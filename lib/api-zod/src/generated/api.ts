@@ -2968,6 +2968,133 @@ export const AdminCancelVendorOrderResponse = zod.object({
 });
 
 /**
+ * @summary Aggregate sales totals across a date range
+ */
+export const AdminReportsSalesSummaryQueryParams = zod.object({
+  dateFrom: zod.coerce
+    .string()
+    .optional()
+    .describe(
+      "Inclusive lower bound on placedAt (ISO date or datetime). Defaults to 30 days ago.",
+    ),
+  dateTo: zod.coerce
+    .string()
+    .optional()
+    .describe(
+      "Inclusive upper bound on placedAt (ISO date or datetime). Defaults to now.",
+    ),
+  includeCanceled: zod.coerce
+    .boolean()
+    .optional()
+    .describe(
+      "When true, include canceled+refunded orders in the totals (defaults to false).",
+    ),
+});
+
+export const AdminReportsSalesSummaryResponse = zod.object({
+  range: zod.object({
+    dateFrom: zod.coerce.date(),
+    dateTo: zod.coerce.date(),
+    includeCanceled: zod.boolean(),
+  }),
+  orderCount: zod.number(),
+  itemCount: zod.number(),
+  grossRevenue: zod.number().describe("Sum of order.total"),
+  subtotal: zod.number(),
+  taxTotal: zod.number(),
+  deliveryTotal: zod.number(),
+  discountTotal: zod.number().describe("Sum of order_items.discount_amount"),
+  averageOrderValue: zod.number(),
+});
+
+/**
+ * @summary Sales aggregated by sales agent (createdByAgentId)
+ */
+export const AdminReportsSalesByAgentQueryParams = zod.object({
+  dateFrom: zod.coerce.string().optional(),
+  dateTo: zod.coerce.string().optional(),
+  includeCanceled: zod.coerce.boolean().optional(),
+  format: zod
+    .enum(["json", "csv"])
+    .optional()
+    .describe("When 'csv', returns text\/csv instead of JSON."),
+});
+
+export const AdminReportsSalesByAgentResponse = zod.object({
+  range: zod.object({
+    dateFrom: zod.coerce.date(),
+    dateTo: zod.coerce.date(),
+    includeCanceled: zod.boolean(),
+  }),
+  rows: zod.array(
+    zod.object({
+      agentId: zod.number().nullable(),
+      agentEmail: zod.string().nullable(),
+      orderCount: zod.number(),
+      itemCount: zod.number(),
+      grossRevenue: zod.number(),
+      averageOrderValue: zod.number(),
+    }),
+  ),
+});
+
+/**
+ * @summary Sales aggregated by manufacturer (via order_items → products)
+ */
+export const AdminReportsSalesByManufacturerQueryParams = zod.object({
+  dateFrom: zod.coerce.string().optional(),
+  dateTo: zod.coerce.string().optional(),
+  includeCanceled: zod.coerce.boolean().optional(),
+  format: zod.enum(["json", "csv"]).optional(),
+});
+
+export const AdminReportsSalesByManufacturerResponse = zod.object({
+  range: zod.object({
+    dateFrom: zod.coerce.date(),
+    dateTo: zod.coerce.date(),
+    includeCanceled: zod.boolean(),
+  }),
+  rows: zod.array(
+    zod.object({
+      manufacturerId: zod.number().nullable(),
+      manufacturerName: zod.string().nullable(),
+      orderCount: zod.number(),
+      itemCount: zod.number(),
+      revenue: zod
+        .number()
+        .describe("Sum of order_items.amount minus discount_amount"),
+    }),
+  ),
+});
+
+/**
+ * @summary Sales aggregated by product category (via order_items → products)
+ */
+export const AdminReportsSalesByCategoryQueryParams = zod.object({
+  dateFrom: zod.coerce.string().optional(),
+  dateTo: zod.coerce.string().optional(),
+  includeCanceled: zod.coerce.boolean().optional(),
+  format: zod.enum(["json", "csv"]).optional(),
+});
+
+export const AdminReportsSalesByCategoryResponse = zod.object({
+  range: zod.object({
+    dateFrom: zod.coerce.date(),
+    dateTo: zod.coerce.date(),
+    includeCanceled: zod.boolean(),
+  }),
+  rows: zod.array(
+    zod.object({
+      categoryId: zod.number().nullable(),
+      categoryName: zod.string().nullable(),
+      orderCount: zod.number(),
+      itemCount: zod.number(),
+      revenue: zod.number(),
+    }),
+  ),
+});
+
+/**
  * @summary List the current staff user's notifications (newest first)
  */
 export const staffListNotificationsQueryLimitMax = 100;

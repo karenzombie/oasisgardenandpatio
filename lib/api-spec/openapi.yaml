@@ -2105,6 +2105,124 @@ paths:
               schema: { $ref: "#/components/schemas/AdminVendorOrderDetail" }
         "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
         "409": { description: Already received or canceled, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+  /admin/reports/sales-summary:
+    get:
+      operationId: adminReportsSalesSummary
+      tags: [admin-reports]
+      summary: Aggregate sales totals across a date range
+      parameters:
+        - name: dateFrom
+          in: query
+          required: false
+          description: Inclusive lower bound on placedAt (ISO date or datetime). Defaults to 30 days ago.
+          schema: { type: string }
+        - name: dateTo
+          in: query
+          required: false
+          description: Inclusive upper bound on placedAt (ISO date or datetime). Defaults to now.
+          schema: { type: string }
+        - name: includeCanceled
+          in: query
+          required: false
+          description: When true, include canceled+refunded orders in the totals (defaults to false).
+          schema: { type: boolean }
+      responses:
+        "200":
+          description: Sales summary
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminReportsSalesSummary" }
+  /admin/reports/sales-by-agent:
+    get:
+      operationId: adminReportsSalesByAgent
+      tags: [admin-reports]
+      summary: Sales aggregated by sales agent (createdByAgentId)
+      parameters:
+        - name: dateFrom
+          in: query
+          required: false
+          schema: { type: string }
+        - name: dateTo
+          in: query
+          required: false
+          schema: { type: string }
+        - name: includeCanceled
+          in: query
+          required: false
+          schema: { type: boolean }
+        - name: format
+          in: query
+          required: false
+          description: When 'csv', returns text/csv instead of JSON.
+          schema: { type: string, enum: [json, csv] }
+      responses:
+        "200":
+          description: Sales by agent
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminReportsSalesByAgent" }
+            text/csv:
+              schema: { type: string }
+  /admin/reports/sales-by-manufacturer:
+    get:
+      operationId: adminReportsSalesByManufacturer
+      tags: [admin-reports]
+      summary: Sales aggregated by manufacturer (via order_items → products)
+      parameters:
+        - name: dateFrom
+          in: query
+          required: false
+          schema: { type: string }
+        - name: dateTo
+          in: query
+          required: false
+          schema: { type: string }
+        - name: includeCanceled
+          in: query
+          required: false
+          schema: { type: boolean }
+        - name: format
+          in: query
+          required: false
+          schema: { type: string, enum: [json, csv] }
+      responses:
+        "200":
+          description: Sales by manufacturer
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminReportsSalesByManufacturer" }
+            text/csv:
+              schema: { type: string }
+  /admin/reports/sales-by-category:
+    get:
+      operationId: adminReportsSalesByCategory
+      tags: [admin-reports]
+      summary: Sales aggregated by product category (via order_items → products)
+      parameters:
+        - name: dateFrom
+          in: query
+          required: false
+          schema: { type: string }
+        - name: dateTo
+          in: query
+          required: false
+          schema: { type: string }
+        - name: includeCanceled
+          in: query
+          required: false
+          schema: { type: boolean }
+        - name: format
+          in: query
+          required: false
+          schema: { type: string, enum: [json, csv] }
+      responses:
+        "200":
+          description: Sales by category
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminReportsSalesByCategory" }
+            text/csv:
+              schema: { type: string }
   /staff/notifications:
     get:
       operationId: staffListNotifications
@@ -2703,6 +2821,80 @@ components:
       properties:
         notes: { type: string, nullable: true }
         vendorEstimatedDeliveryDate: { type: string, format: date-time, nullable: true }
+    AdminReportsRange:
+      type: object
+      properties:
+        dateFrom: { type: string, format: date-time }
+        dateTo: { type: string, format: date-time }
+        includeCanceled: { type: boolean }
+      required: [dateFrom, dateTo, includeCanceled]
+    AdminReportsSalesSummary:
+      type: object
+      properties:
+        range: { $ref: "#/components/schemas/AdminReportsRange" }
+        orderCount: { type: integer }
+        itemCount: { type: integer }
+        grossRevenue: { type: number, description: "Sum of order.total" }
+        subtotal: { type: number }
+        taxTotal: { type: number }
+        deliveryTotal: { type: number }
+        discountTotal: { type: number, description: "Sum of order_items.discount_amount" }
+        averageOrderValue: { type: number }
+      required:
+        [range, orderCount, itemCount, grossRevenue, subtotal, taxTotal, deliveryTotal, discountTotal, averageOrderValue]
+    AdminReportsAgentRow:
+      type: object
+      properties:
+        agentId: { type: integer, nullable: true }
+        agentEmail: { type: string, nullable: true }
+        orderCount: { type: integer }
+        itemCount: { type: integer }
+        grossRevenue: { type: number }
+        averageOrderValue: { type: number }
+      required:
+        [agentId, agentEmail, orderCount, itemCount, grossRevenue, averageOrderValue]
+    AdminReportsSalesByAgent:
+      type: object
+      properties:
+        range: { $ref: "#/components/schemas/AdminReportsRange" }
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/AdminReportsAgentRow" }
+      required: [range, rows]
+    AdminReportsManufacturerRow:
+      type: object
+      properties:
+        manufacturerId: { type: integer, nullable: true }
+        manufacturerName: { type: string, nullable: true }
+        orderCount: { type: integer }
+        itemCount: { type: integer }
+        revenue: { type: number, description: "Sum of order_items.amount minus discount_amount" }
+      required: [manufacturerId, manufacturerName, orderCount, itemCount, revenue]
+    AdminReportsSalesByManufacturer:
+      type: object
+      properties:
+        range: { $ref: "#/components/schemas/AdminReportsRange" }
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/AdminReportsManufacturerRow" }
+      required: [range, rows]
+    AdminReportsCategoryRow:
+      type: object
+      properties:
+        categoryId: { type: integer, nullable: true }
+        categoryName: { type: string, nullable: true }
+        orderCount: { type: integer }
+        itemCount: { type: integer }
+        revenue: { type: number }
+      required: [categoryId, categoryName, orderCount, itemCount, revenue]
+    AdminReportsSalesByCategory:
+      type: object
+      properties:
+        range: { $ref: "#/components/schemas/AdminReportsRange" }
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/AdminReportsCategoryRow" }
+      required: [range, rows]
     AdminCancellationRequest:
       type: object
       properties:

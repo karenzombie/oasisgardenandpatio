@@ -26,11 +26,11 @@ import Orders from "./pages/admin/Orders";
 import OrderDetail from "./pages/admin/OrderDetail";
 import VendorOrders from "./pages/admin/VendorOrders";
 import VendorOrderDetail from "./pages/admin/VendorOrderDetail";
+import Reports from "./pages/admin/Reports";
 import { PagePlaceholder } from "./pages/PagePlaceholder";
 
 const ADMIN_PLACEHOLDERS: Array<{ path: string; title: string; comingIn: string }> = [
   { path: "/notifications", title: "Notifications", comingIn: "Phase 6.18" },
-  { path: "/reports", title: "Reports", comingIn: "Phase 6.23" },
 ];
 
 const AGENT_PLACEHOLDERS: Array<{ path: string; title: string; comingIn: string }> = [
@@ -79,6 +79,7 @@ export default function StaffRouter() {
                 <Route path="/orders/:id" component={OrderDetail} />
                 <Route path="/vendor-orders" component={VendorOrders} />
                 <Route path="/vendor-orders/:id" component={VendorOrderDetail} />
+                <Route path="/reports" component={Reports} />
                 {ADMIN_PLACEHOLDERS.map(({ path, title, comingIn }) => (
                   <Route key={path} path={path}>
                     {() => <PagePlaceholder title={title} comingIn={comingIn} />}

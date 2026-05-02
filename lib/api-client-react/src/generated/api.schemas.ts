@@ -245,6 +245,67 @@ export interface UpdateVendorOrderRequest {
   vendorEstimatedDeliveryDate?: string | null;
 }
 
+export interface AdminReportsRange {
+  dateFrom: string;
+  dateTo: string;
+  includeCanceled: boolean;
+}
+
+export interface AdminReportsSalesSummary {
+  range: AdminReportsRange;
+  orderCount: number;
+  itemCount: number;
+  /** Sum of order.total */
+  grossRevenue: number;
+  subtotal: number;
+  taxTotal: number;
+  deliveryTotal: number;
+  /** Sum of order_items.discount_amount */
+  discountTotal: number;
+  averageOrderValue: number;
+}
+
+export interface AdminReportsAgentRow {
+  agentId: number | null;
+  agentEmail: string | null;
+  orderCount: number;
+  itemCount: number;
+  grossRevenue: number;
+  averageOrderValue: number;
+}
+
+export interface AdminReportsSalesByAgent {
+  range: AdminReportsRange;
+  rows: AdminReportsAgentRow[];
+}
+
+export interface AdminReportsManufacturerRow {
+  manufacturerId: number | null;
+  manufacturerName: string | null;
+  orderCount: number;
+  itemCount: number;
+  /** Sum of order_items.amount minus discount_amount */
+  revenue: number;
+}
+
+export interface AdminReportsSalesByManufacturer {
+  range: AdminReportsRange;
+  rows: AdminReportsManufacturerRow[];
+}
+
+export interface AdminReportsCategoryRow {
+  categoryId: number | null;
+  categoryName: string | null;
+  orderCount: number;
+  itemCount: number;
+  revenue: number;
+}
+
+export interface AdminReportsSalesByCategory {
+  range: AdminReportsRange;
+  rows: AdminReportsCategoryRow[];
+}
+
 export interface AdminCancellationRequest {
   id: number;
   orderId: number;
@@ -1840,6 +1901,69 @@ export type AdminListVendorOrdersBucket =
 export const AdminListVendorOrdersBucket = {
   needs_action: "needs_action",
   sent: "sent",
+} as const;
+
+export type AdminReportsSalesSummaryParams = {
+  /**
+   * Inclusive lower bound on placedAt (ISO date or datetime). Defaults to 30 days ago.
+   */
+  dateFrom?: string;
+  /**
+   * Inclusive upper bound on placedAt (ISO date or datetime). Defaults to now.
+   */
+  dateTo?: string;
+  /**
+   * When true, include canceled+refunded orders in the totals (defaults to false).
+   */
+  includeCanceled?: boolean;
+};
+
+export type AdminReportsSalesByAgentParams = {
+  dateFrom?: string;
+  dateTo?: string;
+  includeCanceled?: boolean;
+  /**
+   * When 'csv', returns text/csv instead of JSON.
+   */
+  format?: AdminReportsSalesByAgentFormat;
+};
+
+export type AdminReportsSalesByAgentFormat =
+  (typeof AdminReportsSalesByAgentFormat)[keyof typeof AdminReportsSalesByAgentFormat];
+
+export const AdminReportsSalesByAgentFormat = {
+  json: "json",
+  csv: "csv",
+} as const;
+
+export type AdminReportsSalesByManufacturerParams = {
+  dateFrom?: string;
+  dateTo?: string;
+  includeCanceled?: boolean;
+  format?: AdminReportsSalesByManufacturerFormat;
+};
+
+export type AdminReportsSalesByManufacturerFormat =
+  (typeof AdminReportsSalesByManufacturerFormat)[keyof typeof AdminReportsSalesByManufacturerFormat];
+
+export const AdminReportsSalesByManufacturerFormat = {
+  json: "json",
+  csv: "csv",
+} as const;
+
+export type AdminReportsSalesByCategoryParams = {
+  dateFrom?: string;
+  dateTo?: string;
+  includeCanceled?: boolean;
+  format?: AdminReportsSalesByCategoryFormat;
+};
+
+export type AdminReportsSalesByCategoryFormat =
+  (typeof AdminReportsSalesByCategoryFormat)[keyof typeof AdminReportsSalesByCategoryFormat];
+
+export const AdminReportsSalesByCategoryFormat = {
+  json: "json",
+  csv: "csv",
 } as const;
 
 export type StaffListNotificationsParams = {
