@@ -6,6 +6,8 @@ import manufacturersRouter from "./manufacturers";
 import categoriesRouter from "./categories";
 import productsRouter from "./products";
 import authRouter from "./auth";
+import staffAuthRouter from "./staffAuth";
+import storageRouter from "./storage";
 
 const router: IRouter = Router();
 
@@ -16,5 +18,7 @@ router.use(manufacturersRouter);
 router.use(categoriesRouter);
 router.use(productsRouter);
 router.use(authRouter);
+router.use(staffAuthRouter);
+router.use(storageRouter);
 
 export default router;

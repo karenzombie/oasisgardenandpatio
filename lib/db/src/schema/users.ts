@@ -29,6 +29,17 @@ export const usersTable = pgTable(
     isActive: boolean("is_active").notNull().default(true),
     emailVerifiedAt: timestamp("email_verified_at", { withTimezone: true }),
     lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
+    mustChangePassword: boolean("must_change_password")
+      .notNull()
+      .default(false),
+    twoFactorEnabled: boolean("two_factor_enabled").notNull().default(false),
+    twoFactorSecret: text("two_factor_secret"),
+    twoFactorEnrolledAt: timestamp("two_factor_enrolled_at", {
+      withTimezone: true,
+    }),
+    twoFactorRecoveryCodes: json("two_factor_recovery_codes")
+      .$type<string[]>()
+      .default(sql`'[]'::json`),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

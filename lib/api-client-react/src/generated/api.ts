@@ -19,6 +19,7 @@ import type {
 import type {
   Banner,
   Category,
+  ChangePasswordRequest,
   CurrentUser,
   Error,
   FeaturedProduct,
@@ -26,9 +27,17 @@ import type {
   LegalDocument,
   LoginRequest,
   Manufacturer,
+  RecoveryCodeRequest,
   RequestPasswordResetRequest,
+  RequestUploadUrlRequest,
+  RequestUploadUrlResponseSchema,
   ResetPasswordRequest,
   SignupRequest,
+  StaffDisableTotp200,
+  StaffLoginRequest,
+  StaffStageResponse,
+  TotpCodeRequest,
+  TotpSetupInitResponse,
   VerifyEmailRequest,
 } from "./api.schemas";
 
@@ -1172,4 +1181,757 @@ export const useResetPassword = <
   TContext
 > => {
   return useMutation(getResetPasswordMutationOptions(options));
+};
+
+/**
+ * @summary Begin staff login (email + password). Returns the next stage.
+ */
+export const getStaffLoginUrl = () => {
+  return `/api/auth/staff/login`;
+};
+
+export const staffLogin = async (
+  staffLoginRequest: StaffLoginRequest,
+  options?: RequestInit,
+): Promise<StaffStageResponse> => {
+  return customFetch<StaffStageResponse>(getStaffLoginUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(staffLoginRequest),
+  });
+};
+
+export const getStaffLoginMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof staffLogin>>,
+    TError,
+    { data: BodyType<StaffLoginRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof staffLogin>>,
+  TError,
+  { data: BodyType<StaffLoginRequest> },
+  TContext
+> => {
+  const mutationKey = ["staffLogin"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof staffLogin>>,
+    { data: BodyType<StaffLoginRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return staffLogin(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type StaffLoginMutationResult = NonNullable<
+  Awaited<ReturnType<typeof staffLogin>>
+>;
+export type StaffLoginMutationBody = BodyType<StaffLoginRequest>;
+export type StaffLoginMutationError = ErrorType<Error>;
+
+/**
+ * @summary Begin staff login (email + password). Returns the next stage.
+ */
+export const useStaffLogin = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof staffLogin>>,
+    TError,
+    { data: BodyType<StaffLoginRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof staffLogin>>,
+  TError,
+  { data: BodyType<StaffLoginRequest> },
+  TContext
+> => {
+  return useMutation(getStaffLoginMutationOptions(options));
+};
+
+/**
+ * @summary Get current staff session stage
+ */
+export const getStaffGetStateUrl = () => {
+  return `/api/auth/staff/state`;
+};
+
+export const staffGetState = async (
+  options?: RequestInit,
+): Promise<StaffStageResponse> => {
+  return customFetch<StaffStageResponse>(getStaffGetStateUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getStaffGetStateQueryKey = () => {
+  return [`/api/auth/staff/state`] as const;
+};
+
+export const getStaffGetStateQueryOptions = <
+  TData = Awaited<ReturnType<typeof staffGetState>>,
+  TError = ErrorType<StaffStageResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof staffGetState>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getStaffGetStateQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof staffGetState>>> = ({
+    signal,
+  }) => staffGetState({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof staffGetState>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type StaffGetStateQueryResult = NonNullable<
+  Awaited<ReturnType<typeof staffGetState>>
+>;
+export type StaffGetStateQueryError = ErrorType<StaffStageResponse>;
+
+/**
+ * @summary Get current staff session stage
+ */
+
+export function useStaffGetState<
+  TData = Awaited<ReturnType<typeof staffGetState>>,
+  TError = ErrorType<StaffStageResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof staffGetState>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getStaffGetStateQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Generate a new TOTP secret for first-time enrollment
+ */
+export const getStaffSetupTotpUrl = () => {
+  return `/api/auth/staff/2fa/setup-init`;
+};
+
+export const staffSetupTotp = async (
+  options?: RequestInit,
+): Promise<TotpSetupInitResponse> => {
+  return customFetch<TotpSetupInitResponse>(getStaffSetupTotpUrl(), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getStaffSetupTotpMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof staffSetupTotp>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof staffSetupTotp>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["staffSetupTotp"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof staffSetupTotp>>,
+    void
+  > = () => {
+    return staffSetupTotp(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type StaffSetupTotpMutationResult = NonNullable<
+  Awaited<ReturnType<typeof staffSetupTotp>>
+>;
+
+export type StaffSetupTotpMutationError = ErrorType<Error>;
+
+/**
+ * @summary Generate a new TOTP secret for first-time enrollment
+ */
+export const useStaffSetupTotp = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof staffSetupTotp>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof staffSetupTotp>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getStaffSetupTotpMutationOptions(options));
+};
+
+/**
+ * @summary Confirm TOTP enrollment with the first 6-digit code
+ */
+export const getStaffVerifySetupTotpUrl = () => {
+  return `/api/auth/staff/2fa/setup-verify`;
+};
+
+export const staffVerifySetupTotp = async (
+  totpCodeRequest: TotpCodeRequest,
+  options?: RequestInit,
+): Promise<StaffStageResponse> => {
+  return customFetch<StaffStageResponse>(getStaffVerifySetupTotpUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(totpCodeRequest),
+  });
+};
+
+export const getStaffVerifySetupTotpMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof staffVerifySetupTotp>>,
+    TError,
+    { data: BodyType<TotpCodeRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof staffVerifySetupTotp>>,
+  TError,
+  { data: BodyType<TotpCodeRequest> },
+  TContext
+> => {
+  const mutationKey = ["staffVerifySetupTotp"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof staffVerifySetupTotp>>,
+    { data: BodyType<TotpCodeRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return staffVerifySetupTotp(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type StaffVerifySetupTotpMutationResult = NonNullable<
+  Awaited<ReturnType<typeof staffVerifySetupTotp>>
+>;
+export type StaffVerifySetupTotpMutationBody = BodyType<TotpCodeRequest>;
+export type StaffVerifySetupTotpMutationError = ErrorType<Error>;
+
+/**
+ * @summary Confirm TOTP enrollment with the first 6-digit code
+ */
+export const useStaffVerifySetupTotp = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof staffVerifySetupTotp>>,
+    TError,
+    { data: BodyType<TotpCodeRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof staffVerifySetupTotp>>,
+  TError,
+  { data: BodyType<TotpCodeRequest> },
+  TContext
+> => {
+  return useMutation(getStaffVerifySetupTotpMutationOptions(options));
+};
+
+/**
+ * @summary Verify TOTP code for an already-enrolled user
+ */
+export const getStaffVerifyTotpUrl = () => {
+  return `/api/auth/staff/2fa/verify`;
+};
+
+export const staffVerifyTotp = async (
+  totpCodeRequest: TotpCodeRequest,
+  options?: RequestInit,
+): Promise<StaffStageResponse> => {
+  return customFetch<StaffStageResponse>(getStaffVerifyTotpUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(totpCodeRequest),
+  });
+};
+
+export const getStaffVerifyTotpMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof staffVerifyTotp>>,
+    TError,
+    { data: BodyType<TotpCodeRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof staffVerifyTotp>>,
+  TError,
+  { data: BodyType<TotpCodeRequest> },
+  TContext
+> => {
+  const mutationKey = ["staffVerifyTotp"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof staffVerifyTotp>>,
+    { data: BodyType<TotpCodeRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return staffVerifyTotp(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type StaffVerifyTotpMutationResult = NonNullable<
+  Awaited<ReturnType<typeof staffVerifyTotp>>
+>;
+export type StaffVerifyTotpMutationBody = BodyType<TotpCodeRequest>;
+export type StaffVerifyTotpMutationError = ErrorType<Error>;
+
+/**
+ * @summary Verify TOTP code for an already-enrolled user
+ */
+export const useStaffVerifyTotp = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof staffVerifyTotp>>,
+    TError,
+    { data: BodyType<TotpCodeRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof staffVerifyTotp>>,
+  TError,
+  { data: BodyType<TotpCodeRequest> },
+  TContext
+> => {
+  return useMutation(getStaffVerifyTotpMutationOptions(options));
+};
+
+/**
+ * @summary Use a one-time recovery code instead of a TOTP code
+ */
+export const getStaffVerifyRecoveryCodeUrl = () => {
+  return `/api/auth/staff/2fa/recovery`;
+};
+
+export const staffVerifyRecoveryCode = async (
+  recoveryCodeRequest: RecoveryCodeRequest,
+  options?: RequestInit,
+): Promise<StaffStageResponse> => {
+  return customFetch<StaffStageResponse>(getStaffVerifyRecoveryCodeUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(recoveryCodeRequest),
+  });
+};
+
+export const getStaffVerifyRecoveryCodeMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof staffVerifyRecoveryCode>>,
+    TError,
+    { data: BodyType<RecoveryCodeRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof staffVerifyRecoveryCode>>,
+  TError,
+  { data: BodyType<RecoveryCodeRequest> },
+  TContext
+> => {
+  const mutationKey = ["staffVerifyRecoveryCode"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof staffVerifyRecoveryCode>>,
+    { data: BodyType<RecoveryCodeRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return staffVerifyRecoveryCode(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type StaffVerifyRecoveryCodeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof staffVerifyRecoveryCode>>
+>;
+export type StaffVerifyRecoveryCodeMutationBody = BodyType<RecoveryCodeRequest>;
+export type StaffVerifyRecoveryCodeMutationError = ErrorType<Error>;
+
+/**
+ * @summary Use a one-time recovery code instead of a TOTP code
+ */
+export const useStaffVerifyRecoveryCode = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof staffVerifyRecoveryCode>>,
+    TError,
+    { data: BodyType<RecoveryCodeRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof staffVerifyRecoveryCode>>,
+  TError,
+  { data: BodyType<RecoveryCodeRequest> },
+  TContext
+> => {
+  return useMutation(getStaffVerifyRecoveryCodeMutationOptions(options));
+};
+
+/**
+ * @summary Change the current staff user's password (also clears must_change_password)
+ */
+export const getStaffChangePasswordUrl = () => {
+  return `/api/auth/staff/change-password`;
+};
+
+export const staffChangePassword = async (
+  changePasswordRequest: ChangePasswordRequest,
+  options?: RequestInit,
+): Promise<StaffStageResponse> => {
+  return customFetch<StaffStageResponse>(getStaffChangePasswordUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(changePasswordRequest),
+  });
+};
+
+export const getStaffChangePasswordMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof staffChangePassword>>,
+    TError,
+    { data: BodyType<ChangePasswordRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof staffChangePassword>>,
+  TError,
+  { data: BodyType<ChangePasswordRequest> },
+  TContext
+> => {
+  const mutationKey = ["staffChangePassword"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof staffChangePassword>>,
+    { data: BodyType<ChangePasswordRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return staffChangePassword(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type StaffChangePasswordMutationResult = NonNullable<
+  Awaited<ReturnType<typeof staffChangePassword>>
+>;
+export type StaffChangePasswordMutationBody = BodyType<ChangePasswordRequest>;
+export type StaffChangePasswordMutationError = ErrorType<Error>;
+
+/**
+ * @summary Change the current staff user's password (also clears must_change_password)
+ */
+export const useStaffChangePassword = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof staffChangePassword>>,
+    TError,
+    { data: BodyType<ChangePasswordRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof staffChangePassword>>,
+  TError,
+  { data: BodyType<ChangePasswordRequest> },
+  TContext
+> => {
+  return useMutation(getStaffChangePasswordMutationOptions(options));
+};
+
+/**
+ * @summary Disable TOTP for the current admin (admins only)
+ */
+export const getStaffDisableTotpUrl = () => {
+  return `/api/auth/staff/2fa/disable`;
+};
+
+export const staffDisableTotp = async (
+  options?: RequestInit,
+): Promise<StaffDisableTotp200> => {
+  return customFetch<StaffDisableTotp200>(getStaffDisableTotpUrl(), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getStaffDisableTotpMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof staffDisableTotp>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof staffDisableTotp>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["staffDisableTotp"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof staffDisableTotp>>,
+    void
+  > = () => {
+    return staffDisableTotp(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type StaffDisableTotpMutationResult = NonNullable<
+  Awaited<ReturnType<typeof staffDisableTotp>>
+>;
+
+export type StaffDisableTotpMutationError = ErrorType<Error>;
+
+/**
+ * @summary Disable TOTP for the current admin (admins only)
+ */
+export const useStaffDisableTotp = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof staffDisableTotp>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof staffDisableTotp>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getStaffDisableTotpMutationOptions(options));
+};
+
+/**
+ * @summary Request a presigned URL for uploading a file (staff only)
+ */
+export const getRequestUploadUrlUrl = () => {
+  return `/api/storage/uploads/request-url`;
+};
+
+export const requestUploadUrl = async (
+  requestUploadUrlRequest: RequestUploadUrlRequest,
+  options?: RequestInit,
+): Promise<RequestUploadUrlResponseSchema> => {
+  return customFetch<RequestUploadUrlResponseSchema>(getRequestUploadUrlUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(requestUploadUrlRequest),
+  });
+};
+
+export const getRequestUploadUrlMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof requestUploadUrl>>,
+    TError,
+    { data: BodyType<RequestUploadUrlRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof requestUploadUrl>>,
+  TError,
+  { data: BodyType<RequestUploadUrlRequest> },
+  TContext
+> => {
+  const mutationKey = ["requestUploadUrl"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof requestUploadUrl>>,
+    { data: BodyType<RequestUploadUrlRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return requestUploadUrl(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RequestUploadUrlMutationResult = NonNullable<
+  Awaited<ReturnType<typeof requestUploadUrl>>
+>;
+export type RequestUploadUrlMutationBody = BodyType<RequestUploadUrlRequest>;
+export type RequestUploadUrlMutationError = ErrorType<Error>;
+
+/**
+ * @summary Request a presigned URL for uploading a file (staff only)
+ */
+export const useRequestUploadUrl = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof requestUploadUrl>>,
+    TError,
+    { data: BodyType<RequestUploadUrlRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof requestUploadUrl>>,
+  TError,
+  { data: BodyType<RequestUploadUrlRequest> },
+  TContext
+> => {
+  return useMutation(getRequestUploadUrlMutationOptions(options));
 };

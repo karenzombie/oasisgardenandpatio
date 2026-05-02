@@ -29,6 +29,19 @@ export const passwordResetRateLimiter = rateLimit({
   handler: jsonErrorHandler,
 });
 
+export const twoFactorRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 15,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+  keyGenerator: (req) => {
+    const pending = req.session?.pendingStaffUserId;
+    return pending ? `pending:${pending}` : `ip:${ipKeyGenerator(req.ip ?? "")}`;
+  },
+  handler: jsonErrorHandler,
+});
+
 export const resendVerificationRateLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   limit: 5,

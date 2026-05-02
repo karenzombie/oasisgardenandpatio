@@ -163,3 +163,237 @@ export const ResetPasswordBody = zod.object({
   token: zod.string().min(1),
   newPassword: zod.string().min(resetPasswordBodyNewPasswordMin),
 });
+
+/**
+ * @summary Begin staff login (email + password). Returns the next stage.
+ */
+
+export const StaffLoginBody = zod.object({
+  email: zod.string().email(),
+  password: zod.string().min(1),
+});
+
+export const StaffLoginResponse = zod.object({
+  stage: zod.enum([
+    "anonymous",
+    "needs_2fa_setup",
+    "needs_2fa_verify",
+    "needs_password_change",
+    "complete",
+  ]),
+  user: zod
+    .object({
+      id: zod.number(),
+      email: zod.string().email(),
+      firstName: zod.string().nullable(),
+      lastName: zod.string().nullable(),
+      role: zod.enum(["agent", "admin"]),
+      twoFactorEnabled: zod.boolean(),
+      mustChangePassword: zod.boolean(),
+    })
+    .optional(),
+  recoveryCodes: zod.array(zod.string()).optional(),
+  recoveryCodesRemaining: zod.number().optional(),
+});
+
+/**
+ * @summary Get current staff session stage
+ */
+export const StaffGetStateResponse = zod.object({
+  stage: zod.enum([
+    "anonymous",
+    "needs_2fa_setup",
+    "needs_2fa_verify",
+    "needs_password_change",
+    "complete",
+  ]),
+  user: zod
+    .object({
+      id: zod.number(),
+      email: zod.string().email(),
+      firstName: zod.string().nullable(),
+      lastName: zod.string().nullable(),
+      role: zod.enum(["agent", "admin"]),
+      twoFactorEnabled: zod.boolean(),
+      mustChangePassword: zod.boolean(),
+    })
+    .optional(),
+  recoveryCodes: zod.array(zod.string()).optional(),
+  recoveryCodesRemaining: zod.number().optional(),
+});
+
+/**
+ * @summary Generate a new TOTP secret for first-time enrollment
+ */
+export const StaffSetupTotpResponse = zod.object({
+  otpAuthUrl: zod.string(),
+  qrDataUrl: zod.string(),
+  manualEntryKey: zod.string(),
+});
+
+/**
+ * @summary Confirm TOTP enrollment with the first 6-digit code
+ */
+export const staffVerifySetupTotpBodyCodeMin = 6;
+export const staffVerifySetupTotpBodyCodeMax = 8;
+
+export const StaffVerifySetupTotpBody = zod.object({
+  code: zod
+    .string()
+    .min(staffVerifySetupTotpBodyCodeMin)
+    .max(staffVerifySetupTotpBodyCodeMax),
+});
+
+export const StaffVerifySetupTotpResponse = zod.object({
+  stage: zod.enum([
+    "anonymous",
+    "needs_2fa_setup",
+    "needs_2fa_verify",
+    "needs_password_change",
+    "complete",
+  ]),
+  user: zod
+    .object({
+      id: zod.number(),
+      email: zod.string().email(),
+      firstName: zod.string().nullable(),
+      lastName: zod.string().nullable(),
+      role: zod.enum(["agent", "admin"]),
+      twoFactorEnabled: zod.boolean(),
+      mustChangePassword: zod.boolean(),
+    })
+    .optional(),
+  recoveryCodes: zod.array(zod.string()).optional(),
+  recoveryCodesRemaining: zod.number().optional(),
+});
+
+/**
+ * @summary Verify TOTP code for an already-enrolled user
+ */
+export const staffVerifyTotpBodyCodeMin = 6;
+export const staffVerifyTotpBodyCodeMax = 8;
+
+export const StaffVerifyTotpBody = zod.object({
+  code: zod
+    .string()
+    .min(staffVerifyTotpBodyCodeMin)
+    .max(staffVerifyTotpBodyCodeMax),
+});
+
+export const StaffVerifyTotpResponse = zod.object({
+  stage: zod.enum([
+    "anonymous",
+    "needs_2fa_setup",
+    "needs_2fa_verify",
+    "needs_password_change",
+    "complete",
+  ]),
+  user: zod
+    .object({
+      id: zod.number(),
+      email: zod.string().email(),
+      firstName: zod.string().nullable(),
+      lastName: zod.string().nullable(),
+      role: zod.enum(["agent", "admin"]),
+      twoFactorEnabled: zod.boolean(),
+      mustChangePassword: zod.boolean(),
+    })
+    .optional(),
+  recoveryCodes: zod.array(zod.string()).optional(),
+  recoveryCodesRemaining: zod.number().optional(),
+});
+
+/**
+ * @summary Use a one-time recovery code instead of a TOTP code
+ */
+export const staffVerifyRecoveryCodeBodyCodeMin = 8;
+
+export const StaffVerifyRecoveryCodeBody = zod.object({
+  code: zod.string().min(staffVerifyRecoveryCodeBodyCodeMin),
+});
+
+export const StaffVerifyRecoveryCodeResponse = zod.object({
+  stage: zod.enum([
+    "anonymous",
+    "needs_2fa_setup",
+    "needs_2fa_verify",
+    "needs_password_change",
+    "complete",
+  ]),
+  user: zod
+    .object({
+      id: zod.number(),
+      email: zod.string().email(),
+      firstName: zod.string().nullable(),
+      lastName: zod.string().nullable(),
+      role: zod.enum(["agent", "admin"]),
+      twoFactorEnabled: zod.boolean(),
+      mustChangePassword: zod.boolean(),
+    })
+    .optional(),
+  recoveryCodes: zod.array(zod.string()).optional(),
+  recoveryCodesRemaining: zod.number().optional(),
+});
+
+/**
+ * @summary Change the current staff user's password (also clears must_change_password)
+ */
+
+export const staffChangePasswordBodyNewPasswordMin = 12;
+
+export const StaffChangePasswordBody = zod.object({
+  currentPassword: zod.string().min(1),
+  newPassword: zod.string().min(staffChangePasswordBodyNewPasswordMin),
+});
+
+export const StaffChangePasswordResponse = zod.object({
+  stage: zod.enum([
+    "anonymous",
+    "needs_2fa_setup",
+    "needs_2fa_verify",
+    "needs_password_change",
+    "complete",
+  ]),
+  user: zod
+    .object({
+      id: zod.number(),
+      email: zod.string().email(),
+      firstName: zod.string().nullable(),
+      lastName: zod.string().nullable(),
+      role: zod.enum(["agent", "admin"]),
+      twoFactorEnabled: zod.boolean(),
+      mustChangePassword: zod.boolean(),
+    })
+    .optional(),
+  recoveryCodes: zod.array(zod.string()).optional(),
+  recoveryCodesRemaining: zod.number().optional(),
+});
+
+/**
+ * @summary Disable TOTP for the current admin (admins only)
+ */
+export const StaffDisableTotpResponse = zod.object({
+  ok: zod.boolean(),
+});
+
+/**
+ * @summary Request a presigned URL for uploading a file (staff only)
+ */
+
+export const requestUploadUrlBodySizeMin = 0;
+
+export const RequestUploadUrlBody = zod.object({
+  name: zod.string().min(1),
+  size: zod.number().min(requestUploadUrlBodySizeMin),
+  contentType: zod.string().min(1),
+});
+
+export const RequestUploadUrlResponse = zod.object({
+  uploadURL: zod.string(),
+  objectPath: zod.string(),
+  metadata: zod.object({
+    name: zod.string(),
+    size: zod.number(),
+    contentType: zod.string(),
+  }),
+});

@@ -62,6 +62,11 @@ export const ordersTable = pgTable(
       .notNull()
       .default(false),
     customerSignatureUrl: text("customer_signature_url"),
+    customerUpdatedAfterReceiving: boolean("customer_updated_after_receiving")
+      .notNull()
+      .default(false),
+    orderConfirmationPdfUrl: text("order_confirmation_pdf_url"),
+    deliverySheetPdfUrl: text("delivery_sheet_pdf_url"),
     notes: text("notes"),
     placedAt: timestamp("placed_at", { withTimezone: true })
       .notNull()
@@ -100,14 +105,22 @@ export const orderItemsTable = pgTable(
     productId: integer("product_id").references(() => productsTable.id, {
       onDelete: "set null",
     }),
+    vendorOrderId: integer("vendor_order_id"),
     department: text("department"),
     description: text("description").notNull(),
     quantity: integer("quantity").notNull(),
     unitPrice: numeric("unit_price", { precision: 10, scale: 2 }).notNull(),
     amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
+    discountAmount: numeric("discount_amount", { precision: 10, scale: 2 })
+      .notNull()
+      .default("0"),
+    discountReason: text("discount_reason"),
     notes: text("notes"),
   },
-  (t) => [index("order_items_order_id_idx").on(t.orderId)],
+  (t) => [
+    index("order_items_order_id_idx").on(t.orderId),
+    index("order_items_vendor_order_id_idx").on(t.vendorOrderId),
+  ],
 );
 
 export const insertOrderItemSchema = createInsertSchema(orderItemsTable).omit({

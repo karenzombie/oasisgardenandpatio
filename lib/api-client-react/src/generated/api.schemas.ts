@@ -125,3 +125,97 @@ export interface ResetPasswordRequest {
   /** @minLength 8 */
   newPassword: string;
 }
+
+export type StaffUserRole = (typeof StaffUserRole)[keyof typeof StaffUserRole];
+
+export const StaffUserRole = {
+  agent: "agent",
+  admin: "admin",
+} as const;
+
+export interface StaffUser {
+  id: number;
+  email: string;
+  /** @nullable */
+  firstName: string | null;
+  /** @nullable */
+  lastName: string | null;
+  role: StaffUserRole;
+  twoFactorEnabled: boolean;
+  mustChangePassword: boolean;
+}
+
+export interface StaffLoginRequest {
+  email: string;
+  /** @minLength 1 */
+  password: string;
+}
+
+export type StaffStageResponseStage =
+  (typeof StaffStageResponseStage)[keyof typeof StaffStageResponseStage];
+
+export const StaffStageResponseStage = {
+  anonymous: "anonymous",
+  needs_2fa_setup: "needs_2fa_setup",
+  needs_2fa_verify: "needs_2fa_verify",
+  needs_password_change: "needs_password_change",
+  complete: "complete",
+} as const;
+
+export interface StaffStageResponse {
+  stage: StaffStageResponseStage;
+  user?: StaffUser;
+  recoveryCodes?: string[];
+  recoveryCodesRemaining?: number;
+}
+
+export interface TotpSetupInitResponse {
+  otpAuthUrl: string;
+  qrDataUrl: string;
+  manualEntryKey: string;
+}
+
+export interface TotpCodeRequest {
+  /**
+   * @minLength 6
+   * @maxLength 8
+   */
+  code: string;
+}
+
+export interface RecoveryCodeRequest {
+  /** @minLength 8 */
+  code: string;
+}
+
+export interface ChangePasswordRequest {
+  /** @minLength 1 */
+  currentPassword: string;
+  /** @minLength 12 */
+  newPassword: string;
+}
+
+export interface RequestUploadUrlRequest {
+  /** @minLength 1 */
+  name: string;
+  /** @minimum 0 */
+  size: number;
+  /** @minLength 1 */
+  contentType: string;
+}
+
+export type RequestUploadUrlResponseSchemaMetadata = {
+  name: string;
+  size: number;
+  contentType: string;
+};
+
+export interface RequestUploadUrlResponseSchema {
+  uploadURL: string;
+  objectPath: string;
+  metadata: RequestUploadUrlResponseSchemaMetadata;
+}
+
+export type StaffDisableTotp200 = {
+  ok: boolean;
+};

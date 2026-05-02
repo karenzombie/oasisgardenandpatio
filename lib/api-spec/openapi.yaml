@@ -22,6 +22,10 @@ tags:
     description: Products
   - name: auth
     description: Authentication and account management
+  - name: staff-auth
+    description: Staff (agent / admin) authentication, 2FA, and password change
+  - name: storage
+    description: File upload and object storage
 paths:
   /healthz:
     get:
@@ -269,6 +273,214 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /auth/staff/login:
+    post:
+      operationId: staffLogin
+      tags: [staff-auth]
+      summary: Begin staff login (email + password). Returns the next stage.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StaffLoginRequest"
+      responses:
+        "200":
+          description: Login accepted; returns next required stage
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffStageResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /auth/staff/state:
+    get:
+      operationId: staffGetState
+      tags: [staff-auth]
+      summary: Get current staff session stage
+      responses:
+        "200":
+          description: Current stage
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffStageResponse"
+        "401":
+          description: Not in any staff session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffStageResponse"
+  /auth/staff/2fa/setup-init:
+    post:
+      operationId: staffSetupTotp
+      tags: [staff-auth]
+      summary: Generate a new TOTP secret for first-time enrollment
+      responses:
+        "200":
+          description: QR code and manual entry key for an authenticator app
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TotpSetupInitResponse"
+        "400":
+          description: Not in setup stage
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /auth/staff/2fa/setup-verify:
+    post:
+      operationId: staffVerifySetupTotp
+      tags: [staff-auth]
+      summary: Confirm TOTP enrollment with the first 6-digit code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TotpCodeRequest"
+      responses:
+        "200":
+          description: Enrollment complete; returns recovery codes (shown once)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffStageResponse"
+        "400":
+          description: Invalid code or not in setup stage
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /auth/staff/2fa/verify:
+    post:
+      operationId: staffVerifyTotp
+      tags: [staff-auth]
+      summary: Verify TOTP code for an already-enrolled user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TotpCodeRequest"
+      responses:
+        "200":
+          description: Code verified; returns next stage
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffStageResponse"
+        "400":
+          description: Invalid code or not in verify stage
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /auth/staff/2fa/recovery:
+    post:
+      operationId: staffVerifyRecoveryCode
+      tags: [staff-auth]
+      summary: Use a one-time recovery code instead of a TOTP code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecoveryCodeRequest"
+      responses:
+        "200":
+          description: Recovery code consumed; returns next stage
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffStageResponse"
+        "400":
+          description: Invalid recovery code or not in verify stage
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /auth/staff/change-password:
+    post:
+      operationId: staffChangePassword
+      tags: [staff-auth]
+      summary: Change the current staff user's password (also clears must_change_password)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordRequest"
+      responses:
+        "200":
+          description: Password changed; returns next stage (usually complete)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffStageResponse"
+        "400":
+          description: Invalid current password or weak new password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /auth/staff/2fa/disable:
+    post:
+      operationId: staffDisableTotp
+      tags: [staff-auth]
+      summary: Disable TOTP for the current admin (admins only)
+      responses:
+        "200":
+          description: TOTP disabled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                required: [ok]
+        "403":
+          description: Only admins may disable their own 2FA
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /storage/uploads/request-url:
+    post:
+      operationId: requestUploadUrl
+      tags: [storage]
+      summary: Request a presigned URL for uploading a file (staff only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RequestUploadUrlRequest"
+      responses:
+        "200":
+          description: Presigned upload URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RequestUploadUrlResponseSchema"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Not staff
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 components:
   schemas:
     HealthStatus:
@@ -475,3 +687,145 @@ components:
       required:
         - token
         - newPassword
+    StaffUser:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+          format: email
+        firstName:
+          type: ["string", "null"]
+        lastName:
+          type: ["string", "null"]
+        role:
+          type: string
+          enum: [agent, admin]
+        twoFactorEnabled:
+          type: boolean
+        mustChangePassword:
+          type: boolean
+      required:
+        - id
+        - email
+        - firstName
+        - lastName
+        - role
+        - twoFactorEnabled
+        - mustChangePassword
+    StaffLoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 1
+      required:
+        - email
+        - password
+    StaffStageResponse:
+      type: object
+      properties:
+        stage:
+          type: string
+          enum:
+            - anonymous
+            - needs_2fa_setup
+            - needs_2fa_verify
+            - needs_password_change
+            - complete
+        user:
+          $ref: "#/components/schemas/StaffUser"
+        recoveryCodes:
+          type: array
+          items:
+            type: string
+        recoveryCodesRemaining:
+          type: integer
+      required:
+        - stage
+    TotpSetupInitResponse:
+      type: object
+      properties:
+        otpAuthUrl:
+          type: string
+        qrDataUrl:
+          type: string
+        manualEntryKey:
+          type: string
+      required:
+        - otpAuthUrl
+        - qrDataUrl
+        - manualEntryKey
+    TotpCodeRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 6
+          maxLength: 8
+      required:
+        - code
+    RecoveryCodeRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 8
+      required:
+        - code
+    ChangePasswordRequest:
+      type: object
+      properties:
+        currentPassword:
+          type: string
+          minLength: 1
+        newPassword:
+          type: string
+          minLength: 12
+      required:
+        - currentPassword
+        - newPassword
+    RequestUploadUrlRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        size:
+          type: integer
+          minimum: 0
+        contentType:
+          type: string
+          minLength: 1
+      required:
+        - name
+        - size
+        - contentType
+    RequestUploadUrlResponseSchema:
+      type: object
+      properties:
+        uploadURL:
+          type: string
+        objectPath:
+          type: string
+        metadata:
+          type: object
+          properties:
+            name:
+              type: string
+            size:
+              type: integer
+            contentType:
+              type: string
+          required:
+            - name
+            - size
+            - contentType
+      required:
+        - uploadURL
+        - objectPath
+        - metadata

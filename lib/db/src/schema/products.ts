@@ -42,6 +42,7 @@ export const productsTable = pgTable(
     inStoreOnly: boolean("in_store_only").notNull().default(false),
     featured: boolean("featured").notNull().default(false),
     displayOrder: integer("display_order").notNull().default(0),
+    lowStockThreshold: integer("low_stock_threshold").notNull().default(0),
     isActive: boolean("is_active").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()

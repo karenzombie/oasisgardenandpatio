@@ -6,6 +6,12 @@ import type { RequestHandler } from "express";
 declare module "express-session" {
   interface SessionData {
     userId?: number;
+    pendingStaffUserId?: number;
+    pendingStaffStage?:
+      | "needs_2fa_setup"
+      | "needs_2fa_verify"
+      | "needs_password_change";
+    pendingTotpSecret?: string;
   }
 }
 
