@@ -22,9 +22,22 @@ export function Footer() {
 
           {/* Contact Col */}
           <div>
-            <h3 className="font-serif text-xl font-medium mb-6">Visit Our Showroom</h3>
+            <h3 className="font-serif text-xl font-medium mb-3">Experience the difference in person.</h3>
+            <p className="text-secondary-foreground/80 text-sm leading-relaxed mb-6">
+              Serving Santa Clarita for over 20 years. Step into our showroom to feel the quality, test the comfort, and let our experts help you design your perfect outdoor oasis.
+            </p>
             <address className="not-italic text-secondary-foreground/80 text-sm space-y-3">
               <p>21182 Centre Pointe Pkwy #100<br/>Santa Clarita, CA 91350</p>
+              <p>
+                <a
+                  href="https://www.google.com/maps/dir/?api=1&destination=21182+Centre+Pointe+Pkwy+%23100,+Santa+Clarita,+CA+91350"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block border border-primary text-primary px-4 py-2 text-xs uppercase tracking-widest font-medium hover:bg-primary hover:text-primary-foreground transition-colors"
+                >
+                  Get Directions
+                </a>
+              </p>
               <p>
                 <a href="tel:6612559909" className="hover:text-primary transition-colors">(661) 255-9909</a>
               </p>

@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { ArrowRight, MapPin, Clock, Phone } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   useListManufacturers,
@@ -143,53 +143,6 @@ export default function Home() {
               </Button>
             </div>
           )}
-        </div>
-      </section>
-
-      {/* Showroom Section */}
-      <section className="py-0 flex flex-col lg:flex-row bg-secondary text-secondary-foreground">
-        <div className="w-full lg:w-1/2 aspect-square lg:aspect-auto min-h-[500px] relative">
-          <img 
-            src="/src/assets/showroom.png" 
-            alt="Oasis Garden & Patio Showroom"
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-        </div>
-        <div className="w-full lg:w-1/2 flex items-center p-8 md:p-16 lg:p-24">
-          <div className="max-w-md">
-            <h2 className="text-3xl md:text-5xl font-serif mb-6 leading-tight">Experience the difference in person.</h2>
-            <p className="text-secondary-foreground/80 mb-10 text-lg leading-relaxed">
-              Serving Santa Clarita for over 20 years. Step into our showroom to feel the quality, test the comfort, and let our experts help you design your perfect outdoor oasis.
-            </p>
-            
-            <div className="space-y-6 mb-10">
-              <div className="flex items-start gap-4">
-                <MapPin className="w-6 h-6 text-primary shrink-0 mt-1" />
-                <div>
-                  <h4 className="font-medium mb-1">Santa Clarita Showroom</h4>
-                  <p className="text-secondary-foreground/70">21182 Centre Pointe Pkwy #100<br/>Santa Clarita, CA 91350</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-4">
-                <Clock className="w-6 h-6 text-primary shrink-0 mt-1" />
-                <div>
-                  <h4 className="font-medium mb-1">Store Hours</h4>
-                  <p className="text-secondary-foreground/70">Mon–Sat: 10am – 6pm<br/>Sun: 11am – 5pm</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-4">
-                <Phone className="w-6 h-6 text-primary shrink-0 mt-1" />
-                <div>
-                  <h4 className="font-medium mb-1">Contact</h4>
-                  <p className="text-secondary-foreground/70">(661) 255-9909<br/>sales@oasisgardenandpatio.com</p>
-                </div>
-              </div>
-            </div>
-
-            <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-none px-8 font-serif tracking-wide w-full sm:w-auto" asChild>
-              <Link href="/contact">Get Directions</Link>
-            </Button>
-          </div>
         </div>
       </section>
 
