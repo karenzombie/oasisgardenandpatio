@@ -1029,6 +1029,518 @@ export const AdminImportProductsCommitResponse = zod.object({
 });
 
 /**
+ * @summary List all product sets (active and inactive)
+ */
+export const AdminListSetsResponseItem = zod
+  .object({
+    id: zod.number(),
+    name: zod.string(),
+    slug: zod.string(),
+    sku: zod.string().nullable(),
+    description: zod.string().nullable(),
+    manufacturerId: zod.number().nullable(),
+    manufacturerName: zod.string().nullable(),
+    setPrice: zod
+      .string()
+      .nullable()
+      .describe(
+        "pg numeric, serialized as string. Null = no fixed bundle price.",
+      ),
+    isActive: zod.boolean(),
+    displayOrder: zod.number(),
+    itemCount: zod.number(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  })
+  .describe("Light row used for the admin Sets list; no items array.");
+export const AdminListSetsResponse = zod.array(AdminListSetsResponseItem);
+
+/**
+ * @summary Create a new product set (metadata only — items added via PUT /items)
+ */
+
+export const adminCreateSetBodySlugRegExp = new RegExp(
+  "^[a-z0-9]+(?:-[a-z0-9]+)\*$",
+);
+export const adminCreateSetBodySetPriceRegExp = new RegExp(
+  "^\\d+(\\.\\d{1,2})?$",
+);
+export const adminCreateSetBodyDisplayOrderDefault = 0;
+export const adminCreateSetBodyIsActiveDefault = true;
+
+export const AdminCreateSetBody = zod.object({
+  name: zod.string().min(1),
+  slug: zod.string().min(1).regex(adminCreateSetBodySlugRegExp),
+  sku: zod
+    .string()
+    .nullish()
+    .describe("Optional bundle SKU printed on quotes."),
+  description: zod.string().nullish(),
+  manufacturerId: zod.number().nullish(),
+  setPrice: zod
+    .string()
+    .regex(adminCreateSetBodySetPriceRegExp)
+    .nullish()
+    .describe(
+      'Decimal as string (e.g. \"1299.00\"). Null = no bundle override; sum of items at quote time.',
+    ),
+  displayOrder: zod.number().default(adminCreateSetBodyDisplayOrderDefault),
+  isActive: zod.boolean().default(adminCreateSetBodyIsActiveDefault),
+});
+
+/**
+ * @summary Get a product set with its items
+ */
+export const AdminGetSetParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminGetSetResponse = zod
+  .object({
+    id: zod.number(),
+    name: zod.string(),
+    slug: zod.string(),
+    sku: zod.string().nullable(),
+    description: zod.string().nullable(),
+    manufacturerId: zod.number().nullable(),
+    manufacturerName: zod.string().nullable(),
+    setPrice: zod
+      .string()
+      .nullable()
+      .describe(
+        "pg numeric, serialized as string. Null = no fixed bundle price.",
+      ),
+    isActive: zod.boolean(),
+    displayOrder: zod.number(),
+    itemCount: zod.number(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  })
+  .describe("Light row used for the admin Sets list; no items array.")
+  .and(
+    zod.object({
+      items: zod.array(
+        zod
+          .object({
+            id: zod.number(),
+            setId: zod.number(),
+            productId: zod.number(),
+            productSku: zod.string(),
+            productName: zod.string(),
+            productPrice: zod.string().nullable(),
+            productPrimaryImageUrl: zod.string().nullable(),
+            quantity: zod.number().min(1),
+            displayOrder: zod.number(),
+          })
+          .describe(
+            "One product line inside a set, with the joined product label fields the UI needs.",
+          ),
+      ),
+    }),
+  );
+
+/**
+ * @summary Update set metadata (name, slug, sku, description, manufacturer, set_price, etc.)
+ */
+export const AdminUpdateSetParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const adminUpdateSetBodySlugRegExp = new RegExp(
+  "^[a-z0-9]+(?:-[a-z0-9]+)\*$",
+);
+export const adminUpdateSetBodySetPriceRegExp = new RegExp(
+  "^\\d+(\\.\\d{1,2})?$",
+);
+
+export const AdminUpdateSetBody = zod.object({
+  name: zod.string().min(1),
+  slug: zod.string().min(1).regex(adminUpdateSetBodySlugRegExp),
+  sku: zod.string().nullish(),
+  description: zod.string().nullish(),
+  manufacturerId: zod.number().nullish(),
+  setPrice: zod.string().regex(adminUpdateSetBodySetPriceRegExp).nullish(),
+  displayOrder: zod.number().optional(),
+  isActive: zod.boolean().optional(),
+});
+
+export const AdminUpdateSetResponse = zod
+  .object({
+    id: zod.number(),
+    name: zod.string(),
+    slug: zod.string(),
+    sku: zod.string().nullable(),
+    description: zod.string().nullable(),
+    manufacturerId: zod.number().nullable(),
+    manufacturerName: zod.string().nullable(),
+    setPrice: zod
+      .string()
+      .nullable()
+      .describe(
+        "pg numeric, serialized as string. Null = no fixed bundle price.",
+      ),
+    isActive: zod.boolean(),
+    displayOrder: zod.number(),
+    itemCount: zod.number(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  })
+  .describe("Light row used for the admin Sets list; no items array.")
+  .and(
+    zod.object({
+      items: zod.array(
+        zod
+          .object({
+            id: zod.number(),
+            setId: zod.number(),
+            productId: zod.number(),
+            productSku: zod.string(),
+            productName: zod.string(),
+            productPrice: zod.string().nullable(),
+            productPrimaryImageUrl: zod.string().nullable(),
+            quantity: zod.number().min(1),
+            displayOrder: zod.number(),
+          })
+          .describe(
+            "One product line inside a set, with the joined product label fields the UI needs.",
+          ),
+      ),
+    }),
+  );
+
+/**
+ * @summary Activate or deactivate a product set
+ */
+export const AdminSetSetActiveParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminSetSetActiveBody = zod.object({
+  isActive: zod.boolean(),
+});
+
+export const AdminSetSetActiveResponse = zod
+  .object({
+    id: zod.number(),
+    name: zod.string(),
+    slug: zod.string(),
+    sku: zod.string().nullable(),
+    description: zod.string().nullable(),
+    manufacturerId: zod.number().nullable(),
+    manufacturerName: zod.string().nullable(),
+    setPrice: zod
+      .string()
+      .nullable()
+      .describe(
+        "pg numeric, serialized as string. Null = no fixed bundle price.",
+      ),
+    isActive: zod.boolean(),
+    displayOrder: zod.number(),
+    itemCount: zod.number(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  })
+  .describe("Light row used for the admin Sets list; no items array.");
+
+/**
+ * @summary Atomically replace the full items list for a set (delete all + insert all in one tx)
+ */
+export const AdminReplaceSetItemsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const adminReplaceSetItemsBodyItemsItemQuantityDefault = 1;
+
+export const adminReplaceSetItemsBodyItemsItemDisplayOrderDefault = 0;
+
+export const AdminReplaceSetItemsBody = zod.object({
+  items: zod.array(
+    zod.object({
+      productId: zod.number(),
+      quantity: zod
+        .number()
+        .min(1)
+        .default(adminReplaceSetItemsBodyItemsItemQuantityDefault),
+      displayOrder: zod
+        .number()
+        .default(adminReplaceSetItemsBodyItemsItemDisplayOrderDefault),
+    }),
+  ),
+});
+
+export const AdminReplaceSetItemsResponse = zod
+  .object({
+    id: zod.number(),
+    name: zod.string(),
+    slug: zod.string(),
+    sku: zod.string().nullable(),
+    description: zod.string().nullable(),
+    manufacturerId: zod.number().nullable(),
+    manufacturerName: zod.string().nullable(),
+    setPrice: zod
+      .string()
+      .nullable()
+      .describe(
+        "pg numeric, serialized as string. Null = no fixed bundle price.",
+      ),
+    isActive: zod.boolean(),
+    displayOrder: zod.number(),
+    itemCount: zod.number(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  })
+  .describe("Light row used for the admin Sets list; no items array.")
+  .and(
+    zod.object({
+      items: zod.array(
+        zod
+          .object({
+            id: zod.number(),
+            setId: zod.number(),
+            productId: zod.number(),
+            productSku: zod.string(),
+            productName: zod.string(),
+            productPrice: zod.string().nullable(),
+            productPrimaryImageUrl: zod.string().nullable(),
+            quantity: zod.number().min(1),
+            displayOrder: zod.number(),
+          })
+          .describe(
+            "One product line inside a set, with the joined product label fields the UI needs.",
+          ),
+      ),
+    }),
+  );
+
+/**
+ * @summary List products with current inventory levels
+ */
+export const adminListInventoryQueryIncludeInactiveDefault = false;
+export const adminListInventoryQueryPageDefault = 1;
+
+export const adminListInventoryQueryPageSizeDefault = 50;
+export const adminListInventoryQueryPageSizeMax = 200;
+
+export const AdminListInventoryQueryParams = zod.object({
+  q: zod.coerce.string().optional(),
+  status: zod.enum(["in_stock", "low_stock", "out_of_stock"]).optional(),
+  manufacturerId: zod.coerce.number().optional(),
+  categoryId: zod.coerce.number().optional(),
+  includeInactive: zod.coerce
+    .boolean()
+    .default(adminListInventoryQueryIncludeInactiveDefault),
+  page: zod.coerce.number().min(1).default(adminListInventoryQueryPageDefault),
+  pageSize: zod.coerce
+    .number()
+    .min(1)
+    .max(adminListInventoryQueryPageSizeMax)
+    .default(adminListInventoryQueryPageSizeDefault),
+});
+
+export const AdminListInventoryResponse = zod.object({
+  items: zod.array(
+    zod
+      .object({
+        productId: zod.number(),
+        name: zod.string(),
+        sku: zod.string(),
+        slug: zod.string(),
+        manufacturerName: zod.string().nullable(),
+        categoryName: zod.string().nullable(),
+        primaryImageUrl: zod.string().nullable(),
+        onHand: zod.number(),
+        onHold: zod.number(),
+        lowStockThreshold: zod.number(),
+        reorderThreshold: zod.number(),
+        status: zod.enum(["in_stock", "low_stock", "out_of_stock"]),
+        isActive: zod.boolean(),
+        updatedAt: zod.coerce.date().nullable(),
+      })
+      .describe("Product with current stock + computed status."),
+  ),
+  total: zod.number(),
+  page: zod.number(),
+  pageSize: zod.number(),
+});
+
+/**
+ * @summary Atomically apply a manual inventory adjustment + write an audit row
+ */
+export const AdminAdjustInventoryBody = zod.object({
+  productId: zod.number(),
+  locationId: zod
+    .number()
+    .nullish()
+    .describe("Defaults to current default location when null."),
+  adjustmentType: zod
+    .enum([
+      "cycle_count",
+      "damage",
+      "loss",
+      "found",
+      "transfer",
+      "return",
+      "manual_correction",
+      "other",
+    ])
+    .describe("Allowed adjustment categories for manual changes."),
+  quantityChange: zod
+    .number()
+    .describe(
+      "Signed delta (positive to add, negative to remove). Cannot be zero.",
+    ),
+  reason: zod.string().nullish(),
+});
+
+export const AdminAdjustInventoryResponse = zod.object({
+  productId: zod.number(),
+  onHand: zod.number(),
+  adjustmentId: zod.number(),
+});
+
+/**
+ * @summary List inventory adjustments (audit trail)
+ */
+export const adminListInventoryAdjustmentsQueryPageDefault = 1;
+
+export const adminListInventoryAdjustmentsQueryPageSizeDefault = 50;
+export const adminListInventoryAdjustmentsQueryPageSizeMax = 200;
+
+export const AdminListInventoryAdjustmentsQueryParams = zod.object({
+  productId: zod.coerce.number().optional(),
+  locationId: zod.coerce.number().optional(),
+  type: zod.coerce.string().optional(),
+  page: zod.coerce
+    .number()
+    .min(1)
+    .default(adminListInventoryAdjustmentsQueryPageDefault),
+  pageSize: zod.coerce
+    .number()
+    .min(1)
+    .max(adminListInventoryAdjustmentsQueryPageSizeMax)
+    .default(adminListInventoryAdjustmentsQueryPageSizeDefault),
+});
+
+export const AdminListInventoryAdjustmentsResponse = zod.object({
+  adjustments: zod.array(
+    zod.object({
+      id: zod.number(),
+      productId: zod.number(),
+      productName: zod.string(),
+      productSku: zod.string(),
+      locationId: zod.number().nullable(),
+      locationName: zod.string().nullable(),
+      adjustmentType: zod.string(),
+      quantityChange: zod.number(),
+      quantityAfter: zod.number().nullable(),
+      reason: zod.string().nullable(),
+      performedByUserId: zod.number().nullable(),
+      performedByName: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  total: zod.number(),
+  page: zod.number(),
+  pageSize: zod.number(),
+});
+
+/**
+ * @summary List all inventory locations
+ */
+export const AdminListInventoryLocationsResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  code: zod.string().nullable(),
+  address: zod.string().nullable(),
+  isActive: zod.boolean(),
+  isDefault: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const AdminListInventoryLocationsResponse = zod.array(
+  AdminListInventoryLocationsResponseItem,
+);
+
+/**
+ * @summary Create a new inventory location
+ */
+
+export const adminCreateInventoryLocationBodyIsActiveDefault = true;
+
+export const AdminCreateInventoryLocationBody = zod.object({
+  name: zod.string().min(1),
+  code: zod.string().nullish(),
+  address: zod.string().nullish(),
+  isActive: zod
+    .boolean()
+    .default(adminCreateInventoryLocationBodyIsActiveDefault),
+});
+
+/**
+ * @summary Update a location
+ */
+export const AdminUpdateInventoryLocationParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminUpdateInventoryLocationBody = zod.object({
+  name: zod.string().min(1),
+  code: zod.string().nullish(),
+  address: zod.string().nullish(),
+});
+
+export const AdminUpdateInventoryLocationResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  code: zod.string().nullable(),
+  address: zod.string().nullable(),
+  isActive: zod.boolean(),
+  isDefault: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Activate or deactivate a location
+ */
+export const AdminSetInventoryLocationActiveParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminSetInventoryLocationActiveBody = zod.object({
+  isActive: zod.boolean(),
+});
+
+export const AdminSetInventoryLocationActiveResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  code: zod.string().nullable(),
+  address: zod.string().nullable(),
+  isActive: zod.boolean(),
+  isDefault: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Mark a location as the default; clears the flag on all others atomically
+ */
+export const AdminSetInventoryLocationDefaultParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminSetInventoryLocationDefaultResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  code: zod.string().nullable(),
+  address: zod.string().nullable(),
+  isActive: zod.boolean(),
+  isDefault: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
  * @summary Request a presigned URL for uploading a file (staff only)
  */
 

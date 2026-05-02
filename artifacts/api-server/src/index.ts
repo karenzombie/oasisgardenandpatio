@@ -1,6 +1,7 @@
 import app from "./app";
 import { logger } from "./lib/logger";
 import { seedSuperAdmin } from "./lib/seedAdmin";
+import { seedDefaultInventoryLocation } from "./lib/seedInventoryLocations";
 
 const rawPort = process.env["PORT"];
 
@@ -21,6 +22,15 @@ async function main() {
     await seedSuperAdmin();
   } catch (err) {
     logger.error({ err }, "Admin seed failed (continuing boot)");
+  }
+
+  try {
+    await seedDefaultInventoryLocation();
+  } catch (err) {
+    logger.error(
+      { err },
+      "Default inventory location seed failed (continuing boot)",
+    );
   }
 
   app.listen(port, (err) => {

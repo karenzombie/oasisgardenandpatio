@@ -1063,6 +1063,359 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /admin/sets:
+    get:
+      operationId: adminListSets
+      tags: [admin-sets]
+      summary: List all product sets (active and inactive)
+      responses:
+        "200":
+          description: All sets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminSetSummary"
+        "401":
+          description: Not authenticated
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "403":
+          description: Not admin
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+    post:
+      operationId: adminCreateSet
+      tags: [admin-sets]
+      summary: Create a new product set (metadata only — items added via PUT /items)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSetRequest"
+      responses:
+        "201":
+          description: Set created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminSet"
+        "400":
+          description: Validation error
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "409":
+          description: Duplicate slug or sku
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/sets/{id}:
+    get:
+      operationId: adminGetSet
+      tags: [admin-sets]
+      summary: Get a product set with its items
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Set with items
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminSet"
+        "404":
+          description: Not found
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+    put:
+      operationId: adminUpdateSet
+      tags: [admin-sets]
+      summary: Update set metadata (name, slug, sku, description, manufacturer, set_price, etc.)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSetRequest"
+      responses:
+        "200":
+          description: Updated set (with items)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminSet"
+        "400":
+          description: Validation error
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "404":
+          description: Not found
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "409":
+          description: Duplicate slug or sku
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/sets/{id}/active:
+    patch:
+      operationId: adminSetSetActive
+      tags: [admin-sets]
+      summary: Activate or deactivate a product set
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetActiveRequest"
+      responses:
+        "200":
+          description: Updated set
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminSetSummary"
+        "404":
+          description: Not found
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/sets/{id}/items:
+    put:
+      operationId: adminReplaceSetItems
+      tags: [admin-sets]
+      summary: Atomically replace the full items list for a set (delete all + insert all in one tx)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReplaceSetItemsRequest"
+      responses:
+        "200":
+          description: Updated set with new items
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminSet"
+        "400":
+          description: Validation error (e.g. unknown product id, dup product, bad qty)
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "404":
+          description: Set not found
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/inventory:
+    get:
+      operationId: adminListInventory
+      tags: [admin-inventory]
+      summary: List products with current inventory levels
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema: { type: string }
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [in_stock, low_stock, out_of_stock]
+        - name: manufacturerId
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: categoryId
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: includeInactive
+          in: query
+          required: false
+          schema: { type: boolean, default: false }
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: pageSize
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+      responses:
+        "200":
+          description: Paginated inventory items
+          content: { application/json: { schema: { $ref: "#/components/schemas/AdminInventoryPage" } } }
+        "401":
+          description: Not authenticated
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "403":
+          description: Not admin
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/inventory/adjust:
+    post:
+      operationId: adminAdjustInventory
+      tags: [admin-inventory]
+      summary: Atomically apply a manual inventory adjustment + write an audit row
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateInventoryAdjustmentRequest" }
+      responses:
+        "200":
+          description: New inventory level after adjustment
+          content: { application/json: { schema: { $ref: "#/components/schemas/AdjustInventoryResponse" } } }
+        "400":
+          description: Validation error (zero delta, would go negative, unknown location)
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "404":
+          description: Product not found
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/inventory/adjustments:
+    get:
+      operationId: adminListInventoryAdjustments
+      tags: [admin-inventory]
+      summary: List inventory adjustments (audit trail)
+      parameters:
+        - name: productId
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: locationId
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: type
+          in: query
+          required: false
+          schema: { type: string }
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: pageSize
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+      responses:
+        "200":
+          description: Paginated adjustments
+          content: { application/json: { schema: { $ref: "#/components/schemas/AdminInventoryAdjustmentsPage" } } }
+        "401":
+          description: Not authenticated
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/inventory/locations:
+    get:
+      operationId: adminListInventoryLocations
+      tags: [admin-inventory]
+      summary: List all inventory locations
+      responses:
+        "200":
+          description: Locations
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/InventoryLocation" }
+    post:
+      operationId: adminCreateInventoryLocation
+      tags: [admin-inventory]
+      summary: Create a new inventory location
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateInventoryLocationRequest" }
+      responses:
+        "201":
+          description: Location created
+          content: { application/json: { schema: { $ref: "#/components/schemas/InventoryLocation" } } }
+        "400":
+          description: Validation error
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "409":
+          description: Duplicate code
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/inventory/locations/{id}:
+    put:
+      operationId: adminUpdateInventoryLocation
+      tags: [admin-inventory]
+      summary: Update a location
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateInventoryLocationRequest" }
+      responses:
+        "200":
+          description: Updated location
+          content: { application/json: { schema: { $ref: "#/components/schemas/InventoryLocation" } } }
+        "400":
+          description: Validation error
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "404":
+          description: Not found
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "409":
+          description: Duplicate code
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/inventory/locations/{id}/active:
+    patch:
+      operationId: adminSetInventoryLocationActive
+      tags: [admin-inventory]
+      summary: Activate or deactivate a location
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SetActiveRequest" }
+      responses:
+        "200":
+          description: Updated location
+          content: { application/json: { schema: { $ref: "#/components/schemas/InventoryLocation" } } }
+        "400":
+          description: Cannot deactivate the default location
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "404":
+          description: Not found
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/inventory/locations/{id}/default:
+    post:
+      operationId: adminSetInventoryLocationDefault
+      tags: [admin-inventory]
+      summary: Mark a location as the default; clears the flag on all others atomically
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Updated location (now default)
+          content: { application/json: { schema: { $ref: "#/components/schemas/InventoryLocation" } } }
+        "400":
+          description: Location is not active
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "404":
+          description: Not found
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
   /storage/uploads/request-url:
     post:
       operationId: requestUploadUrl
@@ -2009,3 +2362,265 @@ components:
           items:
             $ref: "#/components/schemas/ImportProductsRowResult"
       required: [totalRows, createdCount, updatedCount, errorCount, errors]
+    AdminSetSummary:
+      type: object
+      description: Light row used for the admin Sets list; no items array.
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        slug: { type: string }
+        sku: { type: ["string", "null"] }
+        description: { type: ["string", "null"] }
+        manufacturerId: { type: ["integer", "null"] }
+        manufacturerName: { type: ["string", "null"] }
+        setPrice:
+          type: ["string", "null"]
+          description: pg numeric, serialized as string. Null = no fixed bundle price.
+        isActive: { type: boolean }
+        displayOrder: { type: integer }
+        itemCount: { type: integer }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+      required:
+        - id
+        - name
+        - slug
+        - sku
+        - description
+        - manufacturerId
+        - manufacturerName
+        - setPrice
+        - isActive
+        - displayOrder
+        - itemCount
+        - createdAt
+        - updatedAt
+    AdminSetItem:
+      type: object
+      description: One product line inside a set, with the joined product label fields the UI needs.
+      properties:
+        id: { type: integer }
+        setId: { type: integer }
+        productId: { type: integer }
+        productSku: { type: string }
+        productName: { type: string }
+        productPrice: { type: ["string", "null"] }
+        productPrimaryImageUrl: { type: ["string", "null"] }
+        quantity: { type: integer, minimum: 1 }
+        displayOrder: { type: integer }
+      required:
+        - id
+        - setId
+        - productId
+        - productSku
+        - productName
+        - productPrice
+        - productPrimaryImageUrl
+        - quantity
+        - displayOrder
+    AdminSet:
+      allOf:
+        - $ref: "#/components/schemas/AdminSetSummary"
+        - type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/AdminSetItem"
+          required: [items]
+    CreateSetRequest:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        slug:
+          type: string
+          minLength: 1
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        sku:
+          type: ["string", "null"]
+          description: Optional bundle SKU printed on quotes.
+        description: { type: ["string", "null"] }
+        manufacturerId: { type: ["integer", "null"] }
+        setPrice:
+          type: ["string", "null"]
+          pattern: "^\\d+(\\.\\d{1,2})?$"
+          description: Decimal as string (e.g. "1299.00"). Null = no bundle override; sum of items at quote time.
+        displayOrder: { type: integer, default: 0 }
+        isActive: { type: boolean, default: true }
+      required: [name, slug]
+    UpdateSetRequest:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        slug:
+          type: string
+          minLength: 1
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        sku: { type: ["string", "null"] }
+        description: { type: ["string", "null"] }
+        manufacturerId: { type: ["integer", "null"] }
+        setPrice:
+          type: ["string", "null"]
+          pattern: "^\\d+(\\.\\d{1,2})?$"
+        displayOrder: { type: integer }
+        isActive: { type: boolean }
+      required: [name, slug]
+    SetItemInput:
+      type: object
+      properties:
+        productId: { type: integer }
+        quantity: { type: integer, minimum: 1, default: 1 }
+        displayOrder: { type: integer, default: 0 }
+      required: [productId]
+    ReplaceSetItemsRequest:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SetItemInput"
+      required: [items]
+    InventoryLocation:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        code: { type: ["string", "null"] }
+        address: { type: ["string", "null"] }
+        isActive: { type: boolean }
+        isDefault: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+      required: [id, name, code, address, isActive, isDefault, createdAt, updatedAt]
+    CreateInventoryLocationRequest:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        code: { type: ["string", "null"] }
+        address: { type: ["string", "null"] }
+        isActive: { type: boolean, default: true }
+      required: [name]
+    UpdateInventoryLocationRequest:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        code: { type: ["string", "null"] }
+        address: { type: ["string", "null"] }
+      required: [name]
+    AdminInventoryItem:
+      type: object
+      description: Product with current stock + computed status.
+      properties:
+        productId: { type: integer }
+        name: { type: string }
+        sku: { type: string }
+        slug: { type: string }
+        manufacturerName: { type: ["string", "null"] }
+        categoryName: { type: ["string", "null"] }
+        primaryImageUrl: { type: ["string", "null"] }
+        onHand: { type: integer }
+        onHold: { type: integer }
+        lowStockThreshold: { type: integer }
+        reorderThreshold: { type: integer }
+        status:
+          type: string
+          enum: [in_stock, low_stock, out_of_stock]
+        isActive: { type: boolean }
+        updatedAt: { type: ["string", "null"], format: date-time }
+      required:
+        - productId
+        - name
+        - sku
+        - slug
+        - manufacturerName
+        - categoryName
+        - primaryImageUrl
+        - onHand
+        - onHold
+        - lowStockThreshold
+        - reorderThreshold
+        - status
+        - isActive
+        - updatedAt
+    AdminInventoryPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/AdminInventoryItem" }
+        total: { type: integer }
+        page: { type: integer }
+        pageSize: { type: integer }
+      required: [items, total, page, pageSize]
+    InventoryAdjustmentType:
+      type: string
+      description: Allowed adjustment categories for manual changes.
+      enum:
+        - cycle_count
+        - damage
+        - loss
+        - found
+        - transfer
+        - return
+        - manual_correction
+        - other
+    CreateInventoryAdjustmentRequest:
+      type: object
+      properties:
+        productId: { type: integer }
+        locationId:
+          type: ["integer", "null"]
+          description: Defaults to current default location when null.
+        adjustmentType: { $ref: "#/components/schemas/InventoryAdjustmentType" }
+        quantityChange:
+          type: integer
+          description: Signed delta (positive to add, negative to remove). Cannot be zero.
+        reason: { type: ["string", "null"] }
+      required: [productId, adjustmentType, quantityChange]
+    AdjustInventoryResponse:
+      type: object
+      properties:
+        productId: { type: integer }
+        onHand: { type: integer }
+        adjustmentId: { type: integer }
+      required: [productId, onHand, adjustmentId]
+    AdminInventoryAdjustment:
+      type: object
+      properties:
+        id: { type: integer }
+        productId: { type: integer }
+        productName: { type: string }
+        productSku: { type: string }
+        locationId: { type: ["integer", "null"] }
+        locationName: { type: ["string", "null"] }
+        adjustmentType: { type: string }
+        quantityChange: { type: integer }
+        quantityAfter: { type: ["integer", "null"] }
+        reason: { type: ["string", "null"] }
+        performedByUserId: { type: ["integer", "null"] }
+        performedByName: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
+      required:
+        - id
+        - productId
+        - productName
+        - productSku
+        - locationId
+        - locationName
+        - adjustmentType
+        - quantityChange
+        - quantityAfter
+        - reason
+        - performedByUserId
+        - performedByName
+        - createdAt
+    AdminInventoryAdjustmentsPage:
+      type: object
+      properties:
+        adjustments:
+          type: array
+          items: { $ref: "#/components/schemas/AdminInventoryAdjustment" }
+        total: { type: integer }
+        page: { type: integer }
+        pageSize: { type: integer }
+      required: [adjustments, total, page, pageSize]

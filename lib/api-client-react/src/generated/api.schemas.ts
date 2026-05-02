@@ -564,6 +564,254 @@ export interface ImportProductsCommitResult {
   errors: ImportProductsRowResult[];
 }
 
+/**
+ * Light row used for the admin Sets list; no items array.
+ */
+export interface AdminSetSummary {
+  id: number;
+  name: string;
+  slug: string;
+  /** @nullable */
+  sku: string | null;
+  /** @nullable */
+  description: string | null;
+  /** @nullable */
+  manufacturerId: number | null;
+  /** @nullable */
+  manufacturerName: string | null;
+  /**
+   * pg numeric, serialized as string. Null = no fixed bundle price.
+   * @nullable
+   */
+  setPrice: string | null;
+  isActive: boolean;
+  displayOrder: number;
+  itemCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * One product line inside a set, with the joined product label fields the UI needs.
+ */
+export interface AdminSetItem {
+  id: number;
+  setId: number;
+  productId: number;
+  productSku: string;
+  productName: string;
+  /** @nullable */
+  productPrice: string | null;
+  /** @nullable */
+  productPrimaryImageUrl: string | null;
+  /** @minimum 1 */
+  quantity: number;
+  displayOrder: number;
+}
+
+export type AdminSet = AdminSetSummary & {
+  items: AdminSetItem[];
+};
+
+export interface CreateSetRequest {
+  /** @minLength 1 */
+  name: string;
+  /**
+   * @minLength 1
+   * @pattern ^[a-z0-9]+(?:-[a-z0-9]+)*$
+   */
+  slug: string;
+  /**
+   * Optional bundle SKU printed on quotes.
+   * @nullable
+   */
+  sku?: string | null;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  manufacturerId?: number | null;
+  /**
+   * Decimal as string (e.g. "1299.00"). Null = no bundle override; sum of items at quote time.
+   * @nullable
+   * @pattern ^\d+(\.\d{1,2})?$
+   */
+  setPrice?: string | null;
+  displayOrder?: number;
+  isActive?: boolean;
+}
+
+export interface UpdateSetRequest {
+  /** @minLength 1 */
+  name: string;
+  /**
+   * @minLength 1
+   * @pattern ^[a-z0-9]+(?:-[a-z0-9]+)*$
+   */
+  slug: string;
+  /** @nullable */
+  sku?: string | null;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  manufacturerId?: number | null;
+  /**
+   * @nullable
+   * @pattern ^\d+(\.\d{1,2})?$
+   */
+  setPrice?: string | null;
+  displayOrder?: number;
+  isActive?: boolean;
+}
+
+export interface SetItemInput {
+  productId: number;
+  /** @minimum 1 */
+  quantity?: number;
+  displayOrder?: number;
+}
+
+export interface ReplaceSetItemsRequest {
+  items: SetItemInput[];
+}
+
+export interface InventoryLocation {
+  id: number;
+  name: string;
+  /** @nullable */
+  code: string | null;
+  /** @nullable */
+  address: string | null;
+  isActive: boolean;
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateInventoryLocationRequest {
+  /** @minLength 1 */
+  name: string;
+  /** @nullable */
+  code?: string | null;
+  /** @nullable */
+  address?: string | null;
+  isActive?: boolean;
+}
+
+export interface UpdateInventoryLocationRequest {
+  /** @minLength 1 */
+  name: string;
+  /** @nullable */
+  code?: string | null;
+  /** @nullable */
+  address?: string | null;
+}
+
+export type AdminInventoryItemStatus =
+  (typeof AdminInventoryItemStatus)[keyof typeof AdminInventoryItemStatus];
+
+export const AdminInventoryItemStatus = {
+  in_stock: "in_stock",
+  low_stock: "low_stock",
+  out_of_stock: "out_of_stock",
+} as const;
+
+/**
+ * Product with current stock + computed status.
+ */
+export interface AdminInventoryItem {
+  productId: number;
+  name: string;
+  sku: string;
+  slug: string;
+  /** @nullable */
+  manufacturerName: string | null;
+  /** @nullable */
+  categoryName: string | null;
+  /** @nullable */
+  primaryImageUrl: string | null;
+  onHand: number;
+  onHold: number;
+  lowStockThreshold: number;
+  reorderThreshold: number;
+  status: AdminInventoryItemStatus;
+  isActive: boolean;
+  /** @nullable */
+  updatedAt: string | null;
+}
+
+export interface AdminInventoryPage {
+  items: AdminInventoryItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+/**
+ * Allowed adjustment categories for manual changes.
+ */
+export type InventoryAdjustmentType =
+  (typeof InventoryAdjustmentType)[keyof typeof InventoryAdjustmentType];
+
+export const InventoryAdjustmentType = {
+  cycle_count: "cycle_count",
+  damage: "damage",
+  loss: "loss",
+  found: "found",
+  transfer: "transfer",
+  return: "return",
+  manual_correction: "manual_correction",
+  other: "other",
+} as const;
+
+export interface CreateInventoryAdjustmentRequest {
+  productId: number;
+  /**
+   * Defaults to current default location when null.
+   * @nullable
+   */
+  locationId?: number | null;
+  adjustmentType: InventoryAdjustmentType;
+  /** Signed delta (positive to add, negative to remove). Cannot be zero. */
+  quantityChange: number;
+  /** @nullable */
+  reason?: string | null;
+}
+
+export interface AdjustInventoryResponse {
+  productId: number;
+  onHand: number;
+  adjustmentId: number;
+}
+
+export interface AdminInventoryAdjustment {
+  id: number;
+  productId: number;
+  productName: string;
+  productSku: string;
+  /** @nullable */
+  locationId: number | null;
+  /** @nullable */
+  locationName: string | null;
+  adjustmentType: string;
+  quantityChange: number;
+  /** @nullable */
+  quantityAfter: number | null;
+  /** @nullable */
+  reason: string | null;
+  /** @nullable */
+  performedByUserId: number | null;
+  /** @nullable */
+  performedByName: string | null;
+  createdAt: string;
+}
+
+export interface AdminInventoryAdjustmentsPage {
+  adjustments: AdminInventoryAdjustment[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
 export type StaffDisableTotp200 = {
   ok: boolean;
 };
@@ -574,6 +822,47 @@ export type AdminListProductsParams = {
   categoryId?: number;
   isActive?: boolean;
   featured?: boolean;
+  /**
+   * @minimum 1
+   */
+  page?: number;
+  /**
+   * @minimum 1
+   * @maximum 200
+   */
+  pageSize?: number;
+};
+
+export type AdminListInventoryParams = {
+  q?: string;
+  status?: AdminListInventoryStatus;
+  manufacturerId?: number;
+  categoryId?: number;
+  includeInactive?: boolean;
+  /**
+   * @minimum 1
+   */
+  page?: number;
+  /**
+   * @minimum 1
+   * @maximum 200
+   */
+  pageSize?: number;
+};
+
+export type AdminListInventoryStatus =
+  (typeof AdminListInventoryStatus)[keyof typeof AdminListInventoryStatus];
+
+export const AdminListInventoryStatus = {
+  in_stock: "in_stock",
+  low_stock: "low_stock",
+  out_of_stock: "out_of_stock",
+} as const;
+
+export type AdminListInventoryAdjustmentsParams = {
+  productId?: number;
+  locationId?: number;
+  type?: string;
   /**
    * @minimum 1
    */
