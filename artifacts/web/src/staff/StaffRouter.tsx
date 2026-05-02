@@ -15,21 +15,21 @@ import ProductsImport from "./pages/admin/ProductsImport";
 import Sets from "./pages/admin/Sets";
 import SetEdit from "./pages/admin/SetEdit";
 import Inventory from "./pages/admin/Inventory";
+import Carriers from "./pages/admin/Carriers";
+import Banners from "./pages/admin/Banners";
+import Legal from "./pages/admin/Legal";
+import Settings from "./pages/admin/Settings";
+import Discounts from "./pages/admin/Discounts";
+import Users from "./pages/admin/Users";
+import AuditLog from "./pages/admin/AuditLog";
+import Orders from "./pages/admin/Orders";
+import OrderDetail from "./pages/admin/OrderDetail";
 import { PagePlaceholder } from "./pages/PagePlaceholder";
 
 const ADMIN_PLACEHOLDERS: Array<{ path: string; title: string; comingIn: string }> = [
   { path: "/notifications", title: "Notifications", comingIn: "Phase 6.18" },
-  { path: "/orders", title: "Orders", comingIn: "Phase 6.21" },
   { path: "/vendor-orders", title: "Vendor Orders", comingIn: "Phase 6.22" },
-  { path: "/customers", title: "Customers", comingIn: "Phase 6.17" },
-  { path: "/discounts", title: "Discounts", comingIn: "Phase 6.16" },
-  { path: "/carriers", title: "Carriers", comingIn: "Phase 6.12" },
-  { path: "/banners", title: "Site Banners", comingIn: "Phase 6.13" },
-  { path: "/legal", title: "Legal Pages", comingIn: "Phase 6.14" },
   { path: "/reports", title: "Reports", comingIn: "Phase 6.23" },
-  { path: "/users", title: "Users", comingIn: "Phase 6.17" },
-  { path: "/audit-log", title: "Audit Log", comingIn: "Phase 6.19" },
-  { path: "/settings", title: "Settings", comingIn: "Phase 6.15" },
 ];
 
 const AGENT_PLACEHOLDERS: Array<{ path: string; title: string; comingIn: string }> = [
@@ -66,6 +66,16 @@ export default function StaffRouter() {
                 <Route path="/sets" component={Sets} />
                 <Route path="/sets/:id" component={SetEdit} />
                 <Route path="/inventory" component={Inventory} />
+                <Route path="/carriers" component={Carriers} />
+                <Route path="/banners" component={Banners} />
+                <Route path="/legal" component={Legal} />
+                <Route path="/settings" component={Settings} />
+                <Route path="/discounts" component={Discounts} />
+                <Route path="/users" component={Users} />
+                <Route path="/customers" component={Users} />
+                <Route path="/audit-log" component={AuditLog} />
+                <Route path="/orders" component={Orders} />
+                <Route path="/orders/:id" component={OrderDetail} />
                 {ADMIN_PLACEHOLDERS.map(({ path, title, comingIn }) => (
                   <Route key={path} path={path}>
                     {() => <PagePlaceholder title={title} comingIn={comingIn} />}

@@ -13,6 +13,184 @@ export interface Error {
   error: string;
 }
 
+export interface AuditLogEntry {
+  id: number;
+  userId: number | null;
+  userEmail: string | null;
+  action: string;
+  entityType: string | null;
+  entityId: number | null;
+  changes?: unknown;
+  ipAddress: string | null;
+  userAgent: string | null;
+  createdAt: string;
+}
+
+export interface AuditLogPage {
+  rows: AuditLogEntry[];
+  total: number;
+}
+
+export interface UpdateOrderStatusRequest {
+  toStatus: string;
+  note?: string | null;
+}
+
+export interface UpdateOrderNotesRequest {
+  notes: string | null;
+}
+
+export type ReviewCancellationRequestDecision =
+  (typeof ReviewCancellationRequestDecision)[keyof typeof ReviewCancellationRequestDecision];
+
+export const ReviewCancellationRequestDecision = {
+  approved: "approved",
+  denied: "denied",
+} as const;
+
+export interface ReviewCancellationRequest {
+  decision: ReviewCancellationRequestDecision;
+  reviewNote?: string | null;
+  refundAmount?: number | null;
+}
+
+export interface AdminOrderSummary {
+  id: number;
+  orderNumber: string;
+  status: string;
+  orderType: string;
+  total: number;
+  balanceDue: number;
+  customerId: number | null;
+  customerName: string | null;
+  customerEmail: string | null;
+  agentId: number | null;
+  agentName: string | null;
+  itemCount: number;
+  placedAt: string;
+}
+
+export interface AdminOrderPage {
+  rows: AdminOrderSummary[];
+  total: number;
+}
+
+export interface AdminOrderItem {
+  id: number;
+  productId: number | null;
+  productSkuSnapshot: string | null;
+  variantSkuSnapshot: string | null;
+  variantNameSnapshot: string | null;
+  fabricNameSnapshot: string | null;
+  department: string | null;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  amount: number;
+  discountAmount: number;
+  discountReason: string | null;
+  notes: string | null;
+  vendorOrderId: number | null;
+}
+
+export interface AdminOrderAddress {
+  id: number;
+  recipientName?: string | null;
+  street1: string;
+  street2?: string | null;
+  city: string;
+  state: string;
+  zip: string;
+  country: string;
+  phone?: string | null;
+}
+
+export interface AdminOrderStatusEvent {
+  id: number;
+  fromStatus: string | null;
+  toStatus: string;
+  changedByUserId: number | null;
+  changedByEmail: string | null;
+  note: string | null;
+  createdAt: string;
+}
+
+export interface AdminOrderVendorOrder {
+  id: number;
+  vendorOrderNumber: string;
+  status: string;
+  manufacturerId: number | null;
+  manufacturerName: string | null;
+  sentAt: string | null;
+  receivedAt: string | null;
+  itemsReceived: boolean;
+}
+
+export interface AdminCancellationRequest {
+  id: number;
+  orderId: number;
+  orderNumber: string | null;
+  requestedByUserId: number | null;
+  requestedByEmail: string | null;
+  reason: string | null;
+  status: string;
+  reviewedByUserId: number | null;
+  reviewedByEmail: string | null;
+  reviewedAt: string | null;
+  reviewNote: string | null;
+  refundAmount: number | null;
+  createdAt: string;
+}
+
+export interface AdminOrderDetail {
+  id: number;
+  orderNumber: string;
+  status: string;
+  orderType: string;
+  subtotal: number;
+  taxAmount: number;
+  deliveryAmount: number;
+  total: number;
+  depositAmount: number;
+  balanceDue: number;
+  customerId: number | null;
+  customerName: string | null;
+  customerEmail: string | null;
+  agentId: number | null;
+  agentName: string | null;
+  salespersonName: string | null;
+  shippingMethod: string | null;
+  specialInstructions: string | null;
+  notes: string | null;
+  merchandiseReceived: boolean;
+  placedAt: string;
+  updatedAt: string;
+  shippingAddress: AdminOrderAddress | null;
+  billingAddress: AdminOrderAddress | null;
+  items: AdminOrderItem[];
+  statusHistory: AdminOrderStatusEvent[];
+  vendorOrders: AdminOrderVendorOrder[];
+  cancellationRequests: AdminCancellationRequest[];
+}
+
+export interface StaffNotification {
+  id: number;
+  type: string;
+  message: string;
+  linkUrl: string | null;
+  isRead: boolean;
+  createdAt: string;
+  readAt: string | null;
+}
+
+export interface StaffUnreadCount {
+  unread: number;
+}
+
+export interface StaffMarkAllReadResponse {
+  updated: number;
+}
+
 export type LegalDocumentType =
   (typeof LegalDocumentType)[keyof typeof LegalDocumentType];
 
@@ -812,6 +990,536 @@ export interface AdminInventoryAdjustmentsPage {
   pageSize: number;
 }
 
+export interface Carrier {
+  id: number;
+  name: string;
+  /** @nullable */
+  code: string | null;
+  /** @nullable */
+  contactName: string | null;
+  /** @nullable */
+  contactPhone: string | null;
+  /** @nullable */
+  contactEmail: string | null;
+  /**
+   * URL template; use {trackingNumber} as the placeholder.
+   * @nullable
+   */
+  trackingUrlTemplate: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateCarrierRequest {
+  /** @minLength 1 */
+  name: string;
+  /** @nullable */
+  code?: string | null;
+  /** @nullable */
+  contactName?: string | null;
+  /** @nullable */
+  contactPhone?: string | null;
+  /** @nullable */
+  contactEmail?: string | null;
+  /** @nullable */
+  trackingUrlTemplate?: string | null;
+  isActive?: boolean;
+}
+
+export interface UpdateCarrierRequest {
+  /** @minLength 1 */
+  name: string;
+  /** @nullable */
+  code?: string | null;
+  /** @nullable */
+  contactName?: string | null;
+  /** @nullable */
+  contactPhone?: string | null;
+  /** @nullable */
+  contactEmail?: string | null;
+  /** @nullable */
+  trackingUrlTemplate?: string | null;
+}
+
+export type AdminBannerType =
+  (typeof AdminBannerType)[keyof typeof AdminBannerType];
+
+export const AdminBannerType = {
+  popup: "popup",
+  banner: "banner",
+} as const;
+
+export interface AdminBanner {
+  id: number;
+  title: string;
+  messageText: string;
+  type: AdminBannerType;
+  /** @nullable */
+  startDate: string | null;
+  /** @nullable */
+  endDate: string | null;
+  isActive: boolean;
+  displayOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreateBannerRequestType =
+  (typeof CreateBannerRequestType)[keyof typeof CreateBannerRequestType];
+
+export const CreateBannerRequestType = {
+  popup: "popup",
+  banner: "banner",
+} as const;
+
+export interface CreateBannerRequest {
+  /** @minLength 1 */
+  title: string;
+  /** @minLength 1 */
+  messageText: string;
+  type: CreateBannerRequestType;
+  /** @nullable */
+  startDate?: string | null;
+  /** @nullable */
+  endDate?: string | null;
+  isActive?: boolean;
+  displayOrder?: number;
+}
+
+export type UpdateBannerRequestType =
+  (typeof UpdateBannerRequestType)[keyof typeof UpdateBannerRequestType];
+
+export const UpdateBannerRequestType = {
+  popup: "popup",
+  banner: "banner",
+} as const;
+
+export interface UpdateBannerRequest {
+  /** @minLength 1 */
+  title: string;
+  /** @minLength 1 */
+  messageText: string;
+  type: UpdateBannerRequestType;
+  /** @nullable */
+  startDate?: string | null;
+  /** @nullable */
+  endDate?: string | null;
+  displayOrder?: number;
+}
+
+export type AdminLegalDocumentType =
+  (typeof AdminLegalDocumentType)[keyof typeof AdminLegalDocumentType];
+
+export const AdminLegalDocumentType = {
+  privacy_policy: "privacy_policy",
+  terms_and_conditions: "terms_and_conditions",
+} as const;
+
+export interface AdminLegalDocument {
+  id: number;
+  type: AdminLegalDocumentType;
+  version: string;
+  content: string;
+  effectiveDate: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateLegalVersionRequest {
+  /** @minLength 1 */
+  content: string;
+  /** ISO date (YYYY-MM-DD); defaults to today if omitted */
+  effectiveDate?: string;
+  /**
+   * Optional; auto-incremented (v1, v2, ...) if omitted
+   * @minLength 1
+   */
+  version?: string;
+}
+
+export type SystemSettingsShippingMode =
+  (typeof SystemSettingsShippingMode)[keyof typeof SystemSettingsShippingMode];
+
+export const SystemSettingsShippingMode = {
+  flat: "flat",
+  percentage: "percentage",
+  free: "free",
+} as const;
+
+export interface SystemSettings {
+  /**
+   * @minimum 0
+   * @maximum 1
+   */
+  defaultTaxRate: number;
+  shippingMode: SystemSettingsShippingMode;
+  /** @minimum 0 */
+  flatShippingRate: number;
+  /**
+   * @minimum 0
+   * @maximum 1
+   */
+  shippingPercentage: number;
+  /** @minimum 0 */
+  freeShippingThreshold: number;
+  /** @minimum 1 */
+  overdueVendorOrderThresholdDays: number;
+  /** @minimum 0 */
+  lowStockThreshold: number;
+  /**
+   * @minimum 0
+   * @maximum 1
+   */
+  defaultAgentDiscountCap: number;
+  /**
+   * @minimum 2000
+   * @maximum 2999
+   */
+  currentSequenceYear: number;
+  /** @minimum 0 */
+  currentYearOrderSequence: number;
+}
+
+export type SystemSettingsUpdateShippingMode =
+  (typeof SystemSettingsUpdateShippingMode)[keyof typeof SystemSettingsUpdateShippingMode];
+
+export const SystemSettingsUpdateShippingMode = {
+  flat: "flat",
+  percentage: "percentage",
+  free: "free",
+} as const;
+
+export interface SystemSettingsUpdate {
+  /**
+   * @minimum 0
+   * @maximum 1
+   */
+  defaultTaxRate?: number;
+  shippingMode?: SystemSettingsUpdateShippingMode;
+  /** @minimum 0 */
+  flatShippingRate?: number;
+  /**
+   * @minimum 0
+   * @maximum 1
+   */
+  shippingPercentage?: number;
+  /** @minimum 0 */
+  freeShippingThreshold?: number;
+  /** @minimum 1 */
+  overdueVendorOrderThresholdDays?: number;
+  /** @minimum 0 */
+  lowStockThreshold?: number;
+  /**
+   * @minimum 0
+   * @maximum 1
+   */
+  defaultAgentDiscountCap?: number;
+  /**
+   * @minimum 2000
+   * @maximum 2999
+   */
+  currentSequenceYear?: number;
+  /** @minimum 0 */
+  currentYearOrderSequence?: number;
+}
+
+export type AdminDiscountEventType =
+  (typeof AdminDiscountEventType)[keyof typeof AdminDiscountEventType];
+
+export const AdminDiscountEventType = {
+  percentage: "percentage",
+  fixed: "fixed",
+} as const;
+
+export type AdminDiscountEventAppliesTo =
+  (typeof AdminDiscountEventAppliesTo)[keyof typeof AdminDiscountEventAppliesTo];
+
+export const AdminDiscountEventAppliesTo = {
+  global: "global",
+  category: "category",
+  manufacturer: "manufacturer",
+  product: "product",
+} as const;
+
+export interface AdminDiscountEvent {
+  id: number;
+  name: string;
+  type: AdminDiscountEventType;
+  /** @minimum 0 */
+  value: number;
+  appliesTo: AdminDiscountEventAppliesTo;
+  targetIds: number[];
+  startDate: string | null;
+  endDate: string | null;
+  isStackable: boolean;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreateDiscountEventRequestType =
+  (typeof CreateDiscountEventRequestType)[keyof typeof CreateDiscountEventRequestType];
+
+export const CreateDiscountEventRequestType = {
+  percentage: "percentage",
+  fixed: "fixed",
+} as const;
+
+export type CreateDiscountEventRequestAppliesTo =
+  (typeof CreateDiscountEventRequestAppliesTo)[keyof typeof CreateDiscountEventRequestAppliesTo];
+
+export const CreateDiscountEventRequestAppliesTo = {
+  global: "global",
+  category: "category",
+  manufacturer: "manufacturer",
+  product: "product",
+} as const;
+
+export interface CreateDiscountEventRequest {
+  /** @minLength 1 */
+  name: string;
+  type: CreateDiscountEventRequestType;
+  /** @minimum 0 */
+  value: number;
+  appliesTo?: CreateDiscountEventRequestAppliesTo;
+  targetIds?: number[];
+  startDate?: string | null;
+  endDate?: string | null;
+  isStackable?: boolean;
+  isActive?: boolean;
+}
+
+export type UpdateDiscountEventRequestType =
+  (typeof UpdateDiscountEventRequestType)[keyof typeof UpdateDiscountEventRequestType];
+
+export const UpdateDiscountEventRequestType = {
+  percentage: "percentage",
+  fixed: "fixed",
+} as const;
+
+export type UpdateDiscountEventRequestAppliesTo =
+  (typeof UpdateDiscountEventRequestAppliesTo)[keyof typeof UpdateDiscountEventRequestAppliesTo];
+
+export const UpdateDiscountEventRequestAppliesTo = {
+  global: "global",
+  category: "category",
+  manufacturer: "manufacturer",
+  product: "product",
+} as const;
+
+export interface UpdateDiscountEventRequest {
+  /** @minLength 1 */
+  name?: string;
+  type?: UpdateDiscountEventRequestType;
+  /** @minimum 0 */
+  value?: number;
+  appliesTo?: UpdateDiscountEventRequestAppliesTo;
+  targetIds?: number[];
+  startDate?: string | null;
+  endDate?: string | null;
+  isStackable?: boolean;
+  isActive?: boolean;
+}
+
+export type AdminCouponCodeDiscountType =
+  (typeof AdminCouponCodeDiscountType)[keyof typeof AdminCouponCodeDiscountType];
+
+export const AdminCouponCodeDiscountType = {
+  percentage: "percentage",
+  fixed: "fixed",
+} as const;
+
+export type AdminCouponCodeAppliesTo =
+  (typeof AdminCouponCodeAppliesTo)[keyof typeof AdminCouponCodeAppliesTo];
+
+export const AdminCouponCodeAppliesTo = {
+  global: "global",
+  category: "category",
+  manufacturer: "manufacturer",
+  product: "product",
+} as const;
+
+export interface AdminCouponCode {
+  id: number;
+  code: string;
+  discountType: AdminCouponCodeDiscountType;
+  /** @minimum 0 */
+  value: number;
+  minOrderAmount: number | null;
+  maxUsesTotal: number | null;
+  currentUses: number;
+  singleUsePerCustomer: boolean;
+  appliesTo: AdminCouponCodeAppliesTo;
+  targetIds: number[];
+  startDate: string | null;
+  expirationDate: string | null;
+  isStackable: boolean;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreateCouponCodeRequestDiscountType =
+  (typeof CreateCouponCodeRequestDiscountType)[keyof typeof CreateCouponCodeRequestDiscountType];
+
+export const CreateCouponCodeRequestDiscountType = {
+  percentage: "percentage",
+  fixed: "fixed",
+} as const;
+
+export type CreateCouponCodeRequestAppliesTo =
+  (typeof CreateCouponCodeRequestAppliesTo)[keyof typeof CreateCouponCodeRequestAppliesTo];
+
+export const CreateCouponCodeRequestAppliesTo = {
+  global: "global",
+  category: "category",
+  manufacturer: "manufacturer",
+  product: "product",
+} as const;
+
+export interface CreateCouponCodeRequest {
+  /** @minLength 1 */
+  code: string;
+  discountType: CreateCouponCodeRequestDiscountType;
+  /** @minimum 0 */
+  value: number;
+  minOrderAmount?: number | null;
+  maxUsesTotal?: number | null;
+  singleUsePerCustomer?: boolean;
+  appliesTo?: CreateCouponCodeRequestAppliesTo;
+  targetIds?: number[];
+  startDate?: string | null;
+  expirationDate?: string | null;
+  isStackable?: boolean;
+  isActive?: boolean;
+}
+
+export type UpdateCouponCodeRequestDiscountType =
+  (typeof UpdateCouponCodeRequestDiscountType)[keyof typeof UpdateCouponCodeRequestDiscountType];
+
+export const UpdateCouponCodeRequestDiscountType = {
+  percentage: "percentage",
+  fixed: "fixed",
+} as const;
+
+export type UpdateCouponCodeRequestAppliesTo =
+  (typeof UpdateCouponCodeRequestAppliesTo)[keyof typeof UpdateCouponCodeRequestAppliesTo];
+
+export const UpdateCouponCodeRequestAppliesTo = {
+  global: "global",
+  category: "category",
+  manufacturer: "manufacturer",
+  product: "product",
+} as const;
+
+export interface UpdateCouponCodeRequest {
+  /** @minLength 1 */
+  code?: string;
+  discountType?: UpdateCouponCodeRequestDiscountType;
+  /** @minimum 0 */
+  value?: number;
+  minOrderAmount?: number | null;
+  maxUsesTotal?: number | null;
+  singleUsePerCustomer?: boolean;
+  appliesTo?: UpdateCouponCodeRequestAppliesTo;
+  targetIds?: number[];
+  startDate?: string | null;
+  expirationDate?: string | null;
+  isStackable?: boolean;
+  isActive?: boolean;
+}
+
+export interface AdminCouponCodeUse {
+  id: number;
+  couponCodeId: number;
+  userId: number | null;
+  userEmail: string | null;
+  orderId: number | null;
+  orderNumber: string | null;
+  discountApplied: number;
+  createdAt: string;
+}
+
+export type AdminUserSummaryRole =
+  (typeof AdminUserSummaryRole)[keyof typeof AdminUserSummaryRole];
+
+export const AdminUserSummaryRole = {
+  customer: "customer",
+  agent: "agent",
+  admin: "admin",
+} as const;
+
+export interface AdminUserSummary {
+  id: number;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  role: AdminUserSummaryRole;
+  isActive: boolean;
+  emailVerified: boolean;
+  mustChangePassword: boolean;
+  twoFactorEnabled: boolean;
+  lastLoginAt: string | null;
+  createdAt: string;
+}
+
+export interface AdminAgentPrivileges {
+  canViewAllOrders: boolean;
+  canViewAllCustomers: boolean;
+  canViewCost: boolean;
+  canAdjustInventory: boolean;
+  canApproveCancellations: boolean;
+  canSendVendorOrders: boolean;
+  /**
+   * @minimum 0
+   * @maximum 100
+   */
+  maxDiscountPercentage: number | null;
+}
+
+export type AdminUserDetail = AdminUserSummary & {
+  agentPrivileges: AdminAgentPrivileges | null;
+};
+
+export type CreateStaffUserRequestRole =
+  (typeof CreateStaffUserRequestRole)[keyof typeof CreateStaffUserRequestRole];
+
+export const CreateStaffUserRequestRole = {
+  agent: "agent",
+  admin: "admin",
+} as const;
+
+export interface CreateStaffUserRequest {
+  email: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  role: CreateStaffUserRequestRole;
+  /** @minLength 8 */
+  password: string;
+}
+
+export type UpdateUserRequestRole =
+  (typeof UpdateUserRequestRole)[keyof typeof UpdateUserRequestRole];
+
+export const UpdateUserRequestRole = {
+  customer: "customer",
+  agent: "agent",
+  admin: "admin",
+} as const;
+
+export interface UpdateUserRequest {
+  firstName?: string | null;
+  lastName?: string | null;
+  role?: UpdateUserRequestRole;
+  isActive?: boolean;
+}
+
+export interface AdminResetPasswordResponse {
+  temporaryPassword: string;
+}
+
 export type StaffDisableTotp200 = {
   ok: boolean;
 };
@@ -872,4 +1580,66 @@ export type AdminListInventoryAdjustmentsParams = {
    * @maximum 200
    */
   pageSize?: number;
+};
+
+export type AdminListUsersParams = {
+  group?: AdminListUsersGroup;
+  q?: string;
+};
+
+export type AdminListUsersGroup =
+  (typeof AdminListUsersGroup)[keyof typeof AdminListUsersGroup];
+
+export const AdminListUsersGroup = {
+  customers: "customers",
+  staff: "staff",
+} as const;
+
+export type AdminListAuditLogParams = {
+  userId?: number;
+  action?: string;
+  entityType?: string;
+  entityId?: number;
+  q?: string;
+  /**
+   * @minimum 1
+   * @maximum 200
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   */
+  offset?: number;
+};
+
+export type AdminListOrdersParams = {
+  status?: string;
+  /**
+   * Match order number, customer email, or customer name
+   */
+  q?: string;
+  customerId?: number;
+  agentId?: number;
+  /**
+   * @minimum 1
+   * @maximum 200
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   */
+  offset?: number;
+};
+
+export type AdminListCancellationRequestsParams = {
+  status?: string;
+};
+
+export type StaffListNotificationsParams = {
+  unreadOnly?: boolean;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
 };

@@ -1416,6 +1416,788 @@ paths:
         "404":
           description: Not found
           content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/carriers:
+    get:
+      operationId: adminListCarriers
+      tags: [admin-carriers]
+      summary: List all carriers (active + inactive)
+      responses:
+        "200":
+          description: Carriers
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Carrier" }
+        "401":
+          description: Not authenticated
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "403":
+          description: Not admin
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+    post:
+      operationId: adminCreateCarrier
+      tags: [admin-carriers]
+      summary: Create a new carrier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateCarrierRequest" }
+      responses:
+        "201":
+          description: Created
+          content: { application/json: { schema: { $ref: "#/components/schemas/Carrier" } } }
+        "400":
+          description: Validation error
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "409":
+          description: Duplicate code
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/carriers/{id}:
+    put:
+      operationId: adminUpdateCarrier
+      tags: [admin-carriers]
+      summary: Update a carrier
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateCarrierRequest" }
+      responses:
+        "200":
+          description: Updated carrier
+          content: { application/json: { schema: { $ref: "#/components/schemas/Carrier" } } }
+        "400":
+          description: Validation error
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "404":
+          description: Not found
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "409":
+          description: Duplicate code
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/carriers/{id}/active:
+    patch:
+      operationId: adminSetCarrierActive
+      tags: [admin-carriers]
+      summary: Activate or deactivate a carrier
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SetActiveRequest" }
+      responses:
+        "200":
+          description: Updated carrier
+          content: { application/json: { schema: { $ref: "#/components/schemas/Carrier" } } }
+        "404":
+          description: Not found
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/banners:
+    get:
+      operationId: adminListBanners
+      tags: [admin-banners]
+      summary: List all site banners (active + inactive, all dates)
+      responses:
+        "200":
+          description: Banners
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AdminBanner" }
+    post:
+      operationId: adminCreateBanner
+      tags: [admin-banners]
+      summary: Create a new site banner
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateBannerRequest" }
+      responses:
+        "201":
+          description: Created
+          content: { application/json: { schema: { $ref: "#/components/schemas/AdminBanner" } } }
+        "400":
+          description: Validation error
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/banners/{id}:
+    put:
+      operationId: adminUpdateBanner
+      tags: [admin-banners]
+      summary: Update a site banner
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateBannerRequest" }
+      responses:
+        "200":
+          description: Updated banner
+          content: { application/json: { schema: { $ref: "#/components/schemas/AdminBanner" } } }
+        "400":
+          description: Validation error
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "404":
+          description: Not found
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+    delete:
+      operationId: adminDeleteBanner
+      tags: [admin-banners]
+      summary: Delete a site banner
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/banners/{id}/active:
+    patch:
+      operationId: adminSetBannerActive
+      tags: [admin-banners]
+      summary: Activate or deactivate a banner
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SetActiveRequest" }
+      responses:
+        "200":
+          description: Updated banner
+          content: { application/json: { schema: { $ref: "#/components/schemas/AdminBanner" } } }
+        "404":
+          description: Not found
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/users:
+    get:
+      operationId: adminListUsers
+      tags: [admin-users]
+      summary: List users, optionally filtered by role group
+      parameters:
+        - name: group
+          in: query
+          required: false
+          schema: { type: string, enum: [customers, staff] }
+        - name: q
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        "200":
+          description: Matching users
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AdminUserSummary" }
+    post:
+      operationId: adminCreateStaffUser
+      tags: [admin-users]
+      summary: Create a new staff user (agent or admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateStaffUserRequest" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminUserSummary" }
+        "400":
+          description: Validation error
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "409":
+          description: Email already exists
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/users/{id}:
+    get:
+      operationId: adminGetUser
+      tags: [admin-users]
+      summary: Get user detail (with agent privileges if applicable)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: User
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminUserDetail" }
+        "404":
+          description: Not found
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+    put:
+      operationId: adminUpdateUser
+      tags: [admin-users]
+      summary: Update user fields (name, role, active)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateUserRequest" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminUserSummary" }
+        "400":
+          description: Validation error
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "404":
+          description: Not found
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/users/{id}/reset-password:
+    post:
+      operationId: adminResetUserPassword
+      tags: [admin-users]
+      summary: Generate a temporary password for a user
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Temporary password (returned once)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminResetPasswordResponse" }
+        "404":
+          description: Not found
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/users/{id}/agent-privileges:
+    put:
+      operationId: adminUpdateAgentPrivileges
+      tags: [admin-users]
+      summary: Set or replace an agent's privilege bundle
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdminAgentPrivileges" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminAgentPrivileges" }
+        "400":
+          description: User is not an agent or validation error
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "404":
+          description: Not found
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/audit-log:
+    get:
+      operationId: adminListAuditLog
+      tags: [admin-audit]
+      summary: Search audit log entries (newest first)
+      parameters:
+        - name: userId
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: action
+          in: query
+          required: false
+          schema: { type: string }
+        - name: entityType
+          in: query
+          required: false
+          schema: { type: string }
+        - name: entityId
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: q
+          in: query
+          required: false
+          schema: { type: string }
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 200 }
+        - name: offset
+          in: query
+          required: false
+          schema: { type: integer, minimum: 0 }
+      responses:
+        "200":
+          description: Audit log entries with total count
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuditLogPage" }
+  /admin/orders:
+    get:
+      operationId: adminListOrders
+      tags: [admin-orders]
+      summary: List customer orders (newest first)
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema: { type: string }
+        - name: q
+          in: query
+          required: false
+          description: Match order number, customer email, or customer name
+          schema: { type: string }
+        - name: customerId
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: agentId
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 200 }
+        - name: offset
+          in: query
+          required: false
+          schema: { type: integer, minimum: 0 }
+      responses:
+        "200":
+          description: Orders page
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminOrderPage" }
+  /admin/orders/{id}:
+    get:
+      operationId: adminGetOrder
+      tags: [admin-orders]
+      summary: Order detail (items, addresses, history, vendor orders, cancellation)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Order detail
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminOrderDetail" }
+        "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+  /admin/orders/{id}/status:
+    post:
+      operationId: adminUpdateOrderStatus
+      tags: [admin-orders]
+      summary: Move an order to a new status (writes order_status_history)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateOrderStatusRequest" }
+      responses:
+        "200":
+          description: Updated order
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminOrderDetail" }
+        "400": { description: Bad request, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+        "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+  /admin/orders/{id}/notes:
+    post:
+      operationId: adminUpdateOrderNotes
+      tags: [admin-orders]
+      summary: Update internal notes on an order
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateOrderNotesRequest" }
+      responses:
+        "200":
+          description: Updated order
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminOrderDetail" }
+        "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+  /admin/cancellation-requests:
+    get:
+      operationId: adminListCancellationRequests
+      tags: [admin-orders]
+      summary: List cancellation requests (optionally filtered by status)
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        "200":
+          description: Cancellation requests list
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AdminCancellationRequest" }
+  /admin/cancellation-requests/{id}/review:
+    post:
+      operationId: adminReviewCancellationRequest
+      tags: [admin-orders]
+      summary: Approve or deny a cancellation request
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReviewCancellationRequest" }
+      responses:
+        "200":
+          description: Updated cancellation request
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminCancellationRequest" }
+        "400": { description: Bad request, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+        "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+  /staff/notifications:
+    get:
+      operationId: staffListNotifications
+      tags: [staff-notifications]
+      summary: List the current staff user's notifications (newest first)
+      parameters:
+        - name: unreadOnly
+          in: query
+          required: false
+          schema: { type: boolean }
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 100 }
+      responses:
+        "200":
+          description: Notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/StaffNotification" }
+  /staff/notifications/unread-count:
+    get:
+      operationId: staffGetUnreadNotificationCount
+      tags: [staff-notifications]
+      summary: Get count of unread notifications for the current staff user
+      responses:
+        "200":
+          description: Unread count
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StaffUnreadCount" }
+  /staff/notifications/{id}/read:
+    post:
+      operationId: staffMarkNotificationRead
+      tags: [staff-notifications]
+      summary: Mark a single notification as read
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Updated notification
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StaffNotification" }
+        "404":
+          description: Not found
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /staff/notifications/read-all:
+    post:
+      operationId: staffMarkAllNotificationsRead
+      tags: [staff-notifications]
+      summary: Mark every unread notification for the current staff user as read
+      responses:
+        "200":
+          description: Number of rows updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StaffMarkAllReadResponse" }
+  /admin/discount-events:
+    get:
+      operationId: adminListDiscountEvents
+      tags: [admin-discounts]
+      summary: List all discount events
+      responses:
+        "200":
+          description: All events, active first
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AdminDiscountEvent" }
+    post:
+      operationId: adminCreateDiscountEvent
+      tags: [admin-discounts]
+      summary: Create a new discount event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateDiscountEventRequest" }
+      responses:
+        "201":
+          description: Created
+          content: { application/json: { schema: { $ref: "#/components/schemas/AdminDiscountEvent" } } }
+        "400":
+          description: Validation error
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/discount-events/{id}:
+    put:
+      operationId: adminUpdateDiscountEvent
+      tags: [admin-discounts]
+      summary: Update a discount event
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateDiscountEventRequest" }
+      responses:
+        "200":
+          description: Updated
+          content: { application/json: { schema: { $ref: "#/components/schemas/AdminDiscountEvent" } } }
+        "400":
+          description: Validation error
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "404":
+          description: Not found
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+    delete:
+      operationId: adminDeleteDiscountEvent
+      tags: [admin-discounts]
+      summary: Delete a discount event
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
+        "404":
+          description: Not found
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/coupon-codes:
+    get:
+      operationId: adminListCouponCodes
+      tags: [admin-discounts]
+      summary: List all coupon codes
+      responses:
+        "200":
+          description: All coupons, active first
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AdminCouponCode" }
+    post:
+      operationId: adminCreateCouponCode
+      tags: [admin-discounts]
+      summary: Create a new coupon code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateCouponCodeRequest" }
+      responses:
+        "201":
+          description: Created
+          content: { application/json: { schema: { $ref: "#/components/schemas/AdminCouponCode" } } }
+        "400":
+          description: Validation error
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "409":
+          description: Code already exists
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/coupon-codes/{id}:
+    put:
+      operationId: adminUpdateCouponCode
+      tags: [admin-discounts]
+      summary: Update a coupon code
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateCouponCodeRequest" }
+      responses:
+        "200":
+          description: Updated
+          content: { application/json: { schema: { $ref: "#/components/schemas/AdminCouponCode" } } }
+        "400":
+          description: Validation error
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "404":
+          description: Not found
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "409":
+          description: Code already exists
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+    delete:
+      operationId: adminDeleteCouponCode
+      tags: [admin-discounts]
+      summary: Delete a coupon code
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
+        "404":
+          description: Not found
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/coupon-codes/{id}/uses:
+    get:
+      operationId: adminListCouponCodeUses
+      tags: [admin-discounts]
+      summary: List redemptions of a coupon code
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: All uses, newest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AdminCouponCodeUse" }
+        "404":
+          description: Coupon not found
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/settings:
+    get:
+      operationId: adminGetSettings
+      tags: [admin-settings]
+      summary: Read all system settings as a typed object
+      responses:
+        "200":
+          description: Current settings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SystemSettings" }
+    put:
+      operationId: adminUpdateSettings
+      tags: [admin-settings]
+      summary: Bulk update one or more system settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SystemSettingsUpdate" }
+      responses:
+        "200":
+          description: Updated settings
+          content: { application/json: { schema: { $ref: "#/components/schemas/SystemSettings" } } }
+        "400":
+          description: Validation error
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/legal/{type}:
+    get:
+      operationId: adminListLegalVersions
+      tags: [admin-legal]
+      summary: List all versions of a legal document type
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [privacy_policy, terms_and_conditions]
+      responses:
+        "200":
+          description: All versions, newest effective date first
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AdminLegalDocument" }
+    post:
+      operationId: adminCreateLegalVersion
+      tags: [admin-legal]
+      summary: Publish a new version of a legal document
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [privacy_policy, terms_and_conditions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateLegalVersionRequest" }
+      responses:
+        "201":
+          description: Newly active version
+          content: { application/json: { schema: { $ref: "#/components/schemas/AdminLegalDocument" } } }
+        "400":
+          description: Validation error
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/legal/{type}/{id}/restore:
+    post:
+      operationId: adminRestoreLegalVersion
+      tags: [admin-legal]
+      summary: Restore a prior version as the active one
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [privacy_policy, terms_and_conditions]
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: The restored (now-active) version
+          content: { application/json: { schema: { $ref: "#/components/schemas/AdminLegalDocument" } } }
+        "404":
+          description: Not found
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
   /storage/uploads/request-url:
     post:
       operationId: requestUploadUrl
@@ -1462,6 +2244,214 @@ components:
           type: string
       required:
         - error
+    AuditLogEntry:
+      type: object
+      properties:
+        id: { type: integer }
+        userId: { type: integer, nullable: true }
+        userEmail: { type: string, nullable: true }
+        action: { type: string }
+        entityType: { type: string, nullable: true }
+        entityId: { type: integer, nullable: true }
+        changes: {}
+        ipAddress: { type: string, nullable: true }
+        userAgent: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+      required:
+        [id, userId, userEmail, action, entityType, entityId, ipAddress, userAgent, createdAt]
+    AuditLogPage:
+      type: object
+      properties:
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/AuditLogEntry" }
+        total: { type: integer }
+      required: [rows, total]
+    UpdateOrderStatusRequest:
+      type: object
+      properties:
+        toStatus: { type: string }
+        note: { type: string, nullable: true }
+      required: [toStatus]
+    UpdateOrderNotesRequest:
+      type: object
+      properties:
+        notes: { type: string, nullable: true }
+      required: [notes]
+    ReviewCancellationRequest:
+      type: object
+      properties:
+        decision: { type: string, enum: [approved, denied] }
+        reviewNote: { type: string, nullable: true }
+        refundAmount: { type: number, nullable: true }
+      required: [decision]
+    AdminOrderSummary:
+      type: object
+      properties:
+        id: { type: integer }
+        orderNumber: { type: string }
+        status: { type: string }
+        orderType: { type: string }
+        total: { type: number }
+        balanceDue: { type: number }
+        customerId: { type: integer, nullable: true }
+        customerName: { type: string, nullable: true }
+        customerEmail: { type: string, nullable: true }
+        agentId: { type: integer, nullable: true }
+        agentName: { type: string, nullable: true }
+        itemCount: { type: integer }
+        placedAt: { type: string, format: date-time }
+      required:
+        [id, orderNumber, status, orderType, total, balanceDue, customerId, customerName, customerEmail, agentId, agentName, itemCount, placedAt]
+    AdminOrderPage:
+      type: object
+      properties:
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/AdminOrderSummary" }
+        total: { type: integer }
+      required: [rows, total]
+    AdminOrderItem:
+      type: object
+      properties:
+        id: { type: integer }
+        productId: { type: integer, nullable: true }
+        productSkuSnapshot: { type: string, nullable: true }
+        variantSkuSnapshot: { type: string, nullable: true }
+        variantNameSnapshot: { type: string, nullable: true }
+        fabricNameSnapshot: { type: string, nullable: true }
+        department: { type: string, nullable: true }
+        description: { type: string }
+        quantity: { type: integer }
+        unitPrice: { type: number }
+        amount: { type: number }
+        discountAmount: { type: number }
+        discountReason: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+        vendorOrderId: { type: integer, nullable: true }
+      required:
+        [id, productId, productSkuSnapshot, variantSkuSnapshot, variantNameSnapshot, fabricNameSnapshot, department, description, quantity, unitPrice, amount, discountAmount, discountReason, notes, vendorOrderId]
+    AdminOrderAddress:
+      type: object
+      properties:
+        id: { type: integer }
+        recipientName: { type: string, nullable: true }
+        street1: { type: string }
+        street2: { type: string, nullable: true }
+        city: { type: string }
+        state: { type: string }
+        zip: { type: string }
+        country: { type: string }
+        phone: { type: string, nullable: true }
+      required: [id, street1, city, state, zip, country]
+    AdminOrderStatusEvent:
+      type: object
+      properties:
+        id: { type: integer }
+        fromStatus: { type: string, nullable: true }
+        toStatus: { type: string }
+        changedByUserId: { type: integer, nullable: true }
+        changedByEmail: { type: string, nullable: true }
+        note: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+      required: [id, fromStatus, toStatus, changedByUserId, changedByEmail, note, createdAt]
+    AdminOrderVendorOrder:
+      type: object
+      properties:
+        id: { type: integer }
+        vendorOrderNumber: { type: string }
+        status: { type: string }
+        manufacturerId: { type: integer, nullable: true }
+        manufacturerName: { type: string, nullable: true }
+        sentAt: { type: string, format: date-time, nullable: true }
+        receivedAt: { type: string, format: date-time, nullable: true }
+        itemsReceived: { type: boolean }
+      required: [id, vendorOrderNumber, status, manufacturerId, manufacturerName, sentAt, receivedAt, itemsReceived]
+    AdminCancellationRequest:
+      type: object
+      properties:
+        id: { type: integer }
+        orderId: { type: integer }
+        orderNumber: { type: string, nullable: true }
+        requestedByUserId: { type: integer, nullable: true }
+        requestedByEmail: { type: string, nullable: true }
+        reason: { type: string, nullable: true }
+        status: { type: string }
+        reviewedByUserId: { type: integer, nullable: true }
+        reviewedByEmail: { type: string, nullable: true }
+        reviewedAt: { type: string, format: date-time, nullable: true }
+        reviewNote: { type: string, nullable: true }
+        refundAmount: { type: number, nullable: true }
+        createdAt: { type: string, format: date-time }
+      required: [id, orderId, orderNumber, requestedByUserId, requestedByEmail, reason, status, reviewedByUserId, reviewedByEmail, reviewedAt, reviewNote, refundAmount, createdAt]
+    AdminOrderDetail:
+      type: object
+      properties:
+        id: { type: integer }
+        orderNumber: { type: string }
+        status: { type: string }
+        orderType: { type: string }
+        subtotal: { type: number }
+        taxAmount: { type: number }
+        deliveryAmount: { type: number }
+        total: { type: number }
+        depositAmount: { type: number }
+        balanceDue: { type: number }
+        customerId: { type: integer, nullable: true }
+        customerName: { type: string, nullable: true }
+        customerEmail: { type: string, nullable: true }
+        agentId: { type: integer, nullable: true }
+        agentName: { type: string, nullable: true }
+        salespersonName: { type: string, nullable: true }
+        shippingMethod: { type: string, nullable: true }
+        specialInstructions: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+        merchandiseReceived: { type: boolean }
+        placedAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        shippingAddress:
+          oneOf:
+            - { $ref: "#/components/schemas/AdminOrderAddress" }
+            - { type: "null" }
+        billingAddress:
+          oneOf:
+            - { $ref: "#/components/schemas/AdminOrderAddress" }
+            - { type: "null" }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/AdminOrderItem" }
+        statusHistory:
+          type: array
+          items: { $ref: "#/components/schemas/AdminOrderStatusEvent" }
+        vendorOrders:
+          type: array
+          items: { $ref: "#/components/schemas/AdminOrderVendorOrder" }
+        cancellationRequests:
+          type: array
+          items: { $ref: "#/components/schemas/AdminCancellationRequest" }
+      required:
+        [id, orderNumber, status, orderType, subtotal, taxAmount, deliveryAmount, total, depositAmount, balanceDue, customerId, customerName, customerEmail, agentId, agentName, salespersonName, shippingMethod, specialInstructions, notes, merchandiseReceived, placedAt, updatedAt, shippingAddress, billingAddress, items, statusHistory, vendorOrders, cancellationRequests]
+    StaffNotification:
+      type: object
+      properties:
+        id: { type: integer }
+        type: { type: string }
+        message: { type: string }
+        linkUrl: { type: string, nullable: true }
+        isRead: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        readAt: { type: string, format: date-time, nullable: true }
+      required: [id, type, message, linkUrl, isRead, createdAt, readAt]
+    StaffUnreadCount:
+      type: object
+      properties:
+        unread: { type: integer }
+      required: [unread]
+    StaffMarkAllReadResponse:
+      type: object
+      properties:
+        updated: { type: integer }
+      required: [updated]
     LegalDocument:
       type: object
       properties:
@@ -2624,3 +3614,341 @@ components:
         page: { type: integer }
         pageSize: { type: integer }
       required: [adjustments, total, page, pageSize]
+    Carrier:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        code: { type: ["string", "null"] }
+        contactName: { type: ["string", "null"] }
+        contactPhone: { type: ["string", "null"] }
+        contactEmail: { type: ["string", "null"] }
+        trackingUrlTemplate:
+          type: ["string", "null"]
+          description: "URL template; use {trackingNumber} as the placeholder."
+        isActive: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+      required:
+        - id
+        - name
+        - code
+        - contactName
+        - contactPhone
+        - contactEmail
+        - trackingUrlTemplate
+        - isActive
+        - createdAt
+        - updatedAt
+    CreateCarrierRequest:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        code: { type: ["string", "null"] }
+        contactName: { type: ["string", "null"] }
+        contactPhone: { type: ["string", "null"] }
+        contactEmail: { type: ["string", "null"] }
+        trackingUrlTemplate: { type: ["string", "null"] }
+        isActive: { type: boolean, default: true }
+      required: [name]
+    UpdateCarrierRequest:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        code: { type: ["string", "null"] }
+        contactName: { type: ["string", "null"] }
+        contactPhone: { type: ["string", "null"] }
+        contactEmail: { type: ["string", "null"] }
+        trackingUrlTemplate: { type: ["string", "null"] }
+      required: [name]
+    AdminBanner:
+      type: object
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        messageText: { type: string }
+        type: { type: string, enum: [popup, banner] }
+        startDate: { type: ["string", "null"], format: date-time }
+        endDate: { type: ["string", "null"], format: date-time }
+        isActive: { type: boolean }
+        displayOrder: { type: integer }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+      required:
+        - id
+        - title
+        - messageText
+        - type
+        - startDate
+        - endDate
+        - isActive
+        - displayOrder
+        - createdAt
+        - updatedAt
+    CreateBannerRequest:
+      type: object
+      properties:
+        title: { type: string, minLength: 1 }
+        messageText: { type: string, minLength: 1 }
+        type: { type: string, enum: [popup, banner] }
+        startDate: { type: ["string", "null"], format: date-time }
+        endDate: { type: ["string", "null"], format: date-time }
+        isActive: { type: boolean, default: true }
+        displayOrder: { type: integer, default: 0 }
+      required: [title, messageText, type]
+    UpdateBannerRequest:
+      type: object
+      properties:
+        title: { type: string, minLength: 1 }
+        messageText: { type: string, minLength: 1 }
+        type: { type: string, enum: [popup, banner] }
+        startDate: { type: ["string", "null"], format: date-time }
+        endDate: { type: ["string", "null"], format: date-time }
+        displayOrder: { type: integer }
+      required: [title, messageText, type]
+    AdminLegalDocument:
+      type: object
+      properties:
+        id: { type: integer }
+        type: { type: string, enum: [privacy_policy, terms_and_conditions] }
+        version: { type: string }
+        content: { type: string }
+        effectiveDate: { type: string, format: date }
+        isActive: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+      required:
+        - id
+        - type
+        - version
+        - content
+        - effectiveDate
+        - isActive
+        - createdAt
+        - updatedAt
+    CreateLegalVersionRequest:
+      type: object
+      properties:
+        content: { type: string, minLength: 1 }
+        effectiveDate:
+          type: string
+          format: date
+          description: ISO date (YYYY-MM-DD); defaults to today if omitted
+        version:
+          type: string
+          minLength: 1
+          description: Optional; auto-incremented (v1, v2, ...) if omitted
+      required: [content]
+    SystemSettings:
+      type: object
+      properties:
+        defaultTaxRate: { type: number, minimum: 0, maximum: 1 }
+        shippingMode:
+          type: string
+          enum: [flat, percentage, free]
+        flatShippingRate: { type: number, minimum: 0 }
+        shippingPercentage: { type: number, minimum: 0, maximum: 1 }
+        freeShippingThreshold: { type: number, minimum: 0 }
+        overdueVendorOrderThresholdDays: { type: integer, minimum: 1 }
+        lowStockThreshold: { type: integer, minimum: 0 }
+        defaultAgentDiscountCap: { type: number, minimum: 0, maximum: 1 }
+        currentSequenceYear: { type: integer, minimum: 2000, maximum: 2999 }
+        currentYearOrderSequence: { type: integer, minimum: 0 }
+      required:
+        - defaultTaxRate
+        - shippingMode
+        - flatShippingRate
+        - shippingPercentage
+        - freeShippingThreshold
+        - overdueVendorOrderThresholdDays
+        - lowStockThreshold
+        - defaultAgentDiscountCap
+        - currentSequenceYear
+        - currentYearOrderSequence
+    SystemSettingsUpdate:
+      type: object
+      properties:
+        defaultTaxRate: { type: number, minimum: 0, maximum: 1 }
+        shippingMode:
+          type: string
+          enum: [flat, percentage, free]
+        flatShippingRate: { type: number, minimum: 0 }
+        shippingPercentage: { type: number, minimum: 0, maximum: 1 }
+        freeShippingThreshold: { type: number, minimum: 0 }
+        overdueVendorOrderThresholdDays: { type: integer, minimum: 1 }
+        lowStockThreshold: { type: integer, minimum: 0 }
+        defaultAgentDiscountCap: { type: number, minimum: 0, maximum: 1 }
+        currentSequenceYear: { type: integer, minimum: 2000, maximum: 2999 }
+        currentYearOrderSequence: { type: integer, minimum: 0 }
+    AdminDiscountEvent:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        type: { type: string, enum: [percentage, fixed] }
+        value: { type: number, minimum: 0 }
+        appliesTo: { type: string, enum: [global, category, manufacturer, product] }
+        targetIds:
+          type: array
+          items: { type: integer }
+        startDate: { type: string, format: date-time, nullable: true }
+        endDate: { type: string, format: date-time, nullable: true }
+        isStackable: { type: boolean }
+        isActive: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+      required: [id, name, type, value, appliesTo, targetIds, startDate, endDate, isStackable, isActive, createdAt, updatedAt]
+    CreateDiscountEventRequest:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        type: { type: string, enum: [percentage, fixed] }
+        value: { type: number, minimum: 0 }
+        appliesTo: { type: string, enum: [global, category, manufacturer, product] }
+        targetIds:
+          type: array
+          items: { type: integer }
+        startDate: { type: string, format: date-time, nullable: true }
+        endDate: { type: string, format: date-time, nullable: true }
+        isStackable: { type: boolean }
+        isActive: { type: boolean }
+      required: [name, type, value]
+    UpdateDiscountEventRequest:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        type: { type: string, enum: [percentage, fixed] }
+        value: { type: number, minimum: 0 }
+        appliesTo: { type: string, enum: [global, category, manufacturer, product] }
+        targetIds:
+          type: array
+          items: { type: integer }
+        startDate: { type: string, format: date-time, nullable: true }
+        endDate: { type: string, format: date-time, nullable: true }
+        isStackable: { type: boolean }
+        isActive: { type: boolean }
+    AdminCouponCode:
+      type: object
+      properties:
+        id: { type: integer }
+        code: { type: string }
+        discountType: { type: string, enum: [percentage, fixed] }
+        value: { type: number, minimum: 0 }
+        minOrderAmount: { type: number, nullable: true }
+        maxUsesTotal: { type: integer, nullable: true }
+        currentUses: { type: integer }
+        singleUsePerCustomer: { type: boolean }
+        appliesTo: { type: string, enum: [global, category, manufacturer, product] }
+        targetIds:
+          type: array
+          items: { type: integer }
+        startDate: { type: string, format: date-time, nullable: true }
+        expirationDate: { type: string, format: date-time, nullable: true }
+        isStackable: { type: boolean }
+        isActive: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+      required: [id, code, discountType, value, minOrderAmount, maxUsesTotal, currentUses, singleUsePerCustomer, appliesTo, targetIds, startDate, expirationDate, isStackable, isActive, createdAt, updatedAt]
+    CreateCouponCodeRequest:
+      type: object
+      properties:
+        code: { type: string, minLength: 1 }
+        discountType: { type: string, enum: [percentage, fixed] }
+        value: { type: number, minimum: 0 }
+        minOrderAmount: { type: number, nullable: true }
+        maxUsesTotal: { type: integer, nullable: true }
+        singleUsePerCustomer: { type: boolean }
+        appliesTo: { type: string, enum: [global, category, manufacturer, product] }
+        targetIds:
+          type: array
+          items: { type: integer }
+        startDate: { type: string, format: date-time, nullable: true }
+        expirationDate: { type: string, format: date-time, nullable: true }
+        isStackable: { type: boolean }
+        isActive: { type: boolean }
+      required: [code, discountType, value]
+    UpdateCouponCodeRequest:
+      type: object
+      properties:
+        code: { type: string, minLength: 1 }
+        discountType: { type: string, enum: [percentage, fixed] }
+        value: { type: number, minimum: 0 }
+        minOrderAmount: { type: number, nullable: true }
+        maxUsesTotal: { type: integer, nullable: true }
+        singleUsePerCustomer: { type: boolean }
+        appliesTo: { type: string, enum: [global, category, manufacturer, product] }
+        targetIds:
+          type: array
+          items: { type: integer }
+        startDate: { type: string, format: date-time, nullable: true }
+        expirationDate: { type: string, format: date-time, nullable: true }
+        isStackable: { type: boolean }
+        isActive: { type: boolean }
+    AdminCouponCodeUse:
+      type: object
+      properties:
+        id: { type: integer }
+        couponCodeId: { type: integer }
+        userId: { type: integer, nullable: true }
+        userEmail: { type: string, nullable: true }
+        orderId: { type: integer, nullable: true }
+        orderNumber: { type: string, nullable: true }
+        discountApplied: { type: number }
+        createdAt: { type: string, format: date-time }
+      required: [id, couponCodeId, userId, userEmail, orderId, orderNumber, discountApplied, createdAt]
+    AdminUserSummary:
+      type: object
+      properties:
+        id: { type: integer }
+        email: { type: string }
+        firstName: { type: string, nullable: true }
+        lastName: { type: string, nullable: true }
+        role: { type: string, enum: [customer, agent, admin] }
+        isActive: { type: boolean }
+        emailVerified: { type: boolean }
+        mustChangePassword: { type: boolean }
+        twoFactorEnabled: { type: boolean }
+        lastLoginAt: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
+      required: [id, email, firstName, lastName, role, isActive, emailVerified, mustChangePassword, twoFactorEnabled, lastLoginAt, createdAt]
+    AdminAgentPrivileges:
+      type: object
+      properties:
+        canViewAllOrders: { type: boolean }
+        canViewAllCustomers: { type: boolean }
+        canViewCost: { type: boolean }
+        canAdjustInventory: { type: boolean }
+        canApproveCancellations: { type: boolean }
+        canSendVendorOrders: { type: boolean }
+        maxDiscountPercentage: { type: number, nullable: true, minimum: 0, maximum: 100 }
+      required: [canViewAllOrders, canViewAllCustomers, canViewCost, canAdjustInventory, canApproveCancellations, canSendVendorOrders, maxDiscountPercentage]
+    AdminUserDetail:
+      allOf:
+        - $ref: "#/components/schemas/AdminUserSummary"
+        - type: object
+          properties:
+            agentPrivileges:
+              nullable: true
+              allOf: [{ $ref: "#/components/schemas/AdminAgentPrivileges" }]
+          required: [agentPrivileges]
+    CreateStaffUserRequest:
+      type: object
+      properties:
+        email: { type: string, format: email }
+        firstName: { type: string, nullable: true }
+        lastName: { type: string, nullable: true }
+        role: { type: string, enum: [agent, admin] }
+        password: { type: string, minLength: 8 }
+      required: [email, role, password]
+    UpdateUserRequest:
+      type: object
+      properties:
+        firstName: { type: string, nullable: true }
+        lastName: { type: string, nullable: true }
+        role: { type: string, enum: [customer, agent, admin] }
+        isActive: { type: boolean }
+    AdminResetPasswordResponse:
+      type: object
+      properties:
+        temporaryPassword: { type: string }
+      required: [temporaryPassword]

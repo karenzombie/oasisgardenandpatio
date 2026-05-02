@@ -1541,6 +1541,1371 @@ export const AdminSetInventoryLocationDefaultResponse = zod.object({
 });
 
 /**
+ * @summary List all carriers (active + inactive)
+ */
+export const AdminListCarriersResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  code: zod.string().nullable(),
+  contactName: zod.string().nullable(),
+  contactPhone: zod.string().nullable(),
+  contactEmail: zod.string().nullable(),
+  trackingUrlTemplate: zod
+    .string()
+    .nullable()
+    .describe("URL template; use {trackingNumber} as the placeholder."),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const AdminListCarriersResponse = zod.array(
+  AdminListCarriersResponseItem,
+);
+
+/**
+ * @summary Create a new carrier
+ */
+
+export const adminCreateCarrierBodyIsActiveDefault = true;
+
+export const AdminCreateCarrierBody = zod.object({
+  name: zod.string().min(1),
+  code: zod.string().nullish(),
+  contactName: zod.string().nullish(),
+  contactPhone: zod.string().nullish(),
+  contactEmail: zod.string().nullish(),
+  trackingUrlTemplate: zod.string().nullish(),
+  isActive: zod.boolean().default(adminCreateCarrierBodyIsActiveDefault),
+});
+
+/**
+ * @summary Update a carrier
+ */
+export const AdminUpdateCarrierParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminUpdateCarrierBody = zod.object({
+  name: zod.string().min(1),
+  code: zod.string().nullish(),
+  contactName: zod.string().nullish(),
+  contactPhone: zod.string().nullish(),
+  contactEmail: zod.string().nullish(),
+  trackingUrlTemplate: zod.string().nullish(),
+});
+
+export const AdminUpdateCarrierResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  code: zod.string().nullable(),
+  contactName: zod.string().nullable(),
+  contactPhone: zod.string().nullable(),
+  contactEmail: zod.string().nullable(),
+  trackingUrlTemplate: zod
+    .string()
+    .nullable()
+    .describe("URL template; use {trackingNumber} as the placeholder."),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Activate or deactivate a carrier
+ */
+export const AdminSetCarrierActiveParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminSetCarrierActiveBody = zod.object({
+  isActive: zod.boolean(),
+});
+
+export const AdminSetCarrierActiveResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  code: zod.string().nullable(),
+  contactName: zod.string().nullable(),
+  contactPhone: zod.string().nullable(),
+  contactEmail: zod.string().nullable(),
+  trackingUrlTemplate: zod
+    .string()
+    .nullable()
+    .describe("URL template; use {trackingNumber} as the placeholder."),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary List all site banners (active + inactive, all dates)
+ */
+export const AdminListBannersResponseItem = zod.object({
+  id: zod.number(),
+  title: zod.string(),
+  messageText: zod.string(),
+  type: zod.enum(["popup", "banner"]),
+  startDate: zod.coerce.date().nullable(),
+  endDate: zod.coerce.date().nullable(),
+  isActive: zod.boolean(),
+  displayOrder: zod.number(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const AdminListBannersResponse = zod.array(AdminListBannersResponseItem);
+
+/**
+ * @summary Create a new site banner
+ */
+
+export const adminCreateBannerBodyIsActiveDefault = true;
+export const adminCreateBannerBodyDisplayOrderDefault = 0;
+
+export const AdminCreateBannerBody = zod.object({
+  title: zod.string().min(1),
+  messageText: zod.string().min(1),
+  type: zod.enum(["popup", "banner"]),
+  startDate: zod.coerce.date().nullish(),
+  endDate: zod.coerce.date().nullish(),
+  isActive: zod.boolean().default(adminCreateBannerBodyIsActiveDefault),
+  displayOrder: zod.number().default(adminCreateBannerBodyDisplayOrderDefault),
+});
+
+/**
+ * @summary Update a site banner
+ */
+export const AdminUpdateBannerParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminUpdateBannerBody = zod.object({
+  title: zod.string().min(1),
+  messageText: zod.string().min(1),
+  type: zod.enum(["popup", "banner"]),
+  startDate: zod.coerce.date().nullish(),
+  endDate: zod.coerce.date().nullish(),
+  displayOrder: zod.number().optional(),
+});
+
+export const AdminUpdateBannerResponse = zod.object({
+  id: zod.number(),
+  title: zod.string(),
+  messageText: zod.string(),
+  type: zod.enum(["popup", "banner"]),
+  startDate: zod.coerce.date().nullable(),
+  endDate: zod.coerce.date().nullable(),
+  isActive: zod.boolean(),
+  displayOrder: zod.number(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete a site banner
+ */
+export const AdminDeleteBannerParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
+ * @summary Activate or deactivate a banner
+ */
+export const AdminSetBannerActiveParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminSetBannerActiveBody = zod.object({
+  isActive: zod.boolean(),
+});
+
+export const AdminSetBannerActiveResponse = zod.object({
+  id: zod.number(),
+  title: zod.string(),
+  messageText: zod.string(),
+  type: zod.enum(["popup", "banner"]),
+  startDate: zod.coerce.date().nullable(),
+  endDate: zod.coerce.date().nullable(),
+  isActive: zod.boolean(),
+  displayOrder: zod.number(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary List users, optionally filtered by role group
+ */
+export const AdminListUsersQueryParams = zod.object({
+  group: zod.enum(["customers", "staff"]).optional(),
+  q: zod.coerce.string().optional(),
+});
+
+export const AdminListUsersResponseItem = zod.object({
+  id: zod.number(),
+  email: zod.string(),
+  firstName: zod.string().nullable(),
+  lastName: zod.string().nullable(),
+  role: zod.enum(["customer", "agent", "admin"]),
+  isActive: zod.boolean(),
+  emailVerified: zod.boolean(),
+  mustChangePassword: zod.boolean(),
+  twoFactorEnabled: zod.boolean(),
+  lastLoginAt: zod.coerce.date().nullable(),
+  createdAt: zod.coerce.date(),
+});
+export const AdminListUsersResponse = zod.array(AdminListUsersResponseItem);
+
+/**
+ * @summary Create a new staff user (agent or admin)
+ */
+export const adminCreateStaffUserBodyPasswordMin = 8;
+
+export const AdminCreateStaffUserBody = zod.object({
+  email: zod.string().email(),
+  firstName: zod.string().nullish(),
+  lastName: zod.string().nullish(),
+  role: zod.enum(["agent", "admin"]),
+  password: zod.string().min(adminCreateStaffUserBodyPasswordMin),
+});
+
+/**
+ * @summary Get user detail (with agent privileges if applicable)
+ */
+export const AdminGetUserParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const adminGetUserResponseTwoAgentPrivilegesOneMaxDiscountPercentageMin = 0;
+export const adminGetUserResponseTwoAgentPrivilegesOneMaxDiscountPercentageMax = 100;
+
+export const AdminGetUserResponse = zod
+  .object({
+    id: zod.number(),
+    email: zod.string(),
+    firstName: zod.string().nullable(),
+    lastName: zod.string().nullable(),
+    role: zod.enum(["customer", "agent", "admin"]),
+    isActive: zod.boolean(),
+    emailVerified: zod.boolean(),
+    mustChangePassword: zod.boolean(),
+    twoFactorEnabled: zod.boolean(),
+    lastLoginAt: zod.coerce.date().nullable(),
+    createdAt: zod.coerce.date(),
+  })
+  .and(
+    zod.object({
+      agentPrivileges: zod
+        .object({
+          canViewAllOrders: zod.boolean(),
+          canViewAllCustomers: zod.boolean(),
+          canViewCost: zod.boolean(),
+          canAdjustInventory: zod.boolean(),
+          canApproveCancellations: zod.boolean(),
+          canSendVendorOrders: zod.boolean(),
+          maxDiscountPercentage: zod
+            .number()
+            .min(
+              adminGetUserResponseTwoAgentPrivilegesOneMaxDiscountPercentageMin,
+            )
+            .max(
+              adminGetUserResponseTwoAgentPrivilegesOneMaxDiscountPercentageMax,
+            )
+            .nullable(),
+        })
+        .nullable(),
+    }),
+  );
+
+/**
+ * @summary Update user fields (name, role, active)
+ */
+export const AdminUpdateUserParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminUpdateUserBody = zod.object({
+  firstName: zod.string().nullish(),
+  lastName: zod.string().nullish(),
+  role: zod.enum(["customer", "agent", "admin"]).optional(),
+  isActive: zod.boolean().optional(),
+});
+
+export const AdminUpdateUserResponse = zod.object({
+  id: zod.number(),
+  email: zod.string(),
+  firstName: zod.string().nullable(),
+  lastName: zod.string().nullable(),
+  role: zod.enum(["customer", "agent", "admin"]),
+  isActive: zod.boolean(),
+  emailVerified: zod.boolean(),
+  mustChangePassword: zod.boolean(),
+  twoFactorEnabled: zod.boolean(),
+  lastLoginAt: zod.coerce.date().nullable(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Generate a temporary password for a user
+ */
+export const AdminResetUserPasswordParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminResetUserPasswordResponse = zod.object({
+  temporaryPassword: zod.string(),
+});
+
+/**
+ * @summary Set or replace an agent's privilege bundle
+ */
+export const AdminUpdateAgentPrivilegesParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const adminUpdateAgentPrivilegesBodyMaxDiscountPercentageMin = 0;
+export const adminUpdateAgentPrivilegesBodyMaxDiscountPercentageMax = 100;
+
+export const AdminUpdateAgentPrivilegesBody = zod.object({
+  canViewAllOrders: zod.boolean(),
+  canViewAllCustomers: zod.boolean(),
+  canViewCost: zod.boolean(),
+  canAdjustInventory: zod.boolean(),
+  canApproveCancellations: zod.boolean(),
+  canSendVendorOrders: zod.boolean(),
+  maxDiscountPercentage: zod
+    .number()
+    .min(adminUpdateAgentPrivilegesBodyMaxDiscountPercentageMin)
+    .max(adminUpdateAgentPrivilegesBodyMaxDiscountPercentageMax)
+    .nullable(),
+});
+
+export const adminUpdateAgentPrivilegesResponseMaxDiscountPercentageMin = 0;
+export const adminUpdateAgentPrivilegesResponseMaxDiscountPercentageMax = 100;
+
+export const AdminUpdateAgentPrivilegesResponse = zod.object({
+  canViewAllOrders: zod.boolean(),
+  canViewAllCustomers: zod.boolean(),
+  canViewCost: zod.boolean(),
+  canAdjustInventory: zod.boolean(),
+  canApproveCancellations: zod.boolean(),
+  canSendVendorOrders: zod.boolean(),
+  maxDiscountPercentage: zod
+    .number()
+    .min(adminUpdateAgentPrivilegesResponseMaxDiscountPercentageMin)
+    .max(adminUpdateAgentPrivilegesResponseMaxDiscountPercentageMax)
+    .nullable(),
+});
+
+/**
+ * @summary Search audit log entries (newest first)
+ */
+export const adminListAuditLogQueryLimitMax = 200;
+
+export const adminListAuditLogQueryOffsetMin = 0;
+
+export const AdminListAuditLogQueryParams = zod.object({
+  userId: zod.coerce.number().optional(),
+  action: zod.coerce.string().optional(),
+  entityType: zod.coerce.string().optional(),
+  entityId: zod.coerce.number().optional(),
+  q: zod.coerce.string().optional(),
+  limit: zod.coerce
+    .number()
+    .min(1)
+    .max(adminListAuditLogQueryLimitMax)
+    .optional(),
+  offset: zod.coerce.number().min(adminListAuditLogQueryOffsetMin).optional(),
+});
+
+export const AdminListAuditLogResponse = zod.object({
+  rows: zod.array(
+    zod.object({
+      id: zod.number(),
+      userId: zod.number().nullable(),
+      userEmail: zod.string().nullable(),
+      action: zod.string(),
+      entityType: zod.string().nullable(),
+      entityId: zod.number().nullable(),
+      changes: zod.unknown().optional(),
+      ipAddress: zod.string().nullable(),
+      userAgent: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  total: zod.number(),
+});
+
+/**
+ * @summary List customer orders (newest first)
+ */
+export const adminListOrdersQueryLimitMax = 200;
+
+export const adminListOrdersQueryOffsetMin = 0;
+
+export const AdminListOrdersQueryParams = zod.object({
+  status: zod.coerce.string().optional(),
+  q: zod.coerce
+    .string()
+    .optional()
+    .describe("Match order number, customer email, or customer name"),
+  customerId: zod.coerce.number().optional(),
+  agentId: zod.coerce.number().optional(),
+  limit: zod.coerce
+    .number()
+    .min(1)
+    .max(adminListOrdersQueryLimitMax)
+    .optional(),
+  offset: zod.coerce.number().min(adminListOrdersQueryOffsetMin).optional(),
+});
+
+export const AdminListOrdersResponse = zod.object({
+  rows: zod.array(
+    zod.object({
+      id: zod.number(),
+      orderNumber: zod.string(),
+      status: zod.string(),
+      orderType: zod.string(),
+      total: zod.number(),
+      balanceDue: zod.number(),
+      customerId: zod.number().nullable(),
+      customerName: zod.string().nullable(),
+      customerEmail: zod.string().nullable(),
+      agentId: zod.number().nullable(),
+      agentName: zod.string().nullable(),
+      itemCount: zod.number(),
+      placedAt: zod.coerce.date(),
+    }),
+  ),
+  total: zod.number(),
+});
+
+/**
+ * @summary Order detail (items, addresses, history, vendor orders, cancellation)
+ */
+export const AdminGetOrderParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminGetOrderResponse = zod.object({
+  id: zod.number(),
+  orderNumber: zod.string(),
+  status: zod.string(),
+  orderType: zod.string(),
+  subtotal: zod.number(),
+  taxAmount: zod.number(),
+  deliveryAmount: zod.number(),
+  total: zod.number(),
+  depositAmount: zod.number(),
+  balanceDue: zod.number(),
+  customerId: zod.number().nullable(),
+  customerName: zod.string().nullable(),
+  customerEmail: zod.string().nullable(),
+  agentId: zod.number().nullable(),
+  agentName: zod.string().nullable(),
+  salespersonName: zod.string().nullable(),
+  shippingMethod: zod.string().nullable(),
+  specialInstructions: zod.string().nullable(),
+  notes: zod.string().nullable(),
+  merchandiseReceived: zod.boolean(),
+  placedAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+  shippingAddress: zod.union([
+    zod.object({
+      id: zod.number(),
+      recipientName: zod.string().nullish(),
+      street1: zod.string(),
+      street2: zod.string().nullish(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullish(),
+    }),
+    zod.null(),
+  ]),
+  billingAddress: zod.union([
+    zod.object({
+      id: zod.number(),
+      recipientName: zod.string().nullish(),
+      street1: zod.string(),
+      street2: zod.string().nullish(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullish(),
+    }),
+    zod.null(),
+  ]),
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      productId: zod.number().nullable(),
+      productSkuSnapshot: zod.string().nullable(),
+      variantSkuSnapshot: zod.string().nullable(),
+      variantNameSnapshot: zod.string().nullable(),
+      fabricNameSnapshot: zod.string().nullable(),
+      department: zod.string().nullable(),
+      description: zod.string(),
+      quantity: zod.number(),
+      unitPrice: zod.number(),
+      amount: zod.number(),
+      discountAmount: zod.number(),
+      discountReason: zod.string().nullable(),
+      notes: zod.string().nullable(),
+      vendorOrderId: zod.number().nullable(),
+    }),
+  ),
+  statusHistory: zod.array(
+    zod.object({
+      id: zod.number(),
+      fromStatus: zod.string().nullable(),
+      toStatus: zod.string(),
+      changedByUserId: zod.number().nullable(),
+      changedByEmail: zod.string().nullable(),
+      note: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  vendorOrders: zod.array(
+    zod.object({
+      id: zod.number(),
+      vendorOrderNumber: zod.string(),
+      status: zod.string(),
+      manufacturerId: zod.number().nullable(),
+      manufacturerName: zod.string().nullable(),
+      sentAt: zod.coerce.date().nullable(),
+      receivedAt: zod.coerce.date().nullable(),
+      itemsReceived: zod.boolean(),
+    }),
+  ),
+  cancellationRequests: zod.array(
+    zod.object({
+      id: zod.number(),
+      orderId: zod.number(),
+      orderNumber: zod.string().nullable(),
+      requestedByUserId: zod.number().nullable(),
+      requestedByEmail: zod.string().nullable(),
+      reason: zod.string().nullable(),
+      status: zod.string(),
+      reviewedByUserId: zod.number().nullable(),
+      reviewedByEmail: zod.string().nullable(),
+      reviewedAt: zod.coerce.date().nullable(),
+      reviewNote: zod.string().nullable(),
+      refundAmount: zod.number().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+/**
+ * @summary Move an order to a new status (writes order_status_history)
+ */
+export const AdminUpdateOrderStatusParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminUpdateOrderStatusBody = zod.object({
+  toStatus: zod.string(),
+  note: zod.string().nullish(),
+});
+
+export const AdminUpdateOrderStatusResponse = zod.object({
+  id: zod.number(),
+  orderNumber: zod.string(),
+  status: zod.string(),
+  orderType: zod.string(),
+  subtotal: zod.number(),
+  taxAmount: zod.number(),
+  deliveryAmount: zod.number(),
+  total: zod.number(),
+  depositAmount: zod.number(),
+  balanceDue: zod.number(),
+  customerId: zod.number().nullable(),
+  customerName: zod.string().nullable(),
+  customerEmail: zod.string().nullable(),
+  agentId: zod.number().nullable(),
+  agentName: zod.string().nullable(),
+  salespersonName: zod.string().nullable(),
+  shippingMethod: zod.string().nullable(),
+  specialInstructions: zod.string().nullable(),
+  notes: zod.string().nullable(),
+  merchandiseReceived: zod.boolean(),
+  placedAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+  shippingAddress: zod.union([
+    zod.object({
+      id: zod.number(),
+      recipientName: zod.string().nullish(),
+      street1: zod.string(),
+      street2: zod.string().nullish(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullish(),
+    }),
+    zod.null(),
+  ]),
+  billingAddress: zod.union([
+    zod.object({
+      id: zod.number(),
+      recipientName: zod.string().nullish(),
+      street1: zod.string(),
+      street2: zod.string().nullish(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullish(),
+    }),
+    zod.null(),
+  ]),
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      productId: zod.number().nullable(),
+      productSkuSnapshot: zod.string().nullable(),
+      variantSkuSnapshot: zod.string().nullable(),
+      variantNameSnapshot: zod.string().nullable(),
+      fabricNameSnapshot: zod.string().nullable(),
+      department: zod.string().nullable(),
+      description: zod.string(),
+      quantity: zod.number(),
+      unitPrice: zod.number(),
+      amount: zod.number(),
+      discountAmount: zod.number(),
+      discountReason: zod.string().nullable(),
+      notes: zod.string().nullable(),
+      vendorOrderId: zod.number().nullable(),
+    }),
+  ),
+  statusHistory: zod.array(
+    zod.object({
+      id: zod.number(),
+      fromStatus: zod.string().nullable(),
+      toStatus: zod.string(),
+      changedByUserId: zod.number().nullable(),
+      changedByEmail: zod.string().nullable(),
+      note: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  vendorOrders: zod.array(
+    zod.object({
+      id: zod.number(),
+      vendorOrderNumber: zod.string(),
+      status: zod.string(),
+      manufacturerId: zod.number().nullable(),
+      manufacturerName: zod.string().nullable(),
+      sentAt: zod.coerce.date().nullable(),
+      receivedAt: zod.coerce.date().nullable(),
+      itemsReceived: zod.boolean(),
+    }),
+  ),
+  cancellationRequests: zod.array(
+    zod.object({
+      id: zod.number(),
+      orderId: zod.number(),
+      orderNumber: zod.string().nullable(),
+      requestedByUserId: zod.number().nullable(),
+      requestedByEmail: zod.string().nullable(),
+      reason: zod.string().nullable(),
+      status: zod.string(),
+      reviewedByUserId: zod.number().nullable(),
+      reviewedByEmail: zod.string().nullable(),
+      reviewedAt: zod.coerce.date().nullable(),
+      reviewNote: zod.string().nullable(),
+      refundAmount: zod.number().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+/**
+ * @summary Update internal notes on an order
+ */
+export const AdminUpdateOrderNotesParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminUpdateOrderNotesBody = zod.object({
+  notes: zod.string().nullable(),
+});
+
+export const AdminUpdateOrderNotesResponse = zod.object({
+  id: zod.number(),
+  orderNumber: zod.string(),
+  status: zod.string(),
+  orderType: zod.string(),
+  subtotal: zod.number(),
+  taxAmount: zod.number(),
+  deliveryAmount: zod.number(),
+  total: zod.number(),
+  depositAmount: zod.number(),
+  balanceDue: zod.number(),
+  customerId: zod.number().nullable(),
+  customerName: zod.string().nullable(),
+  customerEmail: zod.string().nullable(),
+  agentId: zod.number().nullable(),
+  agentName: zod.string().nullable(),
+  salespersonName: zod.string().nullable(),
+  shippingMethod: zod.string().nullable(),
+  specialInstructions: zod.string().nullable(),
+  notes: zod.string().nullable(),
+  merchandiseReceived: zod.boolean(),
+  placedAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+  shippingAddress: zod.union([
+    zod.object({
+      id: zod.number(),
+      recipientName: zod.string().nullish(),
+      street1: zod.string(),
+      street2: zod.string().nullish(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullish(),
+    }),
+    zod.null(),
+  ]),
+  billingAddress: zod.union([
+    zod.object({
+      id: zod.number(),
+      recipientName: zod.string().nullish(),
+      street1: zod.string(),
+      street2: zod.string().nullish(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullish(),
+    }),
+    zod.null(),
+  ]),
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      productId: zod.number().nullable(),
+      productSkuSnapshot: zod.string().nullable(),
+      variantSkuSnapshot: zod.string().nullable(),
+      variantNameSnapshot: zod.string().nullable(),
+      fabricNameSnapshot: zod.string().nullable(),
+      department: zod.string().nullable(),
+      description: zod.string(),
+      quantity: zod.number(),
+      unitPrice: zod.number(),
+      amount: zod.number(),
+      discountAmount: zod.number(),
+      discountReason: zod.string().nullable(),
+      notes: zod.string().nullable(),
+      vendorOrderId: zod.number().nullable(),
+    }),
+  ),
+  statusHistory: zod.array(
+    zod.object({
+      id: zod.number(),
+      fromStatus: zod.string().nullable(),
+      toStatus: zod.string(),
+      changedByUserId: zod.number().nullable(),
+      changedByEmail: zod.string().nullable(),
+      note: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  vendorOrders: zod.array(
+    zod.object({
+      id: zod.number(),
+      vendorOrderNumber: zod.string(),
+      status: zod.string(),
+      manufacturerId: zod.number().nullable(),
+      manufacturerName: zod.string().nullable(),
+      sentAt: zod.coerce.date().nullable(),
+      receivedAt: zod.coerce.date().nullable(),
+      itemsReceived: zod.boolean(),
+    }),
+  ),
+  cancellationRequests: zod.array(
+    zod.object({
+      id: zod.number(),
+      orderId: zod.number(),
+      orderNumber: zod.string().nullable(),
+      requestedByUserId: zod.number().nullable(),
+      requestedByEmail: zod.string().nullable(),
+      reason: zod.string().nullable(),
+      status: zod.string(),
+      reviewedByUserId: zod.number().nullable(),
+      reviewedByEmail: zod.string().nullable(),
+      reviewedAt: zod.coerce.date().nullable(),
+      reviewNote: zod.string().nullable(),
+      refundAmount: zod.number().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+/**
+ * @summary List cancellation requests (optionally filtered by status)
+ */
+export const AdminListCancellationRequestsQueryParams = zod.object({
+  status: zod.coerce.string().optional(),
+});
+
+export const AdminListCancellationRequestsResponseItem = zod.object({
+  id: zod.number(),
+  orderId: zod.number(),
+  orderNumber: zod.string().nullable(),
+  requestedByUserId: zod.number().nullable(),
+  requestedByEmail: zod.string().nullable(),
+  reason: zod.string().nullable(),
+  status: zod.string(),
+  reviewedByUserId: zod.number().nullable(),
+  reviewedByEmail: zod.string().nullable(),
+  reviewedAt: zod.coerce.date().nullable(),
+  reviewNote: zod.string().nullable(),
+  refundAmount: zod.number().nullable(),
+  createdAt: zod.coerce.date(),
+});
+export const AdminListCancellationRequestsResponse = zod.array(
+  AdminListCancellationRequestsResponseItem,
+);
+
+/**
+ * @summary Approve or deny a cancellation request
+ */
+export const AdminReviewCancellationRequestParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminReviewCancellationRequestBody = zod.object({
+  decision: zod.enum(["approved", "denied"]),
+  reviewNote: zod.string().nullish(),
+  refundAmount: zod.number().nullish(),
+});
+
+export const AdminReviewCancellationRequestResponse = zod.object({
+  id: zod.number(),
+  orderId: zod.number(),
+  orderNumber: zod.string().nullable(),
+  requestedByUserId: zod.number().nullable(),
+  requestedByEmail: zod.string().nullable(),
+  reason: zod.string().nullable(),
+  status: zod.string(),
+  reviewedByUserId: zod.number().nullable(),
+  reviewedByEmail: zod.string().nullable(),
+  reviewedAt: zod.coerce.date().nullable(),
+  reviewNote: zod.string().nullable(),
+  refundAmount: zod.number().nullable(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary List the current staff user's notifications (newest first)
+ */
+export const staffListNotificationsQueryLimitMax = 100;
+
+export const StaffListNotificationsQueryParams = zod.object({
+  unreadOnly: zod.coerce.boolean().optional(),
+  limit: zod.coerce
+    .number()
+    .min(1)
+    .max(staffListNotificationsQueryLimitMax)
+    .optional(),
+});
+
+export const StaffListNotificationsResponseItem = zod.object({
+  id: zod.number(),
+  type: zod.string(),
+  message: zod.string(),
+  linkUrl: zod.string().nullable(),
+  isRead: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  readAt: zod.coerce.date().nullable(),
+});
+export const StaffListNotificationsResponse = zod.array(
+  StaffListNotificationsResponseItem,
+);
+
+/**
+ * @summary Get count of unread notifications for the current staff user
+ */
+export const StaffGetUnreadNotificationCountResponse = zod.object({
+  unread: zod.number(),
+});
+
+/**
+ * @summary Mark a single notification as read
+ */
+export const StaffMarkNotificationReadParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const StaffMarkNotificationReadResponse = zod.object({
+  id: zod.number(),
+  type: zod.string(),
+  message: zod.string(),
+  linkUrl: zod.string().nullable(),
+  isRead: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  readAt: zod.coerce.date().nullable(),
+});
+
+/**
+ * @summary Mark every unread notification for the current staff user as read
+ */
+export const StaffMarkAllNotificationsReadResponse = zod.object({
+  updated: zod.number(),
+});
+
+/**
+ * @summary List all discount events
+ */
+export const adminListDiscountEventsResponseValueMin = 0;
+
+export const AdminListDiscountEventsResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  type: zod.enum(["percentage", "fixed"]),
+  value: zod.number().min(adminListDiscountEventsResponseValueMin),
+  appliesTo: zod.enum(["global", "category", "manufacturer", "product"]),
+  targetIds: zod.array(zod.number()),
+  startDate: zod.coerce.date().nullable(),
+  endDate: zod.coerce.date().nullable(),
+  isStackable: zod.boolean(),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const AdminListDiscountEventsResponse = zod.array(
+  AdminListDiscountEventsResponseItem,
+);
+
+/**
+ * @summary Create a new discount event
+ */
+
+export const adminCreateDiscountEventBodyValueMin = 0;
+
+export const AdminCreateDiscountEventBody = zod.object({
+  name: zod.string().min(1),
+  type: zod.enum(["percentage", "fixed"]),
+  value: zod.number().min(adminCreateDiscountEventBodyValueMin),
+  appliesTo: zod
+    .enum(["global", "category", "manufacturer", "product"])
+    .optional(),
+  targetIds: zod.array(zod.number()).optional(),
+  startDate: zod.coerce.date().nullish(),
+  endDate: zod.coerce.date().nullish(),
+  isStackable: zod.boolean().optional(),
+  isActive: zod.boolean().optional(),
+});
+
+/**
+ * @summary Update a discount event
+ */
+export const AdminUpdateDiscountEventParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const adminUpdateDiscountEventBodyValueMin = 0;
+
+export const AdminUpdateDiscountEventBody = zod.object({
+  name: zod.string().min(1).optional(),
+  type: zod.enum(["percentage", "fixed"]).optional(),
+  value: zod.number().min(adminUpdateDiscountEventBodyValueMin).optional(),
+  appliesTo: zod
+    .enum(["global", "category", "manufacturer", "product"])
+    .optional(),
+  targetIds: zod.array(zod.number()).optional(),
+  startDate: zod.coerce.date().nullish(),
+  endDate: zod.coerce.date().nullish(),
+  isStackable: zod.boolean().optional(),
+  isActive: zod.boolean().optional(),
+});
+
+export const adminUpdateDiscountEventResponseValueMin = 0;
+
+export const AdminUpdateDiscountEventResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  type: zod.enum(["percentage", "fixed"]),
+  value: zod.number().min(adminUpdateDiscountEventResponseValueMin),
+  appliesTo: zod.enum(["global", "category", "manufacturer", "product"]),
+  targetIds: zod.array(zod.number()),
+  startDate: zod.coerce.date().nullable(),
+  endDate: zod.coerce.date().nullable(),
+  isStackable: zod.boolean(),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete a discount event
+ */
+export const AdminDeleteDiscountEventParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
+ * @summary List all coupon codes
+ */
+export const adminListCouponCodesResponseValueMin = 0;
+
+export const AdminListCouponCodesResponseItem = zod.object({
+  id: zod.number(),
+  code: zod.string(),
+  discountType: zod.enum(["percentage", "fixed"]),
+  value: zod.number().min(adminListCouponCodesResponseValueMin),
+  minOrderAmount: zod.number().nullable(),
+  maxUsesTotal: zod.number().nullable(),
+  currentUses: zod.number(),
+  singleUsePerCustomer: zod.boolean(),
+  appliesTo: zod.enum(["global", "category", "manufacturer", "product"]),
+  targetIds: zod.array(zod.number()),
+  startDate: zod.coerce.date().nullable(),
+  expirationDate: zod.coerce.date().nullable(),
+  isStackable: zod.boolean(),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const AdminListCouponCodesResponse = zod.array(
+  AdminListCouponCodesResponseItem,
+);
+
+/**
+ * @summary Create a new coupon code
+ */
+
+export const adminCreateCouponCodeBodyValueMin = 0;
+
+export const AdminCreateCouponCodeBody = zod.object({
+  code: zod.string().min(1),
+  discountType: zod.enum(["percentage", "fixed"]),
+  value: zod.number().min(adminCreateCouponCodeBodyValueMin),
+  minOrderAmount: zod.number().nullish(),
+  maxUsesTotal: zod.number().nullish(),
+  singleUsePerCustomer: zod.boolean().optional(),
+  appliesTo: zod
+    .enum(["global", "category", "manufacturer", "product"])
+    .optional(),
+  targetIds: zod.array(zod.number()).optional(),
+  startDate: zod.coerce.date().nullish(),
+  expirationDate: zod.coerce.date().nullish(),
+  isStackable: zod.boolean().optional(),
+  isActive: zod.boolean().optional(),
+});
+
+/**
+ * @summary Update a coupon code
+ */
+export const AdminUpdateCouponCodeParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const adminUpdateCouponCodeBodyValueMin = 0;
+
+export const AdminUpdateCouponCodeBody = zod.object({
+  code: zod.string().min(1).optional(),
+  discountType: zod.enum(["percentage", "fixed"]).optional(),
+  value: zod.number().min(adminUpdateCouponCodeBodyValueMin).optional(),
+  minOrderAmount: zod.number().nullish(),
+  maxUsesTotal: zod.number().nullish(),
+  singleUsePerCustomer: zod.boolean().optional(),
+  appliesTo: zod
+    .enum(["global", "category", "manufacturer", "product"])
+    .optional(),
+  targetIds: zod.array(zod.number()).optional(),
+  startDate: zod.coerce.date().nullish(),
+  expirationDate: zod.coerce.date().nullish(),
+  isStackable: zod.boolean().optional(),
+  isActive: zod.boolean().optional(),
+});
+
+export const adminUpdateCouponCodeResponseValueMin = 0;
+
+export const AdminUpdateCouponCodeResponse = zod.object({
+  id: zod.number(),
+  code: zod.string(),
+  discountType: zod.enum(["percentage", "fixed"]),
+  value: zod.number().min(adminUpdateCouponCodeResponseValueMin),
+  minOrderAmount: zod.number().nullable(),
+  maxUsesTotal: zod.number().nullable(),
+  currentUses: zod.number(),
+  singleUsePerCustomer: zod.boolean(),
+  appliesTo: zod.enum(["global", "category", "manufacturer", "product"]),
+  targetIds: zod.array(zod.number()),
+  startDate: zod.coerce.date().nullable(),
+  expirationDate: zod.coerce.date().nullable(),
+  isStackable: zod.boolean(),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete a coupon code
+ */
+export const AdminDeleteCouponCodeParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
+ * @summary List redemptions of a coupon code
+ */
+export const AdminListCouponCodeUsesParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminListCouponCodeUsesResponseItem = zod.object({
+  id: zod.number(),
+  couponCodeId: zod.number(),
+  userId: zod.number().nullable(),
+  userEmail: zod.string().nullable(),
+  orderId: zod.number().nullable(),
+  orderNumber: zod.string().nullable(),
+  discountApplied: zod.number(),
+  createdAt: zod.coerce.date(),
+});
+export const AdminListCouponCodeUsesResponse = zod.array(
+  AdminListCouponCodeUsesResponseItem,
+);
+
+/**
+ * @summary Read all system settings as a typed object
+ */
+export const adminGetSettingsResponseDefaultTaxRateMin = 0;
+export const adminGetSettingsResponseDefaultTaxRateMax = 1;
+
+export const adminGetSettingsResponseFlatShippingRateMin = 0;
+
+export const adminGetSettingsResponseShippingPercentageMin = 0;
+export const adminGetSettingsResponseShippingPercentageMax = 1;
+
+export const adminGetSettingsResponseFreeShippingThresholdMin = 0;
+
+export const adminGetSettingsResponseLowStockThresholdMin = 0;
+
+export const adminGetSettingsResponseDefaultAgentDiscountCapMin = 0;
+export const adminGetSettingsResponseDefaultAgentDiscountCapMax = 1;
+
+export const adminGetSettingsResponseCurrentSequenceYearMin = 2000;
+export const adminGetSettingsResponseCurrentSequenceYearMax = 2999;
+
+export const adminGetSettingsResponseCurrentYearOrderSequenceMin = 0;
+
+export const AdminGetSettingsResponse = zod.object({
+  defaultTaxRate: zod
+    .number()
+    .min(adminGetSettingsResponseDefaultTaxRateMin)
+    .max(adminGetSettingsResponseDefaultTaxRateMax),
+  shippingMode: zod.enum(["flat", "percentage", "free"]),
+  flatShippingRate: zod
+    .number()
+    .min(adminGetSettingsResponseFlatShippingRateMin),
+  shippingPercentage: zod
+    .number()
+    .min(adminGetSettingsResponseShippingPercentageMin)
+    .max(adminGetSettingsResponseShippingPercentageMax),
+  freeShippingThreshold: zod
+    .number()
+    .min(adminGetSettingsResponseFreeShippingThresholdMin),
+  overdueVendorOrderThresholdDays: zod.number().min(1),
+  lowStockThreshold: zod
+    .number()
+    .min(adminGetSettingsResponseLowStockThresholdMin),
+  defaultAgentDiscountCap: zod
+    .number()
+    .min(adminGetSettingsResponseDefaultAgentDiscountCapMin)
+    .max(adminGetSettingsResponseDefaultAgentDiscountCapMax),
+  currentSequenceYear: zod
+    .number()
+    .min(adminGetSettingsResponseCurrentSequenceYearMin)
+    .max(adminGetSettingsResponseCurrentSequenceYearMax),
+  currentYearOrderSequence: zod
+    .number()
+    .min(adminGetSettingsResponseCurrentYearOrderSequenceMin),
+});
+
+/**
+ * @summary Bulk update one or more system settings
+ */
+export const adminUpdateSettingsBodyDefaultTaxRateMin = 0;
+export const adminUpdateSettingsBodyDefaultTaxRateMax = 1;
+
+export const adminUpdateSettingsBodyFlatShippingRateMin = 0;
+
+export const adminUpdateSettingsBodyShippingPercentageMin = 0;
+export const adminUpdateSettingsBodyShippingPercentageMax = 1;
+
+export const adminUpdateSettingsBodyFreeShippingThresholdMin = 0;
+
+export const adminUpdateSettingsBodyLowStockThresholdMin = 0;
+
+export const adminUpdateSettingsBodyDefaultAgentDiscountCapMin = 0;
+export const adminUpdateSettingsBodyDefaultAgentDiscountCapMax = 1;
+
+export const adminUpdateSettingsBodyCurrentSequenceYearMin = 2000;
+export const adminUpdateSettingsBodyCurrentSequenceYearMax = 2999;
+
+export const adminUpdateSettingsBodyCurrentYearOrderSequenceMin = 0;
+
+export const AdminUpdateSettingsBody = zod.object({
+  defaultTaxRate: zod
+    .number()
+    .min(adminUpdateSettingsBodyDefaultTaxRateMin)
+    .max(adminUpdateSettingsBodyDefaultTaxRateMax)
+    .optional(),
+  shippingMode: zod.enum(["flat", "percentage", "free"]).optional(),
+  flatShippingRate: zod
+    .number()
+    .min(adminUpdateSettingsBodyFlatShippingRateMin)
+    .optional(),
+  shippingPercentage: zod
+    .number()
+    .min(adminUpdateSettingsBodyShippingPercentageMin)
+    .max(adminUpdateSettingsBodyShippingPercentageMax)
+    .optional(),
+  freeShippingThreshold: zod
+    .number()
+    .min(adminUpdateSettingsBodyFreeShippingThresholdMin)
+    .optional(),
+  overdueVendorOrderThresholdDays: zod.number().min(1).optional(),
+  lowStockThreshold: zod
+    .number()
+    .min(adminUpdateSettingsBodyLowStockThresholdMin)
+    .optional(),
+  defaultAgentDiscountCap: zod
+    .number()
+    .min(adminUpdateSettingsBodyDefaultAgentDiscountCapMin)
+    .max(adminUpdateSettingsBodyDefaultAgentDiscountCapMax)
+    .optional(),
+  currentSequenceYear: zod
+    .number()
+    .min(adminUpdateSettingsBodyCurrentSequenceYearMin)
+    .max(adminUpdateSettingsBodyCurrentSequenceYearMax)
+    .optional(),
+  currentYearOrderSequence: zod
+    .number()
+    .min(adminUpdateSettingsBodyCurrentYearOrderSequenceMin)
+    .optional(),
+});
+
+export const adminUpdateSettingsResponseDefaultTaxRateMin = 0;
+export const adminUpdateSettingsResponseDefaultTaxRateMax = 1;
+
+export const adminUpdateSettingsResponseFlatShippingRateMin = 0;
+
+export const adminUpdateSettingsResponseShippingPercentageMin = 0;
+export const adminUpdateSettingsResponseShippingPercentageMax = 1;
+
+export const adminUpdateSettingsResponseFreeShippingThresholdMin = 0;
+
+export const adminUpdateSettingsResponseLowStockThresholdMin = 0;
+
+export const adminUpdateSettingsResponseDefaultAgentDiscountCapMin = 0;
+export const adminUpdateSettingsResponseDefaultAgentDiscountCapMax = 1;
+
+export const adminUpdateSettingsResponseCurrentSequenceYearMin = 2000;
+export const adminUpdateSettingsResponseCurrentSequenceYearMax = 2999;
+
+export const adminUpdateSettingsResponseCurrentYearOrderSequenceMin = 0;
+
+export const AdminUpdateSettingsResponse = zod.object({
+  defaultTaxRate: zod
+    .number()
+    .min(adminUpdateSettingsResponseDefaultTaxRateMin)
+    .max(adminUpdateSettingsResponseDefaultTaxRateMax),
+  shippingMode: zod.enum(["flat", "percentage", "free"]),
+  flatShippingRate: zod
+    .number()
+    .min(adminUpdateSettingsResponseFlatShippingRateMin),
+  shippingPercentage: zod
+    .number()
+    .min(adminUpdateSettingsResponseShippingPercentageMin)
+    .max(adminUpdateSettingsResponseShippingPercentageMax),
+  freeShippingThreshold: zod
+    .number()
+    .min(adminUpdateSettingsResponseFreeShippingThresholdMin),
+  overdueVendorOrderThresholdDays: zod.number().min(1),
+  lowStockThreshold: zod
+    .number()
+    .min(adminUpdateSettingsResponseLowStockThresholdMin),
+  defaultAgentDiscountCap: zod
+    .number()
+    .min(adminUpdateSettingsResponseDefaultAgentDiscountCapMin)
+    .max(adminUpdateSettingsResponseDefaultAgentDiscountCapMax),
+  currentSequenceYear: zod
+    .number()
+    .min(adminUpdateSettingsResponseCurrentSequenceYearMin)
+    .max(adminUpdateSettingsResponseCurrentSequenceYearMax),
+  currentYearOrderSequence: zod
+    .number()
+    .min(adminUpdateSettingsResponseCurrentYearOrderSequenceMin),
+});
+
+/**
+ * @summary List all versions of a legal document type
+ */
+export const AdminListLegalVersionsParams = zod.object({
+  type: zod.enum(["privacy_policy", "terms_and_conditions"]),
+});
+
+export const AdminListLegalVersionsResponseItem = zod.object({
+  id: zod.number(),
+  type: zod.enum(["privacy_policy", "terms_and_conditions"]),
+  version: zod.string(),
+  content: zod.string(),
+  effectiveDate: zod.coerce.date(),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const AdminListLegalVersionsResponse = zod.array(
+  AdminListLegalVersionsResponseItem,
+);
+
+/**
+ * @summary Publish a new version of a legal document
+ */
+export const AdminCreateLegalVersionParams = zod.object({
+  type: zod.enum(["privacy_policy", "terms_and_conditions"]),
+});
+
+export const AdminCreateLegalVersionBody = zod.object({
+  content: zod.string().min(1),
+  effectiveDate: zod.coerce
+    .date()
+    .optional()
+    .describe("ISO date (YYYY-MM-DD); defaults to today if omitted"),
+  version: zod
+    .string()
+    .min(1)
+    .optional()
+    .describe("Optional; auto-incremented (v1, v2, ...) if omitted"),
+});
+
+/**
+ * @summary Restore a prior version as the active one
+ */
+export const AdminRestoreLegalVersionParams = zod.object({
+  type: zod.enum(["privacy_policy", "terms_and_conditions"]),
+  id: zod.coerce.number(),
+});
+
+export const AdminRestoreLegalVersionResponse = zod.object({
+  id: zod.number(),
+  type: zod.enum(["privacy_policy", "terms_and_conditions"]),
+  version: zod.string(),
+  content: zod.string(),
+  effectiveDate: zod.coerce.date(),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
  * @summary Request a presigned URL for uploading a file (staff only)
  */
 

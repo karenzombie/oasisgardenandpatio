@@ -2,6 +2,8 @@ import app from "./app";
 import { logger } from "./lib/logger";
 import { seedSuperAdmin } from "./lib/seedAdmin";
 import { seedDefaultInventoryLocation } from "./lib/seedInventoryLocations";
+import { seedDefaultCarriers } from "./lib/seedCarriers";
+import { seedDefaultSettings } from "./lib/seedSettings";
 
 const rawPort = process.env["PORT"];
 
@@ -30,6 +32,24 @@ async function main() {
     logger.error(
       { err },
       "Default inventory location seed failed (continuing boot)",
+    );
+  }
+
+  try {
+    await seedDefaultCarriers();
+  } catch (err) {
+    logger.error(
+      { err },
+      "Default carriers seed failed (continuing boot)",
+    );
+  }
+
+  try {
+    await seedDefaultSettings();
+  } catch (err) {
+    logger.error(
+      { err },
+      "Default settings seed failed (continuing boot)",
     );
   }
 

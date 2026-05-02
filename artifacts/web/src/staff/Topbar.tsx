@@ -7,7 +7,8 @@ import {
   type StaffUser,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
-import { Bell, Menu, LogOut } from "lucide-react";
+import { Menu, LogOut } from "lucide-react";
+import { NotificationBell } from "./NotificationBell";
 
 interface TopbarProps {
   user: StaffUser;
@@ -23,6 +24,11 @@ export function Topbar({ user, onMenu }: TopbarProps) {
     try {
       await logoutMutation.mutateAsync();
     } finally {
+      // Clear ALL cached queries — prevents the next user (e.g. on a shared
+      // workstation) from briefly seeing the prior user's notifications,
+      // unread count, or any other per-user data from React Query cache.
+      queryClient.clear();
+      // Defensive: explicitly drop these too in case clear() is partial.
       queryClient.removeQueries({ queryKey: getStaffGetStateQueryKey() });
       queryClient.removeQueries({ queryKey: getGetCurrentUserQueryKey() });
       navigate("/staff");
@@ -48,13 +54,7 @@ export function Topbar({ user, onMenu }: TopbarProps) {
 
       <div className="flex-1" />
 
-      <button
-        type="button"
-        className="p-2 hover:bg-white/10 rounded relative"
-        aria-label="Notifications"
-      >
-        <Bell className="size-5" />
-      </button>
+      <NotificationBell />
 
       <div className="flex items-center gap-3 pl-3 ml-2 border-l border-white/10">
         <div className="size-8 rounded-full bg-white/15 flex items-center justify-center text-xs font-semibold">
