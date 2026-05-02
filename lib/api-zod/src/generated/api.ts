@@ -476,6 +476,108 @@ export const AdminSetManufacturerActiveResponse = zod.object({
 });
 
 /**
+ * @summary List all categories (active and inactive)
+ */
+export const AdminListCategoriesResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  slug: zod.string(),
+  description: zod.string().nullable(),
+  parentId: zod.number().nullable(),
+  imageUrl: zod.string().nullable(),
+  displayOrder: zod.number(),
+  isActive: zod.boolean(),
+  productCount: zod.number(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const AdminListCategoriesResponse = zod.array(
+  AdminListCategoriesResponseItem,
+);
+
+/**
+ * @summary Create a new category
+ */
+
+export const adminCreateCategoryBodySlugRegExp = new RegExp(
+  "^[a-z0-9]+(?:-[a-z0-9]+)\*$",
+);
+export const adminCreateCategoryBodyDisplayOrderDefault = 0;
+export const adminCreateCategoryBodyIsActiveDefault = true;
+
+export const AdminCreateCategoryBody = zod.object({
+  name: zod.string().min(1),
+  slug: zod.string().min(1).regex(adminCreateCategoryBodySlugRegExp),
+  description: zod.string().nullish(),
+  parentId: zod.number().nullish(),
+  imageUrl: zod.string().nullish(),
+  displayOrder: zod
+    .number()
+    .default(adminCreateCategoryBodyDisplayOrderDefault),
+  isActive: zod.boolean().default(adminCreateCategoryBodyIsActiveDefault),
+});
+
+/**
+ * @summary Update a category
+ */
+export const AdminUpdateCategoryParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const adminUpdateCategoryBodySlugRegExp = new RegExp(
+  "^[a-z0-9]+(?:-[a-z0-9]+)\*$",
+);
+
+export const AdminUpdateCategoryBody = zod.object({
+  name: zod.string().min(1),
+  slug: zod.string().min(1).regex(adminUpdateCategoryBodySlugRegExp),
+  description: zod.string().nullish(),
+  parentId: zod.number().nullish(),
+  imageUrl: zod.string().nullish(),
+  displayOrder: zod.number().optional(),
+  isActive: zod.boolean().optional(),
+});
+
+export const AdminUpdateCategoryResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  slug: zod.string(),
+  description: zod.string().nullable(),
+  parentId: zod.number().nullable(),
+  imageUrl: zod.string().nullable(),
+  displayOrder: zod.number(),
+  isActive: zod.boolean(),
+  productCount: zod.number(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Activate or deactivate a category
+ */
+export const AdminSetCategoryActiveParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminSetCategoryActiveBody = zod.object({
+  isActive: zod.boolean(),
+});
+
+export const AdminSetCategoryActiveResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  slug: zod.string(),
+  description: zod.string().nullable(),
+  parentId: zod.number().nullable(),
+  imageUrl: zod.string().nullable(),
+  displayOrder: zod.number(),
+  isActive: zod.boolean(),
+  productCount: zod.number(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
  * @summary Request a presigned URL for uploading a file (staff only)
  */
 

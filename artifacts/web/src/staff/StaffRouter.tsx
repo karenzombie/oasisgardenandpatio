@@ -7,6 +7,8 @@ import Verify2FA from "./pages/Verify2FA";
 import ChangePassword from "./pages/ChangePassword";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AgentDashboard from "./pages/agent/Dashboard";
+import Manufacturers from "./pages/admin/Manufacturers";
+import Categories from "./pages/admin/Categories";
 import { PagePlaceholder } from "./pages/PagePlaceholder";
 
 const ADMIN_PLACEHOLDERS: Array<{ path: string; title: string; comingIn: string }> = [
@@ -16,10 +18,8 @@ const ADMIN_PLACEHOLDERS: Array<{ path: string; title: string; comingIn: string 
   { path: "/customers", title: "Customers", comingIn: "Phase 6.17" },
   { path: "/discounts", title: "Discounts", comingIn: "Phase 6.16" },
   { path: "/products", title: "Products", comingIn: "Phase 6.8" },
-  { path: "/categories", title: "Categories", comingIn: "Phase 6.6" },
   { path: "/sets", title: "Product Sets", comingIn: "Phase 6.10" },
   { path: "/inventory", title: "Inventory", comingIn: "Phase 6.11" },
-  { path: "/manufacturers", title: "Manufacturers", comingIn: "Phase 6.5" },
   { path: "/carriers", title: "Carriers", comingIn: "Phase 6.12" },
   { path: "/banners", title: "Site Banners", comingIn: "Phase 6.13" },
   { path: "/legal", title: "Legal Pages", comingIn: "Phase 6.14" },
@@ -54,6 +54,8 @@ export default function StaffRouter() {
             <StaffShell user={user}>
               <Switch>
                 <Route path="/">{() => <AdminDashboard user={user} />}</Route>
+                <Route path="/manufacturers" component={Manufacturers} />
+                <Route path="/categories" component={Categories} />
                 {ADMIN_PLACEHOLDERS.map(({ path, title, comingIn }) => (
                   <Route key={path} path={path}>
                     {() => <PagePlaceholder title={title} comingIn={comingIn} />}

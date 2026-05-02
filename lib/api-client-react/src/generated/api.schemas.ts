@@ -105,6 +105,59 @@ export interface SetActiveRequest {
   isActive: boolean;
 }
 
+export interface AdminCategory {
+  id: number;
+  name: string;
+  slug: string;
+  /** @nullable */
+  description: string | null;
+  /** @nullable */
+  parentId: number | null;
+  /** @nullable */
+  imageUrl: string | null;
+  displayOrder: number;
+  isActive: boolean;
+  productCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateCategoryRequest {
+  /** @minLength 1 */
+  name: string;
+  /**
+   * @minLength 1
+   * @pattern ^[a-z0-9]+(?:-[a-z0-9]+)*$
+   */
+  slug: string;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  parentId?: number | null;
+  /** @nullable */
+  imageUrl?: string | null;
+  displayOrder?: number;
+  isActive?: boolean;
+}
+
+export interface UpdateCategoryRequest {
+  /** @minLength 1 */
+  name: string;
+  /**
+   * @minLength 1
+   * @pattern ^[a-z0-9]+(?:-[a-z0-9]+)*$
+   */
+  slug: string;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  parentId?: number | null;
+  /** @nullable */
+  imageUrl?: string | null;
+  displayOrder?: number;
+  isActive?: boolean;
+}
+
 export interface Category {
   id: number;
   name: string;

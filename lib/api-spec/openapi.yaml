@@ -28,6 +28,8 @@ tags:
     description: File upload and object storage
   - name: admin-manufacturers
     description: Admin CRUD for manufacturers
+  - name: admin-categories
+    description: Admin CRUD for product categories
 paths:
   /healthz:
     get:
@@ -574,6 +576,133 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /admin/categories:
+    get:
+      operationId: adminListCategories
+      tags: [admin-categories]
+      summary: List all categories (active and inactive)
+      responses:
+        "200":
+          description: All categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminCategory"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Not admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      operationId: adminCreateCategory
+      tags: [admin-categories]
+      summary: Create a new category
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCategoryRequest"
+      responses:
+        "201":
+          description: Category created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminCategory"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Duplicate slug
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /admin/categories/{id}:
+    put:
+      operationId: adminUpdateCategory
+      tags: [admin-categories]
+      summary: Update a category
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCategoryRequest"
+      responses:
+        "200":
+          description: Category updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminCategory"
+        "400":
+          description: Validation error (e.g. cycle in parent chain)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Duplicate slug
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /admin/categories/{id}/active:
+    patch:
+      operationId: adminSetCategoryActive
+      tags: [admin-categories]
+      summary: Activate or deactivate a category
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetActiveRequest"
+      responses:
+        "200":
+          description: Updated category
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminCategory"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /storage/uploads/request-url:
     post:
       operationId: requestUploadUrl
@@ -762,6 +891,93 @@ components:
           type: boolean
       required:
         - isActive
+    AdminCategory:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: ["string", "null"]
+        parentId:
+          type: ["integer", "null"]
+        imageUrl:
+          type: ["string", "null"]
+        displayOrder:
+          type: integer
+        isActive:
+          type: boolean
+        productCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - slug
+        - description
+        - parentId
+        - imageUrl
+        - displayOrder
+        - isActive
+        - productCount
+        - createdAt
+        - updatedAt
+    CreateCategoryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        slug:
+          type: string
+          minLength: 1
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        description:
+          type: ["string", "null"]
+        parentId:
+          type: ["integer", "null"]
+        imageUrl:
+          type: ["string", "null"]
+        displayOrder:
+          type: integer
+          default: 0
+        isActive:
+          type: boolean
+          default: true
+      required:
+        - name
+        - slug
+    UpdateCategoryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        slug:
+          type: string
+          minLength: 1
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        description:
+          type: ["string", "null"]
+        parentId:
+          type: ["integer", "null"]
+        imageUrl:
+          type: ["string", "null"]
+        displayOrder:
+          type: integer
+        isActive:
+          type: boolean
+      required:
+        - name
+        - slug
     Category:
       type: object
       properties:

@@ -17,10 +17,12 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  AdminCategory,
   AdminManufacturer,
   Banner,
   Category,
   ChangePasswordRequest,
+  CreateCategoryRequest,
   CreateManufacturerRequest,
   CurrentUser,
   Error,
@@ -41,6 +43,7 @@ import type {
   StaffStageResponse,
   TotpCodeRequest,
   TotpSetupInitResponse,
+  UpdateCategoryRequest,
   UpdateManufacturerRequest,
   VerifyEmailRequest,
 } from "./api.schemas";
@@ -2190,6 +2193,341 @@ export const useAdminSetManufacturerActive = <
   TContext
 > => {
   return useMutation(getAdminSetManufacturerActiveMutationOptions(options));
+};
+
+/**
+ * @summary List all categories (active and inactive)
+ */
+export const getAdminListCategoriesUrl = () => {
+  return `/api/admin/categories`;
+};
+
+export const adminListCategories = async (
+  options?: RequestInit,
+): Promise<AdminCategory[]> => {
+  return customFetch<AdminCategory[]>(getAdminListCategoriesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAdminListCategoriesQueryKey = () => {
+  return [`/api/admin/categories`] as const;
+};
+
+export const getAdminListCategoriesQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminListCategories>>,
+  TError = ErrorType<Error>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminListCategories>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getAdminListCategoriesQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminListCategories>>
+  > = ({ signal }) => adminListCategories({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminListCategories>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminListCategoriesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminListCategories>>
+>;
+export type AdminListCategoriesQueryError = ErrorType<Error>;
+
+/**
+ * @summary List all categories (active and inactive)
+ */
+
+export function useAdminListCategories<
+  TData = Awaited<ReturnType<typeof adminListCategories>>,
+  TError = ErrorType<Error>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminListCategories>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminListCategoriesQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a new category
+ */
+export const getAdminCreateCategoryUrl = () => {
+  return `/api/admin/categories`;
+};
+
+export const adminCreateCategory = async (
+  createCategoryRequest: CreateCategoryRequest,
+  options?: RequestInit,
+): Promise<AdminCategory> => {
+  return customFetch<AdminCategory>(getAdminCreateCategoryUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createCategoryRequest),
+  });
+};
+
+export const getAdminCreateCategoryMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCreateCategory>>,
+    TError,
+    { data: BodyType<CreateCategoryRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminCreateCategory>>,
+  TError,
+  { data: BodyType<CreateCategoryRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminCreateCategory"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminCreateCategory>>,
+    { data: BodyType<CreateCategoryRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return adminCreateCategory(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminCreateCategoryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminCreateCategory>>
+>;
+export type AdminCreateCategoryMutationBody = BodyType<CreateCategoryRequest>;
+export type AdminCreateCategoryMutationError = ErrorType<Error>;
+
+/**
+ * @summary Create a new category
+ */
+export const useAdminCreateCategory = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCreateCategory>>,
+    TError,
+    { data: BodyType<CreateCategoryRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminCreateCategory>>,
+  TError,
+  { data: BodyType<CreateCategoryRequest> },
+  TContext
+> => {
+  return useMutation(getAdminCreateCategoryMutationOptions(options));
+};
+
+/**
+ * @summary Update a category
+ */
+export const getAdminUpdateCategoryUrl = (id: number) => {
+  return `/api/admin/categories/${id}`;
+};
+
+export const adminUpdateCategory = async (
+  id: number,
+  updateCategoryRequest: UpdateCategoryRequest,
+  options?: RequestInit,
+): Promise<AdminCategory> => {
+  return customFetch<AdminCategory>(getAdminUpdateCategoryUrl(id), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateCategoryRequest),
+  });
+};
+
+export const getAdminUpdateCategoryMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateCategory>>,
+    TError,
+    { id: number; data: BodyType<UpdateCategoryRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUpdateCategory>>,
+  TError,
+  { id: number; data: BodyType<UpdateCategoryRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminUpdateCategory"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUpdateCategory>>,
+    { id: number; data: BodyType<UpdateCategoryRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminUpdateCategory(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminUpdateCategoryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUpdateCategory>>
+>;
+export type AdminUpdateCategoryMutationBody = BodyType<UpdateCategoryRequest>;
+export type AdminUpdateCategoryMutationError = ErrorType<Error>;
+
+/**
+ * @summary Update a category
+ */
+export const useAdminUpdateCategory = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateCategory>>,
+    TError,
+    { id: number; data: BodyType<UpdateCategoryRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUpdateCategory>>,
+  TError,
+  { id: number; data: BodyType<UpdateCategoryRequest> },
+  TContext
+> => {
+  return useMutation(getAdminUpdateCategoryMutationOptions(options));
+};
+
+/**
+ * @summary Activate or deactivate a category
+ */
+export const getAdminSetCategoryActiveUrl = (id: number) => {
+  return `/api/admin/categories/${id}/active`;
+};
+
+export const adminSetCategoryActive = async (
+  id: number,
+  setActiveRequest: SetActiveRequest,
+  options?: RequestInit,
+): Promise<AdminCategory> => {
+  return customFetch<AdminCategory>(getAdminSetCategoryActiveUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(setActiveRequest),
+  });
+};
+
+export const getAdminSetCategoryActiveMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminSetCategoryActive>>,
+    TError,
+    { id: number; data: BodyType<SetActiveRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminSetCategoryActive>>,
+  TError,
+  { id: number; data: BodyType<SetActiveRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminSetCategoryActive"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminSetCategoryActive>>,
+    { id: number; data: BodyType<SetActiveRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminSetCategoryActive(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminSetCategoryActiveMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminSetCategoryActive>>
+>;
+export type AdminSetCategoryActiveMutationBody = BodyType<SetActiveRequest>;
+export type AdminSetCategoryActiveMutationError = ErrorType<Error>;
+
+/**
+ * @summary Activate or deactivate a category
+ */
+export const useAdminSetCategoryActive = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminSetCategoryActive>>,
+    TError,
+    { id: number; data: BodyType<SetActiveRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminSetCategoryActive>>,
+  TError,
+  { id: number; data: BodyType<SetActiveRequest> },
+  TContext
+> => {
+  return useMutation(getAdminSetCategoryActiveMutationOptions(options));
 };
 
 /**
