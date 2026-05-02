@@ -33,7 +33,7 @@ export function Footer() {
                   href="https://www.google.com/maps/dir/?api=1&destination=21182+Centre+Pointe+Pkwy+%23100,+Santa+Clarita,+CA+91350"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-block border border-primary text-primary px-4 py-2 text-xs uppercase tracking-widest font-medium hover:bg-primary hover:text-primary-foreground transition-colors"
+                  className="inline-block bg-primary text-primary-foreground px-4 py-2 text-xs uppercase tracking-widest font-medium hover:bg-primary/90 transition-colors"
                 >
                   Get Directions
                 </a>
