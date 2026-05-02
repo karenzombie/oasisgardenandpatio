@@ -1,0 +1,219 @@
+import { Link } from "wouter";
+import { ArrowRight, MapPin, Clock, Phone } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  useListManufacturers,
+  useListCategories,
+  useListFeaturedProducts,
+} from "@workspace/api-client-react";
+
+export default function Home() {
+  const { data: manufacturers } = useListManufacturers();
+  const { data: categories } = useListCategories();
+  const { data: featuredProducts } = useListFeaturedProducts();
+
+  const topLevelCategories = categories?.filter(c => c.parentId === null) || [];
+
+  return (
+    <div className="w-full">
+      {/* Hero Section */}
+      <section className="relative w-full h-[80vh] min-h-[600px] flex items-center justify-center overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <img
+            src="/src/assets/hero.png"
+            alt="Beautiful outdoor patio furniture"
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-black/40 mix-blend-multiply" />
+        </div>
+        
+        <div className="relative z-10 container mx-auto px-4 text-center max-w-4xl text-white">
+          <h1 className="font-serif text-5xl md:text-7xl font-medium tracking-tight mb-6 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+            California Living,<br />Refined.
+          </h1>
+          <p className="text-lg md:text-xl font-light text-white/90 mb-10 max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-150">
+            Discover curated outdoor furniture collections designed for the ultimate coastal lifestyle. Craftsmanship that endures.
+          </p>
+          <div className="flex items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
+            <Button size="lg" className="bg-white text-black hover:bg-white/90 rounded-none px-8 font-serif tracking-wide" asChild>
+              <Link href="/shop">Shop Collection</Link>
+            </Button>
+            <Button size="lg" variant="outline" className="text-white border-white hover:bg-white/10 rounded-none px-8 font-serif tracking-wide bg-transparent" asChild>
+              <Link href="/contact">Visit Showroom</Link>
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Categories Section */}
+      <section className="py-24 bg-background">
+        <div className="container mx-auto px-4 md:px-6">
+          <div className="flex flex-col items-center text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-serif mb-4">Shop by Category</h2>
+            <div className="h-px w-24 bg-primary/40" />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {topLevelCategories.length > 0 ? (
+              topLevelCategories.slice(0, 3).map((category, i) => (
+                <Link key={category.id} href={`/shop?category=${category.slug}`} className="group group/card block cursor-pointer">
+                  <div className="relative aspect-[3/4] overflow-hidden mb-4 bg-muted">
+                    <img 
+                      src={i === 0 ? "/src/assets/category-lounge.png" : i === 1 ? "/src/assets/category-dining.png" : "/src/assets/category-shade.png"}
+                      alt={category.name}
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors duration-500" />
+                  </div>
+                  <h3 className="font-serif text-xl group-hover:text-primary transition-colors flex items-center justify-between">
+                    {category.name}
+                    <ArrowRight className="w-5 h-5 opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
+                  </h3>
+                </Link>
+              ))
+            ) : (
+              // Fallback if no categories
+              <>
+                {[
+                  { name: "Lounge Furniture", img: "/src/assets/category-lounge.png" },
+                  { name: "Dining Sets", img: "/src/assets/category-dining.png" },
+                  { name: "Shade & Accessories", img: "/src/assets/category-shade.png" }
+                ].map((item, i) => (
+                  <Link key={i} href="/shop" className="group group/card block cursor-pointer">
+                    <div className="relative aspect-[3/4] overflow-hidden mb-4 bg-muted">
+                      <img 
+                        src={item.img}
+                        alt={item.name}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors duration-500" />
+                    </div>
+                    <h3 className="font-serif text-xl group-hover:text-primary transition-colors flex items-center justify-between">
+                      {item.name}
+                      <ArrowRight className="w-5 h-5 opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
+                    </h3>
+                  </Link>
+                ))}
+              </>
+            )}
+          </div>
+          <div className="text-center mt-12">
+            <Button variant="link" className="font-serif text-lg text-primary hover:text-primary/80" asChild>
+              <Link href="/shop">View all categories <ArrowRight className="ml-2 w-4 h-4" /></Link>
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Featured Products Section */}
+      <section className="py-24 bg-muted/30 border-y border-border">
+        <div className="container mx-auto px-4 md:px-6">
+          <div className="flex flex-col items-center text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-serif mb-4">Featured Collections</h2>
+            <div className="h-px w-24 bg-primary/40" />
+          </div>
+
+          {featuredProducts && featuredProducts.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {featuredProducts.map((product) => (
+                <Link key={product.id} href={`/shop/${product.slug}`} className="group block">
+                  <div className="aspect-square bg-card overflow-hidden mb-4 relative">
+                    {product.primaryImageUrl ? (
+                      <img src={product.primaryImageUrl} alt={product.name} className="w-full h-full object-cover mix-blend-multiply transition-transform duration-500 group-hover:scale-105" />
+                    ) : (
+                      <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground font-serif">Oasis</div>
+                    )}
+                  </div>
+                  <div className="space-y-1 text-center">
+                    <p className="text-xs uppercase tracking-widest text-muted-foreground">{product.manufacturerName}</p>
+                    <h3 className="font-serif text-lg group-hover:text-primary transition-colors line-clamp-1">{product.name}</h3>
+                    {product.showPriceOnline && product.price && (
+                      <p className="text-sm">${product.price}</p>
+                    )}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center max-w-md mx-auto py-12">
+              <h3 className="font-serif text-2xl mb-4 text-foreground/80">New Collections Coming Soon</h3>
+              <p className="text-muted-foreground mb-8">We are currently curating our online featured selection. Visit our Santa Clarita showroom to view our full range of luxury patio furniture.</p>
+              <Button variant="outline" className="rounded-none border-primary text-primary hover:bg-primary hover:text-white" asChild>
+                <Link href="/contact">Visit Showroom</Link>
+              </Button>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Showroom Section */}
+      <section className="py-0 flex flex-col lg:flex-row bg-secondary text-secondary-foreground">
+        <div className="w-full lg:w-1/2 aspect-square lg:aspect-auto min-h-[500px] relative">
+          <img 
+            src="/src/assets/showroom.png" 
+            alt="Oasis Garden & Patio Showroom"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        </div>
+        <div className="w-full lg:w-1/2 flex items-center p-8 md:p-16 lg:p-24">
+          <div className="max-w-md">
+            <h2 className="text-3xl md:text-5xl font-serif mb-6 leading-tight">Experience the difference in person.</h2>
+            <p className="text-secondary-foreground/80 mb-10 text-lg leading-relaxed">
+              Serving Santa Clarita for over 20 years. Step into our showroom to feel the quality, test the comfort, and let our experts help you design your perfect outdoor oasis.
+            </p>
+            
+            <div className="space-y-6 mb-10">
+              <div className="flex items-start gap-4">
+                <MapPin className="w-6 h-6 text-primary shrink-0 mt-1" />
+                <div>
+                  <h4 className="font-medium mb-1">Santa Clarita Showroom</h4>
+                  <p className="text-secondary-foreground/70">21182 Centre Pointe Pkwy #100<br/>Santa Clarita, CA 91350</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4">
+                <Clock className="w-6 h-6 text-primary shrink-0 mt-1" />
+                <div>
+                  <h4 className="font-medium mb-1">Store Hours</h4>
+                  <p className="text-secondary-foreground/70">Mon–Sat: 10am – 6pm<br/>Sun: 11am – 5pm</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4">
+                <Phone className="w-6 h-6 text-primary shrink-0 mt-1" />
+                <div>
+                  <h4 className="font-medium mb-1">Contact</h4>
+                  <p className="text-secondary-foreground/70">(661) 255-9909<br/>sales@oasisgardenandpatio.com</p>
+                </div>
+              </div>
+            </div>
+
+            <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-none px-8 font-serif tracking-wide w-full sm:w-auto" asChild>
+              <Link href="/contact">Get Directions</Link>
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Manufacturers Marquee Placeholder */}
+      <section className="py-16 bg-background border-t border-border overflow-hidden flex flex-col items-center">
+        <p className="text-sm uppercase tracking-widest text-muted-foreground mb-8 font-medium">Proudly Featuring Top Brands</p>
+        <div className="w-full inline-flex flex-nowrap overflow-hidden [mask-image:_linear-gradient(to_right,transparent_0,_black_128px,_black_calc(100%-128px),transparent_100%)]">
+          <ul className="flex items-center justify-center md:justify-start [&_li]:mx-8 [&_img]:max-w-none animate-infinite-scroll">
+            {manufacturers?.map((m) => (
+              <li key={m.id} className="font-serif text-2xl md:text-3xl text-muted-foreground/40 whitespace-nowrap">
+                {m.name}
+              </li>
+            )) || (
+              <>
+                <li className="font-serif text-2xl md:text-3xl text-muted-foreground/40 whitespace-nowrap">Brown Jordan</li>
+                <li className="font-serif text-2xl md:text-3xl text-muted-foreground/40 whitespace-nowrap">O.W. Lee</li>
+                <li className="font-serif text-2xl md:text-3xl text-muted-foreground/40 whitespace-nowrap">Tropitone</li>
+                <li className="font-serif text-2xl md:text-3xl text-muted-foreground/40 whitespace-nowrap">Hanamint</li>
+                <li className="font-serif text-2xl md:text-3xl text-muted-foreground/40 whitespace-nowrap">Treasure Garden</li>
+              </>
+            )}
+          </ul>
+        </div>
+      </section>
+    </div>
+  );
+}

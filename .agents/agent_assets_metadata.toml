@@ -1,0 +1,32 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "WrpV4js2zT-lFMWrOaOIY"
+uri = "file://artifacts/web/src/assets/hero.png"
+type = "image"
+title = "beautiful patio dining set"
+
+[[generated]]
+id = "H8ReypDKmqwNZ-qkYR6Kk"
+uri = "file://artifacts/web/src/assets/category-lounge.png"
+type = "image"
+title = "outdoor lounge furniture"
+
+[[generated]]
+id = "P5BTlWKKf0xmq9mIirG9d"
+uri = "file://artifacts/web/src/assets/category-dining.png"
+type = "image"
+title = "outdoor dining furniture"
+
+[[generated]]
+id = "dDs2O5hVJZUFZsRLcE78m"
+uri = "file://artifacts/web/src/assets/category-shade.png"
+type = "image"
+title = "patio umbrella and chaises"
+
+[[generated]]
+id = "oy9ePbPZFFNopExUliBnf"
+uri = "file://artifacts/web/src/assets/showroom.png"
+type = "image"
+title = "patio furniture showroom"

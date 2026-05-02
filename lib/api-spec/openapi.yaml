@@ -3,13 +3,23 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Oasis Garden & Patio API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: legal
+    description: Legal document operations
+  - name: banners
+    description: Site notifications
+  - name: manufacturers
+    description: Manufacturers
+  - name: categories
+    description: Product categories
+  - name: products
+    description: Products
 paths:
   /healthz:
     get:
@@ -24,6 +34,87 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /legal/{type}:
+    get:
+      operationId: getLegalDocument
+      tags: [legal]
+      summary: Get the currently active legal document for a given type
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [privacy_policy, terms_and_conditions]
+      responses:
+        "200":
+          description: The active legal document
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LegalDocument"
+        "404":
+          description: No active document found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /banners/active:
+    get:
+      operationId: listActiveBanners
+      tags: [banners]
+      summary: List currently active site-wide banners
+      responses:
+        "200":
+          description: Active banners
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Banner"
+  /manufacturers:
+    get:
+      operationId: listManufacturers
+      tags: [manufacturers]
+      summary: List active manufacturers
+      responses:
+        "200":
+          description: Active manufacturers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Manufacturer"
+  /categories:
+    get:
+      operationId: listCategories
+      tags: [categories]
+      summary: List active categories
+      responses:
+        "200":
+          description: Active categories (top-level and nested)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Category"
+  /products/featured:
+    get:
+      operationId: listFeaturedProducts
+      tags: [products]
+      summary: Featured products for the homepage
+      responses:
+        "200":
+          description: Featured products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FeaturedProduct"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +124,114 @@ components:
           type: string
       required:
         - status
-
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+    LegalDocument:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [privacy_policy, terms_and_conditions]
+        version:
+          type: string
+        content:
+          type: string
+        effectiveDate:
+          type: string
+          format: date
+      required:
+        - id
+        - type
+        - version
+        - content
+        - effectiveDate
+    Banner:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        messageText:
+          type: string
+        type:
+          type: string
+          enum: [popup, banner]
+      required:
+        - id
+        - title
+        - messageText
+        - type
+    Manufacturer:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+      required:
+        - id
+        - name
+        - slug
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        parentId:
+          type: ["integer", "null"]
+        displayOrder:
+          type: integer
+      required:
+        - id
+        - name
+        - slug
+        - parentId
+        - displayOrder
+    FeaturedProduct:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        sku:
+          type: string
+        manufacturerName:
+          type: string
+        categoryName:
+          type: string
+        price:
+          type: ["string", "null"]
+        showPriceOnline:
+          type: boolean
+        availableOnline:
+          type: boolean
+        primaryImageUrl:
+          type: ["string", "null"]
+      required:
+        - id
+        - name
+        - slug
+        - sku
+        - manufacturerName
+        - categoryName
+        - price
+        - showPriceOnline
+        - availableOnline
+        - primaryImageUrl
