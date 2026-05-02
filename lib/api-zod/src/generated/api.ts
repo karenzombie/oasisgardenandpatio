@@ -377,6 +377,105 @@ export const StaffDisableTotpResponse = zod.object({
 });
 
 /**
+ * @summary List all manufacturers (active and inactive) for admin
+ */
+export const AdminListManufacturersResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  slug: zod.string(),
+  description: zod.string().nullable(),
+  logoUrl: zod.string().nullable(),
+  website: zod.string().nullable(),
+  displayOrder: zod.number(),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const AdminListManufacturersResponse = zod.array(
+  AdminListManufacturersResponseItem,
+);
+
+/**
+ * @summary Create a new manufacturer
+ */
+
+export const adminCreateManufacturerBodySlugRegExp = new RegExp(
+  "^[a-z0-9]+(?:-[a-z0-9]+)\*$",
+);
+export const adminCreateManufacturerBodyDisplayOrderDefault = 0;
+export const adminCreateManufacturerBodyIsActiveDefault = true;
+
+export const AdminCreateManufacturerBody = zod.object({
+  name: zod.string().min(1),
+  slug: zod.string().min(1).regex(adminCreateManufacturerBodySlugRegExp),
+  description: zod.string().nullish(),
+  logoUrl: zod.string().nullish(),
+  website: zod.string().nullish(),
+  displayOrder: zod
+    .number()
+    .default(adminCreateManufacturerBodyDisplayOrderDefault),
+  isActive: zod.boolean().default(adminCreateManufacturerBodyIsActiveDefault),
+});
+
+/**
+ * @summary Update a manufacturer
+ */
+export const AdminUpdateManufacturerParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const adminUpdateManufacturerBodySlugRegExp = new RegExp(
+  "^[a-z0-9]+(?:-[a-z0-9]+)\*$",
+);
+
+export const AdminUpdateManufacturerBody = zod.object({
+  name: zod.string().min(1),
+  slug: zod.string().min(1).regex(adminUpdateManufacturerBodySlugRegExp),
+  description: zod.string().nullish(),
+  logoUrl: zod.string().nullish(),
+  website: zod.string().nullish(),
+  displayOrder: zod.number().optional(),
+  isActive: zod.boolean().optional(),
+});
+
+export const AdminUpdateManufacturerResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  slug: zod.string(),
+  description: zod.string().nullable(),
+  logoUrl: zod.string().nullable(),
+  website: zod.string().nullable(),
+  displayOrder: zod.number(),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Activate or deactivate a manufacturer
+ */
+export const AdminSetManufacturerActiveParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminSetManufacturerActiveBody = zod.object({
+  isActive: zod.boolean(),
+});
+
+export const AdminSetManufacturerActiveResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  slug: zod.string(),
+  description: zod.string().nullable(),
+  logoUrl: zod.string().nullable(),
+  website: zod.string().nullable(),
+  displayOrder: zod.number(),
+  isActive: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
  * @summary Request a presigned URL for uploading a file (staff only)
  */
 

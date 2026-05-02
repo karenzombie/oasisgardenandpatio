@@ -26,6 +26,8 @@ tags:
     description: Staff (agent / admin) authentication, 2FA, and password change
   - name: storage
     description: File upload and object storage
+  - name: admin-manufacturers
+    description: Admin CRUD for manufacturers
 paths:
   /healthz:
     get:
@@ -451,6 +453,127 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /admin/manufacturers:
+    get:
+      operationId: adminListManufacturers
+      tags: [admin-manufacturers]
+      summary: List all manufacturers (active and inactive) for admin
+      responses:
+        "200":
+          description: All manufacturers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminManufacturer"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Not admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      operationId: adminCreateManufacturer
+      tags: [admin-manufacturers]
+      summary: Create a new manufacturer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateManufacturerRequest"
+      responses:
+        "201":
+          description: Manufacturer created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminManufacturer"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Duplicate slug
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /admin/manufacturers/{id}:
+    put:
+      operationId: adminUpdateManufacturer
+      tags: [admin-manufacturers]
+      summary: Update a manufacturer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateManufacturerRequest"
+      responses:
+        "200":
+          description: Manufacturer updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminManufacturer"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Duplicate slug
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /admin/manufacturers/{id}/active:
+    patch:
+      operationId: adminSetManufacturerActive
+      tags: [admin-manufacturers]
+      summary: Activate or deactivate a manufacturer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetActiveRequest"
+      responses:
+        "200":
+          description: Updated manufacturer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminManufacturer"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /storage/uploads/request-url:
     post:
       operationId: requestUploadUrl
@@ -548,6 +671,97 @@ components:
         - id
         - name
         - slug
+    AdminManufacturer:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: ["string", "null"]
+        logoUrl:
+          type: ["string", "null"]
+        website:
+          type: ["string", "null"]
+        displayOrder:
+          type: integer
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - slug
+        - description
+        - logoUrl
+        - website
+        - displayOrder
+        - isActive
+        - createdAt
+        - updatedAt
+    CreateManufacturerRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        slug:
+          type: string
+          minLength: 1
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        description:
+          type: ["string", "null"]
+        logoUrl:
+          type: ["string", "null"]
+        website:
+          type: ["string", "null"]
+        displayOrder:
+          type: integer
+          default: 0
+        isActive:
+          type: boolean
+          default: true
+      required:
+        - name
+        - slug
+    UpdateManufacturerRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        slug:
+          type: string
+          minLength: 1
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        description:
+          type: ["string", "null"]
+        logoUrl:
+          type: ["string", "null"]
+        website:
+          type: ["string", "null"]
+        displayOrder:
+          type: integer
+        isActive:
+          type: boolean
+      required:
+        - name
+        - slug
+    SetActiveRequest:
+      type: object
+      properties:
+        isActive:
+          type: boolean
+      required:
+        - isActive
     Category:
       type: object
       properties:

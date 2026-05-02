@@ -17,9 +17,11 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  AdminManufacturer,
   Banner,
   Category,
   ChangePasswordRequest,
+  CreateManufacturerRequest,
   CurrentUser,
   Error,
   FeaturedProduct,
@@ -32,12 +34,14 @@ import type {
   RequestUploadUrlRequest,
   RequestUploadUrlResponseSchema,
   ResetPasswordRequest,
+  SetActiveRequest,
   SignupRequest,
   StaffDisableTotp200,
   StaffLoginRequest,
   StaffStageResponse,
   TotpCodeRequest,
   TotpSetupInitResponse,
+  UpdateManufacturerRequest,
   VerifyEmailRequest,
 } from "./api.schemas";
 
@@ -1848,6 +1852,344 @@ export const useStaffDisableTotp = <
   TContext
 > => {
   return useMutation(getStaffDisableTotpMutationOptions(options));
+};
+
+/**
+ * @summary List all manufacturers (active and inactive) for admin
+ */
+export const getAdminListManufacturersUrl = () => {
+  return `/api/admin/manufacturers`;
+};
+
+export const adminListManufacturers = async (
+  options?: RequestInit,
+): Promise<AdminManufacturer[]> => {
+  return customFetch<AdminManufacturer[]>(getAdminListManufacturersUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAdminListManufacturersQueryKey = () => {
+  return [`/api/admin/manufacturers`] as const;
+};
+
+export const getAdminListManufacturersQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminListManufacturers>>,
+  TError = ErrorType<Error>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminListManufacturers>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getAdminListManufacturersQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminListManufacturers>>
+  > = ({ signal }) => adminListManufacturers({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminListManufacturers>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminListManufacturersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminListManufacturers>>
+>;
+export type AdminListManufacturersQueryError = ErrorType<Error>;
+
+/**
+ * @summary List all manufacturers (active and inactive) for admin
+ */
+
+export function useAdminListManufacturers<
+  TData = Awaited<ReturnType<typeof adminListManufacturers>>,
+  TError = ErrorType<Error>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminListManufacturers>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminListManufacturersQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a new manufacturer
+ */
+export const getAdminCreateManufacturerUrl = () => {
+  return `/api/admin/manufacturers`;
+};
+
+export const adminCreateManufacturer = async (
+  createManufacturerRequest: CreateManufacturerRequest,
+  options?: RequestInit,
+): Promise<AdminManufacturer> => {
+  return customFetch<AdminManufacturer>(getAdminCreateManufacturerUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createManufacturerRequest),
+  });
+};
+
+export const getAdminCreateManufacturerMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCreateManufacturer>>,
+    TError,
+    { data: BodyType<CreateManufacturerRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminCreateManufacturer>>,
+  TError,
+  { data: BodyType<CreateManufacturerRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminCreateManufacturer"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminCreateManufacturer>>,
+    { data: BodyType<CreateManufacturerRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return adminCreateManufacturer(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminCreateManufacturerMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminCreateManufacturer>>
+>;
+export type AdminCreateManufacturerMutationBody =
+  BodyType<CreateManufacturerRequest>;
+export type AdminCreateManufacturerMutationError = ErrorType<Error>;
+
+/**
+ * @summary Create a new manufacturer
+ */
+export const useAdminCreateManufacturer = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCreateManufacturer>>,
+    TError,
+    { data: BodyType<CreateManufacturerRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminCreateManufacturer>>,
+  TError,
+  { data: BodyType<CreateManufacturerRequest> },
+  TContext
+> => {
+  return useMutation(getAdminCreateManufacturerMutationOptions(options));
+};
+
+/**
+ * @summary Update a manufacturer
+ */
+export const getAdminUpdateManufacturerUrl = (id: number) => {
+  return `/api/admin/manufacturers/${id}`;
+};
+
+export const adminUpdateManufacturer = async (
+  id: number,
+  updateManufacturerRequest: UpdateManufacturerRequest,
+  options?: RequestInit,
+): Promise<AdminManufacturer> => {
+  return customFetch<AdminManufacturer>(getAdminUpdateManufacturerUrl(id), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateManufacturerRequest),
+  });
+};
+
+export const getAdminUpdateManufacturerMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateManufacturer>>,
+    TError,
+    { id: number; data: BodyType<UpdateManufacturerRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUpdateManufacturer>>,
+  TError,
+  { id: number; data: BodyType<UpdateManufacturerRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminUpdateManufacturer"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUpdateManufacturer>>,
+    { id: number; data: BodyType<UpdateManufacturerRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminUpdateManufacturer(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminUpdateManufacturerMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUpdateManufacturer>>
+>;
+export type AdminUpdateManufacturerMutationBody =
+  BodyType<UpdateManufacturerRequest>;
+export type AdminUpdateManufacturerMutationError = ErrorType<Error>;
+
+/**
+ * @summary Update a manufacturer
+ */
+export const useAdminUpdateManufacturer = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateManufacturer>>,
+    TError,
+    { id: number; data: BodyType<UpdateManufacturerRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUpdateManufacturer>>,
+  TError,
+  { id: number; data: BodyType<UpdateManufacturerRequest> },
+  TContext
+> => {
+  return useMutation(getAdminUpdateManufacturerMutationOptions(options));
+};
+
+/**
+ * @summary Activate or deactivate a manufacturer
+ */
+export const getAdminSetManufacturerActiveUrl = (id: number) => {
+  return `/api/admin/manufacturers/${id}/active`;
+};
+
+export const adminSetManufacturerActive = async (
+  id: number,
+  setActiveRequest: SetActiveRequest,
+  options?: RequestInit,
+): Promise<AdminManufacturer> => {
+  return customFetch<AdminManufacturer>(getAdminSetManufacturerActiveUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(setActiveRequest),
+  });
+};
+
+export const getAdminSetManufacturerActiveMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminSetManufacturerActive>>,
+    TError,
+    { id: number; data: BodyType<SetActiveRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminSetManufacturerActive>>,
+  TError,
+  { id: number; data: BodyType<SetActiveRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminSetManufacturerActive"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminSetManufacturerActive>>,
+    { id: number; data: BodyType<SetActiveRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminSetManufacturerActive(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminSetManufacturerActiveMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminSetManufacturerActive>>
+>;
+export type AdminSetManufacturerActiveMutationBody = BodyType<SetActiveRequest>;
+export type AdminSetManufacturerActiveMutationError = ErrorType<Error>;
+
+/**
+ * @summary Activate or deactivate a manufacturer
+ */
+export const useAdminSetManufacturerActive = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminSetManufacturerActive>>,
+    TError,
+    { id: number; data: BodyType<SetActiveRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminSetManufacturerActive>>,
+  TError,
+  { id: number; data: BodyType<SetActiveRequest> },
+  TContext
+> => {
+  return useMutation(getAdminSetManufacturerActiveMutationOptions(options));
 };
 
 /**

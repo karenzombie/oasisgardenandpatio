@@ -6,10 +6,12 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from "./adminManufacturer";
 export * from "./banner";
 export * from "./bannerType";
 export * from "./category";
 export * from "./changePasswordRequest";
+export * from "./createManufacturerRequest";
 export * from "./currentUser";
 export * from "./currentUserRole";
 export * from "./error";
@@ -25,6 +27,7 @@ export * from "./requestUploadUrlRequest";
 export * from "./requestUploadUrlResponseSchema";
 export * from "./requestUploadUrlResponseSchemaMetadata";
 export * from "./resetPasswordRequest";
+export * from "./setActiveRequest";
 export * from "./signupRequest";
 export * from "./staffDisableTotp200";
 export * from "./staffLoginRequest";
@@ -34,4 +37,5 @@ export * from "./staffUser";
 export * from "./staffUserRole";
 export * from "./totpCodeRequest";
 export * from "./totpSetupInitResponse";
+export * from "./updateManufacturerRequest";
 export * from "./verifyEmailRequest";

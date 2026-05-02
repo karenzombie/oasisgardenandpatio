@@ -49,6 +49,62 @@ export interface Manufacturer {
   slug: string;
 }
 
+export interface AdminManufacturer {
+  id: number;
+  name: string;
+  slug: string;
+  /** @nullable */
+  description: string | null;
+  /** @nullable */
+  logoUrl: string | null;
+  /** @nullable */
+  website: string | null;
+  displayOrder: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateManufacturerRequest {
+  /** @minLength 1 */
+  name: string;
+  /**
+   * @minLength 1
+   * @pattern ^[a-z0-9]+(?:-[a-z0-9]+)*$
+   */
+  slug: string;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  logoUrl?: string | null;
+  /** @nullable */
+  website?: string | null;
+  displayOrder?: number;
+  isActive?: boolean;
+}
+
+export interface UpdateManufacturerRequest {
+  /** @minLength 1 */
+  name: string;
+  /**
+   * @minLength 1
+   * @pattern ^[a-z0-9]+(?:-[a-z0-9]+)*$
+   */
+  slug: string;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  logoUrl?: string | null;
+  /** @nullable */
+  website?: string | null;
+  displayOrder?: number;
+  isActive?: boolean;
+}
+
+export interface SetActiveRequest {
+  isActive: boolean;
+}
+
 export interface Category {
   id: number;
   name: string;
