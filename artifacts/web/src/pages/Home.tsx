@@ -2,13 +2,12 @@ import { Link } from "wouter";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  useListManufacturers,
   useListCategories,
   useListFeaturedProducts,
 } from "@workspace/api-client-react";
+import { BRAND_LOGOS, getBrandLogo } from "@/lib/brandLogos";
 
 export default function Home() {
-  const { data: manufacturers } = useListManufacturers();
   const { data: categories } = useListCategories();
   const { data: featuredProducts } = useListFeaturedProducts();
 
@@ -115,24 +114,40 @@ export default function Home() {
 
           {featuredProducts && featuredProducts.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {featuredProducts.map((product) => (
-                <Link key={product.id} href={`/shop/${product.slug}`} className="group block">
-                  <div className="aspect-square bg-card overflow-hidden mb-4 relative">
-                    {product.primaryImageUrl ? (
-                      <img src={product.primaryImageUrl} alt={product.name} className="w-full h-full object-cover mix-blend-multiply transition-transform duration-500 group-hover:scale-105" />
-                    ) : (
-                      <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground font-serif">Oasis</div>
-                    )}
-                  </div>
-                  <div className="space-y-1 text-center">
-                    <p className="text-xs uppercase tracking-widest text-muted-foreground">{product.manufacturerName}</p>
-                    <h3 className="font-serif text-lg group-hover:text-primary transition-colors line-clamp-1">{product.name}</h3>
-                    {product.showPriceOnline && product.price && (
-                      <p className="text-sm">${product.price}</p>
-                    )}
-                  </div>
-                </Link>
-              ))}
+              {featuredProducts.map((product) => {
+                const brandLogo = getBrandLogo(product.manufacturerName);
+                return (
+                  <Link key={product.id} href={`/shop/${product.slug}`} className="group block">
+                    <div className="aspect-square bg-card overflow-hidden mb-4 relative">
+                      {product.primaryImageUrl ? (
+                        <img src={product.primaryImageUrl} alt={product.name} className="w-full h-full object-cover mix-blend-multiply transition-transform duration-500 group-hover:scale-105" />
+                      ) : (
+                        <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground font-serif">Oasis</div>
+                      )}
+                      {brandLogo ? (
+                        <div className="absolute top-3 left-3 bg-white/95 px-2 py-1 rounded-sm shadow-sm" aria-hidden="true">
+                          <img src={brandLogo} alt="" className="h-5 w-auto object-contain" />
+                        </div>
+                      ) : null}
+                    </div>
+                    <div className="space-y-2 text-center">
+                      {brandLogo ? (
+                        <img
+                          src={brandLogo}
+                          alt={product.manufacturerName ?? ""}
+                          className="h-6 w-auto object-contain mx-auto"
+                        />
+                      ) : (
+                        <p className="text-xs uppercase tracking-widest text-muted-foreground">{product.manufacturerName}</p>
+                      )}
+                      <h3 className="font-serif text-lg group-hover:text-primary transition-colors line-clamp-1">{product.name}</h3>
+                      {product.showPriceOnline && product.price && (
+                        <p className="text-sm">${product.price}</p>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           ) : (
             <div className="text-center max-w-md mx-auto py-12">
@@ -146,24 +161,34 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Manufacturers Marquee Placeholder */}
+      {/* Manufacturers Marquee */}
       <section className="py-16 bg-background border-t border-border overflow-hidden flex flex-col items-center">
-        <p className="text-sm uppercase tracking-widest text-muted-foreground mb-8 font-medium">Proudly Featuring Top Brands</p>
+        <p className="text-sm uppercase tracking-widest text-muted-foreground mb-10 font-medium">Proudly Featuring Top Brands</p>
         <div className="w-full inline-flex flex-nowrap overflow-hidden [mask-image:_linear-gradient(to_right,transparent_0,_black_128px,_black_calc(100%-128px),transparent_100%)]">
-          <ul className="flex items-center justify-center md:justify-start [&_li]:mx-8 [&_img]:max-w-none animate-infinite-scroll">
-            {manufacturers?.map((m) => (
-              <li key={m.id} className="font-serif text-2xl md:text-3xl text-muted-foreground/40 whitespace-nowrap">
-                {m.name}
+          <ul className="flex items-center [&_li]:mx-10 [&_img]:max-w-none animate-infinite-scroll shrink-0">
+            {BRAND_LOGOS.map((b) => (
+              <li key={`a-${b.name}`} className="shrink-0 flex items-center justify-center h-16">
+                <img
+                  src={b.src}
+                  alt={b.name}
+                  title={b.name}
+                  loading="lazy"
+                  className="max-h-16 w-auto object-contain opacity-70 hover:opacity-100 transition-opacity"
+                />
               </li>
-            )) || (
-              <>
-                <li className="font-serif text-2xl md:text-3xl text-muted-foreground/40 whitespace-nowrap">Brown Jordan</li>
-                <li className="font-serif text-2xl md:text-3xl text-muted-foreground/40 whitespace-nowrap">O.W. Lee</li>
-                <li className="font-serif text-2xl md:text-3xl text-muted-foreground/40 whitespace-nowrap">Tropitone</li>
-                <li className="font-serif text-2xl md:text-3xl text-muted-foreground/40 whitespace-nowrap">Hanamint</li>
-                <li className="font-serif text-2xl md:text-3xl text-muted-foreground/40 whitespace-nowrap">Treasure Garden</li>
-              </>
-            )}
+            ))}
+          </ul>
+          <ul aria-hidden="true" className="flex items-center [&_li]:mx-10 [&_img]:max-w-none animate-infinite-scroll shrink-0">
+            {BRAND_LOGOS.map((b) => (
+              <li key={`b-${b.name}`} className="shrink-0 flex items-center justify-center h-16">
+                <img
+                  src={b.src}
+                  alt=""
+                  loading="lazy"
+                  className="max-h-16 w-auto object-contain opacity-70 hover:opacity-100 transition-opacity"
+                />
+              </li>
+            ))}
           </ul>
         </div>
       </section>
