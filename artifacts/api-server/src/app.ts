@@ -29,8 +29,11 @@ app.use(
   }),
 );
 app.use(cors({ origin: true, credentials: true }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Use a generous JSON body limit. CSV product imports send the whole sheet as
+// JSON (`{ csvText, mapping }`); real vendor exports can easily be a few MB.
+// Auth-gated routes mean this is not a public DoS surface.
+app.use(express.json({ limit: "25mb" }));
+app.use(express.urlencoded({ extended: true, limit: "25mb" }));
 app.use(buildSessionMiddleware());
 
 app.use("/api", router);

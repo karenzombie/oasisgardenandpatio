@@ -703,6 +703,366 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /admin/products:
+    get:
+      operationId: adminListProducts
+      tags: [admin-products]
+      summary: List products with filters and pagination
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: manufacturerId
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: categoryId
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: isActive
+          in: query
+          required: false
+          schema:
+            type: boolean
+        - name: featured
+          in: query
+          required: false
+          schema:
+            type: boolean
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+      responses:
+        "200":
+          description: Paginated products
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminProductsPage"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Not admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      operationId: adminCreateProduct
+      tags: [admin-products]
+      summary: Create a new product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProductRequest"
+      responses:
+        "201":
+          description: Product created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminProduct"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Duplicate slug or SKU
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /admin/products/{id}:
+    get:
+      operationId: adminGetProduct
+      tags: [admin-products]
+      summary: Get a product with images and inventory
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Product detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminProductDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    put:
+      operationId: adminUpdateProduct
+      tags: [admin-products]
+      summary: Update a product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProductRequest"
+      responses:
+        "200":
+          description: Product updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminProduct"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Duplicate slug or SKU
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /admin/products/{id}/active:
+    patch:
+      operationId: adminSetProductActive
+      tags: [admin-products]
+      summary: Activate or deactivate a product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetActiveRequest"
+      responses:
+        "200":
+          description: Product updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminProduct"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /admin/products/{id}/images:
+    post:
+      operationId: adminAddProductImage
+      tags: [admin-products]
+      summary: Attach an image to a product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddProductImageRequest"
+      responses:
+        "201":
+          description: Image added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminProductImage"
+        "404":
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /admin/products/{id}/images/order:
+    put:
+      operationId: adminReorderProductImages
+      tags: [admin-products]
+      summary: Reorder product images and set primary
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReorderProductImagesRequest"
+      responses:
+        "200":
+          description: Updated images in order
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminProductImage"
+        "400":
+          description: Image ids do not all belong to product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /admin/products/{id}/images/{imageId}:
+    delete:
+      operationId: adminDeleteProductImage
+      tags: [admin-products]
+      summary: Delete a product image
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: imageId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /admin/products/{id}/inventory:
+    put:
+      operationId: adminUpdateProductInventory
+      tags: [admin-products]
+      summary: Set on-hand and reorder threshold for a product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateInventoryRequest"
+      responses:
+        "200":
+          description: Updated inventory
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminProductInventory"
+        "404":
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /admin/products/import/dry-run:
+    post:
+      operationId: adminImportProductsDryRun
+      tags: [admin-products]
+      summary: Validate a CSV import without writing changes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImportProductsRequest"
+      responses:
+        "200":
+          description: Dry-run validation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportProductsDryRunResult"
+        "400":
+          description: Validation error (e.g. CSV unparseable, required mapping missing)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /admin/products/import/commit:
+    post:
+      operationId: adminImportProductsCommit
+      tags: [admin-products]
+      summary: Commit a CSV import (creates or updates products by SKU)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImportProductsRequest"
+      responses:
+        "200":
+          description: Commit result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportProductsCommitResult"
+        "400":
+          description: Validation error or rows had blocking errors
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /storage/uploads/request-url:
     post:
       operationId: requestUploadUrl
@@ -891,6 +1251,313 @@ components:
           type: boolean
       required:
         - isActive
+    AdminProduct:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        sku:
+          type: string
+        description:
+          type: ["string", "null"]
+        shortDescription:
+          type: ["string", "null"]
+        manufacturerId:
+          type: ["integer", "null"]
+        manufacturerName:
+          type: ["string", "null"]
+        categoryId:
+          type: ["integer", "null"]
+        categoryName:
+          type: ["string", "null"]
+        materialId:
+          type: ["integer", "null"]
+        materialName:
+          type: ["string", "null"]
+        price:
+          type: ["string", "null"]
+        cost:
+          type: ["string", "null"]
+        weight:
+          type: ["string", "null"]
+        dimensions:
+          type: ["string", "null"]
+        showPriceOnline:
+          type: boolean
+        availableOnline:
+          type: boolean
+        inStoreOnly:
+          type: boolean
+        featured:
+          type: boolean
+        displayOrder:
+          type: integer
+        lowStockThreshold:
+          type: integer
+        isActive:
+          type: boolean
+        primaryImageUrl:
+          type: ["string", "null"]
+        imageCount:
+          type: integer
+        onHand:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - slug
+        - sku
+        - description
+        - shortDescription
+        - manufacturerId
+        - manufacturerName
+        - categoryId
+        - categoryName
+        - materialId
+        - materialName
+        - price
+        - cost
+        - weight
+        - dimensions
+        - showPriceOnline
+        - availableOnline
+        - inStoreOnly
+        - featured
+        - displayOrder
+        - lowStockThreshold
+        - isActive
+        - primaryImageUrl
+        - imageCount
+        - onHand
+        - createdAt
+        - updatedAt
+    AdminProductImage:
+      type: object
+      properties:
+        id:
+          type: integer
+        productId:
+          type: integer
+        url:
+          type: string
+        altText:
+          type: ["string", "null"]
+        isPrimary:
+          type: boolean
+        displayOrder:
+          type: integer
+      required:
+        - id
+        - productId
+        - url
+        - altText
+        - isPrimary
+        - displayOrder
+    AdminProductInventory:
+      type: object
+      properties:
+        productId:
+          type: integer
+        onHand:
+          type: integer
+        onHold:
+          type: integer
+        reorderThreshold:
+          type: integer
+      required:
+        - productId
+        - onHand
+        - onHold
+        - reorderThreshold
+    AdminProductDetail:
+      allOf:
+        - $ref: "#/components/schemas/AdminProduct"
+        - type: object
+          properties:
+            images:
+              type: array
+              items:
+                $ref: "#/components/schemas/AdminProductImage"
+            inventory:
+              $ref: "#/components/schemas/AdminProductInventory"
+          required:
+            - images
+            - inventory
+    AdminProductsPage:
+      type: object
+      properties:
+        products:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminProduct"
+        total:
+          type: integer
+        page:
+          type: integer
+        pageSize:
+          type: integer
+      required:
+        - products
+        - total
+        - page
+        - pageSize
+    CreateProductRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        slug:
+          type: string
+          minLength: 1
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        sku:
+          type: string
+          minLength: 1
+        description:
+          type: ["string", "null"]
+        shortDescription:
+          type: ["string", "null"]
+        manufacturerId:
+          type: ["integer", "null"]
+        categoryId:
+          type: ["integer", "null"]
+        materialId:
+          type: ["integer", "null"]
+        price:
+          type: ["string", "null"]
+        cost:
+          type: ["string", "null"]
+        weight:
+          type: ["string", "null"]
+        dimensions:
+          type: ["string", "null"]
+        showPriceOnline:
+          type: boolean
+          default: true
+        availableOnline:
+          type: boolean
+          default: true
+        inStoreOnly:
+          type: boolean
+          default: false
+        featured:
+          type: boolean
+          default: false
+        displayOrder:
+          type: integer
+          default: 0
+        lowStockThreshold:
+          type: integer
+          default: 0
+        isActive:
+          type: boolean
+          default: true
+      required:
+        - name
+        - slug
+        - sku
+    UpdateProductRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        slug:
+          type: string
+          minLength: 1
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        sku:
+          type: string
+          minLength: 1
+        description:
+          type: ["string", "null"]
+        shortDescription:
+          type: ["string", "null"]
+        manufacturerId:
+          type: ["integer", "null"]
+        categoryId:
+          type: ["integer", "null"]
+        materialId:
+          type: ["integer", "null"]
+        price:
+          type: ["string", "null"]
+        cost:
+          type: ["string", "null"]
+        weight:
+          type: ["string", "null"]
+        dimensions:
+          type: ["string", "null"]
+        showPriceOnline:
+          type: boolean
+        availableOnline:
+          type: boolean
+        inStoreOnly:
+          type: boolean
+        featured:
+          type: boolean
+        displayOrder:
+          type: integer
+        lowStockThreshold:
+          type: integer
+        isActive:
+          type: boolean
+      required:
+        - name
+        - slug
+        - sku
+    AddProductImageRequest:
+      type: object
+      properties:
+        url:
+          type: string
+          minLength: 1
+        altText:
+          type: ["string", "null"]
+      required:
+        - url
+    ReorderProductImagesRequest:
+      type: object
+      properties:
+        images:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              displayOrder:
+                type: integer
+              isPrimary:
+                type: boolean
+            required:
+              - id
+              - displayOrder
+              - isPrimary
+      required:
+        - images
+    UpdateInventoryRequest:
+      type: object
+      properties:
+        onHand:
+          type: integer
+          minimum: 0
+        reorderThreshold:
+          type: integer
+          minimum: 0
+      required:
+        - onHand
+        - reorderThreshold
     AdminCategory:
       type: object
       properties:
@@ -1259,3 +1926,86 @@ components:
         - uploadURL
         - objectPath
         - metadata
+    ImportProductsMapping:
+      type: object
+      description: Maps product fields to CSV header column names. Required mapped fields - name, sku, manufacturer, category, price.
+      properties:
+        name: { type: string }
+        slug: { type: string }
+        sku: { type: string }
+        manufacturer: { type: string }
+        category: { type: string }
+        shortDescription: { type: string }
+        description: { type: string }
+        price: { type: string }
+        cost: { type: string }
+        weight: { type: string }
+        dimensions: { type: string }
+        onHand: { type: string }
+        reorderThreshold: { type: string }
+        featured: { type: string }
+        availableOnline: { type: string }
+        inStoreOnly: { type: string }
+      required: [name, sku, manufacturer, category, price]
+    ImportProductsRequest:
+      type: object
+      properties:
+        csvText:
+          type: string
+          minLength: 1
+        mapping:
+          $ref: "#/components/schemas/ImportProductsMapping"
+      required: [csvText, mapping]
+    ImportProductsRowError:
+      type: object
+      properties:
+        field: { type: string }
+        message: { type: string }
+      required: [field, message]
+    ImportProductsRowResult:
+      type: object
+      properties:
+        rowIndex:
+          type: integer
+          description: 1-based row number in the CSV (excluding header).
+        action:
+          type: string
+          enum: [create, update, error]
+        sku:
+          type: string
+          nullable: true
+        name:
+          type: string
+          nullable: true
+        existingProductId:
+          type: integer
+          nullable: true
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportProductsRowError"
+      required: [rowIndex, action, errors]
+    ImportProductsDryRunResult:
+      type: object
+      properties:
+        totalRows: { type: integer }
+        willCreateCount: { type: integer }
+        willUpdateCount: { type: integer }
+        errorCount: { type: integer }
+        rows:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportProductsRowResult"
+      required: [totalRows, willCreateCount, willUpdateCount, errorCount, rows]
+    ImportProductsCommitResult:
+      type: object
+      properties:
+        totalRows: { type: integer }
+        createdCount: { type: integer }
+        updatedCount: { type: integer }
+        errorCount: { type: integer }
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportProductsRowResult"
+      required: [totalRows, createdCount, updatedCount, errorCount, errors]

@@ -578,6 +578,457 @@ export const AdminSetCategoryActiveResponse = zod.object({
 });
 
 /**
+ * @summary List products with filters and pagination
+ */
+export const adminListProductsQueryPageDefault = 1;
+
+export const adminListProductsQueryPageSizeDefault = 50;
+export const adminListProductsQueryPageSizeMax = 200;
+
+export const AdminListProductsQueryParams = zod.object({
+  q: zod.coerce.string().optional(),
+  manufacturerId: zod.coerce.number().optional(),
+  categoryId: zod.coerce.number().optional(),
+  isActive: zod.coerce.boolean().optional(),
+  featured: zod.coerce.boolean().optional(),
+  page: zod.coerce.number().min(1).default(adminListProductsQueryPageDefault),
+  pageSize: zod.coerce
+    .number()
+    .min(1)
+    .max(adminListProductsQueryPageSizeMax)
+    .default(adminListProductsQueryPageSizeDefault),
+});
+
+export const AdminListProductsResponse = zod.object({
+  products: zod.array(
+    zod.object({
+      id: zod.number(),
+      name: zod.string(),
+      slug: zod.string(),
+      sku: zod.string(),
+      description: zod.string().nullable(),
+      shortDescription: zod.string().nullable(),
+      manufacturerId: zod.number().nullable(),
+      manufacturerName: zod.string().nullable(),
+      categoryId: zod.number().nullable(),
+      categoryName: zod.string().nullable(),
+      materialId: zod.number().nullable(),
+      materialName: zod.string().nullable(),
+      price: zod.string().nullable(),
+      cost: zod.string().nullable(),
+      weight: zod.string().nullable(),
+      dimensions: zod.string().nullable(),
+      showPriceOnline: zod.boolean(),
+      availableOnline: zod.boolean(),
+      inStoreOnly: zod.boolean(),
+      featured: zod.boolean(),
+      displayOrder: zod.number(),
+      lowStockThreshold: zod.number(),
+      isActive: zod.boolean(),
+      primaryImageUrl: zod.string().nullable(),
+      imageCount: zod.number(),
+      onHand: zod.number(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+  total: zod.number(),
+  page: zod.number(),
+  pageSize: zod.number(),
+});
+
+/**
+ * @summary Create a new product
+ */
+
+export const adminCreateProductBodySlugRegExp = new RegExp(
+  "^[a-z0-9]+(?:-[a-z0-9]+)\*$",
+);
+
+export const adminCreateProductBodyShowPriceOnlineDefault = true;
+export const adminCreateProductBodyAvailableOnlineDefault = true;
+export const adminCreateProductBodyInStoreOnlyDefault = false;
+export const adminCreateProductBodyFeaturedDefault = false;
+export const adminCreateProductBodyDisplayOrderDefault = 0;
+export const adminCreateProductBodyLowStockThresholdDefault = 0;
+export const adminCreateProductBodyIsActiveDefault = true;
+
+export const AdminCreateProductBody = zod.object({
+  name: zod.string().min(1),
+  slug: zod.string().min(1).regex(adminCreateProductBodySlugRegExp),
+  sku: zod.string().min(1),
+  description: zod.string().nullish(),
+  shortDescription: zod.string().nullish(),
+  manufacturerId: zod.number().nullish(),
+  categoryId: zod.number().nullish(),
+  materialId: zod.number().nullish(),
+  price: zod.string().nullish(),
+  cost: zod.string().nullish(),
+  weight: zod.string().nullish(),
+  dimensions: zod.string().nullish(),
+  showPriceOnline: zod
+    .boolean()
+    .default(adminCreateProductBodyShowPriceOnlineDefault),
+  availableOnline: zod
+    .boolean()
+    .default(adminCreateProductBodyAvailableOnlineDefault),
+  inStoreOnly: zod.boolean().default(adminCreateProductBodyInStoreOnlyDefault),
+  featured: zod.boolean().default(adminCreateProductBodyFeaturedDefault),
+  displayOrder: zod.number().default(adminCreateProductBodyDisplayOrderDefault),
+  lowStockThreshold: zod
+    .number()
+    .default(adminCreateProductBodyLowStockThresholdDefault),
+  isActive: zod.boolean().default(adminCreateProductBodyIsActiveDefault),
+});
+
+/**
+ * @summary Get a product with images and inventory
+ */
+export const AdminGetProductParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminGetProductResponse = zod
+  .object({
+    id: zod.number(),
+    name: zod.string(),
+    slug: zod.string(),
+    sku: zod.string(),
+    description: zod.string().nullable(),
+    shortDescription: zod.string().nullable(),
+    manufacturerId: zod.number().nullable(),
+    manufacturerName: zod.string().nullable(),
+    categoryId: zod.number().nullable(),
+    categoryName: zod.string().nullable(),
+    materialId: zod.number().nullable(),
+    materialName: zod.string().nullable(),
+    price: zod.string().nullable(),
+    cost: zod.string().nullable(),
+    weight: zod.string().nullable(),
+    dimensions: zod.string().nullable(),
+    showPriceOnline: zod.boolean(),
+    availableOnline: zod.boolean(),
+    inStoreOnly: zod.boolean(),
+    featured: zod.boolean(),
+    displayOrder: zod.number(),
+    lowStockThreshold: zod.number(),
+    isActive: zod.boolean(),
+    primaryImageUrl: zod.string().nullable(),
+    imageCount: zod.number(),
+    onHand: zod.number(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  })
+  .and(
+    zod.object({
+      images: zod.array(
+        zod.object({
+          id: zod.number(),
+          productId: zod.number(),
+          url: zod.string(),
+          altText: zod.string().nullable(),
+          isPrimary: zod.boolean(),
+          displayOrder: zod.number(),
+        }),
+      ),
+      inventory: zod.object({
+        productId: zod.number(),
+        onHand: zod.number(),
+        onHold: zod.number(),
+        reorderThreshold: zod.number(),
+      }),
+    }),
+  );
+
+/**
+ * @summary Update a product
+ */
+export const AdminUpdateProductParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const adminUpdateProductBodySlugRegExp = new RegExp(
+  "^[a-z0-9]+(?:-[a-z0-9]+)\*$",
+);
+
+export const AdminUpdateProductBody = zod.object({
+  name: zod.string().min(1),
+  slug: zod.string().min(1).regex(adminUpdateProductBodySlugRegExp),
+  sku: zod.string().min(1),
+  description: zod.string().nullish(),
+  shortDescription: zod.string().nullish(),
+  manufacturerId: zod.number().nullish(),
+  categoryId: zod.number().nullish(),
+  materialId: zod.number().nullish(),
+  price: zod.string().nullish(),
+  cost: zod.string().nullish(),
+  weight: zod.string().nullish(),
+  dimensions: zod.string().nullish(),
+  showPriceOnline: zod.boolean().optional(),
+  availableOnline: zod.boolean().optional(),
+  inStoreOnly: zod.boolean().optional(),
+  featured: zod.boolean().optional(),
+  displayOrder: zod.number().optional(),
+  lowStockThreshold: zod.number().optional(),
+  isActive: zod.boolean().optional(),
+});
+
+export const AdminUpdateProductResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  slug: zod.string(),
+  sku: zod.string(),
+  description: zod.string().nullable(),
+  shortDescription: zod.string().nullable(),
+  manufacturerId: zod.number().nullable(),
+  manufacturerName: zod.string().nullable(),
+  categoryId: zod.number().nullable(),
+  categoryName: zod.string().nullable(),
+  materialId: zod.number().nullable(),
+  materialName: zod.string().nullable(),
+  price: zod.string().nullable(),
+  cost: zod.string().nullable(),
+  weight: zod.string().nullable(),
+  dimensions: zod.string().nullable(),
+  showPriceOnline: zod.boolean(),
+  availableOnline: zod.boolean(),
+  inStoreOnly: zod.boolean(),
+  featured: zod.boolean(),
+  displayOrder: zod.number(),
+  lowStockThreshold: zod.number(),
+  isActive: zod.boolean(),
+  primaryImageUrl: zod.string().nullable(),
+  imageCount: zod.number(),
+  onHand: zod.number(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Activate or deactivate a product
+ */
+export const AdminSetProductActiveParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminSetProductActiveBody = zod.object({
+  isActive: zod.boolean(),
+});
+
+export const AdminSetProductActiveResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  slug: zod.string(),
+  sku: zod.string(),
+  description: zod.string().nullable(),
+  shortDescription: zod.string().nullable(),
+  manufacturerId: zod.number().nullable(),
+  manufacturerName: zod.string().nullable(),
+  categoryId: zod.number().nullable(),
+  categoryName: zod.string().nullable(),
+  materialId: zod.number().nullable(),
+  materialName: zod.string().nullable(),
+  price: zod.string().nullable(),
+  cost: zod.string().nullable(),
+  weight: zod.string().nullable(),
+  dimensions: zod.string().nullable(),
+  showPriceOnline: zod.boolean(),
+  availableOnline: zod.boolean(),
+  inStoreOnly: zod.boolean(),
+  featured: zod.boolean(),
+  displayOrder: zod.number(),
+  lowStockThreshold: zod.number(),
+  isActive: zod.boolean(),
+  primaryImageUrl: zod.string().nullable(),
+  imageCount: zod.number(),
+  onHand: zod.number(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Attach an image to a product
+ */
+export const AdminAddProductImageParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminAddProductImageBody = zod.object({
+  url: zod.string().min(1),
+  altText: zod.string().nullish(),
+});
+
+/**
+ * @summary Reorder product images and set primary
+ */
+export const AdminReorderProductImagesParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminReorderProductImagesBody = zod.object({
+  images: zod.array(
+    zod.object({
+      id: zod.number(),
+      displayOrder: zod.number(),
+      isPrimary: zod.boolean(),
+    }),
+  ),
+});
+
+export const AdminReorderProductImagesResponseItem = zod.object({
+  id: zod.number(),
+  productId: zod.number(),
+  url: zod.string(),
+  altText: zod.string().nullable(),
+  isPrimary: zod.boolean(),
+  displayOrder: zod.number(),
+});
+export const AdminReorderProductImagesResponse = zod.array(
+  AdminReorderProductImagesResponseItem,
+);
+
+/**
+ * @summary Delete a product image
+ */
+export const AdminDeleteProductImageParams = zod.object({
+  id: zod.coerce.number(),
+  imageId: zod.coerce.number(),
+});
+
+/**
+ * @summary Set on-hand and reorder threshold for a product
+ */
+export const AdminUpdateProductInventoryParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const adminUpdateProductInventoryBodyOnHandMin = 0;
+
+export const adminUpdateProductInventoryBodyReorderThresholdMin = 0;
+
+export const AdminUpdateProductInventoryBody = zod.object({
+  onHand: zod.number().min(adminUpdateProductInventoryBodyOnHandMin),
+  reorderThreshold: zod
+    .number()
+    .min(adminUpdateProductInventoryBodyReorderThresholdMin),
+});
+
+export const AdminUpdateProductInventoryResponse = zod.object({
+  productId: zod.number(),
+  onHand: zod.number(),
+  onHold: zod.number(),
+  reorderThreshold: zod.number(),
+});
+
+/**
+ * @summary Validate a CSV import without writing changes
+ */
+
+export const AdminImportProductsDryRunBody = zod.object({
+  csvText: zod.string().min(1),
+  mapping: zod
+    .object({
+      name: zod.string(),
+      slug: zod.string().optional(),
+      sku: zod.string(),
+      manufacturer: zod.string(),
+      category: zod.string(),
+      shortDescription: zod.string().optional(),
+      description: zod.string().optional(),
+      price: zod.string(),
+      cost: zod.string().optional(),
+      weight: zod.string().optional(),
+      dimensions: zod.string().optional(),
+      onHand: zod.string().optional(),
+      reorderThreshold: zod.string().optional(),
+      featured: zod.string().optional(),
+      availableOnline: zod.string().optional(),
+      inStoreOnly: zod.string().optional(),
+    })
+    .describe(
+      "Maps product fields to CSV header column names. Required mapped fields - name, sku, manufacturer, category, price.",
+    ),
+});
+
+export const AdminImportProductsDryRunResponse = zod.object({
+  totalRows: zod.number(),
+  willCreateCount: zod.number(),
+  willUpdateCount: zod.number(),
+  errorCount: zod.number(),
+  rows: zod.array(
+    zod.object({
+      rowIndex: zod
+        .number()
+        .describe("1-based row number in the CSV (excluding header)."),
+      action: zod.enum(["create", "update", "error"]),
+      sku: zod.string().nullish(),
+      name: zod.string().nullish(),
+      existingProductId: zod.number().nullish(),
+      errors: zod.array(
+        zod.object({
+          field: zod.string(),
+          message: zod.string(),
+        }),
+      ),
+    }),
+  ),
+});
+
+/**
+ * @summary Commit a CSV import (creates or updates products by SKU)
+ */
+
+export const AdminImportProductsCommitBody = zod.object({
+  csvText: zod.string().min(1),
+  mapping: zod
+    .object({
+      name: zod.string(),
+      slug: zod.string().optional(),
+      sku: zod.string(),
+      manufacturer: zod.string(),
+      category: zod.string(),
+      shortDescription: zod.string().optional(),
+      description: zod.string().optional(),
+      price: zod.string(),
+      cost: zod.string().optional(),
+      weight: zod.string().optional(),
+      dimensions: zod.string().optional(),
+      onHand: zod.string().optional(),
+      reorderThreshold: zod.string().optional(),
+      featured: zod.string().optional(),
+      availableOnline: zod.string().optional(),
+      inStoreOnly: zod.string().optional(),
+    })
+    .describe(
+      "Maps product fields to CSV header column names. Required mapped fields - name, sku, manufacturer, category, price.",
+    ),
+});
+
+export const AdminImportProductsCommitResponse = zod.object({
+  totalRows: zod.number(),
+  createdCount: zod.number(),
+  updatedCount: zod.number(),
+  errorCount: zod.number(),
+  errors: zod.array(
+    zod.object({
+      rowIndex: zod
+        .number()
+        .describe("1-based row number in the CSV (excluding header)."),
+      action: zod.enum(["create", "update", "error"]),
+      sku: zod.string().nullish(),
+      name: zod.string().nullish(),
+      existingProductId: zod.number().nullish(),
+      errors: zod.array(
+        zod.object({
+          field: zod.string(),
+          message: zod.string(),
+        }),
+      ),
+    }),
+  ),
+});
+
+/**
  * @summary Request a presigned URL for uploading a file (staff only)
  */
 

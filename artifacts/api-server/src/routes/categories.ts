@@ -16,6 +16,7 @@ import {
   AdminSetCategoryActiveBody,
 } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
+import { isUniqueViolation } from "../lib/dbErrors";
 
 const router: IRouter = Router();
 
@@ -150,8 +151,7 @@ router.post(
         .returning();
       res.status(201).json(toAdminPayload(row, 0));
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      if (/unique|duplicate/i.test(msg)) {
+      if (isUniqueViolation(err)) {
         res
           .status(409)
           .json({ error: "A category with that slug already exists" });
@@ -175,6 +175,14 @@ router.put(
       return;
     }
     if (body.data.parentId !== null && body.data.parentId !== undefined) {
+      const [parent] = await db
+        .select({ id: categoriesTable.id })
+        .from(categoriesTable)
+        .where(eq(categoriesTable.id, body.data.parentId));
+      if (!parent) {
+        res.status(400).json({ error: "Parent category does not exist" });
+        return;
+      }
       if (await wouldCreateCycle(params.data.id, body.data.parentId)) {
         res.status(400).json({
           error: "That would create a cycle (a category cannot be its own ancestor)",
@@ -210,8 +218,7 @@ router.put(
         .where(eq(productsTable.categoryId, row.id));
       res.json(toAdminPayload(row, count));
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      if (/unique|duplicate/i.test(msg)) {
+      if (isUniqueViolation(err)) {
         res
           .status(409)
           .json({ error: "A category with that slug already exists" });

@@ -30,11 +30,16 @@ Full-stack e-commerce platform for Oasis Garden & Patio — a luxury outdoor fur
 
 1. **Foundation** ✅ — DB schema, OpenAPI spec, public read-only routes (legal, banners, manufacturers, categories, products/featured), customer site shell
 2. **Customer auth** ✅ — email/password (bcryptjs rounds=12), session cookies (express-session + connect-pg-simple), 3 roles (customer/agent/admin), 8 endpoints (signup/login/logout/me/verify-email/resend-verification/request-password-reset/reset-password), branded transactional emails via Resend (Replit connector). Tokens stored as SHA-256 hashes, atomically consumed via `UPDATE…RETURNING`. Rate limiting: login 10/15min/IP, password-reset 5/hr/(IP+email), resend-verification 5/hr/user. Frontend: `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/verify-email`, `/account`; auth-aware header dropdown; `useAuth()` hook in `artifacts/web/src/lib/auth.tsx`.
-3. **Catalog browsing** — product list, filters, PDP
-4. **Cart + checkout** — Authorize.net, TaxJar, shipping
-5. **Customer account** — order history, addresses
-6. **Staff portal** — agent-created orders, inventory, purchasing
-7. **Admin portal** — manufacturers, categories, products, CMS, users, reports
+3. **Staff portal (in progress)** — building admin + agent shells *before* customer catalog, per user request, so real products can be loaded from a vendor spreadsheet.
+   - ✅ Schema additions, admin bootstrap from env, role-aware shell + 2FA + first-login flow
+   - ✅ Manufacturers CRUD, Categories CRUD (with tree), Object Storage wiring
+   - ✅ Products CRUD (multi-image drag/reorder, primary, inventory tab)
+   - ✅ **CSV Import** (`/admin/products/import`): upload → auto-map columns → dry-run validation → atomic commit. Resolves manufacturer/category by name (case-insensitive), upserts by SKU, inventory via `onConflictDoUpdate`. Body limit raised to 25 MB; rejects dangerous header names (`__proto__`/`constructor`/`prototype`).
+   - 🔜 Sets, Inventory, Carriers, Banners, Legal, Settings, Discounts, Users, Audit, Notifications, Orders, Vendor Orders, Reports, Agent shell
+4. **Catalog browsing** — product list, filters, PDP
+5. **Cart + checkout** — Authorize.net, TaxJar, shipping
+6. **Customer account** — order history, addresses
+7. **Admin portal extras / final pass**
 
 ## Integrations
 

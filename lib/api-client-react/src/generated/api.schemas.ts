@@ -105,6 +105,177 @@ export interface SetActiveRequest {
   isActive: boolean;
 }
 
+export interface AdminProduct {
+  id: number;
+  name: string;
+  slug: string;
+  sku: string;
+  /** @nullable */
+  description: string | null;
+  /** @nullable */
+  shortDescription: string | null;
+  /** @nullable */
+  manufacturerId: number | null;
+  /** @nullable */
+  manufacturerName: string | null;
+  /** @nullable */
+  categoryId: number | null;
+  /** @nullable */
+  categoryName: string | null;
+  /** @nullable */
+  materialId: number | null;
+  /** @nullable */
+  materialName: string | null;
+  /** @nullable */
+  price: string | null;
+  /** @nullable */
+  cost: string | null;
+  /** @nullable */
+  weight: string | null;
+  /** @nullable */
+  dimensions: string | null;
+  showPriceOnline: boolean;
+  availableOnline: boolean;
+  inStoreOnly: boolean;
+  featured: boolean;
+  displayOrder: number;
+  lowStockThreshold: number;
+  isActive: boolean;
+  /** @nullable */
+  primaryImageUrl: string | null;
+  imageCount: number;
+  onHand: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminProductImage {
+  id: number;
+  productId: number;
+  url: string;
+  /** @nullable */
+  altText: string | null;
+  isPrimary: boolean;
+  displayOrder: number;
+}
+
+export interface AdminProductInventory {
+  productId: number;
+  onHand: number;
+  onHold: number;
+  reorderThreshold: number;
+}
+
+export type AdminProductDetail = AdminProduct & {
+  images: AdminProductImage[];
+  inventory: AdminProductInventory;
+};
+
+export interface AdminProductsPage {
+  products: AdminProduct[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface CreateProductRequest {
+  /** @minLength 1 */
+  name: string;
+  /**
+   * @minLength 1
+   * @pattern ^[a-z0-9]+(?:-[a-z0-9]+)*$
+   */
+  slug: string;
+  /** @minLength 1 */
+  sku: string;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  shortDescription?: string | null;
+  /** @nullable */
+  manufacturerId?: number | null;
+  /** @nullable */
+  categoryId?: number | null;
+  /** @nullable */
+  materialId?: number | null;
+  /** @nullable */
+  price?: string | null;
+  /** @nullable */
+  cost?: string | null;
+  /** @nullable */
+  weight?: string | null;
+  /** @nullable */
+  dimensions?: string | null;
+  showPriceOnline?: boolean;
+  availableOnline?: boolean;
+  inStoreOnly?: boolean;
+  featured?: boolean;
+  displayOrder?: number;
+  lowStockThreshold?: number;
+  isActive?: boolean;
+}
+
+export interface UpdateProductRequest {
+  /** @minLength 1 */
+  name: string;
+  /**
+   * @minLength 1
+   * @pattern ^[a-z0-9]+(?:-[a-z0-9]+)*$
+   */
+  slug: string;
+  /** @minLength 1 */
+  sku: string;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  shortDescription?: string | null;
+  /** @nullable */
+  manufacturerId?: number | null;
+  /** @nullable */
+  categoryId?: number | null;
+  /** @nullable */
+  materialId?: number | null;
+  /** @nullable */
+  price?: string | null;
+  /** @nullable */
+  cost?: string | null;
+  /** @nullable */
+  weight?: string | null;
+  /** @nullable */
+  dimensions?: string | null;
+  showPriceOnline?: boolean;
+  availableOnline?: boolean;
+  inStoreOnly?: boolean;
+  featured?: boolean;
+  displayOrder?: number;
+  lowStockThreshold?: number;
+  isActive?: boolean;
+}
+
+export interface AddProductImageRequest {
+  /** @minLength 1 */
+  url: string;
+  /** @nullable */
+  altText?: string | null;
+}
+
+export type ReorderProductImagesRequestImagesItem = {
+  id: number;
+  displayOrder: number;
+  isPrimary: boolean;
+};
+
+export interface ReorderProductImagesRequest {
+  images: ReorderProductImagesRequestImagesItem[];
+}
+
+export interface UpdateInventoryRequest {
+  /** @minimum 0 */
+  onHand: number;
+  /** @minimum 0 */
+  reorderThreshold: number;
+}
+
 export interface AdminCategory {
   id: number;
   name: string;
@@ -325,6 +496,91 @@ export interface RequestUploadUrlResponseSchema {
   metadata: RequestUploadUrlResponseSchemaMetadata;
 }
 
+/**
+ * Maps product fields to CSV header column names. Required mapped fields - name, sku, manufacturer, category, price.
+ */
+export interface ImportProductsMapping {
+  name: string;
+  slug?: string;
+  sku: string;
+  manufacturer: string;
+  category: string;
+  shortDescription?: string;
+  description?: string;
+  price: string;
+  cost?: string;
+  weight?: string;
+  dimensions?: string;
+  onHand?: string;
+  reorderThreshold?: string;
+  featured?: string;
+  availableOnline?: string;
+  inStoreOnly?: string;
+}
+
+export interface ImportProductsRequest {
+  /** @minLength 1 */
+  csvText: string;
+  mapping: ImportProductsMapping;
+}
+
+export interface ImportProductsRowError {
+  field: string;
+  message: string;
+}
+
+export type ImportProductsRowResultAction =
+  (typeof ImportProductsRowResultAction)[keyof typeof ImportProductsRowResultAction];
+
+export const ImportProductsRowResultAction = {
+  create: "create",
+  update: "update",
+  error: "error",
+} as const;
+
+export interface ImportProductsRowResult {
+  /** 1-based row number in the CSV (excluding header). */
+  rowIndex: number;
+  action: ImportProductsRowResultAction;
+  sku?: string | null;
+  name?: string | null;
+  existingProductId?: number | null;
+  errors: ImportProductsRowError[];
+}
+
+export interface ImportProductsDryRunResult {
+  totalRows: number;
+  willCreateCount: number;
+  willUpdateCount: number;
+  errorCount: number;
+  rows: ImportProductsRowResult[];
+}
+
+export interface ImportProductsCommitResult {
+  totalRows: number;
+  createdCount: number;
+  updatedCount: number;
+  errorCount: number;
+  errors: ImportProductsRowResult[];
+}
+
 export type StaffDisableTotp200 = {
   ok: boolean;
+};
+
+export type AdminListProductsParams = {
+  q?: string;
+  manufacturerId?: number;
+  categoryId?: number;
+  isActive?: boolean;
+  featured?: boolean;
+  /**
+   * @minimum 1
+   */
+  page?: number;
+  /**
+   * @minimum 1
+   * @maximum 200
+   */
+  pageSize?: number;
 };

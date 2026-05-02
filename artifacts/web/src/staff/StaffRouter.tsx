@@ -9,6 +9,9 @@ import AdminDashboard from "./pages/admin/Dashboard";
 import AgentDashboard from "./pages/agent/Dashboard";
 import Manufacturers from "./pages/admin/Manufacturers";
 import Categories from "./pages/admin/Categories";
+import Products from "./pages/admin/Products";
+import ProductEdit from "./pages/admin/ProductEdit";
+import ProductsImport from "./pages/admin/ProductsImport";
 import { PagePlaceholder } from "./pages/PagePlaceholder";
 
 const ADMIN_PLACEHOLDERS: Array<{ path: string; title: string; comingIn: string }> = [
@@ -17,7 +20,6 @@ const ADMIN_PLACEHOLDERS: Array<{ path: string; title: string; comingIn: string 
   { path: "/vendor-orders", title: "Vendor Orders", comingIn: "Phase 6.22" },
   { path: "/customers", title: "Customers", comingIn: "Phase 6.17" },
   { path: "/discounts", title: "Discounts", comingIn: "Phase 6.16" },
-  { path: "/products", title: "Products", comingIn: "Phase 6.8" },
   { path: "/sets", title: "Product Sets", comingIn: "Phase 6.10" },
   { path: "/inventory", title: "Inventory", comingIn: "Phase 6.11" },
   { path: "/carriers", title: "Carriers", comingIn: "Phase 6.12" },
@@ -56,6 +58,10 @@ export default function StaffRouter() {
                 <Route path="/">{() => <AdminDashboard user={user} />}</Route>
                 <Route path="/manufacturers" component={Manufacturers} />
                 <Route path="/categories" component={Categories} />
+                <Route path="/products" component={Products} />
+                <Route path="/products/import" component={ProductsImport} />
+                <Route path="/products/new" component={ProductEdit} />
+                <Route path="/products/:id" component={ProductEdit} />
                 {ADMIN_PLACEHOLDERS.map(({ path, title, comingIn }) => (
                   <Route key={path} path={path}>
                     {() => <PagePlaceholder title={title} comingIn={comingIn} />}

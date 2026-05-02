@@ -11,6 +11,7 @@ import {
   AdminSetManufacturerActiveBody,
 } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
+import { isUniqueViolation } from "../lib/dbErrors";
 
 const router: IRouter = Router();
 
@@ -92,8 +93,7 @@ router.post(
         .returning();
       res.status(201).json(toAdminPayload(row));
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      if (/unique|duplicate/i.test(msg)) {
+      if (isUniqueViolation(err)) {
         res.status(409).json({ error: "A manufacturer with that slug already exists" });
         return;
       }
@@ -144,8 +144,7 @@ router.put(
       }
       res.json(toAdminPayload(row));
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      if (/unique|duplicate/i.test(msg)) {
+      if (isUniqueViolation(err)) {
         res.status(409).json({ error: "A manufacturer with that slug already exists" });
         return;
       }
