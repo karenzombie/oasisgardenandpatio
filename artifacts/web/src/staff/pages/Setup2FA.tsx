@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { useLocation } from "wouter";
+import { useLocation, Redirect } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useStaffSetupTotp,
@@ -29,14 +29,6 @@ export default function Setup2FA() {
   const [error, setError] = useState<string | null>(null);
   const [recoveryCodes, setRecoveryCodes] = useState<string[] | null>(null);
 
-  // Redirect if not in correct stage
-  useEffect(() => {
-    if (session.isLoading) return;
-    if (session.stage !== "needs_2fa_setup" && !recoveryCodes) {
-      navigate(pathForStage(session.stage, session.user?.role));
-    }
-  }, [session.isLoading, session.stage, session.user?.role, navigate, recoveryCodes]);
-
   // Auto-init the QR on first load
   useEffect(() => {
     if (qrUrl || initMutation.isPending) return;
@@ -52,6 +44,17 @@ export default function Setup2FA() {
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session.stage]);
+
+  // Redirect if not in correct stage (after hooks have all run)
+  if (
+    !session.isLoading &&
+    session.stage !== "needs_2fa_setup" &&
+    !recoveryCodes
+  ) {
+    return (
+      <Redirect to={pathForStage(session.stage, session.user?.role)} replace />
+    );
+  }
 
   const handleVerify = async (e: FormEvent) => {
     e.preventDefault();

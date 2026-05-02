@@ -1,5 +1,5 @@
-import { useEffect, useState, type FormEvent } from "react";
-import { useLocation } from "wouter";
+import { useState, type FormEvent } from "react";
+import { useLocation, Redirect } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useStaffLogin,
@@ -24,13 +24,12 @@ export default function StaffLogin() {
 
   const loginMutation = useStaffLogin();
 
-  // If already authenticated, bounce to the right place
-  useEffect(() => {
-    if (session.isLoading) return;
-    if (session.stage !== "anonymous") {
-      navigate(pathForStage(session.stage, session.user?.role));
-    }
-  }, [session.isLoading, session.stage, session.user?.role, navigate]);
+  // If already mid-flow or signed in, bounce to the right place
+  if (!session.isLoading && session.stage !== "anonymous") {
+    return (
+      <Redirect to={pathForStage(session.stage, session.user?.role)} replace />
+    );
+  }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();

@@ -27,19 +27,24 @@ export function useStaffSession() {
   };
 }
 
+/**
+ * Returns an absolute path with the `~` prefix so it works correctly inside
+ * wouter `nest` contexts (e.g. inside `/admin` nest, `navigate("/staff")`
+ * would otherwise resolve to `/admin/staff`).
+ */
 export function pathForStage(stage: StaffStage, role?: "agent" | "admin") {
   switch (stage) {
     case "anonymous":
-      return "/staff";
+      return "~/staff";
     case "needs_2fa_setup":
-      return "/staff/setup-2fa";
+      return "~/staff/setup-2fa";
     case "needs_2fa_verify":
-      return "/staff/verify-2fa";
+      return "~/staff/verify-2fa";
     case "needs_password_change":
-      return "/staff/change-password";
+      return "~/staff/change-password";
     case "complete":
-      return role === "admin" ? "/admin" : "/agent";
+      return role === "admin" ? "~/admin" : "~/agent";
     default:
-      return "/staff";
+      return "~/staff";
   }
 }

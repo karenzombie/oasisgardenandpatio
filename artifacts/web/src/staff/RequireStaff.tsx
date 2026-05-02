@@ -1,5 +1,5 @@
-import { useEffect, type ReactNode } from "react";
-import { useLocation } from "wouter";
+import { type ReactNode } from "react";
+import { Redirect } from "wouter";
 import { Spinner } from "@/components/ui/spinner";
 import { useStaffSession, pathForStage } from "./lib/staffSession";
 
@@ -10,21 +10,8 @@ interface RequireStaffProps {
 
 export function RequireStaff({ children, requireRole }: RequireStaffProps) {
   const { isLoading, stage, user } = useStaffSession();
-  const [loc, navigate] = useLocation();
 
-  useEffect(() => {
-    if (isLoading) return;
-    if (stage !== "complete") {
-      const target = pathForStage(stage, user?.role);
-      if (loc !== target) navigate(target);
-      return;
-    }
-    if (requireRole === "admin" && user?.role !== "admin") {
-      navigate("/agent");
-    }
-  }, [isLoading, stage, user?.role, requireRole, loc, navigate]);
-
-  if (isLoading || stage !== "complete" || !user) {
+  if (isLoading) {
     return (
       <div className="min-h-[100dvh] flex items-center justify-center bg-[#F5F7FA]">
         <Spinner className="size-8 text-[#1A3C5E]" />
@@ -32,8 +19,12 @@ export function RequireStaff({ children, requireRole }: RequireStaffProps) {
     );
   }
 
+  if (stage !== "complete" || !user) {
+    return <Redirect to={pathForStage(stage, user?.role)} replace />;
+  }
+
   if (requireRole === "admin" && user.role !== "admin") {
-    return null;
+    return <Redirect to="~/agent" replace />;
   }
 
   return <>{children(user)}</>;

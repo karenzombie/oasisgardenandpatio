@@ -1,5 +1,5 @@
-import { useEffect, useState, type FormEvent } from "react";
-import { useLocation } from "wouter";
+import { useState, type FormEvent } from "react";
+import { useLocation, Redirect } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useStaffVerifyTotp,
@@ -25,12 +25,11 @@ export default function Verify2FA() {
   const totpMutation = useStaffVerifyTotp();
   const recoveryMutation = useStaffVerifyRecoveryCode();
 
-  useEffect(() => {
-    if (session.isLoading) return;
-    if (session.stage !== "needs_2fa_verify") {
-      navigate(pathForStage(session.stage, session.user?.role));
-    }
-  }, [session.isLoading, session.stage, session.user?.role, navigate]);
+  if (!session.isLoading && session.stage !== "needs_2fa_verify") {
+    return (
+      <Redirect to={pathForStage(session.stage, session.user?.role)} replace />
+    );
+  }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();

@@ -1,5 +1,5 @@
-import { useEffect, useState, type FormEvent } from "react";
-import { useLocation } from "wouter";
+import { useState, type FormEvent } from "react";
+import { useLocation, Redirect } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useStaffChangePassword,
@@ -25,15 +25,15 @@ export default function ChangePassword() {
 
   const mutation = useStaffChangePassword();
 
-  useEffect(() => {
-    if (session.isLoading) return;
-    if (
-      session.stage !== "needs_password_change" &&
-      session.stage !== "complete"
-    ) {
-      navigate(pathForStage(session.stage, session.user?.role));
-    }
-  }, [session.isLoading, session.stage, session.user?.role, navigate]);
+  if (
+    !session.isLoading &&
+    session.stage !== "needs_password_change" &&
+    session.stage !== "complete"
+  ) {
+    return (
+      <Redirect to={pathForStage(session.stage, session.user?.role)} replace />
+    );
+  }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();

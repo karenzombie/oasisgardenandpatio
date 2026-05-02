@@ -10,32 +10,32 @@ import AgentDashboard from "./pages/agent/Dashboard";
 import { PagePlaceholder } from "./pages/PagePlaceholder";
 
 const ADMIN_PLACEHOLDERS: Array<{ path: string; title: string; comingIn: string }> = [
-  { path: "/admin/notifications", title: "Notifications", comingIn: "Phase 6.18" },
-  { path: "/admin/orders", title: "Orders", comingIn: "Phase 6.21" },
-  { path: "/admin/vendor-orders", title: "Vendor Orders", comingIn: "Phase 6.22" },
-  { path: "/admin/customers", title: "Customers", comingIn: "Phase 6.17" },
-  { path: "/admin/discounts", title: "Discounts", comingIn: "Phase 6.16" },
-  { path: "/admin/products", title: "Products", comingIn: "Phase 6.8" },
-  { path: "/admin/categories", title: "Categories", comingIn: "Phase 6.6" },
-  { path: "/admin/sets", title: "Product Sets", comingIn: "Phase 6.10" },
-  { path: "/admin/inventory", title: "Inventory", comingIn: "Phase 6.11" },
-  { path: "/admin/manufacturers", title: "Manufacturers", comingIn: "Phase 6.5" },
-  { path: "/admin/carriers", title: "Carriers", comingIn: "Phase 6.12" },
-  { path: "/admin/banners", title: "Site Banners", comingIn: "Phase 6.13" },
-  { path: "/admin/legal", title: "Legal Pages", comingIn: "Phase 6.14" },
-  { path: "/admin/reports", title: "Reports", comingIn: "Phase 6.23" },
-  { path: "/admin/users", title: "Users", comingIn: "Phase 6.17" },
-  { path: "/admin/audit-log", title: "Audit Log", comingIn: "Phase 6.19" },
-  { path: "/admin/settings", title: "Settings", comingIn: "Phase 6.15" },
+  { path: "/notifications", title: "Notifications", comingIn: "Phase 6.18" },
+  { path: "/orders", title: "Orders", comingIn: "Phase 6.21" },
+  { path: "/vendor-orders", title: "Vendor Orders", comingIn: "Phase 6.22" },
+  { path: "/customers", title: "Customers", comingIn: "Phase 6.17" },
+  { path: "/discounts", title: "Discounts", comingIn: "Phase 6.16" },
+  { path: "/products", title: "Products", comingIn: "Phase 6.8" },
+  { path: "/categories", title: "Categories", comingIn: "Phase 6.6" },
+  { path: "/sets", title: "Product Sets", comingIn: "Phase 6.10" },
+  { path: "/inventory", title: "Inventory", comingIn: "Phase 6.11" },
+  { path: "/manufacturers", title: "Manufacturers", comingIn: "Phase 6.5" },
+  { path: "/carriers", title: "Carriers", comingIn: "Phase 6.12" },
+  { path: "/banners", title: "Site Banners", comingIn: "Phase 6.13" },
+  { path: "/legal", title: "Legal Pages", comingIn: "Phase 6.14" },
+  { path: "/reports", title: "Reports", comingIn: "Phase 6.23" },
+  { path: "/users", title: "Users", comingIn: "Phase 6.17" },
+  { path: "/audit-log", title: "Audit Log", comingIn: "Phase 6.19" },
+  { path: "/settings", title: "Settings", comingIn: "Phase 6.15" },
 ];
 
 const AGENT_PLACEHOLDERS: Array<{ path: string; title: string; comingIn: string }> = [
-  { path: "/agent/new-order", title: "New Order", comingIn: "Phase 6.24" },
-  { path: "/agent/orders", title: "My Orders", comingIn: "Phase 6.24" },
-  { path: "/agent/customers", title: "Customers", comingIn: "Phase 6.24" },
-  { path: "/agent/products", title: "Product Catalog", comingIn: "Phase 6.24" },
-  { path: "/agent/inventory", title: "Inventory", comingIn: "Phase 6.24" },
-  { path: "/agent/reports", title: "My Reports", comingIn: "Phase 6.24" },
+  { path: "/new-order", title: "New Order", comingIn: "Phase 6.24" },
+  { path: "/orders", title: "My Orders", comingIn: "Phase 6.24" },
+  { path: "/customers", title: "Customers", comingIn: "Phase 6.24" },
+  { path: "/products", title: "Product Catalog", comingIn: "Phase 6.24" },
+  { path: "/inventory", title: "Inventory", comingIn: "Phase 6.24" },
+  { path: "/reports", title: "My Reports", comingIn: "Phase 6.24" },
 ];
 
 export default function StaffRouter() {
@@ -47,13 +47,13 @@ export default function StaffRouter() {
       <Route path="/staff/verify-2fa" component={Verify2FA} />
       <Route path="/staff/change-password" component={ChangePassword} />
 
-      {/* Admin routes (require admin role + shell) */}
-      <Route path="/admin/:rest*">
+      {/* Admin section (matches /admin and /admin/*) */}
+      <Route path="/admin" nest>
         <RequireStaff requireRole="admin">
           {(user) => (
             <StaffShell user={user}>
               <Switch>
-                <Route path="/admin">{() => <AdminDashboard user={user} />}</Route>
+                <Route path="/">{() => <AdminDashboard user={user} />}</Route>
                 {ADMIN_PLACEHOLDERS.map(({ path, title, comingIn }) => (
                   <Route key={path} path={path}>
                     {() => <PagePlaceholder title={title} comingIn={comingIn} />}
@@ -73,13 +73,13 @@ export default function StaffRouter() {
         </RequireStaff>
       </Route>
 
-      {/* Agent routes (any staff) */}
-      <Route path="/agent/:rest*">
+      {/* Agent section (matches /agent and /agent/*) */}
+      <Route path="/agent" nest>
         <RequireStaff>
           {(user) => (
             <StaffShell user={user}>
               <Switch>
-                <Route path="/agent">{() => <AgentDashboard user={user} />}</Route>
+                <Route path="/">{() => <AgentDashboard user={user} />}</Route>
                 {AGENT_PLACEHOLDERS.map(({ path, title, comingIn }) => (
                   <Route key={path} path={path}>
                     {() => <PagePlaceholder title={title} comingIn={comingIn} />}
