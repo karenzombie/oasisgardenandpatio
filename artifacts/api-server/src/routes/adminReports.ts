@@ -97,7 +97,7 @@ function sendCsv(res: Response, filename: string, csv: string) {
 router.get(
   "/admin/reports/sales-summary",
   requireAuth,
-  requireRole("admin"),
+  requireRole("admin", "agent"),
   async (req: Request, res: Response) => {
     const parsed = AdminReportsSalesSummaryQueryParams.safeParse(req.query);
     if (!parsed.success) {
@@ -106,7 +106,12 @@ router.get(
     const range = resolveRange(parsed.data);
     if ("error" in range) return res.status(400).json({ error: range.error });
 
-    const filter = rangeFilter(range);
+    const baseFilter = rangeFilter(range);
+    // Agents only see their own orders in the summary numbers.
+    const filter =
+      req.user?.role === "agent"
+        ? and(baseFilter, eq(ordersTable.createdByAgentId, req.user.id))
+        : baseFilter;
 
     const [orderTotals] = await db
       .select({
@@ -148,7 +153,7 @@ router.get(
 router.get(
   "/admin/reports/sales-by-agent",
   requireAuth,
-  requireRole("admin"),
+  requireRole("admin", "agent"),
   async (req: Request, res: Response) => {
     const parsed = AdminReportsSalesByAgentQueryParams.safeParse(req.query);
     if (!parsed.success) {
@@ -163,6 +168,13 @@ router.get(
       where ${orderItemsTable.orderId} = ${ordersTable.id}
     )`;
 
+    const baseFilter = rangeFilter(range);
+    // Agents only see their own row in the by-agent breakdown.
+    const filter =
+      req.user?.role === "agent"
+        ? and(baseFilter, eq(ordersTable.createdByAgentId, req.user.id))
+        : baseFilter;
+
     const rows = await db
       .select({
         agentId: ordersTable.createdByAgentId,
@@ -173,7 +185,7 @@ router.get(
       })
       .from(ordersTable)
       .leftJoin(usersTable, eq(ordersTable.createdByAgentId, usersTable.id))
-      .where(rangeFilter(range))
+      .where(filter)
       .groupBy(ordersTable.createdByAgentId, usersTable.email)
       .orderBy(desc(sql`coalesce(sum(${ordersTable.total}), 0)`));
 

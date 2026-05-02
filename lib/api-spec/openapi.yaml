@@ -1758,6 +1758,22 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/AuditLogPage" }
   /admin/orders:
+    post:
+      operationId: adminCreateOrder
+      tags: [admin-orders]
+      summary: Create an order (in-store agent builder)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateOrderRequest" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminOrderDetail" }
+        "400": { description: Bad request, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
     get:
       operationId: adminListOrders
       tags: [admin-orders]
@@ -2554,6 +2570,134 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /admin/customers:
+    get:
+      operationId: adminListCustomers
+      tags: [admin-customers]
+      summary: Search customers (newest first)
+      parameters:
+        - name: q
+          in: query
+          required: false
+          description: Match email, name, phone, or company
+          schema: { type: string }
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 200 }
+        - name: offset
+          in: query
+          required: false
+          schema: { type: integer, minimum: 0 }
+      responses:
+        "200":
+          description: Customers page
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminCustomerPage" }
+    post:
+      operationId: adminCreateCustomer
+      tags: [admin-customers]
+      summary: Create a new customer record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateCustomerRequest" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminCustomer" }
+        "400": { description: Bad request, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+        "409": { description: Conflict, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+  /admin/customers/{id}:
+    get:
+      operationId: adminGetCustomer
+      tags: [admin-customers]
+      summary: Customer detail with addresses
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Customer detail
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminCustomerDetail" }
+        "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+    patch:
+      operationId: adminUpdateCustomer
+      tags: [admin-customers]
+      summary: Update customer fields
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateCustomerRequest" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminCustomer" }
+        "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+  /admin/customers/{id}/addresses:
+    post:
+      operationId: adminCreateCustomerAddress
+      tags: [admin-customers]
+      summary: Add an address to a customer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateAddressRequest" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminAddress" }
+        "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+  /admin/customers/{id}/addresses/{addressId}:
+    patch:
+      operationId: adminUpdateCustomerAddress
+      tags: [admin-customers]
+      summary: Update one of a customer's addresses
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: addressId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateAddressRequest" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminAddress" }
+        "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
 components:
   schemas:
     HealthStatus:
@@ -4515,3 +4659,135 @@ components:
       properties:
         temporaryPassword: { type: string }
       required: [temporaryPassword]
+    AdminAddress:
+      type: object
+      properties:
+        id: { type: integer }
+        customerId: { type: integer }
+        type: { type: string }
+        recipientName: { type: ["string", "null"] }
+        street1: { type: string }
+        street2: { type: ["string", "null"] }
+        city: { type: string }
+        state: { type: string }
+        zip: { type: string }
+        country: { type: string }
+        phone: { type: ["string", "null"] }
+        isDefault: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+      required: [id, customerId, type, recipientName, street1, street2, city, state, zip, country, phone, isDefault, createdAt, updatedAt]
+    AdminCustomer:
+      type: object
+      properties:
+        id: { type: integer }
+        userId: { type: ["integer", "null"] }
+        email: { type: string }
+        firstName: { type: string }
+        lastName: { type: string }
+        phone: { type: ["string", "null"] }
+        companyName: { type: ["string", "null"] }
+        customerType: { type: string }
+        createdByAgentId: { type: ["integer", "null"] }
+        notes: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+      required: [id, userId, email, firstName, lastName, phone, companyName, customerType, createdByAgentId, notes, createdAt, updatedAt]
+    AdminCustomerDetail:
+      allOf:
+        - $ref: "#/components/schemas/AdminCustomer"
+        - type: object
+          properties:
+            addresses:
+              type: array
+              items: { $ref: "#/components/schemas/AdminAddress" }
+          required: [addresses]
+    AdminCustomerPage:
+      type: object
+      properties:
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/AdminCustomer" }
+        total: { type: integer }
+      required: [rows, total]
+    CreateCustomerRequest:
+      type: object
+      properties:
+        email: { type: string, minLength: 1 }
+        firstName: { type: string, minLength: 1 }
+        lastName: { type: string, minLength: 1 }
+        phone: { type: ["string", "null"] }
+        companyName: { type: ["string", "null"] }
+        customerType: { type: string, enum: [residential, commercial], default: residential }
+        notes: { type: ["string", "null"] }
+      required: [email, firstName, lastName]
+    UpdateCustomerRequest:
+      type: object
+      properties:
+        email: { type: string, minLength: 1 }
+        firstName: { type: string, minLength: 1 }
+        lastName: { type: string, minLength: 1 }
+        phone: { type: ["string", "null"] }
+        companyName: { type: ["string", "null"] }
+        customerType: { type: string, enum: [residential, commercial] }
+        notes: { type: ["string", "null"] }
+    CreateAddressRequest:
+      type: object
+      properties:
+        type: { type: string, enum: [shipping, billing], default: shipping }
+        recipientName: { type: ["string", "null"] }
+        street1: { type: string, minLength: 1 }
+        street2: { type: ["string", "null"] }
+        city: { type: string, minLength: 1 }
+        state: { type: string, minLength: 1 }
+        zip: { type: string, minLength: 1 }
+        country: { type: string, default: "US" }
+        phone: { type: ["string", "null"] }
+        isDefault: { type: boolean, default: false }
+      required: [street1, city, state, zip]
+    UpdateAddressRequest:
+      type: object
+      properties:
+        type: { type: string, enum: [shipping, billing] }
+        recipientName: { type: ["string", "null"] }
+        street1: { type: string, minLength: 1 }
+        street2: { type: ["string", "null"] }
+        city: { type: string, minLength: 1 }
+        state: { type: string, minLength: 1 }
+        zip: { type: string, minLength: 1 }
+        country: { type: string }
+        phone: { type: ["string", "null"] }
+        isDefault: { type: boolean }
+    CreateOrderItemRequest:
+      type: object
+      properties:
+        productId: { type: ["integer", "null"] }
+        variantId: { type: ["integer", "null"] }
+        fabricId: { type: ["integer", "null"] }
+        description: { type: string, minLength: 1 }
+        quantity: { type: integer, minimum: 1 }
+        unitPrice: { type: number, minimum: 0 }
+        discountAmount: { type: number, minimum: 0, default: 0 }
+        discountReason: { type: ["string", "null"] }
+        notes: { type: ["string", "null"] }
+      required: [description, quantity, unitPrice]
+    CreateOrderRequest:
+      type: object
+      properties:
+        customerId: { type: integer }
+        items:
+          type: array
+          minItems: 1
+          items: { $ref: "#/components/schemas/CreateOrderItemRequest" }
+        shippingAddressId: { type: ["integer", "null"] }
+        billingAddressId: { type: ["integer", "null"] }
+        shippingMethod: { type: ["string", "null"] }
+        deliveryAmount: { type: number, minimum: 0, default: 0 }
+        taxRate: { type: number, minimum: 0, maximum: 1, default: 0, description: "Decimal tax rate, e.g. 0.0875 for 8.75%" }
+        depositAmount: { type: number, minimum: 0, default: 0 }
+        salespersonName: { type: ["string", "null"] }
+        specialInstructions: { type: ["string", "null"] }
+        notes: { type: ["string", "null"] }
+        orderType: { type: string, enum: [online, in_store, phone], default: in_store }
+        status: { type: string, default: pending }
+      required: [customerId, items]

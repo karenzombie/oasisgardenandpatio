@@ -72,14 +72,17 @@ function generateTempPassword(): string {
 router.get(
   "/admin/users",
   requireAuth,
-  requireRole("admin"),
+  requireRole("admin", "agent"),
   async (req: Request, res: Response): Promise<void> => {
     const parsed = AdminListUsersQueryParams.safeParse(req.query);
     if (!parsed.success) {
       res.status(400).json({ error: "Invalid query" });
       return;
     }
-    const { group, q } = parsed.data;
+    // Agents may only browse customer accounts, never staff.
+    const group =
+      req.user?.role === "agent" ? "customers" : parsed.data.group;
+    const { q } = parsed.data;
     const conditions: Array<ReturnType<typeof eq>> = [];
     if (group === "customers") {
       conditions.push(eq(usersTable.role, "customer"));

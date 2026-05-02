@@ -11,6 +11,9 @@ import {
   vendorOrdersTable,
   cancellationRequestsTable,
   manufacturersTable,
+  productsTable,
+  productVariantsTable,
+  fabricsTable,
   type Order,
   type OrderItem,
   type Address,
@@ -25,6 +28,7 @@ import {
   AdminListCancellationRequestsQueryParams,
   AdminReviewCancellationRequestParams,
   AdminReviewCancellationRequestBody,
+  AdminCreateOrderBody,
 } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import { recordAudit } from "../lib/audit";
@@ -94,14 +98,17 @@ function itemToPayload(it: OrderItem) {
 router.get(
   "/admin/orders",
   requireAuth,
-  requireRole("admin"),
+  requireRole("admin", "agent"),
   async (req: Request, res: Response): Promise<void> => {
     const parsed = AdminListOrdersQueryParams.safeParse(req.query);
     if (!parsed.success) {
       res.status(400).json({ error: "Invalid query" });
       return;
     }
-    const { status, q, customerId, agentId, limit, offset } = parsed.data;
+    const { status, q, customerId, limit, offset } = parsed.data;
+    // Agents are scoped to orders they created. Admins may filter by any agent.
+    const agentId =
+      req.user?.role === "agent" ? req.user.id : parsed.data.agentId;
     const conditions: Array<ReturnType<typeof eq>> = [];
     if (status) conditions.push(eq(ordersTable.status, status));
     if (customerId !== undefined)
@@ -338,7 +345,7 @@ async function loadOrderDetail(orderId: number) {
 router.get(
   "/admin/orders/:id",
   requireAuth,
-  requireRole("admin"),
+  requireRole("admin", "agent"),
   async (req: Request, res: Response): Promise<void> => {
     const params = AdminGetOrderParams.safeParse(req.params);
     if (!params.success) {
@@ -350,6 +357,11 @@ router.get(
       res.status(404).json({ error: "Not found" });
       return;
     }
+    // Agents may only view orders they created.
+    if (req.user?.role === "agent" && detail.agentId !== req.user.id) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
     res.json(detail);
   },
 );
@@ -357,7 +369,7 @@ router.get(
 router.post(
   "/admin/orders/:id/status",
   requireAuth,
-  requireRole("admin"),
+  requireRole("admin", "agent"),
   async (req: Request, res: Response): Promise<void> => {
     const params = AdminUpdateOrderStatusParams.safeParse(req.params);
     if (!params.success) {
@@ -385,6 +397,13 @@ router.post(
         .for("update")
         .limit(1);
       if (!existing) return { kind: "not_found" as const };
+      // Agents can only modify orders they created.
+      if (
+        req.user?.role === "agent" &&
+        existing.createdByAgentId !== req.user.id
+      ) {
+        return { kind: "not_found" as const };
+      }
       if (existing.status === body.data.toStatus) {
         return { kind: "noop" as const };
       }
@@ -438,7 +457,7 @@ router.post(
 router.post(
   "/admin/orders/:id/notes",
   requireAuth,
-  requireRole("admin"),
+  requireRole("admin", "agent"),
   async (req: Request, res: Response): Promise<void> => {
     const params = AdminUpdateOrderNotesParams.safeParse(req.params);
     if (!params.success) {
@@ -451,6 +470,18 @@ router.post(
         .status(400)
         .json({ error: body.error.issues[0]?.message ?? "Invalid body" });
       return;
+    }
+    // Agents can only modify orders they created.
+    if (req.user?.role === "agent") {
+      const [existing] = await db
+        .select({ createdByAgentId: ordersTable.createdByAgentId })
+        .from(ordersTable)
+        .where(eq(ordersTable.id, params.data.id))
+        .limit(1);
+      if (!existing || existing.createdByAgentId !== req.user.id) {
+        res.status(404).json({ error: "Not found" });
+        return;
+      }
     }
     const [row] = await db
       .update(ordersTable)
@@ -673,6 +704,244 @@ router.post(
         updated.refundAmount === null ? null : Number(updated.refundAmount),
       createdAt: updated.createdAt.toISOString(),
     });
+  },
+);
+
+// ──────────────────────────────────────────────────────────────────────────
+// Create order (used by Agent New Order builder)
+// ──────────────────────────────────────────────────────────────────────────
+
+function generateOrderNumber(): string {
+  const ts = Date.now().toString(36).toUpperCase();
+  const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
+  return `ORD-${ts}-${rand}`;
+}
+
+function money(n: number): string {
+  return (Math.round(n * 100) / 100).toFixed(2);
+}
+
+router.post(
+  "/admin/orders",
+  requireAuth,
+  requireRole("admin", "agent"),
+  async (req: Request, res: Response): Promise<void> => {
+    const parsed = AdminCreateOrderBody.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: parsed.error.issues[0]?.message ?? "Invalid body" });
+      return;
+    }
+    const data = parsed.data;
+
+    const [customer] = await db
+      .select()
+      .from(customersTable)
+      .where(eq(customersTable.id, data.customerId))
+      .limit(1);
+    if (!customer) {
+      res.status(400).json({ error: "Customer not found" });
+      return;
+    }
+
+    if (data.shippingAddressId != null) {
+      const [a] = await db
+        .select()
+        .from(addressesTable)
+        .where(
+          and(
+            eq(addressesTable.id, data.shippingAddressId),
+            eq(addressesTable.customerId, customer.id),
+          ),
+        )
+        .limit(1);
+      if (!a) {
+        res
+          .status(400)
+          .json({ error: "Shipping address does not belong to customer" });
+        return;
+      }
+    }
+    if (data.billingAddressId != null) {
+      const [a] = await db
+        .select()
+        .from(addressesTable)
+        .where(
+          and(
+            eq(addressesTable.id, data.billingAddressId),
+            eq(addressesTable.customerId, customer.id),
+          ),
+        )
+        .limit(1);
+      if (!a) {
+        res
+          .status(400)
+          .json({ error: "Billing address does not belong to customer" });
+        return;
+      }
+    }
+
+    if (data.items.length === 0) {
+      res.status(400).json({ error: "Order must have at least one item" });
+      return;
+    }
+
+    try {
+      const orderId = await db.transaction(async (tx) => {
+        let subtotal = 0;
+        const prepared: Array<{
+          productId: number | null;
+          variantId: number | null;
+          fabricId: number | null;
+          productSkuSnapshot: string | null;
+          variantSkuSnapshot: string | null;
+          variantNameSnapshot: string | null;
+          fabricItemNumberSnapshot: string | null;
+          fabricNameSnapshot: string | null;
+          description: string;
+          quantity: number;
+          unitPrice: string;
+          amount: string;
+          discountAmount: string;
+          discountReason: string | null;
+          notes: string | null;
+        }> = [];
+
+        for (const it of data.items) {
+          let productSku: string | null = null;
+          let variantSku: string | null = null;
+          let variantName: string | null = null;
+          let fabricItem: string | null = null;
+          let fabricName: string | null = null;
+
+          if (it.productId != null) {
+            const [p] = await tx
+              .select({ sku: productsTable.sku })
+              .from(productsTable)
+              .where(eq(productsTable.id, it.productId))
+              .limit(1);
+            if (!p)
+              throw new Error(`Product ${it.productId} not found`);
+            productSku = p.sku;
+          }
+          if (it.variantId != null) {
+            const [v] = await tx
+              .select({
+                sku: productVariantsTable.variantSku,
+                name: productVariantsTable.variantName,
+                productId: productVariantsTable.productId,
+              })
+              .from(productVariantsTable)
+              .where(eq(productVariantsTable.id, it.variantId))
+              .limit(1);
+            if (!v) throw new Error(`Variant ${it.variantId} not found`);
+            if (it.productId != null && v.productId !== it.productId)
+              throw new Error("Variant does not belong to product");
+            variantSku = v.sku;
+            variantName = v.name;
+          }
+          if (it.fabricId != null) {
+            const [f] = await tx
+              .select({
+                itemNumber: fabricsTable.itemNumber,
+                name: fabricsTable.name,
+              })
+              .from(fabricsTable)
+              .where(eq(fabricsTable.id, it.fabricId))
+              .limit(1);
+            if (!f) throw new Error(`Fabric ${it.fabricId} not found`);
+            fabricItem = f.itemNumber;
+            fabricName = f.name;
+          }
+
+          const lineAmount = it.quantity * it.unitPrice;
+          const discount = it.discountAmount ?? 0;
+          subtotal += lineAmount - discount;
+
+          prepared.push({
+            productId: it.productId ?? null,
+            variantId: it.variantId ?? null,
+            fabricId: it.fabricId ?? null,
+            productSkuSnapshot: productSku,
+            variantSkuSnapshot: variantSku,
+            variantNameSnapshot: variantName,
+            fabricItemNumberSnapshot: fabricItem,
+            fabricNameSnapshot: fabricName,
+            description: it.description,
+            quantity: it.quantity,
+            unitPrice: money(it.unitPrice),
+            amount: money(lineAmount),
+            discountAmount: money(discount),
+            discountReason: it.discountReason ?? null,
+            notes: it.notes ?? null,
+          });
+        }
+
+        const taxRate = data.taxRate ?? 0;
+        const taxAmount = subtotal * taxRate;
+        const deliveryAmount = data.deliveryAmount ?? 0;
+        const total = subtotal + taxAmount + deliveryAmount;
+        const deposit = data.depositAmount ?? 0;
+        const balanceDue = total - deposit;
+
+        const status = data.status ?? "pending";
+        const [order] = await tx
+          .insert(ordersTable)
+          .values({
+            orderNumber: generateOrderNumber(),
+            customerId: data.customerId,
+            createdByAgentId: req.user?.id ?? null,
+            orderType: data.orderType ?? "in_store",
+            status,
+            subtotal: money(subtotal),
+            taxAmount: money(taxAmount),
+            deliveryAmount: money(deliveryAmount),
+            total: money(total),
+            depositAmount: money(deposit),
+            balanceDue: money(balanceDue),
+            shippingAddressId: data.shippingAddressId ?? null,
+            billingAddressId: data.billingAddressId ?? null,
+            shippingMethod: data.shippingMethod ?? null,
+            salespersonName: data.salespersonName ?? null,
+            specialInstructions: data.specialInstructions ?? null,
+            notes: data.notes ?? null,
+          })
+          .returning();
+        if (!order) throw new Error("Order insert returned no row");
+
+        await tx
+          .insert(orderItemsTable)
+          .values(prepared.map((p) => ({ ...p, orderId: order.id })));
+
+        await tx.insert(orderStatusHistoryTable).values({
+          orderId: order.id,
+          fromStatus: null,
+          toStatus: status,
+          changedByUserId: req.user?.id ?? null,
+          note: "Order created",
+        });
+
+        return order.id;
+      });
+
+      await recordAudit(req, {
+        action: "order.create",
+        entityType: "order",
+        entityId: orderId,
+        changes: { itemCount: data.items.length },
+      });
+
+      const detail = await loadOrderDetail(orderId);
+      if (!detail) {
+        res.status(500).json({ error: "Order created but could not be loaded" });
+        return;
+      }
+      res.status(201).json(detail);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to create order";
+      res.status(400).json({ error: msg });
+    }
   },
 );
 

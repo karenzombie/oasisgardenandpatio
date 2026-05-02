@@ -7,6 +7,13 @@ import Verify2FA from "./pages/Verify2FA";
 import ChangePassword from "./pages/ChangePassword";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AgentDashboard from "./pages/agent/Dashboard";
+import AgentOrders from "./pages/agent/Orders";
+import AgentOrderDetail from "./pages/agent/OrderDetail";
+import AgentNewOrder from "./pages/agent/NewOrder";
+import AgentCustomers from "./pages/agent/Customers";
+import AgentProducts from "./pages/agent/Products";
+import AgentInventory from "./pages/agent/Inventory";
+import AgentReports from "./pages/agent/Reports";
 import Manufacturers from "./pages/admin/Manufacturers";
 import Categories from "./pages/admin/Categories";
 import Products from "./pages/admin/Products";
@@ -33,14 +40,7 @@ const ADMIN_PLACEHOLDERS: Array<{ path: string; title: string; comingIn: string 
   { path: "/notifications", title: "Notifications", comingIn: "Phase 6.18" },
 ];
 
-const AGENT_PLACEHOLDERS: Array<{ path: string; title: string; comingIn: string }> = [
-  { path: "/new-order", title: "New Order", comingIn: "Phase 6.24" },
-  { path: "/orders", title: "My Orders", comingIn: "Phase 6.24" },
-  { path: "/customers", title: "Customers", comingIn: "Phase 6.24" },
-  { path: "/products", title: "Product Catalog", comingIn: "Phase 6.24" },
-  { path: "/inventory", title: "Inventory", comingIn: "Phase 6.24" },
-  { path: "/reports", title: "My Reports", comingIn: "Phase 6.24" },
-];
+const AGENT_PLACEHOLDERS: Array<{ path: string; title: string; comingIn: string }> = [];
 
 export default function StaffRouter() {
   return (
@@ -106,6 +106,13 @@ export default function StaffRouter() {
             <StaffShell user={user}>
               <Switch>
                 <Route path="/">{() => <AgentDashboard user={user} />}</Route>
+                <Route path="/new-order" component={AgentNewOrder} />
+                <Route path="/orders" component={AgentOrders} />
+                <Route path="/orders/:id" component={AgentOrderDetail} />
+                <Route path="/customers" component={AgentCustomers} />
+                <Route path="/products" component={AgentProducts} />
+                <Route path="/inventory" component={AgentInventory} />
+                <Route path="/reports" component={AgentReports} />
                 {AGENT_PLACEHOLDERS.map(({ path, title, comingIn }) => (
                   <Route key={path} path={path}>
                     {() => <PagePlaceholder title={title} comingIn={comingIn} />}

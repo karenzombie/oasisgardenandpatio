@@ -1757,6 +1757,219 @@ export interface AdminResetPasswordResponse {
   temporaryPassword: string;
 }
 
+export interface AdminAddress {
+  id: number;
+  customerId: number;
+  type: string;
+  /** @nullable */
+  recipientName: string | null;
+  street1: string;
+  /** @nullable */
+  street2: string | null;
+  city: string;
+  state: string;
+  zip: string;
+  country: string;
+  /** @nullable */
+  phone: string | null;
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminCustomer {
+  id: number;
+  /** @nullable */
+  userId: number | null;
+  email: string;
+  firstName: string;
+  lastName: string;
+  /** @nullable */
+  phone: string | null;
+  /** @nullable */
+  companyName: string | null;
+  customerType: string;
+  /** @nullable */
+  createdByAgentId: number | null;
+  /** @nullable */
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type AdminCustomerDetail = AdminCustomer & {
+  addresses: AdminAddress[];
+};
+
+export interface AdminCustomerPage {
+  rows: AdminCustomer[];
+  total: number;
+}
+
+export type CreateCustomerRequestCustomerType =
+  (typeof CreateCustomerRequestCustomerType)[keyof typeof CreateCustomerRequestCustomerType];
+
+export const CreateCustomerRequestCustomerType = {
+  residential: "residential",
+  commercial: "commercial",
+} as const;
+
+export interface CreateCustomerRequest {
+  /** @minLength 1 */
+  email: string;
+  /** @minLength 1 */
+  firstName: string;
+  /** @minLength 1 */
+  lastName: string;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  companyName?: string | null;
+  customerType?: CreateCustomerRequestCustomerType;
+  /** @nullable */
+  notes?: string | null;
+}
+
+export type UpdateCustomerRequestCustomerType =
+  (typeof UpdateCustomerRequestCustomerType)[keyof typeof UpdateCustomerRequestCustomerType];
+
+export const UpdateCustomerRequestCustomerType = {
+  residential: "residential",
+  commercial: "commercial",
+} as const;
+
+export interface UpdateCustomerRequest {
+  /** @minLength 1 */
+  email?: string;
+  /** @minLength 1 */
+  firstName?: string;
+  /** @minLength 1 */
+  lastName?: string;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  companyName?: string | null;
+  customerType?: UpdateCustomerRequestCustomerType;
+  /** @nullable */
+  notes?: string | null;
+}
+
+export type CreateAddressRequestType =
+  (typeof CreateAddressRequestType)[keyof typeof CreateAddressRequestType];
+
+export const CreateAddressRequestType = {
+  shipping: "shipping",
+  billing: "billing",
+} as const;
+
+export interface CreateAddressRequest {
+  type?: CreateAddressRequestType;
+  /** @nullable */
+  recipientName?: string | null;
+  /** @minLength 1 */
+  street1: string;
+  /** @nullable */
+  street2?: string | null;
+  /** @minLength 1 */
+  city: string;
+  /** @minLength 1 */
+  state: string;
+  /** @minLength 1 */
+  zip: string;
+  country?: string;
+  /** @nullable */
+  phone?: string | null;
+  isDefault?: boolean;
+}
+
+export type UpdateAddressRequestType =
+  (typeof UpdateAddressRequestType)[keyof typeof UpdateAddressRequestType];
+
+export const UpdateAddressRequestType = {
+  shipping: "shipping",
+  billing: "billing",
+} as const;
+
+export interface UpdateAddressRequest {
+  type?: UpdateAddressRequestType;
+  /** @nullable */
+  recipientName?: string | null;
+  /** @minLength 1 */
+  street1?: string;
+  /** @nullable */
+  street2?: string | null;
+  /** @minLength 1 */
+  city?: string;
+  /** @minLength 1 */
+  state?: string;
+  /** @minLength 1 */
+  zip?: string;
+  country?: string;
+  /** @nullable */
+  phone?: string | null;
+  isDefault?: boolean;
+}
+
+export interface CreateOrderItemRequest {
+  /** @nullable */
+  productId?: number | null;
+  /** @nullable */
+  variantId?: number | null;
+  /** @nullable */
+  fabricId?: number | null;
+  /** @minLength 1 */
+  description: string;
+  /** @minimum 1 */
+  quantity: number;
+  /** @minimum 0 */
+  unitPrice: number;
+  /** @minimum 0 */
+  discountAmount?: number;
+  /** @nullable */
+  discountReason?: string | null;
+  /** @nullable */
+  notes?: string | null;
+}
+
+export type CreateOrderRequestOrderType =
+  (typeof CreateOrderRequestOrderType)[keyof typeof CreateOrderRequestOrderType];
+
+export const CreateOrderRequestOrderType = {
+  online: "online",
+  in_store: "in_store",
+  phone: "phone",
+} as const;
+
+export interface CreateOrderRequest {
+  customerId: number;
+  /** @minItems 1 */
+  items: CreateOrderItemRequest[];
+  /** @nullable */
+  shippingAddressId?: number | null;
+  /** @nullable */
+  billingAddressId?: number | null;
+  /** @nullable */
+  shippingMethod?: string | null;
+  /** @minimum 0 */
+  deliveryAmount?: number;
+  /**
+   * Decimal tax rate, e.g. 0.0875 for 8.75%
+   * @minimum 0
+   * @maximum 1
+   */
+  taxRate?: number;
+  /** @minimum 0 */
+  depositAmount?: number;
+  /** @nullable */
+  salespersonName?: string | null;
+  /** @nullable */
+  specialInstructions?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  orderType?: CreateOrderRequestOrderType;
+  status?: string;
+}
+
 export type StaffDisableTotp200 = {
   ok: boolean;
 };
@@ -1973,4 +2186,20 @@ export type StaffListNotificationsParams = {
    * @maximum 100
    */
   limit?: number;
+};
+
+export type AdminListCustomersParams = {
+  /**
+   * Match email, name, phone, or company
+   */
+  q?: string;
+  /**
+   * @minimum 1
+   * @maximum 200
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   */
+  offset?: number;
 };

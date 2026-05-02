@@ -87,7 +87,7 @@ END`;
 router.get(
   "/admin/inventory/locations",
   requireAuth,
-  requireRole("admin"),
+  requireRole("admin", "agent"),
   async (_req: Request, res: Response): Promise<void> => {
     const rows = await db
       .select()
@@ -274,7 +274,7 @@ router.post(
 router.get(
   "/admin/inventory",
   requireAuth,
-  requireRole("admin"),
+  requireRole("admin", "agent"),
   async (req: Request, res: Response): Promise<void> => {
     const parsed = AdminListInventoryQueryParams.safeParse(req.query);
     if (!parsed.success) {

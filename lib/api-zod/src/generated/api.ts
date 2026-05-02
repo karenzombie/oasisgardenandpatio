@@ -2026,6 +2026,74 @@ export const AdminListAuditLogResponse = zod.object({
 });
 
 /**
+ * @summary Create an order (in-store agent builder)
+ */
+
+export const adminCreateOrderBodyItemsItemUnitPriceMin = 0;
+
+export const adminCreateOrderBodyItemsItemDiscountAmountDefault = 0;
+export const adminCreateOrderBodyItemsItemDiscountAmountMin = 0;
+
+export const adminCreateOrderBodyDeliveryAmountDefault = 0;
+export const adminCreateOrderBodyDeliveryAmountMin = 0;
+
+export const adminCreateOrderBodyTaxRateDefault = 0;
+export const adminCreateOrderBodyTaxRateMin = 0;
+export const adminCreateOrderBodyTaxRateMax = 1;
+
+export const adminCreateOrderBodyDepositAmountDefault = 0;
+export const adminCreateOrderBodyDepositAmountMin = 0;
+
+export const adminCreateOrderBodyOrderTypeDefault = `in_store`;
+export const adminCreateOrderBodyStatusDefault = `pending`;
+
+export const AdminCreateOrderBody = zod.object({
+  customerId: zod.number(),
+  items: zod
+    .array(
+      zod.object({
+        productId: zod.number().nullish(),
+        variantId: zod.number().nullish(),
+        fabricId: zod.number().nullish(),
+        description: zod.string().min(1),
+        quantity: zod.number().min(1),
+        unitPrice: zod.number().min(adminCreateOrderBodyItemsItemUnitPriceMin),
+        discountAmount: zod
+          .number()
+          .min(adminCreateOrderBodyItemsItemDiscountAmountMin)
+          .default(adminCreateOrderBodyItemsItemDiscountAmountDefault),
+        discountReason: zod.string().nullish(),
+        notes: zod.string().nullish(),
+      }),
+    )
+    .min(1),
+  shippingAddressId: zod.number().nullish(),
+  billingAddressId: zod.number().nullish(),
+  shippingMethod: zod.string().nullish(),
+  deliveryAmount: zod
+    .number()
+    .min(adminCreateOrderBodyDeliveryAmountMin)
+    .default(adminCreateOrderBodyDeliveryAmountDefault),
+  taxRate: zod
+    .number()
+    .min(adminCreateOrderBodyTaxRateMin)
+    .max(adminCreateOrderBodyTaxRateMax)
+    .default(adminCreateOrderBodyTaxRateDefault)
+    .describe("Decimal tax rate, e.g. 0.0875 for 8.75%"),
+  depositAmount: zod
+    .number()
+    .min(adminCreateOrderBodyDepositAmountMin)
+    .default(adminCreateOrderBodyDepositAmountDefault),
+  salespersonName: zod.string().nullish(),
+  specialInstructions: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  orderType: zod
+    .enum(["online", "in_store", "phone"])
+    .default(adminCreateOrderBodyOrderTypeDefault),
+  status: zod.string().default(adminCreateOrderBodyStatusDefault),
+});
+
+/**
  * @summary List customer orders (newest first)
  */
 export const adminListOrdersQueryLimitMax = 200;
@@ -3620,4 +3688,206 @@ export const RequestUploadUrlResponse = zod.object({
     size: zod.number(),
     contentType: zod.string(),
   }),
+});
+
+/**
+ * @summary Search customers (newest first)
+ */
+export const adminListCustomersQueryLimitMax = 200;
+
+export const adminListCustomersQueryOffsetMin = 0;
+
+export const AdminListCustomersQueryParams = zod.object({
+  q: zod.coerce
+    .string()
+    .optional()
+    .describe("Match email, name, phone, or company"),
+  limit: zod.coerce
+    .number()
+    .min(1)
+    .max(adminListCustomersQueryLimitMax)
+    .optional(),
+  offset: zod.coerce.number().min(adminListCustomersQueryOffsetMin).optional(),
+});
+
+export const AdminListCustomersResponse = zod.object({
+  rows: zod.array(
+    zod.object({
+      id: zod.number(),
+      userId: zod.number().nullable(),
+      email: zod.string(),
+      firstName: zod.string(),
+      lastName: zod.string(),
+      phone: zod.string().nullable(),
+      companyName: zod.string().nullable(),
+      customerType: zod.string(),
+      createdByAgentId: zod.number().nullable(),
+      notes: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+  total: zod.number(),
+});
+
+/**
+ * @summary Create a new customer record
+ */
+
+export const adminCreateCustomerBodyCustomerTypeDefault = `residential`;
+
+export const AdminCreateCustomerBody = zod.object({
+  email: zod.string().min(1),
+  firstName: zod.string().min(1),
+  lastName: zod.string().min(1),
+  phone: zod.string().nullish(),
+  companyName: zod.string().nullish(),
+  customerType: zod
+    .enum(["residential", "commercial"])
+    .default(adminCreateCustomerBodyCustomerTypeDefault),
+  notes: zod.string().nullish(),
+});
+
+/**
+ * @summary Customer detail with addresses
+ */
+export const AdminGetCustomerParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminGetCustomerResponse = zod
+  .object({
+    id: zod.number(),
+    userId: zod.number().nullable(),
+    email: zod.string(),
+    firstName: zod.string(),
+    lastName: zod.string(),
+    phone: zod.string().nullable(),
+    companyName: zod.string().nullable(),
+    customerType: zod.string(),
+    createdByAgentId: zod.number().nullable(),
+    notes: zod.string().nullable(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  })
+  .and(
+    zod.object({
+      addresses: zod.array(
+        zod.object({
+          id: zod.number(),
+          customerId: zod.number(),
+          type: zod.string(),
+          recipientName: zod.string().nullable(),
+          street1: zod.string(),
+          street2: zod.string().nullable(),
+          city: zod.string(),
+          state: zod.string(),
+          zip: zod.string(),
+          country: zod.string(),
+          phone: zod.string().nullable(),
+          isDefault: zod.boolean(),
+          createdAt: zod.coerce.date(),
+          updatedAt: zod.coerce.date(),
+        }),
+      ),
+    }),
+  );
+
+/**
+ * @summary Update customer fields
+ */
+export const AdminUpdateCustomerParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminUpdateCustomerBody = zod.object({
+  email: zod.string().min(1).optional(),
+  firstName: zod.string().min(1).optional(),
+  lastName: zod.string().min(1).optional(),
+  phone: zod.string().nullish(),
+  companyName: zod.string().nullish(),
+  customerType: zod.enum(["residential", "commercial"]).optional(),
+  notes: zod.string().nullish(),
+});
+
+export const AdminUpdateCustomerResponse = zod.object({
+  id: zod.number(),
+  userId: zod.number().nullable(),
+  email: zod.string(),
+  firstName: zod.string(),
+  lastName: zod.string(),
+  phone: zod.string().nullable(),
+  companyName: zod.string().nullable(),
+  customerType: zod.string(),
+  createdByAgentId: zod.number().nullable(),
+  notes: zod.string().nullable(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Add an address to a customer
+ */
+export const AdminCreateCustomerAddressParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const adminCreateCustomerAddressBodyTypeDefault = `shipping`;
+
+export const adminCreateCustomerAddressBodyCountryDefault = `US`;
+export const adminCreateCustomerAddressBodyIsDefaultDefault = false;
+
+export const AdminCreateCustomerAddressBody = zod.object({
+  type: zod
+    .enum(["shipping", "billing"])
+    .default(adminCreateCustomerAddressBodyTypeDefault),
+  recipientName: zod.string().nullish(),
+  street1: zod.string().min(1),
+  street2: zod.string().nullish(),
+  city: zod.string().min(1),
+  state: zod.string().min(1),
+  zip: zod.string().min(1),
+  country: zod.string().default(adminCreateCustomerAddressBodyCountryDefault),
+  phone: zod.string().nullish(),
+  isDefault: zod
+    .boolean()
+    .default(adminCreateCustomerAddressBodyIsDefaultDefault),
+});
+
+/**
+ * @summary Update one of a customer's addresses
+ */
+export const AdminUpdateCustomerAddressParams = zod.object({
+  id: zod.coerce.number(),
+  addressId: zod.coerce.number(),
+});
+
+export const AdminUpdateCustomerAddressBody = zod.object({
+  type: zod.enum(["shipping", "billing"]).optional(),
+  recipientName: zod.string().nullish(),
+  street1: zod.string().min(1).optional(),
+  street2: zod.string().nullish(),
+  city: zod.string().min(1).optional(),
+  state: zod.string().min(1).optional(),
+  zip: zod.string().min(1).optional(),
+  country: zod.string().optional(),
+  phone: zod.string().nullish(),
+  isDefault: zod.boolean().optional(),
+});
+
+export const AdminUpdateCustomerAddressResponse = zod.object({
+  id: zod.number(),
+  customerId: zod.number(),
+  type: zod.string(),
+  recipientName: zod.string().nullable(),
+  street1: zod.string(),
+  street2: zod.string().nullable(),
+  city: zod.string(),
+  state: zod.string(),
+  zip: zod.string(),
+  country: zod.string(),
+  phone: zod.string().nullable(),
+  isDefault: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
 });

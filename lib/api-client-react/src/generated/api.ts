@@ -19,18 +19,23 @@ import type {
 import type {
   AddProductImageRequest,
   AdjustInventoryResponse,
+  AdminAddress,
   AdminAgentPrivileges,
   AdminBanner,
   AdminCancellationRequest,
   AdminCategory,
   AdminCouponCode,
   AdminCouponCodeUse,
+  AdminCustomer,
+  AdminCustomerDetail,
+  AdminCustomerPage,
   AdminDiscountEvent,
   AdminInventoryAdjustmentsPage,
   AdminInventoryPage,
   AdminLegalDocument,
   AdminListAuditLogParams,
   AdminListCancellationRequestsParams,
+  AdminListCustomersParams,
   AdminListInventoryAdjustmentsParams,
   AdminListInventoryParams,
   AdminListOrdersParams,
@@ -66,15 +71,18 @@ import type {
   Carrier,
   Category,
   ChangePasswordRequest,
+  CreateAddressRequest,
   CreateBannerRequest,
   CreateCarrierRequest,
   CreateCategoryRequest,
   CreateCouponCodeRequest,
+  CreateCustomerRequest,
   CreateDiscountEventRequest,
   CreateInventoryAdjustmentRequest,
   CreateInventoryLocationRequest,
   CreateLegalVersionRequest,
   CreateManufacturerRequest,
+  CreateOrderRequest,
   CreateProductRequest,
   CreateSetRequest,
   CreateStaffUserRequest,
@@ -114,10 +122,12 @@ import type {
   SystemSettingsUpdate,
   TotpCodeRequest,
   TotpSetupInitResponse,
+  UpdateAddressRequest,
   UpdateBannerRequest,
   UpdateCarrierRequest,
   UpdateCategoryRequest,
   UpdateCouponCodeRequest,
+  UpdateCustomerRequest,
   UpdateDiscountEventRequest,
   UpdateInventoryLocationRequest,
   UpdateInventoryRequest,
@@ -6212,6 +6222,92 @@ export function useAdminListAuditLog<
 }
 
 /**
+ * @summary Create an order (in-store agent builder)
+ */
+export const getAdminCreateOrderUrl = () => {
+  return `/api/admin/orders`;
+};
+
+export const adminCreateOrder = async (
+  createOrderRequest: CreateOrderRequest,
+  options?: RequestInit,
+): Promise<AdminOrderDetail> => {
+  return customFetch<AdminOrderDetail>(getAdminCreateOrderUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createOrderRequest),
+  });
+};
+
+export const getAdminCreateOrderMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCreateOrder>>,
+    TError,
+    { data: BodyType<CreateOrderRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminCreateOrder>>,
+  TError,
+  { data: BodyType<CreateOrderRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminCreateOrder"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminCreateOrder>>,
+    { data: BodyType<CreateOrderRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return adminCreateOrder(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminCreateOrderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminCreateOrder>>
+>;
+export type AdminCreateOrderMutationBody = BodyType<CreateOrderRequest>;
+export type AdminCreateOrderMutationError = ErrorType<Error>;
+
+/**
+ * @summary Create an order (in-store agent builder)
+ */
+export const useAdminCreateOrder = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCreateOrder>>,
+    TError,
+    { data: BodyType<CreateOrderRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminCreateOrder>>,
+  TError,
+  { data: BodyType<CreateOrderRequest> },
+  TContext
+> => {
+  return useMutation(getAdminCreateOrderMutationOptions(options));
+};
+
+/**
  * @summary List customer orders (newest first)
  */
 export const getAdminListOrdersUrl = (params?: AdminListOrdersParams) => {
@@ -9652,4 +9748,544 @@ export const useRequestUploadUrl = <
   TContext
 > => {
   return useMutation(getRequestUploadUrlMutationOptions(options));
+};
+
+/**
+ * @summary Search customers (newest first)
+ */
+export const getAdminListCustomersUrl = (params?: AdminListCustomersParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/admin/customers?${stringifiedParams}`
+    : `/api/admin/customers`;
+};
+
+export const adminListCustomers = async (
+  params?: AdminListCustomersParams,
+  options?: RequestInit,
+): Promise<AdminCustomerPage> => {
+  return customFetch<AdminCustomerPage>(getAdminListCustomersUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAdminListCustomersQueryKey = (
+  params?: AdminListCustomersParams,
+) => {
+  return [`/api/admin/customers`, ...(params ? [params] : [])] as const;
+};
+
+export const getAdminListCustomersQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminListCustomers>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: AdminListCustomersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminListCustomers>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getAdminListCustomersQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminListCustomers>>
+  > = ({ signal }) => adminListCustomers(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminListCustomers>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminListCustomersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminListCustomers>>
+>;
+export type AdminListCustomersQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Search customers (newest first)
+ */
+
+export function useAdminListCustomers<
+  TData = Awaited<ReturnType<typeof adminListCustomers>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: AdminListCustomersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminListCustomers>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminListCustomersQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a new customer record
+ */
+export const getAdminCreateCustomerUrl = () => {
+  return `/api/admin/customers`;
+};
+
+export const adminCreateCustomer = async (
+  createCustomerRequest: CreateCustomerRequest,
+  options?: RequestInit,
+): Promise<AdminCustomer> => {
+  return customFetch<AdminCustomer>(getAdminCreateCustomerUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createCustomerRequest),
+  });
+};
+
+export const getAdminCreateCustomerMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCreateCustomer>>,
+    TError,
+    { data: BodyType<CreateCustomerRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminCreateCustomer>>,
+  TError,
+  { data: BodyType<CreateCustomerRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminCreateCustomer"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminCreateCustomer>>,
+    { data: BodyType<CreateCustomerRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return adminCreateCustomer(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminCreateCustomerMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminCreateCustomer>>
+>;
+export type AdminCreateCustomerMutationBody = BodyType<CreateCustomerRequest>;
+export type AdminCreateCustomerMutationError = ErrorType<Error>;
+
+/**
+ * @summary Create a new customer record
+ */
+export const useAdminCreateCustomer = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCreateCustomer>>,
+    TError,
+    { data: BodyType<CreateCustomerRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminCreateCustomer>>,
+  TError,
+  { data: BodyType<CreateCustomerRequest> },
+  TContext
+> => {
+  return useMutation(getAdminCreateCustomerMutationOptions(options));
+};
+
+/**
+ * @summary Customer detail with addresses
+ */
+export const getAdminGetCustomerUrl = (id: number) => {
+  return `/api/admin/customers/${id}`;
+};
+
+export const adminGetCustomer = async (
+  id: number,
+  options?: RequestInit,
+): Promise<AdminCustomerDetail> => {
+  return customFetch<AdminCustomerDetail>(getAdminGetCustomerUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAdminGetCustomerQueryKey = (id: number) => {
+  return [`/api/admin/customers/${id}`] as const;
+};
+
+export const getAdminGetCustomerQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminGetCustomer>>,
+  TError = ErrorType<Error>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminGetCustomer>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getAdminGetCustomerQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminGetCustomer>>
+  > = ({ signal }) => adminGetCustomer(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetCustomer>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminGetCustomerQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminGetCustomer>>
+>;
+export type AdminGetCustomerQueryError = ErrorType<Error>;
+
+/**
+ * @summary Customer detail with addresses
+ */
+
+export function useAdminGetCustomer<
+  TData = Awaited<ReturnType<typeof adminGetCustomer>>,
+  TError = ErrorType<Error>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminGetCustomer>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminGetCustomerQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update customer fields
+ */
+export const getAdminUpdateCustomerUrl = (id: number) => {
+  return `/api/admin/customers/${id}`;
+};
+
+export const adminUpdateCustomer = async (
+  id: number,
+  updateCustomerRequest: UpdateCustomerRequest,
+  options?: RequestInit,
+): Promise<AdminCustomer> => {
+  return customFetch<AdminCustomer>(getAdminUpdateCustomerUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateCustomerRequest),
+  });
+};
+
+export const getAdminUpdateCustomerMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateCustomer>>,
+    TError,
+    { id: number; data: BodyType<UpdateCustomerRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUpdateCustomer>>,
+  TError,
+  { id: number; data: BodyType<UpdateCustomerRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminUpdateCustomer"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUpdateCustomer>>,
+    { id: number; data: BodyType<UpdateCustomerRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminUpdateCustomer(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminUpdateCustomerMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUpdateCustomer>>
+>;
+export type AdminUpdateCustomerMutationBody = BodyType<UpdateCustomerRequest>;
+export type AdminUpdateCustomerMutationError = ErrorType<Error>;
+
+/**
+ * @summary Update customer fields
+ */
+export const useAdminUpdateCustomer = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateCustomer>>,
+    TError,
+    { id: number; data: BodyType<UpdateCustomerRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUpdateCustomer>>,
+  TError,
+  { id: number; data: BodyType<UpdateCustomerRequest> },
+  TContext
+> => {
+  return useMutation(getAdminUpdateCustomerMutationOptions(options));
+};
+
+/**
+ * @summary Add an address to a customer
+ */
+export const getAdminCreateCustomerAddressUrl = (id: number) => {
+  return `/api/admin/customers/${id}/addresses`;
+};
+
+export const adminCreateCustomerAddress = async (
+  id: number,
+  createAddressRequest: CreateAddressRequest,
+  options?: RequestInit,
+): Promise<AdminAddress> => {
+  return customFetch<AdminAddress>(getAdminCreateCustomerAddressUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createAddressRequest),
+  });
+};
+
+export const getAdminCreateCustomerAddressMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCreateCustomerAddress>>,
+    TError,
+    { id: number; data: BodyType<CreateAddressRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminCreateCustomerAddress>>,
+  TError,
+  { id: number; data: BodyType<CreateAddressRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminCreateCustomerAddress"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminCreateCustomerAddress>>,
+    { id: number; data: BodyType<CreateAddressRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminCreateCustomerAddress(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminCreateCustomerAddressMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminCreateCustomerAddress>>
+>;
+export type AdminCreateCustomerAddressMutationBody =
+  BodyType<CreateAddressRequest>;
+export type AdminCreateCustomerAddressMutationError = ErrorType<Error>;
+
+/**
+ * @summary Add an address to a customer
+ */
+export const useAdminCreateCustomerAddress = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCreateCustomerAddress>>,
+    TError,
+    { id: number; data: BodyType<CreateAddressRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminCreateCustomerAddress>>,
+  TError,
+  { id: number; data: BodyType<CreateAddressRequest> },
+  TContext
+> => {
+  return useMutation(getAdminCreateCustomerAddressMutationOptions(options));
+};
+
+/**
+ * @summary Update one of a customer's addresses
+ */
+export const getAdminUpdateCustomerAddressUrl = (
+  id: number,
+  addressId: number,
+) => {
+  return `/api/admin/customers/${id}/addresses/${addressId}`;
+};
+
+export const adminUpdateCustomerAddress = async (
+  id: number,
+  addressId: number,
+  updateAddressRequest: UpdateAddressRequest,
+  options?: RequestInit,
+): Promise<AdminAddress> => {
+  return customFetch<AdminAddress>(
+    getAdminUpdateCustomerAddressUrl(id, addressId),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateAddressRequest),
+    },
+  );
+};
+
+export const getAdminUpdateCustomerAddressMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateCustomerAddress>>,
+    TError,
+    { id: number; addressId: number; data: BodyType<UpdateAddressRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUpdateCustomerAddress>>,
+  TError,
+  { id: number; addressId: number; data: BodyType<UpdateAddressRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminUpdateCustomerAddress"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUpdateCustomerAddress>>,
+    { id: number; addressId: number; data: BodyType<UpdateAddressRequest> }
+  > = (props) => {
+    const { id, addressId, data } = props ?? {};
+
+    return adminUpdateCustomerAddress(id, addressId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminUpdateCustomerAddressMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUpdateCustomerAddress>>
+>;
+export type AdminUpdateCustomerAddressMutationBody =
+  BodyType<UpdateAddressRequest>;
+export type AdminUpdateCustomerAddressMutationError = ErrorType<Error>;
+
+/**
+ * @summary Update one of a customer's addresses
+ */
+export const useAdminUpdateCustomerAddress = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateCustomerAddress>>,
+    TError,
+    { id: number; addressId: number; data: BodyType<UpdateAddressRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUpdateCustomerAddress>>,
+  TError,
+  { id: number; addressId: number; data: BodyType<UpdateAddressRequest> },
+  TContext
+> => {
+  return useMutation(getAdminUpdateCustomerAddressMutationOptions(options));
 };

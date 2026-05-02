@@ -103,7 +103,7 @@ const IMAGE_COUNT_SQL = sql<number>`(
 )`;
 
 const ON_HAND_SQL = sql<number>`coalesce((
-  select ${inventoryTable.onHand}
+  select sum(${inventoryTable.onHand})::int
   from ${inventoryTable}
   where ${inventoryTable.productId} = ${productsTable.id}
 ), 0)`;
@@ -202,7 +202,7 @@ async function validateFks(input: {
 router.get(
   "/admin/products",
   requireAuth,
-  requireRole("admin"),
+  requireRole("admin", "agent"),
   async (req: Request, res: Response): Promise<void> => {
     const parsed = AdminListProductsQueryParams.safeParse(req.query);
     if (!parsed.success) {
@@ -270,7 +270,7 @@ router.get(
 router.get(
   "/admin/products/:id",
   requireAuth,
-  requireRole("admin"),
+  requireRole("admin", "agent"),
   async (req: Request, res: Response): Promise<void> => {
     const params = AdminGetProductParams.safeParse(req.params);
     if (!params.success) {
