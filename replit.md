@@ -29,16 +29,17 @@ Full-stack e-commerce platform for Oasis Garden & Patio — a luxury outdoor fur
 ## Build Plan (7 phases)
 
 1. **Foundation** ✅ — DB schema, OpenAPI spec, public read-only routes (legal, banners, manufacturers, categories, products/featured), customer site shell
-2. **Auth** — `users` + sessions, login/signup, role enforcement
+2. **Customer auth** ✅ — email/password (bcryptjs rounds=12), session cookies (express-session + connect-pg-simple), 3 roles (customer/agent/admin), 8 endpoints (signup/login/logout/me/verify-email/resend-verification/request-password-reset/reset-password), branded transactional emails via Resend (Replit connector). Tokens stored as SHA-256 hashes, atomically consumed via `UPDATE…RETURNING`. Rate limiting: login 10/15min/IP, password-reset 5/hr/(IP+email), resend-verification 5/hr/user. Frontend: `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/verify-email`, `/account`; auth-aware header dropdown; `useAuth()` hook in `artifacts/web/src/lib/auth.tsx`.
 3. **Catalog browsing** — product list, filters, PDP
 4. **Cart + checkout** — Authorize.net, TaxJar, shipping
 5. **Customer account** — order history, addresses
 6. **Staff portal** — agent-created orders, inventory, purchasing
 7. **Admin portal** — manufacturers, categories, products, CMS, users, reports
 
-## Integrations (planned)
+## Integrations
 
-Authorize.net (payments), TaxJar (tax), Maileroo (transactional email), Google Drive (PO attachments), Replit Object Storage (product images).
+- **Resend** ✅ — transactional email via Replit connector (`getResendCredentials()` in `artifacts/api-server/src/lib/email.ts`, never cache the client). The connector must be authenticated and have a verified sender domain configured before emails will actually deliver in dev/prod.
+- Authorize.net (payments), TaxJar (tax), Google Drive (PO attachments), Replit Object Storage (product images) — planned.
 
 ## Key Commands
 

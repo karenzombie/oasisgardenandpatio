@@ -85,3 +85,81 @@ export const ListFeaturedProductsResponseItem = zod.object({
 export const ListFeaturedProductsResponse = zod.array(
   ListFeaturedProductsResponseItem,
 );
+
+/**
+ * @summary Create a new customer account
+ */
+export const signupBodyPasswordMin = 8;
+
+export const SignupBody = zod.object({
+  email: zod.string().email(),
+  password: zod.string().min(signupBodyPasswordMin),
+  firstName: zod.string().min(1),
+  lastName: zod.string().min(1),
+  phone: zod.string().optional(),
+});
+
+/**
+ * @summary Log in with email and password
+ */
+
+export const LoginBody = zod.object({
+  email: zod.string().email(),
+  password: zod.string().min(1),
+});
+
+export const LoginResponse = zod.object({
+  id: zod.number(),
+  email: zod.string().email(),
+  firstName: zod.string().nullable(),
+  lastName: zod.string().nullable(),
+  role: zod.enum(["customer", "agent", "admin"]),
+  emailVerified: zod.boolean(),
+});
+
+/**
+ * @summary Get the currently authenticated user
+ */
+export const GetCurrentUserResponse = zod.object({
+  id: zod.number(),
+  email: zod.string().email(),
+  firstName: zod.string().nullable(),
+  lastName: zod.string().nullable(),
+  role: zod.enum(["customer", "agent", "admin"]),
+  emailVerified: zod.boolean(),
+});
+
+/**
+ * @summary Verify an email address using a token from the verification email
+ */
+
+export const VerifyEmailBody = zod.object({
+  token: zod.string().min(1),
+});
+
+export const VerifyEmailResponse = zod.object({
+  id: zod.number(),
+  email: zod.string().email(),
+  firstName: zod.string().nullable(),
+  lastName: zod.string().nullable(),
+  role: zod.enum(["customer", "agent", "admin"]),
+  emailVerified: zod.boolean(),
+});
+
+/**
+ * @summary Send a password reset email if the address is registered
+ */
+export const RequestPasswordResetBody = zod.object({
+  email: zod.string().email(),
+});
+
+/**
+ * @summary Reset a password using a token from the reset email
+ */
+
+export const resetPasswordBodyNewPasswordMin = 8;
+
+export const ResetPasswordBody = zod.object({
+  token: zod.string().min(1),
+  newPassword: zod.string().min(resetPasswordBodyNewPasswordMin),
+});

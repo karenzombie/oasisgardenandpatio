@@ -72,3 +72,56 @@ export interface FeaturedProduct {
   /** @nullable */
   primaryImageUrl: string | null;
 }
+
+export type CurrentUserRole =
+  (typeof CurrentUserRole)[keyof typeof CurrentUserRole];
+
+export const CurrentUserRole = {
+  customer: "customer",
+  agent: "agent",
+  admin: "admin",
+} as const;
+
+export interface CurrentUser {
+  id: number;
+  email: string;
+  /** @nullable */
+  firstName: string | null;
+  /** @nullable */
+  lastName: string | null;
+  role: CurrentUserRole;
+  emailVerified: boolean;
+}
+
+export interface SignupRequest {
+  email: string;
+  /** @minLength 8 */
+  password: string;
+  /** @minLength 1 */
+  firstName: string;
+  /** @minLength 1 */
+  lastName: string;
+  phone?: string;
+}
+
+export interface LoginRequest {
+  email: string;
+  /** @minLength 1 */
+  password: string;
+}
+
+export interface VerifyEmailRequest {
+  /** @minLength 1 */
+  token: string;
+}
+
+export interface RequestPasswordResetRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  /** @minLength 1 */
+  token: string;
+  /** @minLength 8 */
+  newPassword: string;
+}

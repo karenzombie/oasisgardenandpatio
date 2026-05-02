@@ -9,6 +9,12 @@ import Home from "@/pages/Home";
 import Contact from "@/pages/Contact";
 import ComingSoon from "@/pages/ComingSoon";
 import LegalDocument from "@/pages/LegalDocument";
+import Login from "@/pages/Login";
+import Signup from "@/pages/Signup";
+import ForgotPassword from "@/pages/ForgotPassword";
+import ResetPassword from "@/pages/ResetPassword";
+import VerifyEmail from "@/pages/VerifyEmail";
+import Account from "@/pages/Account";
 
 const queryClient = new QueryClient();
 
@@ -32,7 +38,12 @@ function Router() {
         <Route path="/shop/:id" component={ComingSoon} />
         <Route path="/commercial" component={ComingSoon} />
         <Route path="/cushions" component={ComingSoon} />
-        <Route path="/login" component={ComingSoon} />
+        <Route path="/login" component={Login} />
+        <Route path="/signup" component={Signup} />
+        <Route path="/forgot-password" component={ForgotPassword} />
+        <Route path="/reset-password" component={ResetPassword} />
+        <Route path="/verify-email" component={VerifyEmail} />
+        <Route path="/account" component={Account} />
         
         {/* 404 */}
         <Route component={NotFound} />
