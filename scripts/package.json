@@ -10,6 +10,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@google-cloud/storage": "^7.19.0",
     "@types/papaparse": "^5.5.2",
     "@workspace/db": "workspace:*",
     "drizzle-orm": "catalog:",

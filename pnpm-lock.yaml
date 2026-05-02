@@ -687,6 +687,9 @@ importers:
 
   scripts:
     dependencies:
+      '@google-cloud/storage':
+        specifier: ^7.19.0
+        version: 7.19.0
       '@types/papaparse':
         specifier: ^5.5.2
         version: 5.5.2

@@ -10,6 +10,7 @@ import {
   index,
   uniqueIndex,
   foreignKey,
+  check,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
@@ -98,6 +99,12 @@ export const productImagesTable = pgTable(
     altText: text("alt_text"),
     isPrimary: boolean("is_primary").notNull().default(false),
     displayOrder: integer("display_order").notNull().default(0),
+    // 'gallery' = main product photos shown in the carousel.
+    // 'spec'    = technical drawing / dimensions illustration shown in the
+    //             specifications section, NOT in the gallery carousel.
+    // Vendor data load currently produces both kinds; admin upload UI will
+    // expose the kind picker in a follow-up.
+    imageKind: text("image_kind").notNull().default("gallery"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -105,6 +112,16 @@ export const productImagesTable = pgTable(
   (t) => [
     index("product_images_product_id_idx").on(t.productId),
     index("product_images_variant_id_idx").on(t.variantId),
+    index("product_images_kind_idx").on(t.productId, t.imageKind),
+    // Make image inserts idempotent for both the vendor loader (deterministic
+    // /objects/vendor-imports/<file>.png paths) and future admin upload flows
+    // (each upload returns a fresh /objects/uploads/<uuid> path, so this is
+    // never a problem in practice but cheaply rules out double-insert races).
+    uniqueIndex("product_images_product_url_uq").on(t.productId, t.url),
+    check(
+      "product_images_kind_check",
+      sql`${t.imageKind} IN ('gallery', 'spec')`,
+    ),
   ],
 );
 
