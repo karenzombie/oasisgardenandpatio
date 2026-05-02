@@ -62,6 +62,7 @@ interface FormState {
   description: string;
   website: string;
   displayOrder: string;
+  dealerRate: string;
   isActive: boolean;
   logoUrl: string | null;
 }
@@ -74,6 +75,7 @@ function emptyForm(): FormState {
     description: "",
     website: "",
     displayOrder: "0",
+    dealerRate: "",
     isActive: true,
     logoUrl: null,
   };
@@ -87,6 +89,7 @@ function formFromRow(row: AdminManufacturer): FormState {
     description: row.description ?? "",
     website: row.website ?? "",
     displayOrder: String(row.displayOrder),
+    dealerRate: row.dealerRate ?? "",
     isActive: row.isActive,
     logoUrl: row.logoUrl,
   };
@@ -196,6 +199,20 @@ export default function Manufacturers() {
       setError("Display order must be a number");
       return;
     }
+    const dealerRateTrim = form.dealerRate.trim();
+    let dealerRate: string | null = null;
+    if (dealerRateTrim) {
+      if (!/^\d+(\.\d{1,2})?$/.test(dealerRateTrim)) {
+        setError("Dealer rate must be a number with up to 2 decimals");
+        return;
+      }
+      const n = Number(dealerRateTrim);
+      if (n < 0 || n > 100) {
+        setError("Dealer rate must be between 0 and 100");
+        return;
+      }
+      dealerRate = dealerRateTrim;
+    }
 
     const payload = {
       name,
@@ -204,6 +221,7 @@ export default function Manufacturers() {
       website: form.website.trim() || null,
       logoUrl: form.logoUrl,
       displayOrder,
+      dealerRate,
       isActive: form.isActive,
     };
 
@@ -505,6 +523,24 @@ export default function Manufacturers() {
                     min={0}
                   />
                 </div>
+              </div>
+
+              <div>
+                <Label htmlFor="m-dealer-rate">Default dealer rate (%)</Label>
+                <Input
+                  id="m-dealer-rate"
+                  value={form.dealerRate}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, dealerRate: e.target.value }))
+                  }
+                  placeholder="e.g. 50.00"
+                  inputMode="decimal"
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  % off MSRP for dealer (us). Used when a product is priced via
+                  &ldquo;MSRP &minus; dealer rate&rdquo;. Leave blank if this
+                  brand isn&rsquo;t priced that way.
+                </p>
               </div>
 
               <div>

@@ -41,8 +41,25 @@ export const productsTable = pgTable(
     materialId: integer("material_id").references(() => materialsTable.id, {
       onDelete: "set null",
     }),
+    // Sell price actually shown to customers / used at checkout. Always set
+    // (manually or by `pricing_mode` derivation; see below).
     price: numeric("price", { precision: 10, scale: 2 }),
+    // Our wholesale cost (what we pay the vendor). Used for cost+markup mode
+    // and for margin reporting.
     cost: numeric("cost", { precision: 10, scale: 2 }),
+    // Manufacturer's suggested retail price (the "list" before any dealer
+    // discount). Used for msrp-minus-dealer-rate mode.
+    msrp: numeric("msrp", { precision: 10, scale: 2 }),
+    // Markup % over `cost` when pricingMode = 'cost_plus_markup'
+    // (e.g. 80.00 means cost * 1.80). Stored as a numeric percentage.
+    markupPercent: numeric("markup_percent", { precision: 5, scale: 2 }),
+    // How `price` should be interpreted / derived. 'fixed' (default) means
+    // `price` is authored directly. 'cost_plus_markup' and
+    // 'msrp_minus_dealer_rate' indicate the price was (or should be) computed
+    // from the inputs above + manufacturer's `dealer_rate`. The pricing
+    // helper in `lib/db` exposes the computation; checkout always uses the
+    // stored `price`.
+    pricingMode: text("pricing_mode").notNull().default("fixed"),
     weight: numeric("weight", { precision: 10, scale: 2 }),
     dimensions: text("dimensions"),
     // Free-form structured spec sheet (Treasure Garden umbrellas, etc.).
@@ -71,6 +88,10 @@ export const productsTable = pgTable(
     index("products_material_id_idx").on(t.materialId),
     index("products_featured_idx").on(t.featured),
     index("products_active_idx").on(t.isActive),
+    check(
+      "products_pricing_mode_check",
+      sql`${t.pricingMode} IN ('fixed', 'cost_plus_markup', 'msrp_minus_dealer_rate')`,
+    ),
   ],
 );
 

@@ -17,6 +17,11 @@ export interface AdminManufacturer {
   /** @nullable */
   website: string | null;
   displayOrder: number;
+  /**
+   * Default dealer discount % off MSRP (numeric, 0-100). Used when a product priced via msrp_minus_dealer_rate.
+   * @nullable
+   */
+  dealerRate: string | null;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;

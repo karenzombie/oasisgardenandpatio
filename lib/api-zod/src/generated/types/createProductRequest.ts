@@ -5,6 +5,7 @@
  * Oasis Garden & Patio API
  * OpenAPI spec version: 0.1.0
  */
+import type { CreateProductRequestPricingMode } from "./createProductRequestPricingMode";
 
 export interface CreateProductRequest {
   /** @minLength 1 */
@@ -30,6 +31,11 @@ export interface CreateProductRequest {
   price?: string | null;
   /** @nullable */
   cost?: string | null;
+  /** @nullable */
+  msrp?: string | null;
+  /** @nullable */
+  markupPercent?: string | null;
+  pricingMode?: CreateProductRequestPricingMode;
   /** @nullable */
   weight?: string | null;
   /** @nullable */

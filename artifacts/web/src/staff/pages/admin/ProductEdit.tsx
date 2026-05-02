@@ -73,6 +73,9 @@ interface FormState {
   categoryId: string;
   price: string;
   cost: string;
+  msrp: string;
+  markupPercent: string;
+  pricingMode: "fixed" | "cost_plus_markup" | "msrp_minus_dealer_rate";
   weight: string;
   dimensions: string;
   showPriceOnline: boolean;
@@ -99,6 +102,9 @@ function emptyForm(): FormState {
     categoryId: "none",
     price: "",
     cost: "",
+    msrp: "",
+    markupPercent: "",
+    pricingMode: "fixed",
     weight: "",
     dimensions: "",
     showPriceOnline: true,
@@ -176,6 +182,9 @@ export default function ProductEdit() {
         categoryId: d.categoryId != null ? String(d.categoryId) : "none",
         price: d.price ?? "",
         cost: d.cost ?? "",
+        msrp: d.msrp ?? "",
+        markupPercent: d.markupPercent ?? "",
+        pricingMode: d.pricingMode,
         weight: d.weight ?? "",
         dimensions: d.dimensions ?? "",
         showPriceOnline: d.showPriceOnline,
@@ -237,6 +246,10 @@ export default function ProductEdit() {
     if (price === "INVALID") return null;
     const cost = decimalOrNull(form.cost, "Cost");
     if (cost === "INVALID") return null;
+    const msrp = decimalOrNull(form.msrp, "MSRP");
+    if (msrp === "INVALID") return null;
+    const markupPercent = decimalOrNull(form.markupPercent, "Markup %");
+    if (markupPercent === "INVALID") return null;
     const weight = decimalOrNull(form.weight, "Weight");
     if (weight === "INVALID") return null;
 
@@ -251,6 +264,9 @@ export default function ProductEdit() {
       materialId: null,
       price,
       cost,
+      msrp,
+      markupPercent,
+      pricingMode: form.pricingMode,
       weight,
       dimensions: form.dimensions.trim() || null,
       showPriceOnline: form.showPriceOnline,
@@ -599,9 +615,39 @@ export default function ProductEdit() {
             <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-4">
               Pricing &amp; specifications
             </h3>
+            <div className="mb-4">
+              <Label htmlFor="p-pricing-mode">Pricing mode</Label>
+              <Select
+                value={form.pricingMode}
+                onValueChange={(v) =>
+                  setForm((f) => ({
+                    ...f,
+                    pricingMode: v as FormState["pricingMode"],
+                  }))
+                }
+              >
+                <SelectTrigger id="p-pricing-mode" className="w-full md:w-80">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="fixed">Fixed price (manual)</SelectItem>
+                  <SelectItem value="cost_plus_markup">
+                    Cost + markup %
+                  </SelectItem>
+                  <SelectItem value="msrp_minus_dealer_rate">
+                    MSRP − dealer rate
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-slate-500 mt-1">
+                The sell price below is always what customers see. Mode is a
+                hint for how the price was derived; computation helpers will
+                use cost/markup or MSRP/dealer-rate accordingly.
+              </p>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
-                <Label htmlFor="p-price">Price ($)</Label>
+                <Label htmlFor="p-price">Sell price ($)</Label>
                 <Input
                   id="p-price"
                   value={form.price}
@@ -622,6 +668,30 @@ export default function ProductEdit() {
                 <p className="text-xs text-slate-500 mt-1">Internal only.</p>
               </div>
               <div>
+                <Label htmlFor="p-msrp">MSRP ($)</Label>
+                <Input
+                  id="p-msrp"
+                  value={form.msrp}
+                  onChange={(e) => setForm((f) => ({ ...f, msrp: e.target.value }))}
+                  placeholder="0.00"
+                  inputMode="decimal"
+                />
+                <p className="text-xs text-slate-500 mt-1">Manufacturer list.</p>
+              </div>
+              <div>
+                <Label htmlFor="p-markup">Markup (%)</Label>
+                <Input
+                  id="p-markup"
+                  value={form.markupPercent}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, markupPercent: e.target.value }))
+                  }
+                  placeholder="0.00"
+                  inputMode="decimal"
+                />
+                <p className="text-xs text-slate-500 mt-1">Over cost.</p>
+              </div>
+              <div>
                 <Label htmlFor="p-weight">Weight (lb)</Label>
                 <Input
                   id="p-weight"
@@ -631,7 +701,7 @@ export default function ProductEdit() {
                   inputMode="decimal"
                 />
               </div>
-              <div>
+              <div className="md:col-span-3">
                 <Label htmlFor="p-dim">Dimensions</Label>
                 <Input
                   id="p-dim"

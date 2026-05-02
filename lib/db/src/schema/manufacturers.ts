@@ -5,6 +5,7 @@ import {
   boolean,
   timestamp,
   integer,
+  numeric,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
@@ -17,6 +18,11 @@ export const manufacturersTable = pgTable("manufacturers", {
   logoUrl: text("logo_url"),
   website: text("website"),
   displayOrder: integer("display_order").notNull().default(0),
+  // Default dealer discount % off MSRP (e.g. 50.00 = dealer pays 50% of
+  // list). Used by the pricing helper when a product's
+  // pricingMode = 'msrp_minus_dealer_rate'. Optional — products may also
+  // override or use a different mode.
+  dealerRate: numeric("dealer_rate", { precision: 5, scale: 2 }),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()

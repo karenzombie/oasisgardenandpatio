@@ -44,6 +44,7 @@ function toAdminPayload(row: Manufacturer) {
     logoUrl: row.logoUrl,
     website: row.website,
     displayOrder: row.displayOrder,
+    dealerRate: row.dealerRate,
     isActive: row.isActive,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -88,6 +89,7 @@ router.post(
           logoUrl: parsed.data.logoUrl ?? null,
           website: parsed.data.website ?? null,
           displayOrder: parsed.data.displayOrder ?? 0,
+          dealerRate: parsed.data.dealerRate ?? null,
           isActive: parsed.data.isActive ?? true,
         })
         .returning();
@@ -131,6 +133,9 @@ router.put(
           website: body.data.website ?? null,
           ...(body.data.displayOrder !== undefined
             ? { displayOrder: body.data.displayOrder }
+            : {}),
+          ...(body.data.dealerRate !== undefined
+            ? { dealerRate: body.data.dealerRate }
             : {}),
           ...(body.data.isActive !== undefined
             ? { isActive: body.data.isActive }

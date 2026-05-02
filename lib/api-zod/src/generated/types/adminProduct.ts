@@ -5,6 +5,7 @@
  * Oasis Garden & Patio API
  * OpenAPI spec version: 0.1.0
  */
+import type { AdminProductPricingMode } from "./adminProductPricingMode";
 
 export interface AdminProduct {
   id: number;
@@ -31,6 +32,17 @@ export interface AdminProduct {
   price: string | null;
   /** @nullable */
   cost: string | null;
+  /**
+   * Manufacturer suggested retail price (list before any dealer discount).
+   * @nullable
+   */
+  msrp: string | null;
+  /**
+   * Markup % over cost when pricingMode = cost_plus_markup.
+   * @nullable
+   */
+  markupPercent: string | null;
+  pricingMode: AdminProductPricingMode;
   /** @nullable */
   weight: string | null;
   /** @nullable */

@@ -238,6 +238,11 @@ export interface AdminManufacturer {
   /** @nullable */
   website: string | null;
   displayOrder: number;
+  /**
+   * Default dealer discount % off MSRP (numeric, 0-100). Used when a product priced via msrp_minus_dealer_rate.
+   * @nullable
+   */
+  dealerRate: string | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -258,6 +263,8 @@ export interface CreateManufacturerRequest {
   /** @nullable */
   website?: string | null;
   displayOrder?: number;
+  /** @nullable */
+  dealerRate?: string | null;
   isActive?: boolean;
 }
 
@@ -276,12 +283,23 @@ export interface UpdateManufacturerRequest {
   /** @nullable */
   website?: string | null;
   displayOrder?: number;
+  /** @nullable */
+  dealerRate?: string | null;
   isActive?: boolean;
 }
 
 export interface SetActiveRequest {
   isActive: boolean;
 }
+
+export type AdminProductPricingMode =
+  (typeof AdminProductPricingMode)[keyof typeof AdminProductPricingMode];
+
+export const AdminProductPricingMode = {
+  fixed: "fixed",
+  cost_plus_markup: "cost_plus_markup",
+  msrp_minus_dealer_rate: "msrp_minus_dealer_rate",
+} as const;
 
 export interface AdminProduct {
   id: number;
@@ -308,6 +326,17 @@ export interface AdminProduct {
   price: string | null;
   /** @nullable */
   cost: string | null;
+  /**
+   * Manufacturer suggested retail price (list before any dealer discount).
+   * @nullable
+   */
+  msrp: string | null;
+  /**
+   * Markup % over cost when pricingMode = cost_plus_markup.
+   * @nullable
+   */
+  markupPercent: string | null;
+  pricingMode: AdminProductPricingMode;
   /** @nullable */
   weight: string | null;
   /** @nullable */
@@ -356,6 +385,15 @@ export interface AdminProductsPage {
   pageSize: number;
 }
 
+export type CreateProductRequestPricingMode =
+  (typeof CreateProductRequestPricingMode)[keyof typeof CreateProductRequestPricingMode];
+
+export const CreateProductRequestPricingMode = {
+  fixed: "fixed",
+  cost_plus_markup: "cost_plus_markup",
+  msrp_minus_dealer_rate: "msrp_minus_dealer_rate",
+} as const;
+
 export interface CreateProductRequest {
   /** @minLength 1 */
   name: string;
@@ -381,6 +419,11 @@ export interface CreateProductRequest {
   /** @nullable */
   cost?: string | null;
   /** @nullable */
+  msrp?: string | null;
+  /** @nullable */
+  markupPercent?: string | null;
+  pricingMode?: CreateProductRequestPricingMode;
+  /** @nullable */
   weight?: string | null;
   /** @nullable */
   dimensions?: string | null;
@@ -392,6 +435,15 @@ export interface CreateProductRequest {
   lowStockThreshold?: number;
   isActive?: boolean;
 }
+
+export type UpdateProductRequestPricingMode =
+  (typeof UpdateProductRequestPricingMode)[keyof typeof UpdateProductRequestPricingMode];
+
+export const UpdateProductRequestPricingMode = {
+  fixed: "fixed",
+  cost_plus_markup: "cost_plus_markup",
+  msrp_minus_dealer_rate: "msrp_minus_dealer_rate",
+} as const;
 
 export interface UpdateProductRequest {
   /** @minLength 1 */
@@ -417,6 +469,11 @@ export interface UpdateProductRequest {
   price?: string | null;
   /** @nullable */
   cost?: string | null;
+  /** @nullable */
+  msrp?: string | null;
+  /** @nullable */
+  markupPercent?: string | null;
+  pricingMode?: UpdateProductRequestPricingMode;
   /** @nullable */
   weight?: string | null;
   /** @nullable */

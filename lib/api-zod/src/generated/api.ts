@@ -387,6 +387,12 @@ export const AdminListManufacturersResponseItem = zod.object({
   logoUrl: zod.string().nullable(),
   website: zod.string().nullable(),
   displayOrder: zod.number(),
+  dealerRate: zod
+    .string()
+    .nullable()
+    .describe(
+      "Default dealer discount % off MSRP (numeric, 0-100). Used when a product priced via msrp_minus_dealer_rate.",
+    ),
   isActive: zod.boolean(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
@@ -414,6 +420,7 @@ export const AdminCreateManufacturerBody = zod.object({
   displayOrder: zod
     .number()
     .default(adminCreateManufacturerBodyDisplayOrderDefault),
+  dealerRate: zod.string().nullish(),
   isActive: zod.boolean().default(adminCreateManufacturerBodyIsActiveDefault),
 });
 
@@ -435,6 +442,7 @@ export const AdminUpdateManufacturerBody = zod.object({
   logoUrl: zod.string().nullish(),
   website: zod.string().nullish(),
   displayOrder: zod.number().optional(),
+  dealerRate: zod.string().nullish(),
   isActive: zod.boolean().optional(),
 });
 
@@ -446,6 +454,12 @@ export const AdminUpdateManufacturerResponse = zod.object({
   logoUrl: zod.string().nullable(),
   website: zod.string().nullable(),
   displayOrder: zod.number(),
+  dealerRate: zod
+    .string()
+    .nullable()
+    .describe(
+      "Default dealer discount % off MSRP (numeric, 0-100). Used when a product priced via msrp_minus_dealer_rate.",
+    ),
   isActive: zod.boolean(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
@@ -470,6 +484,12 @@ export const AdminSetManufacturerActiveResponse = zod.object({
   logoUrl: zod.string().nullable(),
   website: zod.string().nullable(),
   displayOrder: zod.number(),
+  dealerRate: zod
+    .string()
+    .nullable()
+    .describe(
+      "Default dealer discount % off MSRP (numeric, 0-100). Used when a product priced via msrp_minus_dealer_rate.",
+    ),
   isActive: zod.boolean(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
@@ -616,6 +636,21 @@ export const AdminListProductsResponse = zod.object({
       materialName: zod.string().nullable(),
       price: zod.string().nullable(),
       cost: zod.string().nullable(),
+      msrp: zod
+        .string()
+        .nullable()
+        .describe(
+          "Manufacturer suggested retail price (list before any dealer discount).",
+        ),
+      markupPercent: zod
+        .string()
+        .nullable()
+        .describe("Markup % over cost when pricingMode = cost_plus_markup."),
+      pricingMode: zod.enum([
+        "fixed",
+        "cost_plus_markup",
+        "msrp_minus_dealer_rate",
+      ]),
       weight: zod.string().nullable(),
       dimensions: zod.string().nullable(),
       showPriceOnline: zod.boolean(),
@@ -645,6 +680,7 @@ export const adminCreateProductBodySlugRegExp = new RegExp(
   "^[a-z0-9]+(?:-[a-z0-9]+)\*$",
 );
 
+export const adminCreateProductBodyPricingModeDefault = `fixed`;
 export const adminCreateProductBodyShowPriceOnlineDefault = true;
 export const adminCreateProductBodyAvailableOnlineDefault = true;
 export const adminCreateProductBodyInStoreOnlyDefault = false;
@@ -664,6 +700,11 @@ export const AdminCreateProductBody = zod.object({
   materialId: zod.number().nullish(),
   price: zod.string().nullish(),
   cost: zod.string().nullish(),
+  msrp: zod.string().nullish(),
+  markupPercent: zod.string().nullish(),
+  pricingMode: zod
+    .enum(["fixed", "cost_plus_markup", "msrp_minus_dealer_rate"])
+    .default(adminCreateProductBodyPricingModeDefault),
   weight: zod.string().nullish(),
   dimensions: zod.string().nullish(),
   showPriceOnline: zod
@@ -704,6 +745,21 @@ export const AdminGetProductResponse = zod
     materialName: zod.string().nullable(),
     price: zod.string().nullable(),
     cost: zod.string().nullable(),
+    msrp: zod
+      .string()
+      .nullable()
+      .describe(
+        "Manufacturer suggested retail price (list before any dealer discount).",
+      ),
+    markupPercent: zod
+      .string()
+      .nullable()
+      .describe("Markup % over cost when pricingMode = cost_plus_markup."),
+    pricingMode: zod.enum([
+      "fixed",
+      "cost_plus_markup",
+      "msrp_minus_dealer_rate",
+    ]),
     weight: zod.string().nullable(),
     dimensions: zod.string().nullable(),
     showPriceOnline: zod.boolean(),
@@ -762,6 +818,11 @@ export const AdminUpdateProductBody = zod.object({
   materialId: zod.number().nullish(),
   price: zod.string().nullish(),
   cost: zod.string().nullish(),
+  msrp: zod.string().nullish(),
+  markupPercent: zod.string().nullish(),
+  pricingMode: zod
+    .enum(["fixed", "cost_plus_markup", "msrp_minus_dealer_rate"])
+    .optional(),
   weight: zod.string().nullish(),
   dimensions: zod.string().nullish(),
   showPriceOnline: zod.boolean().optional(),
@@ -788,6 +849,21 @@ export const AdminUpdateProductResponse = zod.object({
   materialName: zod.string().nullable(),
   price: zod.string().nullable(),
   cost: zod.string().nullable(),
+  msrp: zod
+    .string()
+    .nullable()
+    .describe(
+      "Manufacturer suggested retail price (list before any dealer discount).",
+    ),
+  markupPercent: zod
+    .string()
+    .nullable()
+    .describe("Markup % over cost when pricingMode = cost_plus_markup."),
+  pricingMode: zod.enum([
+    "fixed",
+    "cost_plus_markup",
+    "msrp_minus_dealer_rate",
+  ]),
   weight: zod.string().nullable(),
   dimensions: zod.string().nullable(),
   showPriceOnline: zod.boolean(),
@@ -830,6 +906,21 @@ export const AdminSetProductActiveResponse = zod.object({
   materialName: zod.string().nullable(),
   price: zod.string().nullable(),
   cost: zod.string().nullable(),
+  msrp: zod
+    .string()
+    .nullable()
+    .describe(
+      "Manufacturer suggested retail price (list before any dealer discount).",
+    ),
+  markupPercent: zod
+    .string()
+    .nullable()
+    .describe("Markup % over cost when pricingMode = cost_plus_markup."),
+  pricingMode: zod.enum([
+    "fixed",
+    "cost_plus_markup",
+    "msrp_minus_dealer_rate",
+  ]),
   weight: zod.string().nullable(),
   dimensions: zod.string().nullable(),
   showPriceOnline: zod.boolean(),

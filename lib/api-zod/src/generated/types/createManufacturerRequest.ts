@@ -21,5 +21,7 @@ export interface CreateManufacturerRequest {
   /** @nullable */
   website?: string | null;
   displayOrder?: number;
+  /** @nullable */
+  dealerRate?: string | null;
   isActive?: boolean;
 }
