@@ -1,4 +1,4 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,9 +16,11 @@ import ResetPassword from "@/pages/ResetPassword";
 import VerifyEmail from "@/pages/VerifyEmail";
 import Account from "@/pages/Account";
 
+import StaffRouter from "@/staff/StaffRouter";
+
 const queryClient = new QueryClient();
 
-function Router() {
+function CustomerRouter() {
   return (
     <Layout>
       <Switch>
@@ -30,7 +32,7 @@ function Router() {
         <Route path="/terms-and-conditions">
           {() => <LegalDocument type="terms_and_conditions" />}
         </Route>
-        
+
         {/* Placeholder Routes */}
         <Route path="/manufacturers" component={ComingSoon} />
         <Route path="/materials" component={ComingSoon} />
@@ -44,12 +46,25 @@ function Router() {
         <Route path="/reset-password" component={ResetPassword} />
         <Route path="/verify-email" component={VerifyEmail} />
         <Route path="/account" component={Account} />
-        
+
         {/* 404 */}
         <Route component={NotFound} />
       </Switch>
     </Layout>
   );
+}
+
+function Router() {
+  const [loc] = useLocation();
+  const isStaff =
+    loc === "/staff" ||
+    loc.startsWith("/staff/") ||
+    loc === "/admin" ||
+    loc.startsWith("/admin/") ||
+    loc === "/agent" ||
+    loc.startsWith("/agent/");
+
+  return isStaff ? <StaffRouter /> : <CustomerRouter />;
 }
 
 function App() {

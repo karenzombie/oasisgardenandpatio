@@ -1,0 +1,126 @@
+import { useEffect, useState, type FormEvent } from "react";
+import { useLocation } from "wouter";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  useStaffLogin,
+  getStaffGetStateQueryKey,
+  getGetCurrentUserQueryKey,
+  ApiError,
+} from "@workspace/api-client-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
+import { StaffAuthShell } from "../lib/StaffAuthShell";
+import { useStaffSession, pathForStage } from "../lib/staffSession";
+
+export default function StaffLogin() {
+  const [, navigate] = useLocation();
+  const queryClient = useQueryClient();
+  const session = useStaffSession();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  const loginMutation = useStaffLogin();
+
+  // If already authenticated, bounce to the right place
+  useEffect(() => {
+    if (session.isLoading) return;
+    if (session.stage !== "anonymous") {
+      navigate(pathForStage(session.stage, session.user?.role));
+    }
+  }, [session.isLoading, session.stage, session.user?.role, navigate]);
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    try {
+      const res = await loginMutation.mutateAsync({
+        data: { email: email.trim(), password },
+      });
+      await queryClient.invalidateQueries({
+        queryKey: getStaffGetStateQueryKey(),
+      });
+      await queryClient.invalidateQueries({
+        queryKey: getGetCurrentUserQueryKey(),
+      });
+      navigate(pathForStage(res.stage, res.user?.role));
+    } catch (err) {
+      if (err instanceof ApiError) {
+        if (err.status === 401) {
+          setError("Invalid email or password.");
+        } else if (err.status === 429) {
+          setError(
+            "Too many attempts. Please wait a few minutes and try again.",
+          );
+        } else {
+          setError("Could not sign in. Please try again.");
+        }
+      } else {
+        setError("Could not sign in. Please try again.");
+      }
+    }
+  };
+
+  const isPending = loginMutation.isPending;
+
+  return (
+    <StaffAuthShell
+      title="Staff Sign In"
+      subtitle="Authorized employees only. All sign-ins are logged."
+    >
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+        {error && (
+          <div
+            role="alert"
+            className="border border-red-200 bg-red-50 text-red-700 text-sm px-3 py-2 rounded"
+          >
+            {error}
+          </div>
+        )}
+
+        <div className="space-y-1.5">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            autoComplete="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={isPending}
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="password">Password</Label>
+          <Input
+            id="password"
+            type="password"
+            autoComplete="current-password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            disabled={isPending}
+          />
+        </div>
+
+        <Button
+          type="submit"
+          className="w-full bg-[#1A3C5E] hover:bg-[#142e48]"
+          disabled={isPending}
+        >
+          {isPending ? (
+            <>
+              <Spinner className="size-4 mr-2" />
+              Signing in…
+            </>
+          ) : (
+            "Sign in"
+          )}
+        </Button>
+      </form>
+    </StaffAuthShell>
+  );
+}
