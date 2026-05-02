@@ -6,13 +6,20 @@ import {
   timestamp,
   integer,
   numeric,
+  jsonb,
   index,
+  uniqueIndex,
+  foreignKey,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { manufacturersTable } from "./manufacturers";
 import { categoriesTable } from "./categories";
 import { materialsTable } from "./materials";
+// Circular import: variants.ts also imports from this file. Drizzle's
+// `.references(() => …)` is a lazy callback so circular module loads work.
+import { productVariantsTable } from "./variants";
 
 export const productsTable = pgTable(
   "products",
@@ -37,6 +44,11 @@ export const productsTable = pgTable(
     cost: numeric("cost", { precision: 10, scale: 2 }),
     weight: numeric("weight", { precision: 10, scale: 2 }),
     dimensions: text("dimensions"),
+    // Free-form structured spec sheet (Treasure Garden umbrellas, etc.).
+    // Keys are vendor-specific (size, ribs, vent, lift, tilt, …); UI renders
+    // as a labeled spec table. Use sparingly — promote to first-class columns
+    // when a field becomes core to filtering/business logic.
+    specs: jsonb("specs"),
     showPriceOnline: boolean("show_price_online").notNull().default(true),
     availableOnline: boolean("available_online").notNull().default(true),
     inStoreOnly: boolean("in_store_only").notNull().default(false),
@@ -76,6 +88,12 @@ export const productImagesTable = pgTable(
     productId: integer("product_id")
       .notNull()
       .references(() => productsTable.id, { onDelete: "cascade" }),
+    // When NULL, image applies to the whole model (shared across variants).
+    // When set, image is finish-specific (e.g. UM810-00 bronze frame photo).
+    variantId: integer("variant_id").references(
+      () => productVariantsTable.id,
+      { onDelete: "cascade" },
+    ),
     url: text("url").notNull(),
     altText: text("alt_text"),
     isPrimary: boolean("is_primary").notNull().default(false),
@@ -84,7 +102,10 @@ export const productImagesTable = pgTable(
       .notNull()
       .defaultNow(),
   },
-  (t) => [index("product_images_product_id_idx").on(t.productId)],
+  (t) => [
+    index("product_images_product_id_idx").on(t.productId),
+    index("product_images_variant_id_idx").on(t.variantId),
+  ],
 );
 
 export const insertProductImageSchema = createInsertSchema(
@@ -93,20 +114,58 @@ export const insertProductImageSchema = createInsertSchema(
 export type InsertProductImage = z.infer<typeof insertProductImageSchema>;
 export type ProductImage = typeof productImagesTable.$inferSelect;
 
-export const inventoryTable = pgTable("inventory", {
-  id: serial("id").primaryKey(),
-  productId: integer("product_id")
-    .notNull()
-    .unique()
-    .references(() => productsTable.id, { onDelete: "cascade" }),
-  onHand: integer("on_hand").notNull().default(0),
-  onHold: integer("on_hold").notNull().default(0),
-  reorderThreshold: integer("reorder_threshold").notNull().default(0),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .notNull()
-    .defaultNow()
-    .$onUpdate(() => new Date()),
-});
+// Inventory is variant-scoped when a product has variants, and product-scoped
+// otherwise. Two partial unique indexes enforce: at most one inventory row per
+// variant, and at most one variant-less row per product. A composite FK on
+// (product_id, variant_id) guarantees the variant actually belongs to the
+// product when both are set.
+//
+// MODE EXCLUSIVITY (variant rows vs. variant-less rows for the same product)
+// is enforced at the application layer (inventory routes + loader): when the
+// first variant is created for a product we delete any pre-existing
+// variant-null row, and we never write a variant-null row for a product that
+// has variants. PostgreSQL CHECK constraints can't reference other rows, so a
+// pure-DB enforcement would require a trigger; deferred for v1.
+export const inventoryTable = pgTable(
+  "inventory",
+  {
+    id: serial("id").primaryKey(),
+    productId: integer("product_id")
+      .notNull()
+      .references(() => productsTable.id, { onDelete: "cascade" }),
+    variantId: integer("variant_id").references(
+      () => productVariantsTable.id,
+      { onDelete: "cascade" },
+    ),
+    onHand: integer("on_hand").notNull().default(0),
+    onHold: integer("on_hold").notNull().default(0),
+    reorderThreshold: integer("reorder_threshold").notNull().default(0),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [
+    uniqueIndex("inventory_variant_unique")
+      .on(t.variantId)
+      .where(sql`${t.variantId} IS NOT NULL`),
+    uniqueIndex("inventory_product_no_variant_unique")
+      .on(t.productId)
+      .where(sql`${t.variantId} IS NULL`),
+    // Composite FK: when variant_id is set, (product_id, variant_id) must
+    // reference an actual row in product_variants. MATCH SIMPLE (default)
+    // skips the check when variant_id is NULL, which is exactly what we want
+    // for product-scoped rows.
+    foreignKey({
+      name: "inventory_product_variant_fk",
+      columns: [t.productId, t.variantId],
+      foreignColumns: [
+        productVariantsTable.productId,
+        productVariantsTable.id,
+      ],
+    }).onDelete("cascade"),
+  ],
+);
 
 export const insertInventorySchema = createInsertSchema(inventoryTable).omit({
   id: true,

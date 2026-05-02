@@ -35,7 +35,8 @@ Full-stack e-commerce platform for Oasis Garden & Patio — a luxury outdoor fur
    - ✅ Manufacturers CRUD, Categories CRUD (with tree), Object Storage wiring
    - ✅ Products CRUD (multi-image drag/reorder, primary, inventory tab)
    - ✅ **CSV Import** (`/admin/products/import`): upload → auto-map columns → dry-run validation → atomic commit. Resolves manufacturer/category by name (case-insensitive), upserts by SKU, inventory via `onConflictDoUpdate`. Body limit raised to 25 MB; rejects dangerous header names (`__proto__`/`constructor`/`prototype`).
-   - 🔜 Sets, Inventory, Carriers, Banners, Legal, Settings, Discounts, Users, Audit, Notifications, Orders, Vendor Orders, Reports, Agent shell
+   - ✅ **Variants + fabrics + vendor-data load** — added parent-product / per-finish-variant / shared-fabric-library model with composite-FK and CHECK-constraint enforcement. Loaded real vendor data: 98 Sunbrella fabrics, 14 Treasure Garden umbrella models, 42 frame-finish variants, 1,372 product↔fabric links, 42 per-variant inventory rows.
+   - 🔜 Variants/Fabrics admin UI, Sets, Inventory, Carriers, Banners, Legal, Settings, Discounts, Users, Audit, Notifications, Orders, Vendor Orders, Reports, Agent shell
 4. **Catalog browsing** — product list, filters, PDP
 5. **Cart + checkout** — Authorize.net, TaxJar, shipping
 6. **Customer account** — order history, addresses
@@ -70,3 +71,11 @@ User explicitly directed: **ask rather than assume on ambiguous build decisions*
 ## Product decisions
 
 - **Signup email enumeration**: intentionally returning a clear 409 ("An account with that email already exists") on duplicate signup. Friendlier UX over the more private silent/no-enumeration alternative. Password-reset, by contrast, IS no-enumeration (always 204).
+- **Variant + fabric model** (locked):
+  - `products` is the *parent model* customers browse (e.g. "9' Auto Tilt").
+  - `product_variants` rows are the actual orderable SKUs (frame finishes), keyed by `variant_sku`. Inventory is per-variant; one inventory row per variant via partial unique index.
+  - `fabrics` is a shared library, keyed by `(manufacturer_id, item_number)`. Linked to products via `product_fabric_options` (M:N).
+  - **Every order line carries three identifiers** — product SKU, variant SKU, fabric item number — captured as snapshot columns on `order_items` so vendor PDFs and order history never lose them. CHECK constraints enforce snapshot completeness conditional on which FK is set.
+  - **Composite FKs** on `order_items`/`cart_items`/`inventory` `(product_id, variant_id)` and `(product_id, fabric_id)` guarantee a variant belongs to its product and a chosen fabric is configured as an option for that product. Vendor-side line items live on the same `order_items` rows (linked via `vendor_order_id`) — single source of truth.
+  - Inventory mode exclusivity (variant rows vs. variant-null rows for the same product) is enforced at the application layer; pure-DB enforcement would require a trigger and is deferred.
+- **Vendor data loader**: `pnpm --filter @workspace/scripts run load-vendor-data` is idempotent (re-runnable; keyed on natural keys: fabric `item_number`, product `sku`, variant `variant_sku`). Reads the latest matching CSVs from `attached_assets/`. One-shot CLI, single-runner — uses lookup-then-insert/update; if it ever needs to run concurrently, switch to `onConflictDoUpdate`.

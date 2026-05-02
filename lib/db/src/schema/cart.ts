@@ -6,11 +6,17 @@ import {
   integer,
   numeric,
   index,
+  foreignKey,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./users";
 import { productsTable } from "./products";
+import {
+  productVariantsTable,
+  fabricsTable,
+  productFabricOptionsTable,
+} from "./variants";
 
 export const cartsTable = pgTable(
   "carts",
@@ -53,13 +59,44 @@ export const cartItemsTable = pgTable(
     productId: integer("product_id")
       .notNull()
       .references(() => productsTable.id, { onDelete: "restrict" }),
+    // Variant + fabric selections; both nullable for products without options.
+    // Carts aren't a historical record so no name snapshots — renames are fine
+    // to reflect live until checkout, where order_items snapshots capture them.
+    variantId: integer("variant_id").references(
+      () => productVariantsTable.id,
+      { onDelete: "cascade" },
+    ),
+    fabricId: integer("fabric_id").references(() => fabricsTable.id, {
+      onDelete: "set null",
+    }),
     quantity: integer("quantity").notNull(),
     price: numeric("price", { precision: 10, scale: 2 }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
   },
-  (t) => [index("cart_items_cart_id_idx").on(t.cartId)],
+  (t) => [
+    index("cart_items_cart_id_idx").on(t.cartId),
+    // Composite FKs mirror order_items: a cart can't hold a (product, variant)
+    // pair where variant doesn't belong to product, or a fabric that isn't a
+    // configured option for the product.
+    foreignKey({
+      name: "cart_items_product_variant_fk",
+      columns: [t.productId, t.variantId],
+      foreignColumns: [
+        productVariantsTable.productId,
+        productVariantsTable.id,
+      ],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "cart_items_product_fabric_fk",
+      columns: [t.productId, t.fabricId],
+      foreignColumns: [
+        productFabricOptionsTable.productId,
+        productFabricOptionsTable.fabricId,
+      ],
+    }).onDelete("set null"),
+  ],
 );
 
 export const insertCartItemSchema = createInsertSchema(cartItemsTable).omit({

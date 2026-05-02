@@ -8,12 +8,20 @@ import {
   numeric,
   jsonb,
   index,
+  foreignKey,
+  check,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./users";
 import { customersTable, addressesTable } from "./customers";
 import { productsTable } from "./products";
+import {
+  productVariantsTable,
+  fabricsTable,
+  productFabricOptionsTable,
+} from "./variants";
 
 export const ordersTable = pgTable(
   "orders",
@@ -105,6 +113,21 @@ export const orderItemsTable = pgTable(
     productId: integer("product_id").references(() => productsTable.id, {
       onDelete: "set null",
     }),
+    // Variant + fabric refs are nullable to keep simple flat products working.
+    // Snapshots are captured so renames/deletions don't rewrite history. Both
+    // customer-facing and vendor-facing PDFs read from these snapshots.
+    variantId: integer("variant_id").references(
+      () => productVariantsTable.id,
+      { onDelete: "set null" },
+    ),
+    fabricId: integer("fabric_id").references(() => fabricsTable.id, {
+      onDelete: "set null",
+    }),
+    productSkuSnapshot: text("product_sku_snapshot"),
+    variantSkuSnapshot: text("variant_sku_snapshot"),
+    variantNameSnapshot: text("variant_name_snapshot"),
+    fabricItemNumberSnapshot: text("fabric_item_number_snapshot"),
+    fabricNameSnapshot: text("fabric_name_snapshot"),
     vendorOrderId: integer("vendor_order_id"),
     department: text("department"),
     description: text("description").notNull(),
@@ -120,6 +143,51 @@ export const orderItemsTable = pgTable(
   (t) => [
     index("order_items_order_id_idx").on(t.orderId),
     index("order_items_vendor_order_id_idx").on(t.vendorOrderId),
+    // Composite FKs guarantee that variant_id belongs to product_id and that
+    // fabric_id is a configured option for product_id. MATCH SIMPLE skips the
+    // check when either column is NULL, so simple flat-product line items
+    // without variants/fabrics still work.
+    foreignKey({
+      name: "order_items_product_variant_fk",
+      columns: [t.productId, t.variantId],
+      foreignColumns: [
+        productVariantsTable.productId,
+        productVariantsTable.id,
+      ],
+    }).onDelete("set null"),
+    foreignKey({
+      name: "order_items_product_fabric_fk",
+      columns: [t.productId, t.fabricId],
+      foreignColumns: [
+        productFabricOptionsTable.productId,
+        productFabricOptionsTable.fabricId,
+      ],
+    }).onDelete("set null"),
+    // Snapshot completeness: whenever a FK is set, the corresponding snapshot
+    // must be populated so vendor PDFs and order history never lose the
+    // identifier. Snapshots remain nullable so flat-product lines (no variant,
+    // no fabric) can leave them empty.
+    check(
+      "order_items_product_sku_snapshot_required",
+      sql`${t.productId} IS NULL OR ${t.productSkuSnapshot} IS NOT NULL`,
+    ),
+    check(
+      "order_items_variant_snapshots_required",
+      sql`${t.variantId} IS NULL OR (${t.variantSkuSnapshot} IS NOT NULL AND ${t.variantNameSnapshot} IS NOT NULL)`,
+    ),
+    check(
+      "order_items_fabric_snapshots_required",
+      sql`${t.fabricId} IS NULL OR (${t.fabricItemNumberSnapshot} IS NOT NULL AND ${t.fabricNameSnapshot} IS NOT NULL)`,
+    ),
+    // A variant or fabric reference without a product is nonsensical.
+    check(
+      "order_items_variant_requires_product",
+      sql`${t.variantId} IS NULL OR ${t.productId} IS NOT NULL`,
+    ),
+    check(
+      "order_items_fabric_requires_product",
+      sql`${t.fabricId} IS NULL OR ${t.productId} IS NOT NULL`,
+    ),
   ],
 );
 

@@ -5,6 +5,7 @@ export * from "./manufacturers";
 export * from "./materials";
 export * from "./categories";
 export * from "./products";
+export * from "./variants";
 export * from "./sets";
 export * from "./inventoryAdjustments";
 export * from "./cart";

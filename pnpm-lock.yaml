@@ -687,12 +687,18 @@ importers:
 
   scripts:
     dependencies:
+      '@types/papaparse':
+        specifier: ^5.5.2
+        version: 5.5.2
       '@workspace/db':
         specifier: workspace:*
         version: link:../lib/db
       drizzle-orm:
         specifier: 'catalog:'
         version: 0.45.2(@types/pg@8.18.0)(pg@8.20.0)
+      papaparse:
+        specifier: ^5.5.3
+        version: 5.5.3
     devDependencies:
       '@types/node':
         specifier: 'catalog:'

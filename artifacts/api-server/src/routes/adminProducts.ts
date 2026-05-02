@@ -124,6 +124,7 @@ function baseSelect() {
       cost: productsTable.cost,
       weight: productsTable.weight,
       dimensions: productsTable.dimensions,
+      specs: productsTable.specs,
       showPriceOnline: productsTable.showPriceOnline,
       availableOnline: productsTable.availableOnline,
       inStoreOnly: productsTable.inStoreOnly,
