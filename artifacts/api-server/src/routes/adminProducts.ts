@@ -124,6 +124,8 @@ function baseSelect() {
       materialId: productsTable.materialId,
       materialName: materialsTable.name,
       price: productsTable.price,
+      salePrice: productsTable.salePrice,
+      tags: productsTable.tags,
       cost: productsTable.cost,
       msrp: productsTable.msrp,
       markupPercent: productsTable.markupPercent,

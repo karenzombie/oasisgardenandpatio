@@ -8,6 +8,11 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import Contact from "@/pages/Contact";
 import ComingSoon from "@/pages/ComingSoon";
+import Shop from "@/pages/Shop";
+import Product from "@/pages/Product";
+import ShippingReturns from "@/pages/ShippingReturns";
+import Warranty from "@/pages/Warranty";
+import Fabrics from "@/pages/Fabrics";
 import LegalDocument from "@/pages/LegalDocument";
 import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
@@ -36,8 +41,12 @@ function CustomerRouter() {
         {/* Placeholder Routes */}
         <Route path="/manufacturers" component={ComingSoon} />
         <Route path="/materials" component={ComingSoon} />
-        <Route path="/shop" component={ComingSoon} />
-        <Route path="/shop/:id" component={ComingSoon} />
+        <Route path="/shop" component={Shop} />
+        <Route path="/shop/category/:slug" component={Shop} />
+        <Route path="/shop/:slug" component={Product} />
+        <Route path="/shipping-returns" component={ShippingReturns} />
+        <Route path="/warranty" component={Warranty} />
+        <Route path="/fabrics" component={Fabrics} />
         <Route path="/commercial" component={ComingSoon} />
         <Route path="/cushions" component={ComingSoon} />
         <Route path="/login" component={Login} />

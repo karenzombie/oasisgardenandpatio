@@ -125,6 +125,85 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/FeaturedProduct"
+  /products:
+    get:
+      operationId: listCatalogProducts
+      tags: [products]
+      summary: Public product listing with filters, sort, and pagination
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: categorySlug
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: manufacturerSlug
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: materialSlug
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: sort
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [featured, newest, price_asc, price_desc, name_asc]
+            default: featured
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 60
+            default: 12
+      responses:
+        "200":
+          description: Paginated catalog
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CatalogProductsPage"
+  /products/by-slug/{slug}:
+    get:
+      operationId: getCatalogProductBySlug
+      tags: [products]
+      summary: Public product detail page payload
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Product detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CatalogProductDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /auth/signup:
     post:
       operationId: signup
@@ -3748,6 +3827,126 @@ components:
         - showPriceOnline
         - availableOnline
         - primaryImageUrl
+    CatalogProduct:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        sku:
+          type: string
+        shortDescription:
+          type: ["string", "null"]
+        manufacturerName:
+          type: ["string", "null"]
+        manufacturerSlug:
+          type: ["string", "null"]
+        categoryName:
+          type: ["string", "null"]
+        categorySlug:
+          type: ["string", "null"]
+        price:
+          type: ["string", "null"]
+        salePrice:
+          type: ["string", "null"]
+        showPriceOnline:
+          type: boolean
+        availableOnline:
+          type: boolean
+        featured:
+          type: boolean
+        primaryImageUrl:
+          type: ["string", "null"]
+      required:
+        - id
+        - name
+        - slug
+        - sku
+        - shortDescription
+        - manufacturerName
+        - manufacturerSlug
+        - categoryName
+        - categorySlug
+        - price
+        - salePrice
+        - showPriceOnline
+        - availableOnline
+        - featured
+        - primaryImageUrl
+    CatalogProductsPage:
+      type: object
+      properties:
+        products:
+          type: array
+          items:
+            $ref: "#/components/schemas/CatalogProduct"
+        total:
+          type: integer
+        page:
+          type: integer
+        pageSize:
+          type: integer
+      required:
+        - products
+        - total
+        - page
+        - pageSize
+    CatalogProductImage:
+      type: object
+      properties:
+        id:
+          type: integer
+        url:
+          type: string
+        altText:
+          type: ["string", "null"]
+        isPrimary:
+          type: boolean
+        displayOrder:
+          type: integer
+        imageKind:
+          type: string
+          enum: [gallery, spec]
+      required:
+        - id
+        - url
+        - altText
+        - isPrimary
+        - displayOrder
+        - imageKind
+    CatalogProductDetail:
+      allOf:
+        - $ref: "#/components/schemas/CatalogProduct"
+        - type: object
+          properties:
+            description:
+              type: ["string", "null"]
+            dimensions:
+              type: ["string", "null"]
+            weight:
+              type: ["string", "null"]
+            specs:
+              description: Free-form spec sheet (key/value pairs).
+              type: ["object", "null"]
+              additionalProperties: true
+            tags:
+              type: array
+              items:
+                type: string
+            images:
+              type: array
+              items:
+                $ref: "#/components/schemas/CatalogProductImage"
+          required:
+            - description
+            - dimensions
+            - weight
+            - specs
+            - tags
+            - images
     CurrentUser:
       type: object
       properties:

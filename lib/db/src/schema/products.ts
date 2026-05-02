@@ -44,6 +44,11 @@ export const productsTable = pgTable(
     // Sell price actually shown to customers / used at checkout. Always set
     // (manually or by `pricing_mode` derivation; see below).
     price: numeric("price", { precision: 10, scale: 2 }),
+    // Optional sale price. When set AND less than `price`, the storefront
+    // displays a SALE! badge with the original `price` struck through and
+    // `salePrice` shown as the active price. Checkout uses `salePrice` when
+    // present, otherwise `price`.
+    salePrice: numeric("sale_price", { precision: 10, scale: 2 }),
     // Our wholesale cost (what we pay the vendor). Used for cost+markup mode
     // and for margin reporting.
     cost: numeric("cost", { precision: 10, scale: 2 }),
@@ -67,6 +72,10 @@ export const productsTable = pgTable(
     // as a labeled spec table. Use sparingly — promote to first-class columns
     // when a field becomes core to filtering/business logic.
     specs: jsonb("specs"),
+    // Free-form tags surfaced in the PDP meta block and used by future
+    // search ranking. Stored as a JSON array of strings (e.g. ["sunbrella",
+    // "tilt", "9ft"]). Lowercase by convention; not unique-constrained.
+    tags: jsonb("tags").$type<string[]>().default(sql`'[]'::jsonb`),
     showPriceOnline: boolean("show_price_online").notNull().default(true),
     availableOnline: boolean("available_online").notNull().default(true),
     inStoreOnly: boolean("in_store_only").notNull().default(false),

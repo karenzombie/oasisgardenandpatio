@@ -93,3 +93,32 @@ User explicitly directed: **ask rather than assume on ambiguous build decisions*
   - **Composite FKs** on `order_items`/`cart_items`/`inventory` `(product_id, variant_id)` and `(product_id, fabric_id)` guarantee a variant belongs to its product and a chosen fabric is configured as an option for that product. Vendor-side line items live on the same `order_items` rows (linked via `vendor_order_id`) — single source of truth.
   - Inventory mode exclusivity (variant rows vs. variant-null rows for the same product) is enforced at the application layer; pure-DB enforcement would require a trigger and is deferred.
 - **Vendor data loader**: `pnpm --filter @workspace/scripts run load-vendor-data` is idempotent (re-runnable; keyed on natural keys: fabric `item_number`, product `sku`, variant `variant_sku`). Reads the latest matching CSVs from `attached_assets/`. One-shot CLI, single-runner — uses lookup-then-insert/update; if it ever needs to run concurrently, switch to `onConflictDoUpdate`.
+
+## Customer catalog (T026–T031, May 2026)
+
+- **PLP** at `/shop` (and `/shop/category/:slug`): `useListCatalogProducts` →
+  `GET /api/products` with filters (q, categorySlug, manufacturerSlug,
+  materialSlug), sort modes (featured | newest | price_asc | price_desc |
+  name_asc), and offset pagination. Public list filters `isActive=true AND
+  availableOnline=true`. Featured price sort uses `COALESCE(salePrice, price)`.
+  Card UI: brand-logo corner badge + title + SALE/strikethrough.
+- **PDP** at `/shop/:slug`: `useGetCatalogProductBySlug` →
+  `GET /api/products/by-slug/{slug}`. **Public visibility match**: server
+  returns 404 unless `isActive AND availableOnline` (prevents direct-link leak
+  of in-store-only products). Layout: gallery hover-zoom + thumbs | brand logo
+  + title + price + sanitized short description + disabled Add-to-Cart +
+  SKU/Category/Manufacturer/Tags meta + tabbed Description/Specs/Care/Warranty.
+- **HTML sanitization**: any product `description`/`shortDescription`
+  rendered with `dangerouslySetInnerHTML` flows through `sanitizeHtml()` in
+  `artifacts/web/src/lib/sanitize.ts` (DOMPurify with a small allowlist of
+  tags + `href/rel/target/title` attrs). Until admin-side sanitization on
+  write is added, the client allowlist is the source of truth.
+- **Schema additions**: `products.sale_price numeric(10,2)` (when set <
+  price → SALE badge + strikethrough) and `products.tags jsonb default '[]'`
+  (surfaced in PDP meta; future search). Added via direct psql ALTER because
+  `drizzle-kit push` is gated on an unrelated interactive prompt about
+  `product_variants_product_id_id_unique`.
+- **Static pages**: `/shipping-returns`, `/warranty`, `/fabrics` —
+  hand-authored content, linked from footer "Hours & Links" column.
+- **Deferred**: header search dropdown (T029). PLP already accepts `?q=`, so
+  a future header `<form action="/shop">` is a simple interim wire-up.

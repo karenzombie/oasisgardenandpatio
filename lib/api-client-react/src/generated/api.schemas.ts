@@ -768,6 +768,79 @@ export interface FeaturedProduct {
   primaryImageUrl: string | null;
 }
 
+export interface CatalogProduct {
+  id: number;
+  name: string;
+  slug: string;
+  sku: string;
+  /** @nullable */
+  shortDescription: string | null;
+  /** @nullable */
+  manufacturerName: string | null;
+  /** @nullable */
+  manufacturerSlug: string | null;
+  /** @nullable */
+  categoryName: string | null;
+  /** @nullable */
+  categorySlug: string | null;
+  /** @nullable */
+  price: string | null;
+  /** @nullable */
+  salePrice: string | null;
+  showPriceOnline: boolean;
+  availableOnline: boolean;
+  featured: boolean;
+  /** @nullable */
+  primaryImageUrl: string | null;
+}
+
+export interface CatalogProductsPage {
+  products: CatalogProduct[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export type CatalogProductImageImageKind =
+  (typeof CatalogProductImageImageKind)[keyof typeof CatalogProductImageImageKind];
+
+export const CatalogProductImageImageKind = {
+  gallery: "gallery",
+  spec: "spec",
+} as const;
+
+export interface CatalogProductImage {
+  id: number;
+  url: string;
+  /** @nullable */
+  altText: string | null;
+  isPrimary: boolean;
+  displayOrder: number;
+  imageKind: CatalogProductImageImageKind;
+}
+
+/**
+ * Free-form spec sheet (key/value pairs).
+ * @nullable
+ */
+export type CatalogProductDetailSpecs = { [key: string]: unknown } | null;
+
+export type CatalogProductDetail = CatalogProduct & {
+  /** @nullable */
+  description: string | null;
+  /** @nullable */
+  dimensions: string | null;
+  /** @nullable */
+  weight: string | null;
+  /**
+   * Free-form spec sheet (key/value pairs).
+   * @nullable
+   */
+  specs: CatalogProductDetailSpecs;
+  tags: string[];
+  images: CatalogProductImage[];
+};
+
 export type CurrentUserRole =
   (typeof CurrentUserRole)[keyof typeof CurrentUserRole];
 
@@ -1969,6 +2042,34 @@ export interface CreateOrderRequest {
   orderType?: CreateOrderRequestOrderType;
   status?: string;
 }
+
+export type ListCatalogProductsParams = {
+  q?: string;
+  categorySlug?: string;
+  manufacturerSlug?: string;
+  materialSlug?: string;
+  sort?: ListCatalogProductsSort;
+  /**
+   * @minimum 1
+   */
+  page?: number;
+  /**
+   * @minimum 1
+   * @maximum 60
+   */
+  pageSize?: number;
+};
+
+export type ListCatalogProductsSort =
+  (typeof ListCatalogProductsSort)[keyof typeof ListCatalogProductsSort];
+
+export const ListCatalogProductsSort = {
+  featured: "featured",
+  newest: "newest",
+  price_asc: "price_asc",
+  price_desc: "price_desc",
+  name_asc: "name_asc",
+} as const;
 
 export type StaffDisableTotp200 = {
   ok: boolean;

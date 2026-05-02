@@ -87,6 +87,104 @@ export const ListFeaturedProductsResponse = zod.array(
 );
 
 /**
+ * @summary Public product listing with filters, sort, and pagination
+ */
+export const listCatalogProductsQuerySortDefault = `featured`;
+export const listCatalogProductsQueryPageDefault = 1;
+
+export const listCatalogProductsQueryPageSizeDefault = 12;
+export const listCatalogProductsQueryPageSizeMax = 60;
+
+export const ListCatalogProductsQueryParams = zod.object({
+  q: zod.coerce.string().optional(),
+  categorySlug: zod.coerce.string().optional(),
+  manufacturerSlug: zod.coerce.string().optional(),
+  materialSlug: zod.coerce.string().optional(),
+  sort: zod
+    .enum(["featured", "newest", "price_asc", "price_desc", "name_asc"])
+    .default(listCatalogProductsQuerySortDefault),
+  page: zod.coerce.number().min(1).default(listCatalogProductsQueryPageDefault),
+  pageSize: zod.coerce
+    .number()
+    .min(1)
+    .max(listCatalogProductsQueryPageSizeMax)
+    .default(listCatalogProductsQueryPageSizeDefault),
+});
+
+export const ListCatalogProductsResponse = zod.object({
+  products: zod.array(
+    zod.object({
+      id: zod.number(),
+      name: zod.string(),
+      slug: zod.string(),
+      sku: zod.string(),
+      shortDescription: zod.string().nullable(),
+      manufacturerName: zod.string().nullable(),
+      manufacturerSlug: zod.string().nullable(),
+      categoryName: zod.string().nullable(),
+      categorySlug: zod.string().nullable(),
+      price: zod.string().nullable(),
+      salePrice: zod.string().nullable(),
+      showPriceOnline: zod.boolean(),
+      availableOnline: zod.boolean(),
+      featured: zod.boolean(),
+      primaryImageUrl: zod.string().nullable(),
+    }),
+  ),
+  total: zod.number(),
+  page: zod.number(),
+  pageSize: zod.number(),
+});
+
+/**
+ * @summary Public product detail page payload
+ */
+export const GetCatalogProductBySlugParams = zod.object({
+  slug: zod.coerce.string(),
+});
+
+export const GetCatalogProductBySlugResponse = zod
+  .object({
+    id: zod.number(),
+    name: zod.string(),
+    slug: zod.string(),
+    sku: zod.string(),
+    shortDescription: zod.string().nullable(),
+    manufacturerName: zod.string().nullable(),
+    manufacturerSlug: zod.string().nullable(),
+    categoryName: zod.string().nullable(),
+    categorySlug: zod.string().nullable(),
+    price: zod.string().nullable(),
+    salePrice: zod.string().nullable(),
+    showPriceOnline: zod.boolean(),
+    availableOnline: zod.boolean(),
+    featured: zod.boolean(),
+    primaryImageUrl: zod.string().nullable(),
+  })
+  .and(
+    zod.object({
+      description: zod.string().nullable(),
+      dimensions: zod.string().nullable(),
+      weight: zod.string().nullable(),
+      specs: zod
+        .record(zod.string(), zod.unknown())
+        .nullable()
+        .describe("Free-form spec sheet (key\/value pairs)."),
+      tags: zod.array(zod.string()),
+      images: zod.array(
+        zod.object({
+          id: zod.number(),
+          url: zod.string(),
+          altText: zod.string().nullable(),
+          isPrimary: zod.boolean(),
+          displayOrder: zod.number(),
+          imageKind: zod.enum(["gallery", "spec"]),
+        }),
+      ),
+    }),
+  );
+
+/**
  * @summary Create a new customer account
  */
 export const signupBodyPasswordMin = 8;

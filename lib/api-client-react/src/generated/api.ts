@@ -69,6 +69,8 @@ import type {
   Banner,
   CancelVendorOrderRequest,
   Carrier,
+  CatalogProductDetail,
+  CatalogProductsPage,
   Category,
   ChangePasswordRequest,
   CreateAddressRequest,
@@ -97,6 +99,7 @@ import type {
   ImportProductsRequest,
   InventoryLocation,
   LegalDocument,
+  ListCatalogProductsParams,
   LoginRequest,
   Manufacturer,
   ReceiveVendorOrderRequest,
@@ -610,6 +613,198 @@ export function useListFeaturedProducts<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getListFeaturedProductsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Public product listing with filters, sort, and pagination
+ */
+export const getListCatalogProductsUrl = (
+  params?: ListCatalogProductsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/products?${stringifiedParams}`
+    : `/api/products`;
+};
+
+export const listCatalogProducts = async (
+  params?: ListCatalogProductsParams,
+  options?: RequestInit,
+): Promise<CatalogProductsPage> => {
+  return customFetch<CatalogProductsPage>(getListCatalogProductsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListCatalogProductsQueryKey = (
+  params?: ListCatalogProductsParams,
+) => {
+  return [`/api/products`, ...(params ? [params] : [])] as const;
+};
+
+export const getListCatalogProductsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listCatalogProducts>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListCatalogProductsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listCatalogProducts>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListCatalogProductsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listCatalogProducts>>
+  > = ({ signal }) =>
+    listCatalogProducts(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listCatalogProducts>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListCatalogProductsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listCatalogProducts>>
+>;
+export type ListCatalogProductsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Public product listing with filters, sort, and pagination
+ */
+
+export function useListCatalogProducts<
+  TData = Awaited<ReturnType<typeof listCatalogProducts>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListCatalogProductsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listCatalogProducts>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListCatalogProductsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Public product detail page payload
+ */
+export const getGetCatalogProductBySlugUrl = (slug: string) => {
+  return `/api/products/by-slug/${slug}`;
+};
+
+export const getCatalogProductBySlug = async (
+  slug: string,
+  options?: RequestInit,
+): Promise<CatalogProductDetail> => {
+  return customFetch<CatalogProductDetail>(
+    getGetCatalogProductBySlugUrl(slug),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetCatalogProductBySlugQueryKey = (slug: string) => {
+  return [`/api/products/by-slug/${slug}`] as const;
+};
+
+export const getGetCatalogProductBySlugQueryOptions = <
+  TData = Awaited<ReturnType<typeof getCatalogProductBySlug>>,
+  TError = ErrorType<Error>,
+>(
+  slug: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCatalogProductBySlug>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetCatalogProductBySlugQueryKey(slug);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getCatalogProductBySlug>>
+  > = ({ signal }) =>
+    getCatalogProductBySlug(slug, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!slug,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getCatalogProductBySlug>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetCatalogProductBySlugQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getCatalogProductBySlug>>
+>;
+export type GetCatalogProductBySlugQueryError = ErrorType<Error>;
+
+/**
+ * @summary Public product detail page payload
+ */
+
+export function useGetCatalogProductBySlug<
+  TData = Awaited<ReturnType<typeof getCatalogProductBySlug>>,
+  TError = ErrorType<Error>,
+>(
+  slug: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCatalogProductBySlug>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetCatalogProductBySlugQueryOptions(slug, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
