@@ -2491,6 +2491,483 @@ export const AdminReviewCancellationRequestResponse = zod.object({
 });
 
 /**
+ * @summary List vendor orders (filterable by bucket/status/manufacturer/customer order/search)
+ */
+export const adminListVendorOrdersQueryLimitMax = 200;
+
+export const adminListVendorOrdersQueryOffsetMin = 0;
+
+export const AdminListVendorOrdersQueryParams = zod.object({
+  bucket: zod
+    .enum(["needs_action", "sent"])
+    .optional()
+    .describe("needs_action = pending; sent = everything else"),
+  status: zod.coerce.string().optional(),
+  manufacturerId: zod.coerce.number().optional(),
+  customerOrderId: zod.coerce.number().optional(),
+  q: zod.coerce
+    .string()
+    .optional()
+    .describe("Match vendor order number or customer order number"),
+  limit: zod.coerce
+    .number()
+    .min(1)
+    .max(adminListVendorOrdersQueryLimitMax)
+    .optional(),
+  offset: zod.coerce
+    .number()
+    .min(adminListVendorOrdersQueryOffsetMin)
+    .optional(),
+});
+
+export const AdminListVendorOrdersResponse = zod.object({
+  rows: zod.array(
+    zod.object({
+      id: zod.number(),
+      vendorOrderNumber: zod.string(),
+      status: zod.string(),
+      manufacturerId: zod.number().nullable(),
+      manufacturerName: zod.string().nullable(),
+      customerOrderId: zod.number(),
+      customerOrderNumber: zod.string().nullable(),
+      notes: zod.string().nullable(),
+      vendorEstimatedDeliveryDate: zod.coerce.date().nullable(),
+      sentAt: zod.coerce.date().nullable(),
+      acknowledgedAt: zod.coerce.date().nullable(),
+      fulfilledAt: zod.coerce.date().nullable(),
+      receivedAt: zod.coerce.date().nullable(),
+      itemsReceived: zod.boolean(),
+      itemCount: zod.number(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  total: zod.number(),
+});
+
+/**
+ * @summary Vendor order detail (items, sends history, customer order summary)
+ */
+export const AdminGetVendorOrderParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminGetVendorOrderResponse = zod.object({
+  id: zod.number(),
+  vendorOrderNumber: zod.string(),
+  status: zod.string(),
+  notes: zod.string().nullable(),
+  vendorEstimatedDeliveryDate: zod.coerce.date().nullable(),
+  sentAt: zod.coerce.date().nullable(),
+  acknowledgedAt: zod.coerce.date().nullable(),
+  fulfilledAt: zod.coerce.date().nullable(),
+  receivedAt: zod.coerce.date().nullable(),
+  receivedByUserId: zod.number().nullable(),
+  receivedByEmail: zod.string().nullable(),
+  itemsReceived: zod.boolean(),
+  createdByUserId: zod.number().nullable(),
+  createdByEmail: zod.string().nullable(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+  manufacturerId: zod.number().nullable(),
+  manufacturerName: zod.string().nullable(),
+  customerOrderId: zod.number(),
+  customerOrderNumber: zod.string().nullable(),
+  customerOrderStatus: zod.string().nullable(),
+  customerName: zod.string().nullable(),
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      productId: zod.number().nullable(),
+      productSkuSnapshot: zod.string().nullable(),
+      variantSkuSnapshot: zod.string().nullable(),
+      variantNameSnapshot: zod.string().nullable(),
+      fabricNameSnapshot: zod.string().nullable(),
+      description: zod.string(),
+      quantity: zod.number(),
+      unitPrice: zod.number(),
+      amount: zod.number(),
+      notes: zod.string().nullable(),
+    }),
+  ),
+  sends: zod.array(
+    zod.object({
+      id: zod.number(),
+      sentByUserId: zod.number().nullable(),
+      sentByEmail: zod.string().nullable(),
+      sentAt: zod.coerce.date(),
+      sentToEmail: zod.string().nullable(),
+      isResend: zod.boolean(),
+      resendNote: zod.string().nullable(),
+      pdfStorageUrl: zod.string().nullable(),
+    }),
+  ),
+});
+
+/**
+ * @summary Update vendor order notes / vendor ETA
+ */
+export const AdminUpdateVendorOrderParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminUpdateVendorOrderBody = zod.object({
+  notes: zod.string().nullish(),
+  vendorEstimatedDeliveryDate: zod.coerce.date().nullish(),
+});
+
+export const AdminUpdateVendorOrderResponse = zod.object({
+  id: zod.number(),
+  vendorOrderNumber: zod.string(),
+  status: zod.string(),
+  notes: zod.string().nullable(),
+  vendorEstimatedDeliveryDate: zod.coerce.date().nullable(),
+  sentAt: zod.coerce.date().nullable(),
+  acknowledgedAt: zod.coerce.date().nullable(),
+  fulfilledAt: zod.coerce.date().nullable(),
+  receivedAt: zod.coerce.date().nullable(),
+  receivedByUserId: zod.number().nullable(),
+  receivedByEmail: zod.string().nullable(),
+  itemsReceived: zod.boolean(),
+  createdByUserId: zod.number().nullable(),
+  createdByEmail: zod.string().nullable(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+  manufacturerId: zod.number().nullable(),
+  manufacturerName: zod.string().nullable(),
+  customerOrderId: zod.number(),
+  customerOrderNumber: zod.string().nullable(),
+  customerOrderStatus: zod.string().nullable(),
+  customerName: zod.string().nullable(),
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      productId: zod.number().nullable(),
+      productSkuSnapshot: zod.string().nullable(),
+      variantSkuSnapshot: zod.string().nullable(),
+      variantNameSnapshot: zod.string().nullable(),
+      fabricNameSnapshot: zod.string().nullable(),
+      description: zod.string(),
+      quantity: zod.number(),
+      unitPrice: zod.number(),
+      amount: zod.number(),
+      notes: zod.string().nullable(),
+    }),
+  ),
+  sends: zod.array(
+    zod.object({
+      id: zod.number(),
+      sentByUserId: zod.number().nullable(),
+      sentByEmail: zod.string().nullable(),
+      sentAt: zod.coerce.date(),
+      sentToEmail: zod.string().nullable(),
+      isResend: zod.boolean(),
+      resendNote: zod.string().nullable(),
+      pdfStorageUrl: zod.string().nullable(),
+    }),
+  ),
+});
+
+/**
+ * @summary Delete a pending vendor order (un-assigns its items)
+ */
+export const AdminDeleteVendorOrderParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
+ * @summary Auto-generate vendor orders for unassigned items in a customer order, grouped by manufacturer
+ */
+export const AdminGenerateVendorOrdersParams = zod.object({
+  orderId: zod.coerce.number(),
+});
+
+export const AdminGenerateVendorOrdersBody = zod.object({
+  notes: zod.string().nullish(),
+});
+
+export const AdminGenerateVendorOrdersResponse = zod.object({
+  created: zod.array(
+    zod.object({
+      id: zod.number(),
+      vendorOrderNumber: zod.string(),
+      status: zod.string(),
+      manufacturerId: zod.number().nullable(),
+      manufacturerName: zod.string().nullable(),
+      customerOrderId: zod.number(),
+      customerOrderNumber: zod.string().nullable(),
+      notes: zod.string().nullable(),
+      vendorEstimatedDeliveryDate: zod.coerce.date().nullable(),
+      sentAt: zod.coerce.date().nullable(),
+      acknowledgedAt: zod.coerce.date().nullable(),
+      fulfilledAt: zod.coerce.date().nullable(),
+      receivedAt: zod.coerce.date().nullable(),
+      itemsReceived: zod.boolean(),
+      itemCount: zod.number(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  skippedItemCount: zod
+    .number()
+    .describe("Items skipped because the product has no manufacturer"),
+  assignedItemCount: zod.number(),
+});
+
+/**
+ * @summary Record a vendor order send (first send sets status=sent; subsequent sends are resends)
+ */
+export const AdminSendVendorOrderParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminSendVendorOrderBody = zod.object({
+  sentToEmail: zod.string().nullish(),
+  resendNote: zod.string().nullish(),
+  pdfStorageUrl: zod.string().nullish(),
+});
+
+export const AdminSendVendorOrderResponse = zod.object({
+  id: zod.number(),
+  vendorOrderNumber: zod.string(),
+  status: zod.string(),
+  notes: zod.string().nullable(),
+  vendorEstimatedDeliveryDate: zod.coerce.date().nullable(),
+  sentAt: zod.coerce.date().nullable(),
+  acknowledgedAt: zod.coerce.date().nullable(),
+  fulfilledAt: zod.coerce.date().nullable(),
+  receivedAt: zod.coerce.date().nullable(),
+  receivedByUserId: zod.number().nullable(),
+  receivedByEmail: zod.string().nullable(),
+  itemsReceived: zod.boolean(),
+  createdByUserId: zod.number().nullable(),
+  createdByEmail: zod.string().nullable(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+  manufacturerId: zod.number().nullable(),
+  manufacturerName: zod.string().nullable(),
+  customerOrderId: zod.number(),
+  customerOrderNumber: zod.string().nullable(),
+  customerOrderStatus: zod.string().nullable(),
+  customerName: zod.string().nullable(),
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      productId: zod.number().nullable(),
+      productSkuSnapshot: zod.string().nullable(),
+      variantSkuSnapshot: zod.string().nullable(),
+      variantNameSnapshot: zod.string().nullable(),
+      fabricNameSnapshot: zod.string().nullable(),
+      description: zod.string(),
+      quantity: zod.number(),
+      unitPrice: zod.number(),
+      amount: zod.number(),
+      notes: zod.string().nullable(),
+    }),
+  ),
+  sends: zod.array(
+    zod.object({
+      id: zod.number(),
+      sentByUserId: zod.number().nullable(),
+      sentByEmail: zod.string().nullable(),
+      sentAt: zod.coerce.date(),
+      sentToEmail: zod.string().nullable(),
+      isResend: zod.boolean(),
+      resendNote: zod.string().nullable(),
+      pdfStorageUrl: zod.string().nullable(),
+    }),
+  ),
+});
+
+/**
+ * @summary Move a vendor order to a new status (acknowledged or fulfilled). Use /receive for received, /cancel for canceled.
+ */
+export const AdminUpdateVendorOrderStatusParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminUpdateVendorOrderStatusBody = zod.object({
+  toStatus: zod.enum(["acknowledged", "fulfilled"]),
+  note: zod.string().nullish(),
+});
+
+export const AdminUpdateVendorOrderStatusResponse = zod.object({
+  id: zod.number(),
+  vendorOrderNumber: zod.string(),
+  status: zod.string(),
+  notes: zod.string().nullable(),
+  vendorEstimatedDeliveryDate: zod.coerce.date().nullable(),
+  sentAt: zod.coerce.date().nullable(),
+  acknowledgedAt: zod.coerce.date().nullable(),
+  fulfilledAt: zod.coerce.date().nullable(),
+  receivedAt: zod.coerce.date().nullable(),
+  receivedByUserId: zod.number().nullable(),
+  receivedByEmail: zod.string().nullable(),
+  itemsReceived: zod.boolean(),
+  createdByUserId: zod.number().nullable(),
+  createdByEmail: zod.string().nullable(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+  manufacturerId: zod.number().nullable(),
+  manufacturerName: zod.string().nullable(),
+  customerOrderId: zod.number(),
+  customerOrderNumber: zod.string().nullable(),
+  customerOrderStatus: zod.string().nullable(),
+  customerName: zod.string().nullable(),
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      productId: zod.number().nullable(),
+      productSkuSnapshot: zod.string().nullable(),
+      variantSkuSnapshot: zod.string().nullable(),
+      variantNameSnapshot: zod.string().nullable(),
+      fabricNameSnapshot: zod.string().nullable(),
+      description: zod.string(),
+      quantity: zod.number(),
+      unitPrice: zod.number(),
+      amount: zod.number(),
+      notes: zod.string().nullable(),
+    }),
+  ),
+  sends: zod.array(
+    zod.object({
+      id: zod.number(),
+      sentByUserId: zod.number().nullable(),
+      sentByEmail: zod.string().nullable(),
+      sentAt: zod.coerce.date(),
+      sentToEmail: zod.string().nullable(),
+      isResend: zod.boolean(),
+      resendNote: zod.string().nullable(),
+      pdfStorageUrl: zod.string().nullable(),
+    }),
+  ),
+});
+
+/**
+ * @summary Mark a vendor order's items as received (creates an inventory_receipts row)
+ */
+export const AdminReceiveVendorOrderParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminReceiveVendorOrderBody = zod.object({
+  notes: zod.string().nullish(),
+});
+
+export const AdminReceiveVendorOrderResponse = zod.object({
+  id: zod.number(),
+  vendorOrderNumber: zod.string(),
+  status: zod.string(),
+  notes: zod.string().nullable(),
+  vendorEstimatedDeliveryDate: zod.coerce.date().nullable(),
+  sentAt: zod.coerce.date().nullable(),
+  acknowledgedAt: zod.coerce.date().nullable(),
+  fulfilledAt: zod.coerce.date().nullable(),
+  receivedAt: zod.coerce.date().nullable(),
+  receivedByUserId: zod.number().nullable(),
+  receivedByEmail: zod.string().nullable(),
+  itemsReceived: zod.boolean(),
+  createdByUserId: zod.number().nullable(),
+  createdByEmail: zod.string().nullable(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+  manufacturerId: zod.number().nullable(),
+  manufacturerName: zod.string().nullable(),
+  customerOrderId: zod.number(),
+  customerOrderNumber: zod.string().nullable(),
+  customerOrderStatus: zod.string().nullable(),
+  customerName: zod.string().nullable(),
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      productId: zod.number().nullable(),
+      productSkuSnapshot: zod.string().nullable(),
+      variantSkuSnapshot: zod.string().nullable(),
+      variantNameSnapshot: zod.string().nullable(),
+      fabricNameSnapshot: zod.string().nullable(),
+      description: zod.string(),
+      quantity: zod.number(),
+      unitPrice: zod.number(),
+      amount: zod.number(),
+      notes: zod.string().nullable(),
+    }),
+  ),
+  sends: zod.array(
+    zod.object({
+      id: zod.number(),
+      sentByUserId: zod.number().nullable(),
+      sentByEmail: zod.string().nullable(),
+      sentAt: zod.coerce.date(),
+      sentToEmail: zod.string().nullable(),
+      isResend: zod.boolean(),
+      resendNote: zod.string().nullable(),
+      pdfStorageUrl: zod.string().nullable(),
+    }),
+  ),
+});
+
+/**
+ * @summary Cancel a vendor order (un-assigns its items so they can be reassigned)
+ */
+export const AdminCancelVendorOrderParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminCancelVendorOrderBody = zod.object({
+  note: zod.string().nullish(),
+});
+
+export const AdminCancelVendorOrderResponse = zod.object({
+  id: zod.number(),
+  vendorOrderNumber: zod.string(),
+  status: zod.string(),
+  notes: zod.string().nullable(),
+  vendorEstimatedDeliveryDate: zod.coerce.date().nullable(),
+  sentAt: zod.coerce.date().nullable(),
+  acknowledgedAt: zod.coerce.date().nullable(),
+  fulfilledAt: zod.coerce.date().nullable(),
+  receivedAt: zod.coerce.date().nullable(),
+  receivedByUserId: zod.number().nullable(),
+  receivedByEmail: zod.string().nullable(),
+  itemsReceived: zod.boolean(),
+  createdByUserId: zod.number().nullable(),
+  createdByEmail: zod.string().nullable(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+  manufacturerId: zod.number().nullable(),
+  manufacturerName: zod.string().nullable(),
+  customerOrderId: zod.number(),
+  customerOrderNumber: zod.string().nullable(),
+  customerOrderStatus: zod.string().nullable(),
+  customerName: zod.string().nullable(),
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      productId: zod.number().nullable(),
+      productSkuSnapshot: zod.string().nullable(),
+      variantSkuSnapshot: zod.string().nullable(),
+      variantNameSnapshot: zod.string().nullable(),
+      fabricNameSnapshot: zod.string().nullable(),
+      description: zod.string(),
+      quantity: zod.number(),
+      unitPrice: zod.number(),
+      amount: zod.number(),
+      notes: zod.string().nullable(),
+    }),
+  ),
+  sends: zod.array(
+    zod.object({
+      id: zod.number(),
+      sentByUserId: zod.number().nullable(),
+      sentByEmail: zod.string().nullable(),
+      sentAt: zod.coerce.date(),
+      sentToEmail: zod.string().nullable(),
+      isResend: zod.boolean(),
+      resendNote: zod.string().nullable(),
+      pdfStorageUrl: zod.string().nullable(),
+    }),
+  ),
+});
+
+/**
  * @summary List the current staff user's notifications (newest first)
  */
 export const staffListNotificationsQueryLimitMax = 100;

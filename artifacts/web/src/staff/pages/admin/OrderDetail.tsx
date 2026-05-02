@@ -7,9 +7,11 @@ import {
   useAdminUpdateOrderStatus,
   useAdminUpdateOrderNotes,
   useAdminReviewCancellationRequest,
+  useAdminGenerateVendorOrders,
   getAdminGetOrderQueryKey,
   getAdminListOrdersQueryKey,
   getAdminListCancellationRequestsQueryKey,
+  getAdminListVendorOrdersQueryKey,
   type AdminOrderDetail,
   type AdminOrderAddress,
 } from "@workspace/api-client-react";
@@ -127,6 +129,7 @@ export default function OrderDetail() {
   const updateStatus = useAdminUpdateOrderStatus();
   const updateNotes = useAdminUpdateOrderNotes();
   const reviewCancellation = useAdminReviewCancellationRequest();
+  const generateVendorOrders = useAdminGenerateVendorOrders();
 
   function invalidate() {
     queryClient.invalidateQueries({
@@ -136,6 +139,43 @@ export default function OrderDetail() {
     queryClient.invalidateQueries({
       queryKey: getAdminListCancellationRequestsQueryKey(),
     });
+    queryClient.invalidateQueries({
+      queryKey: getAdminListVendorOrdersQueryKey(),
+    });
+  }
+
+  function handleGenerateVendorOrders() {
+    generateVendorOrders.mutate(
+      { orderId, data: {} },
+      {
+        onSuccess: (res) => {
+          const created = res.created.length;
+          const skipped = res.skippedItemCount;
+          if (created === 0 && skipped === 0) {
+            toast({
+              title: "Nothing to generate",
+              description: "All items are already on a vendor order.",
+            });
+          } else {
+            toast({
+              title: `Generated ${created} vendor order${created === 1 ? "" : "s"}`,
+              description:
+                skipped > 0
+                  ? `${skipped} item${skipped === 1 ? "" : "s"} skipped (no manufacturer set on the product).`
+                  : undefined,
+            });
+          }
+          invalidate();
+        },
+        onError: (e: unknown) => {
+          toast({
+            title: "Generate failed",
+            description: e instanceof Error ? e.message : "Unknown error",
+            variant: "destructive",
+          });
+        },
+      },
+    );
   }
 
   function handleStatusUpdate() {
@@ -603,11 +643,28 @@ export default function OrderDetail() {
               <AddressBlock label="Billing" address={order.billingAddress} />
             </div>
 
-            {order.vendorOrders.length > 0 && (
-              <div className="rounded-md border bg-white p-4">
-                <div className="text-xs font-medium text-slate-500 uppercase mb-2">
+            <div className="rounded-md border bg-white p-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-xs font-medium text-slate-500 uppercase">
                   Vendor orders
                 </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={handleGenerateVendorOrders}
+                  disabled={generateVendorOrders.isPending}
+                >
+                  Generate vendor orders
+                </Button>
+              </div>
+              {order.vendorOrders.length === 0 ? (
+                <div className="text-sm text-slate-500">
+                  No vendor orders yet. Click{" "}
+                  <span className="font-medium">Generate vendor orders</span> to
+                  group unassigned items by manufacturer.
+                </div>
+              ) : (
                 <ul className="space-y-2 text-sm">
                   {order.vendorOrders.map((vo) => (
                     <li
@@ -615,7 +672,12 @@ export default function OrderDetail() {
                       className="flex items-center justify-between"
                     >
                       <div>
-                        <div className="font-medium">{vo.vendorOrderNumber}</div>
+                        <Link
+                          href={`/admin/vendor-orders/${vo.id}`}
+                          className="font-medium text-blue-700 hover:underline"
+                        >
+                          {vo.vendorOrderNumber}
+                        </Link>
                         <div className="text-slate-500">
                           {vo.manufacturerName ?? "—"}
                         </div>
@@ -624,8 +686,8 @@ export default function OrderDetail() {
                     </li>
                   ))}
                 </ul>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
 

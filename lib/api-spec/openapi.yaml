@@ -1897,6 +1897,214 @@ paths:
               schema: { $ref: "#/components/schemas/AdminCancellationRequest" }
         "400": { description: Bad request, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
         "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+  /admin/vendor-orders:
+    get:
+      operationId: adminListVendorOrders
+      tags: [admin-vendor-orders]
+      summary: List vendor orders (filterable by bucket/status/manufacturer/customer order/search)
+      parameters:
+        - name: bucket
+          in: query
+          required: false
+          description: "needs_action = pending; sent = everything else"
+          schema: { type: string, enum: [needs_action, sent] }
+        - name: status
+          in: query
+          required: false
+          schema: { type: string }
+        - name: manufacturerId
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: customerOrderId
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: q
+          in: query
+          required: false
+          description: Match vendor order number or customer order number
+          schema: { type: string }
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 200 }
+        - name: offset
+          in: query
+          required: false
+          schema: { type: integer, minimum: 0 }
+      responses:
+        "200":
+          description: Vendor orders page
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminVendorOrderPage" }
+  /admin/vendor-orders/{id}:
+    get:
+      operationId: adminGetVendorOrder
+      tags: [admin-vendor-orders]
+      summary: Vendor order detail (items, sends history, customer order summary)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Vendor order detail
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminVendorOrderDetail" }
+        "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+    patch:
+      operationId: adminUpdateVendorOrder
+      tags: [admin-vendor-orders]
+      summary: Update vendor order notes / vendor ETA
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateVendorOrderRequest" }
+      responses:
+        "200":
+          description: Updated vendor order
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminVendorOrderDetail" }
+        "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+    delete:
+      operationId: adminDeleteVendorOrder
+      tags: [admin-vendor-orders]
+      summary: Delete a pending vendor order (un-assigns its items)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204": { description: Deleted }
+        "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+        "409": { description: Cannot delete after sending, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+  /admin/orders/{orderId}/vendor-orders/generate:
+    post:
+      operationId: adminGenerateVendorOrders
+      tags: [admin-vendor-orders]
+      summary: Auto-generate vendor orders for unassigned items in a customer order, grouped by manufacturer
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/GenerateVendorOrdersRequest" }
+      responses:
+        "200":
+          description: Generated vendor orders summary
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GenerateVendorOrdersResponse" }
+        "404": { description: Order not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+  /admin/vendor-orders/{id}/send:
+    post:
+      operationId: adminSendVendorOrder
+      tags: [admin-vendor-orders]
+      summary: Record a vendor order send (first send sets status=sent; subsequent sends are resends)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SendVendorOrderRequest" }
+      responses:
+        "200":
+          description: Updated vendor order
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminVendorOrderDetail" }
+        "400": { description: Bad request, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+        "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+  /admin/vendor-orders/{id}/status:
+    post:
+      operationId: adminUpdateVendorOrderStatus
+      tags: [admin-vendor-orders]
+      summary: Move a vendor order to a new status (acknowledged or fulfilled). Use /receive for received, /cancel for canceled.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateVendorOrderStatusRequest" }
+      responses:
+        "200":
+          description: Updated vendor order
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminVendorOrderDetail" }
+        "400": { description: Bad request, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+        "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+        "409": { description: Invalid transition, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+  /admin/vendor-orders/{id}/receive:
+    post:
+      operationId: adminReceiveVendorOrder
+      tags: [admin-vendor-orders]
+      summary: Mark a vendor order's items as received (creates an inventory_receipts row)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReceiveVendorOrderRequest" }
+      responses:
+        "200":
+          description: Updated vendor order
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminVendorOrderDetail" }
+        "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+        "409": { description: Invalid state for receive, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+  /admin/vendor-orders/{id}/cancel:
+    post:
+      operationId: adminCancelVendorOrder
+      tags: [admin-vendor-orders]
+      summary: Cancel a vendor order (un-assigns its items so they can be reassigned)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CancelVendorOrderRequest" }
+      responses:
+        "200":
+          description: Updated vendor order
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminVendorOrderDetail" }
+        "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+        "409": { description: Already received or canceled, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
   /staff/notifications:
     get:
       operationId: staffListNotifications
@@ -2367,6 +2575,134 @@ components:
         receivedAt: { type: string, format: date-time, nullable: true }
         itemsReceived: { type: boolean }
       required: [id, vendorOrderNumber, status, manufacturerId, manufacturerName, sentAt, receivedAt, itemsReceived]
+    AdminVendorOrderSummary:
+      type: object
+      properties:
+        id: { type: integer }
+        vendorOrderNumber: { type: string }
+        status: { type: string }
+        manufacturerId: { type: integer, nullable: true }
+        manufacturerName: { type: string, nullable: true }
+        customerOrderId: { type: integer }
+        customerOrderNumber: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+        vendorEstimatedDeliveryDate: { type: string, format: date-time, nullable: true }
+        sentAt: { type: string, format: date-time, nullable: true }
+        acknowledgedAt: { type: string, format: date-time, nullable: true }
+        fulfilledAt: { type: string, format: date-time, nullable: true }
+        receivedAt: { type: string, format: date-time, nullable: true }
+        itemsReceived: { type: boolean }
+        itemCount: { type: integer }
+        createdAt: { type: string, format: date-time }
+      required:
+        [id, vendorOrderNumber, status, manufacturerId, manufacturerName, customerOrderId, customerOrderNumber, notes, vendorEstimatedDeliveryDate, sentAt, acknowledgedAt, fulfilledAt, receivedAt, itemsReceived, itemCount, createdAt]
+    AdminVendorOrderPage:
+      type: object
+      properties:
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/AdminVendorOrderSummary" }
+        total: { type: integer }
+      required: [rows, total]
+    AdminVendorOrderItem:
+      type: object
+      properties:
+        id: { type: integer }
+        productId: { type: integer, nullable: true }
+        productSkuSnapshot: { type: string, nullable: true }
+        variantSkuSnapshot: { type: string, nullable: true }
+        variantNameSnapshot: { type: string, nullable: true }
+        fabricNameSnapshot: { type: string, nullable: true }
+        description: { type: string }
+        quantity: { type: integer }
+        unitPrice: { type: number }
+        amount: { type: number }
+        notes: { type: string, nullable: true }
+      required:
+        [id, productId, productSkuSnapshot, variantSkuSnapshot, variantNameSnapshot, fabricNameSnapshot, description, quantity, unitPrice, amount, notes]
+    AdminVendorOrderSend:
+      type: object
+      properties:
+        id: { type: integer }
+        sentByUserId: { type: integer, nullable: true }
+        sentByEmail: { type: string, nullable: true }
+        sentAt: { type: string, format: date-time }
+        sentToEmail: { type: string, nullable: true }
+        isResend: { type: boolean }
+        resendNote: { type: string, nullable: true }
+        pdfStorageUrl: { type: string, nullable: true }
+      required: [id, sentByUserId, sentByEmail, sentAt, sentToEmail, isResend, resendNote, pdfStorageUrl]
+    AdminVendorOrderDetail:
+      type: object
+      properties:
+        id: { type: integer }
+        vendorOrderNumber: { type: string }
+        status: { type: string }
+        notes: { type: string, nullable: true }
+        vendorEstimatedDeliveryDate: { type: string, format: date-time, nullable: true }
+        sentAt: { type: string, format: date-time, nullable: true }
+        acknowledgedAt: { type: string, format: date-time, nullable: true }
+        fulfilledAt: { type: string, format: date-time, nullable: true }
+        receivedAt: { type: string, format: date-time, nullable: true }
+        receivedByUserId: { type: integer, nullable: true }
+        receivedByEmail: { type: string, nullable: true }
+        itemsReceived: { type: boolean }
+        createdByUserId: { type: integer, nullable: true }
+        createdByEmail: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        manufacturerId: { type: integer, nullable: true }
+        manufacturerName: { type: string, nullable: true }
+        customerOrderId: { type: integer }
+        customerOrderNumber: { type: string, nullable: true }
+        customerOrderStatus: { type: string, nullable: true }
+        customerName: { type: string, nullable: true }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/AdminVendorOrderItem" }
+        sends:
+          type: array
+          items: { $ref: "#/components/schemas/AdminVendorOrderSend" }
+      required:
+        [id, vendorOrderNumber, status, notes, vendorEstimatedDeliveryDate, sentAt, acknowledgedAt, fulfilledAt, receivedAt, receivedByUserId, receivedByEmail, itemsReceived, createdByUserId, createdByEmail, createdAt, updatedAt, manufacturerId, manufacturerName, customerOrderId, customerOrderNumber, customerOrderStatus, customerName, items, sends]
+    GenerateVendorOrdersRequest:
+      type: object
+      properties:
+        notes: { type: string, nullable: true }
+    GenerateVendorOrdersResponse:
+      type: object
+      properties:
+        created:
+          type: array
+          items: { $ref: "#/components/schemas/AdminVendorOrderSummary" }
+        skippedItemCount: { type: integer, description: "Items skipped because the product has no manufacturer" }
+        assignedItemCount: { type: integer }
+      required: [created, skippedItemCount, assignedItemCount]
+    SendVendorOrderRequest:
+      type: object
+      properties:
+        sentToEmail: { type: string, nullable: true }
+        resendNote: { type: string, nullable: true }
+        pdfStorageUrl: { type: string, nullable: true }
+    UpdateVendorOrderStatusRequest:
+      type: object
+      properties:
+        toStatus: { type: string, enum: [acknowledged, fulfilled] }
+        note: { type: string, nullable: true }
+      required: [toStatus]
+    ReceiveVendorOrderRequest:
+      type: object
+      properties:
+        notes: { type: string, nullable: true }
+    CancelVendorOrderRequest:
+      type: object
+      properties:
+        note: { type: string, nullable: true }
+    UpdateVendorOrderRequest:
+      type: object
+      properties:
+        notes: { type: string, nullable: true }
+        vendorEstimatedDeliveryDate: { type: string, format: date-time, nullable: true }
     AdminCancellationRequest:
       type: object
       properties:

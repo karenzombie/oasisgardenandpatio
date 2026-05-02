@@ -126,6 +126,125 @@ export interface AdminOrderVendorOrder {
   itemsReceived: boolean;
 }
 
+export interface AdminVendorOrderSummary {
+  id: number;
+  vendorOrderNumber: string;
+  status: string;
+  manufacturerId: number | null;
+  manufacturerName: string | null;
+  customerOrderId: number;
+  customerOrderNumber: string | null;
+  notes: string | null;
+  vendorEstimatedDeliveryDate: string | null;
+  sentAt: string | null;
+  acknowledgedAt: string | null;
+  fulfilledAt: string | null;
+  receivedAt: string | null;
+  itemsReceived: boolean;
+  itemCount: number;
+  createdAt: string;
+}
+
+export interface AdminVendorOrderPage {
+  rows: AdminVendorOrderSummary[];
+  total: number;
+}
+
+export interface AdminVendorOrderItem {
+  id: number;
+  productId: number | null;
+  productSkuSnapshot: string | null;
+  variantSkuSnapshot: string | null;
+  variantNameSnapshot: string | null;
+  fabricNameSnapshot: string | null;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  amount: number;
+  notes: string | null;
+}
+
+export interface AdminVendorOrderSend {
+  id: number;
+  sentByUserId: number | null;
+  sentByEmail: string | null;
+  sentAt: string;
+  sentToEmail: string | null;
+  isResend: boolean;
+  resendNote: string | null;
+  pdfStorageUrl: string | null;
+}
+
+export interface AdminVendorOrderDetail {
+  id: number;
+  vendorOrderNumber: string;
+  status: string;
+  notes: string | null;
+  vendorEstimatedDeliveryDate: string | null;
+  sentAt: string | null;
+  acknowledgedAt: string | null;
+  fulfilledAt: string | null;
+  receivedAt: string | null;
+  receivedByUserId: number | null;
+  receivedByEmail: string | null;
+  itemsReceived: boolean;
+  createdByUserId: number | null;
+  createdByEmail: string | null;
+  createdAt: string;
+  updatedAt: string;
+  manufacturerId: number | null;
+  manufacturerName: string | null;
+  customerOrderId: number;
+  customerOrderNumber: string | null;
+  customerOrderStatus: string | null;
+  customerName: string | null;
+  items: AdminVendorOrderItem[];
+  sends: AdminVendorOrderSend[];
+}
+
+export interface GenerateVendorOrdersRequest {
+  notes?: string | null;
+}
+
+export interface GenerateVendorOrdersResponse {
+  created: AdminVendorOrderSummary[];
+  /** Items skipped because the product has no manufacturer */
+  skippedItemCount: number;
+  assignedItemCount: number;
+}
+
+export interface SendVendorOrderRequest {
+  sentToEmail?: string | null;
+  resendNote?: string | null;
+  pdfStorageUrl?: string | null;
+}
+
+export type UpdateVendorOrderStatusRequestToStatus =
+  (typeof UpdateVendorOrderStatusRequestToStatus)[keyof typeof UpdateVendorOrderStatusRequestToStatus];
+
+export const UpdateVendorOrderStatusRequestToStatus = {
+  acknowledged: "acknowledged",
+  fulfilled: "fulfilled",
+} as const;
+
+export interface UpdateVendorOrderStatusRequest {
+  toStatus: UpdateVendorOrderStatusRequestToStatus;
+  note?: string | null;
+}
+
+export interface ReceiveVendorOrderRequest {
+  notes?: string | null;
+}
+
+export interface CancelVendorOrderRequest {
+  note?: string | null;
+}
+
+export interface UpdateVendorOrderRequest {
+  notes?: string | null;
+  vendorEstimatedDeliveryDate?: string | null;
+}
+
 export interface AdminCancellationRequest {
   id: number;
   orderId: number;
@@ -1691,6 +1810,37 @@ export type AdminListOrdersParams = {
 export type AdminListCancellationRequestsParams = {
   status?: string;
 };
+
+export type AdminListVendorOrdersParams = {
+  /**
+   * needs_action = pending; sent = everything else
+   */
+  bucket?: AdminListVendorOrdersBucket;
+  status?: string;
+  manufacturerId?: number;
+  customerOrderId?: number;
+  /**
+   * Match vendor order number or customer order number
+   */
+  q?: string;
+  /**
+   * @minimum 1
+   * @maximum 200
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   */
+  offset?: number;
+};
+
+export type AdminListVendorOrdersBucket =
+  (typeof AdminListVendorOrdersBucket)[keyof typeof AdminListVendorOrdersBucket];
+
+export const AdminListVendorOrdersBucket = {
+  needs_action: "needs_action",
+  sent: "sent",
+} as const;
 
 export type StaffListNotificationsParams = {
   unreadOnly?: boolean;

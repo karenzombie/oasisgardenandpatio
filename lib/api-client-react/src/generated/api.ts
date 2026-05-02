@@ -36,6 +36,7 @@ import type {
   AdminListOrdersParams,
   AdminListProductsParams,
   AdminListUsersParams,
+  AdminListVendorOrdersParams,
   AdminManufacturer,
   AdminOrderDetail,
   AdminOrderPage,
@@ -49,8 +50,11 @@ import type {
   AdminSetSummary,
   AdminUserDetail,
   AdminUserSummary,
+  AdminVendorOrderDetail,
+  AdminVendorOrderPage,
   AuditLogPage,
   Banner,
+  CancelVendorOrderRequest,
   Carrier,
   Category,
   ChangePasswordRequest,
@@ -69,6 +73,8 @@ import type {
   CurrentUser,
   Error,
   FeaturedProduct,
+  GenerateVendorOrdersRequest,
+  GenerateVendorOrdersResponse,
   HealthStatus,
   ImportProductsCommitResult,
   ImportProductsDryRunResult,
@@ -77,6 +83,7 @@ import type {
   LegalDocument,
   LoginRequest,
   Manufacturer,
+  ReceiveVendorOrderRequest,
   RecoveryCodeRequest,
   ReorderProductImagesRequest,
   ReplaceSetItemsRequest,
@@ -85,6 +92,7 @@ import type {
   RequestUploadUrlResponseSchema,
   ResetPasswordRequest,
   ReviewCancellationRequest,
+  SendVendorOrderRequest,
   SetActiveRequest,
   SignupRequest,
   StaffDisableTotp200,
@@ -111,6 +119,8 @@ import type {
   UpdateProductRequest,
   UpdateSetRequest,
   UpdateUserRequest,
+  UpdateVendorOrderRequest,
+  UpdateVendorOrderStatusRequest,
   VerifyEmailRequest,
 } from "./api.schemas";
 
@@ -6748,6 +6758,816 @@ export const useAdminReviewCancellationRequest = <
   TContext
 > => {
   return useMutation(getAdminReviewCancellationRequestMutationOptions(options));
+};
+
+/**
+ * @summary List vendor orders (filterable by bucket/status/manufacturer/customer order/search)
+ */
+export const getAdminListVendorOrdersUrl = (
+  params?: AdminListVendorOrdersParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/admin/vendor-orders?${stringifiedParams}`
+    : `/api/admin/vendor-orders`;
+};
+
+export const adminListVendorOrders = async (
+  params?: AdminListVendorOrdersParams,
+  options?: RequestInit,
+): Promise<AdminVendorOrderPage> => {
+  return customFetch<AdminVendorOrderPage>(
+    getAdminListVendorOrdersUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getAdminListVendorOrdersQueryKey = (
+  params?: AdminListVendorOrdersParams,
+) => {
+  return [`/api/admin/vendor-orders`, ...(params ? [params] : [])] as const;
+};
+
+export const getAdminListVendorOrdersQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminListVendorOrders>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: AdminListVendorOrdersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminListVendorOrders>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getAdminListVendorOrdersQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminListVendorOrders>>
+  > = ({ signal }) =>
+    adminListVendorOrders(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminListVendorOrders>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminListVendorOrdersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminListVendorOrders>>
+>;
+export type AdminListVendorOrdersQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List vendor orders (filterable by bucket/status/manufacturer/customer order/search)
+ */
+
+export function useAdminListVendorOrders<
+  TData = Awaited<ReturnType<typeof adminListVendorOrders>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: AdminListVendorOrdersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminListVendorOrders>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminListVendorOrdersQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Vendor order detail (items, sends history, customer order summary)
+ */
+export const getAdminGetVendorOrderUrl = (id: number) => {
+  return `/api/admin/vendor-orders/${id}`;
+};
+
+export const adminGetVendorOrder = async (
+  id: number,
+  options?: RequestInit,
+): Promise<AdminVendorOrderDetail> => {
+  return customFetch<AdminVendorOrderDetail>(getAdminGetVendorOrderUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAdminGetVendorOrderQueryKey = (id: number) => {
+  return [`/api/admin/vendor-orders/${id}`] as const;
+};
+
+export const getAdminGetVendorOrderQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminGetVendorOrder>>,
+  TError = ErrorType<Error>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminGetVendorOrder>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getAdminGetVendorOrderQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminGetVendorOrder>>
+  > = ({ signal }) => adminGetVendorOrder(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetVendorOrder>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminGetVendorOrderQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminGetVendorOrder>>
+>;
+export type AdminGetVendorOrderQueryError = ErrorType<Error>;
+
+/**
+ * @summary Vendor order detail (items, sends history, customer order summary)
+ */
+
+export function useAdminGetVendorOrder<
+  TData = Awaited<ReturnType<typeof adminGetVendorOrder>>,
+  TError = ErrorType<Error>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminGetVendorOrder>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminGetVendorOrderQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update vendor order notes / vendor ETA
+ */
+export const getAdminUpdateVendorOrderUrl = (id: number) => {
+  return `/api/admin/vendor-orders/${id}`;
+};
+
+export const adminUpdateVendorOrder = async (
+  id: number,
+  updateVendorOrderRequest: UpdateVendorOrderRequest,
+  options?: RequestInit,
+): Promise<AdminVendorOrderDetail> => {
+  return customFetch<AdminVendorOrderDetail>(getAdminUpdateVendorOrderUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateVendorOrderRequest),
+  });
+};
+
+export const getAdminUpdateVendorOrderMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateVendorOrder>>,
+    TError,
+    { id: number; data: BodyType<UpdateVendorOrderRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUpdateVendorOrder>>,
+  TError,
+  { id: number; data: BodyType<UpdateVendorOrderRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminUpdateVendorOrder"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUpdateVendorOrder>>,
+    { id: number; data: BodyType<UpdateVendorOrderRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminUpdateVendorOrder(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminUpdateVendorOrderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUpdateVendorOrder>>
+>;
+export type AdminUpdateVendorOrderMutationBody =
+  BodyType<UpdateVendorOrderRequest>;
+export type AdminUpdateVendorOrderMutationError = ErrorType<Error>;
+
+/**
+ * @summary Update vendor order notes / vendor ETA
+ */
+export const useAdminUpdateVendorOrder = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateVendorOrder>>,
+    TError,
+    { id: number; data: BodyType<UpdateVendorOrderRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUpdateVendorOrder>>,
+  TError,
+  { id: number; data: BodyType<UpdateVendorOrderRequest> },
+  TContext
+> => {
+  return useMutation(getAdminUpdateVendorOrderMutationOptions(options));
+};
+
+/**
+ * @summary Delete a pending vendor order (un-assigns its items)
+ */
+export const getAdminDeleteVendorOrderUrl = (id: number) => {
+  return `/api/admin/vendor-orders/${id}`;
+};
+
+export const adminDeleteVendorOrder = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getAdminDeleteVendorOrderUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getAdminDeleteVendorOrderMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeleteVendorOrder>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminDeleteVendorOrder>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["adminDeleteVendorOrder"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminDeleteVendorOrder>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return adminDeleteVendorOrder(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminDeleteVendorOrderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminDeleteVendorOrder>>
+>;
+
+export type AdminDeleteVendorOrderMutationError = ErrorType<Error>;
+
+/**
+ * @summary Delete a pending vendor order (un-assigns its items)
+ */
+export const useAdminDeleteVendorOrder = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeleteVendorOrder>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminDeleteVendorOrder>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getAdminDeleteVendorOrderMutationOptions(options));
+};
+
+/**
+ * @summary Auto-generate vendor orders for unassigned items in a customer order, grouped by manufacturer
+ */
+export const getAdminGenerateVendorOrdersUrl = (orderId: number) => {
+  return `/api/admin/orders/${orderId}/vendor-orders/generate`;
+};
+
+export const adminGenerateVendorOrders = async (
+  orderId: number,
+  generateVendorOrdersRequest?: GenerateVendorOrdersRequest,
+  options?: RequestInit,
+): Promise<GenerateVendorOrdersResponse> => {
+  return customFetch<GenerateVendorOrdersResponse>(
+    getAdminGenerateVendorOrdersUrl(orderId),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(generateVendorOrdersRequest),
+    },
+  );
+};
+
+export const getAdminGenerateVendorOrdersMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminGenerateVendorOrders>>,
+    TError,
+    { orderId: number; data: BodyType<GenerateVendorOrdersRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminGenerateVendorOrders>>,
+  TError,
+  { orderId: number; data: BodyType<GenerateVendorOrdersRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminGenerateVendorOrders"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminGenerateVendorOrders>>,
+    { orderId: number; data: BodyType<GenerateVendorOrdersRequest> }
+  > = (props) => {
+    const { orderId, data } = props ?? {};
+
+    return adminGenerateVendorOrders(orderId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminGenerateVendorOrdersMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminGenerateVendorOrders>>
+>;
+export type AdminGenerateVendorOrdersMutationBody =
+  BodyType<GenerateVendorOrdersRequest>;
+export type AdminGenerateVendorOrdersMutationError = ErrorType<Error>;
+
+/**
+ * @summary Auto-generate vendor orders for unassigned items in a customer order, grouped by manufacturer
+ */
+export const useAdminGenerateVendorOrders = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminGenerateVendorOrders>>,
+    TError,
+    { orderId: number; data: BodyType<GenerateVendorOrdersRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminGenerateVendorOrders>>,
+  TError,
+  { orderId: number; data: BodyType<GenerateVendorOrdersRequest> },
+  TContext
+> => {
+  return useMutation(getAdminGenerateVendorOrdersMutationOptions(options));
+};
+
+/**
+ * @summary Record a vendor order send (first send sets status=sent; subsequent sends are resends)
+ */
+export const getAdminSendVendorOrderUrl = (id: number) => {
+  return `/api/admin/vendor-orders/${id}/send`;
+};
+
+export const adminSendVendorOrder = async (
+  id: number,
+  sendVendorOrderRequest: SendVendorOrderRequest,
+  options?: RequestInit,
+): Promise<AdminVendorOrderDetail> => {
+  return customFetch<AdminVendorOrderDetail>(getAdminSendVendorOrderUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(sendVendorOrderRequest),
+  });
+};
+
+export const getAdminSendVendorOrderMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminSendVendorOrder>>,
+    TError,
+    { id: number; data: BodyType<SendVendorOrderRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminSendVendorOrder>>,
+  TError,
+  { id: number; data: BodyType<SendVendorOrderRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminSendVendorOrder"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminSendVendorOrder>>,
+    { id: number; data: BodyType<SendVendorOrderRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminSendVendorOrder(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminSendVendorOrderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminSendVendorOrder>>
+>;
+export type AdminSendVendorOrderMutationBody = BodyType<SendVendorOrderRequest>;
+export type AdminSendVendorOrderMutationError = ErrorType<Error>;
+
+/**
+ * @summary Record a vendor order send (first send sets status=sent; subsequent sends are resends)
+ */
+export const useAdminSendVendorOrder = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminSendVendorOrder>>,
+    TError,
+    { id: number; data: BodyType<SendVendorOrderRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminSendVendorOrder>>,
+  TError,
+  { id: number; data: BodyType<SendVendorOrderRequest> },
+  TContext
+> => {
+  return useMutation(getAdminSendVendorOrderMutationOptions(options));
+};
+
+/**
+ * @summary Move a vendor order to a new status (acknowledged or fulfilled). Use /receive for received, /cancel for canceled.
+ */
+export const getAdminUpdateVendorOrderStatusUrl = (id: number) => {
+  return `/api/admin/vendor-orders/${id}/status`;
+};
+
+export const adminUpdateVendorOrderStatus = async (
+  id: number,
+  updateVendorOrderStatusRequest: UpdateVendorOrderStatusRequest,
+  options?: RequestInit,
+): Promise<AdminVendorOrderDetail> => {
+  return customFetch<AdminVendorOrderDetail>(
+    getAdminUpdateVendorOrderStatusUrl(id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateVendorOrderStatusRequest),
+    },
+  );
+};
+
+export const getAdminUpdateVendorOrderStatusMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateVendorOrderStatus>>,
+    TError,
+    { id: number; data: BodyType<UpdateVendorOrderStatusRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUpdateVendorOrderStatus>>,
+  TError,
+  { id: number; data: BodyType<UpdateVendorOrderStatusRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminUpdateVendorOrderStatus"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUpdateVendorOrderStatus>>,
+    { id: number; data: BodyType<UpdateVendorOrderStatusRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminUpdateVendorOrderStatus(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminUpdateVendorOrderStatusMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUpdateVendorOrderStatus>>
+>;
+export type AdminUpdateVendorOrderStatusMutationBody =
+  BodyType<UpdateVendorOrderStatusRequest>;
+export type AdminUpdateVendorOrderStatusMutationError = ErrorType<Error>;
+
+/**
+ * @summary Move a vendor order to a new status (acknowledged or fulfilled). Use /receive for received, /cancel for canceled.
+ */
+export const useAdminUpdateVendorOrderStatus = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateVendorOrderStatus>>,
+    TError,
+    { id: number; data: BodyType<UpdateVendorOrderStatusRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUpdateVendorOrderStatus>>,
+  TError,
+  { id: number; data: BodyType<UpdateVendorOrderStatusRequest> },
+  TContext
+> => {
+  return useMutation(getAdminUpdateVendorOrderStatusMutationOptions(options));
+};
+
+/**
+ * @summary Mark a vendor order's items as received (creates an inventory_receipts row)
+ */
+export const getAdminReceiveVendorOrderUrl = (id: number) => {
+  return `/api/admin/vendor-orders/${id}/receive`;
+};
+
+export const adminReceiveVendorOrder = async (
+  id: number,
+  receiveVendorOrderRequest?: ReceiveVendorOrderRequest,
+  options?: RequestInit,
+): Promise<AdminVendorOrderDetail> => {
+  return customFetch<AdminVendorOrderDetail>(
+    getAdminReceiveVendorOrderUrl(id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(receiveVendorOrderRequest),
+    },
+  );
+};
+
+export const getAdminReceiveVendorOrderMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminReceiveVendorOrder>>,
+    TError,
+    { id: number; data: BodyType<ReceiveVendorOrderRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminReceiveVendorOrder>>,
+  TError,
+  { id: number; data: BodyType<ReceiveVendorOrderRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminReceiveVendorOrder"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminReceiveVendorOrder>>,
+    { id: number; data: BodyType<ReceiveVendorOrderRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminReceiveVendorOrder(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminReceiveVendorOrderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminReceiveVendorOrder>>
+>;
+export type AdminReceiveVendorOrderMutationBody =
+  BodyType<ReceiveVendorOrderRequest>;
+export type AdminReceiveVendorOrderMutationError = ErrorType<Error>;
+
+/**
+ * @summary Mark a vendor order's items as received (creates an inventory_receipts row)
+ */
+export const useAdminReceiveVendorOrder = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminReceiveVendorOrder>>,
+    TError,
+    { id: number; data: BodyType<ReceiveVendorOrderRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminReceiveVendorOrder>>,
+  TError,
+  { id: number; data: BodyType<ReceiveVendorOrderRequest> },
+  TContext
+> => {
+  return useMutation(getAdminReceiveVendorOrderMutationOptions(options));
+};
+
+/**
+ * @summary Cancel a vendor order (un-assigns its items so they can be reassigned)
+ */
+export const getAdminCancelVendorOrderUrl = (id: number) => {
+  return `/api/admin/vendor-orders/${id}/cancel`;
+};
+
+export const adminCancelVendorOrder = async (
+  id: number,
+  cancelVendorOrderRequest?: CancelVendorOrderRequest,
+  options?: RequestInit,
+): Promise<AdminVendorOrderDetail> => {
+  return customFetch<AdminVendorOrderDetail>(getAdminCancelVendorOrderUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(cancelVendorOrderRequest),
+  });
+};
+
+export const getAdminCancelVendorOrderMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCancelVendorOrder>>,
+    TError,
+    { id: number; data: BodyType<CancelVendorOrderRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminCancelVendorOrder>>,
+  TError,
+  { id: number; data: BodyType<CancelVendorOrderRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminCancelVendorOrder"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminCancelVendorOrder>>,
+    { id: number; data: BodyType<CancelVendorOrderRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminCancelVendorOrder(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminCancelVendorOrderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminCancelVendorOrder>>
+>;
+export type AdminCancelVendorOrderMutationBody =
+  BodyType<CancelVendorOrderRequest>;
+export type AdminCancelVendorOrderMutationError = ErrorType<Error>;
+
+/**
+ * @summary Cancel a vendor order (un-assigns its items so they can be reassigned)
+ */
+export const useAdminCancelVendorOrder = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCancelVendorOrder>>,
+    TError,
+    { id: number; data: BodyType<CancelVendorOrderRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminCancelVendorOrder>>,
+  TError,
+  { id: number; data: BodyType<CancelVendorOrderRequest> },
+  TContext
+> => {
+  return useMutation(getAdminCancelVendorOrderMutationOptions(options));
 };
 
 /**
