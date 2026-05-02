@@ -71,8 +71,19 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-secondary-foreground/10 pt-8 flex flex-col md:flex-row items-center justify-between text-xs text-secondary-foreground/60">
+        <div className="border-t border-secondary-foreground/10 pt-8 flex flex-col items-center md:items-start gap-2 text-xs text-secondary-foreground/60">
           <p>© {new Date().getFullYear()} Oasis Garden & Patio. All rights reserved.</p>
+          <p>
+            Built by Zombie Platforms LLC.{" "}
+            <a
+              href="https://zombieplatforms.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-primary transition-colors"
+            >
+              Learn more
+            </a>
+          </p>
         </div>
       </div>
     </footer>
