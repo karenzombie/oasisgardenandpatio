@@ -21,6 +21,7 @@ import {
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import { isUniqueViolation } from "../lib/dbErrors";
 import { recordAudit } from "../lib/audit";
+import { isUSCountry, US_ONLY_MESSAGE } from "../lib/geo";
 
 const router: IRouter = Router();
 
@@ -267,6 +268,11 @@ router.post(
     }
     const data = body.data;
     const customerId = params.data.id;
+    // US-only ship-to policy. Empty/omitted country defaults to "US".
+    if (data.country !== undefined && data.country !== null && data.country.trim() !== "" && !isUSCountry(data.country)) {
+      res.status(400).json({ error: US_ONLY_MESSAGE });
+      return;
+    }
     const [exists] = await db
       .select({ id: customersTable.id })
       .from(customersTable)
@@ -287,7 +293,7 @@ router.post(
         city: data.city.trim(),
         state: data.state.trim(),
         zip: data.zip.trim(),
-        country: data.country?.trim() || "US",
+        country: "US",
         phone: data.phone?.trim() || null,
         isDefault: data.isDefault ?? false,
       })
@@ -318,6 +324,11 @@ router.patch(
       return;
     }
     const data = body.data;
+    // US-only ship-to policy. Reject any non-US country update.
+    if (data.country !== undefined && data.country !== null && data.country.trim() !== "" && !isUSCountry(data.country)) {
+      res.status(400).json({ error: US_ONLY_MESSAGE });
+      return;
+    }
     const updates: Record<string, unknown> = {};
     for (const k of [
       "type",
@@ -333,8 +344,11 @@ router.patch(
     ] as const) {
       if (data[k] !== undefined) {
         const v = data[k];
-        updates[k] =
-          typeof v === "string" ? (v.trim() || null) : v;
+        if (k === "country") {
+          updates[k] = "US";
+        } else {
+          updates[k] = typeof v === "string" ? (v.trim() || null) : v;
+        }
       }
     }
     if (Object.keys(updates).length === 0) {
