@@ -83,7 +83,7 @@ export function Navbar() {
               <img
                 src="/src/assets/logo.png"
                 alt="Oasis Garden & Patio"
-                className="h-10 md:h-14 object-contain"
+                className="h-10 sm:h-12 md:h-16 lg:h-20 object-contain"
               />
             </Link>
 
