@@ -14,8 +14,8 @@ export function Footer() {
                 className="h-12 object-contain filter brightness-0"
               />
             </Link>
-            <p className="text-secondary-foreground/80 max-w-xs text-sm leading-relaxed mb-6">
-              Family-owned outdoor patio furniture retailer in Santa Clarita, CA. 
+            <p className="italic text-secondary-foreground/80 max-w-xs text-sm leading-relaxed mb-6">
+              Family-owned outdoor patio furniture retailer in Santa Clarita, CA.
               Quietly confident craftsmanship for your California outdoor living space.
             </p>
           </div>
