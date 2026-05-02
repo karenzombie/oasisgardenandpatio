@@ -29,10 +29,10 @@ export default function Home() {
         
         <div className="relative z-10 container mx-auto px-4 text-center max-w-4xl text-white">
           <h1 className="font-serif text-5xl md:text-7xl font-medium tracking-tight mb-6 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-            California Living,<br />Refined.
+            Outdoor Living,<br />Refined.
           </h1>
           <p className="text-lg md:text-xl font-light text-white/90 mb-10 max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-150">
-            Discover curated outdoor furniture collections designed for the ultimate coastal lifestyle. Craftsmanship that endures.
+            Discover curated outdoor furniture collections designed for the way you live outside. Craftsmanship that endures.
           </p>
           <div className="flex items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
             <Button size="lg" className="bg-white text-black hover:bg-white/90 rounded-none px-8 font-serif tracking-wide" asChild>
