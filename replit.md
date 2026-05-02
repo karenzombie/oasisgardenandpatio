@@ -38,7 +38,7 @@ Full-stack e-commerce platform for Oasis Garden & Patio — a luxury outdoor fur
 
 ## Integrations
 
-- **Resend** ✅ — transactional email via Replit connector (`getResendCredentials()` in `artifacts/api-server/src/lib/email.ts`, never cache the client). The connector must be authenticated and have a verified sender domain configured before emails will actually deliver in dev/prod.
+- **Resend** ✅ — transactional email. API key in `Resend_API` secret (preferred); falls back to the Replit connector. Sender comes from `RESEND_FROM_EMAIL` (env), else `onboarding@resend.dev`. **Currently in test mode**: account has no verified sender domain, so emails only deliver to the Resend account owner's address. Before launch: verify `oasisgardenandpatio.com` (or another domain) at resend.com/domains and set `RESEND_FROM_EMAIL` to e.g. `noreply@oasisgardenandpatio.com`. All other auth flows work regardless.
 - Authorize.net (payments), TaxJar (tax), Google Drive (PO attachments), Replit Object Storage (product images) — planned.
 
 ## Key Commands
@@ -61,3 +61,7 @@ Full-stack e-commerce platform for Oasis Garden & Patio — a luxury outdoor fur
 ## Working style with this user
 
 User explicitly directed: **ask rather than assume on ambiguous build decisions** — never guess direction on anything material.
+
+## Product decisions
+
+- **Signup email enumeration**: intentionally returning a clear 409 ("An account with that email already exists") on duplicate signup. Friendlier UX over the more private silent/no-enumeration alternative. Password-reset, by contrast, IS no-enumeration (always 204).
