@@ -6,7 +6,21 @@ interface ResendCredentials {
   fromEmail: string;
 }
 
+const DEFAULT_FROM_EMAIL = "onboarding@resend.dev";
+
 async function getResendCredentials(): Promise<ResendCredentials> {
+  const directApiKey =
+    process.env["Resend_API"] ??
+    process.env["RESEND_API"] ??
+    process.env["RESEND_API_KEY"];
+
+  if (directApiKey) {
+    return {
+      apiKey: directApiKey,
+      fromEmail: process.env["RESEND_FROM_EMAIL"] ?? DEFAULT_FROM_EMAIL,
+    };
+  }
+
   const hostname = process.env["REPLIT_CONNECTORS_HOSTNAME"];
   const xReplitToken = process.env["REPL_IDENTITY"]
     ? "repl " + process.env["REPL_IDENTITY"]
@@ -16,7 +30,7 @@ async function getResendCredentials(): Promise<ResendCredentials> {
 
   if (!hostname || !xReplitToken) {
     throw new Error(
-      "Replit connector credentials not available (missing REPLIT_CONNECTORS_HOSTNAME or REPL_IDENTITY)",
+      "Resend not configured: set Resend_API secret or connect the Resend integration",
     );
   }
 
@@ -35,7 +49,7 @@ async function getResendCredentials(): Promise<ResendCredentials> {
 
   return {
     apiKey: data.settings.api_key,
-    fromEmail: data.settings.from_email ?? "onboarding@resend.dev",
+    fromEmail: data.settings.from_email ?? DEFAULT_FROM_EMAIL,
   };
 }
 
