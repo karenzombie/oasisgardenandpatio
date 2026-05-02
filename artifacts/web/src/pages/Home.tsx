@@ -31,7 +31,7 @@ export default function Home() {
           <h1 className="font-serif text-5xl md:text-7xl font-medium tracking-tight mb-6 animate-in fade-in slide-in-from-bottom-8 duration-1000">
             Outdoor Living,<br />Refined.
           </h1>
-          <p className="text-lg md:text-xl font-medium text-white mb-10 max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-150 [text-shadow:0_2px_8px_rgba(0,0,0,0.6)]">
+          <p className="text-xl md:text-2xl font-bold text-white mb-10 max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-150 [text-shadow:0_2px_4px_rgba(0,0,0,0.85),0_4px_16px_rgba(0,0,0,0.7)]">
             Discover curated outdoor furniture collections designed for the way you live outside. Craftsmanship that endures.
           </p>
           <div className="flex items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
