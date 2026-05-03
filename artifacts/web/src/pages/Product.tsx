@@ -33,7 +33,6 @@ export default function Product() {
   const { data, isLoading, error } = useGetCatalogProductBySlug(slug);
   const [tab, setTab] = useState<TabId>("description");
   const [activeImageIdx, setActiveImageIdx] = useState(0);
-  const [zoomPos, setZoomPos] = useState<{ x: number; y: number } | null>(null);
   const [qty, setQty] = useState(1);
 
   const { isAuthenticated } = useAuth();
@@ -90,13 +89,6 @@ export default function Product() {
   const onSale = data.salePrice && data.price && Number(data.salePrice) < Number(data.price);
   const brandLogo = getBrandLogo(data.manufacturerName);
 
-  function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
-    const r = e.currentTarget.getBoundingClientRect();
-    const x = ((e.clientX - r.left) / r.width) * 100;
-    const y = ((e.clientY - r.top) / r.height) * 100;
-    setZoomPos({ x, y });
-  }
-
   return (
     <div className="container mx-auto px-4 py-10 max-w-7xl">
       {/* Breadcrumb */}
@@ -117,24 +109,12 @@ export default function Product() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
         {/* Gallery */}
         <div>
-          <div
-            className="relative aspect-square bg-card overflow-hidden cursor-zoom-in"
-            onMouseMove={handleMouseMove}
-            onMouseLeave={() => setZoomPos(null)}
-          >
+          <div className="relative aspect-square bg-card overflow-hidden border border-border">
             {activeImage ? (
               <img
                 src={activeImage.url}
                 alt={activeImage.altText ?? data.name}
-                className="w-full h-full object-cover mix-blend-multiply transition-transform duration-200"
-                style={
-                  zoomPos
-                    ? {
-                        transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
-                        transform: "scale(2)",
-                      }
-                    : undefined
-                }
+                className="absolute inset-0 w-full h-full object-contain p-6 mix-blend-multiply"
               />
             ) : (
               <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground font-serif">No image</div>

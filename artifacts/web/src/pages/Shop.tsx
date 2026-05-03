@@ -151,9 +151,7 @@ export default function Shop() {
                   </div>
                 </div>
                 <div className="space-y-1 text-center">
-                  {brandLogo ? (
-                    <img src={brandLogo} alt={p.manufacturerName ?? ""} className="h-5 w-auto object-contain mx-auto" />
-                  ) : p.manufacturerName ? (
+                  {!brandLogo && p.manufacturerName ? (
                     <p className="text-xs uppercase tracking-widest text-muted-foreground">{p.manufacturerName}</p>
                   ) : null}
                   {p.showPriceOnline && p.price ? (
