@@ -2938,6 +2938,226 @@ export const AdminSetCarrierActiveResponse = zod.object({
 });
 
 /**
+ * @summary Update an order's shipping/delivery method label
+ */
+export const AdminUpdateOrderShippingMethodParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminUpdateOrderShippingMethodBody = zod.object({
+  shippingMethod: zod.string().nullable(),
+});
+
+export const AdminUpdateOrderShippingMethodResponse = zod.object({
+  id: zod.number(),
+  orderNumber: zod.string(),
+  status: zod.string(),
+  orderType: zod.string(),
+  subtotal: zod.number(),
+  taxAmount: zod.number(),
+  deliveryAmount: zod.number(),
+  total: zod.number(),
+  depositAmount: zod.number(),
+  balanceDue: zod.number(),
+  customerId: zod.number().nullable(),
+  customerName: zod.string().nullable(),
+  customerEmail: zod.string().nullable(),
+  agentId: zod.number().nullable(),
+  agentName: zod.string().nullable(),
+  salespersonName: zod.string().nullable(),
+  shippingMethod: zod.string().nullable(),
+  specialInstructions: zod.string().nullable(),
+  notes: zod.string().nullable(),
+  merchandiseReceived: zod.boolean(),
+  placedAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+  shippingAddress: zod.union([
+    zod.object({
+      id: zod.number(),
+      recipientName: zod.string().nullish(),
+      street1: zod.string(),
+      street2: zod.string().nullish(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullish(),
+    }),
+    zod.null(),
+  ]),
+  billingAddress: zod.union([
+    zod.object({
+      id: zod.number(),
+      recipientName: zod.string().nullish(),
+      street1: zod.string(),
+      street2: zod.string().nullish(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullish(),
+    }),
+    zod.null(),
+  ]),
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      productId: zod.number().nullable(),
+      productSkuSnapshot: zod.string().nullable(),
+      variantSkuSnapshot: zod.string().nullable(),
+      variantNameSnapshot: zod.string().nullable(),
+      fabricNameSnapshot: zod.string().nullable(),
+      department: zod.string().nullable(),
+      description: zod.string(),
+      quantity: zod.number(),
+      unitPrice: zod.number(),
+      amount: zod.number(),
+      discountAmount: zod.number(),
+      discountReason: zod.string().nullable(),
+      notes: zod.string().nullable(),
+      vendorOrderId: zod.number().nullable(),
+    }),
+  ),
+  statusHistory: zod.array(
+    zod.object({
+      id: zod.number(),
+      fromStatus: zod.string().nullable(),
+      toStatus: zod.string(),
+      changedByUserId: zod.number().nullable(),
+      changedByEmail: zod.string().nullable(),
+      note: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  vendorOrders: zod.array(
+    zod.object({
+      id: zod.number(),
+      vendorOrderNumber: zod.string(),
+      status: zod.string(),
+      manufacturerId: zod.number().nullable(),
+      manufacturerName: zod.string().nullable(),
+      sentAt: zod.coerce.date().nullable(),
+      receivedAt: zod.coerce.date().nullable(),
+      itemsReceived: zod.boolean(),
+    }),
+  ),
+  cancellationRequests: zod.array(
+    zod.object({
+      id: zod.number(),
+      orderId: zod.number(),
+      orderNumber: zod.string().nullable(),
+      requestedByUserId: zod.number().nullable(),
+      requestedByEmail: zod.string().nullable(),
+      reason: zod.string().nullable(),
+      status: zod.string(),
+      reviewedByUserId: zod.number().nullable(),
+      reviewedByEmail: zod.string().nullable(),
+      reviewedAt: zod.coerce.date().nullable(),
+      reviewNote: zod.string().nullable(),
+      refundAmount: zod.number().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  isQuickOrder: zod.boolean(),
+  skipVendorOrder: zod.boolean(),
+  walkInName: zod.string().nullable(),
+  walkInEmail: zod.string().nullable(),
+  walkInPhone: zod.string().nullable(),
+  shipments: zod.array(
+    zod.object({
+      id: zod.number(),
+      orderId: zod.number(),
+      carrierId: zod.number().nullable(),
+      carrierName: zod.string().nullable(),
+      carrierCode: zod.string().nullable(),
+      trackingNumber: zod.string().nullable(),
+      trackingUrl: zod.string().nullable(),
+      shippedAt: zod.coerce.date().nullable(),
+      deliveredAt: zod.coerce.date().nullable(),
+      notes: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+/**
+ * @summary List shipments for an order
+ */
+export const AdminListOrderShipmentsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminListOrderShipmentsResponseItem = zod.object({
+  id: zod.number(),
+  orderId: zod.number(),
+  carrierId: zod.number().nullable(),
+  carrierName: zod.string().nullable(),
+  carrierCode: zod.string().nullable(),
+  trackingNumber: zod.string().nullable(),
+  trackingUrl: zod.string().nullable(),
+  shippedAt: zod.coerce.date().nullable(),
+  deliveredAt: zod.coerce.date().nullable(),
+  notes: zod.string().nullable(),
+  createdAt: zod.coerce.date(),
+});
+export const AdminListOrderShipmentsResponse = zod.array(
+  AdminListOrderShipmentsResponseItem,
+);
+
+/**
+ * @summary Add a shipment to an order
+ */
+export const AdminCreateOrderShipmentParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminCreateOrderShipmentBody = zod.object({
+  carrierId: zod.number().nullish(),
+  trackingNumber: zod.string().nullish(),
+  shippedAt: zod.coerce.date().nullish(),
+  deliveredAt: zod.coerce.date().nullish(),
+  notes: zod.string().nullish(),
+});
+
+/**
+ * @summary Update a shipment
+ */
+export const AdminUpdateOrderShipmentParams = zod.object({
+  id: zod.coerce.number(),
+  shipmentId: zod.coerce.number(),
+});
+
+export const AdminUpdateOrderShipmentBody = zod.object({
+  carrierId: zod.number().nullish(),
+  trackingNumber: zod.string().nullish(),
+  shippedAt: zod.coerce.date().nullish(),
+  deliveredAt: zod.coerce.date().nullish(),
+  notes: zod.string().nullish(),
+});
+
+export const AdminUpdateOrderShipmentResponse = zod.object({
+  id: zod.number(),
+  orderId: zod.number(),
+  carrierId: zod.number().nullable(),
+  carrierName: zod.string().nullable(),
+  carrierCode: zod.string().nullable(),
+  trackingNumber: zod.string().nullable(),
+  trackingUrl: zod.string().nullable(),
+  shippedAt: zod.coerce.date().nullable(),
+  deliveredAt: zod.coerce.date().nullable(),
+  notes: zod.string().nullable(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete a shipment
+ */
+export const AdminDeleteOrderShipmentParams = zod.object({
+  id: zod.coerce.number(),
+  shipmentId: zod.coerce.number(),
+});
+
+/**
  * @summary List all site banners (active + inactive, all dates)
  */
 export const AdminListBannersResponseItem = zod.object({
@@ -3491,6 +3711,21 @@ export const AdminGetOrderResponse = zod.object({
   walkInName: zod.string().nullable(),
   walkInEmail: zod.string().nullable(),
   walkInPhone: zod.string().nullable(),
+  shipments: zod.array(
+    zod.object({
+      id: zod.number(),
+      orderId: zod.number(),
+      carrierId: zod.number().nullable(),
+      carrierName: zod.string().nullable(),
+      carrierCode: zod.string().nullable(),
+      trackingNumber: zod.string().nullable(),
+      trackingUrl: zod.string().nullable(),
+      shippedAt: zod.coerce.date().nullable(),
+      deliveredAt: zod.coerce.date().nullable(),
+      notes: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
 });
 
 /**
@@ -3620,6 +3855,21 @@ export const AdminUpdateOrderStatusResponse = zod.object({
   walkInName: zod.string().nullable(),
   walkInEmail: zod.string().nullable(),
   walkInPhone: zod.string().nullable(),
+  shipments: zod.array(
+    zod.object({
+      id: zod.number(),
+      orderId: zod.number(),
+      carrierId: zod.number().nullable(),
+      carrierName: zod.string().nullable(),
+      carrierCode: zod.string().nullable(),
+      trackingNumber: zod.string().nullable(),
+      trackingUrl: zod.string().nullable(),
+      shippedAt: zod.coerce.date().nullable(),
+      deliveredAt: zod.coerce.date().nullable(),
+      notes: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
 });
 
 /**
@@ -3766,6 +4016,21 @@ export const AdminUpdateOrderTotalsResponse = zod.object({
   walkInName: zod.string().nullable(),
   walkInEmail: zod.string().nullable(),
   walkInPhone: zod.string().nullable(),
+  shipments: zod.array(
+    zod.object({
+      id: zod.number(),
+      orderId: zod.number(),
+      carrierId: zod.number().nullable(),
+      carrierName: zod.string().nullable(),
+      carrierCode: zod.string().nullable(),
+      trackingNumber: zod.string().nullable(),
+      trackingUrl: zod.string().nullable(),
+      shippedAt: zod.coerce.date().nullable(),
+      deliveredAt: zod.coerce.date().nullable(),
+      notes: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
 });
 
 /**
@@ -3894,6 +4159,21 @@ export const AdminUpdateOrderNotesResponse = zod.object({
   walkInName: zod.string().nullable(),
   walkInEmail: zod.string().nullable(),
   walkInPhone: zod.string().nullable(),
+  shipments: zod.array(
+    zod.object({
+      id: zod.number(),
+      orderId: zod.number(),
+      carrierId: zod.number().nullable(),
+      carrierName: zod.string().nullable(),
+      carrierCode: zod.string().nullable(),
+      trackingNumber: zod.string().nullable(),
+      trackingUrl: zod.string().nullable(),
+      shippedAt: zod.coerce.date().nullable(),
+      deliveredAt: zod.coerce.date().nullable(),
+      notes: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
 });
 
 /**

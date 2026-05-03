@@ -35,6 +35,7 @@ import {
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import { recordAudit } from "../lib/audit";
 import { recordHistory } from "../lib/history";
+import { loadOrderShipments } from "./adminOrderShipments";
 
 const router: IRouter = Router();
 const DEFAULT_LIMIT = 50;
@@ -180,7 +181,7 @@ router.get(
   },
 );
 
-async function loadOrderDetail(orderId: number) {
+export async function loadOrderDetail(orderId: number) {
   const [orderRow] = await db
     .select({
       order: ordersTable,
@@ -313,6 +314,7 @@ async function loadOrderDetail(orderId: number) {
       note: h.h.note,
       createdAt: h.h.createdAt.toISOString(),
     })),
+    shipments: await loadOrderShipments(orderId),
     vendorOrders: vos.map((v) => ({
       id: v.vo.id,
       vendorOrderNumber: v.vo.vendorOrderNumber,

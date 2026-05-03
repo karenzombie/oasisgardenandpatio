@@ -39,6 +39,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { PageBody, PageHeader } from "../../StaffShell";
 import HistoryPanel from "../../components/HistoryPanel";
+import DeliveryPanel from "./DeliveryPanel";
 
 const ORDER_STATUSES = [
   "pending",
@@ -759,14 +760,17 @@ export default function OrderDetail() {
                   {order.salespersonName && (
                     <div>Salesperson: {order.salespersonName}</div>
                   )}
-                  {order.shippingMethod && (
-                    <div>Shipping: {order.shippingMethod}</div>
-                  )}
                 </div>
               </div>
               <AddressBlock label="Shipping" address={order.shippingAddress} />
               <AddressBlock label="Billing" address={order.billingAddress} />
             </div>
+
+            <DeliveryPanel
+              orderId={orderId}
+              shippingMethod={order.shippingMethod}
+              shipments={order.shipments}
+            />
 
             <div className="rounded-md border bg-white p-4">
               <div className="flex items-center justify-between mb-2">

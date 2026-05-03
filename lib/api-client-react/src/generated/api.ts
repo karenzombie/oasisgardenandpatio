@@ -36,6 +36,7 @@ import type {
   AdminCouponCode,
   AdminCouponCodeUse,
   AdminCreateCustomerResponse,
+  AdminCreateShipmentRequest,
   AdminCustomer,
   AdminCustomerDetail,
   AdminCustomerPage,
@@ -58,6 +59,7 @@ import type {
   AdminManufacturer,
   AdminOrderDetail,
   AdminOrderPage,
+  AdminOrderShipment,
   AdminProduct,
   AdminProductAttribute,
   AdminProductDetail,
@@ -77,9 +79,11 @@ import type {
   AdminResetPasswordResponse,
   AdminSet,
   AdminSetSummary,
+  AdminUpdateOrderShippingMethodRequest,
   AdminUpdateOrderTotalsRequest,
   AdminUpdateProductAttributesRequest,
   AdminUpdateProductFabricsRequest,
+  AdminUpdateShipmentRequest,
   AdminUserDetail,
   AdminUserSummary,
   AdminVendorOrderDetail,
@@ -7946,6 +7950,477 @@ export const useAdminSetCarrierActive = <
   TContext
 > => {
   return useMutation(getAdminSetCarrierActiveMutationOptions(options));
+};
+
+/**
+ * @summary Update an order's shipping/delivery method label
+ */
+export const getAdminUpdateOrderShippingMethodUrl = (id: number) => {
+  return `/api/admin/orders/${id}/shipping-method`;
+};
+
+export const adminUpdateOrderShippingMethod = async (
+  id: number,
+  adminUpdateOrderShippingMethodRequest: AdminUpdateOrderShippingMethodRequest,
+  options?: RequestInit,
+): Promise<AdminOrderDetail> => {
+  return customFetch<AdminOrderDetail>(
+    getAdminUpdateOrderShippingMethodUrl(id),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(adminUpdateOrderShippingMethodRequest),
+    },
+  );
+};
+
+export const getAdminUpdateOrderShippingMethodMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateOrderShippingMethod>>,
+    TError,
+    { id: number; data: BodyType<AdminUpdateOrderShippingMethodRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUpdateOrderShippingMethod>>,
+  TError,
+  { id: number; data: BodyType<AdminUpdateOrderShippingMethodRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminUpdateOrderShippingMethod"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUpdateOrderShippingMethod>>,
+    { id: number; data: BodyType<AdminUpdateOrderShippingMethodRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminUpdateOrderShippingMethod(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminUpdateOrderShippingMethodMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUpdateOrderShippingMethod>>
+>;
+export type AdminUpdateOrderShippingMethodMutationBody =
+  BodyType<AdminUpdateOrderShippingMethodRequest>;
+export type AdminUpdateOrderShippingMethodMutationError = ErrorType<Error>;
+
+/**
+ * @summary Update an order's shipping/delivery method label
+ */
+export const useAdminUpdateOrderShippingMethod = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateOrderShippingMethod>>,
+    TError,
+    { id: number; data: BodyType<AdminUpdateOrderShippingMethodRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUpdateOrderShippingMethod>>,
+  TError,
+  { id: number; data: BodyType<AdminUpdateOrderShippingMethodRequest> },
+  TContext
+> => {
+  return useMutation(getAdminUpdateOrderShippingMethodMutationOptions(options));
+};
+
+/**
+ * @summary List shipments for an order
+ */
+export const getAdminListOrderShipmentsUrl = (id: number) => {
+  return `/api/admin/orders/${id}/shipments`;
+};
+
+export const adminListOrderShipments = async (
+  id: number,
+  options?: RequestInit,
+): Promise<AdminOrderShipment[]> => {
+  return customFetch<AdminOrderShipment[]>(getAdminListOrderShipmentsUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAdminListOrderShipmentsQueryKey = (id: number) => {
+  return [`/api/admin/orders/${id}/shipments`] as const;
+};
+
+export const getAdminListOrderShipmentsQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminListOrderShipments>>,
+  TError = ErrorType<Error>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminListOrderShipments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getAdminListOrderShipmentsQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminListOrderShipments>>
+  > = ({ signal }) =>
+    adminListOrderShipments(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminListOrderShipments>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminListOrderShipmentsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminListOrderShipments>>
+>;
+export type AdminListOrderShipmentsQueryError = ErrorType<Error>;
+
+/**
+ * @summary List shipments for an order
+ */
+
+export function useAdminListOrderShipments<
+  TData = Awaited<ReturnType<typeof adminListOrderShipments>>,
+  TError = ErrorType<Error>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminListOrderShipments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminListOrderShipmentsQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Add a shipment to an order
+ */
+export const getAdminCreateOrderShipmentUrl = (id: number) => {
+  return `/api/admin/orders/${id}/shipments`;
+};
+
+export const adminCreateOrderShipment = async (
+  id: number,
+  adminCreateShipmentRequest: AdminCreateShipmentRequest,
+  options?: RequestInit,
+): Promise<AdminOrderShipment> => {
+  return customFetch<AdminOrderShipment>(getAdminCreateOrderShipmentUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(adminCreateShipmentRequest),
+  });
+};
+
+export const getAdminCreateOrderShipmentMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCreateOrderShipment>>,
+    TError,
+    { id: number; data: BodyType<AdminCreateShipmentRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminCreateOrderShipment>>,
+  TError,
+  { id: number; data: BodyType<AdminCreateShipmentRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminCreateOrderShipment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminCreateOrderShipment>>,
+    { id: number; data: BodyType<AdminCreateShipmentRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminCreateOrderShipment(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminCreateOrderShipmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminCreateOrderShipment>>
+>;
+export type AdminCreateOrderShipmentMutationBody =
+  BodyType<AdminCreateShipmentRequest>;
+export type AdminCreateOrderShipmentMutationError = ErrorType<Error>;
+
+/**
+ * @summary Add a shipment to an order
+ */
+export const useAdminCreateOrderShipment = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCreateOrderShipment>>,
+    TError,
+    { id: number; data: BodyType<AdminCreateShipmentRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminCreateOrderShipment>>,
+  TError,
+  { id: number; data: BodyType<AdminCreateShipmentRequest> },
+  TContext
+> => {
+  return useMutation(getAdminCreateOrderShipmentMutationOptions(options));
+};
+
+/**
+ * @summary Update a shipment
+ */
+export const getAdminUpdateOrderShipmentUrl = (
+  id: number,
+  shipmentId: number,
+) => {
+  return `/api/admin/orders/${id}/shipments/${shipmentId}`;
+};
+
+export const adminUpdateOrderShipment = async (
+  id: number,
+  shipmentId: number,
+  adminUpdateShipmentRequest: AdminUpdateShipmentRequest,
+  options?: RequestInit,
+): Promise<AdminOrderShipment> => {
+  return customFetch<AdminOrderShipment>(
+    getAdminUpdateOrderShipmentUrl(id, shipmentId),
+    {
+      ...options,
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(adminUpdateShipmentRequest),
+    },
+  );
+};
+
+export const getAdminUpdateOrderShipmentMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateOrderShipment>>,
+    TError,
+    {
+      id: number;
+      shipmentId: number;
+      data: BodyType<AdminUpdateShipmentRequest>;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUpdateOrderShipment>>,
+  TError,
+  {
+    id: number;
+    shipmentId: number;
+    data: BodyType<AdminUpdateShipmentRequest>;
+  },
+  TContext
+> => {
+  const mutationKey = ["adminUpdateOrderShipment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUpdateOrderShipment>>,
+    {
+      id: number;
+      shipmentId: number;
+      data: BodyType<AdminUpdateShipmentRequest>;
+    }
+  > = (props) => {
+    const { id, shipmentId, data } = props ?? {};
+
+    return adminUpdateOrderShipment(id, shipmentId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminUpdateOrderShipmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUpdateOrderShipment>>
+>;
+export type AdminUpdateOrderShipmentMutationBody =
+  BodyType<AdminUpdateShipmentRequest>;
+export type AdminUpdateOrderShipmentMutationError = ErrorType<Error>;
+
+/**
+ * @summary Update a shipment
+ */
+export const useAdminUpdateOrderShipment = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateOrderShipment>>,
+    TError,
+    {
+      id: number;
+      shipmentId: number;
+      data: BodyType<AdminUpdateShipmentRequest>;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUpdateOrderShipment>>,
+  TError,
+  {
+    id: number;
+    shipmentId: number;
+    data: BodyType<AdminUpdateShipmentRequest>;
+  },
+  TContext
+> => {
+  return useMutation(getAdminUpdateOrderShipmentMutationOptions(options));
+};
+
+/**
+ * @summary Delete a shipment
+ */
+export const getAdminDeleteOrderShipmentUrl = (
+  id: number,
+  shipmentId: number,
+) => {
+  return `/api/admin/orders/${id}/shipments/${shipmentId}`;
+};
+
+export const adminDeleteOrderShipment = async (
+  id: number,
+  shipmentId: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getAdminDeleteOrderShipmentUrl(id, shipmentId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getAdminDeleteOrderShipmentMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeleteOrderShipment>>,
+    TError,
+    { id: number; shipmentId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminDeleteOrderShipment>>,
+  TError,
+  { id: number; shipmentId: number },
+  TContext
+> => {
+  const mutationKey = ["adminDeleteOrderShipment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminDeleteOrderShipment>>,
+    { id: number; shipmentId: number }
+  > = (props) => {
+    const { id, shipmentId } = props ?? {};
+
+    return adminDeleteOrderShipment(id, shipmentId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminDeleteOrderShipmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminDeleteOrderShipment>>
+>;
+
+export type AdminDeleteOrderShipmentMutationError = ErrorType<Error>;
+
+/**
+ * @summary Delete a shipment
+ */
+export const useAdminDeleteOrderShipment = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeleteOrderShipment>>,
+    TError,
+    { id: number; shipmentId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminDeleteOrderShipment>>,
+  TError,
+  { id: number; shipmentId: number },
+  TContext
+> => {
+  return useMutation(getAdminDeleteOrderShipmentMutationOptions(options));
 };
 
 /**

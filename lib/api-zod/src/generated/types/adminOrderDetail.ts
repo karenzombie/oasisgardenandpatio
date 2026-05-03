@@ -8,6 +8,7 @@
 import type { AdminCancellationRequest } from "./adminCancellationRequest";
 import type { AdminOrderAddress } from "./adminOrderAddress";
 import type { AdminOrderItem } from "./adminOrderItem";
+import type { AdminOrderShipment } from "./adminOrderShipment";
 import type { AdminOrderStatusEvent } from "./adminOrderStatusEvent";
 import type { AdminOrderVendorOrder } from "./adminOrderVendorOrder";
 
@@ -45,4 +46,5 @@ export interface AdminOrderDetail {
   walkInName: string | null;
   walkInEmail: string | null;
   walkInPhone: string | null;
+  shipments: AdminOrderShipment[];
 }

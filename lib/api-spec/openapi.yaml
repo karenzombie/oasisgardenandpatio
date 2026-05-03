@@ -2390,6 +2390,118 @@ paths:
         "404":
           description: Not found
           content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/orders/{id}/shipping-method:
+    patch:
+      operationId: adminUpdateOrderShippingMethod
+      tags: [admin-orders]
+      summary: Update an order's shipping/delivery method label
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdminUpdateOrderShippingMethodRequest" }
+      responses:
+        "200":
+          description: Updated order
+          content: { application/json: { schema: { $ref: "#/components/schemas/AdminOrderDetail" } } }
+        "404":
+          description: Not found
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/orders/{id}/shipments:
+    get:
+      operationId: adminListOrderShipments
+      tags: [admin-orders]
+      summary: List shipments for an order
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Shipments
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AdminOrderShipment" }
+        "404":
+          description: Order not found
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+    post:
+      operationId: adminCreateOrderShipment
+      tags: [admin-orders]
+      summary: Add a shipment to an order
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdminCreateShipmentRequest" }
+      responses:
+        "201":
+          description: Created shipment
+          content: { application/json: { schema: { $ref: "#/components/schemas/AdminOrderShipment" } } }
+        "400":
+          description: Validation error
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "404":
+          description: Order not found
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/orders/{id}/shipments/{shipmentId}:
+    put:
+      operationId: adminUpdateOrderShipment
+      tags: [admin-orders]
+      summary: Update a shipment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: shipmentId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdminUpdateShipmentRequest" }
+      responses:
+        "200":
+          description: Updated shipment
+          content: { application/json: { schema: { $ref: "#/components/schemas/AdminOrderShipment" } } }
+        "404":
+          description: Not found
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+    delete:
+      operationId: adminDeleteOrderShipment
+      tags: [admin-orders]
+      summary: Delete a shipment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: shipmentId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
   /admin/banners:
     get:
       operationId: adminListBanners
@@ -4157,8 +4269,47 @@ components:
         walkInName: { type: string, nullable: true }
         walkInEmail: { type: string, nullable: true }
         walkInPhone: { type: string, nullable: true }
+        shipments:
+          type: array
+          items: { $ref: "#/components/schemas/AdminOrderShipment" }
       required:
-        [id, orderNumber, status, orderType, subtotal, taxAmount, deliveryAmount, total, depositAmount, balanceDue, customerId, customerName, customerEmail, agentId, agentName, salespersonName, shippingMethod, specialInstructions, notes, merchandiseReceived, placedAt, updatedAt, shippingAddress, billingAddress, items, statusHistory, vendorOrders, cancellationRequests, isQuickOrder, skipVendorOrder, walkInName, walkInEmail, walkInPhone]
+        [id, orderNumber, status, orderType, subtotal, taxAmount, deliveryAmount, total, depositAmount, balanceDue, customerId, customerName, customerEmail, agentId, agentName, salespersonName, shippingMethod, specialInstructions, notes, merchandiseReceived, placedAt, updatedAt, shippingAddress, billingAddress, items, statusHistory, vendorOrders, cancellationRequests, isQuickOrder, skipVendorOrder, walkInName, walkInEmail, walkInPhone, shipments]
+    AdminOrderShipment:
+      type: object
+      properties:
+        id: { type: integer }
+        orderId: { type: integer }
+        carrierId: { type: integer, nullable: true }
+        carrierName: { type: string, nullable: true }
+        carrierCode: { type: string, nullable: true }
+        trackingNumber: { type: string, nullable: true }
+        trackingUrl: { type: string, nullable: true }
+        shippedAt: { type: string, format: date-time, nullable: true }
+        deliveredAt: { type: string, format: date-time, nullable: true }
+        notes: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+      required: [id, orderId, carrierId, carrierName, carrierCode, trackingNumber, trackingUrl, shippedAt, deliveredAt, notes, createdAt]
+    AdminCreateShipmentRequest:
+      type: object
+      properties:
+        carrierId: { type: integer, nullable: true }
+        trackingNumber: { type: string, nullable: true }
+        shippedAt: { type: string, format: date-time, nullable: true }
+        deliveredAt: { type: string, format: date-time, nullable: true }
+        notes: { type: string, nullable: true }
+    AdminUpdateShipmentRequest:
+      type: object
+      properties:
+        carrierId: { type: integer, nullable: true }
+        trackingNumber: { type: string, nullable: true }
+        shippedAt: { type: string, format: date-time, nullable: true }
+        deliveredAt: { type: string, format: date-time, nullable: true }
+        notes: { type: string, nullable: true }
+    AdminUpdateOrderShippingMethodRequest:
+      type: object
+      properties:
+        shippingMethod: { type: string, nullable: true }
+      required: [shippingMethod]
     StaffNotification:
       type: object
       properties:

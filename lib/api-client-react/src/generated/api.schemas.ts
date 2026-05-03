@@ -322,6 +322,20 @@ export interface AdminCancellationRequest {
   createdAt: string;
 }
 
+export interface AdminOrderShipment {
+  id: number;
+  orderId: number;
+  carrierId: number | null;
+  carrierName: string | null;
+  carrierCode: string | null;
+  trackingNumber: string | null;
+  trackingUrl: string | null;
+  shippedAt: string | null;
+  deliveredAt: string | null;
+  notes: string | null;
+  createdAt: string;
+}
+
 export interface AdminOrderDetail {
   id: number;
   orderNumber: string;
@@ -356,6 +370,27 @@ export interface AdminOrderDetail {
   walkInName: string | null;
   walkInEmail: string | null;
   walkInPhone: string | null;
+  shipments: AdminOrderShipment[];
+}
+
+export interface AdminCreateShipmentRequest {
+  carrierId?: number | null;
+  trackingNumber?: string | null;
+  shippedAt?: string | null;
+  deliveredAt?: string | null;
+  notes?: string | null;
+}
+
+export interface AdminUpdateShipmentRequest {
+  carrierId?: number | null;
+  trackingNumber?: string | null;
+  shippedAt?: string | null;
+  deliveredAt?: string | null;
+  notes?: string | null;
+}
+
+export interface AdminUpdateOrderShippingMethodRequest {
+  shippingMethod: string | null;
 }
 
 export interface StaffNotification {
