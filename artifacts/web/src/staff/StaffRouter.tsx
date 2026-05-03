@@ -58,44 +58,44 @@ export default function StaffRouter() {
       <Route path="/staff/verify-2fa" component={Verify2FA} />
       <Route path="/staff/change-password" component={ChangePassword} />
 
-      {/* Admin section (matches /admin and /admin/*) */}
-      <Route path="/admin" nest>
+      {/* Admin section — uses a regex path on the outer Route (NOT `nest`) so
+          the inner <Switch> sees absolute locations and we avoid wouter v3's
+          flaky base-stripping behaviour. */}
+      <Route path={/^\/admin(?:\/.*)?$/}>
         <RequireStaff requireRole="admin">
           {(user) => (
             <StaffShell user={user}>
               <Switch>
-                {/* Index route — wouter v3 nest can strip `/admin` to `""` or
-                    `/`, so accept both. */}
-                <Route path={/^\/?$/}>
+                <Route path="/admin">
                   {() => <AdminDashboard user={user} />}
                 </Route>
-                <Route path="/manufacturers" component={Manufacturers} />
-                <Route path="/categories" component={Categories} />
-                <Route path="/products" component={Products} />
-                <Route path="/products/import" component={ProductsImport} />
-                <Route path="/products/new" component={ProductEdit} />
-                <Route path="/products/:id" component={ProductEdit} />
-                <Route path="/sets" component={Sets} />
-                <Route path="/sets/:id" component={SetEdit} />
-                <Route path="/inventory" component={Inventory} />
-                <Route path="/carriers" component={Carriers} />
-                <Route path="/banners" component={Banners} />
-                <Route path="/legal" component={Legal} />
-                <Route path="/settings" component={Settings} />
-                <Route path="/discounts" component={Discounts} />
-                <Route path="/users" component={Users} />
-                <Route path="/customers" component={Users} />
-                <Route path="/audit-log" component={AuditLog} />
-                <Route path="/recovery-requests" component={RecoveryRequests} />
-                <Route path="/orders" component={Orders} />
-                <Route path="/orders/:id" component={OrderDetail} />
-                <Route path="/vendor-orders" component={VendorOrders} />
-                <Route path="/vendor-orders/:id" component={VendorOrderDetail} />
-                <Route path="/cushion-orders" component={CushionOrders} />
-                <Route path="/cushion-orders/:id" component={CushionOrderDetail} />
-                <Route path="/reports" component={Reports} />
+                <Route path="/admin/manufacturers" component={Manufacturers} />
+                <Route path="/admin/categories" component={Categories} />
+                <Route path="/admin/products" component={Products} />
+                <Route path="/admin/products/import" component={ProductsImport} />
+                <Route path="/admin/products/new" component={ProductEdit} />
+                <Route path="/admin/products/:id" component={ProductEdit} />
+                <Route path="/admin/sets" component={Sets} />
+                <Route path="/admin/sets/:id" component={SetEdit} />
+                <Route path="/admin/inventory" component={Inventory} />
+                <Route path="/admin/carriers" component={Carriers} />
+                <Route path="/admin/banners" component={Banners} />
+                <Route path="/admin/legal" component={Legal} />
+                <Route path="/admin/settings" component={Settings} />
+                <Route path="/admin/discounts" component={Discounts} />
+                <Route path="/admin/users" component={Users} />
+                <Route path="/admin/customers" component={Users} />
+                <Route path="/admin/audit-log" component={AuditLog} />
+                <Route path="/admin/recovery-requests" component={RecoveryRequests} />
+                <Route path="/admin/orders" component={Orders} />
+                <Route path="/admin/orders/:id" component={OrderDetail} />
+                <Route path="/admin/vendor-orders" component={VendorOrders} />
+                <Route path="/admin/vendor-orders/:id" component={VendorOrderDetail} />
+                <Route path="/admin/cushion-orders" component={CushionOrders} />
+                <Route path="/admin/cushion-orders/:id" component={CushionOrderDetail} />
+                <Route path="/admin/reports" component={Reports} />
                 {ADMIN_PLACEHOLDERS.map(({ path, title, comingIn }) => (
-                  <Route key={path} path={path}>
+                  <Route key={path} path={`/admin${path}`}>
                     {() => <PagePlaceholder title={title} comingIn={comingIn} />}
                   </Route>
                 ))}
@@ -113,24 +113,24 @@ export default function StaffRouter() {
         </RequireStaff>
       </Route>
 
-      {/* Agent section (matches /agent and /agent/*) */}
-      <Route path="/agent" nest>
+      {/* Agent section — same approach as admin. */}
+      <Route path={/^\/agent(?:\/.*)?$/}>
         <RequireStaff>
           {(user) => (
             <StaffShell user={user}>
               <Switch>
-                <Route path={/^\/?$/}>
+                <Route path="/agent">
                   {() => <AgentDashboard user={user} />}
                 </Route>
-                <Route path="/new-order" component={AgentNewOrder} />
-                <Route path="/orders" component={AgentOrders} />
-                <Route path="/orders/:id" component={AgentOrderDetail} />
-                <Route path="/customers" component={AgentCustomers} />
-                <Route path="/products" component={AgentProducts} />
-                <Route path="/inventory" component={AgentInventory} />
-                <Route path="/reports" component={AgentReports} />
+                <Route path="/agent/new-order" component={AgentNewOrder} />
+                <Route path="/agent/orders" component={AgentOrders} />
+                <Route path="/agent/orders/:id" component={AgentOrderDetail} />
+                <Route path="/agent/customers" component={AgentCustomers} />
+                <Route path="/agent/products" component={AgentProducts} />
+                <Route path="/agent/inventory" component={AgentInventory} />
+                <Route path="/agent/reports" component={AgentReports} />
                 {AGENT_PLACEHOLDERS.map(({ path, title, comingIn }) => (
-                  <Route key={path} path={path}>
+                  <Route key={path} path={`/agent${path}`}>
                     {() => <PagePlaceholder title={title} comingIn={comingIn} />}
                   </Route>
                 ))}
