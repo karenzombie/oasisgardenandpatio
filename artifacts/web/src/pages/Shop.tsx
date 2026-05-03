@@ -121,12 +121,12 @@ export default function Shop() {
             const brandLogo = getBrandLogo(p.manufacturerName);
             return (
               <Link key={p.id} href={`/shop/${p.slug}`} className="group block">
-                <div className="relative aspect-square bg-card overflow-hidden mb-4">
+                <div className="relative aspect-square bg-card overflow-hidden mb-4 border border-border">
                   {p.primaryImageUrl ? (
                     <img
                       src={p.primaryImageUrl}
                       alt={p.name}
-                      className="w-full h-full object-cover mix-blend-multiply transition-transform duration-500 group-hover:scale-105"
+                      className="absolute inset-0 w-full h-full object-contain p-6 mix-blend-multiply"
                     />
                   ) : (
                     <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground font-serif">Oasis</div>
@@ -141,17 +141,21 @@ export default function Shop() {
                       Sale
                     </div>
                   ) : null}
-                  <div className="absolute bottom-3 right-3">
+                  <div className="absolute bottom-3 right-3 z-10">
                     <WishlistButton productId={p.id} />
                   </div>
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent pt-10 pb-3 px-4">
+                    <h3 className="font-serif text-base md:text-lg text-white drop-shadow line-clamp-2 pr-12">
+                      {p.name}
+                    </h3>
+                  </div>
                 </div>
-                <div className="space-y-2 text-center">
+                <div className="space-y-1 text-center">
                   {brandLogo ? (
                     <img src={brandLogo} alt={p.manufacturerName ?? ""} className="h-5 w-auto object-contain mx-auto" />
-                  ) : (
+                  ) : p.manufacturerName ? (
                     <p className="text-xs uppercase tracking-widest text-muted-foreground">{p.manufacturerName}</p>
-                  )}
-                  <h3 className="font-serif text-lg group-hover:text-primary transition-colors line-clamp-2">{p.name}</h3>
+                  ) : null}
                   {p.showPriceOnline && p.price ? (
                     onSale ? (
                       <p className="text-sm">
