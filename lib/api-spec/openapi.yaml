@@ -1683,6 +1683,42 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /admin/history:
+    get:
+      operationId: adminListHistory
+      tags: [admin-products]
+      summary: List entity edit history (admin)
+      parameters:
+        - { name: entityType, in: query, schema: { type: string } }
+        - { name: entityId, in: query, schema: { type: integer } }
+        - { name: userId, in: query, schema: { type: integer } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: pageSize, in: query, schema: { type: integer, minimum: 1, maximum: 200, default: 50 } }
+      responses:
+        "200":
+          description: Paginated history rows (most recent first)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rows:
+                    type: array
+                    items: { $ref: "#/components/schemas/EntityHistoryEntry" }
+                  total: { type: integer }
+                  page: { type: integer }
+                  pageSize: { type: integer }
+                required: [rows, total, page, pageSize]
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "403":
+          description: Not admin
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
   /admin/fabrics:
     get:
       operationId: adminListFabrics
@@ -6771,3 +6807,29 @@ components:
             $ref: "#/components/schemas/AdminProductAttributeInput"
       required:
         - attributes
+    EntityHistoryEntry:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        entityType: { type: string }
+        entityId: { type: integer }
+        changeType:
+          type: string
+          enum: [create, update, delete, replace]
+        snapshot: {}
+        previousSnapshot: {}
+        changedByUserId: { type: ["integer", "null"] }
+        changedByEmail: { type: ["string", "null"] }
+        notes: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
+      required:
+        - id
+        - entityType
+        - entityId
+        - changeType
+        - snapshot
+        - previousSnapshot
+        - changedByUserId
+        - changedByEmail
+        - notes
+        - createdAt

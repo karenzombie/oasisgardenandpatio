@@ -10,6 +10,7 @@ import {
 } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import { isUniqueViolation } from "../lib/dbErrors";
+import { recordHistory } from "../lib/history";
 
 const router: IRouter = Router();
 
@@ -78,6 +79,12 @@ router.post(
         res.status(500).json({ error: "Insert returned no row" });
         return;
       }
+      await recordHistory(req, {
+        entityType: "carrier",
+        entityId: created.id,
+        changeType: "create",
+        snapshot: created,
+      });
       res.status(201).json(carrierToPayload(created));
     } catch (err) {
       if (isUniqueViolation(err)) {
@@ -106,6 +113,10 @@ router.put(
         .json({ error: body.error.issues[0]?.message ?? "Invalid body" });
       return;
     }
+    const [previous] = await db
+      .select()
+      .from(carriersTable)
+      .where(eq(carriersTable.id, params.data.id));
     try {
       const [updated] = await db
         .update(carriersTable)
@@ -123,6 +134,13 @@ router.put(
         res.status(404).json({ error: "Carrier not found" });
         return;
       }
+      await recordHistory(req, {
+        entityType: "carrier",
+        entityId: updated.id,
+        changeType: "update",
+        snapshot: updated,
+        previousSnapshot: previous ?? null,
+      });
       res.json(carrierToPayload(updated));
     } catch (err) {
       if (isUniqueViolation(err)) {
@@ -149,6 +167,10 @@ router.patch(
       res.status(400).json({ error: "Invalid body" });
       return;
     }
+    const [previous] = await db
+      .select()
+      .from(carriersTable)
+      .where(eq(carriersTable.id, params.data.id));
     const [updated] = await db
       .update(carriersTable)
       .set({ isActive: body.data.isActive })
@@ -158,6 +180,14 @@ router.patch(
       res.status(404).json({ error: "Carrier not found" });
       return;
     }
+    await recordHistory(req, {
+      entityType: "carrier",
+      entityId: updated.id,
+      changeType: "update",
+      snapshot: updated,
+      previousSnapshot: previous ?? null,
+      notes: `set isActive=${body.data.isActive}`,
+    });
     res.json(carrierToPayload(updated));
   },
 );

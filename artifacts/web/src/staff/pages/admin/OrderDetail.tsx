@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { PageBody, PageHeader } from "../../StaffShell";
+import HistoryPanel from "../../components/HistoryPanel";
 
 const ORDER_STATUSES = [
   "pending",
@@ -855,6 +856,12 @@ export default function OrderDetail() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {Number.isFinite(orderId) ? (
+          <div className="mt-6">
+            <HistoryPanel entityType="order" entityId={orderId} />
+          </div>
+        ) : null}
       </PageBody>
     </>
   );

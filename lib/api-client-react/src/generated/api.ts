@@ -44,6 +44,8 @@ import type {
   AdminListAuditLogParams,
   AdminListCancellationRequestsParams,
   AdminListCustomersParams,
+  AdminListHistory200,
+  AdminListHistoryParams,
   AdminListInventoryAdjustmentsParams,
   AdminListInventoryParams,
   AdminListOrdersParams,
@@ -5559,6 +5561,103 @@ export const useAdminUpdateProductInventory = <
 > => {
   return useMutation(getAdminUpdateProductInventoryMutationOptions(options));
 };
+
+/**
+ * @summary List entity edit history (admin)
+ */
+export const getAdminListHistoryUrl = (params?: AdminListHistoryParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/admin/history?${stringifiedParams}`
+    : `/api/admin/history`;
+};
+
+export const adminListHistory = async (
+  params?: AdminListHistoryParams,
+  options?: RequestInit,
+): Promise<AdminListHistory200> => {
+  return customFetch<AdminListHistory200>(getAdminListHistoryUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAdminListHistoryQueryKey = (
+  params?: AdminListHistoryParams,
+) => {
+  return [`/api/admin/history`, ...(params ? [params] : [])] as const;
+};
+
+export const getAdminListHistoryQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminListHistory>>,
+  TError = ErrorType<Error>,
+>(
+  params?: AdminListHistoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminListHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getAdminListHistoryQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminListHistory>>
+  > = ({ signal }) => adminListHistory(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminListHistory>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminListHistoryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminListHistory>>
+>;
+export type AdminListHistoryQueryError = ErrorType<Error>;
+
+/**
+ * @summary List entity edit history (admin)
+ */
+
+export function useAdminListHistory<
+  TData = Awaited<ReturnType<typeof adminListHistory>>,
+  TError = ErrorType<Error>,
+>(
+  params?: AdminListHistoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminListHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminListHistoryQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary List all fabrics across manufacturers (admin)

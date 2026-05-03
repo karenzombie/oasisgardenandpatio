@@ -29,6 +29,7 @@ import {
 } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import { isUniqueViolation } from "../lib/dbErrors";
+import { recordHistory } from "../lib/history";
 
 const router: IRouter = Router();
 
@@ -389,6 +390,12 @@ router.post(
         .onConflictDoNothing();
 
       const full = await loadProductById(row.id);
+      await recordHistory(req, {
+        entityType: "product",
+        entityId: row.id,
+        changeType: "create",
+        snapshot: full,
+      });
       res.status(201).json(toAdminPayload(full!));
     } catch (err) {
       if (isUniqueViolation(err)) {
@@ -425,6 +432,7 @@ router.put(
       res.status(400).json({ error: fkError });
       return;
     }
+    const previous = await loadProductById(params.data.id);
     try {
       const [row] = await db
         .update(productsTable)
@@ -478,6 +486,13 @@ router.put(
         return;
       }
       const full = await loadProductById(row.id);
+      await recordHistory(req, {
+        entityType: "product",
+        entityId: row.id,
+        changeType: "update",
+        snapshot: full,
+        previousSnapshot: previous,
+      });
       res.json(toAdminPayload(full!));
     } catch (err) {
       if (isUniqueViolation(err)) {
@@ -503,6 +518,7 @@ router.patch(
       res.status(400).json({ error: "Invalid input" });
       return;
     }
+    const previous = await loadProductById(params.data.id);
     const [row] = await db
       .update(productsTable)
       .set({ isActive: body.data.isActive })
@@ -513,9 +529,30 @@ router.patch(
       return;
     }
     const full = await loadProductById(row.id);
+    await recordHistory(req, {
+      entityType: "product",
+      entityId: row.id,
+      changeType: "update",
+      snapshot: full,
+      previousSnapshot: previous,
+      notes: `set isActive=${body.data.isActive}`,
+    });
     res.json(toAdminPayload(full!));
   },
 );
+
+async function loadProductImagesSnapshot(productId: number) {
+  const rows = await db
+    .select()
+    .from(productImagesTable)
+    .where(eq(productImagesTable.productId, productId))
+    .orderBy(
+      desc(productImagesTable.isPrimary),
+      asc(productImagesTable.displayOrder),
+      asc(productImagesTable.id),
+    );
+  return rows.map(imageToPayload);
+}
 
 router.post(
   "/admin/products/:id/images",
@@ -563,6 +600,13 @@ router.post(
         res.status(404).json({ error: "Product not found" });
         return;
       }
+      await recordHistory(req, {
+        entityType: "product_images",
+        entityId: params.data.id,
+        changeType: "replace",
+        snapshot: { images: await loadProductImagesSnapshot(params.data.id) },
+        notes: `added image #${img.id}`,
+      });
       res.status(201).json(imageToPayload(img));
     } catch (err) {
       req.log.error({ err }, "Failed to add product image");
@@ -620,6 +664,7 @@ router.put(
         });
       return;
     }
+    const previousImages = await loadProductImagesSnapshot(productId);
     await db.transaction(async (tx) => {
       for (const update of body.data.images) {
         await tx
@@ -640,6 +685,14 @@ router.put(
         asc(productImagesTable.displayOrder),
         asc(productImagesTable.id),
       );
+    await recordHistory(req, {
+      entityType: "product_images",
+      entityId: productId,
+      changeType: "replace",
+      snapshot: { images: updated.map(imageToPayload) },
+      previousSnapshot: { images: previousImages },
+      notes: "reordered images",
+    });
     res.json(updated.map(imageToPayload));
   },
 );
@@ -667,6 +720,7 @@ router.delete(
       res.status(404).json({ error: "Image not found" });
       return;
     }
+    const previousImages = await loadProductImagesSnapshot(params.data.id);
     await db
       .delete(productImagesTable)
       .where(eq(productImagesTable.id, img.id));
@@ -687,6 +741,14 @@ router.delete(
           .where(eq(productImagesTable.id, next.id));
       }
     }
+    await recordHistory(req, {
+      entityType: "product_images",
+      entityId: params.data.id,
+      changeType: "replace",
+      snapshot: { images: await loadProductImagesSnapshot(params.data.id) },
+      previousSnapshot: { images: previousImages },
+      notes: `deleted image #${img.id}`,
+    });
     res.status(204).end();
   },
 );
@@ -710,6 +772,15 @@ router.put(
       res.status(404).json({ error: "Product not found" });
       return;
     }
+    const [prevInv] = await db
+      .select()
+      .from(inventoryTable)
+      .where(
+        and(
+          eq(inventoryTable.productId, product.id),
+          sql`${inventoryTable.variantId} IS NULL`,
+        ),
+      );
     const [inv] = await db
       .insert(inventoryTable)
       .values({
@@ -728,6 +799,14 @@ router.put(
         },
       })
       .returning();
+    await recordHistory(req, {
+      entityType: "product",
+      entityId: product.id,
+      changeType: prevInv ? "update" : "create",
+      snapshot: { inventory: inv },
+      previousSnapshot: prevInv ? { inventory: prevInv } : undefined,
+      notes: "inventory updated",
+    });
     res.json({
       productId: product.id,
       onHand: inv.onHand,

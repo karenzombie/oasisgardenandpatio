@@ -12,6 +12,7 @@ import {
 } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import { isUniqueViolation } from "../lib/dbErrors";
+import { recordHistory } from "../lib/history";
 
 const router: IRouter = Router();
 
@@ -129,6 +130,12 @@ router.post(
           isActive: parsed.data.isActive ?? true,
         })
         .returning();
+      await recordHistory(req, {
+        entityType: "manufacturer",
+        entityId: row.id,
+        changeType: "create",
+        snapshot: row,
+      });
       res.status(201).json(toAdminPayload(row));
     } catch (err) {
       if (isUniqueViolation(err)) {
@@ -178,6 +185,10 @@ router.put(
         .json({ error: "Fax number is required when orders are sent by fax." });
       return;
     }
+    const [previous] = await db
+      .select()
+      .from(manufacturersTable)
+      .where(eq(manufacturersTable.id, params.data.id));
     try {
       const [row] = await db
         .update(manufacturersTable)
@@ -228,6 +239,13 @@ router.put(
         res.status(404).json({ error: "Manufacturer not found" });
         return;
       }
+      await recordHistory(req, {
+        entityType: "manufacturer",
+        entityId: row.id,
+        changeType: "update",
+        snapshot: row,
+        previousSnapshot: previous ?? null,
+      });
       res.json(toAdminPayload(row));
     } catch (err) {
       if (isUniqueViolation(err)) {
@@ -251,6 +269,10 @@ router.patch(
       res.status(400).json({ error: "Invalid input" });
       return;
     }
+    const [previous] = await db
+      .select()
+      .from(manufacturersTable)
+      .where(eq(manufacturersTable.id, params.data.id));
     const [row] = await db
       .update(manufacturersTable)
       .set({ isActive: body.data.isActive })
@@ -260,6 +282,14 @@ router.patch(
       res.status(404).json({ error: "Manufacturer not found" });
       return;
     }
+    await recordHistory(req, {
+      entityType: "manufacturer",
+      entityId: row.id,
+      changeType: "update",
+      snapshot: row,
+      previousSnapshot: previous ?? null,
+      notes: `set isActive=${body.data.isActive}`,
+    });
     res.json(toAdminPayload(row));
   },
 );

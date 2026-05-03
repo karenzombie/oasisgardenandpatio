@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { PageBody, PageHeader } from "../../StaffShell";
+import HistoryPanel from "../../components/HistoryPanel";
 
 const STATUS_VARIANT: Record<
   string,
@@ -703,6 +704,12 @@ export default function VendorOrderDetail() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {Number.isFinite(id) ? (
+          <div className="mt-6">
+            <HistoryPanel entityType="vendor_order" entityId={id} />
+          </div>
+        ) : null}
       </PageBody>
     </>
   );

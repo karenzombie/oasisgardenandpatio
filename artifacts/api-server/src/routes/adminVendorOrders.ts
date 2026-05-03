@@ -33,6 +33,7 @@ import {
 } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import { recordAudit } from "../lib/audit";
+import { recordHistory } from "../lib/history";
 
 const router: IRouter = Router();
 const DEFAULT_LIMIT = 50;
@@ -345,6 +346,12 @@ router.patch(
       entityId: row.id,
       changes: updates,
     });
+    await recordHistory(req, {
+      entityType: "vendor_order",
+      entityId: row.id,
+      changeType: "update",
+      snapshot: row,
+    });
     const detail = await loadVendorOrderDetail(row.id);
     res.json(detail);
   },
@@ -403,6 +410,17 @@ router.delete(
       entityType: "vendor_order",
       entityId: result.id,
       changes: {
+        vendorOrderNumber: result.vendorOrderNumber,
+        customerOrderId: result.customerOrderId,
+        unassignedItemCount: result.unassignedItemCount,
+      },
+    });
+    await recordHistory(req, {
+      entityType: "vendor_order",
+      entityId: result.id,
+      changeType: "delete",
+      snapshot: {
+        id: result.id,
         vendorOrderNumber: result.vendorOrderNumber,
         customerOrderId: result.customerOrderId,
         unassignedItemCount: result.unassignedItemCount,
@@ -671,6 +689,19 @@ router.post(
       entityId: params.data.id,
       changes: { sentToEmail: body.data.sentToEmail ?? null },
     });
+    const [voRow] = await db
+      .select()
+      .from(vendorOrdersTable)
+      .where(eq(vendorOrdersTable.id, params.data.id));
+    if (voRow) {
+      await recordHistory(req, {
+        entityType: "vendor_order",
+        entityId: params.data.id,
+        changeType: "update",
+        snapshot: voRow,
+        notes: result.isResend ? "resent" : "sent",
+      });
+    }
     const detail = await loadVendorOrderDetail(params.data.id);
     res.json(detail);
   },
@@ -738,6 +769,19 @@ router.post(
       entityId: params.data.id,
       changes: { toStatus: body.data.toStatus, note: body.data.note ?? null },
     });
+    const [voRow] = await db
+      .select()
+      .from(vendorOrdersTable)
+      .where(eq(vendorOrdersTable.id, params.data.id));
+    if (voRow) {
+      await recordHistory(req, {
+        entityType: "vendor_order",
+        entityId: params.data.id,
+        changeType: "update",
+        snapshot: voRow,
+        notes: `status → ${body.data.toStatus}${body.data.note ? `: ${body.data.note}` : ""}`,
+      });
+    }
     const detail = await loadVendorOrderDetail(params.data.id);
     res.json(detail);
   },
@@ -813,6 +857,19 @@ router.post(
         entityId: params.data.id,
         changes: { notes: body.data.notes ?? null },
       });
+      const [voRow] = await db
+        .select()
+        .from(vendorOrdersTable)
+        .where(eq(vendorOrdersTable.id, params.data.id));
+      if (voRow) {
+        await recordHistory(req, {
+          entityType: "vendor_order",
+          entityId: params.data.id,
+          changeType: "update",
+          snapshot: voRow,
+          notes: `received${body.data.notes ? `: ${body.data.notes}` : ""}`,
+        });
+      }
     }
     const detail = await loadVendorOrderDetail(params.data.id);
     res.json(detail);
@@ -876,6 +933,19 @@ router.post(
         entityId: params.data.id,
         changes: { note: body.data.note ?? null },
       });
+      const [voRow] = await db
+        .select()
+        .from(vendorOrdersTable)
+        .where(eq(vendorOrdersTable.id, params.data.id));
+      if (voRow) {
+        await recordHistory(req, {
+          entityType: "vendor_order",
+          entityId: params.data.id,
+          changeType: "update",
+          snapshot: voRow,
+          notes: `canceled${body.data.note ? `: ${body.data.note}` : ""}`,
+        });
+      }
     }
     const detail = await loadVendorOrderDetail(params.data.id);
     res.json(detail);

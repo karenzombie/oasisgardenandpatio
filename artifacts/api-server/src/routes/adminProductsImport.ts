@@ -14,6 +14,7 @@ import {
 } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import { isUniqueViolation } from "../lib/dbErrors";
+import { recordHistory } from "../lib/history";
 
 const router: IRouter = Router();
 
@@ -459,6 +460,10 @@ router.post(
     let createdCount = 0;
     let updatedCount = 0;
     const errors: ReturnType<typeof rowToReportPayload>[] = [];
+    const historyOps: Array<{
+      productId: number;
+      changeType: "create" | "update";
+    }> = [];
 
     try {
       await db.transaction(async (tx) => {
@@ -497,6 +502,7 @@ router.post(
                 reorderThreshold: r.reorderThreshold!,
               });
               createdCount += 1;
+              historyOps.push({ productId: created.id, changeType: "create" });
             } else if (r.action === "update" && r.existingProductId) {
               await tx
                 .update(productsTable)
@@ -538,6 +544,10 @@ router.post(
                   },
                 });
               updatedCount += 1;
+              historyOps.push({
+                productId: r.existingProductId,
+                changeType: "update",
+              });
             }
           } catch (err) {
             const msg = isUniqueViolation(err)
@@ -569,6 +579,31 @@ router.post(
               : "Import failed",
       });
       return;
+    }
+
+    if (historyOps.length > 0) {
+      const ids = historyOps.map((o) => o.productId);
+      const rows = await db
+        .select()
+        .from(productsTable)
+        .where(
+          sql`${productsTable.id} IN (${sql.join(
+            ids.map((id) => sql`${id}`),
+            sql`,`,
+          )})`,
+        );
+      const byId = new Map(rows.map((r) => [r.id, r]));
+      for (const op of historyOps) {
+        const row = byId.get(op.productId);
+        if (!row) continue;
+        await recordHistory(req, {
+          entityType: "product",
+          entityId: op.productId,
+          changeType: op.changeType,
+          snapshot: row,
+          notes: `CSV import ${op.changeType}`,
+        });
+      }
     }
 
     res.json({

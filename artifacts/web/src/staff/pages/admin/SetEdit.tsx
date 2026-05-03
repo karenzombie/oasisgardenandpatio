@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { PageBody, PageHeader } from "../../StaffShell";
+import HistoryPanel from "../../components/HistoryPanel";
 
 const NO_MANUFACTURER = "__none__";
 
@@ -732,6 +733,12 @@ export default function SetEdit() {
             </div>
           </div>
         </div>
+
+        {setId != null && Number.isFinite(setId) ? (
+          <div className="mt-6">
+            <HistoryPanel entityType="product_set" entityId={setId} />
+          </div>
+        ) : null}
       </PageBody>
     </>
   );

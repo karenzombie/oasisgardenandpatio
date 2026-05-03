@@ -1,12 +1,15 @@
 import {
   pgTable,
   serial,
+  bigserial,
   text,
   timestamp,
   integer,
   jsonb,
   index,
+  check,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./users";
@@ -41,6 +44,54 @@ export const insertAuditLogSchema = createInsertSchema(auditLogTable).omit({
 });
 export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
 export type AuditLog = typeof auditLogTable.$inferSelect;
+
+/**
+ * Append-only history of every admin-driven mutation to a tracked entity.
+ *
+ * One row per save event. The `snapshot` jsonb captures the entity's full
+ * state AFTER the change (and for `delete`, the state BEFORE the row was
+ * removed). Combined with `previousSnapshot` you can reconstruct any past
+ * state and restore it.
+ *
+ * `entityType` is a free-form string (e.g. 'product', 'product_fabrics',
+ * 'manufacturer'). `entityId` is the primary id of the live row.
+ */
+export const entityHistoryTable = pgTable(
+  "entity_history",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    entityType: text("entity_type").notNull(),
+    entityId: integer("entity_id").notNull(),
+    changeType: text("change_type").notNull(),
+    snapshot: jsonb("snapshot").notNull(),
+    previousSnapshot: jsonb("previous_snapshot"),
+    changedByUserId: integer("changed_by_user_id").references(
+      () => usersTable.id,
+      { onDelete: "set null" },
+    ),
+    // Denormalized so history survives user deletion.
+    changedByEmail: text("changed_by_email"),
+    notes: text("notes"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("entity_history_entity_idx").on(
+      t.entityType,
+      t.entityId,
+      t.createdAt,
+    ),
+    index("entity_history_user_idx").on(t.changedByUserId, t.createdAt),
+    index("entity_history_created_at_idx").on(t.createdAt),
+    check(
+      "entity_history_change_type_chk",
+      sql`change_type IN ('create','update','delete','replace')`,
+    ),
+  ],
+);
+
+export type EntityHistory = typeof entityHistoryTable.$inferSelect;
 
 export const emailLogTable = pgTable(
   "email_log",

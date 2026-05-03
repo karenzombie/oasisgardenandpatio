@@ -63,6 +63,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { PageBody, PageHeader } from "../../StaffShell";
+import HistoryPanel from "../../components/HistoryPanel";
 import { uploadFile, getStaffObjectUrl } from "../../lib/upload";
 
 function slugify(input: string): string {
@@ -1479,6 +1480,12 @@ export default function ProductEdit() {
             </Button>
           </div>
         </form>
+
+        {!isNew && productId != null ? (
+          <div className="mt-6">
+            <HistoryPanel entityType="product" entityId={productId} />
+          </div>
+        ) : null}
       </PageBody>
 
       <AlertDialog

@@ -1977,6 +1977,46 @@ export const AdminUpdateProductInventoryResponse = zod.object({
 });
 
 /**
+ * @summary List entity edit history (admin)
+ */
+export const adminListHistoryQueryPageDefault = 1;
+
+export const adminListHistoryQueryPageSizeDefault = 50;
+export const adminListHistoryQueryPageSizeMax = 200;
+
+export const AdminListHistoryQueryParams = zod.object({
+  entityType: zod.coerce.string().optional(),
+  entityId: zod.coerce.number().optional(),
+  userId: zod.coerce.number().optional(),
+  page: zod.coerce.number().min(1).default(adminListHistoryQueryPageDefault),
+  pageSize: zod.coerce
+    .number()
+    .min(1)
+    .max(adminListHistoryQueryPageSizeMax)
+    .default(adminListHistoryQueryPageSizeDefault),
+});
+
+export const AdminListHistoryResponse = zod.object({
+  rows: zod.array(
+    zod.object({
+      id: zod.number(),
+      entityType: zod.string(),
+      entityId: zod.number(),
+      changeType: zod.enum(["create", "update", "delete", "replace"]),
+      snapshot: zod.unknown(),
+      previousSnapshot: zod.unknown(),
+      changedByUserId: zod.number().nullable(),
+      changedByEmail: zod.string().nullable(),
+      notes: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  total: zod.number(),
+  page: zod.number(),
+  pageSize: zod.number(),
+});
+
+/**
  * @summary List all fabrics across manufacturers (admin)
  */
 export const AdminListFabricsResponseItem = zod.object({

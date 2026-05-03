@@ -22,6 +22,16 @@ import {
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import { isUniqueViolation } from "../lib/dbErrors";
 import { recordAudit } from "../lib/audit";
+import { recordHistory } from "../lib/history";
+
+function userSafeSnapshot(u: User) {
+  // Strip secrets so they never end up in history jsonb.
+  const { passwordHash: _ph, twoFactorSecret: _tfs, ...rest } = u as User & {
+    passwordHash?: string;
+    twoFactorSecret?: string | null;
+  };
+  return rest;
+}
 
 const router: IRouter = Router();
 const BCRYPT_ROUNDS = 12;
@@ -182,6 +192,12 @@ router.post(
         entityId: row.id,
         changes: { email: row.email, role: row.role },
       });
+      await recordHistory(req, {
+        entityType: "user",
+        entityId: row.id,
+        changeType: "create",
+        snapshot: userSafeSnapshot(row),
+      });
       res.status(201).json(userToSummary(row));
     } catch (err) {
       if (isUniqueViolation(err)) {
@@ -275,6 +291,13 @@ router.put(
         entityId: row.id,
         changes: updates,
       });
+      await recordHistory(req, {
+        entityType: "user",
+        entityId: row.id,
+        changeType: "update",
+        snapshot: userSafeSnapshot(row),
+        previousSnapshot: userSafeSnapshot(existing),
+      });
     }
     res.json(userToSummary(row));
   },
@@ -317,6 +340,14 @@ router.post(
       entityType: "user",
       entityId: user.id,
       changes: { email: user.email },
+    });
+    await recordHistory(req, {
+      entityType: "user",
+      entityId: user.id,
+      changeType: "update",
+      snapshot: { ...userSafeSnapshot(user), mustChangePassword: true },
+      previousSnapshot: userSafeSnapshot(user),
+      notes: "admin reset password",
     });
     res.json({ temporaryPassword: tempPassword });
   },
@@ -368,6 +399,10 @@ router.put(
           ? null
           : String(data.maxDiscountPercentage),
     };
+    const [previous] = await db
+      .select()
+      .from(agentPrivilegesTable)
+      .where(eq(agentPrivilegesTable.userId, user.id));
     const [row] = await db
       .insert(agentPrivilegesTable)
       .values(values)
@@ -384,6 +419,14 @@ router.put(
         },
       })
       .returning();
+    await recordHistory(req, {
+      entityType: "agent_privileges",
+      entityId: user.id,
+      changeType: "replace",
+      snapshot: row,
+      previousSnapshot: previous ?? null,
+      notes: `agent privileges for user #${user.id}`,
+    });
     res.json(privilegesToPayload(row ?? null));
   },
 );

@@ -8,6 +8,7 @@ import {
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import { SETTING_DEFAULTS } from "../lib/seedSettings";
 import { recordAudit } from "../lib/audit";
+import { recordHistory } from "../lib/history";
 
 const router: IRouter = Router();
 
@@ -80,6 +81,7 @@ router.put(
       res.json(settings);
       return;
     }
+    const previousSettings = await readAllSettings();
     try {
       await db.transaction(async (tx) => {
         for (const [apiKey, value] of entries) {
@@ -101,6 +103,13 @@ router.put(
         entityType: "settings",
         entityId: null,
         changes: body.data,
+      });
+      await recordHistory(req, {
+        entityType: "system_settings",
+        entityId: 0,
+        changeType: "replace",
+        snapshot: settings,
+        previousSnapshot: previousSettings,
       });
       res.json(settings);
     } catch (err) {

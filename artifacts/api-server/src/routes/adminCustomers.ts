@@ -21,6 +21,7 @@ import {
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import { isUniqueViolation } from "../lib/dbErrors";
 import { recordAudit } from "../lib/audit";
+import { recordHistory } from "../lib/history";
 import { isUSCountry, US_ONLY_MESSAGE } from "../lib/geo";
 
 const router: IRouter = Router();
@@ -176,6 +177,12 @@ router.post(
         entityId: created.id,
         changes: { email: created.email },
       });
+      await recordHistory(req, {
+        entityType: "customer",
+        entityId: created.id,
+        changeType: "create",
+        snapshot: created,
+      });
       res.status(201).json(customerToPayload(created));
     } catch (err) {
       if (isUniqueViolation(err)) {
@@ -228,6 +235,10 @@ router.patch(
       res.json(customerToPayload(existing));
       return;
     }
+    const [previous] = await db
+      .select()
+      .from(customersTable)
+      .where(eq(customersTable.id, params.data.id));
     const [updated] = await db
       .update(customersTable)
       .set(updates)
@@ -242,6 +253,13 @@ router.patch(
       entityType: "customer",
       entityId: updated.id,
       changes: updates,
+    });
+    await recordHistory(req, {
+      entityType: "customer",
+      entityId: updated.id,
+      changeType: "update",
+      snapshot: updated,
+      previousSnapshot: previous ?? null,
     });
     res.json(customerToPayload(updated));
   },
@@ -302,6 +320,13 @@ router.post(
       res.status(500).json({ error: "Insert returned no row" });
       return;
     }
+    await recordHistory(req, {
+      entityType: "customer_address",
+      entityId: created.id,
+      changeType: "create",
+      snapshot: created,
+      notes: `customer #${customerId}`,
+    });
     res.status(201).json(addressToPayload(created));
   },
 );
@@ -355,6 +380,15 @@ router.patch(
       res.status(400).json({ error: "No fields provided" });
       return;
     }
+    const [previous] = await db
+      .select()
+      .from(addressesTable)
+      .where(
+        and(
+          eq(addressesTable.id, params.data.addressId),
+          eq(addressesTable.customerId, params.data.id),
+        ),
+      );
     const [updated] = await db
       .update(addressesTable)
       .set(updates)
@@ -369,6 +403,14 @@ router.patch(
       res.status(404).json({ error: "Not found" });
       return;
     }
+    await recordHistory(req, {
+      entityType: "customer_address",
+      entityId: updated.id,
+      changeType: "update",
+      snapshot: updated,
+      previousSnapshot: previous ?? null,
+      notes: `customer #${params.data.id}`,
+    });
     res.json(addressToPayload(updated));
   },
 );

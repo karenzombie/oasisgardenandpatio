@@ -23,6 +23,7 @@ import {
 } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import { isUniqueViolation } from "../lib/dbErrors";
+import { recordHistory } from "../lib/history";
 
 const router: IRouter = Router();
 
@@ -139,6 +140,12 @@ router.post(
       res.status(500).json({ error: "Failed to create event" });
       return;
     }
+    await recordHistory(req, {
+      entityType: "discount_event",
+      entityId: row.id,
+      changeType: "create",
+      snapshot: row,
+    });
     res.status(201).json(discountEventToPayload(row));
   },
 );
@@ -205,6 +212,10 @@ router.put(
       res.json(discountEventToPayload(existing));
       return;
     }
+    const [previous] = await db
+      .select()
+      .from(discountEventsTable)
+      .where(eq(discountEventsTable.id, params.data.id));
     const [row] = await db
       .update(discountEventsTable)
       .set(updates)
@@ -214,6 +225,13 @@ router.put(
       res.status(404).json({ error: "Not found" });
       return;
     }
+    await recordHistory(req, {
+      entityType: "discount_event",
+      entityId: row.id,
+      changeType: "update",
+      snapshot: row,
+      previousSnapshot: previous ?? null,
+    });
     res.json(discountEventToPayload(row));
   },
 );
@@ -228,6 +246,10 @@ router.delete(
       res.status(400).json({ error: "Invalid id" });
       return;
     }
+    const [previous] = await db
+      .select()
+      .from(discountEventsTable)
+      .where(eq(discountEventsTable.id, params.data.id));
     const result = await db
       .delete(discountEventsTable)
       .where(eq(discountEventsTable.id, params.data.id))
@@ -236,6 +258,13 @@ router.delete(
       res.status(404).json({ error: "Not found" });
       return;
     }
+    await recordHistory(req, {
+      entityType: "discount_event",
+      entityId: params.data.id,
+      changeType: "delete",
+      snapshot: previous ?? { id: params.data.id },
+      previousSnapshot: previous ?? null,
+    });
     res.status(204).end();
   },
 );
@@ -305,6 +334,12 @@ router.post(
         res.status(500).json({ error: "Failed to create coupon" });
         return;
       }
+      await recordHistory(req, {
+        entityType: "coupon_code",
+        entityId: row.id,
+        changeType: "create",
+        snapshot: row,
+      });
       res.status(201).json(couponToPayload(row));
     } catch (err) {
       if (isUniqueViolation(err)) {
@@ -390,6 +425,10 @@ router.put(
       res.json(couponToPayload(existing));
       return;
     }
+    const [previous] = await db
+      .select()
+      .from(couponCodesTable)
+      .where(eq(couponCodesTable.id, params.data.id));
     try {
       const [row] = await db
         .update(couponCodesTable)
@@ -400,6 +439,13 @@ router.put(
         res.status(404).json({ error: "Not found" });
         return;
       }
+      await recordHistory(req, {
+        entityType: "coupon_code",
+        entityId: row.id,
+        changeType: "update",
+        snapshot: row,
+        previousSnapshot: previous ?? null,
+      });
       res.json(couponToPayload(row));
     } catch (err) {
       if (isUniqueViolation(err)) {
@@ -423,6 +469,10 @@ router.delete(
       res.status(400).json({ error: "Invalid id" });
       return;
     }
+    const [previous] = await db
+      .select()
+      .from(couponCodesTable)
+      .where(eq(couponCodesTable.id, params.data.id));
     const result = await db
       .delete(couponCodesTable)
       .where(eq(couponCodesTable.id, params.data.id))
@@ -431,6 +481,13 @@ router.delete(
       res.status(404).json({ error: "Not found" });
       return;
     }
+    await recordHistory(req, {
+      entityType: "coupon_code",
+      entityId: params.data.id,
+      changeType: "delete",
+      snapshot: previous ?? { id: params.data.id },
+      previousSnapshot: previous ?? null,
+    });
     res.status(204).end();
   },
 );

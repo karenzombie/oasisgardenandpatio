@@ -25,6 +25,7 @@ import {
 } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import { isUniqueViolation } from "../lib/dbErrors";
+import { recordHistory } from "../lib/history";
 
 const router: IRouter = Router();
 
@@ -128,6 +129,12 @@ router.post(
         res.status(500).json({ error: "Insert returned no row" });
         return;
       }
+      await recordHistory(req, {
+        entityType: "inventory_location",
+        entityId: created.id,
+        changeType: "create",
+        snapshot: created,
+      });
       res.status(201).json(locationToPayload(created));
     } catch (err) {
       if (isUniqueViolation(err)) {
@@ -156,6 +163,10 @@ router.put(
         .json({ error: body.error.issues[0]?.message ?? "Invalid body" });
       return;
     }
+    const [previousLoc] = await db
+      .select()
+      .from(inventoryLocationsTable)
+      .where(eq(inventoryLocationsTable.id, params.data.id));
     try {
       const [updated] = await db
         .update(inventoryLocationsTable)
@@ -170,6 +181,13 @@ router.put(
         res.status(404).json({ error: "Location not found" });
         return;
       }
+      await recordHistory(req, {
+        entityType: "inventory_location",
+        entityId: updated.id,
+        changeType: "update",
+        snapshot: updated,
+        previousSnapshot: previousLoc ?? null,
+      });
       res.json(locationToPayload(updated));
     } catch (err) {
       if (isUniqueViolation(err)) {
@@ -215,6 +233,14 @@ router.patch(
       .set({ isActive: body.data.isActive })
       .where(eq(inventoryLocationsTable.id, params.data.id))
       .returning();
+    await recordHistory(req, {
+      entityType: "inventory_location",
+      entityId: params.data.id,
+      changeType: "update",
+      snapshot: updated!,
+      previousSnapshot: existing,
+      notes: body.data.isActive ? "activated" : "deactivated",
+    });
     res.json(locationToPayload(updated!));
   },
 );
@@ -263,6 +289,13 @@ router.post(
         .json({ error: "Cannot set an inactive location as default" });
       return;
     }
+    await recordHistory(req, {
+      entityType: "inventory_location",
+      entityId: result.updated.id,
+      changeType: "update",
+      snapshot: result.updated,
+      notes: "set as default",
+    });
     res.json(locationToPayload(result.updated));
   },
 );
@@ -578,6 +611,21 @@ router.post(
       });
       return;
     }
+    await recordHistory(req, {
+      entityType: "product",
+      entityId: productId,
+      changeType: "update",
+      snapshot: {
+        productId,
+        onHand: result.onHand,
+        adjustmentId: result.adjustmentId,
+        adjustmentType,
+        quantityChange,
+        locationId: effectiveLocationId,
+        reason: reason ?? null,
+      },
+      notes: `inventory ${adjustmentType} ${quantityChange >= 0 ? "+" : ""}${quantityChange} → onHand ${result.onHand}`,
+    });
     res.json({
       productId,
       onHand: result.onHand,

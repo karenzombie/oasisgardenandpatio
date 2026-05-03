@@ -10,6 +10,7 @@ import {
   AdminSetBannerActiveBody,
 } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
+import { recordHistory } from "../lib/history";
 
 const router: IRouter = Router();
 
@@ -85,6 +86,12 @@ router.post(
       res.status(500).json({ error: "Insert returned no row" });
       return;
     }
+    await recordHistory(req, {
+      entityType: "banner",
+      entityId: created.id,
+      changeType: "create",
+      snapshot: created,
+    });
     res.status(201).json(bannerToPayload(created));
   },
 );
@@ -114,6 +121,10 @@ router.put(
         .json({ error: "End date must be after start date" });
       return;
     }
+    const [previous] = await db
+      .select()
+      .from(siteNotificationsTable)
+      .where(eq(siteNotificationsTable.id, params.data.id));
     const [updated] = await db
       .update(siteNotificationsTable)
       .set({
@@ -132,6 +143,13 @@ router.put(
       res.status(404).json({ error: "Banner not found" });
       return;
     }
+    await recordHistory(req, {
+      entityType: "banner",
+      entityId: updated.id,
+      changeType: "update",
+      snapshot: updated,
+      previousSnapshot: previous ?? null,
+    });
     res.json(bannerToPayload(updated));
   },
 );
@@ -146,6 +164,10 @@ router.delete(
       res.status(400).json({ error: "Invalid id" });
       return;
     }
+    const [previous] = await db
+      .select()
+      .from(siteNotificationsTable)
+      .where(eq(siteNotificationsTable.id, params.data.id));
     const [deleted] = await db
       .delete(siteNotificationsTable)
       .where(eq(siteNotificationsTable.id, params.data.id))
@@ -154,6 +176,13 @@ router.delete(
       res.status(404).json({ error: "Banner not found" });
       return;
     }
+    await recordHistory(req, {
+      entityType: "banner",
+      entityId: deleted.id,
+      changeType: "delete",
+      snapshot: previous ?? { id: deleted.id },
+      previousSnapshot: previous ?? null,
+    });
     res.status(204).send();
   },
 );
@@ -173,6 +202,10 @@ router.patch(
       res.status(400).json({ error: "Invalid body" });
       return;
     }
+    const [previous] = await db
+      .select()
+      .from(siteNotificationsTable)
+      .where(eq(siteNotificationsTable.id, params.data.id));
     const [updated] = await db
       .update(siteNotificationsTable)
       .set({ isActive: body.data.isActive })
@@ -182,6 +215,14 @@ router.patch(
       res.status(404).json({ error: "Banner not found" });
       return;
     }
+    await recordHistory(req, {
+      entityType: "banner",
+      entityId: updated.id,
+      changeType: "update",
+      snapshot: updated,
+      previousSnapshot: previous ?? null,
+      notes: `set isActive=${body.data.isActive}`,
+    });
     res.json(bannerToPayload(updated));
   },
 );

@@ -18,6 +18,7 @@ import {
   AdminUpdateProductAttributesBody,
 } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
+import { recordHistory } from "../lib/history";
 
 const router: IRouter = Router();
 
@@ -158,6 +159,7 @@ router.put(
       }
     }
 
+    const previousConfig = await loadFabricsConfig(productId);
     try {
       await db.transaction(async (tx) => {
         await tx
@@ -193,7 +195,15 @@ router.put(
       return;
     }
 
-    res.json(await loadFabricsConfig(productId));
+    const newConfig = await loadFabricsConfig(productId);
+    await recordHistory(req, {
+      entityType: "product_fabrics",
+      entityId: productId,
+      changeType: "replace",
+      snapshot: newConfig,
+      previousSnapshot: previousConfig,
+    });
+    res.json(newConfig);
   },
 );
 
@@ -291,6 +301,21 @@ router.put(
       return;
     }
 
+    const previousAttrs = await db
+      .select({
+        id: productAttributesTable.id,
+        attributeType: productAttributesTable.attributeType,
+        partName: productAttributesTable.partName,
+        value: productAttributesTable.value,
+        displayOrder: productAttributesTable.displayOrder,
+      })
+      .from(productAttributesTable)
+      .where(eq(productAttributesTable.productId, productId))
+      .orderBy(
+        asc(productAttributesTable.attributeType),
+        asc(productAttributesTable.displayOrder),
+      );
+
     try {
       await db.transaction(async (tx) => {
         await tx
@@ -331,6 +356,13 @@ router.put(
         asc(productAttributesTable.attributeType),
         asc(productAttributesTable.displayOrder),
       );
+    await recordHistory(req, {
+      entityType: "product_attributes",
+      entityId: productId,
+      changeType: "replace",
+      snapshot: { attributes: rows },
+      previousSnapshot: { attributes: previousAttrs },
+    });
     res.json(rows);
   },
 );

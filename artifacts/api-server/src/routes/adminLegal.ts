@@ -8,6 +8,7 @@ import {
   AdminRestoreLegalVersionParams,
 } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
+import { recordHistory } from "../lib/history";
 
 const router: IRouter = Router();
 
@@ -124,6 +125,13 @@ router.post(
         if (!row) throw new Error("Insert returned no row");
         return row;
       });
+      await recordHistory(req, {
+        entityType: "legal_document",
+        entityId: created.id,
+        changeType: "create",
+        snapshot: created,
+        notes: `published ${type} ${created.version}`,
+      });
       res.status(201).json(toPayload(created));
     } catch (err) {
       req.log.error({ err }, "Failed to publish legal version");
@@ -176,6 +184,13 @@ router.post(
         res.status(404).json({ error: "Version not found" });
         return;
       }
+      await recordHistory(req, {
+        entityType: "legal_document",
+        entityId: restored.id,
+        changeType: "update",
+        snapshot: restored,
+        notes: `restored ${type} ${restored.version} as active`,
+      });
       res.json(toPayload(restored));
     } catch (err) {
       req.log.error({ err }, "Failed to restore legal version");

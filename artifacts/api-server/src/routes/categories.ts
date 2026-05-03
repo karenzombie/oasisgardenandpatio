@@ -17,6 +17,7 @@ import {
 } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import { isUniqueViolation } from "../lib/dbErrors";
+import { recordHistory } from "../lib/history";
 
 const router: IRouter = Router();
 
@@ -149,6 +150,12 @@ router.post(
           isActive: parsed.data.isActive ?? true,
         })
         .returning();
+      await recordHistory(req, {
+        entityType: "category",
+        entityId: row.id,
+        changeType: "create",
+        snapshot: row,
+      });
       res.status(201).json(toAdminPayload(row, 0));
     } catch (err) {
       if (isUniqueViolation(err)) {
@@ -190,6 +197,10 @@ router.put(
         return;
       }
     }
+    const [previous] = await db
+      .select()
+      .from(categoriesTable)
+      .where(eq(categoriesTable.id, params.data.id));
     try {
       const [row] = await db
         .update(categoriesTable)
@@ -216,6 +227,13 @@ router.put(
         .select({ count: sql<number>`count(*)::int` })
         .from(productsTable)
         .where(eq(productsTable.categoryId, row.id));
+      await recordHistory(req, {
+        entityType: "category",
+        entityId: row.id,
+        changeType: "update",
+        snapshot: row,
+        previousSnapshot: previous ?? null,
+      });
       res.json(toAdminPayload(row, count));
     } catch (err) {
       if (isUniqueViolation(err)) {
@@ -241,6 +259,10 @@ router.patch(
       res.status(400).json({ error: "Invalid input" });
       return;
     }
+    const [previous] = await db
+      .select()
+      .from(categoriesTable)
+      .where(eq(categoriesTable.id, params.data.id));
     const [row] = await db
       .update(categoriesTable)
       .set({ isActive: body.data.isActive })
@@ -254,6 +276,14 @@ router.patch(
       .select({ count: sql<number>`count(*)::int` })
       .from(productsTable)
       .where(eq(productsTable.categoryId, row.id));
+    await recordHistory(req, {
+      entityType: "category",
+      entityId: row.id,
+      changeType: "update",
+      snapshot: row,
+      previousSnapshot: previous ?? null,
+      notes: `set isActive=${body.data.isActive}`,
+    });
     res.json(toAdminPayload(row, count));
   },
 );

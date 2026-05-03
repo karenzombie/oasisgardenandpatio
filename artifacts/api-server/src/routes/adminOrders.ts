@@ -34,6 +34,7 @@ import {
 } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import { recordAudit } from "../lib/audit";
+import { recordHistory } from "../lib/history";
 
 const router: IRouter = Router();
 const DEFAULT_LIMIT = 50;
@@ -446,6 +447,15 @@ router.post(
         entityId: orderId,
         changes: { toStatus: body.data.toStatus, note: body.data.note ?? null },
       });
+      if (result.row) {
+        await recordHistory(req, {
+          entityType: "order",
+          entityId: orderId,
+          changeType: "update",
+          snapshot: result.row,
+          notes: `status → ${body.data.toStatus}${body.data.note ? `: ${body.data.note}` : ""}`,
+        });
+      }
     }
     const detail = await loadOrderDetail(orderId);
     if (!detail) {
@@ -549,6 +559,19 @@ router.post(
         note: body.data.note ?? null,
       },
     });
+    const [latestOrder] = await db
+      .select()
+      .from(ordersTable)
+      .where(eq(ordersTable.id, orderId));
+    if (latestOrder) {
+      await recordHistory(req, {
+        entityType: "order",
+        entityId: orderId,
+        changeType: "update",
+        snapshot: latestOrder,
+        notes: `totals override${body.data.note ? `: ${body.data.note}` : ""}`,
+      });
+    }
 
     const detail = await loadOrderDetail(orderId);
     if (!detail) {
@@ -602,6 +625,13 @@ router.post(
       entityType: "order",
       entityId: row.id,
       changes: { notes: body.data.notes ?? null },
+    });
+    await recordHistory(req, {
+      entityType: "order",
+      entityId: row.id,
+      changeType: "update",
+      snapshot: row,
+      notes: "notes updated",
     });
     const detail = await loadOrderDetail(row.id);
     if (!detail) {
@@ -780,6 +810,13 @@ router.post(
       entityType: "cancellation_request",
       entityId: updated.id,
       changes: { decision: body.data.decision },
+    });
+    await recordHistory(req, {
+      entityType: "cancellation_request",
+      entityId: updated.id,
+      changeType: "update",
+      snapshot: updated,
+      notes: `${body.data.decision}${body.data.reviewNote ? `: ${body.data.reviewNote}` : ""}`,
     });
     const [reviewer] = updated.reviewedByUserId
       ? await db
@@ -1035,6 +1072,21 @@ router.post(
         entityType: "order",
         entityId: orderId,
         changes: { itemCount: data.items.length },
+      });
+
+      const [createdRow] = await db
+        .select()
+        .from(ordersTable)
+        .where(eq(ordersTable.id, orderId));
+      const createdItems = await db
+        .select()
+        .from(orderItemsTable)
+        .where(eq(orderItemsTable.orderId, orderId));
+      await recordHistory(req, {
+        entityType: "order",
+        entityId: orderId,
+        changeType: "create",
+        snapshot: { ...(createdRow ?? { id: orderId }), items: createdItems },
       });
 
       const detail = await loadOrderDetail(orderId);

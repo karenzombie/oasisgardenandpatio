@@ -21,6 +21,7 @@ import {
 } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import { isUniqueViolation } from "../lib/dbErrors";
+import { recordHistory } from "../lib/history";
 
 const router: IRouter = Router();
 
@@ -197,6 +198,12 @@ router.post(
         })
         .returning();
       const full = await loadFullSet(row.id);
+      await recordHistory(req, {
+        entityType: "product_set",
+        entityId: row.id,
+        changeType: "create",
+        snapshot: full,
+      });
       res.status(201).json(full);
     } catch (err) {
       if (isUniqueViolation(err)) {
@@ -229,6 +236,7 @@ router.put(
       res.status(400).json({ error: msg ?? "Invalid input" });
       return;
     }
+    const previous = await loadFullSet(params.data.id);
     try {
       const [row] = await db
         .update(productSetsTable)
@@ -253,6 +261,13 @@ router.put(
         return;
       }
       const full = await loadFullSet(row.id);
+      await recordHistory(req, {
+        entityType: "product_set",
+        entityId: row.id,
+        changeType: "update",
+        snapshot: full,
+        previousSnapshot: previous,
+      });
       res.json(full);
     } catch (err) {
       if (isUniqueViolation(err)) {
@@ -279,6 +294,7 @@ router.patch(
       res.status(400).json({ error: "Invalid input" });
       return;
     }
+    const previous = await loadFullSet(params.data.id);
     const [row] = await db
       .update(productSetsTable)
       .set({ isActive: body.data.isActive })
@@ -293,6 +309,14 @@ router.patch(
       res.status(404).json({ error: "Set not found" });
       return;
     }
+    await recordHistory(req, {
+      entityType: "product_set",
+      entityId: row.id,
+      changeType: "update",
+      snapshot: await loadFullSet(row.id),
+      previousSnapshot: previous,
+      notes: `set isActive=${body.data.isActive}`,
+    });
     res.json(toSummaryPayload(summary));
   },
 );
@@ -398,6 +422,13 @@ router.put(
       }
 
       const full = await loadFullSet(setId);
+      await recordHistory(req, {
+        entityType: "product_set_items",
+        entityId: setId,
+        changeType: "replace",
+        snapshot: { items: full?.items ?? [] },
+        notes: `replaced items (${incoming.length})`,
+      });
       res.json(full);
     } catch (err) {
       req.log.error({ err, setId }, "Failed to replace set items");

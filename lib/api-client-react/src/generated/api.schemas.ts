@@ -2903,6 +2903,32 @@ export interface AdminUpdateProductAttributesRequest {
   attributes: AdminProductAttributeInput[];
 }
 
+export type EntityHistoryEntryChangeType =
+  (typeof EntityHistoryEntryChangeType)[keyof typeof EntityHistoryEntryChangeType];
+
+export const EntityHistoryEntryChangeType = {
+  create: "create",
+  update: "update",
+  delete: "delete",
+  replace: "replace",
+} as const;
+
+export interface EntityHistoryEntry {
+  id: number;
+  entityType: string;
+  entityId: number;
+  changeType: EntityHistoryEntryChangeType;
+  snapshot: unknown;
+  previousSnapshot: unknown;
+  /** @nullable */
+  changedByUserId: number | null;
+  /** @nullable */
+  changedByEmail: string | null;
+  /** @nullable */
+  notes: string | null;
+  createdAt: string;
+}
+
 export type ListCatalogProductsParams = {
   q?: string;
   categorySlug?: string;
@@ -2977,6 +3003,28 @@ export const AdminListProductsSortOrder = {
   asc: "asc",
   desc: "desc",
 } as const;
+
+export type AdminListHistoryParams = {
+  entityType?: string;
+  entityId?: number;
+  userId?: number;
+  /**
+   * @minimum 1
+   */
+  page?: number;
+  /**
+   * @minimum 1
+   * @maximum 200
+   */
+  pageSize?: number;
+};
+
+export type AdminListHistory200 = {
+  rows: EntityHistoryEntry[];
+  total: number;
+  page: number;
+  pageSize: number;
+};
 
 export type AdminListInventoryParams = {
   q?: string;
