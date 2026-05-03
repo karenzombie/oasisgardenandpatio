@@ -3078,6 +3078,25 @@ export const AdminUpdateOrderShippingMethodResponse = zod.object({
       createdAt: zod.coerce.date(),
     }),
   ),
+  payments: zod.array(
+    zod.object({
+      id: zod.number(),
+      orderId: zod.number(),
+      amount: zod.number(),
+      paymentMethod: zod.string(),
+      status: zod.string(),
+      transactionId: zod.string().nullable(),
+      cardLast4: zod.string().nullable(),
+      cardType: zod.string().nullable(),
+      notes: zod.string().nullable(),
+      receivedAt: zod.coerce.date().nullable(),
+      recordedByUserId: zod.number().nullable(),
+      recordedByEmail: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  amountPaid: zod.number(),
+  paidInFull: zod.boolean(),
 });
 
 /**
@@ -3155,6 +3174,546 @@ export const AdminUpdateOrderShipmentResponse = zod.object({
 export const AdminDeleteOrderShipmentParams = zod.object({
   id: zod.coerce.number(),
   shipmentId: zod.coerce.number(),
+});
+
+/**
+ * @summary List payments recorded for an order
+ */
+export const AdminListOrderPaymentsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminListOrderPaymentsResponseItem = zod.object({
+  id: zod.number(),
+  orderId: zod.number(),
+  amount: zod.number(),
+  paymentMethod: zod.string(),
+  status: zod.string(),
+  transactionId: zod.string().nullable(),
+  cardLast4: zod.string().nullable(),
+  cardType: zod.string().nullable(),
+  notes: zod.string().nullable(),
+  receivedAt: zod.coerce.date().nullable(),
+  recordedByUserId: zod.number().nullable(),
+  recordedByEmail: zod.string().nullable(),
+  createdAt: zod.coerce.date(),
+});
+export const AdminListOrderPaymentsResponse = zod.array(
+  AdminListOrderPaymentsResponseItem,
+);
+
+/**
+ * @summary Record a payment (deposit, partial, or full) on an order
+ */
+export const AdminCreateOrderPaymentParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminCreateOrderPaymentBody = zod.object({
+  amount: zod.number(),
+  paymentMethod: zod.string(),
+  status: zod.string().nullish(),
+  transactionId: zod.string().nullish(),
+  cardLast4: zod.string().nullish(),
+  cardType: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  receivedAt: zod.coerce.date().nullish(),
+});
+
+/**
+ * @summary Record a payment for the remaining balance, marking the order paid in full
+ */
+export const AdminMarkOrderPaidInFullParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminMarkOrderPaidInFullBody = zod.object({
+  paymentMethod: zod.string(),
+  transactionId: zod.string().nullish(),
+  cardLast4: zod.string().nullish(),
+  cardType: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  receivedAt: zod.coerce.date().nullish(),
+});
+
+export const AdminMarkOrderPaidInFullResponse = zod.object({
+  id: zod.number(),
+  orderNumber: zod.string(),
+  status: zod.string(),
+  orderType: zod.string(),
+  subtotal: zod.number(),
+  taxAmount: zod.number(),
+  deliveryAmount: zod.number(),
+  total: zod.number(),
+  depositAmount: zod.number(),
+  balanceDue: zod.number(),
+  customerId: zod.number().nullable(),
+  customerName: zod.string().nullable(),
+  customerEmail: zod.string().nullable(),
+  agentId: zod.number().nullable(),
+  agentName: zod.string().nullable(),
+  salespersonName: zod.string().nullable(),
+  shippingMethod: zod.string().nullable(),
+  specialInstructions: zod.string().nullable(),
+  notes: zod.string().nullable(),
+  merchandiseReceived: zod.boolean(),
+  placedAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+  shippingAddress: zod.union([
+    zod.object({
+      id: zod.number(),
+      recipientName: zod.string().nullish(),
+      street1: zod.string(),
+      street2: zod.string().nullish(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullish(),
+    }),
+    zod.null(),
+  ]),
+  billingAddress: zod.union([
+    zod.object({
+      id: zod.number(),
+      recipientName: zod.string().nullish(),
+      street1: zod.string(),
+      street2: zod.string().nullish(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullish(),
+    }),
+    zod.null(),
+  ]),
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      productId: zod.number().nullable(),
+      productSkuSnapshot: zod.string().nullable(),
+      variantSkuSnapshot: zod.string().nullable(),
+      variantNameSnapshot: zod.string().nullable(),
+      fabricNameSnapshot: zod.string().nullable(),
+      department: zod.string().nullable(),
+      description: zod.string(),
+      quantity: zod.number(),
+      unitPrice: zod.number(),
+      amount: zod.number(),
+      discountAmount: zod.number(),
+      discountReason: zod.string().nullable(),
+      notes: zod.string().nullable(),
+      vendorOrderId: zod.number().nullable(),
+    }),
+  ),
+  statusHistory: zod.array(
+    zod.object({
+      id: zod.number(),
+      fromStatus: zod.string().nullable(),
+      toStatus: zod.string(),
+      changedByUserId: zod.number().nullable(),
+      changedByEmail: zod.string().nullable(),
+      note: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  vendorOrders: zod.array(
+    zod.object({
+      id: zod.number(),
+      vendorOrderNumber: zod.string(),
+      status: zod.string(),
+      manufacturerId: zod.number().nullable(),
+      manufacturerName: zod.string().nullable(),
+      sentAt: zod.coerce.date().nullable(),
+      receivedAt: zod.coerce.date().nullable(),
+      itemsReceived: zod.boolean(),
+    }),
+  ),
+  cancellationRequests: zod.array(
+    zod.object({
+      id: zod.number(),
+      orderId: zod.number(),
+      orderNumber: zod.string().nullable(),
+      requestedByUserId: zod.number().nullable(),
+      requestedByEmail: zod.string().nullable(),
+      reason: zod.string().nullable(),
+      status: zod.string(),
+      reviewedByUserId: zod.number().nullable(),
+      reviewedByEmail: zod.string().nullable(),
+      reviewedAt: zod.coerce.date().nullable(),
+      reviewNote: zod.string().nullable(),
+      refundAmount: zod.number().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  isQuickOrder: zod.boolean(),
+  skipVendorOrder: zod.boolean(),
+  walkInName: zod.string().nullable(),
+  walkInEmail: zod.string().nullable(),
+  walkInPhone: zod.string().nullable(),
+  shipments: zod.array(
+    zod.object({
+      id: zod.number(),
+      orderId: zod.number(),
+      carrierId: zod.number().nullable(),
+      carrierName: zod.string().nullable(),
+      carrierCode: zod.string().nullable(),
+      trackingNumber: zod.string().nullable(),
+      trackingUrl: zod.string().nullable(),
+      shippedAt: zod.coerce.date().nullable(),
+      deliveredAt: zod.coerce.date().nullable(),
+      notes: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  payments: zod.array(
+    zod.object({
+      id: zod.number(),
+      orderId: zod.number(),
+      amount: zod.number(),
+      paymentMethod: zod.string(),
+      status: zod.string(),
+      transactionId: zod.string().nullable(),
+      cardLast4: zod.string().nullable(),
+      cardType: zod.string().nullable(),
+      notes: zod.string().nullable(),
+      receivedAt: zod.coerce.date().nullable(),
+      recordedByUserId: zod.number().nullable(),
+      recordedByEmail: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  amountPaid: zod.number(),
+  paidInFull: zod.boolean(),
+});
+
+/**
+ * @summary Update a recorded payment
+ */
+export const AdminUpdateOrderPaymentParams = zod.object({
+  id: zod.coerce.number(),
+  paymentId: zod.coerce.number(),
+});
+
+export const AdminUpdateOrderPaymentBody = zod.object({
+  amount: zod.number(),
+  paymentMethod: zod.string(),
+  status: zod.string().nullish(),
+  transactionId: zod.string().nullish(),
+  cardLast4: zod.string().nullish(),
+  cardType: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  receivedAt: zod.coerce.date().nullish(),
+});
+
+export const AdminUpdateOrderPaymentResponse = zod.object({
+  id: zod.number(),
+  orderNumber: zod.string(),
+  status: zod.string(),
+  orderType: zod.string(),
+  subtotal: zod.number(),
+  taxAmount: zod.number(),
+  deliveryAmount: zod.number(),
+  total: zod.number(),
+  depositAmount: zod.number(),
+  balanceDue: zod.number(),
+  customerId: zod.number().nullable(),
+  customerName: zod.string().nullable(),
+  customerEmail: zod.string().nullable(),
+  agentId: zod.number().nullable(),
+  agentName: zod.string().nullable(),
+  salespersonName: zod.string().nullable(),
+  shippingMethod: zod.string().nullable(),
+  specialInstructions: zod.string().nullable(),
+  notes: zod.string().nullable(),
+  merchandiseReceived: zod.boolean(),
+  placedAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+  shippingAddress: zod.union([
+    zod.object({
+      id: zod.number(),
+      recipientName: zod.string().nullish(),
+      street1: zod.string(),
+      street2: zod.string().nullish(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullish(),
+    }),
+    zod.null(),
+  ]),
+  billingAddress: zod.union([
+    zod.object({
+      id: zod.number(),
+      recipientName: zod.string().nullish(),
+      street1: zod.string(),
+      street2: zod.string().nullish(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullish(),
+    }),
+    zod.null(),
+  ]),
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      productId: zod.number().nullable(),
+      productSkuSnapshot: zod.string().nullable(),
+      variantSkuSnapshot: zod.string().nullable(),
+      variantNameSnapshot: zod.string().nullable(),
+      fabricNameSnapshot: zod.string().nullable(),
+      department: zod.string().nullable(),
+      description: zod.string(),
+      quantity: zod.number(),
+      unitPrice: zod.number(),
+      amount: zod.number(),
+      discountAmount: zod.number(),
+      discountReason: zod.string().nullable(),
+      notes: zod.string().nullable(),
+      vendorOrderId: zod.number().nullable(),
+    }),
+  ),
+  statusHistory: zod.array(
+    zod.object({
+      id: zod.number(),
+      fromStatus: zod.string().nullable(),
+      toStatus: zod.string(),
+      changedByUserId: zod.number().nullable(),
+      changedByEmail: zod.string().nullable(),
+      note: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  vendorOrders: zod.array(
+    zod.object({
+      id: zod.number(),
+      vendorOrderNumber: zod.string(),
+      status: zod.string(),
+      manufacturerId: zod.number().nullable(),
+      manufacturerName: zod.string().nullable(),
+      sentAt: zod.coerce.date().nullable(),
+      receivedAt: zod.coerce.date().nullable(),
+      itemsReceived: zod.boolean(),
+    }),
+  ),
+  cancellationRequests: zod.array(
+    zod.object({
+      id: zod.number(),
+      orderId: zod.number(),
+      orderNumber: zod.string().nullable(),
+      requestedByUserId: zod.number().nullable(),
+      requestedByEmail: zod.string().nullable(),
+      reason: zod.string().nullable(),
+      status: zod.string(),
+      reviewedByUserId: zod.number().nullable(),
+      reviewedByEmail: zod.string().nullable(),
+      reviewedAt: zod.coerce.date().nullable(),
+      reviewNote: zod.string().nullable(),
+      refundAmount: zod.number().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  isQuickOrder: zod.boolean(),
+  skipVendorOrder: zod.boolean(),
+  walkInName: zod.string().nullable(),
+  walkInEmail: zod.string().nullable(),
+  walkInPhone: zod.string().nullable(),
+  shipments: zod.array(
+    zod.object({
+      id: zod.number(),
+      orderId: zod.number(),
+      carrierId: zod.number().nullable(),
+      carrierName: zod.string().nullable(),
+      carrierCode: zod.string().nullable(),
+      trackingNumber: zod.string().nullable(),
+      trackingUrl: zod.string().nullable(),
+      shippedAt: zod.coerce.date().nullable(),
+      deliveredAt: zod.coerce.date().nullable(),
+      notes: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  payments: zod.array(
+    zod.object({
+      id: zod.number(),
+      orderId: zod.number(),
+      amount: zod.number(),
+      paymentMethod: zod.string(),
+      status: zod.string(),
+      transactionId: zod.string().nullable(),
+      cardLast4: zod.string().nullable(),
+      cardType: zod.string().nullable(),
+      notes: zod.string().nullable(),
+      receivedAt: zod.coerce.date().nullable(),
+      recordedByUserId: zod.number().nullable(),
+      recordedByEmail: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  amountPaid: zod.number(),
+  paidInFull: zod.boolean(),
+});
+
+/**
+ * @summary Delete a recorded payment
+ */
+export const AdminDeleteOrderPaymentParams = zod.object({
+  id: zod.coerce.number(),
+  paymentId: zod.coerce.number(),
+});
+
+export const AdminDeleteOrderPaymentResponse = zod.object({
+  id: zod.number(),
+  orderNumber: zod.string(),
+  status: zod.string(),
+  orderType: zod.string(),
+  subtotal: zod.number(),
+  taxAmount: zod.number(),
+  deliveryAmount: zod.number(),
+  total: zod.number(),
+  depositAmount: zod.number(),
+  balanceDue: zod.number(),
+  customerId: zod.number().nullable(),
+  customerName: zod.string().nullable(),
+  customerEmail: zod.string().nullable(),
+  agentId: zod.number().nullable(),
+  agentName: zod.string().nullable(),
+  salespersonName: zod.string().nullable(),
+  shippingMethod: zod.string().nullable(),
+  specialInstructions: zod.string().nullable(),
+  notes: zod.string().nullable(),
+  merchandiseReceived: zod.boolean(),
+  placedAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+  shippingAddress: zod.union([
+    zod.object({
+      id: zod.number(),
+      recipientName: zod.string().nullish(),
+      street1: zod.string(),
+      street2: zod.string().nullish(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullish(),
+    }),
+    zod.null(),
+  ]),
+  billingAddress: zod.union([
+    zod.object({
+      id: zod.number(),
+      recipientName: zod.string().nullish(),
+      street1: zod.string(),
+      street2: zod.string().nullish(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullish(),
+    }),
+    zod.null(),
+  ]),
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      productId: zod.number().nullable(),
+      productSkuSnapshot: zod.string().nullable(),
+      variantSkuSnapshot: zod.string().nullable(),
+      variantNameSnapshot: zod.string().nullable(),
+      fabricNameSnapshot: zod.string().nullable(),
+      department: zod.string().nullable(),
+      description: zod.string(),
+      quantity: zod.number(),
+      unitPrice: zod.number(),
+      amount: zod.number(),
+      discountAmount: zod.number(),
+      discountReason: zod.string().nullable(),
+      notes: zod.string().nullable(),
+      vendorOrderId: zod.number().nullable(),
+    }),
+  ),
+  statusHistory: zod.array(
+    zod.object({
+      id: zod.number(),
+      fromStatus: zod.string().nullable(),
+      toStatus: zod.string(),
+      changedByUserId: zod.number().nullable(),
+      changedByEmail: zod.string().nullable(),
+      note: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  vendorOrders: zod.array(
+    zod.object({
+      id: zod.number(),
+      vendorOrderNumber: zod.string(),
+      status: zod.string(),
+      manufacturerId: zod.number().nullable(),
+      manufacturerName: zod.string().nullable(),
+      sentAt: zod.coerce.date().nullable(),
+      receivedAt: zod.coerce.date().nullable(),
+      itemsReceived: zod.boolean(),
+    }),
+  ),
+  cancellationRequests: zod.array(
+    zod.object({
+      id: zod.number(),
+      orderId: zod.number(),
+      orderNumber: zod.string().nullable(),
+      requestedByUserId: zod.number().nullable(),
+      requestedByEmail: zod.string().nullable(),
+      reason: zod.string().nullable(),
+      status: zod.string(),
+      reviewedByUserId: zod.number().nullable(),
+      reviewedByEmail: zod.string().nullable(),
+      reviewedAt: zod.coerce.date().nullable(),
+      reviewNote: zod.string().nullable(),
+      refundAmount: zod.number().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  isQuickOrder: zod.boolean(),
+  skipVendorOrder: zod.boolean(),
+  walkInName: zod.string().nullable(),
+  walkInEmail: zod.string().nullable(),
+  walkInPhone: zod.string().nullable(),
+  shipments: zod.array(
+    zod.object({
+      id: zod.number(),
+      orderId: zod.number(),
+      carrierId: zod.number().nullable(),
+      carrierName: zod.string().nullable(),
+      carrierCode: zod.string().nullable(),
+      trackingNumber: zod.string().nullable(),
+      trackingUrl: zod.string().nullable(),
+      shippedAt: zod.coerce.date().nullable(),
+      deliveredAt: zod.coerce.date().nullable(),
+      notes: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  payments: zod.array(
+    zod.object({
+      id: zod.number(),
+      orderId: zod.number(),
+      amount: zod.number(),
+      paymentMethod: zod.string(),
+      status: zod.string(),
+      transactionId: zod.string().nullable(),
+      cardLast4: zod.string().nullable(),
+      cardType: zod.string().nullable(),
+      notes: zod.string().nullable(),
+      receivedAt: zod.coerce.date().nullable(),
+      recordedByUserId: zod.number().nullable(),
+      recordedByEmail: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  amountPaid: zod.number(),
+  paidInFull: zod.boolean(),
 });
 
 /**
@@ -3726,6 +4285,25 @@ export const AdminGetOrderResponse = zod.object({
       createdAt: zod.coerce.date(),
     }),
   ),
+  payments: zod.array(
+    zod.object({
+      id: zod.number(),
+      orderId: zod.number(),
+      amount: zod.number(),
+      paymentMethod: zod.string(),
+      status: zod.string(),
+      transactionId: zod.string().nullable(),
+      cardLast4: zod.string().nullable(),
+      cardType: zod.string().nullable(),
+      notes: zod.string().nullable(),
+      receivedAt: zod.coerce.date().nullable(),
+      recordedByUserId: zod.number().nullable(),
+      recordedByEmail: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  amountPaid: zod.number(),
+  paidInFull: zod.boolean(),
 });
 
 /**
@@ -3870,6 +4448,25 @@ export const AdminUpdateOrderStatusResponse = zod.object({
       createdAt: zod.coerce.date(),
     }),
   ),
+  payments: zod.array(
+    zod.object({
+      id: zod.number(),
+      orderId: zod.number(),
+      amount: zod.number(),
+      paymentMethod: zod.string(),
+      status: zod.string(),
+      transactionId: zod.string().nullable(),
+      cardLast4: zod.string().nullable(),
+      cardType: zod.string().nullable(),
+      notes: zod.string().nullable(),
+      receivedAt: zod.coerce.date().nullable(),
+      recordedByUserId: zod.number().nullable(),
+      recordedByEmail: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  amountPaid: zod.number(),
+  paidInFull: zod.boolean(),
 });
 
 /**
@@ -4031,6 +4628,25 @@ export const AdminUpdateOrderTotalsResponse = zod.object({
       createdAt: zod.coerce.date(),
     }),
   ),
+  payments: zod.array(
+    zod.object({
+      id: zod.number(),
+      orderId: zod.number(),
+      amount: zod.number(),
+      paymentMethod: zod.string(),
+      status: zod.string(),
+      transactionId: zod.string().nullable(),
+      cardLast4: zod.string().nullable(),
+      cardType: zod.string().nullable(),
+      notes: zod.string().nullable(),
+      receivedAt: zod.coerce.date().nullable(),
+      recordedByUserId: zod.number().nullable(),
+      recordedByEmail: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  amountPaid: zod.number(),
+  paidInFull: zod.boolean(),
 });
 
 /**
@@ -4174,6 +4790,25 @@ export const AdminUpdateOrderNotesResponse = zod.object({
       createdAt: zod.coerce.date(),
     }),
   ),
+  payments: zod.array(
+    zod.object({
+      id: zod.number(),
+      orderId: zod.number(),
+      amount: zod.number(),
+      paymentMethod: zod.string(),
+      status: zod.string(),
+      transactionId: zod.string().nullable(),
+      cardLast4: zod.string().nullable(),
+      cardType: zod.string().nullable(),
+      notes: zod.string().nullable(),
+      receivedAt: zod.coerce.date().nullable(),
+      recordedByUserId: zod.number().nullable(),
+      recordedByEmail: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  amountPaid: zod.number(),
+  paidInFull: zod.boolean(),
 });
 
 /**

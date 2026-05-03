@@ -247,6 +247,12 @@ export const paymentsTable = pgTable(
     cardType: text("card_type"),
     status: text("status").notNull().default("pending"),
     rawResponse: jsonb("raw_response"),
+    notes: text("notes"),
+    receivedAt: timestamp("received_at", { withTimezone: true }),
+    recordedByUserId: integer("recorded_by_user_id").references(
+      () => usersTable.id,
+      { onDelete: "set null" },
+    ),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

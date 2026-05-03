@@ -36,6 +36,7 @@ import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import { recordAudit } from "../lib/audit";
 import { recordHistory } from "../lib/history";
 import { loadOrderShipments } from "./adminOrderShipments";
+import { loadOrderPayments } from "./adminOrderPayments";
 
 const router: IRouter = Router();
 const DEFAULT_LIMIT = 50;
@@ -315,6 +316,9 @@ export async function loadOrderDetail(orderId: number) {
       createdAt: h.h.createdAt.toISOString(),
     })),
     shipments: await loadOrderShipments(orderId),
+    payments: await loadOrderPayments(orderId),
+    amountPaid: Number(o.depositAmount),
+    paidInFull: Number(o.balanceDue) <= 0 && Number(o.depositAmount) > 0,
     vendorOrders: vos.map((v) => ({
       id: v.vo.id,
       vendorOrderNumber: v.vo.vendorOrderNumber,

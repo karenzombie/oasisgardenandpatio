@@ -2502,6 +2502,125 @@ paths:
         "404":
           description: Not found
           content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/orders/{id}/payments:
+    get:
+      operationId: adminListOrderPayments
+      tags: [admin-orders]
+      summary: List payments recorded for an order
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Payments
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AdminOrderPayment" }
+        "404":
+          description: Order not found
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+    post:
+      operationId: adminCreateOrderPayment
+      tags: [admin-orders]
+      summary: Record a payment (deposit, partial, or full) on an order
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdminCreatePaymentRequest" }
+      responses:
+        "201":
+          description: Updated order detail
+          content: { application/json: { schema: { $ref: "#/components/schemas/AdminOrderDetail" } } }
+        "400":
+          description: Validation error
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "404":
+          description: Order not found
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/orders/{id}/payments/mark-paid-in-full:
+    post:
+      operationId: adminMarkOrderPaidInFull
+      tags: [admin-orders]
+      summary: Record a payment for the remaining balance, marking the order paid in full
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdminMarkOrderPaidInFullRequest" }
+      responses:
+        "200":
+          description: Updated order detail
+          content: { application/json: { schema: { $ref: "#/components/schemas/AdminOrderDetail" } } }
+        "400":
+          description: Validation error (e.g. nothing to pay)
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "404":
+          description: Order not found
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/orders/{id}/payments/{paymentId}:
+    put:
+      operationId: adminUpdateOrderPayment
+      tags: [admin-orders]
+      summary: Update a recorded payment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: paymentId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdminUpdatePaymentRequest" }
+      responses:
+        "200":
+          description: Updated order detail
+          content: { application/json: { schema: { $ref: "#/components/schemas/AdminOrderDetail" } } }
+        "400":
+          description: Validation error
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "404":
+          description: Not found
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+    delete:
+      operationId: adminDeleteOrderPayment
+      tags: [admin-orders]
+      summary: Delete a recorded payment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: paymentId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Updated order detail
+          content: { application/json: { schema: { $ref: "#/components/schemas/AdminOrderDetail" } } }
+        "404":
+          description: Not found
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
   /admin/banners:
     get:
       operationId: adminListBanners
@@ -4272,8 +4391,64 @@ components:
         shipments:
           type: array
           items: { $ref: "#/components/schemas/AdminOrderShipment" }
+        payments:
+          type: array
+          items: { $ref: "#/components/schemas/AdminOrderPayment" }
+        amountPaid: { type: number }
+        paidInFull: { type: boolean }
       required:
-        [id, orderNumber, status, orderType, subtotal, taxAmount, deliveryAmount, total, depositAmount, balanceDue, customerId, customerName, customerEmail, agentId, agentName, salespersonName, shippingMethod, specialInstructions, notes, merchandiseReceived, placedAt, updatedAt, shippingAddress, billingAddress, items, statusHistory, vendorOrders, cancellationRequests, isQuickOrder, skipVendorOrder, walkInName, walkInEmail, walkInPhone, shipments]
+        [id, orderNumber, status, orderType, subtotal, taxAmount, deliveryAmount, total, depositAmount, balanceDue, customerId, customerName, customerEmail, agentId, agentName, salespersonName, shippingMethod, specialInstructions, notes, merchandiseReceived, placedAt, updatedAt, shippingAddress, billingAddress, items, statusHistory, vendorOrders, cancellationRequests, isQuickOrder, skipVendorOrder, walkInName, walkInEmail, walkInPhone, shipments, payments, amountPaid, paidInFull]
+    AdminOrderPayment:
+      type: object
+      properties:
+        id: { type: integer }
+        orderId: { type: integer }
+        amount: { type: number }
+        paymentMethod: { type: string }
+        status: { type: string }
+        transactionId: { type: string, nullable: true }
+        cardLast4: { type: string, nullable: true }
+        cardType: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+        receivedAt: { type: string, format: date-time, nullable: true }
+        recordedByUserId: { type: integer, nullable: true }
+        recordedByEmail: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+      required: [id, orderId, amount, paymentMethod, status, transactionId, cardLast4, cardType, notes, receivedAt, recordedByUserId, recordedByEmail, createdAt]
+    AdminCreatePaymentRequest:
+      type: object
+      properties:
+        amount: { type: number }
+        paymentMethod: { type: string }
+        status: { type: string, nullable: true }
+        transactionId: { type: string, nullable: true }
+        cardLast4: { type: string, nullable: true }
+        cardType: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+        receivedAt: { type: string, format: date-time, nullable: true }
+      required: [amount, paymentMethod]
+    AdminUpdatePaymentRequest:
+      type: object
+      properties:
+        amount: { type: number }
+        paymentMethod: { type: string }
+        status: { type: string, nullable: true }
+        transactionId: { type: string, nullable: true }
+        cardLast4: { type: string, nullable: true }
+        cardType: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+        receivedAt: { type: string, format: date-time, nullable: true }
+      required: [amount, paymentMethod]
+    AdminMarkOrderPaidInFullRequest:
+      type: object
+      properties:
+        paymentMethod: { type: string }
+        transactionId: { type: string, nullable: true }
+        cardLast4: { type: string, nullable: true }
+        cardType: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+        receivedAt: { type: string, format: date-time, nullable: true }
+      required: [paymentMethod]
     AdminOrderShipment:
       type: object
       properties:

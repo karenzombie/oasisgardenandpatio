@@ -40,6 +40,7 @@ import { useToast } from "@/hooks/use-toast";
 import { PageBody, PageHeader } from "../../StaffShell";
 import HistoryPanel from "../../components/HistoryPanel";
 import DeliveryPanel from "./DeliveryPanel";
+import PaymentsPanel from "./PaymentsPanel";
 
 const ORDER_STATUSES = [
   "pending",
@@ -765,6 +766,15 @@ export default function OrderDetail() {
               <AddressBlock label="Shipping" address={order.shippingAddress} />
               <AddressBlock label="Billing" address={order.billingAddress} />
             </div>
+
+            <PaymentsPanel
+              orderId={orderId}
+              total={order.total}
+              amountPaid={order.amountPaid}
+              balanceDue={order.balanceDue}
+              paidInFull={order.paidInFull}
+              payments={order.payments}
+            />
 
             <DeliveryPanel
               orderId={orderId}

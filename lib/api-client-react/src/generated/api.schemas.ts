@@ -336,6 +336,22 @@ export interface AdminOrderShipment {
   createdAt: string;
 }
 
+export interface AdminOrderPayment {
+  id: number;
+  orderId: number;
+  amount: number;
+  paymentMethod: string;
+  status: string;
+  transactionId: string | null;
+  cardLast4: string | null;
+  cardType: string | null;
+  notes: string | null;
+  receivedAt: string | null;
+  recordedByUserId: number | null;
+  recordedByEmail: string | null;
+  createdAt: string;
+}
+
 export interface AdminOrderDetail {
   id: number;
   orderNumber: string;
@@ -371,6 +387,40 @@ export interface AdminOrderDetail {
   walkInEmail: string | null;
   walkInPhone: string | null;
   shipments: AdminOrderShipment[];
+  payments: AdminOrderPayment[];
+  amountPaid: number;
+  paidInFull: boolean;
+}
+
+export interface AdminCreatePaymentRequest {
+  amount: number;
+  paymentMethod: string;
+  status?: string | null;
+  transactionId?: string | null;
+  cardLast4?: string | null;
+  cardType?: string | null;
+  notes?: string | null;
+  receivedAt?: string | null;
+}
+
+export interface AdminUpdatePaymentRequest {
+  amount: number;
+  paymentMethod: string;
+  status?: string | null;
+  transactionId?: string | null;
+  cardLast4?: string | null;
+  cardType?: string | null;
+  notes?: string | null;
+  receivedAt?: string | null;
+}
+
+export interface AdminMarkOrderPaidInFullRequest {
+  paymentMethod: string;
+  transactionId?: string | null;
+  cardLast4?: string | null;
+  cardType?: string | null;
+  notes?: string | null;
+  receivedAt?: string | null;
 }
 
 export interface AdminCreateShipmentRequest {

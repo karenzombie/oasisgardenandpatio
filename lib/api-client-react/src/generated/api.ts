@@ -36,6 +36,7 @@ import type {
   AdminCouponCode,
   AdminCouponCodeUse,
   AdminCreateCustomerResponse,
+  AdminCreatePaymentRequest,
   AdminCreateShipmentRequest,
   AdminCustomer,
   AdminCustomerDetail,
@@ -57,8 +58,10 @@ import type {
   AdminListUsersParams,
   AdminListVendorOrdersParams,
   AdminManufacturer,
+  AdminMarkOrderPaidInFullRequest,
   AdminOrderDetail,
   AdminOrderPage,
+  AdminOrderPayment,
   AdminOrderShipment,
   AdminProduct,
   AdminProductAttribute,
@@ -81,6 +84,7 @@ import type {
   AdminSetSummary,
   AdminUpdateOrderShippingMethodRequest,
   AdminUpdateOrderTotalsRequest,
+  AdminUpdatePaymentRequest,
   AdminUpdateProductAttributesRequest,
   AdminUpdateProductFabricsRequest,
   AdminUpdateShipmentRequest,
@@ -8421,6 +8425,464 @@ export const useAdminDeleteOrderShipment = <
   TContext
 > => {
   return useMutation(getAdminDeleteOrderShipmentMutationOptions(options));
+};
+
+/**
+ * @summary List payments recorded for an order
+ */
+export const getAdminListOrderPaymentsUrl = (id: number) => {
+  return `/api/admin/orders/${id}/payments`;
+};
+
+export const adminListOrderPayments = async (
+  id: number,
+  options?: RequestInit,
+): Promise<AdminOrderPayment[]> => {
+  return customFetch<AdminOrderPayment[]>(getAdminListOrderPaymentsUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAdminListOrderPaymentsQueryKey = (id: number) => {
+  return [`/api/admin/orders/${id}/payments`] as const;
+};
+
+export const getAdminListOrderPaymentsQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminListOrderPayments>>,
+  TError = ErrorType<Error>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminListOrderPayments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getAdminListOrderPaymentsQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminListOrderPayments>>
+  > = ({ signal }) => adminListOrderPayments(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminListOrderPayments>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminListOrderPaymentsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminListOrderPayments>>
+>;
+export type AdminListOrderPaymentsQueryError = ErrorType<Error>;
+
+/**
+ * @summary List payments recorded for an order
+ */
+
+export function useAdminListOrderPayments<
+  TData = Awaited<ReturnType<typeof adminListOrderPayments>>,
+  TError = ErrorType<Error>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminListOrderPayments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminListOrderPaymentsQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Record a payment (deposit, partial, or full) on an order
+ */
+export const getAdminCreateOrderPaymentUrl = (id: number) => {
+  return `/api/admin/orders/${id}/payments`;
+};
+
+export const adminCreateOrderPayment = async (
+  id: number,
+  adminCreatePaymentRequest: AdminCreatePaymentRequest,
+  options?: RequestInit,
+): Promise<AdminOrderDetail> => {
+  return customFetch<AdminOrderDetail>(getAdminCreateOrderPaymentUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(adminCreatePaymentRequest),
+  });
+};
+
+export const getAdminCreateOrderPaymentMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCreateOrderPayment>>,
+    TError,
+    { id: number; data: BodyType<AdminCreatePaymentRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminCreateOrderPayment>>,
+  TError,
+  { id: number; data: BodyType<AdminCreatePaymentRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminCreateOrderPayment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminCreateOrderPayment>>,
+    { id: number; data: BodyType<AdminCreatePaymentRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminCreateOrderPayment(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminCreateOrderPaymentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminCreateOrderPayment>>
+>;
+export type AdminCreateOrderPaymentMutationBody =
+  BodyType<AdminCreatePaymentRequest>;
+export type AdminCreateOrderPaymentMutationError = ErrorType<Error>;
+
+/**
+ * @summary Record a payment (deposit, partial, or full) on an order
+ */
+export const useAdminCreateOrderPayment = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCreateOrderPayment>>,
+    TError,
+    { id: number; data: BodyType<AdminCreatePaymentRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminCreateOrderPayment>>,
+  TError,
+  { id: number; data: BodyType<AdminCreatePaymentRequest> },
+  TContext
+> => {
+  return useMutation(getAdminCreateOrderPaymentMutationOptions(options));
+};
+
+/**
+ * @summary Record a payment for the remaining balance, marking the order paid in full
+ */
+export const getAdminMarkOrderPaidInFullUrl = (id: number) => {
+  return `/api/admin/orders/${id}/payments/mark-paid-in-full`;
+};
+
+export const adminMarkOrderPaidInFull = async (
+  id: number,
+  adminMarkOrderPaidInFullRequest: AdminMarkOrderPaidInFullRequest,
+  options?: RequestInit,
+): Promise<AdminOrderDetail> => {
+  return customFetch<AdminOrderDetail>(getAdminMarkOrderPaidInFullUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(adminMarkOrderPaidInFullRequest),
+  });
+};
+
+export const getAdminMarkOrderPaidInFullMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminMarkOrderPaidInFull>>,
+    TError,
+    { id: number; data: BodyType<AdminMarkOrderPaidInFullRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminMarkOrderPaidInFull>>,
+  TError,
+  { id: number; data: BodyType<AdminMarkOrderPaidInFullRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminMarkOrderPaidInFull"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminMarkOrderPaidInFull>>,
+    { id: number; data: BodyType<AdminMarkOrderPaidInFullRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminMarkOrderPaidInFull(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminMarkOrderPaidInFullMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminMarkOrderPaidInFull>>
+>;
+export type AdminMarkOrderPaidInFullMutationBody =
+  BodyType<AdminMarkOrderPaidInFullRequest>;
+export type AdminMarkOrderPaidInFullMutationError = ErrorType<Error>;
+
+/**
+ * @summary Record a payment for the remaining balance, marking the order paid in full
+ */
+export const useAdminMarkOrderPaidInFull = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminMarkOrderPaidInFull>>,
+    TError,
+    { id: number; data: BodyType<AdminMarkOrderPaidInFullRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminMarkOrderPaidInFull>>,
+  TError,
+  { id: number; data: BodyType<AdminMarkOrderPaidInFullRequest> },
+  TContext
+> => {
+  return useMutation(getAdminMarkOrderPaidInFullMutationOptions(options));
+};
+
+/**
+ * @summary Update a recorded payment
+ */
+export const getAdminUpdateOrderPaymentUrl = (
+  id: number,
+  paymentId: number,
+) => {
+  return `/api/admin/orders/${id}/payments/${paymentId}`;
+};
+
+export const adminUpdateOrderPayment = async (
+  id: number,
+  paymentId: number,
+  adminUpdatePaymentRequest: AdminUpdatePaymentRequest,
+  options?: RequestInit,
+): Promise<AdminOrderDetail> => {
+  return customFetch<AdminOrderDetail>(
+    getAdminUpdateOrderPaymentUrl(id, paymentId),
+    {
+      ...options,
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(adminUpdatePaymentRequest),
+    },
+  );
+};
+
+export const getAdminUpdateOrderPaymentMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateOrderPayment>>,
+    TError,
+    {
+      id: number;
+      paymentId: number;
+      data: BodyType<AdminUpdatePaymentRequest>;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUpdateOrderPayment>>,
+  TError,
+  { id: number; paymentId: number; data: BodyType<AdminUpdatePaymentRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminUpdateOrderPayment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUpdateOrderPayment>>,
+    { id: number; paymentId: number; data: BodyType<AdminUpdatePaymentRequest> }
+  > = (props) => {
+    const { id, paymentId, data } = props ?? {};
+
+    return adminUpdateOrderPayment(id, paymentId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminUpdateOrderPaymentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUpdateOrderPayment>>
+>;
+export type AdminUpdateOrderPaymentMutationBody =
+  BodyType<AdminUpdatePaymentRequest>;
+export type AdminUpdateOrderPaymentMutationError = ErrorType<Error>;
+
+/**
+ * @summary Update a recorded payment
+ */
+export const useAdminUpdateOrderPayment = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateOrderPayment>>,
+    TError,
+    {
+      id: number;
+      paymentId: number;
+      data: BodyType<AdminUpdatePaymentRequest>;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUpdateOrderPayment>>,
+  TError,
+  { id: number; paymentId: number; data: BodyType<AdminUpdatePaymentRequest> },
+  TContext
+> => {
+  return useMutation(getAdminUpdateOrderPaymentMutationOptions(options));
+};
+
+/**
+ * @summary Delete a recorded payment
+ */
+export const getAdminDeleteOrderPaymentUrl = (
+  id: number,
+  paymentId: number,
+) => {
+  return `/api/admin/orders/${id}/payments/${paymentId}`;
+};
+
+export const adminDeleteOrderPayment = async (
+  id: number,
+  paymentId: number,
+  options?: RequestInit,
+): Promise<AdminOrderDetail> => {
+  return customFetch<AdminOrderDetail>(
+    getAdminDeleteOrderPaymentUrl(id, paymentId),
+    {
+      ...options,
+      method: "DELETE",
+    },
+  );
+};
+
+export const getAdminDeleteOrderPaymentMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeleteOrderPayment>>,
+    TError,
+    { id: number; paymentId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminDeleteOrderPayment>>,
+  TError,
+  { id: number; paymentId: number },
+  TContext
+> => {
+  const mutationKey = ["adminDeleteOrderPayment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminDeleteOrderPayment>>,
+    { id: number; paymentId: number }
+  > = (props) => {
+    const { id, paymentId } = props ?? {};
+
+    return adminDeleteOrderPayment(id, paymentId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminDeleteOrderPaymentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminDeleteOrderPayment>>
+>;
+
+export type AdminDeleteOrderPaymentMutationError = ErrorType<Error>;
+
+/**
+ * @summary Delete a recorded payment
+ */
+export const useAdminDeleteOrderPayment = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeleteOrderPayment>>,
+    TError,
+    { id: number; paymentId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminDeleteOrderPayment>>,
+  TError,
+  { id: number; paymentId: number },
+  TContext
+> => {
+  return useMutation(getAdminDeleteOrderPaymentMutationOptions(options));
 };
 
 /**
