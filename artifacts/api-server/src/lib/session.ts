@@ -25,7 +25,14 @@ export function buildSessionMiddleware(): RequestHandler {
     throw new Error("SESSION_SECRET environment variable is required");
   }
 
-  const isProd = process.env["NODE_ENV"] === "production";
+  // The app is always served over HTTPS in Replit (dev preview uses the
+  // worf.replit.dev TLS proxy; production is published behind HTTPS too).
+  // SameSite=None + Secure is required for the session cookie to be
+  // accepted by browsers when the app runs inside Replit's cross-site
+  // workspace canvas iframe; SameSite=Lax silently drops the cookie there
+  // and every /auth/me check fails immediately after login.
+  const isHttps = process.env["NODE_ENV"] === "production"
+    || Boolean(process.env["REPLIT_DOMAINS"]);
 
   return session({
     name: "oasis.sid",
@@ -40,8 +47,8 @@ export function buildSessionMiddleware(): RequestHandler {
     }),
     cookie: {
       httpOnly: true,
-      secure: isProd,
-      sameSite: "lax",
+      secure: isHttps,
+      sameSite: isHttps ? "none" : "lax",
       maxAge: SESSION_TTL_MS,
       path: "/",
     },
