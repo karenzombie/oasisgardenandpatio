@@ -7,6 +7,15 @@ import {
 } from "@workspace/api-client-react";
 import { BRAND_LOGOS, getBrandLogo } from "@/lib/brandLogos";
 
+const CATEGORY_IMAGES: Record<string, string> = {
+  "cat-umbrellas": "/src/assets/category-shade.png",
+  "cat-chaise-lounges": "/src/assets/category-lounge.png",
+  "cat-dining": "/src/assets/category-dining.png",
+  shade: "/src/assets/category-shade.png",
+  lounge: "/src/assets/category-lounge.png",
+  dining: "/src/assets/category-dining.png",
+};
+
 export default function Home() {
   const { data: categories } = useListCategories();
   const { data: featuredProducts } = useListFeaturedProducts();
@@ -52,49 +61,45 @@ export default function Home() {
             <div className="h-px w-24 bg-primary/40" />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {topLevelCategories.length > 0 ? (
-              topLevelCategories.slice(0, 3).map((category, i) => (
-                <Link key={category.id} href={`/shop?category=${category.slug}`} className="group group/card block cursor-pointer">
-                  <div className="relative aspect-[3/4] overflow-hidden mb-4 bg-muted">
-                    <img 
-                      src={i === 0 ? "/src/assets/category-lounge.png" : i === 1 ? "/src/assets/category-dining.png" : "/src/assets/category-shade.png"}
-                      alt={category.name}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors duration-500" />
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+            {(topLevelCategories.length > 0
+              ? topLevelCategories
+              : [
+                  { id: "fallback-lounge", name: "Lounge Furniture", slug: "lounge" },
+                  { id: "fallback-dining", name: "Dining Sets", slug: "dining" },
+                  { id: "fallback-shade", name: "Shade & Accessories", slug: "shade" },
+                ]
+            ).map((category) => {
+              const img = CATEGORY_IMAGES[category.slug];
+              return (
+                <Link
+                  key={category.id}
+                  href={`/shop?category=${category.slug}`}
+                  className="group group/card block cursor-pointer"
+                >
+                  <div className="relative aspect-square overflow-hidden mb-3 bg-muted">
+                    {img ? (
+                      <>
+                        <img
+                          src={img}
+                          alt={category.name}
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors duration-500" />
+                      </>
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-secondary/40 text-secondary-foreground/60 font-serif text-sm tracking-widest uppercase">
+                        Image Coming Soon
+                      </div>
+                    )}
                   </div>
-                  <h3 className="font-serif text-xl group-hover:text-primary transition-colors flex items-center justify-between">
+                  <h3 className="font-serif text-base md:text-lg group-hover:text-primary transition-colors flex items-center justify-between">
                     {category.name}
-                    <ArrowRight className="w-5 h-5 opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
+                    <ArrowRight className="w-4 h-4 opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
                   </h3>
                 </Link>
-              ))
-            ) : (
-              // Fallback if no categories
-              <>
-                {[
-                  { name: "Lounge Furniture", img: "/src/assets/category-lounge.png" },
-                  { name: "Dining Sets", img: "/src/assets/category-dining.png" },
-                  { name: "Shade & Accessories", img: "/src/assets/category-shade.png" }
-                ].map((item, i) => (
-                  <Link key={i} href="/shop" className="group group/card block cursor-pointer">
-                    <div className="relative aspect-[3/4] overflow-hidden mb-4 bg-muted">
-                      <img 
-                        src={item.img}
-                        alt={item.name}
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                      />
-                      <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors duration-500" />
-                    </div>
-                    <h3 className="font-serif text-xl group-hover:text-primary transition-colors flex items-center justify-between">
-                      {item.name}
-                      <ArrowRight className="w-5 h-5 opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
-                    </h3>
-                  </Link>
-                ))}
-              </>
-            )}
+              );
+            })}
           </div>
           <div className="text-center mt-12">
             <Button variant="link" className="font-serif text-lg text-primary hover:text-primary/80" asChild>
