@@ -22,6 +22,7 @@ router.get("/manufacturers", async (_req, res): Promise<void> => {
       id: manufacturersTable.id,
       name: manufacturersTable.name,
       slug: manufacturersTable.slug,
+      logoUrl: manufacturersTable.logoUrl,
     })
     .from(manufacturersTable)
     .where(eq(manufacturersTable.isActive, true))

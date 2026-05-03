@@ -50,6 +50,7 @@ export const ListManufacturersResponseItem = zod.object({
   id: zod.number(),
   name: zod.string(),
   slug: zod.string(),
+  logoUrl: zod.string().nullable(),
 });
 export const ListManufacturersResponse = zod.array(
   ListManufacturersResponseItem,

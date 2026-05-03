@@ -10,4 +10,6 @@ export interface Manufacturer {
   id: number;
   name: string;
   slug: string;
+  /** @nullable */
+  logoUrl: string | null;
 }

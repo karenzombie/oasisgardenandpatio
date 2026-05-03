@@ -3847,10 +3847,13 @@ components:
           type: string
         slug:
           type: string
+        logoUrl:
+          type: ["string", "null"]
       required:
         - id
         - name
         - slug
+        - logoUrl
     Material:
       type: object
       properties:
