@@ -1,6 +1,7 @@
 import {
   db,
   categoriesTable,
+  materialsTable,
   legalDocumentsTable,
   siteNotificationsTable,
 } from "@workspace/db";
@@ -151,6 +152,65 @@ async function seedCategories() {
   console.log(`Seeded ${TOP_LEVEL_CATEGORIES.length} top-level categories.`);
 }
 
+const MATERIALS: Array<{
+  name: string;
+  slug: string;
+  description: string;
+  imageUrl: string;
+  displayOrder: number;
+}> = [
+  {
+    name: "Aluminum",
+    slug: "aluminum",
+    description:
+      "Lightweight, weather-resistant cast and extruded aluminum frames.",
+    imageUrl: "/materials/aluminum1.jpg",
+    displayOrder: 1,
+  },
+  {
+    name: "Wrought Iron",
+    slug: "wrought-iron",
+    description:
+      "Classic, heavy-gauge wrought iron — durable and traditional.",
+    imageUrl: "/materials/wroughtiron1.jpg",
+    displayOrder: 2,
+  },
+  {
+    name: "Wicker",
+    slug: "wicker",
+    description: "All-weather resin wicker over rust-resistant frames.",
+    imageUrl: "/materials/wicker1.jpg",
+    displayOrder: 3,
+  },
+];
+
+async function seedMaterials() {
+  for (const m of MATERIALS) {
+    await db
+      .insert(materialsTable)
+      .values({
+        name: m.name,
+        slug: m.slug,
+        description: m.description,
+        imageUrl: m.imageUrl,
+        displayOrder: m.displayOrder,
+        isActive: true,
+      })
+      .onConflictDoUpdate({
+        target: materialsTable.slug,
+        set: {
+          name: m.name,
+          description: m.description,
+          imageUrl: m.imageUrl,
+          displayOrder: m.displayOrder,
+          isActive: true,
+          updatedAt: new Date(),
+        },
+      });
+  }
+  console.log(`Seeded ${MATERIALS.length} materials.`);
+}
+
 async function seedLegalDocuments() {
   const docs: Array<{
     type: "privacy_policy" | "terms_and_conditions";
@@ -226,6 +286,7 @@ async function seedSiteNotifications() {
 async function main() {
   console.log("Seeding Oasis Garden & Patio reference data...");
   await seedCategories();
+  await seedMaterials();
   await seedLegalDocuments();
   await seedSiteNotifications();
   console.log("Done.");

@@ -99,6 +99,20 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Manufacturer"
+  /materials:
+    get:
+      operationId: listMaterials
+      tags: [materials]
+      summary: List active materials
+      responses:
+        "200":
+          description: Active materials
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Material"
   /categories:
     get:
       operationId: listCategories
@@ -3837,6 +3851,28 @@ components:
         - id
         - name
         - slug
+    Material:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: ["string", "null"]
+        imageUrl:
+          type: ["string", "null"]
+        displayOrder:
+          type: integer
+      required:
+        - id
+        - name
+        - slug
+        - description
+        - imageUrl
+        - displayOrder
     AdminManufacturer:
       type: object
       properties:

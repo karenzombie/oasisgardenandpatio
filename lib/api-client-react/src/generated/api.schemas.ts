@@ -407,6 +407,17 @@ export interface Manufacturer {
   slug: string;
 }
 
+export interface Material {
+  id: number;
+  name: string;
+  slug: string;
+  /** @nullable */
+  description: string | null;
+  /** @nullable */
+  imageUrl: string | null;
+  displayOrder: number;
+}
+
 export interface AdminManufacturer {
   id: number;
   name: string;

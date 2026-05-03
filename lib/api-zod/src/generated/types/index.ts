@@ -178,6 +178,7 @@ export * from "./listCushionOrdersParams";
 export * from "./listCushionOrdersStatus";
 export * from "./loginRequest";
 export * from "./manufacturer";
+export * from "./material";
 export * from "./placeOrderRequest";
 export * from "./placeOrderResult";
 export * from "./receiveVendorOrderRequest";

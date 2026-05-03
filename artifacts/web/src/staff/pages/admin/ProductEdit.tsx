@@ -22,6 +22,7 @@ import {
   useAdminUpdateProductInventory,
   useAdminListManufacturers,
   useAdminListCategories,
+  useListMaterials,
   getAdminGetProductQueryKey,
   getAdminListProductsQueryKey,
   type AdminProductImage,
@@ -71,6 +72,7 @@ interface FormState {
   shortDescription: string;
   manufacturerId: string;
   categoryId: string;
+  materialId: string;
   price: string;
   cost: string;
   msrp: string;
@@ -100,6 +102,7 @@ function emptyForm(): FormState {
     shortDescription: "",
     manufacturerId: "none",
     categoryId: "none",
+    materialId: "none",
     price: "",
     cost: "",
     msrp: "",
@@ -137,6 +140,7 @@ export default function ProductEdit() {
   });
   const mfgList = useAdminListManufacturers();
   const catList = useAdminListCategories();
+  const materialList = useListMaterials();
   const createMut = useAdminCreateProduct();
   const updateMut = useAdminUpdateProduct();
   const addImageMut = useAdminAddProductImage();
@@ -168,6 +172,7 @@ export default function ProductEdit() {
       detailQuery.data &&
       mfgList.data &&
       catList.data &&
+      materialList.data &&
       !hydrated
     ) {
       const d = detailQuery.data;
@@ -180,6 +185,7 @@ export default function ProductEdit() {
         shortDescription: d.shortDescription ?? "",
         manufacturerId: d.manufacturerId != null ? String(d.manufacturerId) : "none",
         categoryId: d.categoryId != null ? String(d.categoryId) : "none",
+        materialId: d.materialId != null ? String(d.materialId) : "none",
         price: d.price ?? "",
         cost: d.cost ?? "",
         msrp: d.msrp ?? "",
@@ -199,7 +205,7 @@ export default function ProductEdit() {
       });
       setHydrated(true);
     }
-  }, [detailQuery.data, mfgList.data, catList.data, isNew, hydrated]);
+  }, [detailQuery.data, mfgList.data, catList.data, materialList.data, isNew, hydrated]);
 
   const images: AdminProductImage[] = useMemo(
     () => detailQuery.data?.images ?? [],
@@ -261,7 +267,7 @@ export default function ProductEdit() {
       shortDescription: form.shortDescription.trim() || null,
       manufacturerId: form.manufacturerId === "none" ? null : Number(form.manufacturerId),
       categoryId: form.categoryId === "none" ? null : Number(form.categoryId),
-      materialId: null,
+      materialId: form.materialId === "none" ? null : Number(form.materialId),
       price,
       cost,
       msrp,
@@ -579,6 +585,25 @@ export default function ProductEdit() {
                     {(catList.data ?? []).map((c) => (
                       <SelectItem key={c.id} value={String(c.id)}>
                         {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="p-mat">Material</Label>
+                <Select
+                  value={form.materialId}
+                  onValueChange={(v) => setForm((f) => ({ ...f, materialId: v }))}
+                >
+                  <SelectTrigger id="p-mat">
+                    <SelectValue placeholder="Select material" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">— None —</SelectItem>
+                    {(materialList.data ?? []).map((m) => (
+                      <SelectItem key={m.id} value={String(m.id)}>
+                        {m.name}
                       </SelectItem>
                     ))}
                   </SelectContent>

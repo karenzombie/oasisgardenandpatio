@@ -117,6 +117,7 @@ import type {
   ListCushionOrdersParams,
   LoginRequest,
   Manufacturer,
+  Material,
   PlaceOrderRequest,
   PlaceOrderResult,
   ReceiveVendorOrderRequest,
@@ -485,6 +486,81 @@ export function useListManufacturers<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getListManufacturersQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List active materials
+ */
+export const getListMaterialsUrl = () => {
+  return `/api/materials`;
+};
+
+export const listMaterials = async (
+  options?: RequestInit,
+): Promise<Material[]> => {
+  return customFetch<Material[]>(getListMaterialsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListMaterialsQueryKey = () => {
+  return [`/api/materials`] as const;
+};
+
+export const getListMaterialsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listMaterials>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listMaterials>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListMaterialsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listMaterials>>> = ({
+    signal,
+  }) => listMaterials({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listMaterials>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListMaterialsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listMaterials>>
+>;
+export type ListMaterialsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List active materials
+ */
+
+export function useListMaterials<
+  TData = Awaited<ReturnType<typeof listMaterials>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listMaterials>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListMaterialsQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

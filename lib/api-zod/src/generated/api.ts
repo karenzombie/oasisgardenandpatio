@@ -56,6 +56,19 @@ export const ListManufacturersResponse = zod.array(
 );
 
 /**
+ * @summary List active materials
+ */
+export const ListMaterialsResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  slug: zod.string(),
+  description: zod.string().nullable(),
+  imageUrl: zod.string().nullable(),
+  displayOrder: zod.number(),
+});
+export const ListMaterialsResponse = zod.array(ListMaterialsResponseItem);
+
+/**
  * @summary List active categories
  */
 export const ListCategoriesResponseItem = zod.object({
