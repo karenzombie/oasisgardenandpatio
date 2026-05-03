@@ -420,6 +420,18 @@ export interface Material {
   displayOrder: number;
 }
 
+/**
+ * How purchase orders are routed to this manufacturer.
+ */
+export type AdminManufacturerOrderMethod =
+  (typeof AdminManufacturerOrderMethod)[keyof typeof AdminManufacturerOrderMethod];
+
+export const AdminManufacturerOrderMethod = {
+  email: "email",
+  fax: "fax",
+  manual: "manual",
+} as const;
+
 export interface AdminManufacturer {
   id: number;
   name: string;
@@ -436,10 +448,41 @@ export interface AdminManufacturer {
    * @nullable
    */
   dealerRate: string | null;
+  /** @nullable */
+  addressLine1: string | null;
+  /** @nullable */
+  addressLine2: string | null;
+  /** @nullable */
+  city: string | null;
+  /** @nullable */
+  state: string | null;
+  /** @nullable */
+  postalCode: string | null;
+  /** @nullable */
+  country: string | null;
+  /** @nullable */
+  phone: string | null;
+  /** @nullable */
+  fax: string | null;
+  /** @nullable */
+  orderEmail: string | null;
+  /** @nullable */
+  salesEmail: string | null;
+  /** How purchase orders are routed to this manufacturer. */
+  orderMethod: AdminManufacturerOrderMethod;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
+
+export type CreateManufacturerRequestOrderMethod =
+  (typeof CreateManufacturerRequestOrderMethod)[keyof typeof CreateManufacturerRequestOrderMethod];
+
+export const CreateManufacturerRequestOrderMethod = {
+  email: "email",
+  fax: "fax",
+  manual: "manual",
+} as const;
 
 export interface CreateManufacturerRequest {
   /** @minLength 1 */
@@ -458,8 +501,38 @@ export interface CreateManufacturerRequest {
   displayOrder?: number;
   /** @nullable */
   dealerRate?: string | null;
+  /** @nullable */
+  addressLine1?: string | null;
+  /** @nullable */
+  addressLine2?: string | null;
+  /** @nullable */
+  city?: string | null;
+  /** @nullable */
+  state?: string | null;
+  /** @nullable */
+  postalCode?: string | null;
+  /** @nullable */
+  country?: string | null;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  fax?: string | null;
+  /** @nullable */
+  orderEmail?: string | null;
+  /** @nullable */
+  salesEmail?: string | null;
+  orderMethod?: CreateManufacturerRequestOrderMethod;
   isActive?: boolean;
 }
+
+export type UpdateManufacturerRequestOrderMethod =
+  (typeof UpdateManufacturerRequestOrderMethod)[keyof typeof UpdateManufacturerRequestOrderMethod];
+
+export const UpdateManufacturerRequestOrderMethod = {
+  email: "email",
+  fax: "fax",
+  manual: "manual",
+} as const;
 
 export interface UpdateManufacturerRequest {
   /** @minLength 1 */
@@ -478,6 +551,27 @@ export interface UpdateManufacturerRequest {
   displayOrder?: number;
   /** @nullable */
   dealerRate?: string | null;
+  /** @nullable */
+  addressLine1?: string | null;
+  /** @nullable */
+  addressLine2?: string | null;
+  /** @nullable */
+  city?: string | null;
+  /** @nullable */
+  state?: string | null;
+  /** @nullable */
+  postalCode?: string | null;
+  /** @nullable */
+  country?: string | null;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  fax?: string | null;
+  /** @nullable */
+  orderEmail?: string | null;
+  /** @nullable */
+  salesEmail?: string | null;
+  orderMethod?: UpdateManufacturerRequestOrderMethod;
   isActive?: boolean;
 }
 

@@ -5,6 +5,7 @@
  * Oasis Garden & Patio API
  * OpenAPI spec version: 0.1.0
  */
+import type { UpdateManufacturerRequestOrderMethod } from "./updateManufacturerRequestOrderMethod";
 
 export interface UpdateManufacturerRequest {
   /** @minLength 1 */
@@ -23,5 +24,26 @@ export interface UpdateManufacturerRequest {
   displayOrder?: number;
   /** @nullable */
   dealerRate?: string | null;
+  /** @nullable */
+  addressLine1?: string | null;
+  /** @nullable */
+  addressLine2?: string | null;
+  /** @nullable */
+  city?: string | null;
+  /** @nullable */
+  state?: string | null;
+  /** @nullable */
+  postalCode?: string | null;
+  /** @nullable */
+  country?: string | null;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  fax?: string | null;
+  /** @nullable */
+  orderEmail?: string | null;
+  /** @nullable */
+  salesEmail?: string | null;
+  orderMethod?: UpdateManufacturerRequestOrderMethod;
   isActive?: boolean;
 }

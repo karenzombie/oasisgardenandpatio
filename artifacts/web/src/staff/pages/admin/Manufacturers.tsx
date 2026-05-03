@@ -33,6 +33,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -58,6 +65,8 @@ function slugify(input: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
+type OrderMethod = "email" | "fax" | "manual";
+
 interface FormState {
   name: string;
   slug: string;
@@ -66,6 +75,17 @@ interface FormState {
   website: string;
   displayOrder: string;
   dealerRate: string;
+  addressLine1: string;
+  addressLine2: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  phone: string;
+  fax: string;
+  orderEmail: string;
+  salesEmail: string;
+  orderMethod: OrderMethod;
   isActive: boolean;
   logoUrl: string | null;
 }
@@ -79,6 +99,17 @@ function emptyForm(): FormState {
     website: "",
     displayOrder: "0",
     dealerRate: "",
+    addressLine1: "",
+    addressLine2: "",
+    city: "",
+    state: "",
+    postalCode: "",
+    country: "",
+    phone: "",
+    fax: "",
+    orderEmail: "",
+    salesEmail: "",
+    orderMethod: "manual",
     isActive: true,
     logoUrl: null,
   };
@@ -93,6 +124,17 @@ function formFromRow(row: AdminManufacturer): FormState {
     website: row.website ?? "",
     displayOrder: String(row.displayOrder),
     dealerRate: row.dealerRate ?? "",
+    addressLine1: row.addressLine1 ?? "",
+    addressLine2: row.addressLine2 ?? "",
+    city: row.city ?? "",
+    state: row.state ?? "",
+    postalCode: row.postalCode ?? "",
+    country: row.country ?? "",
+    phone: row.phone ?? "",
+    fax: row.fax ?? "",
+    orderEmail: row.orderEmail ?? "",
+    salesEmail: row.salesEmail ?? "",
+    orderMethod: row.orderMethod,
     isActive: row.isActive,
     logoUrl: row.logoUrl,
   };
@@ -221,6 +263,16 @@ export default function Manufacturers() {
       dealerRate = dealerRateTrim;
     }
 
+    const orderMethod = form.orderMethod;
+    if (orderMethod === "email" && !form.orderEmail.trim()) {
+      setError("Order email is required when orders are sent by email.");
+      return;
+    }
+    if (orderMethod === "fax" && !form.fax.trim()) {
+      setError("Fax number is required when orders are sent by fax.");
+      return;
+    }
+
     const payload = {
       name,
       slug,
@@ -229,6 +281,17 @@ export default function Manufacturers() {
       logoUrl: form.logoUrl,
       displayOrder,
       dealerRate,
+      addressLine1: form.addressLine1.trim() || null,
+      addressLine2: form.addressLine2.trim() || null,
+      city: form.city.trim() || null,
+      state: form.state.trim() || null,
+      postalCode: form.postalCode.trim() || null,
+      country: form.country.trim() || null,
+      phone: form.phone.trim() || null,
+      fax: form.fax.trim() || null,
+      orderEmail: form.orderEmail.trim() || null,
+      salesEmail: form.salesEmail.trim() || null,
+      orderMethod,
       isActive: form.isActive,
     };
 
@@ -441,9 +504,9 @@ export default function Manufacturers() {
 
       {/* Create / edit dialog */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <form onSubmit={handleSubmit}>
-            <DialogHeader>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0">
+          <form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1">
+            <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
               <DialogTitle>
                 {editing ? "Edit manufacturer" : "New manufacturer"}
               </DialogTitle>
@@ -452,7 +515,7 @@ export default function Manufacturers() {
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4 py-4">
+            <div className="space-y-4 px-6 py-4 overflow-y-auto flex-1 min-h-0">
               <div>
                 <Label htmlFor="m-name">Name</Label>
                 <Input
@@ -618,6 +681,173 @@ export default function Manufacturers() {
                 />
               </div>
 
+              {/* Address */}
+              <div className="border-t pt-4">
+                <h4 className="text-sm font-semibold text-slate-900 mb-3">
+                  Address
+                </h4>
+                <div className="space-y-3">
+                  <div>
+                    <Label htmlFor="m-addr1">Street address</Label>
+                    <Input
+                      id="m-addr1"
+                      value={form.addressLine1}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, addressLine1: e.target.value }))
+                      }
+                      placeholder="123 Industry Way"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="m-addr2">Address line 2</Label>
+                    <Input
+                      id="m-addr2"
+                      value={form.addressLine2}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, addressLine2: e.target.value }))
+                      }
+                      placeholder="Suite, building, etc."
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <Label htmlFor="m-city">City</Label>
+                      <Input
+                        id="m-city"
+                        value={form.city}
+                        onChange={(e) =>
+                          setForm((f) => ({ ...f, city: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="m-state">State / region</Label>
+                      <Input
+                        id="m-state"
+                        value={form.state}
+                        onChange={(e) =>
+                          setForm((f) => ({ ...f, state: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="m-zip">Postal code</Label>
+                      <Input
+                        id="m-zip"
+                        value={form.postalCode}
+                        onChange={(e) =>
+                          setForm((f) => ({
+                            ...f,
+                            postalCode: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="m-country">Country</Label>
+                    <Input
+                      id="m-country"
+                      value={form.country}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, country: e.target.value }))
+                      }
+                      placeholder="USA"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Contact */}
+              <div className="border-t pt-4">
+                <h4 className="text-sm font-semibold text-slate-900 mb-3">
+                  Contact
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="m-phone">Phone</Label>
+                    <Input
+                      id="m-phone"
+                      value={form.phone}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, phone: e.target.value }))
+                      }
+                      type="tel"
+                      placeholder="(555) 555-1234"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="m-fax">Fax</Label>
+                    <Input
+                      id="m-fax"
+                      value={form.fax}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, fax: e.target.value }))
+                      }
+                      type="tel"
+                      placeholder="(555) 555-5678"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="m-order-email">Order email</Label>
+                    <Input
+                      id="m-order-email"
+                      value={form.orderEmail}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, orderEmail: e.target.value }))
+                      }
+                      type="email"
+                      placeholder="orders@brand.com"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="m-sales-email">Sales / rep email</Label>
+                    <Input
+                      id="m-sales-email"
+                      value={form.salesEmail}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, salesEmail: e.target.value }))
+                      }
+                      type="email"
+                      placeholder="sales@brand.com"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Order delivery method */}
+              <div className="border-t pt-4">
+                <h4 className="text-sm font-semibold text-slate-900 mb-3">
+                  Order delivery
+                </h4>
+                <Label htmlFor="m-order-method">How orders are sent</Label>
+                <Select
+                  value={form.orderMethod}
+                  onValueChange={(v) =>
+                    setForm((f) => ({ ...f, orderMethod: v as OrderMethod }))
+                  }
+                >
+                  <SelectTrigger id="m-order-method">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="email">
+                      Email (uses order email above)
+                    </SelectItem>
+                    <SelectItem value="fax">
+                      Fax (uses fax number above)
+                    </SelectItem>
+                    <SelectItem value="manual">
+                      Manual (we send POs ourselves)
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-slate-500 mt-1">
+                  Determines how purchase orders generated by the site are
+                  routed to this vendor.
+                </p>
+              </div>
+
               {error && (
                 <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">
                   {error}
@@ -625,7 +855,7 @@ export default function Manufacturers() {
               )}
             </div>
 
-            <DialogFooter>
+            <DialogFooter className="px-6 py-4 border-t shrink-0 bg-slate-50">
               <Button
                 type="button"
                 variant="outline"

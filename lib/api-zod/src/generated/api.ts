@@ -1279,6 +1279,19 @@ export const AdminListManufacturersResponseItem = zod.object({
     .describe(
       "Default dealer discount % off MSRP (numeric, 0-100). Used when a product priced via msrp_minus_dealer_rate.",
     ),
+  addressLine1: zod.string().nullable(),
+  addressLine2: zod.string().nullable(),
+  city: zod.string().nullable(),
+  state: zod.string().nullable(),
+  postalCode: zod.string().nullable(),
+  country: zod.string().nullable(),
+  phone: zod.string().nullable(),
+  fax: zod.string().nullable(),
+  orderEmail: zod.string().nullable(),
+  salesEmail: zod.string().nullable(),
+  orderMethod: zod
+    .enum(["email", "fax", "manual"])
+    .describe("How purchase orders are routed to this manufacturer."),
   isActive: zod.boolean(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
@@ -1295,6 +1308,7 @@ export const adminCreateManufacturerBodySlugRegExp = new RegExp(
   "^[a-z0-9]+(?:-[a-z0-9]+)\*$",
 );
 export const adminCreateManufacturerBodyDisplayOrderDefault = 0;
+export const adminCreateManufacturerBodyOrderMethodDefault = `manual`;
 export const adminCreateManufacturerBodyIsActiveDefault = true;
 
 export const AdminCreateManufacturerBody = zod.object({
@@ -1307,6 +1321,19 @@ export const AdminCreateManufacturerBody = zod.object({
     .number()
     .default(adminCreateManufacturerBodyDisplayOrderDefault),
   dealerRate: zod.string().nullish(),
+  addressLine1: zod.string().nullish(),
+  addressLine2: zod.string().nullish(),
+  city: zod.string().nullish(),
+  state: zod.string().nullish(),
+  postalCode: zod.string().nullish(),
+  country: zod.string().nullish(),
+  phone: zod.string().nullish(),
+  fax: zod.string().nullish(),
+  orderEmail: zod.string().nullish(),
+  salesEmail: zod.string().nullish(),
+  orderMethod: zod
+    .enum(["email", "fax", "manual"])
+    .default(adminCreateManufacturerBodyOrderMethodDefault),
   isActive: zod.boolean().default(adminCreateManufacturerBodyIsActiveDefault),
 });
 
@@ -1329,6 +1356,17 @@ export const AdminUpdateManufacturerBody = zod.object({
   website: zod.string().nullish(),
   displayOrder: zod.number().optional(),
   dealerRate: zod.string().nullish(),
+  addressLine1: zod.string().nullish(),
+  addressLine2: zod.string().nullish(),
+  city: zod.string().nullish(),
+  state: zod.string().nullish(),
+  postalCode: zod.string().nullish(),
+  country: zod.string().nullish(),
+  phone: zod.string().nullish(),
+  fax: zod.string().nullish(),
+  orderEmail: zod.string().nullish(),
+  salesEmail: zod.string().nullish(),
+  orderMethod: zod.enum(["email", "fax", "manual"]).optional(),
   isActive: zod.boolean().optional(),
 });
 
@@ -1346,6 +1384,19 @@ export const AdminUpdateManufacturerResponse = zod.object({
     .describe(
       "Default dealer discount % off MSRP (numeric, 0-100). Used when a product priced via msrp_minus_dealer_rate.",
     ),
+  addressLine1: zod.string().nullable(),
+  addressLine2: zod.string().nullable(),
+  city: zod.string().nullable(),
+  state: zod.string().nullable(),
+  postalCode: zod.string().nullable(),
+  country: zod.string().nullable(),
+  phone: zod.string().nullable(),
+  fax: zod.string().nullable(),
+  orderEmail: zod.string().nullable(),
+  salesEmail: zod.string().nullable(),
+  orderMethod: zod
+    .enum(["email", "fax", "manual"])
+    .describe("How purchase orders are routed to this manufacturer."),
   isActive: zod.boolean(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
@@ -1376,6 +1427,19 @@ export const AdminSetManufacturerActiveResponse = zod.object({
     .describe(
       "Default dealer discount % off MSRP (numeric, 0-100). Used when a product priced via msrp_minus_dealer_rate.",
     ),
+  addressLine1: zod.string().nullable(),
+  addressLine2: zod.string().nullable(),
+  city: zod.string().nullable(),
+  state: zod.string().nullable(),
+  postalCode: zod.string().nullable(),
+  country: zod.string().nullable(),
+  phone: zod.string().nullable(),
+  fax: zod.string().nullable(),
+  orderEmail: zod.string().nullable(),
+  salesEmail: zod.string().nullable(),
+  orderMethod: zod
+    .enum(["email", "fax", "manual"])
+    .describe("How purchase orders are routed to this manufacturer."),
   isActive: zod.boolean(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),

@@ -23,6 +23,19 @@ export const manufacturersTable = pgTable("manufacturers", {
   // pricingMode = 'msrp_minus_dealer_rate'. Optional — products may also
   // override or use a different mode.
   dealerRate: numeric("dealer_rate", { precision: 5, scale: 2 }),
+  // Contact / order routing
+  addressLine1: text("address_line1"),
+  addressLine2: text("address_line2"),
+  city: text("city"),
+  state: text("state"),
+  postalCode: text("postal_code"),
+  country: text("country"),
+  phone: text("phone"),
+  fax: text("fax"),
+  orderEmail: text("order_email"),
+  salesEmail: text("sales_email"),
+  // How vendor orders are delivered. 'email' | 'fax' | 'manual'
+  orderMethod: text("order_method").notNull().default("manual"),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()

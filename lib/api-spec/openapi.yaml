@@ -4044,6 +4044,30 @@ components:
         dealerRate:
           type: ["string", "null"]
           description: Default dealer discount % off MSRP (numeric, 0-100). Used when a product priced via msrp_minus_dealer_rate.
+        addressLine1:
+          type: ["string", "null"]
+        addressLine2:
+          type: ["string", "null"]
+        city:
+          type: ["string", "null"]
+        state:
+          type: ["string", "null"]
+        postalCode:
+          type: ["string", "null"]
+        country:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        fax:
+          type: ["string", "null"]
+        orderEmail:
+          type: ["string", "null"]
+        salesEmail:
+          type: ["string", "null"]
+        orderMethod:
+          type: string
+          enum: [email, fax, manual]
+          description: How purchase orders are routed to this manufacturer.
         isActive:
           type: boolean
         createdAt:
@@ -4061,6 +4085,17 @@ components:
         - website
         - displayOrder
         - dealerRate
+        - addressLine1
+        - addressLine2
+        - city
+        - state
+        - postalCode
+        - country
+        - phone
+        - fax
+        - orderEmail
+        - salesEmail
+        - orderMethod
         - isActive
         - createdAt
         - updatedAt
@@ -4085,6 +4120,30 @@ components:
           default: 0
         dealerRate:
           type: ["string", "null"]
+        addressLine1:
+          type: ["string", "null"]
+        addressLine2:
+          type: ["string", "null"]
+        city:
+          type: ["string", "null"]
+        state:
+          type: ["string", "null"]
+        postalCode:
+          type: ["string", "null"]
+        country:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        fax:
+          type: ["string", "null"]
+        orderEmail:
+          type: ["string", "null"]
+        salesEmail:
+          type: ["string", "null"]
+        orderMethod:
+          type: string
+          enum: [email, fax, manual]
+          default: manual
         isActive:
           type: boolean
           default: true
@@ -4111,6 +4170,29 @@ components:
           type: integer
         dealerRate:
           type: ["string", "null"]
+        addressLine1:
+          type: ["string", "null"]
+        addressLine2:
+          type: ["string", "null"]
+        city:
+          type: ["string", "null"]
+        state:
+          type: ["string", "null"]
+        postalCode:
+          type: ["string", "null"]
+        country:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        fax:
+          type: ["string", "null"]
+        orderEmail:
+          type: ["string", "null"]
+        salesEmail:
+          type: ["string", "null"]
+        orderMethod:
+          type: string
+          enum: [email, fax, manual]
         isActive:
           type: boolean
       required:

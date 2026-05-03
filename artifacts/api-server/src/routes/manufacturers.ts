@@ -46,6 +46,17 @@ function toAdminPayload(row: Manufacturer) {
     website: row.website,
     displayOrder: row.displayOrder,
     dealerRate: row.dealerRate,
+    addressLine1: row.addressLine1,
+    addressLine2: row.addressLine2,
+    city: row.city,
+    state: row.state,
+    postalCode: row.postalCode,
+    country: row.country,
+    phone: row.phone,
+    fax: row.fax,
+    orderEmail: row.orderEmail,
+    salesEmail: row.salesEmail,
+    orderMethod: row.orderMethod as "email" | "fax" | "manual",
     isActive: row.isActive,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -80,6 +91,19 @@ router.post(
         .json({ error: parsed.error.issues[0]?.message ?? "Invalid input" });
       return;
     }
+    const om = parsed.data.orderMethod ?? "manual";
+    if (om === "email" && !parsed.data.orderEmail?.trim()) {
+      res
+        .status(400)
+        .json({ error: "Order email is required when orders are sent by email." });
+      return;
+    }
+    if (om === "fax" && !parsed.data.fax?.trim()) {
+      res
+        .status(400)
+        .json({ error: "Fax number is required when orders are sent by fax." });
+      return;
+    }
     try {
       const [row] = await db
         .insert(manufacturersTable)
@@ -91,6 +115,17 @@ router.post(
           website: parsed.data.website ?? null,
           displayOrder: parsed.data.displayOrder ?? 0,
           dealerRate: parsed.data.dealerRate ?? null,
+          addressLine1: parsed.data.addressLine1 ?? null,
+          addressLine2: parsed.data.addressLine2 ?? null,
+          city: parsed.data.city ?? null,
+          state: parsed.data.state ?? null,
+          postalCode: parsed.data.postalCode ?? null,
+          country: parsed.data.country ?? null,
+          phone: parsed.data.phone ?? null,
+          fax: parsed.data.fax ?? null,
+          orderEmail: parsed.data.orderEmail ?? null,
+          salesEmail: parsed.data.salesEmail ?? null,
+          orderMethod: parsed.data.orderMethod ?? "manual",
           isActive: parsed.data.isActive ?? true,
         })
         .returning();
@@ -123,6 +158,26 @@ router.put(
       res.status(400).json({ error: msg ?? "Invalid input" });
       return;
     }
+    if (
+      body.data.orderMethod === "email" &&
+      body.data.orderEmail !== undefined &&
+      !body.data.orderEmail?.trim()
+    ) {
+      res
+        .status(400)
+        .json({ error: "Order email is required when orders are sent by email." });
+      return;
+    }
+    if (
+      body.data.orderMethod === "fax" &&
+      body.data.fax !== undefined &&
+      !body.data.fax?.trim()
+    ) {
+      res
+        .status(400)
+        .json({ error: "Fax number is required when orders are sent by fax." });
+      return;
+    }
     try {
       const [row] = await db
         .update(manufacturersTable)
@@ -137,6 +192,31 @@ router.put(
             : {}),
           ...(body.data.dealerRate !== undefined
             ? { dealerRate: body.data.dealerRate }
+            : {}),
+          ...(body.data.addressLine1 !== undefined
+            ? { addressLine1: body.data.addressLine1 }
+            : {}),
+          ...(body.data.addressLine2 !== undefined
+            ? { addressLine2: body.data.addressLine2 }
+            : {}),
+          ...(body.data.city !== undefined ? { city: body.data.city } : {}),
+          ...(body.data.state !== undefined ? { state: body.data.state } : {}),
+          ...(body.data.postalCode !== undefined
+            ? { postalCode: body.data.postalCode }
+            : {}),
+          ...(body.data.country !== undefined
+            ? { country: body.data.country }
+            : {}),
+          ...(body.data.phone !== undefined ? { phone: body.data.phone } : {}),
+          ...(body.data.fax !== undefined ? { fax: body.data.fax } : {}),
+          ...(body.data.orderEmail !== undefined
+            ? { orderEmail: body.data.orderEmail }
+            : {}),
+          ...(body.data.salesEmail !== undefined
+            ? { salesEmail: body.data.salesEmail }
+            : {}),
+          ...(body.data.orderMethod !== undefined
+            ? { orderMethod: body.data.orderMethod }
             : {}),
           ...(body.data.isActive !== undefined
             ? { isActive: body.data.isActive }
