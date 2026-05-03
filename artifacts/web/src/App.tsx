@@ -15,7 +15,8 @@ import Fabrics from "@/pages/Fabrics";
 import Materials from "@/pages/Materials";
 import Manufacturers from "@/pages/Manufacturers";
 import Cushions from "@/pages/Cushions";
-import LegalDocument from "@/pages/LegalDocument";
+import PrivacyPolicy from "@/pages/PrivacyPolicy";
+import TermsAndConditions from "@/pages/TermsAndConditions";
 import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
 import ForgotPassword from "@/pages/ForgotPassword";
@@ -40,12 +41,8 @@ function CustomerRouter() {
       <Switch>
         <Route path="/" component={Home} />
         <Route path="/contact" component={Contact} />
-        <Route path="/privacy-policy">
-          {() => <LegalDocument type="privacy_policy" />}
-        </Route>
-        <Route path="/terms-and-conditions">
-          {() => <LegalDocument type="terms_and_conditions" />}
-        </Route>
+        <Route path="/privacy-policy" component={PrivacyPolicy} />
+        <Route path="/terms-and-conditions" component={TermsAndConditions} />
 
         {/* Placeholder Routes */}
         <Route path="/manufacturers" component={Manufacturers} />
@@ -54,9 +51,9 @@ function CustomerRouter() {
         <Route path="/shop/category/:slug" component={Shop} />
         <Route path="/shop/:slug" component={Product} />
         <Route path="/shipping-returns" component={ShippingReturns} />
-        <Route path="/warranty" component={ComingSoon} />
+        <Route path="/warranty">{() => <ComingSoon />}</Route>
         <Route path="/fabrics" component={Fabrics} />
-        <Route path="/commercial" component={ComingSoon} />
+        <Route path="/commercial">{() => <ComingSoon />}</Route>
         <Route path="/cushions" component={Cushions} />
         <Route path="/login" component={Login} />
         <Route path="/signup" component={Signup} />

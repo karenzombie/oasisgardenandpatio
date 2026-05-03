@@ -1,9 +1,15 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 
-export default function ComingSoon() {
+interface ComingSoonProps {
+  title?: string;
+}
+
+export default function ComingSoon({ title }: ComingSoonProps = {}) {
   const [location] = useLocation();
-  const pageName = location.replace('/', '').charAt(0).toUpperCase() + location.slice(2);
+  const pageName =
+    title ??
+    (location.replace("/", "").charAt(0).toUpperCase() + location.slice(2));
 
   return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center px-4 py-24 bg-background">
