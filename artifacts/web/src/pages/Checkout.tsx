@@ -1,13 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useGetCart,
   useListAccountAddresses,
   usePlaceOrder,
+  useQuoteCheckout,
   getGetCartQueryKey,
   getListAccountAddressesQueryKey,
   type AccountAddress,
+  type CheckoutQuoteResponse,
 } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
@@ -131,9 +133,73 @@ export default function Checkout() {
   }, [addresses, selectedId]);
   const shippingState =
     (selectedAddress?.state ?? form.state).toUpperCase().trim();
-  const shippingNum = shippingState === "CA" ? 0 : shippingState ? 50 : 0;
-  const taxNum = 0;
-  const totalNum = subtotalNum + shippingNum + taxNum;
+  const shippingZip = (selectedAddress?.zip ?? form.zip).trim();
+
+  // Live quote: re-fetched whenever the destination state/ZIP or cart
+  // changes. The server is the source of truth for shipping + tax. We
+  // remember which inputs each quote was issued for so we can block
+  // checkout submission until the displayed total matches the address.
+  const quoteM = useQuoteCheckout();
+  const quoteMutate = quoteM.mutate;
+  // We keep the quote *payload* in component state alongside the request
+  // key it was issued for. The displayed totals always read from this
+  // confirmed value rather than the raw mutation `data`, so an out-of-
+  // order response from a prior request can never overwrite the totals
+  // shown to the customer.
+  const [confirmedQuote, setConfirmedQuote] = useState<{
+    key: { state: string; zip: string; subtotal: string };
+    data: CheckoutQuoteResponse;
+  } | null>(null);
+  // Monotonic request id — only the response whose id still matches the
+  // latest dispatched request is allowed to update `confirmedQuote`.
+  const quoteSeq = useRef(0);
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    if (!cart || cart.items.length === 0) return;
+    const subtotalKey = String(cart.subtotal ?? "");
+    const myReq = ++quoteSeq.current;
+    quoteMutate(
+      {
+        data: {
+          state: shippingState || null,
+          zip: shippingZip || null,
+        },
+      },
+      {
+        onSuccess: (data) => {
+          if (myReq !== quoteSeq.current) return;
+          setConfirmedQuote({
+            key: {
+              state: shippingState,
+              zip: shippingZip,
+              subtotal: subtotalKey,
+            },
+            data,
+          });
+        },
+      },
+    );
+  }, [
+    quoteMutate,
+    isAuthenticated,
+    shippingState,
+    shippingZip,
+    cart?.itemCount,
+    cart?.subtotal,
+    cart,
+  ]);
+
+  const quoteFresh =
+    !!confirmedQuote &&
+    confirmedQuote.key.state === shippingState &&
+    confirmedQuote.key.zip === shippingZip &&
+    confirmedQuote.key.subtotal === String(cart?.subtotal ?? "");
+  const quote = quoteFresh ? confirmedQuote!.data : null;
+  const shippingNum = quote ? Number(quote.shipping) : 0;
+  const taxNum = quote ? Number(quote.tax) : 0;
+  const totalNum = quote
+    ? Number(quote.total)
+    : subtotalNum + shippingNum + taxNum;
 
   function setField<K extends keyof AddressForm>(key: K, value: string) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -142,6 +208,14 @@ export default function Checkout() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (placeOrderM.isPending) return;
+    if (!quoteFresh) {
+      toast({
+        title: "One moment",
+        description:
+          "We're calculating your final shipping and tax. Try again in a second.",
+      });
+      return;
+    }
 
     if (typeof selectedId === "number") {
       placeOrderM.mutate({
@@ -380,8 +454,10 @@ export default function Checkout() {
               <div className="flex-1 text-sm">
                 <p className="font-medium">Standard Delivery</p>
                 <p className="text-muted-foreground">
-                  Free within California. Flat $50 elsewhere. White-glove
-                  scheduling provided after order placement.
+                  White-glove scheduling provided after order placement.
+                  {quote?.freeShippingThresholdMet
+                    ? " Your order qualifies for complimentary shipping."
+                    : ""}
                 </p>
               </div>
               <span className="font-serif">{formatMoney(shippingNum)}</span>
@@ -449,12 +525,39 @@ export default function Checkout() {
               </div>
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">Shipping</dt>
-                <dd>{shippingNum === 0 && shippingState === "CA" ? "Free" : formatMoney(shippingNum)}</dd>
+                <dd>
+                  {!shippingState
+                    ? "Enter address"
+                    : !quoteFresh
+                      ? "Calculating…"
+                      : shippingNum === 0
+                        ? "Free"
+                        : formatMoney(shippingNum)}
+                </dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-muted-foreground">Tax</dt>
-                <dd className="text-muted-foreground">Calculated later</dd>
+                <dt className="text-muted-foreground">
+                  Tax
+                  {quote && quote.taxRate > 0
+                    ? ` (${(quote.taxRate * 100).toFixed(2)}%)`
+                    : ""}
+                </dt>
+                <dd>
+                  {!shippingState
+                    ? "Enter address"
+                    : !quoteFresh
+                      ? "Calculating…"
+                      : formatMoney(taxNum)}
+                </dd>
               </div>
+              {quote && shippingState ? (
+                <p className="text-[11px] text-muted-foreground">
+                  {quote.taxJurisdiction} · ships {quote.shippingZoneLabel}
+                  {quote.shippingWeightLbs > 0
+                    ? ` (${quote.shippingWeightLbs.toFixed(1)} lb)`
+                    : ""}
+                </p>
+              ) : null}
             </dl>
             <div className="border-t border-border mt-4 pt-4 flex justify-between font-serif text-lg">
               <span>Total</span>
@@ -462,10 +565,14 @@ export default function Checkout() {
             </div>
             <Button
               type="submit"
-              disabled={placeOrderM.isPending}
+              disabled={placeOrderM.isPending || !quoteFresh}
               className="w-full rounded-none mt-6 font-serif tracking-widest uppercase"
             >
-              {placeOrderM.isPending ? "Placing Order…" : "Place Order"}
+              {placeOrderM.isPending
+                ? "Placing Order…"
+                : !quoteFresh
+                  ? "Calculating…"
+                  : "Place Order"}
             </Button>
             <p className="text-[11px] text-muted-foreground mt-3 text-center">
               By placing this order you agree to our terms. Payment will be

@@ -370,6 +370,35 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /checkout/quote:
+    post:
+      operationId: quoteCheckout
+      tags: [checkout]
+      summary: Compute shipping + tax for the signed-in customer's cart
+      description: >-
+        Returns the live shipping cost and sales tax for the current cart based
+        on a destination state. Used by the checkout page to show realistic
+        totals before the order is placed. The quote is informational: the
+        server re-computes the same values when the order is actually placed.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckoutQuoteRequest"
+      responses:
+        "200":
+          description: Quote
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutQuoteResponse"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /checkout:
     post:
       operationId: placeOrder
@@ -2318,6 +2347,34 @@ paths:
         content:
           application/json:
             schema: { $ref: "#/components/schemas/UpdateOrderStatusRequest" }
+      responses:
+        "200":
+          description: Updated order
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminOrderDetail" }
+        "400": { description: Bad request, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+        "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+  /admin/orders/{id}/totals:
+    post:
+      operationId: adminUpdateOrderTotals
+      tags: [admin-orders]
+      summary: Override the shipping and/or tax amounts on an order
+      description: >-
+        Manually set the delivery (shipping) amount and/or the tax amount for
+        an order. The order's total and balance due are recomputed from
+        subtotal + the new values; deposit is preserved. A status-history note
+        is written so the override is auditable.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdminUpdateOrderTotalsRequest" }
       responses:
         "200":
           description: Updated order
@@ -4698,6 +4755,70 @@ components:
       required:
         - orderNumber
         - total
+    CheckoutQuoteRequest:
+      type: object
+      properties:
+        state:
+          type: ["string", "null"]
+          description: 2-letter US state code for the destination, e.g. "CA". Null/empty means unknown destination.
+        zip:
+          type: ["string", "null"]
+          description: Destination ZIP code; used to look up the per-jurisdiction CA combined sales tax rate.
+      required:
+        - state
+    CheckoutQuoteResponse:
+      type: object
+      properties:
+        subtotal: { type: string }
+        shipping: { type: string }
+        tax: { type: string }
+        total: { type: string }
+        shippingMode:
+          type: string
+          enum: [flat, percentage, free]
+        freeShippingThresholdMet: { type: boolean }
+        taxRate:
+          type: number
+          minimum: 0
+          description: Decimal combined state+local tax rate applied (0 if shipping outside CA).
+        taxJurisdiction:
+          type: string
+          description: Human-readable label for the jurisdiction whose rate was applied.
+        shippingWeightLbs:
+          type: number
+          minimum: 0
+          description: Total billable cart weight used to pick the shipping tier.
+        shippingZone:
+          type: string
+          description: Carrier zone code (Z1–Z6) derived from destination state.
+        shippingZoneLabel:
+          type: string
+          description: Human-readable name for the destination zone.
+      required:
+        - subtotal
+        - shipping
+        - tax
+        - total
+        - shippingMode
+        - freeShippingThresholdMet
+        - taxRate
+        - taxJurisdiction
+        - shippingWeightLbs
+        - shippingZone
+        - shippingZoneLabel
+    AdminUpdateOrderTotalsRequest:
+      type: object
+      description: At least one of deliveryAmount or taxAmount must be provided.
+      properties:
+        deliveryAmount:
+          type: number
+          minimum: 0
+        taxAmount:
+          type: number
+          minimum: 0
+        note:
+          type: ["string", "null"]
+          description: Optional reason for the override; written to status history.
     CurrentUser:
       type: object
       properties:

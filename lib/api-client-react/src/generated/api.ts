@@ -67,6 +67,7 @@ import type {
   AdminResetPasswordResponse,
   AdminSet,
   AdminSetSummary,
+  AdminUpdateOrderTotalsRequest,
   AdminUserDetail,
   AdminUserSummary,
   AdminVendorOrderDetail,
@@ -80,6 +81,8 @@ import type {
   CatalogProductsPage,
   Category,
   ChangePasswordRequest,
+  CheckoutQuoteRequest,
+  CheckoutQuoteResponse,
   CreateAddressRequest,
   CreateBannerRequest,
   CreateCarrierRequest,
@@ -1324,6 +1327,93 @@ export function useGetAccountOrder<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * Returns the live shipping cost and sales tax for the current cart based on a destination state. Used by the checkout page to show realistic totals before the order is placed. The quote is informational: the server re-computes the same values when the order is actually placed.
+ * @summary Compute shipping + tax for the signed-in customer's cart
+ */
+export const getQuoteCheckoutUrl = () => {
+  return `/api/checkout/quote`;
+};
+
+export const quoteCheckout = async (
+  checkoutQuoteRequest: CheckoutQuoteRequest,
+  options?: RequestInit,
+): Promise<CheckoutQuoteResponse> => {
+  return customFetch<CheckoutQuoteResponse>(getQuoteCheckoutUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(checkoutQuoteRequest),
+  });
+};
+
+export const getQuoteCheckoutMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof quoteCheckout>>,
+    TError,
+    { data: BodyType<CheckoutQuoteRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof quoteCheckout>>,
+  TError,
+  { data: BodyType<CheckoutQuoteRequest> },
+  TContext
+> => {
+  const mutationKey = ["quoteCheckout"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof quoteCheckout>>,
+    { data: BodyType<CheckoutQuoteRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return quoteCheckout(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type QuoteCheckoutMutationResult = NonNullable<
+  Awaited<ReturnType<typeof quoteCheckout>>
+>;
+export type QuoteCheckoutMutationBody = BodyType<CheckoutQuoteRequest>;
+export type QuoteCheckoutMutationError = ErrorType<Error>;
+
+/**
+ * @summary Compute shipping + tax for the signed-in customer's cart
+ */
+export const useQuoteCheckout = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof quoteCheckout>>,
+    TError,
+    { data: BodyType<CheckoutQuoteRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof quoteCheckout>>,
+  TError,
+  { data: BodyType<CheckoutQuoteRequest> },
+  TContext
+> => {
+  return useMutation(getQuoteCheckoutMutationOptions(options));
+};
 
 /**
  * @summary Place an order from the signed-in customer's cart
@@ -8015,6 +8105,95 @@ export const useAdminUpdateOrderStatus = <
   TContext
 > => {
   return useMutation(getAdminUpdateOrderStatusMutationOptions(options));
+};
+
+/**
+ * Manually set the delivery (shipping) amount and/or the tax amount for an order. The order's total and balance due are recomputed from subtotal + the new values; deposit is preserved. A status-history note is written so the override is auditable.
+ * @summary Override the shipping and/or tax amounts on an order
+ */
+export const getAdminUpdateOrderTotalsUrl = (id: number) => {
+  return `/api/admin/orders/${id}/totals`;
+};
+
+export const adminUpdateOrderTotals = async (
+  id: number,
+  adminUpdateOrderTotalsRequest: AdminUpdateOrderTotalsRequest,
+  options?: RequestInit,
+): Promise<AdminOrderDetail> => {
+  return customFetch<AdminOrderDetail>(getAdminUpdateOrderTotalsUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(adminUpdateOrderTotalsRequest),
+  });
+};
+
+export const getAdminUpdateOrderTotalsMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateOrderTotals>>,
+    TError,
+    { id: number; data: BodyType<AdminUpdateOrderTotalsRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUpdateOrderTotals>>,
+  TError,
+  { id: number; data: BodyType<AdminUpdateOrderTotalsRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminUpdateOrderTotals"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUpdateOrderTotals>>,
+    { id: number; data: BodyType<AdminUpdateOrderTotalsRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminUpdateOrderTotals(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminUpdateOrderTotalsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUpdateOrderTotals>>
+>;
+export type AdminUpdateOrderTotalsMutationBody =
+  BodyType<AdminUpdateOrderTotalsRequest>;
+export type AdminUpdateOrderTotalsMutationError = ErrorType<Error>;
+
+/**
+ * @summary Override the shipping and/or tax amounts on an order
+ */
+export const useAdminUpdateOrderTotals = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateOrderTotals>>,
+    TError,
+    { id: number; data: BodyType<AdminUpdateOrderTotalsRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUpdateOrderTotals>>,
+  TError,
+  { id: number; data: BodyType<AdminUpdateOrderTotalsRequest> },
+  TContext
+> => {
+  return useMutation(getAdminUpdateOrderTotalsMutationOptions(options));
 };
 
 /**

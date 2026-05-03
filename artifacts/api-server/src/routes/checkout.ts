@@ -10,9 +10,19 @@ import {
   addressesTable,
   productsTable,
 } from "@workspace/db";
-import { PlaceOrderResponse as PlaceOrderResultSchema, PlaceOrderBody } from "@workspace/api-zod";
+import {
+  PlaceOrderResponse as PlaceOrderResultSchema,
+  PlaceOrderBody,
+  QuoteCheckoutBody,
+  QuoteCheckoutResponse,
+} from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/requireAuth";
 import { getOrCreateCustomer } from "./account";
+import {
+  loadPricingSettings,
+  computeShipping,
+  computeTax,
+} from "../lib/checkoutPricing";
 
 const router: IRouter = Router();
 
@@ -51,6 +61,7 @@ router.post(
     // validation 4xx returns cleanly without an open transaction).
     let shippingAddressId: number | null = null;
     let shippingState: string | null = null;
+    let shippingZip: string | null = null;
 
     if (data.shippingAddressId) {
       const [existing] = await db
@@ -69,6 +80,7 @@ router.post(
       }
       shippingAddressId = existing.id;
       shippingState = existing.state;
+      shippingZip = existing.zip;
     } else if (data.shippingAddress) {
       const a = data.shippingAddress;
       const [created] = await db
@@ -89,6 +101,7 @@ router.post(
         .returning();
       shippingAddressId = created.id;
       shippingState = created.state;
+      shippingZip = created.zip;
     } else {
       res.status(400).json({ error: "Shipping address is required" });
       return;
@@ -134,10 +147,7 @@ router.post(
       }
     }
 
-    // Placeholder shipping rule: free in CA, flat $50 elsewhere.
-    const shippingCents =
-      shippingState && shippingState.toUpperCase() === "CA" ? 0 : 5000;
-    const taxCents = 0;
+    const pricingSettings = await loadPricingSettings();
 
     const orderNumber = generateOrderNumber();
 
@@ -162,6 +172,7 @@ router.post(
             name: productsTable.name,
             quantity: cartItemsTable.quantity,
             unitPrice: cartItemsTable.price,
+            weight: productsTable.weight,
             availableOnline: productsTable.availableOnline,
             isActive: productsTable.isActive,
           })
@@ -188,6 +199,23 @@ router.post(
           subtotalCents += c;
           return c;
         });
+        const shipping = computeShipping(
+          subtotalCents,
+          shippingState,
+          lines.map((l) => ({
+            weightLbs: l.weight == null ? null : Number(l.weight),
+            quantity: l.quantity,
+          })),
+          pricingSettings,
+        );
+        const tax = computeTax(
+          subtotalCents,
+          shippingState,
+          shippingZip,
+          pricingSettings,
+        );
+        const shippingCents = shipping.cents;
+        const taxCents = tax.cents;
         const totalCents = subtotalCents + shippingCents + taxCents;
 
         const [order] = await tx
@@ -251,6 +279,79 @@ router.post(
       PlaceOrderResultSchema.parse({
         orderNumber,
         total: moneyFromCents(result.totalCents),
+      }),
+    );
+  },
+);
+
+router.post(
+  "/checkout/quote",
+  requireAuth,
+  async (req: Request, res: Response): Promise<void> => {
+    const parsed = QuoteCheckoutBody.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: parsed.error.issues[0]?.message ?? "Invalid body" });
+      return;
+    }
+    const userId = req.user!.id;
+
+    // Compute subtotal from cart contents (don't trust the client).
+    const [cart] = await db
+      .select()
+      .from(cartsTable)
+      .where(eq(cartsTable.userId, userId))
+      .limit(1);
+
+    let subtotalCents = 0;
+    let lineInputs: { weightLbs: number | null; quantity: number }[] = [];
+    if (cart) {
+      const lines = await db
+        .select({
+          quantity: cartItemsTable.quantity,
+          unitPrice: cartItemsTable.price,
+          weight: productsTable.weight,
+        })
+        .from(cartItemsTable)
+        .innerJoin(
+          productsTable,
+          eq(productsTable.id, cartItemsTable.productId),
+        )
+        .where(eq(cartItemsTable.cartId, cart.id));
+      for (const l of lines) {
+        subtotalCents += toCents(l.unitPrice) * l.quantity;
+      }
+      lineInputs = lines.map((l) => ({
+        weightLbs: l.weight == null ? null : Number(l.weight),
+        quantity: l.quantity,
+      }));
+    }
+
+    const settings = await loadPricingSettings();
+    const state =
+      parsed.data.state && parsed.data.state.trim()
+        ? parsed.data.state.trim().toUpperCase()
+        : null;
+    const zip =
+      parsed.data.zip && parsed.data.zip.trim() ? parsed.data.zip.trim() : null;
+    const shipping = computeShipping(subtotalCents, state, lineInputs, settings);
+    const tax = computeTax(subtotalCents, state, zip, settings);
+    const totalCents = subtotalCents + shipping.cents + tax.cents;
+
+    res.json(
+      QuoteCheckoutResponse.parse({
+        subtotal: moneyFromCents(subtotalCents),
+        shipping: moneyFromCents(shipping.cents),
+        tax: moneyFromCents(tax.cents),
+        total: moneyFromCents(totalCents),
+        shippingMode: settings.shippingMode,
+        freeShippingThresholdMet: shipping.freeShippingApplied,
+        taxRate: tax.rate,
+        taxJurisdiction: tax.jurisdiction,
+        shippingWeightLbs: shipping.weightLbs,
+        shippingZone: shipping.zone.zone,
+        shippingZoneLabel: shipping.zone.label,
       }),
     );
   },

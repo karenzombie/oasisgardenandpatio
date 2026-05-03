@@ -6,6 +6,7 @@ import {
   useAdminGetOrder,
   useAdminUpdateOrderStatus,
   useAdminUpdateOrderNotes,
+  useAdminUpdateOrderTotals,
   useAdminReviewCancellationRequest,
   useAdminGenerateVendorOrders,
   getAdminGetOrderQueryKey,
@@ -118,16 +119,23 @@ export default function OrderDetail() {
   } | null>(null);
   const [reviewNote, setReviewNote] = useState("");
   const [refundAmt, setRefundAmt] = useState("");
+  const [shippingDraft, setShippingDraft] = useState("");
+  const [taxDraft, setTaxDraft] = useState("");
+  const [totalsNote, setTotalsNote] = useState("");
 
   useEffect(() => {
     if (order) {
       setNotesDraft(order.notes ?? "");
       setPendingStatus(order.status);
+      setShippingDraft(String(order.deliveryAmount));
+      setTaxDraft(String(order.taxAmount));
+      setTotalsNote("");
     }
   }, [order]);
 
   const updateStatus = useAdminUpdateOrderStatus();
   const updateNotes = useAdminUpdateOrderNotes();
+  const updateTotals = useAdminUpdateOrderTotals();
   const reviewCancellation = useAdminReviewCancellationRequest();
   const generateVendorOrders = useAdminGenerateVendorOrders();
 
@@ -189,6 +197,52 @@ export default function OrderDetail() {
         onSuccess: () => {
           toast({ title: "Status updated" });
           setStatusNote("");
+          invalidate();
+        },
+        onError: (e: unknown) => {
+          toast({
+            title: "Update failed",
+            description: e instanceof Error ? e.message : "Unknown error",
+            variant: "destructive",
+          });
+        },
+      },
+    );
+  }
+
+  function handleTotalsSave() {
+    if (!order) return;
+    const newDelivery = Number(shippingDraft);
+    const newTax = Number(taxDraft);
+    if (
+      !Number.isFinite(newDelivery) ||
+      newDelivery < 0 ||
+      !Number.isFinite(newTax) ||
+      newTax < 0
+    ) {
+      toast({
+        title: "Invalid amount",
+        description: "Shipping and tax must be non-negative numbers.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const deliveryChanged = newDelivery !== Number(order.deliveryAmount);
+    const taxChanged = newTax !== Number(order.taxAmount);
+    if (!deliveryChanged && !taxChanged) return;
+    updateTotals.mutate(
+      {
+        id: orderId,
+        data: {
+          deliveryAmount: deliveryChanged ? newDelivery : undefined,
+          taxAmount: taxChanged ? newTax : undefined,
+          note: totalsNote || null,
+        },
+      },
+      {
+        onSuccess: () => {
+          toast({ title: "Totals updated" });
+          setTotalsNote("");
           invalidate();
         },
         onError: (e: unknown) => {
@@ -496,6 +550,55 @@ export default function OrderDetail() {
                   </tr>
                 </tfoot>
               </table>
+              <div className="border-t px-4 py-3">
+                <div className="text-xs font-medium text-slate-500 uppercase mb-2">
+                  Override shipping &amp; tax
+                </div>
+                <div className="flex flex-wrap items-end gap-2">
+                  <div className="w-32">
+                    <Label htmlFor="override-shipping">Shipping ($)</Label>
+                    <Input
+                      id="override-shipping"
+                      inputMode="decimal"
+                      value={shippingDraft}
+                      onChange={(e) => setShippingDraft(e.target.value)}
+                    />
+                  </div>
+                  <div className="w-32">
+                    <Label htmlFor="override-tax">Tax ($)</Label>
+                    <Input
+                      id="override-tax"
+                      inputMode="decimal"
+                      value={taxDraft}
+                      onChange={(e) => setTaxDraft(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex-1 min-w-[200px]">
+                    <Label htmlFor="override-note">Note (optional)</Label>
+                    <Input
+                      id="override-note"
+                      value={totalsNote}
+                      onChange={(e) => setTotalsNote(e.target.value)}
+                      placeholder="e.g. waived shipping per manager"
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    onClick={handleTotalsSave}
+                    disabled={
+                      updateTotals.isPending ||
+                      (Number(shippingDraft) === Number(order.deliveryAmount) &&
+                        Number(taxDraft) === Number(order.taxAmount))
+                    }
+                  >
+                    {updateTotals.isPending ? "Saving…" : "Save totals"}
+                  </Button>
+                </div>
+                <p className="text-xs text-slate-500 mt-2">
+                  Total and balance due will recalculate from subtotal + these
+                  values; deposit is preserved.
+                </p>
+              </div>
             </div>
 
             <div className="rounded-md border bg-white p-4">

@@ -25,6 +25,8 @@ import {
   AdminUpdateOrderStatusBody,
   AdminUpdateOrderNotesParams,
   AdminUpdateOrderNotesBody,
+  AdminUpdateOrderTotalsParams,
+  AdminUpdateOrderTotalsBody,
   AdminListCancellationRequestsQueryParams,
   AdminReviewCancellationRequestParams,
   AdminReviewCancellationRequestBody,
@@ -445,6 +447,109 @@ router.post(
         changes: { toStatus: body.data.toStatus, note: body.data.note ?? null },
       });
     }
+    const detail = await loadOrderDetail(orderId);
+    if (!detail) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+    res.json(detail);
+  },
+);
+
+router.post(
+  "/admin/orders/:id/totals",
+  requireAuth,
+  requireRole("admin"),
+  async (req: Request, res: Response): Promise<void> => {
+    const params = AdminUpdateOrderTotalsParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: "Invalid id" });
+      return;
+    }
+    const body = AdminUpdateOrderTotalsBody.safeParse(req.body);
+    if (!body.success) {
+      res
+        .status(400)
+        .json({ error: body.error.issues[0]?.message ?? "Invalid body" });
+      return;
+    }
+    if (
+      body.data.deliveryAmount === undefined &&
+      body.data.taxAmount === undefined
+    ) {
+      res
+        .status(400)
+        .json({ error: "Provide at least one of deliveryAmount or taxAmount" });
+      return;
+    }
+    const orderId = params.data.id;
+    const userId = req.session?.userId ?? null;
+
+    const result = await db.transaction(async (tx) => {
+      const [existing] = await tx
+        .select()
+        .from(ordersTable)
+        .where(eq(ordersTable.id, orderId))
+        .for("update")
+        .limit(1);
+      if (!existing) return { kind: "not_found" as const };
+
+      const subtotal = Number(existing.subtotal);
+      const deposit = Number(existing.depositAmount);
+      const oldDelivery = Number(existing.deliveryAmount);
+      const oldTax = Number(existing.taxAmount);
+      const newDelivery =
+        body.data.deliveryAmount !== undefined
+          ? body.data.deliveryAmount
+          : oldDelivery;
+      const newTax =
+        body.data.taxAmount !== undefined ? body.data.taxAmount : oldTax;
+      const newTotal = subtotal + newDelivery + newTax;
+      const newBalance = newTotal - deposit;
+
+      await tx
+        .update(ordersTable)
+        .set({
+          deliveryAmount: money(newDelivery),
+          taxAmount: money(newTax),
+          total: money(newTotal),
+          balanceDue: money(newBalance),
+        })
+        .where(eq(ordersTable.id, orderId));
+
+      const parts: string[] = [];
+      if (body.data.deliveryAmount !== undefined)
+        parts.push(`delivery ${money(oldDelivery)} → ${money(newDelivery)}`);
+      if (body.data.taxAmount !== undefined)
+        parts.push(`tax ${money(oldTax)} → ${money(newTax)}`);
+      const noteSuffix = body.data.note ? ` — ${body.data.note}` : "";
+      await tx.insert(orderStatusHistoryTable).values({
+        orderId,
+        fromStatus: existing.status,
+        toStatus: existing.status,
+        changedByUserId: userId,
+        note: `Totals overridden: ${parts.join(", ")}${noteSuffix}`,
+      });
+
+      return { kind: "updated" as const };
+    });
+
+    if (result.kind === "not_found") {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+
+    await recordAudit(req, {
+      action: "order.totals_override",
+      entityType: "order",
+      entityId: orderId,
+      changes: {
+        deliveryAmount: body.data.deliveryAmount,
+        taxAmount: body.data.taxAmount,
+        note: body.data.note ?? null,
+      },
+    });
+
     const detail = await loadOrderDetail(orderId);
     if (!detail) {
       res.status(404).json({ error: "Not found" });

@@ -1013,6 +1013,68 @@ export interface PlaceOrderResult {
   total: string;
 }
 
+export interface CheckoutQuoteRequest {
+  /**
+   * 2-letter US state code for the destination, e.g. "CA". Null/empty means unknown destination.
+   * @nullable
+   */
+  state: string | null;
+  /**
+   * Destination ZIP code; used to look up the per-jurisdiction CA combined sales tax rate.
+   * @nullable
+   */
+  zip?: string | null;
+}
+
+export type CheckoutQuoteResponseShippingMode =
+  (typeof CheckoutQuoteResponseShippingMode)[keyof typeof CheckoutQuoteResponseShippingMode];
+
+export const CheckoutQuoteResponseShippingMode = {
+  flat: "flat",
+  percentage: "percentage",
+  free: "free",
+} as const;
+
+export interface CheckoutQuoteResponse {
+  subtotal: string;
+  shipping: string;
+  tax: string;
+  total: string;
+  shippingMode: CheckoutQuoteResponseShippingMode;
+  freeShippingThresholdMet: boolean;
+  /**
+   * Decimal combined state+local tax rate applied (0 if shipping outside CA).
+   * @minimum 0
+   */
+  taxRate: number;
+  /** Human-readable label for the jurisdiction whose rate was applied. */
+  taxJurisdiction: string;
+  /**
+   * Total billable cart weight used to pick the shipping tier.
+   * @minimum 0
+   */
+  shippingWeightLbs: number;
+  /** Carrier zone code (Z1–Z6) derived from destination state. */
+  shippingZone: string;
+  /** Human-readable name for the destination zone. */
+  shippingZoneLabel: string;
+}
+
+/**
+ * At least one of deliveryAmount or taxAmount must be provided.
+ */
+export interface AdminUpdateOrderTotalsRequest {
+  /** @minimum 0 */
+  deliveryAmount?: number;
+  /** @minimum 0 */
+  taxAmount?: number;
+  /**
+   * Optional reason for the override; written to status history.
+   * @nullable
+   */
+  note?: string | null;
+}
+
 export type CurrentUserRole =
   (typeof CurrentUserRole)[keyof typeof CurrentUserRole];
 

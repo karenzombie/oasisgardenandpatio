@@ -413,6 +413,59 @@ export const GetAccountOrderResponse = zod.object({
 });
 
 /**
+ * Returns the live shipping cost and sales tax for the current cart based on a destination state. Used by the checkout page to show realistic totals before the order is placed. The quote is informational: the server re-computes the same values when the order is actually placed.
+ * @summary Compute shipping + tax for the signed-in customer's cart
+ */
+export const QuoteCheckoutBody = zod.object({
+  state: zod
+    .string()
+    .nullable()
+    .describe(
+      '2-letter US state code for the destination, e.g. \"CA\". Null\/empty means unknown destination.',
+    ),
+  zip: zod
+    .string()
+    .nullish()
+    .describe(
+      "Destination ZIP code; used to look up the per-jurisdiction CA combined sales tax rate.",
+    ),
+});
+
+export const quoteCheckoutResponseTaxRateMin = 0;
+
+export const quoteCheckoutResponseShippingWeightLbsMin = 0;
+
+export const QuoteCheckoutResponse = zod.object({
+  subtotal: zod.string(),
+  shipping: zod.string(),
+  tax: zod.string(),
+  total: zod.string(),
+  shippingMode: zod.enum(["flat", "percentage", "free"]),
+  freeShippingThresholdMet: zod.boolean(),
+  taxRate: zod
+    .number()
+    .min(quoteCheckoutResponseTaxRateMin)
+    .describe(
+      "Decimal combined state+local tax rate applied (0 if shipping outside CA).",
+    ),
+  taxJurisdiction: zod
+    .string()
+    .describe(
+      "Human-readable label for the jurisdiction whose rate was applied.",
+    ),
+  shippingWeightLbs: zod
+    .number()
+    .min(quoteCheckoutResponseShippingWeightLbsMin)
+    .describe("Total billable cart weight used to pick the shipping tier."),
+  shippingZone: zod
+    .string()
+    .describe("Carrier zone code (Z1–Z6) derived from destination state."),
+  shippingZoneLabel: zod
+    .string()
+    .describe("Human-readable name for the destination zone."),
+});
+
+/**
  * @summary Place an order from the signed-in customer's cart
  */
 export const placeOrderBodyShippingAddressTypeDefault = `shipping`;
@@ -2910,6 +2963,147 @@ export const AdminUpdateOrderStatusBody = zod.object({
 });
 
 export const AdminUpdateOrderStatusResponse = zod.object({
+  id: zod.number(),
+  orderNumber: zod.string(),
+  status: zod.string(),
+  orderType: zod.string(),
+  subtotal: zod.number(),
+  taxAmount: zod.number(),
+  deliveryAmount: zod.number(),
+  total: zod.number(),
+  depositAmount: zod.number(),
+  balanceDue: zod.number(),
+  customerId: zod.number().nullable(),
+  customerName: zod.string().nullable(),
+  customerEmail: zod.string().nullable(),
+  agentId: zod.number().nullable(),
+  agentName: zod.string().nullable(),
+  salespersonName: zod.string().nullable(),
+  shippingMethod: zod.string().nullable(),
+  specialInstructions: zod.string().nullable(),
+  notes: zod.string().nullable(),
+  merchandiseReceived: zod.boolean(),
+  placedAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+  shippingAddress: zod.union([
+    zod.object({
+      id: zod.number(),
+      recipientName: zod.string().nullish(),
+      street1: zod.string(),
+      street2: zod.string().nullish(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullish(),
+    }),
+    zod.null(),
+  ]),
+  billingAddress: zod.union([
+    zod.object({
+      id: zod.number(),
+      recipientName: zod.string().nullish(),
+      street1: zod.string(),
+      street2: zod.string().nullish(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullish(),
+    }),
+    zod.null(),
+  ]),
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      productId: zod.number().nullable(),
+      productSkuSnapshot: zod.string().nullable(),
+      variantSkuSnapshot: zod.string().nullable(),
+      variantNameSnapshot: zod.string().nullable(),
+      fabricNameSnapshot: zod.string().nullable(),
+      department: zod.string().nullable(),
+      description: zod.string(),
+      quantity: zod.number(),
+      unitPrice: zod.number(),
+      amount: zod.number(),
+      discountAmount: zod.number(),
+      discountReason: zod.string().nullable(),
+      notes: zod.string().nullable(),
+      vendorOrderId: zod.number().nullable(),
+    }),
+  ),
+  statusHistory: zod.array(
+    zod.object({
+      id: zod.number(),
+      fromStatus: zod.string().nullable(),
+      toStatus: zod.string(),
+      changedByUserId: zod.number().nullable(),
+      changedByEmail: zod.string().nullable(),
+      note: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  vendorOrders: zod.array(
+    zod.object({
+      id: zod.number(),
+      vendorOrderNumber: zod.string(),
+      status: zod.string(),
+      manufacturerId: zod.number().nullable(),
+      manufacturerName: zod.string().nullable(),
+      sentAt: zod.coerce.date().nullable(),
+      receivedAt: zod.coerce.date().nullable(),
+      itemsReceived: zod.boolean(),
+    }),
+  ),
+  cancellationRequests: zod.array(
+    zod.object({
+      id: zod.number(),
+      orderId: zod.number(),
+      orderNumber: zod.string().nullable(),
+      requestedByUserId: zod.number().nullable(),
+      requestedByEmail: zod.string().nullable(),
+      reason: zod.string().nullable(),
+      status: zod.string(),
+      reviewedByUserId: zod.number().nullable(),
+      reviewedByEmail: zod.string().nullable(),
+      reviewedAt: zod.coerce.date().nullable(),
+      reviewNote: zod.string().nullable(),
+      refundAmount: zod.number().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+/**
+ * Manually set the delivery (shipping) amount and/or the tax amount for an order. The order's total and balance due are recomputed from subtotal + the new values; deposit is preserved. A status-history note is written so the override is auditable.
+ * @summary Override the shipping and/or tax amounts on an order
+ */
+export const AdminUpdateOrderTotalsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const adminUpdateOrderTotalsBodyDeliveryAmountMin = 0;
+
+export const adminUpdateOrderTotalsBodyTaxAmountMin = 0;
+
+export const AdminUpdateOrderTotalsBody = zod
+  .object({
+    deliveryAmount: zod
+      .number()
+      .min(adminUpdateOrderTotalsBodyDeliveryAmountMin)
+      .optional(),
+    taxAmount: zod
+      .number()
+      .min(adminUpdateOrderTotalsBodyTaxAmountMin)
+      .optional(),
+    note: zod
+      .string()
+      .nullish()
+      .describe("Optional reason for the override; written to status history."),
+  })
+  .describe("At least one of deliveryAmount or taxAmount must be provided.");
+
+export const AdminUpdateOrderTotalsResponse = zod.object({
   id: zod.number(),
   orderNumber: zod.string(),
   status: zod.string(),
