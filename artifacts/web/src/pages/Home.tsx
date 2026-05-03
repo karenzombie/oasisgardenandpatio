@@ -164,7 +164,7 @@ export default function Home() {
       {/* Manufacturers Marquee */}
       <section className="py-16 bg-background border-t border-border overflow-hidden flex flex-col items-center">
         <p className="text-sm uppercase tracking-widest text-muted-foreground mb-10 font-medium">Proudly Featuring Top Brands</p>
-        <div className="w-full inline-flex flex-nowrap overflow-hidden [mask-image:_linear-gradient(to_right,transparent_0,_black_128px,_black_calc(100%-128px),transparent_100%)]">
+        <div className="brand-marquee w-full inline-flex flex-nowrap overflow-hidden">
           <ul className="flex items-center [&_li]:mx-10 [&_img]:max-w-none animate-infinite-scroll shrink-0">
             {BRAND_LOGOS.map((b) => (
               <li key={`a-${b.name}`} className="shrink-0 flex items-center justify-center h-16">
@@ -172,7 +172,7 @@ export default function Home() {
                   src={b.src}
                   alt={b.name}
                   title={b.name}
-                  loading="lazy"
+                  decoding="async"
                   className="max-h-16 w-auto object-contain opacity-70 hover:opacity-100 transition-opacity"
                 />
               </li>
@@ -184,7 +184,7 @@ export default function Home() {
                 <img
                   src={b.src}
                   alt=""
-                  loading="lazy"
+                  decoding="async"
                   className="max-h-16 w-auto object-contain opacity-70 hover:opacity-100 transition-opacity"
                 />
               </li>

@@ -164,12 +164,34 @@
 }
 
 @keyframes infinite-scroll {
-  from { transform: translateX(0); }
-  to { transform: translateX(-100%); }
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-100%, 0, 0); }
 }
 
 .animate-infinite-scroll {
   animation: infinite-scroll 40s linear infinite;
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+/* Edge fade for the brand marquee. Kept in plain CSS so the calc()
+   has the whitespace it needs around the `-` operator (Tailwind
+   arbitrary values can't easily express `calc(100% - 128px)`). */
+.brand-marquee {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black 128px,
+    black calc(100% - 128px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black 128px,
+    black calc(100% - 128px),
+    transparent 100%
+  );
 }
 
 @media (prefers-reduced-motion: reduce) {
