@@ -1,6 +1,6 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { Link } from "wouter";
-import { Search, ShoppingCart } from "lucide-react";
+import { Plus, Search, ShoppingCart } from "lucide-react";
 import {
   useAdminListOrders,
   type AdminOrderSummary,
@@ -84,7 +84,17 @@ export default function Orders() {
 
   return (
     <>
-      <PageHeader title="Orders" subtitle="All customer orders." />
+      <PageHeader
+        title="Orders"
+        subtitle="All customer orders."
+        action={
+          <Button asChild size="sm">
+            <Link href="/admin/new-order">
+              <Plus className="size-4 mr-1" /> New order
+            </Link>
+          </Button>
+        }
+      />
       <PageBody>
         <form
           onSubmit={applyFilter}

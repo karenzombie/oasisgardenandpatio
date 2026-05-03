@@ -42,6 +42,7 @@ export const ADMIN_NAV: NavGroup[] = [
   {
     heading: "Sales",
     items: [
+      { label: "New Order", path: "/admin/new-order", icon: ShoppingCart },
       { label: "Orders", path: "/admin/orders", icon: ShoppingCart },
       { label: "Vendor Orders", path: "/admin/vendor-orders", icon: Send },
       { label: "Cushion Orders", path: "/admin/cushion-orders", icon: Layers },

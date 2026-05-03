@@ -88,6 +88,7 @@ export default function StaffRouter() {
                 <Route path="/admin/audit-log" component={AuditLog} />
                 <Route path="/admin/recovery-requests" component={RecoveryRequests} />
                 <Route path="/admin/orders" component={Orders} />
+                <Route path="/admin/new-order" component={AgentNewOrder} />
                 <Route path="/admin/orders/:id" component={OrderDetail} />
                 <Route path="/admin/vendor-orders" component={VendorOrders} />
                 <Route path="/admin/vendor-orders/:id" component={VendorOrderDetail} />

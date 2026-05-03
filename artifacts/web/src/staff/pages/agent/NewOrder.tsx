@@ -31,6 +31,7 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { PageBody, PageHeader } from "../../StaffShell";
+import { useStaffSession } from "../../lib/staffSession";
 
 type CustomerMode = "existing" | "new" | "quick";
 
@@ -84,6 +85,8 @@ function emptyLine(): LineItem {
 export default function AgentNewOrder() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
+  const { user } = useStaffSession();
+  const orderRoutePrefix = user?.role === "admin" ? "/admin/orders" : "/agent/orders";
   const createOrder = useAdminCreateOrder();
   const createCustomer = useAdminCreateCustomer();
   const quotePricing = useAdminQuoteOrderPricing();
@@ -340,7 +343,7 @@ export default function AgentNewOrder() {
         },
       });
       toast({ title: `Order ${order.orderNumber} created` });
-      navigate(`/agent/orders/${order.id}`);
+      navigate(`${orderRoutePrefix}/${order.id}`);
     } catch (err: unknown) {
       toast({
         title: "Create failed",
