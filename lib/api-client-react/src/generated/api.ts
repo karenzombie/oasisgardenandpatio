@@ -100,6 +100,9 @@ import type {
   CreateSetRequest,
   CreateStaffUserRequest,
   CurrentUser,
+  CushionOrderDetail,
+  CushionOrderPage,
+  CushionOrderSubmitted,
   Error,
   FeaturedProduct,
   GenerateVendorOrdersRequest,
@@ -111,6 +114,7 @@ import type {
   InventoryLocation,
   LegalDocument,
   ListCatalogProductsParams,
+  ListCushionOrdersParams,
   LoginRequest,
   Manufacturer,
   PlaceOrderRequest,
@@ -124,6 +128,7 @@ import type {
   RequestUploadUrlResponseSchema,
   ResetPasswordRequest,
   ReviewCancellationRequest,
+  SendCushionEmailResponse,
   SendVendorOrderRequest,
   SetActiveRequest,
   SignupRequest,
@@ -134,6 +139,7 @@ import type {
   StaffNotification,
   StaffStageResponse,
   StaffUnreadCount,
+  SubmitCushionOrderRequest,
   SystemSettings,
   SystemSettingsUpdate,
   TotpCodeRequest,
@@ -144,6 +150,7 @@ import type {
   UpdateCartItemRequest,
   UpdateCategoryRequest,
   UpdateCouponCodeRequest,
+  UpdateCushionOrderRequest,
   UpdateCustomerRequest,
   UpdateDiscountEventRequest,
   UpdateInventoryLocationRequest,
@@ -11985,3 +11992,536 @@ export const useAdminUpdateCustomerAddress = <
 > => {
   return useMutation(getAdminUpdateCustomerAddressMutationOptions(options));
 };
+
+/**
+ * @summary Submit a custom or stock cushion order (public)
+ */
+export const getSubmitCushionOrderUrl = () => {
+  return `/api/cushions/orders`;
+};
+
+export const submitCushionOrder = async (
+  submitCushionOrderRequest: SubmitCushionOrderRequest,
+  options?: RequestInit,
+): Promise<CushionOrderSubmitted> => {
+  return customFetch<CushionOrderSubmitted>(getSubmitCushionOrderUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(submitCushionOrderRequest),
+  });
+};
+
+export const getSubmitCushionOrderMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof submitCushionOrder>>,
+    TError,
+    { data: BodyType<SubmitCushionOrderRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof submitCushionOrder>>,
+  TError,
+  { data: BodyType<SubmitCushionOrderRequest> },
+  TContext
+> => {
+  const mutationKey = ["submitCushionOrder"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof submitCushionOrder>>,
+    { data: BodyType<SubmitCushionOrderRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return submitCushionOrder(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SubmitCushionOrderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof submitCushionOrder>>
+>;
+export type SubmitCushionOrderMutationBody =
+  BodyType<SubmitCushionOrderRequest>;
+export type SubmitCushionOrderMutationError = ErrorType<Error>;
+
+/**
+ * @summary Submit a custom or stock cushion order (public)
+ */
+export const useSubmitCushionOrder = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof submitCushionOrder>>,
+    TError,
+    { data: BodyType<SubmitCushionOrderRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof submitCushionOrder>>,
+  TError,
+  { data: BodyType<SubmitCushionOrderRequest> },
+  TContext
+> => {
+  return useMutation(getSubmitCushionOrderMutationOptions(options));
+};
+
+/**
+ * @summary List cushion orders (staff)
+ */
+export const getListCushionOrdersUrl = (params?: ListCushionOrdersParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/cushions/orders?${stringifiedParams}`
+    : `/api/cushions/orders`;
+};
+
+export const listCushionOrders = async (
+  params?: ListCushionOrdersParams,
+  options?: RequestInit,
+): Promise<CushionOrderPage> => {
+  return customFetch<CushionOrderPage>(getListCushionOrdersUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListCushionOrdersQueryKey = (
+  params?: ListCushionOrdersParams,
+) => {
+  return [`/api/cushions/orders`, ...(params ? [params] : [])] as const;
+};
+
+export const getListCushionOrdersQueryOptions = <
+  TData = Awaited<ReturnType<typeof listCushionOrders>>,
+  TError = ErrorType<Error>,
+>(
+  params?: ListCushionOrdersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listCushionOrders>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListCushionOrdersQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listCushionOrders>>
+  > = ({ signal }) => listCushionOrders(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listCushionOrders>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListCushionOrdersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listCushionOrders>>
+>;
+export type ListCushionOrdersQueryError = ErrorType<Error>;
+
+/**
+ * @summary List cushion orders (staff)
+ */
+
+export function useListCushionOrders<
+  TData = Awaited<ReturnType<typeof listCushionOrders>>,
+  TError = ErrorType<Error>,
+>(
+  params?: ListCushionOrdersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listCushionOrders>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListCushionOrdersQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get a cushion order with items (staff)
+ */
+export const getGetCushionOrderUrl = (id: number) => {
+  return `/api/cushions/orders/${id}`;
+};
+
+export const getCushionOrder = async (
+  id: number,
+  options?: RequestInit,
+): Promise<CushionOrderDetail> => {
+  return customFetch<CushionOrderDetail>(getGetCushionOrderUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetCushionOrderQueryKey = (id: number) => {
+  return [`/api/cushions/orders/${id}`] as const;
+};
+
+export const getGetCushionOrderQueryOptions = <
+  TData = Awaited<ReturnType<typeof getCushionOrder>>,
+  TError = ErrorType<Error>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCushionOrder>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetCushionOrderQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getCushionOrder>>> = ({
+    signal,
+  }) => getCushionOrder(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getCushionOrder>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetCushionOrderQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getCushionOrder>>
+>;
+export type GetCushionOrderQueryError = ErrorType<Error>;
+
+/**
+ * @summary Get a cushion order with items (staff)
+ */
+
+export function useGetCushionOrder<
+  TData = Awaited<ReturnType<typeof getCushionOrder>>,
+  TError = ErrorType<Error>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCushionOrder>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetCushionOrderQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update status / agent notes (staff)
+ */
+export const getUpdateCushionOrderUrl = (id: number) => {
+  return `/api/cushions/orders/${id}`;
+};
+
+export const updateCushionOrder = async (
+  id: number,
+  updateCushionOrderRequest: UpdateCushionOrderRequest,
+  options?: RequestInit,
+): Promise<CushionOrderDetail> => {
+  return customFetch<CushionOrderDetail>(getUpdateCushionOrderUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateCushionOrderRequest),
+  });
+};
+
+export const getUpdateCushionOrderMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateCushionOrder>>,
+    TError,
+    { id: number; data: BodyType<UpdateCushionOrderRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateCushionOrder>>,
+  TError,
+  { id: number; data: BodyType<UpdateCushionOrderRequest> },
+  TContext
+> => {
+  const mutationKey = ["updateCushionOrder"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateCushionOrder>>,
+    { id: number; data: BodyType<UpdateCushionOrderRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateCushionOrder(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateCushionOrderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateCushionOrder>>
+>;
+export type UpdateCushionOrderMutationBody =
+  BodyType<UpdateCushionOrderRequest>;
+export type UpdateCushionOrderMutationError = ErrorType<Error>;
+
+/**
+ * @summary Update status / agent notes (staff)
+ */
+export const useUpdateCushionOrder = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateCushionOrder>>,
+    TError,
+    { id: number; data: BodyType<UpdateCushionOrderRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateCushionOrder>>,
+  TError,
+  { id: number; data: BodyType<UpdateCushionOrderRequest> },
+  TContext
+> => {
+  return useMutation(getUpdateCushionOrderMutationOptions(options));
+};
+
+/**
+ * @summary Resend customer confirmation email (staff)
+ */
+export const getSendCushionOrderEmailUrl = (id: number) => {
+  return `/api/cushions/orders/${id}/email`;
+};
+
+export const sendCushionOrderEmail = async (
+  id: number,
+  options?: RequestInit,
+): Promise<SendCushionEmailResponse> => {
+  return customFetch<SendCushionEmailResponse>(
+    getSendCushionOrderEmailUrl(id),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getSendCushionOrderEmailMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof sendCushionOrderEmail>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof sendCushionOrderEmail>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["sendCushionOrderEmail"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof sendCushionOrderEmail>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return sendCushionOrderEmail(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SendCushionOrderEmailMutationResult = NonNullable<
+  Awaited<ReturnType<typeof sendCushionOrderEmail>>
+>;
+
+export type SendCushionOrderEmailMutationError = ErrorType<Error>;
+
+/**
+ * @summary Resend customer confirmation email (staff)
+ */
+export const useSendCushionOrderEmail = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof sendCushionOrderEmail>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof sendCushionOrderEmail>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getSendCushionOrderEmailMutationOptions(options));
+};
+
+/**
+ * @summary Generate the vendor PDF for a cushion order (staff)
+ */
+export const getGetCushionOrderPdfUrl = (id: number) => {
+  return `/api/cushions/orders/${id}/pdf`;
+};
+
+export const getCushionOrderPdf = async (
+  id: number,
+  options?: RequestInit,
+): Promise<Blob> => {
+  return customFetch<Blob>(getGetCushionOrderPdfUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetCushionOrderPdfQueryKey = (id: number) => {
+  return [`/api/cushions/orders/${id}/pdf`] as const;
+};
+
+export const getGetCushionOrderPdfQueryOptions = <
+  TData = Awaited<ReturnType<typeof getCushionOrderPdf>>,
+  TError = ErrorType<Error>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCushionOrderPdf>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetCushionOrderPdfQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getCushionOrderPdf>>
+  > = ({ signal }) => getCushionOrderPdf(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getCushionOrderPdf>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetCushionOrderPdfQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getCushionOrderPdf>>
+>;
+export type GetCushionOrderPdfQueryError = ErrorType<Error>;
+
+/**
+ * @summary Generate the vendor PDF for a cushion order (staff)
+ */
+
+export function useGetCushionOrderPdf<
+  TData = Awaited<ReturnType<typeof getCushionOrderPdf>>,
+  TError = ErrorType<Error>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCushionOrderPdf>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetCushionOrderPdfQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}

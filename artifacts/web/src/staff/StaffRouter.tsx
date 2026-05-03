@@ -33,6 +33,8 @@ import Orders from "./pages/admin/Orders";
 import OrderDetail from "./pages/admin/OrderDetail";
 import VendorOrders from "./pages/admin/VendorOrders";
 import VendorOrderDetail from "./pages/admin/VendorOrderDetail";
+import CushionOrders from "./pages/admin/CushionOrders";
+import CushionOrderDetail from "./pages/admin/CushionOrderDetail";
 import Reports from "./pages/admin/Reports";
 import { PagePlaceholder } from "./pages/PagePlaceholder";
 
@@ -79,6 +81,8 @@ export default function StaffRouter() {
                 <Route path="/orders/:id" component={OrderDetail} />
                 <Route path="/vendor-orders" component={VendorOrders} />
                 <Route path="/vendor-orders/:id" component={VendorOrderDetail} />
+                <Route path="/cushion-orders" component={CushionOrders} />
+                <Route path="/cushion-orders/:id" component={CushionOrderDetail} />
                 <Route path="/reports" component={Reports} />
                 {ADMIN_PLACEHOLDERS.map(({ path, title, comingIn }) => (
                   <Route key={path} path={path}>

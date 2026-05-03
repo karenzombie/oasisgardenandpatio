@@ -20,3 +20,4 @@ export * from "./cms";
 export * from "./settings";
 export * from "./notifications";
 export * from "./system";
+export * from "./cushions";

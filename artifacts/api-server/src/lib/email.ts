@@ -89,6 +89,32 @@ function buttonLink(url: string, label: string): string {
   </p>`;
 }
 
+export interface SendEmailArgs {
+  to: string;
+  subject: string;
+  title: string;
+  bodyHtml: string;
+}
+
+export async function sendEmail({
+  to,
+  subject,
+  title,
+  bodyHtml,
+}: SendEmailArgs): Promise<void> {
+  const { client, from } = await getResendClient();
+  const result = await client.emails.send({
+    from,
+    to,
+    subject,
+    html: emailLayout(title, bodyHtml),
+  });
+  if (result.error) {
+    logger.error({ err: result.error, to, subject }, "Failed to send email");
+    throw new Error(`Failed to send email: ${result.error.message}`);
+  }
+}
+
 export interface SendVerificationEmailArgs {
   to: string;
   firstName: string | null;

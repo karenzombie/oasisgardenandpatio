@@ -2331,6 +2331,339 @@ export interface CreateOrderRequest {
   status?: string;
 }
 
+/**
+ * @nullable
+ */
+export type CushionOrderItemInputCushionType =
+  | (typeof CushionOrderItemInputCushionType)[keyof typeof CushionOrderItemInputCushionType]
+  | null;
+
+export const CushionOrderItemInputCushionType = {
+  hinged_chaise: "hinged_chaise",
+  club_chair: "club_chair",
+  trapezoid: "trapezoid",
+  bench: "bench",
+  ottoman: "ottoman",
+  dining_chair: "dining_chair",
+} as const;
+
+export interface CushionOrderItemInput {
+  /** @nullable */
+  cushionType?: CushionOrderItemInputCushionType;
+  /** @minimum 1 */
+  quantity: number;
+  /** @nullable */
+  notes?: string | null;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  measurementA?: number | null;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  measurementB?: number | null;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  measurementC?: number | null;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  measurementD?: number | null;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  measurementE?: number | null;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  measurementF?: number | null;
+  /**
+   * @minimum 0
+   * @nullable
+   */
+  thickness?: number | null;
+  /** @nullable */
+  productId?: number | null;
+  /** @nullable */
+  fabricId?: number | null;
+  /** @nullable */
+  fabricName?: string | null;
+  /** @nullable */
+  fabricItemNumber?: string | null;
+}
+
+export type SubmitCushionOrderRequestOrderKind =
+  (typeof SubmitCushionOrderRequestOrderKind)[keyof typeof SubmitCushionOrderRequestOrderKind];
+
+export const SubmitCushionOrderRequestOrderKind = {
+  custom: "custom",
+  stock: "stock",
+} as const;
+
+/**
+ * @nullable
+ */
+export type SubmitCushionOrderRequestTies =
+  | (typeof SubmitCushionOrderRequestTies)[keyof typeof SubmitCushionOrderRequestTies]
+  | null;
+
+export const SubmitCushionOrderRequestTies = {
+  velcro: "velcro",
+  tie: "tie",
+} as const;
+
+/**
+ * @nullable
+ */
+export type SubmitCushionOrderRequestSeatWelt =
+  | (typeof SubmitCushionOrderRequestSeatWelt)[keyof typeof SubmitCushionOrderRequestSeatWelt]
+  | null;
+
+export const SubmitCushionOrderRequestSeatWelt = {
+  self: "self",
+  contrasting: "contrasting",
+  none: "none",
+} as const;
+
+/**
+ * @nullable
+ */
+export type SubmitCushionOrderRequestBackWelt =
+  | (typeof SubmitCushionOrderRequestBackWelt)[keyof typeof SubmitCushionOrderRequestBackWelt]
+  | null;
+
+export const SubmitCushionOrderRequestBackWelt = {
+  self: "self",
+  contrasting: "contrasting",
+  none: "none",
+} as const;
+
+/**
+ * @nullable
+ */
+export type SubmitCushionOrderRequestButtons =
+  | (typeof SubmitCushionOrderRequestButtons)[keyof typeof SubmitCushionOrderRequestButtons]
+  | null;
+
+export const SubmitCushionOrderRequestButtons = {
+  yes: "yes",
+  no: "no",
+} as const;
+
+/**
+ * @nullable
+ */
+export type SubmitCushionOrderRequestTuft =
+  | (typeof SubmitCushionOrderRequestTuft)[keyof typeof SubmitCushionOrderRequestTuft]
+  | null;
+
+export const SubmitCushionOrderRequestTuft = {
+  yes: "yes",
+  no: "no",
+} as const;
+
+/**
+ * @nullable
+ */
+export type SubmitCushionOrderRequestTemplateAvailable =
+  | (typeof SubmitCushionOrderRequestTemplateAvailable)[keyof typeof SubmitCushionOrderRequestTemplateAvailable]
+  | null;
+
+export const SubmitCushionOrderRequestTemplateAvailable = {
+  yes: "yes",
+  no: "no",
+} as const;
+
+export interface SubmitCushionOrderRequest {
+  orderKind: SubmitCushionOrderRequestOrderKind;
+  /** @minLength 1 */
+  customerName: string;
+  /** @nullable */
+  customerEmail?: string | null;
+  /** @nullable */
+  customerPhone?: string | null;
+  /** @nullable */
+  fabricName?: string | null;
+  /** @nullable */
+  fabricItemNumber?: string | null;
+  /** @nullable */
+  contrastingFabricName?: string | null;
+  /** @nullable */
+  ties?: SubmitCushionOrderRequestTies;
+  /** @nullable */
+  seatWelt?: SubmitCushionOrderRequestSeatWelt;
+  /** @nullable */
+  backWelt?: SubmitCushionOrderRequestBackWelt;
+  /** @nullable */
+  buttons?: SubmitCushionOrderRequestButtons;
+  /** @nullable */
+  tuft?: SubmitCushionOrderRequestTuft;
+  /** @nullable */
+  templateAvailable?: SubmitCushionOrderRequestTemplateAvailable;
+  /** @nullable */
+  customerNotes?: string | null;
+  /** @minItems 1 */
+  items: CushionOrderItemInput[];
+}
+
+export interface CushionOrderSubmitted {
+  id: number;
+  orderNumber: string;
+}
+
+export type CushionOrderListRowOrderKind =
+  (typeof CushionOrderListRowOrderKind)[keyof typeof CushionOrderListRowOrderKind];
+
+export const CushionOrderListRowOrderKind = {
+  custom: "custom",
+  stock: "stock",
+} as const;
+
+export type CushionOrderListRowStatus =
+  (typeof CushionOrderListRowStatus)[keyof typeof CushionOrderListRowStatus];
+
+export const CushionOrderListRowStatus = {
+  submitted: "submitted",
+  in_review: "in_review",
+  ordered: "ordered",
+  complete: "complete",
+} as const;
+
+export interface CushionOrderListRow {
+  id: number;
+  orderNumber: string;
+  orderKind: CushionOrderListRowOrderKind;
+  status: CushionOrderListRowStatus;
+  customerName: string;
+  /** @nullable */
+  customerEmail?: string | null;
+  submittedAt: string;
+  itemSummary: string;
+}
+
+export interface CushionOrderPage {
+  rows: CushionOrderListRow[];
+  total: number;
+}
+
+export interface CushionOrderItemRow {
+  id: number;
+  position: number;
+  /** @nullable */
+  cushionType?: string | null;
+  quantity: number;
+  /** @nullable */
+  notes?: string | null;
+  /** @nullable */
+  measurementA?: string | null;
+  /** @nullable */
+  measurementB?: string | null;
+  /** @nullable */
+  measurementC?: string | null;
+  /** @nullable */
+  measurementD?: string | null;
+  /** @nullable */
+  measurementE?: string | null;
+  /** @nullable */
+  measurementF?: string | null;
+  /** @nullable */
+  thickness?: string | null;
+  /** @nullable */
+  productId?: number | null;
+  /** @nullable */
+  productName?: string | null;
+  /** @nullable */
+  productSku?: string | null;
+  /** @nullable */
+  fabricId?: number | null;
+  /** @nullable */
+  fabricName?: string | null;
+  /** @nullable */
+  fabricItemNumber?: string | null;
+}
+
+export type CushionOrderDetailOrderKind =
+  (typeof CushionOrderDetailOrderKind)[keyof typeof CushionOrderDetailOrderKind];
+
+export const CushionOrderDetailOrderKind = {
+  custom: "custom",
+  stock: "stock",
+} as const;
+
+export type CushionOrderDetailStatus =
+  (typeof CushionOrderDetailStatus)[keyof typeof CushionOrderDetailStatus];
+
+export const CushionOrderDetailStatus = {
+  submitted: "submitted",
+  in_review: "in_review",
+  ordered: "ordered",
+  complete: "complete",
+} as const;
+
+export interface CushionOrderDetail {
+  id: number;
+  orderNumber: string;
+  orderKind: CushionOrderDetailOrderKind;
+  status: CushionOrderDetailStatus;
+  customerName: string;
+  /** @nullable */
+  customerEmail?: string | null;
+  /** @nullable */
+  customerPhone?: string | null;
+  /** @nullable */
+  fabricName?: string | null;
+  /** @nullable */
+  fabricItemNumber?: string | null;
+  /** @nullable */
+  contrastingFabricName?: string | null;
+  /** @nullable */
+  ties?: string | null;
+  /** @nullable */
+  seatWelt?: string | null;
+  /** @nullable */
+  backWelt?: string | null;
+  /** @nullable */
+  buttons?: string | null;
+  /** @nullable */
+  tuft?: string | null;
+  /** @nullable */
+  templateAvailable?: string | null;
+  /** @nullable */
+  customerNotes?: string | null;
+  /** @nullable */
+  agentNotes?: string | null;
+  submittedAt: string;
+  updatedAt: string;
+  items: CushionOrderItemRow[];
+}
+
+export type UpdateCushionOrderRequestStatus =
+  (typeof UpdateCushionOrderRequestStatus)[keyof typeof UpdateCushionOrderRequestStatus];
+
+export const UpdateCushionOrderRequestStatus = {
+  submitted: "submitted",
+  in_review: "in_review",
+  ordered: "ordered",
+  complete: "complete",
+} as const;
+
+export interface UpdateCushionOrderRequest {
+  status?: UpdateCushionOrderRequestStatus;
+  /** @nullable */
+  agentNotes?: string | null;
+}
+
+export interface SendCushionEmailResponse {
+  sent: boolean;
+}
+
 export type ListCatalogProductsParams = {
   q?: string;
   categorySlug?: string;
@@ -2592,3 +2925,26 @@ export type AdminListCustomersParams = {
    */
   offset?: number;
 };
+
+export type ListCushionOrdersParams = {
+  status?: ListCushionOrdersStatus;
+  /**
+   * @minimum 1
+   * @maximum 200
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   */
+  offset?: number;
+};
+
+export type ListCushionOrdersStatus =
+  (typeof ListCushionOrdersStatus)[keyof typeof ListCushionOrdersStatus];
+
+export const ListCushionOrdersStatus = {
+  submitted: "submitted",
+  in_review: "in_review",
+  ordered: "ordered",
+  complete: "complete",
+} as const;

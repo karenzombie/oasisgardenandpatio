@@ -30,6 +30,8 @@ tags:
     description: Admin CRUD for manufacturers
   - name: admin-categories
     description: Admin CRUD for product categories
+  - name: cushions
+    description: Custom cushion order form (public submit, staff review)
 paths:
   /healthz:
     get:
@@ -3243,6 +3245,121 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/AdminAddress" }
         "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+  /cushions/orders:
+    post:
+      operationId: submitCushionOrder
+      tags: [cushions]
+      summary: Submit a custom or stock cushion order (public)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SubmitCushionOrderRequest" }
+      responses:
+        "200":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CushionOrderSubmitted" }
+        "400": { description: Invalid, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+    get:
+      operationId: listCushionOrders
+      tags: [cushions]
+      summary: List cushion orders (staff)
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema: { type: string, enum: [submitted, in_review, ordered, complete] }
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+        - name: offset
+          in: query
+          required: false
+          schema: { type: integer, minimum: 0, default: 0 }
+      responses:
+        "200":
+          description: Cushion orders
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CushionOrderPage" }
+        "401": { description: Unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+        "403": { description: Forbidden, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+  /cushions/orders/{id}:
+    get:
+      operationId: getCushionOrder
+      tags: [cushions]
+      summary: Get a cushion order with items (staff)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Cushion order detail
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CushionOrderDetail" }
+        "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+    patch:
+      operationId: updateCushionOrder
+      tags: [cushions]
+      summary: Update status / agent notes (staff)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateCushionOrderRequest" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CushionOrderDetail" }
+        "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+  /cushions/orders/{id}/email:
+    post:
+      operationId: sendCushionOrderEmail
+      tags: [cushions]
+      summary: Resend customer confirmation email (staff)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Sent
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SendCushionEmailResponse" }
+        "400": { description: No email on file, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+        "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+  /cushions/orders/{id}/pdf:
+    get:
+      operationId: getCushionOrderPdf
+      tags: [cushions]
+      summary: Generate the vendor PDF for a cushion order (staff)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: PDF bytes
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+        "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
 components:
   schemas:
     HealthStatus:
@@ -5976,3 +6093,130 @@ components:
         orderType: { type: string, enum: [online, in_store, phone], default: in_store }
         status: { type: string, default: pending }
       required: [customerId, items]
+    CushionOrderItemInput:
+      type: object
+      properties:
+        cushionType:
+          type: ["string", "null"]
+          enum: [hinged_chaise, club_chair, trapezoid, bench, ottoman, dining_chair, null]
+        quantity: { type: integer, minimum: 1, default: 1 }
+        notes: { type: ["string", "null"] }
+        measurementA: { type: ["number", "null"], minimum: 0 }
+        measurementB: { type: ["number", "null"], minimum: 0 }
+        measurementC: { type: ["number", "null"], minimum: 0 }
+        measurementD: { type: ["number", "null"], minimum: 0 }
+        measurementE: { type: ["number", "null"], minimum: 0 }
+        measurementF: { type: ["number", "null"], minimum: 0 }
+        thickness: { type: ["number", "null"], minimum: 0 }
+        productId: { type: ["integer", "null"] }
+        fabricId: { type: ["integer", "null"] }
+        fabricName: { type: ["string", "null"] }
+        fabricItemNumber: { type: ["string", "null"] }
+      required: [quantity]
+    SubmitCushionOrderRequest:
+      type: object
+      properties:
+        orderKind: { type: string, enum: [custom, stock] }
+        customerName: { type: string, minLength: 1 }
+        customerEmail: { type: ["string", "null"] }
+        customerPhone: { type: ["string", "null"] }
+        fabricName: { type: ["string", "null"] }
+        fabricItemNumber: { type: ["string", "null"] }
+        contrastingFabricName: { type: ["string", "null"] }
+        ties: { type: ["string", "null"], enum: [velcro, tie, null] }
+        seatWelt: { type: ["string", "null"], enum: [self, contrasting, none, null] }
+        backWelt: { type: ["string", "null"], enum: [self, contrasting, none, null] }
+        buttons: { type: ["string", "null"], enum: [yes, no, null] }
+        tuft: { type: ["string", "null"], enum: [yes, no, null] }
+        templateAvailable: { type: ["string", "null"], enum: [yes, no, null] }
+        customerNotes: { type: ["string", "null"] }
+        items:
+          type: array
+          minItems: 1
+          items: { $ref: "#/components/schemas/CushionOrderItemInput" }
+      required: [orderKind, customerName, items]
+    CushionOrderSubmitted:
+      type: object
+      properties:
+        id: { type: integer }
+        orderNumber: { type: string }
+      required: [id, orderNumber]
+    CushionOrderListRow:
+      type: object
+      properties:
+        id: { type: integer }
+        orderNumber: { type: string }
+        orderKind: { type: string, enum: [custom, stock] }
+        status: { type: string, enum: [submitted, in_review, ordered, complete] }
+        customerName: { type: string }
+        customerEmail: { type: ["string", "null"] }
+        submittedAt: { type: string, format: date-time }
+        itemSummary: { type: string }
+      required: [id, orderNumber, orderKind, status, customerName, submittedAt, itemSummary]
+    CushionOrderPage:
+      type: object
+      properties:
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/CushionOrderListRow" }
+        total: { type: integer }
+      required: [rows, total]
+    CushionOrderItemRow:
+      type: object
+      properties:
+        id: { type: integer }
+        position: { type: integer }
+        cushionType: { type: ["string", "null"] }
+        quantity: { type: integer }
+        notes: { type: ["string", "null"] }
+        measurementA: { type: ["string", "null"] }
+        measurementB: { type: ["string", "null"] }
+        measurementC: { type: ["string", "null"] }
+        measurementD: { type: ["string", "null"] }
+        measurementE: { type: ["string", "null"] }
+        measurementF: { type: ["string", "null"] }
+        thickness: { type: ["string", "null"] }
+        productId: { type: ["integer", "null"] }
+        productName: { type: ["string", "null"] }
+        productSku: { type: ["string", "null"] }
+        fabricId: { type: ["integer", "null"] }
+        fabricName: { type: ["string", "null"] }
+        fabricItemNumber: { type: ["string", "null"] }
+      required: [id, position, quantity]
+    CushionOrderDetail:
+      type: object
+      properties:
+        id: { type: integer }
+        orderNumber: { type: string }
+        orderKind: { type: string, enum: [custom, stock] }
+        status: { type: string, enum: [submitted, in_review, ordered, complete] }
+        customerName: { type: string }
+        customerEmail: { type: ["string", "null"] }
+        customerPhone: { type: ["string", "null"] }
+        fabricName: { type: ["string", "null"] }
+        fabricItemNumber: { type: ["string", "null"] }
+        contrastingFabricName: { type: ["string", "null"] }
+        ties: { type: ["string", "null"] }
+        seatWelt: { type: ["string", "null"] }
+        backWelt: { type: ["string", "null"] }
+        buttons: { type: ["string", "null"] }
+        tuft: { type: ["string", "null"] }
+        templateAvailable: { type: ["string", "null"] }
+        customerNotes: { type: ["string", "null"] }
+        agentNotes: { type: ["string", "null"] }
+        submittedAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/CushionOrderItemRow" }
+      required: [id, orderNumber, orderKind, status, customerName, submittedAt, updatedAt, items]
+    UpdateCushionOrderRequest:
+      type: object
+      properties:
+        status: { type: string, enum: [submitted, in_review, ordered, complete] }
+        agentNotes: { type: ["string", "null"] }
+    SendCushionEmailResponse:
+      type: object
+      properties:
+        sent: { type: boolean }
+      required: [sent]

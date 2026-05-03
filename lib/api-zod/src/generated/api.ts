@@ -4821,3 +4821,290 @@ export const AdminUpdateCustomerAddressResponse = zod.object({
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
+
+/**
+ * @summary Submit a custom or stock cushion order (public)
+ */
+
+export const submitCushionOrderBodyItemsItemQuantityDefault = 1;
+
+export const submitCushionOrderBodyItemsItemMeasurementAMin = 0;
+
+export const submitCushionOrderBodyItemsItemMeasurementBMin = 0;
+
+export const submitCushionOrderBodyItemsItemMeasurementCMin = 0;
+
+export const submitCushionOrderBodyItemsItemMeasurementDMin = 0;
+
+export const submitCushionOrderBodyItemsItemMeasurementEMin = 0;
+
+export const submitCushionOrderBodyItemsItemMeasurementFMin = 0;
+
+export const submitCushionOrderBodyItemsItemThicknessMin = 0;
+
+export const SubmitCushionOrderBody = zod.object({
+  orderKind: zod.enum(["custom", "stock"]),
+  customerName: zod.string().min(1),
+  customerEmail: zod.string().nullish(),
+  customerPhone: zod.string().nullish(),
+  fabricName: zod.string().nullish(),
+  fabricItemNumber: zod.string().nullish(),
+  contrastingFabricName: zod.string().nullish(),
+  ties: zod
+    .union([zod.literal("velcro"), zod.literal("tie"), zod.literal(null)])
+    .nullish(),
+  seatWelt: zod
+    .union([
+      zod.literal("self"),
+      zod.literal("contrasting"),
+      zod.literal("none"),
+      zod.literal(null),
+    ])
+    .nullish(),
+  backWelt: zod
+    .union([
+      zod.literal("self"),
+      zod.literal("contrasting"),
+      zod.literal("none"),
+      zod.literal(null),
+    ])
+    .nullish(),
+  buttons: zod
+    .union([zod.literal("yes"), zod.literal("no"), zod.literal(null)])
+    .nullish(),
+  tuft: zod
+    .union([zod.literal("yes"), zod.literal("no"), zod.literal(null)])
+    .nullish(),
+  templateAvailable: zod
+    .union([zod.literal("yes"), zod.literal("no"), zod.literal(null)])
+    .nullish(),
+  customerNotes: zod.string().nullish(),
+  items: zod
+    .array(
+      zod.object({
+        cushionType: zod
+          .union([
+            zod.literal("hinged_chaise"),
+            zod.literal("club_chair"),
+            zod.literal("trapezoid"),
+            zod.literal("bench"),
+            zod.literal("ottoman"),
+            zod.literal("dining_chair"),
+            zod.literal(null),
+          ])
+          .nullish(),
+        quantity: zod
+          .number()
+          .min(1)
+          .default(submitCushionOrderBodyItemsItemQuantityDefault),
+        notes: zod.string().nullish(),
+        measurementA: zod
+          .number()
+          .min(submitCushionOrderBodyItemsItemMeasurementAMin)
+          .nullish(),
+        measurementB: zod
+          .number()
+          .min(submitCushionOrderBodyItemsItemMeasurementBMin)
+          .nullish(),
+        measurementC: zod
+          .number()
+          .min(submitCushionOrderBodyItemsItemMeasurementCMin)
+          .nullish(),
+        measurementD: zod
+          .number()
+          .min(submitCushionOrderBodyItemsItemMeasurementDMin)
+          .nullish(),
+        measurementE: zod
+          .number()
+          .min(submitCushionOrderBodyItemsItemMeasurementEMin)
+          .nullish(),
+        measurementF: zod
+          .number()
+          .min(submitCushionOrderBodyItemsItemMeasurementFMin)
+          .nullish(),
+        thickness: zod
+          .number()
+          .min(submitCushionOrderBodyItemsItemThicknessMin)
+          .nullish(),
+        productId: zod.number().nullish(),
+        fabricId: zod.number().nullish(),
+        fabricName: zod.string().nullish(),
+        fabricItemNumber: zod.string().nullish(),
+      }),
+    )
+    .min(1),
+});
+
+export const SubmitCushionOrderResponse = zod.object({
+  id: zod.number(),
+  orderNumber: zod.string(),
+});
+
+/**
+ * @summary List cushion orders (staff)
+ */
+export const listCushionOrdersQueryLimitDefault = 50;
+export const listCushionOrdersQueryLimitMax = 200;
+
+export const listCushionOrdersQueryOffsetDefault = 0;
+export const listCushionOrdersQueryOffsetMin = 0;
+
+export const ListCushionOrdersQueryParams = zod.object({
+  status: zod
+    .enum(["submitted", "in_review", "ordered", "complete"])
+    .optional(),
+  limit: zod.coerce
+    .number()
+    .min(1)
+    .max(listCushionOrdersQueryLimitMax)
+    .default(listCushionOrdersQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .min(listCushionOrdersQueryOffsetMin)
+    .default(listCushionOrdersQueryOffsetDefault),
+});
+
+export const ListCushionOrdersResponse = zod.object({
+  rows: zod.array(
+    zod.object({
+      id: zod.number(),
+      orderNumber: zod.string(),
+      orderKind: zod.enum(["custom", "stock"]),
+      status: zod.enum(["submitted", "in_review", "ordered", "complete"]),
+      customerName: zod.string(),
+      customerEmail: zod.string().nullish(),
+      submittedAt: zod.coerce.date(),
+      itemSummary: zod.string(),
+    }),
+  ),
+  total: zod.number(),
+});
+
+/**
+ * @summary Get a cushion order with items (staff)
+ */
+export const GetCushionOrderParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetCushionOrderResponse = zod.object({
+  id: zod.number(),
+  orderNumber: zod.string(),
+  orderKind: zod.enum(["custom", "stock"]),
+  status: zod.enum(["submitted", "in_review", "ordered", "complete"]),
+  customerName: zod.string(),
+  customerEmail: zod.string().nullish(),
+  customerPhone: zod.string().nullish(),
+  fabricName: zod.string().nullish(),
+  fabricItemNumber: zod.string().nullish(),
+  contrastingFabricName: zod.string().nullish(),
+  ties: zod.string().nullish(),
+  seatWelt: zod.string().nullish(),
+  backWelt: zod.string().nullish(),
+  buttons: zod.string().nullish(),
+  tuft: zod.string().nullish(),
+  templateAvailable: zod.string().nullish(),
+  customerNotes: zod.string().nullish(),
+  agentNotes: zod.string().nullish(),
+  submittedAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      position: zod.number(),
+      cushionType: zod.string().nullish(),
+      quantity: zod.number(),
+      notes: zod.string().nullish(),
+      measurementA: zod.string().nullish(),
+      measurementB: zod.string().nullish(),
+      measurementC: zod.string().nullish(),
+      measurementD: zod.string().nullish(),
+      measurementE: zod.string().nullish(),
+      measurementF: zod.string().nullish(),
+      thickness: zod.string().nullish(),
+      productId: zod.number().nullish(),
+      productName: zod.string().nullish(),
+      productSku: zod.string().nullish(),
+      fabricId: zod.number().nullish(),
+      fabricName: zod.string().nullish(),
+      fabricItemNumber: zod.string().nullish(),
+    }),
+  ),
+});
+
+/**
+ * @summary Update status / agent notes (staff)
+ */
+export const UpdateCushionOrderParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateCushionOrderBody = zod.object({
+  status: zod
+    .enum(["submitted", "in_review", "ordered", "complete"])
+    .optional(),
+  agentNotes: zod.string().nullish(),
+});
+
+export const UpdateCushionOrderResponse = zod.object({
+  id: zod.number(),
+  orderNumber: zod.string(),
+  orderKind: zod.enum(["custom", "stock"]),
+  status: zod.enum(["submitted", "in_review", "ordered", "complete"]),
+  customerName: zod.string(),
+  customerEmail: zod.string().nullish(),
+  customerPhone: zod.string().nullish(),
+  fabricName: zod.string().nullish(),
+  fabricItemNumber: zod.string().nullish(),
+  contrastingFabricName: zod.string().nullish(),
+  ties: zod.string().nullish(),
+  seatWelt: zod.string().nullish(),
+  backWelt: zod.string().nullish(),
+  buttons: zod.string().nullish(),
+  tuft: zod.string().nullish(),
+  templateAvailable: zod.string().nullish(),
+  customerNotes: zod.string().nullish(),
+  agentNotes: zod.string().nullish(),
+  submittedAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      position: zod.number(),
+      cushionType: zod.string().nullish(),
+      quantity: zod.number(),
+      notes: zod.string().nullish(),
+      measurementA: zod.string().nullish(),
+      measurementB: zod.string().nullish(),
+      measurementC: zod.string().nullish(),
+      measurementD: zod.string().nullish(),
+      measurementE: zod.string().nullish(),
+      measurementF: zod.string().nullish(),
+      thickness: zod.string().nullish(),
+      productId: zod.number().nullish(),
+      productName: zod.string().nullish(),
+      productSku: zod.string().nullish(),
+      fabricId: zod.number().nullish(),
+      fabricName: zod.string().nullish(),
+      fabricItemNumber: zod.string().nullish(),
+    }),
+  ),
+});
+
+/**
+ * @summary Resend customer confirmation email (staff)
+ */
+export const SendCushionOrderEmailParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const SendCushionOrderEmailResponse = zod.object({
+  sent: zod.boolean(),
+});
+
+/**
+ * @summary Generate the vendor PDF for a cushion order (staff)
+ */
+export const GetCushionOrderPdfParams = zod.object({
+  id: zod.coerce.number(),
+});

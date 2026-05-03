@@ -13,6 +13,7 @@ import Product from "@/pages/Product";
 import ShippingReturns from "@/pages/ShippingReturns";
 import Warranty from "@/pages/Warranty";
 import Fabrics from "@/pages/Fabrics";
+import Cushions from "@/pages/Cushions";
 import LegalDocument from "@/pages/LegalDocument";
 import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
@@ -55,7 +56,7 @@ function CustomerRouter() {
         <Route path="/warranty" component={Warranty} />
         <Route path="/fabrics" component={Fabrics} />
         <Route path="/commercial" component={ComingSoon} />
-        <Route path="/cushions" component={ComingSoon} />
+        <Route path="/cushions" component={Cushions} />
         <Route path="/login" component={Login} />
         <Route path="/signup" component={Signup} />
         <Route path="/forgot-password" component={ForgotPassword} />
