@@ -1855,6 +1855,39 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
+  /admin/products/bulk-update:
+    post:
+      operationId: adminBulkUpdateProducts
+      tags: [admin-products]
+      summary: Apply field updates and/or fabric-pool/pick changes to many products at once
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminBulkUpdateProductsRequest"
+      responses:
+        "200":
+          description: Bulk update result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminBulkUpdateProductsResult"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "403":
+          description: Not admin
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
   /admin/products/import/dry-run:
     post:
       operationId: adminImportProductsDryRun
@@ -6807,6 +6840,72 @@ components:
             $ref: "#/components/schemas/AdminProductAttributeInput"
       required:
         - attributes
+    AdminBulkUpdateProductsFields:
+      type: object
+      description: Scalar product fields to set on every selected product. Omit a field to leave it unchanged. Use null on FK fields to clear them.
+      properties:
+        isActive: { type: boolean }
+        featured: { type: boolean }
+        inStoreOnly: { type: boolean }
+        availableOnline: { type: boolean }
+        quoteOnly: { type: boolean }
+        showPriceOnline: { type: boolean }
+        categoryId: { type: ["integer", "null"] }
+        manufacturerId: { type: ["integer", "null"] }
+        materialId: { type: ["integer", "null"] }
+    AdminBulkFabricPoolsChange:
+      type: object
+      description: How to mutate each product's fabric-pool manufacturer list.
+      properties:
+        mode:
+          type: string
+          enum: [replace, add, remove, clear]
+        manufacturerIds:
+          type: array
+          items: { type: integer }
+          description: Required for replace/add/remove; ignored for clear.
+      required: [mode]
+    AdminBulkFabricPicksChange:
+      type: object
+      description: How to mutate each product's individual fabric picks.
+      properties:
+        mode:
+          type: string
+          enum: [replace, add, remove, clear]
+        fabricIds:
+          type: array
+          items: { type: integer }
+          description: Required for replace/add/remove; ignored for clear.
+      required: [mode]
+    AdminBulkUpdateProductsRequest:
+      type: object
+      properties:
+        productIds:
+          type: array
+          items: { type: integer }
+          minItems: 1
+          maxItems: 500
+        fields:
+          $ref: "#/components/schemas/AdminBulkUpdateProductsFields"
+        fabricPools:
+          $ref: "#/components/schemas/AdminBulkFabricPoolsChange"
+        fabricPicks:
+          $ref: "#/components/schemas/AdminBulkFabricPicksChange"
+      required: [productIds]
+    AdminBulkUpdateProductsResult:
+      type: object
+      properties:
+        productsUpdated:
+          type: integer
+          description: How many products had their scalar fields changed.
+        fabricsUpdated:
+          type: integer
+          description: How many products had their fabric pools or picks changed.
+        notFound:
+          type: array
+          items: { type: integer }
+          description: Product IDs that did not exist and were skipped.
+      required: [productsUpdated, fabricsUpdated, notFound]
     EntityHistoryEntry:
       type: object
       properties:

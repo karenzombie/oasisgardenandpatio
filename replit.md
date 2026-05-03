@@ -122,3 +122,10 @@ User explicitly directed: **ask rather than assume on ambiguous build decisions*
   hand-authored content, linked from footer "Hours & Links" column.
 - **Deferred**: header search dropdown (T029). PLP already accepts `?q=`, so
   a future header `<form action="/shop">` is a simple interim wire-up.
+
+## Bulk product update (May 2026)
+
+- **Endpoint**: `POST /api/admin/products/bulk-update` — body `{ productIds, fields?, fabricPools?, fabricPicks? }`. `fields` covers scalar booleans (isActive, featured, inStoreOnly, availableOnline, quoteOnly, showPriceOnline) and FK ids (categoryId, manufacturerId, materialId; pass null to clear). `fabricPools` and `fabricPicks` each take `{ mode: replace|add|remove|clear, manufacturerIds|fabricIds }` so admins can layer brands onto an existing pool instead of overwriting.
+- **History**: per-product `entity_history` rows are written — `entityType="product"` for scalar updates and `entityType="product_fabrics"` (changeType `replace`) for fabric changes — both tagged `notes="bulk update"` so an existing product's HistoryPanel surfaces them.
+- **UI**: `Products.tsx` admin list now has a checkbox column + select-all-on-page (with indeterminate state); a floating bottom toolbar appears whenever any rows are selected and opens `BulkUpdateProductsDialog`. Selection persists across pagination so admins can build a multi-page set before applying.
+- **Why per-product loop instead of one mass UPDATE**: the fabric mutations need per-product previous→next snapshots for history, and individual scalar updates also need per-product history rows. Cap is 500 ids/request to keep one call bounded.

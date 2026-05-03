@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Pencil, Plus, Search, Power, Trash2, ChevronLeft, ChevronRight, Star, Upload } from "lucide-react";
+import { Pencil, Plus, Search, Power, Trash2, ChevronLeft, ChevronRight, Star, Upload, X } from "lucide-react";
 import { SortableHeader, toggleSort, type SortState } from "../../lib/sortable";
+import { BulkUpdateProductsDialog } from "../../components/BulkUpdateProductsDialog";
 
 type ProductsSortKey = "name" | "manufacturer" | "category" | "price" | "onHand";
 import {
@@ -54,6 +55,20 @@ export default function Products() {
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState<SortState<ProductsSortKey>>({ by: null, order: "desc" });
   const [confirmDeactivate, setConfirmDeactivate] = useState<AdminProduct | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [bulkOpen, setBulkOpen] = useState(false);
+
+  function toggleSelect(id: number) {
+    setSelectedIds((s) => {
+      const n = new Set(s);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
+  }
+  function clearSelection() {
+    setSelectedIds(new Set());
+  }
 
   const handleSort = (key: ProductsSortKey) => {
     setSort((prev) => toggleSort(prev, key));
@@ -237,6 +252,37 @@ export default function Products() {
               <table className="w-full text-sm">
                 <thead className="bg-slate-50 text-slate-600 text-left">
                   <tr>
+                    <th className="px-4 py-2.5 font-medium w-10">
+                      <input
+                        type="checkbox"
+                        aria-label="Select all on this page"
+                        checked={
+                          rows.length > 0 &&
+                          rows.every((r) => selectedIds.has(r.id))
+                        }
+                        ref={(el) => {
+                          if (!el) return;
+                          const someChecked = rows.some((r) =>
+                            selectedIds.has(r.id),
+                          );
+                          const allChecked =
+                            rows.length > 0 &&
+                            rows.every((r) => selectedIds.has(r.id));
+                          el.indeterminate = someChecked && !allChecked;
+                        }}
+                        onChange={(e) => {
+                          setSelectedIds((s) => {
+                            const n = new Set(s);
+                            if (e.target.checked) {
+                              for (const r of rows) n.add(r.id);
+                            } else {
+                              for (const r of rows) n.delete(r.id);
+                            }
+                            return n;
+                          });
+                        }}
+                      />
+                    </th>
                     <th className="px-4 py-2.5 font-medium w-16">Image</th>
                     <SortableHeader sortKey="name" state={sort} onSort={handleSort} className="px-4 py-2.5 font-medium">Name / SKU</SortableHeader>
                     <SortableHeader sortKey="manufacturer" state={sort} onSort={handleSort} className="px-4 py-2.5 font-medium">Brand</SortableHeader>
@@ -254,7 +300,20 @@ export default function Products() {
                       row.lowStockThreshold > 0 &&
                       row.onHand <= row.lowStockThreshold;
                     return (
-                      <tr key={row.id} className="hover:bg-slate-50">
+                      <tr
+                        key={row.id}
+                        className={`hover:bg-slate-50 ${
+                          selectedIds.has(row.id) ? "bg-sky-50/40" : ""
+                        }`}
+                      >
+                        <td className="px-4 py-2.5">
+                          <input
+                            type="checkbox"
+                            aria-label={`Select ${row.name}`}
+                            checked={selectedIds.has(row.id)}
+                            onChange={() => toggleSelect(row.id)}
+                          />
+                        </td>
                         <td className="px-4 py-2.5">
                           {img ? (
                             <img
@@ -376,6 +435,39 @@ export default function Products() {
           )}
         </div>
       </PageBody>
+
+      {selectedIds.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-white border border-slate-300 rounded-full shadow-lg px-4 py-2 flex items-center gap-3">
+          <span className="text-sm font-medium text-slate-700">
+            {selectedIds.size} selected
+          </span>
+          <Button
+            size="sm"
+            className="bg-[#1A3C5E] hover:bg-[#15314c] text-white"
+            onClick={() => setBulkOpen(true)}
+          >
+            Bulk update…
+          </Button>
+          <button
+            type="button"
+            onClick={clearSelection}
+            className="text-slate-500 hover:text-slate-800 p-1"
+            aria-label="Clear selection"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+      )}
+
+      <BulkUpdateProductsDialog
+        open={bulkOpen}
+        onOpenChange={setBulkOpen}
+        productIds={Array.from(selectedIds)}
+        onComplete={() => {
+          setBulkOpen(false);
+          clearSelection();
+        }}
+      />
 
       <AlertDialog
         open={confirmDeactivate !== null}

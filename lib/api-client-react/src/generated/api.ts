@@ -28,6 +28,8 @@ import type {
   AdminAddress,
   AdminAgentPrivileges,
   AdminBanner,
+  AdminBulkUpdateProductsRequest,
+  AdminBulkUpdateProductsResult,
   AdminCancelRecoveryRequest200,
   AdminCancellationRequest,
   AdminCategory,
@@ -6097,6 +6099,96 @@ export const useAdminUpdateProductAttributes = <
   TContext
 > => {
   return useMutation(getAdminUpdateProductAttributesMutationOptions(options));
+};
+
+/**
+ * @summary Apply field updates and/or fabric-pool/pick changes to many products at once
+ */
+export const getAdminBulkUpdateProductsUrl = () => {
+  return `/api/admin/products/bulk-update`;
+};
+
+export const adminBulkUpdateProducts = async (
+  adminBulkUpdateProductsRequest: AdminBulkUpdateProductsRequest,
+  options?: RequestInit,
+): Promise<AdminBulkUpdateProductsResult> => {
+  return customFetch<AdminBulkUpdateProductsResult>(
+    getAdminBulkUpdateProductsUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(adminBulkUpdateProductsRequest),
+    },
+  );
+};
+
+export const getAdminBulkUpdateProductsMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminBulkUpdateProducts>>,
+    TError,
+    { data: BodyType<AdminBulkUpdateProductsRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminBulkUpdateProducts>>,
+  TError,
+  { data: BodyType<AdminBulkUpdateProductsRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminBulkUpdateProducts"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminBulkUpdateProducts>>,
+    { data: BodyType<AdminBulkUpdateProductsRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return adminBulkUpdateProducts(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminBulkUpdateProductsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminBulkUpdateProducts>>
+>;
+export type AdminBulkUpdateProductsMutationBody =
+  BodyType<AdminBulkUpdateProductsRequest>;
+export type AdminBulkUpdateProductsMutationError = ErrorType<Error>;
+
+/**
+ * @summary Apply field updates and/or fabric-pool/pick changes to many products at once
+ */
+export const useAdminBulkUpdateProducts = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminBulkUpdateProducts>>,
+    TError,
+    { data: BodyType<AdminBulkUpdateProductsRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminBulkUpdateProducts>>,
+  TError,
+  { data: BodyType<AdminBulkUpdateProductsRequest> },
+  TContext
+> => {
+  return useMutation(getAdminBulkUpdateProductsMutationOptions(options));
 };
 
 /**

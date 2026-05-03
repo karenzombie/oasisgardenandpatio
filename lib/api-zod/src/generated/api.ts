@@ -2146,6 +2146,66 @@ export const AdminUpdateProductAttributesResponse = zod.array(
 );
 
 /**
+ * @summary Apply field updates and/or fabric-pool/pick changes to many products at once
+ */
+export const adminBulkUpdateProductsBodyProductIdsMax = 500;
+
+export const AdminBulkUpdateProductsBody = zod.object({
+  productIds: zod
+    .array(zod.number())
+    .min(1)
+    .max(adminBulkUpdateProductsBodyProductIdsMax),
+  fields: zod
+    .object({
+      isActive: zod.boolean().optional(),
+      featured: zod.boolean().optional(),
+      inStoreOnly: zod.boolean().optional(),
+      availableOnline: zod.boolean().optional(),
+      quoteOnly: zod.boolean().optional(),
+      showPriceOnline: zod.boolean().optional(),
+      categoryId: zod.number().nullish(),
+      manufacturerId: zod.number().nullish(),
+      materialId: zod.number().nullish(),
+    })
+    .optional()
+    .describe(
+      "Scalar product fields to set on every selected product. Omit a field to leave it unchanged. Use null on FK fields to clear them.",
+    ),
+  fabricPools: zod
+    .object({
+      mode: zod.enum(["replace", "add", "remove", "clear"]),
+      manufacturerIds: zod
+        .array(zod.number())
+        .optional()
+        .describe("Required for replace\/add\/remove; ignored for clear."),
+    })
+    .optional()
+    .describe("How to mutate each product's fabric-pool manufacturer list."),
+  fabricPicks: zod
+    .object({
+      mode: zod.enum(["replace", "add", "remove", "clear"]),
+      fabricIds: zod
+        .array(zod.number())
+        .optional()
+        .describe("Required for replace\/add\/remove; ignored for clear."),
+    })
+    .optional()
+    .describe("How to mutate each product's individual fabric picks."),
+});
+
+export const AdminBulkUpdateProductsResponse = zod.object({
+  productsUpdated: zod
+    .number()
+    .describe("How many products had their scalar fields changed."),
+  fabricsUpdated: zod
+    .number()
+    .describe("How many products had their fabric pools or picks changed."),
+  notFound: zod
+    .array(zod.number())
+    .describe("Product IDs that did not exist and were skipped."),
+});
+
+/**
  * @summary Validate a CSV import without writing changes
  */
 

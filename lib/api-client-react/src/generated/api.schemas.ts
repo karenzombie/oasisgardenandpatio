@@ -2903,6 +2903,82 @@ export interface AdminUpdateProductAttributesRequest {
   attributes: AdminProductAttributeInput[];
 }
 
+/**
+ * Scalar product fields to set on every selected product. Omit a field to leave it unchanged. Use null on FK fields to clear them.
+ */
+export interface AdminBulkUpdateProductsFields {
+  isActive?: boolean;
+  featured?: boolean;
+  inStoreOnly?: boolean;
+  availableOnline?: boolean;
+  quoteOnly?: boolean;
+  showPriceOnline?: boolean;
+  /** @nullable */
+  categoryId?: number | null;
+  /** @nullable */
+  manufacturerId?: number | null;
+  /** @nullable */
+  materialId?: number | null;
+}
+
+export type AdminBulkFabricPoolsChangeMode =
+  (typeof AdminBulkFabricPoolsChangeMode)[keyof typeof AdminBulkFabricPoolsChangeMode];
+
+export const AdminBulkFabricPoolsChangeMode = {
+  replace: "replace",
+  add: "add",
+  remove: "remove",
+  clear: "clear",
+} as const;
+
+/**
+ * How to mutate each product's fabric-pool manufacturer list.
+ */
+export interface AdminBulkFabricPoolsChange {
+  mode: AdminBulkFabricPoolsChangeMode;
+  /** Required for replace/add/remove; ignored for clear. */
+  manufacturerIds?: number[];
+}
+
+export type AdminBulkFabricPicksChangeMode =
+  (typeof AdminBulkFabricPicksChangeMode)[keyof typeof AdminBulkFabricPicksChangeMode];
+
+export const AdminBulkFabricPicksChangeMode = {
+  replace: "replace",
+  add: "add",
+  remove: "remove",
+  clear: "clear",
+} as const;
+
+/**
+ * How to mutate each product's individual fabric picks.
+ */
+export interface AdminBulkFabricPicksChange {
+  mode: AdminBulkFabricPicksChangeMode;
+  /** Required for replace/add/remove; ignored for clear. */
+  fabricIds?: number[];
+}
+
+export interface AdminBulkUpdateProductsRequest {
+  /**
+   * @minItems 1
+   * @maxItems 500
+   */
+  productIds: number[];
+  fields?: AdminBulkUpdateProductsFields;
+  fabricPools?: AdminBulkFabricPoolsChange;
+  fabricPicks?: AdminBulkFabricPicksChange;
+}
+
+export interface AdminBulkUpdateProductsResult {
+  /** How many products had their scalar fields changed. */
+  productsUpdated: number;
+  /** How many products had their fabric pools or picks changed. */
+  fabricsUpdated: number;
+  /** Product IDs that did not exist and were skipped. */
+  notFound: number[];
+}
+
 export type EntityHistoryEntryChangeType =
   (typeof EntityHistoryEntryChangeType)[keyof typeof EntityHistoryEntryChangeType];
 
