@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { navForRole } from "./nav";
-import { Leaf } from "lucide-react";
+import logoUrl from "@/assets/logo.png";
 
 interface SidebarProps {
   role: "agent" | "admin";
@@ -13,10 +13,15 @@ export function Sidebar({ role, onNavigate }: SidebarProps) {
 
   return (
     <aside className="h-full w-64 bg-[#1A3C5E] text-white flex flex-col">
-      <div className="h-16 px-5 flex items-center gap-2 border-b border-white/10">
-        <Leaf className="size-5 text-emerald-300" />
+      <div className="h-16 px-5 flex items-center gap-3 border-b border-white/10">
+        <div className="bg-white rounded p-1 flex items-center justify-center">
+          <img
+            src={logoUrl}
+            alt="Oasis Garden & Patio"
+            className="h-8 w-auto object-contain"
+          />
+        </div>
         <div className="leading-tight">
-          <div className="text-sm font-semibold">Oasis Garden</div>
           <div className="text-[11px] uppercase tracking-wider text-white/60">
             {role === "admin" ? "Admin Portal" : "Sales Agent"}
           </div>

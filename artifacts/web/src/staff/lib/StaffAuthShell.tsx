@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Leaf } from "lucide-react";
+import logoUrl from "@/assets/logo.png";
 
 export function StaffAuthShell({
   title,
@@ -15,11 +15,12 @@ export function StaffAuthShell({
   return (
     <div className="min-h-[100dvh] bg-[#F5F7FA] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
-        <div className="flex items-center justify-center gap-2 mb-6 text-[#1A3C5E]">
-          <Leaf className="size-6 text-emerald-600" />
-          <span className="text-base font-semibold tracking-tight">
-            Oasis Garden &amp; Patio
-          </span>
+        <div className="flex items-center justify-center mb-6">
+          <img
+            src={logoUrl}
+            alt="Oasis Garden & Patio"
+            className="h-14 w-auto object-contain"
+          />
         </div>
         <div className="bg-white border border-slate-200 shadow-sm rounded-md p-8">
           <div className="mb-6">
