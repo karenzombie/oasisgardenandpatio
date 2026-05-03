@@ -119,63 +119,86 @@ export default function Home() {
             <div className="h-px w-24 bg-primary/40" />
           </div>
 
-          {featuredProducts && featuredProducts.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {featuredProducts.map((product) => {
-                const brandLogo = getBrandLogo(product.manufacturerName);
-                return (
-                  <Link key={product.id} href={`/shop/${product.slug}`} className="group block">
-                    <div className="aspect-square bg-card overflow-hidden mb-4 relative">
-                      {product.primaryImageUrl ? (
-                        <img src={product.primaryImageUrl} alt={product.name} className="w-full h-full object-cover mix-blend-multiply transition-transform duration-500 group-hover:scale-105" />
+          {(() => {
+            const items =
+              featuredProducts && featuredProducts.length > 0
+                ? featuredProducts.map((product) => ({
+                    key: product.id,
+                    href: `/shop/${product.slug}`,
+                    name: product.name,
+                    imageUrl: product.primaryImageUrl ?? null,
+                    manufacturerName: product.manufacturerName ?? null,
+                    placeholder: false as const,
+                  }))
+                : Array.from({ length: 6 }).map((_, i) => ({
+                    key: `placeholder-${i}`,
+                    href: "/shop",
+                    name: "Coming Soon",
+                    imageUrl: null,
+                    manufacturerName: null,
+                    placeholder: true as const,
+                  }));
+
+            const renderTile = (
+              item: (typeof items)[number],
+              keyPrefix: string,
+            ) => {
+              const brandLogo = item.placeholder
+                ? null
+                : getBrandLogo(item.manufacturerName);
+              return (
+                <li
+                  key={`${keyPrefix}-${item.key}`}
+                  className="shrink-0 w-48 md:w-56"
+                >
+                  <Link href={item.href} className="group block">
+                    <div className="aspect-square overflow-hidden mb-3 relative bg-card">
+                      {item.imageUrl ? (
+                        <img
+                          src={item.imageUrl}
+                          alt={item.name}
+                          className="w-full h-full object-cover mix-blend-multiply transition-transform duration-500 group-hover:scale-105"
+                        />
                       ) : (
-                        <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground font-serif">Oasis</div>
+                        <div className="w-full h-full flex items-center justify-center bg-secondary/40 text-secondary-foreground/60 font-serif text-xs tracking-widest uppercase transition-colors group-hover:bg-secondary/60">
+                          {item.placeholder ? "Featured Soon" : "Oasis"}
+                        </div>
                       )}
                       {brandLogo ? (
-                        <div className="absolute top-3 left-3 bg-white/95 px-2 py-1 rounded-sm shadow-sm" aria-hidden="true">
-                          <img src={brandLogo} alt="" className="h-5 w-auto object-contain" />
+                        <div
+                          className="absolute top-2 left-2 bg-white/95 px-2 py-1 rounded-sm shadow-sm"
+                          aria-hidden="true"
+                        >
+                          <img
+                            src={brandLogo}
+                            alt=""
+                            className="h-4 w-auto object-contain"
+                          />
                         </div>
                       ) : null}
                     </div>
-                    <div className="space-y-2 text-center">
-                      {brandLogo ? (
-                        <img
-                          src={brandLogo}
-                          alt={product.manufacturerName ?? ""}
-                          className="h-6 w-auto object-contain mx-auto"
-                        />
-                      ) : (
-                        <p className="text-xs uppercase tracking-widest text-muted-foreground">{product.manufacturerName}</p>
-                      )}
-                      <h3 className="font-serif text-lg group-hover:text-primary transition-colors line-clamp-1">{product.name}</h3>
-                      {product.showPriceOnline && product.price && (
-                        <p className="text-sm">${product.price}</p>
-                      )}
-                    </div>
+                    <h3 className="font-serif text-sm md:text-base text-center group-hover:text-primary transition-colors line-clamp-1">
+                      {item.name}
+                    </h3>
                   </Link>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <Link
-                  key={i}
-                  href="/shop"
-                  className="group block cursor-pointer"
-                  aria-label="Featured collection coming soon"
+                </li>
+              );
+            };
+
+            return (
+              <div className="featured-marquee w-full inline-flex flex-nowrap overflow-hidden">
+                <ul className="flex items-start [&_li]:mx-4 animate-infinite-scroll shrink-0">
+                  {items.map((it) => renderTile(it, "a"))}
+                </ul>
+                <ul
+                  aria-hidden="true"
+                  className="flex items-start [&_li]:mx-4 animate-infinite-scroll shrink-0"
                 >
-                  <div className="aspect-square bg-secondary/40 overflow-hidden mb-4 flex items-center justify-center text-secondary-foreground/60 font-serif text-xs tracking-widest uppercase transition-colors group-hover:bg-secondary/60">
-                    Featured Soon
-                  </div>
-                  <div className="space-y-2 text-center">
-                    <div className="h-6" aria-hidden="true" />
-                    <h3 className="font-serif text-lg text-muted-foreground">Coming Soon</h3>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
+                  {items.map((it) => renderTile(it, "b"))}
+                </ul>
+              </div>
+            );
+          })()}
         </div>
       </section>
 
