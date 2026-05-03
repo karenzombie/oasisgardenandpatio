@@ -145,14 +145,22 @@ export default function Product() {
 
   const variantOptionLabel = variants[0]?.optionLabel ?? "Variant";
 
-  // A product with no price set in the catalog cannot be checked out online —
-  // the cart endpoint will reject it with "Product has no price set". Treat
-  // those exactly like quote-only items in the UI so the customer is never
-  // shown a clickable "Add to Cart" that the server is guaranteed to refuse.
+  // A product can only be purchased online when ALL of these are true:
+  //   1. it isn't flagged as quote-only,
+  //   2. it has a real, non-zero price set,
+  //   3. it's enabled for online sale (`availableOnline`).
+  // The cart endpoint enforces (2) and (3) server-side and will reject the
+  // request otherwise, so we mirror those rules here and fall back to the
+  // "Contact us" panel + Wishlist button when any rule fails.
   const hasPrice =
     (data.price != null && Number(data.price) > 0) ||
     (data.salePrice != null && Number(data.salePrice) > 0);
-  const showQuoteFallback = data.quoteOnly || !hasPrice;
+  const canBuyOnline =
+    !data.quoteOnly && hasPrice && data.availableOnline;
+  const showQuoteFallback = !canBuyOnline;
+  // Price is only shown to shoppers when (a) the merchant has opted into
+  // showing the online price and (b) a price is actually set.
+  const showPriceBlock = data.showPriceOnline && hasPrice;
 
   return (
     <div className="container mx-auto px-4 py-10 max-w-7xl">
@@ -213,7 +221,7 @@ export default function Product() {
 
           <h1 className="font-serif text-3xl md:text-4xl mb-4">{data.name}</h1>
 
-          {data.showPriceOnline && data.price ? (
+          {showPriceBlock ? (
             <div className="text-2xl mb-6">
               {onSale ? (
                 <>
