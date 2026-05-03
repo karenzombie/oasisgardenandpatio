@@ -314,7 +314,7 @@ export default function ProductEdit() {
         const created = await createMut.mutateAsync({ data: payload as never });
         toast.toast({ title: "Product created" });
         await qc.invalidateQueries({ queryKey: getAdminListProductsQueryKey() });
-        navigate(`/products/${created.id}`);
+        navigate(`/admin/products/${created.id}`);
       } else if (productId) {
         await updateMut.mutateAsync({ id: productId, data: payload as never });
         try {
@@ -474,7 +474,7 @@ export default function ProductEdit() {
             <p className="text-sm text-red-600 mb-4">
               Could not load this product. It may have been deleted.
             </p>
-            <Button variant="outline" onClick={() => navigate("/products")}>
+            <Button variant="outline" onClick={() => navigate("/admin/products")}>
               <ArrowLeft className="size-4" />
               Back to products
             </Button>
@@ -492,7 +492,7 @@ export default function ProductEdit() {
         title={isNew ? "New product" : form.name || "Product"}
         subtitle={isNew ? "Add a new item to your catalog." : `SKU ${form.sku}`}
         action={
-          <Button variant="outline" onClick={() => navigate("/products")}>
+          <Button variant="outline" onClick={() => navigate("/admin/products")}>
             <ArrowLeft className="size-4" />
             Back
           </Button>
@@ -982,7 +982,7 @@ export default function ProductEdit() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => navigate("/products")}
+              onClick={() => navigate("/admin/products")}
               disabled={saving}
             >
               Cancel

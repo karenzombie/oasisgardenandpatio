@@ -114,14 +114,14 @@ export default function Products() {
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
-              onClick={() => navigate("/products/import")}
+              onClick={() => navigate("/admin/products/import")}
               data-testid="btn-import-csv"
             >
               <Upload className="size-4" />
               Import CSV
             </Button>
             <Button
-              onClick={() => navigate("/products/new")}
+              onClick={() => navigate("/admin/products/new")}
               className="bg-[#1A3C5E] hover:bg-[#15314c] text-white"
             >
               <Plus className="size-4" />
@@ -257,7 +257,7 @@ export default function Products() {
                         </td>
                         <td className="px-4 py-2.5">
                           <button
-                            onClick={() => navigate(`/products/${row.id}`)}
+                            onClick={() => navigate(`/admin/products/${row.id}`)}
                             className="font-medium text-slate-900 hover:text-[#1A3C5E] hover:underline text-left"
                           >
                             {row.name}
@@ -297,7 +297,7 @@ export default function Products() {
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => navigate(`/products/${row.id}`)}
+                              onClick={() => navigate(`/admin/products/${row.id}`)}
                               title="Edit"
                             >
                               <Pencil className="size-4" />

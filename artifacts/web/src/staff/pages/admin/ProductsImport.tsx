@@ -277,7 +277,7 @@ export default function ProductsImport() {
         action={
           <Button
             variant="outline"
-            onClick={() => navigate("/products")}
+            onClick={() => navigate("/admin/products")}
           >
             <ArrowLeft className="size-4" />
             Back to products
@@ -588,7 +588,7 @@ export default function ProductsImport() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => navigate("/products")}
+                      onClick={() => navigate("/admin/products")}
                     >
                       View products
                     </Button>
