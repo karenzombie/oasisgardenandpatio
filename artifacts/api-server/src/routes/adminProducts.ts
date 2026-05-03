@@ -696,9 +696,11 @@ router.put(
       })
       .onConflictDoUpdate({
         target: inventoryTable.productId,
+        targetWhere: sql`${inventoryTable.variantId} IS NULL`,
         set: {
           onHand: body.data.onHand,
           reorderThreshold: body.data.reorderThreshold,
+          updatedAt: new Date(),
         },
       })
       .returning();
