@@ -20,7 +20,9 @@ export default function Home() {
   const { data: categories } = useListCategories();
   const { data: featuredProducts } = useListFeaturedProducts();
 
-  const topLevelCategories = categories?.filter(c => c.parentId === null) || [];
+  const topLevelCategories = (categories?.filter(c => c.parentId === null) || [])
+    .slice()
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
     <div className="w-full">
