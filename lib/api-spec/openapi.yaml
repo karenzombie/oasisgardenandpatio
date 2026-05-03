@@ -1683,6 +1683,142 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /admin/fabrics:
+    get:
+      operationId: adminListFabrics
+      tags: [admin-products]
+      summary: List all fabrics across manufacturers (admin)
+      responses:
+        "200":
+          description: All fabrics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminFabric"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "403":
+          description: Not admin
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+  /admin/products/{id}/fabrics:
+    get:
+      operationId: adminGetProductFabrics
+      tags: [admin-products]
+      summary: Get a product's fabric pools and individual fabric picks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Fabric configuration for the product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminProductFabricsConfig"
+        "404":
+          description: Product not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+    put:
+      operationId: adminUpdateProductFabrics
+      tags: [admin-products]
+      summary: Replace a product's fabric pools and individual fabric picks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUpdateProductFabricsRequest"
+      responses:
+        "200":
+          description: Updated configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminProductFabricsConfig"
+        "404":
+          description: Product not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+  /admin/products/{id}/attributes:
+    get:
+      operationId: adminGetProductAttributes
+      tags: [admin-products]
+      summary: List all attributes (features, options, replacement parts) for a product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Attributes for the product
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminProductAttribute"
+        "404":
+          description: Product not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+    put:
+      operationId: adminUpdateProductAttributes
+      tags: [admin-products]
+      summary: Replace all attributes for a product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUpdateProductAttributesRequest"
+      responses:
+        "200":
+          description: Updated attributes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminProductAttribute"
+        "404":
+          description: Product not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
   /admin/products/import/dry-run:
     post:
       operationId: adminImportProductsDryRun
@@ -6532,3 +6668,106 @@ components:
         requestIp: { type: ["string", "null"] }
         requestUserAgent: { type: ["string", "null"] }
       required: [id, userId, userEmail, userRole, requestedAt, availableAt, expiresAt]
+    AdminFabric:
+      type: object
+      properties:
+        id: { type: integer }
+        manufacturerId: { type: integer }
+        manufacturerName: { type: string }
+        itemNumber: { type: string }
+        name: { type: string }
+        swatchImageUrl: { type: ["string", "null"] }
+        isActive: { type: boolean }
+        displayOrder: { type: integer }
+      required:
+        - id
+        - manufacturerId
+        - manufacturerName
+        - itemNumber
+        - name
+        - swatchImageUrl
+        - isActive
+        - displayOrder
+    AdminProductFabricPool:
+      type: object
+      properties:
+        manufacturerId: { type: integer }
+        manufacturerName: { type: string }
+        fabricCount:
+          type: integer
+          description: Number of currently active fabrics in this pool.
+      required:
+        - manufacturerId
+        - manufacturerName
+        - fabricCount
+    AdminProductFabricsConfig:
+      type: object
+      properties:
+        pools:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminProductFabricPool"
+        fabricIds:
+          type: array
+          items: { type: integer }
+          description: Individually-picked fabric IDs (extra fabrics on top of any pools).
+      required:
+        - pools
+        - fabricIds
+    AdminUpdateProductFabricsRequest:
+      type: object
+      properties:
+        manufacturerIds:
+          type: array
+          items: { type: integer }
+          description: Replace pools with these manufacturer IDs.
+        fabricIds:
+          type: array
+          items: { type: integer }
+          description: Replace individual fabric picks with these fabric IDs.
+      required:
+        - manufacturerIds
+        - fabricIds
+    AdminProductAttribute:
+      type: object
+      properties:
+        id: { type: integer }
+        attributeType:
+          type: string
+          enum: [feature, option, replacement_part]
+        partName:
+          type: ["string", "null"]
+          description: Required when attributeType is 'replacement_part', null otherwise.
+        value: { type: string }
+        displayOrder: { type: integer }
+      required:
+        - id
+        - attributeType
+        - partName
+        - value
+        - displayOrder
+    AdminProductAttributeInput:
+      type: object
+      properties:
+        attributeType:
+          type: string
+          enum: [feature, option, replacement_part]
+        partName:
+          type: ["string", "null"]
+        value:
+          type: string
+          minLength: 1
+        displayOrder: { type: integer }
+      required:
+        - attributeType
+        - value
+        - displayOrder
+    AdminUpdateProductAttributesRequest:
+      type: object
+      properties:
+        attributes:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminProductAttributeInput"
+      required:
+        - attributes

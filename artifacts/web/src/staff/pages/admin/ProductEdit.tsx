@@ -5,6 +5,8 @@ import {
   ArrowLeft,
   ArrowDown,
   ArrowUp,
+  ChevronDown,
+  ChevronRight,
   Image as ImageIcon,
   Plus,
   Star,
@@ -23,9 +25,18 @@ import {
   useAdminListManufacturers,
   useAdminListCategories,
   useListMaterials,
+  useAdminListFabrics,
+  useAdminGetProductFabrics,
+  useAdminUpdateProductFabrics,
+  useAdminGetProductAttributes,
+  useAdminUpdateProductAttributes,
   getAdminGetProductQueryKey,
   getAdminListProductsQueryKey,
+  getAdminGetProductFabricsQueryKey,
+  getAdminGetProductAttributesQueryKey,
   type AdminProductImage,
+  type AdminFabric,
+  type AdminProductAttribute,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -141,12 +152,29 @@ export default function ProductEdit() {
   const mfgList = useAdminListManufacturers();
   const catList = useAdminListCategories();
   const materialList = useListMaterials();
+  const fabricsList = useAdminListFabrics({
+    query: { enabled: !isNew, queryKey: ["/api/admin/fabrics"] as const },
+  });
+  const fabricsConfigQuery = useAdminGetProductFabrics(productId ?? 0, {
+    query: {
+      enabled: !isNew && Number.isFinite(productId) && (productId ?? 0) > 0,
+      queryKey: getAdminGetProductFabricsQueryKey(productId ?? 0),
+    },
+  });
+  const attributesQuery = useAdminGetProductAttributes(productId ?? 0, {
+    query: {
+      enabled: !isNew && Number.isFinite(productId) && (productId ?? 0) > 0,
+      queryKey: getAdminGetProductAttributesQueryKey(productId ?? 0),
+    },
+  });
   const createMut = useAdminCreateProduct();
   const updateMut = useAdminUpdateProduct();
   const addImageMut = useAdminAddProductImage();
   const reorderMut = useAdminReorderProductImages();
   const deleteImageMut = useAdminDeleteProductImage();
   const inventoryMut = useAdminUpdateProductInventory();
+  const fabricsMut = useAdminUpdateProductFabrics();
+  const attributesMut = useAdminUpdateProductAttributes();
 
   const [form, setForm] = useState<FormState>(emptyForm);
   const [error, setError] = useState<string | null>(null);
@@ -155,12 +183,60 @@ export default function ProductEdit() {
     useState<AdminProductImage | null>(null);
   const [hydrated, setHydrated] = useState(false);
 
+  // Fabric pool (manufacturer-wide) selections + individual fabric picks.
+  const [poolManufacturerIds, setPoolManufacturerIds] = useState<number[]>([]);
+  const [pickedFabricIds, setPickedFabricIds] = useState<number[]>([]);
+  const [expandedFabricMfgs, setExpandedFabricMfgs] = useState<Set<number>>(
+    () => new Set(),
+  );
+
+  // Free-form attributes (features / options / replacement parts).
+  type AttrDraft = {
+    key: string;
+    attributeType: "feature" | "option" | "replacement_part";
+    partName: string;
+    value: string;
+  };
+  const [attrs, setAttrs] = useState<AttrDraft[]>([]);
+  const [fabAttrHydrated, setFabAttrHydrated] = useState(false);
+
   // Reset hydration when the route param changes (router may reuse the
   // component when navigating between /products/A and /products/B), so the
   // form re-hydrates from the new product's data.
   useEffect(() => {
     setHydrated(false);
+    setFabAttrHydrated(false);
+    // Clear stale per-product state so the previous product's fabrics/attrs
+    // can never be saved against a freshly-opened product if the user clicks
+    // Save before the new queries hydrate.
+    setPoolManufacturerIds([]);
+    setPickedFabricIds([]);
+    setAttrs([]);
   }, [productId]);
+
+  // Hydrate fabric + attribute state from server data once both queries land.
+  useEffect(() => {
+    if (
+      !isNew &&
+      fabricsConfigQuery.data &&
+      attributesQuery.data &&
+      !fabAttrHydrated
+    ) {
+      setPoolManufacturerIds(
+        fabricsConfigQuery.data.pools.map((p) => p.manufacturerId),
+      );
+      setPickedFabricIds(fabricsConfigQuery.data.fabricIds);
+      setAttrs(
+        attributesQuery.data.map((a: AdminProductAttribute, i: number) => ({
+          key: `${a.id}-${i}`,
+          attributeType: a.attributeType,
+          partName: a.partName ?? "",
+          value: a.value,
+        })),
+      );
+      setFabAttrHydrated(true);
+    }
+  }, [fabricsConfigQuery.data, attributesQuery.data, isNew, fabAttrHydrated]);
 
   useEffect(() => {
     // Wait for all three queries to land before hydrating so the
@@ -316,26 +392,103 @@ export default function ProductEdit() {
         await qc.invalidateQueries({ queryKey: getAdminListProductsQueryKey() });
         navigate(`/admin/products/${created.id}`);
       } else if (productId) {
+        // Block save until fabric/attribute data has hydrated, otherwise we'd
+        // overwrite the product's saved configuration with empty arrays.
+        if (!fabAttrHydrated) {
+          setError(
+            "Still loading this product's fabrics and attributes. Try again in a moment.",
+          );
+          return;
+        }
+
+        // Validate attributes locally BEFORE the main update so we don't
+        // commit a partial save (product core fields would otherwise persist
+        // even though attributes are invalid).
+        for (const a of attrs) {
+          if (a.value.trim() === "") {
+            setError("All attributes need a value.");
+            return;
+          }
+          if (a.attributeType === "replacement_part" && a.partName.trim() === "") {
+            setError("Replacement parts need a part name.");
+            return;
+          }
+        }
+
         await updateMut.mutateAsync({ id: productId, data: payload as never });
+
+        const followUpFailures: string[] = [];
+
         try {
           await inventoryMut.mutateAsync({
             id: productId,
             data: { onHand, reorderThreshold },
           });
-          toast.toast({ title: "Product saved" });
         } catch (invErr) {
-          // Product update succeeded but inventory failed — be explicit.
+          followUpFailures.push(
+            `Inventory: ${invErr instanceof Error ? invErr.message : "failed"}`,
+          );
+        }
+
+        try {
+          await fabricsMut.mutateAsync({
+            id: productId,
+            data: {
+              manufacturerIds: poolManufacturerIds,
+              fabricIds: pickedFabricIds,
+            },
+          });
+        } catch (fErr) {
+          followUpFailures.push(
+            `Fabrics: ${fErr instanceof Error ? fErr.message : "failed"}`,
+          );
+        }
+
+        try {
+          // Renumber displayOrder per group so it always reflects current UI order.
+          const counters: Record<string, number> = {};
+          await attributesMut.mutateAsync({
+            id: productId,
+            data: {
+              attributes: attrs.map((a) => {
+                const idx = counters[a.attributeType] ?? 0;
+                counters[a.attributeType] = idx + 1;
+                return {
+                  attributeType: a.attributeType,
+                  partName:
+                    a.attributeType === "replacement_part"
+                      ? a.partName.trim()
+                      : null,
+                  value: a.value.trim(),
+                  displayOrder: idx,
+                };
+              }),
+            },
+          });
+        } catch (aErr) {
+          followUpFailures.push(
+            `Attributes: ${aErr instanceof Error ? aErr.message : "failed"}`,
+          );
+        }
+
+        if (followUpFailures.length === 0) {
+          toast.toast({ title: "Product saved" });
+        } else {
           toast.toast({
             variant: "destructive",
-            title: "Product saved, inventory failed",
-            description:
-              invErr instanceof Error
-                ? invErr.message
-                : "Try saving again to update stock.",
+            title: "Product saved with errors",
+            description: followUpFailures.join("; "),
           });
         }
+
         await qc.invalidateQueries({ queryKey: getAdminGetProductQueryKey(productId) });
         await qc.invalidateQueries({ queryKey: getAdminListProductsQueryKey() });
+        await qc.invalidateQueries({
+          queryKey: getAdminGetProductFabricsQueryKey(productId),
+        });
+        await qc.invalidateQueries({
+          queryKey: getAdminGetProductAttributesQueryKey(productId),
+        });
       }
     } catch (err: unknown) {
       const e = err as { response?: { status?: number }; message?: string };
@@ -484,7 +637,94 @@ export default function ProductEdit() {
     );
   }
 
-  const saving = createMut.isPending || updateMut.isPending || inventoryMut.isPending;
+  const saving =
+    createMut.isPending ||
+    updateMut.isPending ||
+    inventoryMut.isPending ||
+    fabricsMut.isPending ||
+    attributesMut.isPending;
+
+  // Group all fabrics by manufacturer for the picker UI.
+  const fabricsByMfg = useMemo(() => {
+    const map = new Map<
+      number,
+      { manufacturerId: number; manufacturerName: string; fabrics: AdminFabric[] }
+    >();
+    for (const f of fabricsList.data ?? []) {
+      const cur = map.get(f.manufacturerId);
+      if (cur) {
+        cur.fabrics.push(f);
+      } else {
+        map.set(f.manufacturerId, {
+          manufacturerId: f.manufacturerId,
+          manufacturerName: f.manufacturerName,
+          fabrics: [f],
+        });
+      }
+    }
+    return Array.from(map.values()).sort((a, b) =>
+      a.manufacturerName.localeCompare(b.manufacturerName),
+    );
+  }, [fabricsList.data]);
+
+  function togglePool(manufacturerId: number) {
+    setPoolManufacturerIds((cur) =>
+      cur.includes(manufacturerId)
+        ? cur.filter((id) => id !== manufacturerId)
+        : [...cur, manufacturerId],
+    );
+  }
+
+  function togglePickedFabric(fabricId: number) {
+    setPickedFabricIds((cur) =>
+      cur.includes(fabricId)
+        ? cur.filter((id) => id !== fabricId)
+        : [...cur, fabricId],
+    );
+  }
+
+  function toggleMfgExpanded(manufacturerId: number) {
+    setExpandedFabricMfgs((cur) => {
+      const next = new Set(cur);
+      if (next.has(manufacturerId)) next.delete(manufacturerId);
+      else next.add(manufacturerId);
+      return next;
+    });
+  }
+
+  function addAttr(type: AttrDraft["attributeType"]) {
+    setAttrs((cur) => [
+      ...cur,
+      {
+        key: `new-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        attributeType: type,
+        partName: "",
+        value: "",
+      },
+    ]);
+  }
+  function removeAttr(key: string) {
+    setAttrs((cur) => cur.filter((a) => a.key !== key));
+  }
+  function moveAttr(key: string, dir: -1 | 1) {
+    setAttrs((cur) => {
+      const idx = cur.findIndex((a) => a.key === key);
+      if (idx < 0) return cur;
+      // Move within the same attributeType group only.
+      const same = cur[idx].attributeType;
+      let target = idx + dir;
+      while (target >= 0 && target < cur.length && cur[target].attributeType !== same) {
+        target += dir;
+      }
+      if (target < 0 || target >= cur.length) return cur;
+      const next = [...cur];
+      [next[idx], next[target]] = [next[target], next[idx]];
+      return next;
+    });
+  }
+  function patchAttr(key: string, patch: Partial<AttrDraft>) {
+    setAttrs((cur) => cur.map((a) => (a.key === key ? { ...a, ...patch } : a)));
+  }
 
   return (
     <>
@@ -969,6 +1209,249 @@ export default function ProductEdit() {
                   </p>
                 </div>
               </div>
+            </section>
+          )}
+
+          {/* Fabric options */}
+          {!isNew && (
+            <section className="bg-white border border-slate-200 rounded-md p-6">
+              <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-2">
+                Fabric options
+              </h3>
+              <p className="text-xs text-slate-500 mb-4">
+                Choose which fabrics customers can order this product in. Turn
+                on a manufacturer pool to automatically include every current
+                and future fabric from that brand, and/or hand-pick extra
+                individual fabrics.
+              </p>
+              {fabricsList.isLoading || fabricsConfigQuery.isLoading ? (
+                <p className="text-sm text-slate-500">Loading fabrics…</p>
+              ) : fabricsByMfg.length === 0 ? (
+                <p className="text-sm text-slate-500">
+                  No fabrics in the catalog yet.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {fabricsByMfg.map((group) => {
+                    const poolOn = poolManufacturerIds.includes(
+                      group.manufacturerId,
+                    );
+                    const expanded = expandedFabricMfgs.has(
+                      group.manufacturerId,
+                    );
+                    const pickedInGroup = group.fabrics.filter((f) =>
+                      pickedFabricIds.includes(f.id),
+                    ).length;
+                    return (
+                      <div
+                        key={group.manufacturerId}
+                        className="border border-slate-200 rounded-md"
+                      >
+                        <div className="flex items-center gap-3 px-4 py-3">
+                          <label className="flex items-center gap-2 text-sm font-medium text-slate-800">
+                            <input
+                              type="checkbox"
+                              checked={poolOn}
+                              onChange={() =>
+                                togglePool(group.manufacturerId)
+                              }
+                            />
+                            Use all {group.manufacturerName} fabrics
+                          </label>
+                          <span className="text-xs text-slate-500 ml-auto">
+                            {poolOn
+                              ? `${group.fabrics.filter((f) => f.isActive).length} active in pool`
+                              : pickedInGroup > 0
+                                ? `${pickedInGroup} picked`
+                                : `${group.fabrics.length} available`}
+                          </span>
+                          <button
+                            type="button"
+                            className="text-slate-500 hover:text-slate-800"
+                            onClick={() =>
+                              toggleMfgExpanded(group.manufacturerId)
+                            }
+                            aria-label={expanded ? "Collapse" : "Expand"}
+                          >
+                            {expanded ? (
+                              <ChevronDown className="size-4" />
+                            ) : (
+                              <ChevronRight className="size-4" />
+                            )}
+                          </button>
+                        </div>
+                        {expanded && (
+                          <div className="px-4 pb-4 border-t border-slate-200 pt-3">
+                            {poolOn && (
+                              <p className="text-xs text-slate-500 mb-2">
+                                Pool is on — every active fabric below is
+                                already included automatically. You don't need
+                                to pick them individually.
+                              </p>
+                            )}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-72 overflow-auto">
+                              {group.fabrics.map((f) => {
+                                const checked = pickedFabricIds.includes(f.id);
+                                return (
+                                  <label
+                                    key={f.id}
+                                    className={`flex items-center gap-2 text-sm px-2 py-1.5 rounded ${
+                                      poolOn
+                                        ? "text-slate-400"
+                                        : "text-slate-700 hover:bg-slate-50"
+                                    }`}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={poolOn || checked}
+                                      disabled={poolOn}
+                                      onChange={() =>
+                                        togglePickedFabric(f.id)
+                                      }
+                                    />
+                                    {f.swatchImageUrl && (
+                                      <img
+                                        src={f.swatchImageUrl}
+                                        alt=""
+                                        className="size-6 rounded object-cover border border-slate-200"
+                                      />
+                                    )}
+                                    <span className="font-mono text-xs text-slate-500">
+                                      {f.itemNumber}
+                                    </span>
+                                    <span className="truncate">{f.name}</span>
+                                    {!f.isActive && (
+                                      <span className="ml-auto text-xs text-amber-700">
+                                        inactive
+                                      </span>
+                                    )}
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* Attributes (features / options / replacement parts) */}
+          {!isNew && (
+            <section className="bg-white border border-slate-200 rounded-md p-6">
+              <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-2">
+                Attributes
+              </h3>
+              <p className="text-xs text-slate-500 mb-4">
+                Bullet points shown on the product page. Features describe what
+                the product is, options note add-ons or upgrades, and
+                replacement parts list service items by part name.
+              </p>
+              {attributesQuery.isLoading ? (
+                <p className="text-sm text-slate-500">Loading attributes…</p>
+              ) : (
+                (
+                  [
+                    { type: "feature", label: "Features" },
+                    { type: "option", label: "Options" },
+                    {
+                      type: "replacement_part",
+                      label: "Replacement parts",
+                    },
+                  ] as const
+                ).map(({ type, label }) => {
+                  const rows = attrs.filter((a) => a.attributeType === type);
+                  return (
+                    <div key={type} className="mb-6 last:mb-0">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-sm font-medium text-slate-700">
+                          {label}
+                        </h4>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => addAttr(type)}
+                        >
+                          <Plus className="size-3.5" /> Add
+                        </Button>
+                      </div>
+                      {rows.length === 0 ? (
+                        <p className="text-xs text-slate-400 italic">
+                          No {label.toLowerCase()} yet.
+                        </p>
+                      ) : (
+                        <div className="space-y-2">
+                          {rows.map((row, idxInGroup) => (
+                            <div
+                              key={row.key}
+                              className="flex items-start gap-2"
+                            >
+                              {type === "replacement_part" && (
+                                <Input
+                                  value={row.partName}
+                                  onChange={(e) =>
+                                    patchAttr(row.key, {
+                                      partName: e.target.value,
+                                    })
+                                  }
+                                  placeholder="Part name"
+                                  className="max-w-[200px]"
+                                />
+                              )}
+                              <Input
+                                value={row.value}
+                                onChange={(e) =>
+                                  patchAttr(row.key, { value: e.target.value })
+                                }
+                                placeholder={
+                                  type === "replacement_part"
+                                    ? "Part number / SKU"
+                                    : type === "feature"
+                                      ? "e.g. Powder-coated aluminum frame"
+                                      : "e.g. Add umbrella hole (+$50)"
+                                }
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => moveAttr(row.key, -1)}
+                                disabled={idxInGroup === 0}
+                                aria-label="Move up"
+                              >
+                                <ArrowUp className="size-4" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => moveAttr(row.key, 1)}
+                                disabled={idxInGroup === rows.length - 1}
+                                aria-label="Move down"
+                              >
+                                <ArrowDown className="size-4" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => removeAttr(row.key)}
+                                aria-label="Remove"
+                              >
+                                <Trash2 className="size-4 text-red-600" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
             </section>
           )}
 

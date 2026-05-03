@@ -2828,6 +2828,81 @@ export interface AdminRecoveryRequestRow {
   requestUserAgent?: string | null;
 }
 
+export interface AdminFabric {
+  id: number;
+  manufacturerId: number;
+  manufacturerName: string;
+  itemNumber: string;
+  name: string;
+  /** @nullable */
+  swatchImageUrl: string | null;
+  isActive: boolean;
+  displayOrder: number;
+}
+
+export interface AdminProductFabricPool {
+  manufacturerId: number;
+  manufacturerName: string;
+  /** Number of currently active fabrics in this pool. */
+  fabricCount: number;
+}
+
+export interface AdminProductFabricsConfig {
+  pools: AdminProductFabricPool[];
+  /** Individually-picked fabric IDs (extra fabrics on top of any pools). */
+  fabricIds: number[];
+}
+
+export interface AdminUpdateProductFabricsRequest {
+  /** Replace pools with these manufacturer IDs. */
+  manufacturerIds: number[];
+  /** Replace individual fabric picks with these fabric IDs. */
+  fabricIds: number[];
+}
+
+export type AdminProductAttributeAttributeType =
+  (typeof AdminProductAttributeAttributeType)[keyof typeof AdminProductAttributeAttributeType];
+
+export const AdminProductAttributeAttributeType = {
+  feature: "feature",
+  option: "option",
+  replacement_part: "replacement_part",
+} as const;
+
+export interface AdminProductAttribute {
+  id: number;
+  attributeType: AdminProductAttributeAttributeType;
+  /**
+   * Required when attributeType is 'replacement_part', null otherwise.
+   * @nullable
+   */
+  partName: string | null;
+  value: string;
+  displayOrder: number;
+}
+
+export type AdminProductAttributeInputAttributeType =
+  (typeof AdminProductAttributeInputAttributeType)[keyof typeof AdminProductAttributeInputAttributeType];
+
+export const AdminProductAttributeInputAttributeType = {
+  feature: "feature",
+  option: "option",
+  replacement_part: "replacement_part",
+} as const;
+
+export interface AdminProductAttributeInput {
+  attributeType: AdminProductAttributeInputAttributeType;
+  /** @nullable */
+  partName?: string | null;
+  /** @minLength 1 */
+  value: string;
+  displayOrder: number;
+}
+
+export interface AdminUpdateProductAttributesRequest {
+  attributes: AdminProductAttributeInput[];
+}
+
 export type ListCatalogProductsParams = {
   q?: string;
   categorySlug?: string;

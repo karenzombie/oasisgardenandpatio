@@ -1977,6 +1977,135 @@ export const AdminUpdateProductInventoryResponse = zod.object({
 });
 
 /**
+ * @summary List all fabrics across manufacturers (admin)
+ */
+export const AdminListFabricsResponseItem = zod.object({
+  id: zod.number(),
+  manufacturerId: zod.number(),
+  manufacturerName: zod.string(),
+  itemNumber: zod.string(),
+  name: zod.string(),
+  swatchImageUrl: zod.string().nullable(),
+  isActive: zod.boolean(),
+  displayOrder: zod.number(),
+});
+export const AdminListFabricsResponse = zod.array(AdminListFabricsResponseItem);
+
+/**
+ * @summary Get a product's fabric pools and individual fabric picks
+ */
+export const AdminGetProductFabricsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminGetProductFabricsResponse = zod.object({
+  pools: zod.array(
+    zod.object({
+      manufacturerId: zod.number(),
+      manufacturerName: zod.string(),
+      fabricCount: zod
+        .number()
+        .describe("Number of currently active fabrics in this pool."),
+    }),
+  ),
+  fabricIds: zod
+    .array(zod.number())
+    .describe(
+      "Individually-picked fabric IDs (extra fabrics on top of any pools).",
+    ),
+});
+
+/**
+ * @summary Replace a product's fabric pools and individual fabric picks
+ */
+export const AdminUpdateProductFabricsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminUpdateProductFabricsBody = zod.object({
+  manufacturerIds: zod
+    .array(zod.number())
+    .describe("Replace pools with these manufacturer IDs."),
+  fabricIds: zod
+    .array(zod.number())
+    .describe("Replace individual fabric picks with these fabric IDs."),
+});
+
+export const AdminUpdateProductFabricsResponse = zod.object({
+  pools: zod.array(
+    zod.object({
+      manufacturerId: zod.number(),
+      manufacturerName: zod.string(),
+      fabricCount: zod
+        .number()
+        .describe("Number of currently active fabrics in this pool."),
+    }),
+  ),
+  fabricIds: zod
+    .array(zod.number())
+    .describe(
+      "Individually-picked fabric IDs (extra fabrics on top of any pools).",
+    ),
+});
+
+/**
+ * @summary List all attributes (features, options, replacement parts) for a product
+ */
+export const AdminGetProductAttributesParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminGetProductAttributesResponseItem = zod.object({
+  id: zod.number(),
+  attributeType: zod.enum(["feature", "option", "replacement_part"]),
+  partName: zod
+    .string()
+    .nullable()
+    .describe(
+      "Required when attributeType is 'replacement_part', null otherwise.",
+    ),
+  value: zod.string(),
+  displayOrder: zod.number(),
+});
+export const AdminGetProductAttributesResponse = zod.array(
+  AdminGetProductAttributesResponseItem,
+);
+
+/**
+ * @summary Replace all attributes for a product
+ */
+export const AdminUpdateProductAttributesParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminUpdateProductAttributesBody = zod.object({
+  attributes: zod.array(
+    zod.object({
+      attributeType: zod.enum(["feature", "option", "replacement_part"]),
+      partName: zod.string().nullish(),
+      value: zod.string().min(1),
+      displayOrder: zod.number(),
+    }),
+  ),
+});
+
+export const AdminUpdateProductAttributesResponseItem = zod.object({
+  id: zod.number(),
+  attributeType: zod.enum(["feature", "option", "replacement_part"]),
+  partName: zod
+    .string()
+    .nullable()
+    .describe(
+      "Required when attributeType is 'replacement_part', null otherwise.",
+    ),
+  value: zod.string(),
+  displayOrder: zod.number(),
+});
+export const AdminUpdateProductAttributesResponse = zod.array(
+  AdminUpdateProductAttributesResponseItem,
+);
+
+/**
  * @summary Validate a CSV import without writing changes
  */
 

@@ -37,6 +37,7 @@ import type {
   AdminCustomerDetail,
   AdminCustomerPage,
   AdminDiscountEvent,
+  AdminFabric,
   AdminInventoryAdjustmentsPage,
   AdminInventoryPage,
   AdminLegalDocument,
@@ -53,7 +54,9 @@ import type {
   AdminOrderDetail,
   AdminOrderPage,
   AdminProduct,
+  AdminProductAttribute,
   AdminProductDetail,
+  AdminProductFabricsConfig,
   AdminProductImage,
   AdminProductInventory,
   AdminProductsPage,
@@ -70,6 +73,8 @@ import type {
   AdminSet,
   AdminSetSummary,
   AdminUpdateOrderTotalsRequest,
+  AdminUpdateProductAttributesRequest,
+  AdminUpdateProductFabricsRequest,
   AdminUserDetail,
   AdminUserSummary,
   AdminVendorOrderDetail,
@@ -5553,6 +5558,446 @@ export const useAdminUpdateProductInventory = <
   TContext
 > => {
   return useMutation(getAdminUpdateProductInventoryMutationOptions(options));
+};
+
+/**
+ * @summary List all fabrics across manufacturers (admin)
+ */
+export const getAdminListFabricsUrl = () => {
+  return `/api/admin/fabrics`;
+};
+
+export const adminListFabrics = async (
+  options?: RequestInit,
+): Promise<AdminFabric[]> => {
+  return customFetch<AdminFabric[]>(getAdminListFabricsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAdminListFabricsQueryKey = () => {
+  return [`/api/admin/fabrics`] as const;
+};
+
+export const getAdminListFabricsQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminListFabrics>>,
+  TError = ErrorType<Error>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminListFabrics>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getAdminListFabricsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminListFabrics>>
+  > = ({ signal }) => adminListFabrics({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminListFabrics>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminListFabricsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminListFabrics>>
+>;
+export type AdminListFabricsQueryError = ErrorType<Error>;
+
+/**
+ * @summary List all fabrics across manufacturers (admin)
+ */
+
+export function useAdminListFabrics<
+  TData = Awaited<ReturnType<typeof adminListFabrics>>,
+  TError = ErrorType<Error>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminListFabrics>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminListFabricsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get a product's fabric pools and individual fabric picks
+ */
+export const getAdminGetProductFabricsUrl = (id: number) => {
+  return `/api/admin/products/${id}/fabrics`;
+};
+
+export const adminGetProductFabrics = async (
+  id: number,
+  options?: RequestInit,
+): Promise<AdminProductFabricsConfig> => {
+  return customFetch<AdminProductFabricsConfig>(
+    getAdminGetProductFabricsUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getAdminGetProductFabricsQueryKey = (id: number) => {
+  return [`/api/admin/products/${id}/fabrics`] as const;
+};
+
+export const getAdminGetProductFabricsQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminGetProductFabrics>>,
+  TError = ErrorType<Error>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminGetProductFabrics>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getAdminGetProductFabricsQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminGetProductFabrics>>
+  > = ({ signal }) => adminGetProductFabrics(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetProductFabrics>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminGetProductFabricsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminGetProductFabrics>>
+>;
+export type AdminGetProductFabricsQueryError = ErrorType<Error>;
+
+/**
+ * @summary Get a product's fabric pools and individual fabric picks
+ */
+
+export function useAdminGetProductFabrics<
+  TData = Awaited<ReturnType<typeof adminGetProductFabrics>>,
+  TError = ErrorType<Error>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminGetProductFabrics>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminGetProductFabricsQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Replace a product's fabric pools and individual fabric picks
+ */
+export const getAdminUpdateProductFabricsUrl = (id: number) => {
+  return `/api/admin/products/${id}/fabrics`;
+};
+
+export const adminUpdateProductFabrics = async (
+  id: number,
+  adminUpdateProductFabricsRequest: AdminUpdateProductFabricsRequest,
+  options?: RequestInit,
+): Promise<AdminProductFabricsConfig> => {
+  return customFetch<AdminProductFabricsConfig>(
+    getAdminUpdateProductFabricsUrl(id),
+    {
+      ...options,
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(adminUpdateProductFabricsRequest),
+    },
+  );
+};
+
+export const getAdminUpdateProductFabricsMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateProductFabrics>>,
+    TError,
+    { id: number; data: BodyType<AdminUpdateProductFabricsRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUpdateProductFabrics>>,
+  TError,
+  { id: number; data: BodyType<AdminUpdateProductFabricsRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminUpdateProductFabrics"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUpdateProductFabrics>>,
+    { id: number; data: BodyType<AdminUpdateProductFabricsRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminUpdateProductFabrics(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminUpdateProductFabricsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUpdateProductFabrics>>
+>;
+export type AdminUpdateProductFabricsMutationBody =
+  BodyType<AdminUpdateProductFabricsRequest>;
+export type AdminUpdateProductFabricsMutationError = ErrorType<Error>;
+
+/**
+ * @summary Replace a product's fabric pools and individual fabric picks
+ */
+export const useAdminUpdateProductFabrics = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateProductFabrics>>,
+    TError,
+    { id: number; data: BodyType<AdminUpdateProductFabricsRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUpdateProductFabrics>>,
+  TError,
+  { id: number; data: BodyType<AdminUpdateProductFabricsRequest> },
+  TContext
+> => {
+  return useMutation(getAdminUpdateProductFabricsMutationOptions(options));
+};
+
+/**
+ * @summary List all attributes (features, options, replacement parts) for a product
+ */
+export const getAdminGetProductAttributesUrl = (id: number) => {
+  return `/api/admin/products/${id}/attributes`;
+};
+
+export const adminGetProductAttributes = async (
+  id: number,
+  options?: RequestInit,
+): Promise<AdminProductAttribute[]> => {
+  return customFetch<AdminProductAttribute[]>(
+    getAdminGetProductAttributesUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getAdminGetProductAttributesQueryKey = (id: number) => {
+  return [`/api/admin/products/${id}/attributes`] as const;
+};
+
+export const getAdminGetProductAttributesQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminGetProductAttributes>>,
+  TError = ErrorType<Error>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminGetProductAttributes>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getAdminGetProductAttributesQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminGetProductAttributes>>
+  > = ({ signal }) =>
+    adminGetProductAttributes(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetProductAttributes>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminGetProductAttributesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminGetProductAttributes>>
+>;
+export type AdminGetProductAttributesQueryError = ErrorType<Error>;
+
+/**
+ * @summary List all attributes (features, options, replacement parts) for a product
+ */
+
+export function useAdminGetProductAttributes<
+  TData = Awaited<ReturnType<typeof adminGetProductAttributes>>,
+  TError = ErrorType<Error>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminGetProductAttributes>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminGetProductAttributesQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Replace all attributes for a product
+ */
+export const getAdminUpdateProductAttributesUrl = (id: number) => {
+  return `/api/admin/products/${id}/attributes`;
+};
+
+export const adminUpdateProductAttributes = async (
+  id: number,
+  adminUpdateProductAttributesRequest: AdminUpdateProductAttributesRequest,
+  options?: RequestInit,
+): Promise<AdminProductAttribute[]> => {
+  return customFetch<AdminProductAttribute[]>(
+    getAdminUpdateProductAttributesUrl(id),
+    {
+      ...options,
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(adminUpdateProductAttributesRequest),
+    },
+  );
+};
+
+export const getAdminUpdateProductAttributesMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateProductAttributes>>,
+    TError,
+    { id: number; data: BodyType<AdminUpdateProductAttributesRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUpdateProductAttributes>>,
+  TError,
+  { id: number; data: BodyType<AdminUpdateProductAttributesRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminUpdateProductAttributes"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUpdateProductAttributes>>,
+    { id: number; data: BodyType<AdminUpdateProductAttributesRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminUpdateProductAttributes(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminUpdateProductAttributesMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUpdateProductAttributes>>
+>;
+export type AdminUpdateProductAttributesMutationBody =
+  BodyType<AdminUpdateProductAttributesRequest>;
+export type AdminUpdateProductAttributesMutationError = ErrorType<Error>;
+
+/**
+ * @summary Replace all attributes for a product
+ */
+export const useAdminUpdateProductAttributes = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateProductAttributes>>,
+    TError,
+    { id: number; data: BodyType<AdminUpdateProductAttributesRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUpdateProductAttributes>>,
+  TError,
+  { id: number; data: BodyType<AdminUpdateProductAttributesRequest> },
+  TContext
+> => {
+  return useMutation(getAdminUpdateProductAttributesMutationOptions(options));
 };
 
 /**

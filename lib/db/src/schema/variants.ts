@@ -149,3 +149,44 @@ export type InsertProductFabricOption = z.infer<
 >;
 export type ProductFabricOption =
   typeof productFabricOptionsTable.$inferSelect;
+
+// ---------------------------------------------------------------------------
+// Product fabric pools (M:N: which manufacturers' full fabric catalogs are
+// available on this product). A pool means "every active fabric from this
+// manufacturer is automatically offered for this product, including ones
+// added later." The effective set of fabric options for a product at order
+// time is the UNION of pool-expanded fabrics and individually-picked
+// productFabricOptions rows.
+// ---------------------------------------------------------------------------
+
+export const productFabricPoolsTable = pgTable(
+  "product_fabric_pools",
+  {
+    id: serial("id").primaryKey(),
+    productId: integer("product_id")
+      .notNull()
+      .references(() => productsTable.id, { onDelete: "cascade" }),
+    manufacturerId: integer("manufacturer_id")
+      .notNull()
+      .references(() => manufacturersTable.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    unique("product_fabric_pools_product_manufacturer_unique").on(
+      t.productId,
+      t.manufacturerId,
+    ),
+    index("product_fabric_pools_product_idx").on(t.productId),
+    index("product_fabric_pools_manufacturer_idx").on(t.manufacturerId),
+  ],
+);
+
+export const insertProductFabricPoolSchema = createInsertSchema(
+  productFabricPoolsTable,
+).omit({ id: true, createdAt: true });
+export type InsertProductFabricPool = z.infer<
+  typeof insertProductFabricPoolSchema
+>;
+export type ProductFabricPool = typeof productFabricPoolsTable.$inferSelect;
