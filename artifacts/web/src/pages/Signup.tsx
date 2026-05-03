@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useSignup,
@@ -14,6 +14,12 @@ import { AuthShell } from "./auth/AuthShell";
 
 export default function Signup() {
   const [, navigate] = useLocation();
+  const search = useSearch();
+  const nextPath = (() => {
+    const raw = new URLSearchParams(search).get("next");
+    if (!raw) return null;
+    return raw.startsWith("/") && !raw.startsWith("//") ? raw : null;
+  })();
   const queryClient = useQueryClient();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -46,7 +52,7 @@ export default function Signup() {
       await queryClient.invalidateQueries({
         queryKey: getGetCurrentUserQueryKey(),
       });
-      navigate("/account?welcome=1");
+      navigate(nextPath ?? "/account?welcome=1");
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
         setErrorMessage("An account with that email already exists.");

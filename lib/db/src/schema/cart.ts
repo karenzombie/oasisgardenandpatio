@@ -6,8 +6,10 @@ import {
   integer,
   numeric,
   index,
+  uniqueIndex,
   foreignKey,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./users";
@@ -38,6 +40,11 @@ export const cartsTable = pgTable(
   (t) => [
     index("carts_session_id_idx").on(t.sessionId),
     index("carts_user_id_idx").on(t.userId),
+    // Enforce a single open cart per signed-in user. Anonymous carts (NULL
+    // user_id) are not constrained.
+    uniqueIndex("carts_user_id_unique")
+      .on(t.userId)
+      .where(sql`${t.userId} is not null`),
   ],
 );
 

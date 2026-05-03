@@ -1,8 +1,16 @@
-import { Link, useRoute } from "wouter";
+import { Link, useLocation, useRoute } from "wouter";
 import { useState } from "react";
-import { useGetCatalogProductBySlug } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  useGetCatalogProductBySlug,
+  useAddCartItem,
+  getGetCartQueryKey,
+} from "@workspace/api-client-react";
 import { getBrandLogo } from "@/lib/brandLogos";
 import { sanitizeHtml } from "@/lib/sanitize";
+import { WishlistButton } from "@/components/WishlistButton";
+import { useAuth } from "@/lib/auth";
+import { useToast } from "@/hooks/use-toast";
 
 function formatMoney(v: string | null | undefined): string {
   if (v == null || v === "") return "";
@@ -26,6 +34,42 @@ export default function Product() {
   const [tab, setTab] = useState<TabId>("description");
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   const [zoomPos, setZoomPos] = useState<{ x: number; y: number } | null>(null);
+  const [qty, setQty] = useState(1);
+
+  const { isAuthenticated } = useAuth();
+  const [location, navigate] = useLocation();
+  const { toast } = useToast();
+  const qc = useQueryClient();
+  const addToCartM = useAddCartItem({
+    mutation: {
+      onSuccess: (resp) => {
+        qc.setQueryData(getGetCartQueryKey(), resp);
+        toast({
+          title: "Added to cart",
+          description: `${qty} × ${data?.name ?? "item"}`,
+        });
+      },
+      onError: () => {
+        toast({
+          title: "Could not add to cart",
+          description: "Please try again.",
+        });
+      },
+    },
+  });
+
+  function handleAddToCart() {
+    if (!isAuthenticated) {
+      toast({
+        title: "Sign in required",
+        description: "Create an account or sign in to add items to your cart.",
+      });
+      navigate(`/login?next=${encodeURIComponent(location)}`);
+      return;
+    }
+    if (!data) return;
+    addToCartM.mutate({ data: { productId: data.id, quantity: qty } });
+  }
 
   if (isLoading) {
     return <div className="container mx-auto px-4 py-24 text-center text-muted-foreground">Loading…</div>;
@@ -146,14 +190,38 @@ export default function Product() {
             />
           ) : null}
 
-          <button
-            disabled
-            className="w-full md:w-auto bg-primary text-primary-foreground px-8 py-3 text-sm uppercase tracking-widest font-medium opacity-60 cursor-not-allowed"
-            title="Online ordering coming soon"
-          >
-            Add to Cart (Coming Soon)
-          </button>
-          <p className="text-xs text-muted-foreground mt-2">Visit our showroom or contact us to order this item today.</p>
+          <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+            <div className="inline-flex items-center border border-input self-start">
+              <button
+                type="button"
+                className="px-3 py-2.5 hover:bg-muted disabled:opacity-40"
+                onClick={() => setQty((q) => Math.max(1, q - 1))}
+                disabled={qty <= 1}
+                aria-label="Decrease quantity"
+              >
+                −
+              </button>
+              <span className="px-4 text-sm w-12 text-center">{qty}</span>
+              <button
+                type="button"
+                className="px-3 py-2.5 hover:bg-muted"
+                onClick={() => setQty((q) => q + 1)}
+                aria-label="Increase quantity"
+              >
+                +
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={handleAddToCart}
+              disabled={addToCartM.isPending || !data.availableOnline}
+              className="flex-1 sm:flex-none bg-primary text-primary-foreground px-8 py-3 text-sm uppercase tracking-widest font-medium hover:bg-primary/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {addToCartM.isPending ? "Adding…" : "Add to Cart"}
+            </button>
+            <WishlistButton productId={data.id} variant="button" />
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">Visit our showroom or contact us for white-glove delivery options.</p>
 
           {/* Meta */}
           <dl className="mt-8 pt-6 border-t border-border space-y-2 text-sm">

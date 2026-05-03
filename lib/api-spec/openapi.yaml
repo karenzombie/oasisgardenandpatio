@@ -204,6 +204,332 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /account/addresses:
+    get:
+      operationId: listAccountAddresses
+      tags: [account]
+      summary: List the signed-in customer's saved addresses
+      responses:
+        "200":
+          description: Addresses
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountAddressesResponse"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      operationId: createAccountAddress
+      tags: [account]
+      summary: Save a new address to the signed-in customer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountAddressInput"
+      responses:
+        "200":
+          description: Updated addresses
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountAddressesResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /account/orders:
+    get:
+      operationId: listAccountOrders
+      tags: [account]
+      summary: List the signed-in customer's orders
+      responses:
+        "200":
+          description: Orders
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountOrdersResponse"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /account/orders/{orderNumber}:
+    get:
+      operationId: getAccountOrder
+      tags: [account]
+      summary: Get a single order belonging to the signed-in customer
+      parameters:
+        - name: orderNumber
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Order detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountOrderDetail"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /checkout:
+    post:
+      operationId: placeOrder
+      tags: [checkout]
+      summary: Place an order from the signed-in customer's cart
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlaceOrderRequest"
+      responses:
+        "200":
+          description: Order placed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlaceOrderResult"
+        "400":
+          description: Invalid request or empty cart
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /wishlist:
+    get:
+      operationId: getWishlist
+      tags: [wishlist]
+      summary: List the signed-in user's wishlist items
+      responses:
+        "200":
+          description: Wishlist items
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WishlistResponse"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      operationId: addWishlistItem
+      tags: [wishlist]
+      summary: Add a product to the signed-in user's wishlist
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddWishlistItemRequest"
+      responses:
+        "200":
+          description: Wishlist after add
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WishlistResponse"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /cart:
+    get:
+      operationId: getCart
+      tags: [cart]
+      summary: Get the signed-in user's cart
+      responses:
+        "200":
+          description: Cart contents
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CartResponse"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: clearCart
+      tags: [cart]
+      summary: Remove all items from the signed-in user's cart
+      responses:
+        "200":
+          description: Empty cart
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CartResponse"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /cart/items:
+    post:
+      operationId: addCartItem
+      tags: [cart]
+      summary: Add a product to the signed-in user's cart
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddCartItemRequest"
+      responses:
+        "200":
+          description: Updated cart
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CartResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /cart/items/{itemId}:
+    patch:
+      operationId: updateCartItem
+      tags: [cart]
+      summary: Change the quantity of a cart line item
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCartItemRequest"
+      responses:
+        "200":
+          description: Updated cart
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CartResponse"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Cart item not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: removeCartItem
+      tags: [cart]
+      summary: Remove a line item from the cart
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated cart
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CartResponse"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /wishlist/{productId}:
+    delete:
+      operationId: removeWishlistItem
+      tags: [wishlist]
+      summary: Remove a product from the signed-in user's wishlist
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Wishlist after removal
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WishlistResponse"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /auth/signup:
     post:
       operationId: signup
@@ -3947,6 +4273,360 @@ components:
             - specs
             - tags
             - images
+    WishlistItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        productId:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        sku:
+          type: string
+        manufacturerName:
+          type: ["string", "null"]
+        categoryName:
+          type: ["string", "null"]
+        price:
+          type: ["string", "null"]
+        salePrice:
+          type: ["string", "null"]
+        showPriceOnline:
+          type: boolean
+        availableOnline:
+          type: boolean
+        primaryImageUrl:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - productId
+        - name
+        - slug
+        - sku
+        - manufacturerName
+        - categoryName
+        - price
+        - salePrice
+        - showPriceOnline
+        - availableOnline
+        - primaryImageUrl
+        - createdAt
+    WishlistResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/WishlistItem"
+      required:
+        - items
+    AddWishlistItemRequest:
+      type: object
+      properties:
+        productId:
+          type: integer
+      required:
+        - productId
+    CartItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        productId:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        sku:
+          type: string
+        manufacturerName:
+          type: ["string", "null"]
+        primaryImageUrl:
+          type: ["string", "null"]
+        unitPrice:
+          type: string
+          description: Price snapshotted at the time the item was added.
+        quantity:
+          type: integer
+          minimum: 1
+        lineTotal:
+          type: string
+        availableOnline:
+          type: boolean
+      required:
+        - id
+        - productId
+        - name
+        - slug
+        - sku
+        - manufacturerName
+        - primaryImageUrl
+        - unitPrice
+        - quantity
+        - lineTotal
+        - availableOnline
+    CartResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CartItem"
+        itemCount:
+          type: integer
+          description: Sum of quantities across all line items.
+        subtotal:
+          type: string
+      required:
+        - items
+        - itemCount
+        - subtotal
+    AddCartItemRequest:
+      type: object
+      properties:
+        productId:
+          type: integer
+        quantity:
+          type: integer
+          minimum: 1
+          default: 1
+      required:
+        - productId
+    UpdateCartItemRequest:
+      type: object
+      properties:
+        quantity:
+          type: integer
+          minimum: 1
+      required:
+        - quantity
+    AccountAddress:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+        recipientName:
+          type: ["string", "null"]
+        street1:
+          type: string
+        street2:
+          type: ["string", "null"]
+        city:
+          type: string
+        state:
+          type: string
+        zip:
+          type: string
+        country:
+          type: string
+        phone:
+          type: ["string", "null"]
+        isDefault:
+          type: boolean
+      required:
+        - id
+        - type
+        - recipientName
+        - street1
+        - street2
+        - city
+        - state
+        - zip
+        - country
+        - phone
+        - isDefault
+    AccountAddressesResponse:
+      type: object
+      properties:
+        addresses:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccountAddress"
+      required:
+        - addresses
+    AccountAddressInput:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [shipping, billing]
+          default: shipping
+        recipientName:
+          type: string
+        street1:
+          type: string
+          minLength: 1
+        street2:
+          type: string
+        city:
+          type: string
+          minLength: 1
+        state:
+          type: string
+          minLength: 2
+        zip:
+          type: string
+          minLength: 3
+        country:
+          type: string
+          minLength: 2
+          default: "US"
+        phone:
+          type: string
+        isDefault:
+          type: boolean
+          default: false
+      required:
+        - street1
+        - city
+        - state
+        - zip
+    AccountOrderSummary:
+      type: object
+      properties:
+        orderNumber:
+          type: string
+        placedAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+        total:
+          type: string
+        itemCount:
+          type: integer
+      required:
+        - orderNumber
+        - placedAt
+        - status
+        - total
+        - itemCount
+    AccountOrdersResponse:
+      type: object
+      properties:
+        orders:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccountOrderSummary"
+      required:
+        - orders
+    AccountOrderLine:
+      type: object
+      properties:
+        id:
+          type: integer
+        productId:
+          type: ["integer", "null"]
+        slug:
+          type: ["string", "null"]
+        description:
+          type: string
+        productSku:
+          type: ["string", "null"]
+        unitPrice:
+          type: string
+        quantity:
+          type: integer
+        amount:
+          type: string
+      required:
+        - id
+        - productId
+        - slug
+        - description
+        - productSku
+        - unitPrice
+        - quantity
+        - amount
+    AccountOrderDetail:
+      type: object
+      properties:
+        orderNumber:
+          type: string
+        placedAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+        subtotal:
+          type: string
+        deliveryAmount:
+          type: string
+        taxAmount:
+          type: string
+        total:
+          type: string
+        shippingMethod:
+          type: ["string", "null"]
+        specialInstructions:
+          type: ["string", "null"]
+        shippingAddress:
+          oneOf:
+            - $ref: "#/components/schemas/AccountAddress"
+            - type: "null"
+        billingAddress:
+          oneOf:
+            - $ref: "#/components/schemas/AccountAddress"
+            - type: "null"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccountOrderLine"
+      required:
+        - orderNumber
+        - placedAt
+        - status
+        - subtotal
+        - deliveryAmount
+        - taxAmount
+        - total
+        - shippingMethod
+        - specialInstructions
+        - shippingAddress
+        - billingAddress
+        - items
+    PlaceOrderRequest:
+      type: object
+      properties:
+        shippingAddressId:
+          type: integer
+          description: Use an existing saved address ID instead of providing a new one.
+        shippingAddress:
+          $ref: "#/components/schemas/AccountAddressInput"
+        billingSameAsShipping:
+          type: boolean
+          default: true
+        billingAddress:
+          $ref: "#/components/schemas/AccountAddressInput"
+        billingAddressId:
+          type: integer
+        shippingMethod:
+          type: string
+          default: "standard"
+        specialInstructions:
+          type: string
+        saveShippingAddress:
+          type: boolean
+          default: true
+    PlaceOrderResult:
+      type: object
+      properties:
+        orderNumber:
+          type: string
+        total:
+          type: string
+      required:
+        - orderNumber
+        - total
     CurrentUser:
       type: object
       properties:

@@ -20,6 +20,12 @@ import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
 import VerifyEmail from "@/pages/VerifyEmail";
 import Account from "@/pages/Account";
+import AccountWishlist from "@/pages/AccountWishlist";
+import Cart from "@/pages/Cart";
+import Checkout from "@/pages/Checkout";
+import OrderConfirmation from "@/pages/OrderConfirmation";
+import AccountOrders from "@/pages/AccountOrders";
+import AccountOrderDetail from "@/pages/AccountOrderDetail";
 
 import StaffRouter from "@/staff/StaffRouter";
 
@@ -55,6 +61,12 @@ function CustomerRouter() {
         <Route path="/reset-password" component={ResetPassword} />
         <Route path="/verify-email" component={VerifyEmail} />
         <Route path="/account" component={Account} />
+        <Route path="/account/wishlist" component={AccountWishlist} />
+        <Route path="/cart" component={Cart} />
+        <Route path="/checkout" component={Checkout} />
+        <Route path="/order-confirmation/:orderNumber" component={OrderConfirmation} />
+        <Route path="/account/orders" component={AccountOrders} />
+        <Route path="/account/orders/:orderNumber" component={AccountOrderDetail} />
 
         {/* 404 */}
         <Route component={NotFound} />

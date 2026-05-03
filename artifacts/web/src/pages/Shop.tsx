@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { useListCatalogProducts } from "@workspace/api-client-react";
 import type { ListCatalogProductsParams } from "@workspace/api-client-react";
 import { getBrandLogo } from "@/lib/brandLogos";
+import { WishlistButton } from "@/components/WishlistButton";
 
 const SORTS = [
   { value: "featured", label: "Featured" },
@@ -140,6 +141,9 @@ export default function Shop() {
                       Sale
                     </div>
                   ) : null}
+                  <div className="absolute bottom-3 right-3">
+                    <WishlistButton productId={p.id} />
+                  </div>
                 </div>
                 <div className="space-y-2 text-center">
                   {brandLogo ? (

@@ -2,10 +2,12 @@ import { Link, useLocation } from "wouter";
 import {
   useListActiveBanners,
   useLogout,
+  useGetCart,
   getGetCurrentUserQueryKey,
+  getGetCartQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Menu, X, ChevronDown, User } from "lucide-react";
+import { Menu, X, ChevronDown, User, ShoppingBag } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth";
 import {
@@ -37,6 +39,16 @@ export function Navbar() {
   const { user, isAuthenticated } = useAuth();
   const logoutMutation = useLogout();
   const queryClient = useQueryClient();
+
+  const { data: cart } = useGetCart({
+    query: {
+      queryKey: getGetCartQueryKey(),
+      enabled: isAuthenticated,
+      retry: false,
+      staleTime: 15_000,
+    },
+  });
+  const cartCount = cart?.itemCount ?? 0;
 
   const handleLogout = async () => {
     try {
@@ -105,7 +117,19 @@ export function Navbar() {
             </nav>
 
             {/* Right Actions */}
-            <div className="hidden md:flex items-center space-x-4">
+            <div className="hidden md:flex items-center space-x-5">
+              <Link
+                href="/cart"
+                aria-label={`Shopping cart${cartCount > 0 ? ` (${cartCount} items)` : ""}`}
+                className="relative text-foreground/80 hover:text-primary transition-colors"
+              >
+                <ShoppingBag className="w-5 h-5" />
+                {cartCount > 0 ? (
+                  <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-[10px] font-semibold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1">
+                    {cartCount > 99 ? "99+" : cartCount}
+                  </span>
+                ) : null}
+              </Link>
               {isAuthenticated && user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger

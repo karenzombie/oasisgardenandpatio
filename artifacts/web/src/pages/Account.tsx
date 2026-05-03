@@ -159,13 +159,17 @@ export default function Account() {
           </dl>
 
           <div className="border-t border-border pt-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-            <p className="text-sm text-muted-foreground">
-              More account features (orders, favorites, addresses) coming soon.{" "}
-              <Link href="/contact" className="text-primary hover:underline">
-                Contact us
-              </Link>{" "}
-              for help.
-            </p>
+            <div className="flex flex-col sm:flex-row gap-3 text-sm">
+              <Button asChild variant="outline" className="rounded-none font-serif tracking-wide">
+                <Link href="/account/wishlist">My Wishlist</Link>
+              </Button>
+              <Button asChild variant="outline" className="rounded-none font-serif tracking-wide">
+                <Link href="/account/orders">My Orders</Link>
+              </Button>
+              <Button asChild variant="outline" className="rounded-none font-serif tracking-wide">
+                <Link href="/cart">My Cart</Link>
+              </Button>
+            </div>
             <Button
               variant="outline"
               className="rounded-none font-serif tracking-wide"

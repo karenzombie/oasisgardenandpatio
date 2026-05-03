@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useLogin,
@@ -14,6 +14,12 @@ import { AuthShell } from "./auth/AuthShell";
 
 export default function Login() {
   const [, navigate] = useLocation();
+  const search = useSearch();
+  const nextPath = (() => {
+    const raw = new URLSearchParams(search).get("next");
+    if (!raw) return "/account";
+    return raw.startsWith("/") && !raw.startsWith("//") ? raw : "/account";
+  })();
   const queryClient = useQueryClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,7 +35,7 @@ export default function Login() {
       await queryClient.invalidateQueries({
         queryKey: getGetCurrentUserQueryKey(),
       });
-      navigate("/account");
+      navigate(nextPath);
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         setErrorMessage("Invalid email or password.");

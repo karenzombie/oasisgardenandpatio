@@ -10,6 +10,7 @@ export * from "./variants";
 export * from "./sets";
 export * from "./inventoryAdjustments";
 export * from "./cart";
+export * from "./wishlist";
 export * from "./orders";
 export * from "./shipping";
 export * from "./purchasing";

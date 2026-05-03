@@ -185,6 +185,470 @@ export const GetCatalogProductBySlugResponse = zod
   );
 
 /**
+ * @summary List the signed-in customer's saved addresses
+ */
+export const ListAccountAddressesResponse = zod.object({
+  addresses: zod.array(
+    zod.object({
+      id: zod.number(),
+      type: zod.string(),
+      recipientName: zod.string().nullable(),
+      street1: zod.string(),
+      street2: zod.string().nullable(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullable(),
+      isDefault: zod.boolean(),
+    }),
+  ),
+});
+
+/**
+ * @summary Save a new address to the signed-in customer
+ */
+export const createAccountAddressBodyTypeDefault = `shipping`;
+
+export const createAccountAddressBodyStateMin = 2;
+
+export const createAccountAddressBodyZipMin = 3;
+
+export const createAccountAddressBodyCountryDefault = `US`;
+export const createAccountAddressBodyCountryMin = 2;
+
+export const createAccountAddressBodyIsDefaultDefault = false;
+
+export const CreateAccountAddressBody = zod.object({
+  type: zod
+    .enum(["shipping", "billing"])
+    .default(createAccountAddressBodyTypeDefault),
+  recipientName: zod.string().optional(),
+  street1: zod.string().min(1),
+  street2: zod.string().optional(),
+  city: zod.string().min(1),
+  state: zod.string().min(createAccountAddressBodyStateMin),
+  zip: zod.string().min(createAccountAddressBodyZipMin),
+  country: zod
+    .string()
+    .min(createAccountAddressBodyCountryMin)
+    .default(createAccountAddressBodyCountryDefault),
+  phone: zod.string().optional(),
+  isDefault: zod.boolean().default(createAccountAddressBodyIsDefaultDefault),
+});
+
+export const CreateAccountAddressResponse = zod.object({
+  addresses: zod.array(
+    zod.object({
+      id: zod.number(),
+      type: zod.string(),
+      recipientName: zod.string().nullable(),
+      street1: zod.string(),
+      street2: zod.string().nullable(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullable(),
+      isDefault: zod.boolean(),
+    }),
+  ),
+});
+
+/**
+ * @summary List the signed-in customer's orders
+ */
+export const ListAccountOrdersResponse = zod.object({
+  orders: zod.array(
+    zod.object({
+      orderNumber: zod.string(),
+      placedAt: zod.coerce.date(),
+      status: zod.string(),
+      total: zod.string(),
+      itemCount: zod.number(),
+    }),
+  ),
+});
+
+/**
+ * @summary Get a single order belonging to the signed-in customer
+ */
+export const GetAccountOrderParams = zod.object({
+  orderNumber: zod.coerce.string(),
+});
+
+export const GetAccountOrderResponse = zod.object({
+  orderNumber: zod.string(),
+  placedAt: zod.coerce.date(),
+  status: zod.string(),
+  subtotal: zod.string(),
+  deliveryAmount: zod.string(),
+  taxAmount: zod.string(),
+  total: zod.string(),
+  shippingMethod: zod.string().nullable(),
+  specialInstructions: zod.string().nullable(),
+  shippingAddress: zod.union([
+    zod.object({
+      id: zod.number(),
+      type: zod.string(),
+      recipientName: zod.string().nullable(),
+      street1: zod.string(),
+      street2: zod.string().nullable(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullable(),
+      isDefault: zod.boolean(),
+    }),
+    zod.null(),
+  ]),
+  billingAddress: zod.union([
+    zod.object({
+      id: zod.number(),
+      type: zod.string(),
+      recipientName: zod.string().nullable(),
+      street1: zod.string(),
+      street2: zod.string().nullable(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullable(),
+      isDefault: zod.boolean(),
+    }),
+    zod.null(),
+  ]),
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      productId: zod.number().nullable(),
+      slug: zod.string().nullable(),
+      description: zod.string(),
+      productSku: zod.string().nullable(),
+      unitPrice: zod.string(),
+      quantity: zod.number(),
+      amount: zod.string(),
+    }),
+  ),
+});
+
+/**
+ * @summary Place an order from the signed-in customer's cart
+ */
+export const placeOrderBodyShippingAddressTypeDefault = `shipping`;
+
+export const placeOrderBodyShippingAddressStateMin = 2;
+
+export const placeOrderBodyShippingAddressZipMin = 3;
+
+export const placeOrderBodyShippingAddressCountryDefault = `US`;
+export const placeOrderBodyShippingAddressCountryMin = 2;
+
+export const placeOrderBodyShippingAddressIsDefaultDefault = false;
+export const placeOrderBodyBillingSameAsShippingDefault = true;
+export const placeOrderBodyBillingAddressTypeDefault = `shipping`;
+
+export const placeOrderBodyBillingAddressStateMin = 2;
+
+export const placeOrderBodyBillingAddressZipMin = 3;
+
+export const placeOrderBodyBillingAddressCountryDefault = `US`;
+export const placeOrderBodyBillingAddressCountryMin = 2;
+
+export const placeOrderBodyBillingAddressIsDefaultDefault = false;
+export const placeOrderBodyShippingMethodDefault = `standard`;
+export const placeOrderBodySaveShippingAddressDefault = true;
+
+export const PlaceOrderBody = zod.object({
+  shippingAddressId: zod
+    .number()
+    .optional()
+    .describe(
+      "Use an existing saved address ID instead of providing a new one.",
+    ),
+  shippingAddress: zod
+    .object({
+      type: zod
+        .enum(["shipping", "billing"])
+        .default(placeOrderBodyShippingAddressTypeDefault),
+      recipientName: zod.string().optional(),
+      street1: zod.string().min(1),
+      street2: zod.string().optional(),
+      city: zod.string().min(1),
+      state: zod.string().min(placeOrderBodyShippingAddressStateMin),
+      zip: zod.string().min(placeOrderBodyShippingAddressZipMin),
+      country: zod
+        .string()
+        .min(placeOrderBodyShippingAddressCountryMin)
+        .default(placeOrderBodyShippingAddressCountryDefault),
+      phone: zod.string().optional(),
+      isDefault: zod
+        .boolean()
+        .default(placeOrderBodyShippingAddressIsDefaultDefault),
+    })
+    .optional(),
+  billingSameAsShipping: zod
+    .boolean()
+    .default(placeOrderBodyBillingSameAsShippingDefault),
+  billingAddress: zod
+    .object({
+      type: zod
+        .enum(["shipping", "billing"])
+        .default(placeOrderBodyBillingAddressTypeDefault),
+      recipientName: zod.string().optional(),
+      street1: zod.string().min(1),
+      street2: zod.string().optional(),
+      city: zod.string().min(1),
+      state: zod.string().min(placeOrderBodyBillingAddressStateMin),
+      zip: zod.string().min(placeOrderBodyBillingAddressZipMin),
+      country: zod
+        .string()
+        .min(placeOrderBodyBillingAddressCountryMin)
+        .default(placeOrderBodyBillingAddressCountryDefault),
+      phone: zod.string().optional(),
+      isDefault: zod
+        .boolean()
+        .default(placeOrderBodyBillingAddressIsDefaultDefault),
+    })
+    .optional(),
+  billingAddressId: zod.number().optional(),
+  shippingMethod: zod.string().default(placeOrderBodyShippingMethodDefault),
+  specialInstructions: zod.string().optional(),
+  saveShippingAddress: zod
+    .boolean()
+    .default(placeOrderBodySaveShippingAddressDefault),
+});
+
+export const PlaceOrderResponse = zod.object({
+  orderNumber: zod.string(),
+  total: zod.string(),
+});
+
+/**
+ * @summary List the signed-in user's wishlist items
+ */
+export const GetWishlistResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      productId: zod.number(),
+      name: zod.string(),
+      slug: zod.string(),
+      sku: zod.string(),
+      manufacturerName: zod.string().nullable(),
+      categoryName: zod.string().nullable(),
+      price: zod.string().nullable(),
+      salePrice: zod.string().nullable(),
+      showPriceOnline: zod.boolean(),
+      availableOnline: zod.boolean(),
+      primaryImageUrl: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+/**
+ * @summary Add a product to the signed-in user's wishlist
+ */
+export const AddWishlistItemBody = zod.object({
+  productId: zod.number(),
+});
+
+export const AddWishlistItemResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      productId: zod.number(),
+      name: zod.string(),
+      slug: zod.string(),
+      sku: zod.string(),
+      manufacturerName: zod.string().nullable(),
+      categoryName: zod.string().nullable(),
+      price: zod.string().nullable(),
+      salePrice: zod.string().nullable(),
+      showPriceOnline: zod.boolean(),
+      availableOnline: zod.boolean(),
+      primaryImageUrl: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+/**
+ * @summary Get the signed-in user's cart
+ */
+
+export const GetCartResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      productId: zod.number(),
+      name: zod.string(),
+      slug: zod.string(),
+      sku: zod.string(),
+      manufacturerName: zod.string().nullable(),
+      primaryImageUrl: zod.string().nullable(),
+      unitPrice: zod
+        .string()
+        .describe("Price snapshotted at the time the item was added."),
+      quantity: zod.number().min(1),
+      lineTotal: zod.string(),
+      availableOnline: zod.boolean(),
+    }),
+  ),
+  itemCount: zod.number().describe("Sum of quantities across all line items."),
+  subtotal: zod.string(),
+});
+
+/**
+ * @summary Remove all items from the signed-in user's cart
+ */
+
+export const ClearCartResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      productId: zod.number(),
+      name: zod.string(),
+      slug: zod.string(),
+      sku: zod.string(),
+      manufacturerName: zod.string().nullable(),
+      primaryImageUrl: zod.string().nullable(),
+      unitPrice: zod
+        .string()
+        .describe("Price snapshotted at the time the item was added."),
+      quantity: zod.number().min(1),
+      lineTotal: zod.string(),
+      availableOnline: zod.boolean(),
+    }),
+  ),
+  itemCount: zod.number().describe("Sum of quantities across all line items."),
+  subtotal: zod.string(),
+});
+
+/**
+ * @summary Add a product to the signed-in user's cart
+ */
+export const addCartItemBodyQuantityDefault = 1;
+
+export const AddCartItemBody = zod.object({
+  productId: zod.number(),
+  quantity: zod.number().min(1).default(addCartItemBodyQuantityDefault),
+});
+
+export const AddCartItemResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      productId: zod.number(),
+      name: zod.string(),
+      slug: zod.string(),
+      sku: zod.string(),
+      manufacturerName: zod.string().nullable(),
+      primaryImageUrl: zod.string().nullable(),
+      unitPrice: zod
+        .string()
+        .describe("Price snapshotted at the time the item was added."),
+      quantity: zod.number().min(1),
+      lineTotal: zod.string(),
+      availableOnline: zod.boolean(),
+    }),
+  ),
+  itemCount: zod.number().describe("Sum of quantities across all line items."),
+  subtotal: zod.string(),
+});
+
+/**
+ * @summary Change the quantity of a cart line item
+ */
+export const UpdateCartItemParams = zod.object({
+  itemId: zod.coerce.number(),
+});
+
+export const UpdateCartItemBody = zod.object({
+  quantity: zod.number().min(1),
+});
+
+export const UpdateCartItemResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      productId: zod.number(),
+      name: zod.string(),
+      slug: zod.string(),
+      sku: zod.string(),
+      manufacturerName: zod.string().nullable(),
+      primaryImageUrl: zod.string().nullable(),
+      unitPrice: zod
+        .string()
+        .describe("Price snapshotted at the time the item was added."),
+      quantity: zod.number().min(1),
+      lineTotal: zod.string(),
+      availableOnline: zod.boolean(),
+    }),
+  ),
+  itemCount: zod.number().describe("Sum of quantities across all line items."),
+  subtotal: zod.string(),
+});
+
+/**
+ * @summary Remove a line item from the cart
+ */
+export const RemoveCartItemParams = zod.object({
+  itemId: zod.coerce.number(),
+});
+
+export const RemoveCartItemResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      productId: zod.number(),
+      name: zod.string(),
+      slug: zod.string(),
+      sku: zod.string(),
+      manufacturerName: zod.string().nullable(),
+      primaryImageUrl: zod.string().nullable(),
+      unitPrice: zod
+        .string()
+        .describe("Price snapshotted at the time the item was added."),
+      quantity: zod.number().min(1),
+      lineTotal: zod.string(),
+      availableOnline: zod.boolean(),
+    }),
+  ),
+  itemCount: zod.number().describe("Sum of quantities across all line items."),
+  subtotal: zod.string(),
+});
+
+/**
+ * @summary Remove a product from the signed-in user's wishlist
+ */
+export const RemoveWishlistItemParams = zod.object({
+  productId: zod.coerce.number(),
+});
+
+export const RemoveWishlistItemResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      productId: zod.number(),
+      name: zod.string(),
+      slug: zod.string(),
+      sku: zod.string(),
+      manufacturerName: zod.string().nullable(),
+      categoryName: zod.string().nullable(),
+      price: zod.string().nullable(),
+      salePrice: zod.string().nullable(),
+      showPriceOnline: zod.boolean(),
+      availableOnline: zod.boolean(),
+      primaryImageUrl: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+/**
  * @summary Create a new customer account
  */
 export const signupBodyPasswordMin = 8;

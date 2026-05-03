@@ -25,6 +25,10 @@ import adminReportsRouter from "./adminReports";
 import authRouter from "./auth";
 import staffAuthRouter from "./staffAuth";
 import storageRouter from "./storage";
+import wishlistRouter from "./wishlist";
+import cartRouter from "./cart";
+import accountRouter from "./account";
+import checkoutRouter from "./checkout";
 
 const router: IRouter = Router();
 
@@ -54,5 +58,9 @@ router.use(adminReportsRouter);
 router.use(authRouter);
 router.use(staffAuthRouter);
 router.use(storageRouter);
+router.use(wishlistRouter);
+router.use(cartRouter);
+router.use(accountRouter);
+router.use(checkoutRouter);
 
 export default router;

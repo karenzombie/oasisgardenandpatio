@@ -841,6 +841,178 @@ export type CatalogProductDetail = CatalogProduct & {
   images: CatalogProductImage[];
 };
 
+export interface WishlistItem {
+  id: number;
+  productId: number;
+  name: string;
+  slug: string;
+  sku: string;
+  /** @nullable */
+  manufacturerName: string | null;
+  /** @nullable */
+  categoryName: string | null;
+  /** @nullable */
+  price: string | null;
+  /** @nullable */
+  salePrice: string | null;
+  showPriceOnline: boolean;
+  availableOnline: boolean;
+  /** @nullable */
+  primaryImageUrl: string | null;
+  createdAt: string;
+}
+
+export interface WishlistResponse {
+  items: WishlistItem[];
+}
+
+export interface AddWishlistItemRequest {
+  productId: number;
+}
+
+export interface CartItem {
+  id: number;
+  productId: number;
+  name: string;
+  slug: string;
+  sku: string;
+  /** @nullable */
+  manufacturerName: string | null;
+  /** @nullable */
+  primaryImageUrl: string | null;
+  /** Price snapshotted at the time the item was added. */
+  unitPrice: string;
+  /** @minimum 1 */
+  quantity: number;
+  lineTotal: string;
+  availableOnline: boolean;
+}
+
+export interface CartResponse {
+  items: CartItem[];
+  /** Sum of quantities across all line items. */
+  itemCount: number;
+  subtotal: string;
+}
+
+export interface AddCartItemRequest {
+  productId: number;
+  /** @minimum 1 */
+  quantity?: number;
+}
+
+export interface UpdateCartItemRequest {
+  /** @minimum 1 */
+  quantity: number;
+}
+
+export interface AccountAddress {
+  id: number;
+  type: string;
+  /** @nullable */
+  recipientName: string | null;
+  street1: string;
+  /** @nullable */
+  street2: string | null;
+  city: string;
+  state: string;
+  zip: string;
+  country: string;
+  /** @nullable */
+  phone: string | null;
+  isDefault: boolean;
+}
+
+export interface AccountAddressesResponse {
+  addresses: AccountAddress[];
+}
+
+export type AccountAddressInputType =
+  (typeof AccountAddressInputType)[keyof typeof AccountAddressInputType];
+
+export const AccountAddressInputType = {
+  shipping: "shipping",
+  billing: "billing",
+} as const;
+
+export interface AccountAddressInput {
+  type?: AccountAddressInputType;
+  recipientName?: string;
+  /** @minLength 1 */
+  street1: string;
+  street2?: string;
+  /** @minLength 1 */
+  city: string;
+  /** @minLength 2 */
+  state: string;
+  /** @minLength 3 */
+  zip: string;
+  /** @minLength 2 */
+  country?: string;
+  phone?: string;
+  isDefault?: boolean;
+}
+
+export interface AccountOrderSummary {
+  orderNumber: string;
+  placedAt: string;
+  status: string;
+  total: string;
+  itemCount: number;
+}
+
+export interface AccountOrdersResponse {
+  orders: AccountOrderSummary[];
+}
+
+export interface AccountOrderLine {
+  id: number;
+  /** @nullable */
+  productId: number | null;
+  /** @nullable */
+  slug: string | null;
+  description: string;
+  /** @nullable */
+  productSku: string | null;
+  unitPrice: string;
+  quantity: number;
+  amount: string;
+}
+
+export interface AccountOrderDetail {
+  orderNumber: string;
+  placedAt: string;
+  status: string;
+  subtotal: string;
+  deliveryAmount: string;
+  taxAmount: string;
+  total: string;
+  /** @nullable */
+  shippingMethod: string | null;
+  /** @nullable */
+  specialInstructions: string | null;
+  shippingAddress: AccountAddress | null;
+  billingAddress: AccountAddress | null;
+  items: AccountOrderLine[];
+}
+
+export interface PlaceOrderRequest {
+  /** Use an existing saved address ID instead of providing a new one. */
+  shippingAddressId?: number;
+  shippingAddress?: AccountAddressInput;
+  billingSameAsShipping?: boolean;
+  billingAddress?: AccountAddressInput;
+  billingAddressId?: number;
+  shippingMethod?: string;
+  specialInstructions?: string;
+  saveShippingAddress?: boolean;
+}
+
+export interface PlaceOrderResult {
+  orderNumber: string;
+  total: string;
+}
+
 export type CurrentUserRole =
   (typeof CurrentUserRole)[keyof typeof CurrentUserRole];
 

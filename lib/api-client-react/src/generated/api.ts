@@ -17,7 +17,13 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  AccountAddressInput,
+  AccountAddressesResponse,
+  AccountOrderDetail,
+  AccountOrdersResponse,
+  AddCartItemRequest,
   AddProductImageRequest,
+  AddWishlistItemRequest,
   AdjustInventoryResponse,
   AdminAddress,
   AdminAgentPrivileges,
@@ -69,6 +75,7 @@ import type {
   Banner,
   CancelVendorOrderRequest,
   Carrier,
+  CartResponse,
   CatalogProductDetail,
   CatalogProductsPage,
   Category,
@@ -102,6 +109,8 @@ import type {
   ListCatalogProductsParams,
   LoginRequest,
   Manufacturer,
+  PlaceOrderRequest,
+  PlaceOrderResult,
   ReceiveVendorOrderRequest,
   RecoveryCodeRequest,
   ReorderProductImagesRequest,
@@ -128,6 +137,7 @@ import type {
   UpdateAddressRequest,
   UpdateBannerRequest,
   UpdateCarrierRequest,
+  UpdateCartItemRequest,
   UpdateCategoryRequest,
   UpdateCouponCodeRequest,
   UpdateCustomerRequest,
@@ -143,6 +153,7 @@ import type {
   UpdateVendorOrderRequest,
   UpdateVendorOrderStatusRequest,
   VerifyEmailRequest,
+  WishlistResponse,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -812,6 +823,1064 @@ export function useGetCatalogProductBySlug<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary List the signed-in customer's saved addresses
+ */
+export const getListAccountAddressesUrl = () => {
+  return `/api/account/addresses`;
+};
+
+export const listAccountAddresses = async (
+  options?: RequestInit,
+): Promise<AccountAddressesResponse> => {
+  return customFetch<AccountAddressesResponse>(getListAccountAddressesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListAccountAddressesQueryKey = () => {
+  return [`/api/account/addresses`] as const;
+};
+
+export const getListAccountAddressesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listAccountAddresses>>,
+  TError = ErrorType<Error>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listAccountAddresses>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListAccountAddressesQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listAccountAddresses>>
+  > = ({ signal }) => listAccountAddresses({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listAccountAddresses>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListAccountAddressesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listAccountAddresses>>
+>;
+export type ListAccountAddressesQueryError = ErrorType<Error>;
+
+/**
+ * @summary List the signed-in customer's saved addresses
+ */
+
+export function useListAccountAddresses<
+  TData = Awaited<ReturnType<typeof listAccountAddresses>>,
+  TError = ErrorType<Error>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listAccountAddresses>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListAccountAddressesQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Save a new address to the signed-in customer
+ */
+export const getCreateAccountAddressUrl = () => {
+  return `/api/account/addresses`;
+};
+
+export const createAccountAddress = async (
+  accountAddressInput: AccountAddressInput,
+  options?: RequestInit,
+): Promise<AccountAddressesResponse> => {
+  return customFetch<AccountAddressesResponse>(getCreateAccountAddressUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(accountAddressInput),
+  });
+};
+
+export const getCreateAccountAddressMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createAccountAddress>>,
+    TError,
+    { data: BodyType<AccountAddressInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createAccountAddress>>,
+  TError,
+  { data: BodyType<AccountAddressInput> },
+  TContext
+> => {
+  const mutationKey = ["createAccountAddress"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createAccountAddress>>,
+    { data: BodyType<AccountAddressInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createAccountAddress(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateAccountAddressMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createAccountAddress>>
+>;
+export type CreateAccountAddressMutationBody = BodyType<AccountAddressInput>;
+export type CreateAccountAddressMutationError = ErrorType<Error>;
+
+/**
+ * @summary Save a new address to the signed-in customer
+ */
+export const useCreateAccountAddress = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createAccountAddress>>,
+    TError,
+    { data: BodyType<AccountAddressInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createAccountAddress>>,
+  TError,
+  { data: BodyType<AccountAddressInput> },
+  TContext
+> => {
+  return useMutation(getCreateAccountAddressMutationOptions(options));
+};
+
+/**
+ * @summary List the signed-in customer's orders
+ */
+export const getListAccountOrdersUrl = () => {
+  return `/api/account/orders`;
+};
+
+export const listAccountOrders = async (
+  options?: RequestInit,
+): Promise<AccountOrdersResponse> => {
+  return customFetch<AccountOrdersResponse>(getListAccountOrdersUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListAccountOrdersQueryKey = () => {
+  return [`/api/account/orders`] as const;
+};
+
+export const getListAccountOrdersQueryOptions = <
+  TData = Awaited<ReturnType<typeof listAccountOrders>>,
+  TError = ErrorType<Error>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listAccountOrders>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListAccountOrdersQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listAccountOrders>>
+  > = ({ signal }) => listAccountOrders({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listAccountOrders>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListAccountOrdersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listAccountOrders>>
+>;
+export type ListAccountOrdersQueryError = ErrorType<Error>;
+
+/**
+ * @summary List the signed-in customer's orders
+ */
+
+export function useListAccountOrders<
+  TData = Awaited<ReturnType<typeof listAccountOrders>>,
+  TError = ErrorType<Error>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listAccountOrders>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListAccountOrdersQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get a single order belonging to the signed-in customer
+ */
+export const getGetAccountOrderUrl = (orderNumber: string) => {
+  return `/api/account/orders/${orderNumber}`;
+};
+
+export const getAccountOrder = async (
+  orderNumber: string,
+  options?: RequestInit,
+): Promise<AccountOrderDetail> => {
+  return customFetch<AccountOrderDetail>(getGetAccountOrderUrl(orderNumber), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetAccountOrderQueryKey = (orderNumber: string) => {
+  return [`/api/account/orders/${orderNumber}`] as const;
+};
+
+export const getGetAccountOrderQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAccountOrder>>,
+  TError = ErrorType<Error>,
+>(
+  orderNumber: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getAccountOrder>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetAccountOrderQueryKey(orderNumber);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getAccountOrder>>> = ({
+    signal,
+  }) => getAccountOrder(orderNumber, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!orderNumber,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAccountOrder>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetAccountOrderQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAccountOrder>>
+>;
+export type GetAccountOrderQueryError = ErrorType<Error>;
+
+/**
+ * @summary Get a single order belonging to the signed-in customer
+ */
+
+export function useGetAccountOrder<
+  TData = Awaited<ReturnType<typeof getAccountOrder>>,
+  TError = ErrorType<Error>,
+>(
+  orderNumber: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getAccountOrder>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetAccountOrderQueryOptions(orderNumber, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Place an order from the signed-in customer's cart
+ */
+export const getPlaceOrderUrl = () => {
+  return `/api/checkout`;
+};
+
+export const placeOrder = async (
+  placeOrderRequest: PlaceOrderRequest,
+  options?: RequestInit,
+): Promise<PlaceOrderResult> => {
+  return customFetch<PlaceOrderResult>(getPlaceOrderUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(placeOrderRequest),
+  });
+};
+
+export const getPlaceOrderMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof placeOrder>>,
+    TError,
+    { data: BodyType<PlaceOrderRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof placeOrder>>,
+  TError,
+  { data: BodyType<PlaceOrderRequest> },
+  TContext
+> => {
+  const mutationKey = ["placeOrder"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof placeOrder>>,
+    { data: BodyType<PlaceOrderRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return placeOrder(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PlaceOrderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof placeOrder>>
+>;
+export type PlaceOrderMutationBody = BodyType<PlaceOrderRequest>;
+export type PlaceOrderMutationError = ErrorType<Error>;
+
+/**
+ * @summary Place an order from the signed-in customer's cart
+ */
+export const usePlaceOrder = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof placeOrder>>,
+    TError,
+    { data: BodyType<PlaceOrderRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof placeOrder>>,
+  TError,
+  { data: BodyType<PlaceOrderRequest> },
+  TContext
+> => {
+  return useMutation(getPlaceOrderMutationOptions(options));
+};
+
+/**
+ * @summary List the signed-in user's wishlist items
+ */
+export const getGetWishlistUrl = () => {
+  return `/api/wishlist`;
+};
+
+export const getWishlist = async (
+  options?: RequestInit,
+): Promise<WishlistResponse> => {
+  return customFetch<WishlistResponse>(getGetWishlistUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetWishlistQueryKey = () => {
+  return [`/api/wishlist`] as const;
+};
+
+export const getGetWishlistQueryOptions = <
+  TData = Awaited<ReturnType<typeof getWishlist>>,
+  TError = ErrorType<Error>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getWishlist>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetWishlistQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getWishlist>>> = ({
+    signal,
+  }) => getWishlist({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getWishlist>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetWishlistQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getWishlist>>
+>;
+export type GetWishlistQueryError = ErrorType<Error>;
+
+/**
+ * @summary List the signed-in user's wishlist items
+ */
+
+export function useGetWishlist<
+  TData = Awaited<ReturnType<typeof getWishlist>>,
+  TError = ErrorType<Error>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getWishlist>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetWishlistQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Add a product to the signed-in user's wishlist
+ */
+export const getAddWishlistItemUrl = () => {
+  return `/api/wishlist`;
+};
+
+export const addWishlistItem = async (
+  addWishlistItemRequest: AddWishlistItemRequest,
+  options?: RequestInit,
+): Promise<WishlistResponse> => {
+  return customFetch<WishlistResponse>(getAddWishlistItemUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(addWishlistItemRequest),
+  });
+};
+
+export const getAddWishlistItemMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addWishlistItem>>,
+    TError,
+    { data: BodyType<AddWishlistItemRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof addWishlistItem>>,
+  TError,
+  { data: BodyType<AddWishlistItemRequest> },
+  TContext
+> => {
+  const mutationKey = ["addWishlistItem"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof addWishlistItem>>,
+    { data: BodyType<AddWishlistItemRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return addWishlistItem(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AddWishlistItemMutationResult = NonNullable<
+  Awaited<ReturnType<typeof addWishlistItem>>
+>;
+export type AddWishlistItemMutationBody = BodyType<AddWishlistItemRequest>;
+export type AddWishlistItemMutationError = ErrorType<Error>;
+
+/**
+ * @summary Add a product to the signed-in user's wishlist
+ */
+export const useAddWishlistItem = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addWishlistItem>>,
+    TError,
+    { data: BodyType<AddWishlistItemRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof addWishlistItem>>,
+  TError,
+  { data: BodyType<AddWishlistItemRequest> },
+  TContext
+> => {
+  return useMutation(getAddWishlistItemMutationOptions(options));
+};
+
+/**
+ * @summary Get the signed-in user's cart
+ */
+export const getGetCartUrl = () => {
+  return `/api/cart`;
+};
+
+export const getCart = async (options?: RequestInit): Promise<CartResponse> => {
+  return customFetch<CartResponse>(getGetCartUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetCartQueryKey = () => {
+  return [`/api/cart`] as const;
+};
+
+export const getGetCartQueryOptions = <
+  TData = Awaited<ReturnType<typeof getCart>>,
+  TError = ErrorType<Error>,
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof getCart>>, TError, TData>;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetCartQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getCart>>> = ({
+    signal,
+  }) => getCart({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getCart>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetCartQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getCart>>
+>;
+export type GetCartQueryError = ErrorType<Error>;
+
+/**
+ * @summary Get the signed-in user's cart
+ */
+
+export function useGetCart<
+  TData = Awaited<ReturnType<typeof getCart>>,
+  TError = ErrorType<Error>,
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof getCart>>, TError, TData>;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetCartQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Remove all items from the signed-in user's cart
+ */
+export const getClearCartUrl = () => {
+  return `/api/cart`;
+};
+
+export const clearCart = async (
+  options?: RequestInit,
+): Promise<CartResponse> => {
+  return customFetch<CartResponse>(getClearCartUrl(), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getClearCartMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof clearCart>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof clearCart>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["clearCart"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof clearCart>>,
+    void
+  > = () => {
+    return clearCart(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ClearCartMutationResult = NonNullable<
+  Awaited<ReturnType<typeof clearCart>>
+>;
+
+export type ClearCartMutationError = ErrorType<Error>;
+
+/**
+ * @summary Remove all items from the signed-in user's cart
+ */
+export const useClearCart = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof clearCart>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof clearCart>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getClearCartMutationOptions(options));
+};
+
+/**
+ * @summary Add a product to the signed-in user's cart
+ */
+export const getAddCartItemUrl = () => {
+  return `/api/cart/items`;
+};
+
+export const addCartItem = async (
+  addCartItemRequest: AddCartItemRequest,
+  options?: RequestInit,
+): Promise<CartResponse> => {
+  return customFetch<CartResponse>(getAddCartItemUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(addCartItemRequest),
+  });
+};
+
+export const getAddCartItemMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addCartItem>>,
+    TError,
+    { data: BodyType<AddCartItemRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof addCartItem>>,
+  TError,
+  { data: BodyType<AddCartItemRequest> },
+  TContext
+> => {
+  const mutationKey = ["addCartItem"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof addCartItem>>,
+    { data: BodyType<AddCartItemRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return addCartItem(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AddCartItemMutationResult = NonNullable<
+  Awaited<ReturnType<typeof addCartItem>>
+>;
+export type AddCartItemMutationBody = BodyType<AddCartItemRequest>;
+export type AddCartItemMutationError = ErrorType<Error>;
+
+/**
+ * @summary Add a product to the signed-in user's cart
+ */
+export const useAddCartItem = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addCartItem>>,
+    TError,
+    { data: BodyType<AddCartItemRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof addCartItem>>,
+  TError,
+  { data: BodyType<AddCartItemRequest> },
+  TContext
+> => {
+  return useMutation(getAddCartItemMutationOptions(options));
+};
+
+/**
+ * @summary Change the quantity of a cart line item
+ */
+export const getUpdateCartItemUrl = (itemId: number) => {
+  return `/api/cart/items/${itemId}`;
+};
+
+export const updateCartItem = async (
+  itemId: number,
+  updateCartItemRequest: UpdateCartItemRequest,
+  options?: RequestInit,
+): Promise<CartResponse> => {
+  return customFetch<CartResponse>(getUpdateCartItemUrl(itemId), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateCartItemRequest),
+  });
+};
+
+export const getUpdateCartItemMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateCartItem>>,
+    TError,
+    { itemId: number; data: BodyType<UpdateCartItemRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateCartItem>>,
+  TError,
+  { itemId: number; data: BodyType<UpdateCartItemRequest> },
+  TContext
+> => {
+  const mutationKey = ["updateCartItem"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateCartItem>>,
+    { itemId: number; data: BodyType<UpdateCartItemRequest> }
+  > = (props) => {
+    const { itemId, data } = props ?? {};
+
+    return updateCartItem(itemId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateCartItemMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateCartItem>>
+>;
+export type UpdateCartItemMutationBody = BodyType<UpdateCartItemRequest>;
+export type UpdateCartItemMutationError = ErrorType<Error>;
+
+/**
+ * @summary Change the quantity of a cart line item
+ */
+export const useUpdateCartItem = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateCartItem>>,
+    TError,
+    { itemId: number; data: BodyType<UpdateCartItemRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateCartItem>>,
+  TError,
+  { itemId: number; data: BodyType<UpdateCartItemRequest> },
+  TContext
+> => {
+  return useMutation(getUpdateCartItemMutationOptions(options));
+};
+
+/**
+ * @summary Remove a line item from the cart
+ */
+export const getRemoveCartItemUrl = (itemId: number) => {
+  return `/api/cart/items/${itemId}`;
+};
+
+export const removeCartItem = async (
+  itemId: number,
+  options?: RequestInit,
+): Promise<CartResponse> => {
+  return customFetch<CartResponse>(getRemoveCartItemUrl(itemId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getRemoveCartItemMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof removeCartItem>>,
+    TError,
+    { itemId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof removeCartItem>>,
+  TError,
+  { itemId: number },
+  TContext
+> => {
+  const mutationKey = ["removeCartItem"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof removeCartItem>>,
+    { itemId: number }
+  > = (props) => {
+    const { itemId } = props ?? {};
+
+    return removeCartItem(itemId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RemoveCartItemMutationResult = NonNullable<
+  Awaited<ReturnType<typeof removeCartItem>>
+>;
+
+export type RemoveCartItemMutationError = ErrorType<Error>;
+
+/**
+ * @summary Remove a line item from the cart
+ */
+export const useRemoveCartItem = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof removeCartItem>>,
+    TError,
+    { itemId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof removeCartItem>>,
+  TError,
+  { itemId: number },
+  TContext
+> => {
+  return useMutation(getRemoveCartItemMutationOptions(options));
+};
+
+/**
+ * @summary Remove a product from the signed-in user's wishlist
+ */
+export const getRemoveWishlistItemUrl = (productId: number) => {
+  return `/api/wishlist/${productId}`;
+};
+
+export const removeWishlistItem = async (
+  productId: number,
+  options?: RequestInit,
+): Promise<WishlistResponse> => {
+  return customFetch<WishlistResponse>(getRemoveWishlistItemUrl(productId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getRemoveWishlistItemMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof removeWishlistItem>>,
+    TError,
+    { productId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof removeWishlistItem>>,
+  TError,
+  { productId: number },
+  TContext
+> => {
+  const mutationKey = ["removeWishlistItem"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof removeWishlistItem>>,
+    { productId: number }
+  > = (props) => {
+    const { productId } = props ?? {};
+
+    return removeWishlistItem(productId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RemoveWishlistItemMutationResult = NonNullable<
+  Awaited<ReturnType<typeof removeWishlistItem>>
+>;
+
+export type RemoveWishlistItemMutationError = ErrorType<Error>;
+
+/**
+ * @summary Remove a product from the signed-in user's wishlist
+ */
+export const useRemoveWishlistItem = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof removeWishlistItem>>,
+    TError,
+    { productId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof removeWishlistItem>>,
+  TError,
+  { productId: number },
+  TContext
+> => {
+  return useMutation(getRemoveWishlistItemMutationOptions(options));
+};
 
 /**
  * @summary Create a new customer account
