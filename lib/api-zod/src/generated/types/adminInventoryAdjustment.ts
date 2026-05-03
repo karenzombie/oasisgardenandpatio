@@ -12,6 +12,14 @@ export interface AdminInventoryAdjustment {
   productName: string;
   productSku: string;
   /** @nullable */
+  variantId: number | null;
+  /** @nullable */
+  variantName: string | null;
+  /** @nullable */
+  fabricId: number | null;
+  /** @nullable */
+  fabricName: string | null;
+  /** @nullable */
   locationId: number | null;
   /** @nullable */
   locationName: string | null;

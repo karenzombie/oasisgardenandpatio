@@ -20,7 +20,7 @@ import { categoriesTable } from "./categories";
 import { materialsTable } from "./materials";
 // Circular import: variants.ts also imports from this file. Drizzle's
 // `.references(() => …)` is a lazy callback so circular module loads work.
-import { productVariantsTable } from "./variants";
+import { productVariantsTable, fabricsTable } from "./variants";
 
 export const productsTable = pgTable(
   "products",
@@ -165,18 +165,13 @@ export const insertProductImageSchema = createInsertSchema(
 export type InsertProductImage = z.infer<typeof insertProductImageSchema>;
 export type ProductImage = typeof productImagesTable.$inferSelect;
 
-// Inventory is variant-scoped when a product has variants, and product-scoped
-// otherwise. Two partial unique indexes enforce: at most one inventory row per
-// variant, and at most one variant-less row per product. A composite FK on
-// (product_id, variant_id) guarantees the variant actually belongs to the
-// product when both are set.
-//
-// MODE EXCLUSIVITY (variant rows vs. variant-less rows for the same product)
-// is enforced at the application layer (inventory routes + loader): when the
-// first variant is created for a product we delete any pre-existing
-// variant-null row, and we never write a variant-null row for a product that
-// has variants. PostgreSQL CHECK constraints can't reference other rows, so a
-// pure-DB enforcement would require a trigger; deferred for v1.
+// Inventory is tracked at the (product, variant, fabric) granularity — the
+// same physical SKU. A flat product with no variants and no per-fabric
+// stocking has a single row with both nullable refs NULL. The unique index
+// uses NULLS NOT DISTINCT so each variant+fabric combination (including the
+// all-null case) gets exactly one row. Composite FKs guarantee that a chosen
+// variant_id belongs to product_id and that a chosen fabric_id is one of the
+// product's configured fabric options.
 export const inventoryTable = pgTable(
   "inventory",
   {
@@ -188,6 +183,9 @@ export const inventoryTable = pgTable(
       () => productVariantsTable.id,
       { onDelete: "cascade" },
     ),
+    fabricId: integer("fabric_id").references(() => fabricsTable.id, {
+      onDelete: "cascade",
+    }),
     onHand: integer("on_hand").notNull().default(0),
     onHold: integer("on_hold").notNull().default(0),
     reorderThreshold: integer("reorder_threshold").notNull().default(0),
@@ -197,12 +195,18 @@ export const inventoryTable = pgTable(
       .$onUpdate(() => new Date()),
   },
   (t) => [
-    uniqueIndex("inventory_variant_unique")
-      .on(t.variantId)
-      .where(sql`${t.variantId} IS NOT NULL`),
-    uniqueIndex("inventory_product_no_variant_unique")
-      .on(t.productId)
-      .where(sql`${t.variantId} IS NULL`),
+    // One row per (product, variant, fabric) tuple. The actual DB index is
+    // declared NULLS NOT DISTINCT (PG 15+) via psql so (1, NULL, NULL)
+    // collides with itself and flat-product rows stay unique. The Drizzle
+    // version pinned in this workspace doesn't expose `.nullsNotDistinct()`
+    // on uniqueIndex; we only use this declaration for runtime query
+    // hints — migrations are managed by hand per replit.md — so the SQL
+    // option is set in the DB itself, not here.
+    uniqueIndex("inventory_pvf_unique").on(
+      t.productId,
+      t.variantId,
+      t.fabricId,
+    ),
     // Composite FK: when variant_id is set, (product_id, variant_id) must
     // reference an actual row in product_variants. MATCH SIMPLE (default)
     // skips the check when variant_id is NULL, which is exactly what we want

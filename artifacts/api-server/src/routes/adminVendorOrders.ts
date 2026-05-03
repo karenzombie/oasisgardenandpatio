@@ -11,6 +11,9 @@ import {
   customersTable,
   usersTable,
   inventoryReceiptsTable,
+  inventoryAdjustmentsTable,
+  inventoryLocationsTable,
+  inventoryTable,
   type VendorOrder,
   type OrderItem,
 } from "@workspace/db";
@@ -833,6 +836,32 @@ router.post(
           status: existing.status,
         };
       }
+
+      // Decide whether to bump on-hand inventory. Only restock vendor orders
+      // (where the linked customer order is flagged is_internal_restock) put
+      // physical stock into our warehouse. Customer orders are direct-ship —
+      // the goods never touch our shelves, so receiving the vendor's
+      // confirmation MUST NOT inflate on-hand counts.
+      let isRestock = false;
+      let restockLocationId: number | null = null;
+      if (existing.customerOrderId != null) {
+        const [parent] = await tx
+          .select({ isInternalRestock: ordersTable.isInternalRestock })
+          .from(ordersTable)
+          .where(eq(ordersTable.id, existing.customerOrderId));
+        isRestock = parent?.isInternalRestock === true;
+      }
+      if (isRestock) {
+        const [defaultLoc] = await tx
+          .select({ id: inventoryLocationsTable.id })
+          .from(inventoryLocationsTable)
+          .where(eq(inventoryLocationsTable.isDefault, true));
+        if (!defaultLoc) {
+          return { kind: "no_default_location" as const };
+        }
+        restockLocationId = defaultLoc.id;
+      }
+
       const now = new Date();
       await tx
         .update(vendorOrdersTable)
@@ -847,9 +876,93 @@ router.post(
         vendorOrderId: existing.id,
         receivedByUserId: userId,
         linkedOrderId: existing.customerOrderId,
+        locationId: restockLocationId,
         notes: body.data.notes ?? null,
       });
-      return { kind: "received" as const };
+
+      if (isRestock) {
+        // Walk the line items linked to this vendor order and bump on-hand
+        // per (productId, variantId, fabricId). Each line gets its own audit
+        // row tagged 'vendor_receipt' for traceability.
+        const lines = await tx
+          .select({
+            productId: orderItemsTable.productId,
+            variantId: orderItemsTable.variantId,
+            fabricId: orderItemsTable.fabricId,
+            quantity: orderItemsTable.quantity,
+          })
+          .from(orderItemsTable)
+          .where(eq(orderItemsTable.vendorOrderId, existing.id));
+
+        for (const line of lines) {
+          if (line.productId == null || line.quantity <= 0) continue;
+          const pid = line.productId;
+          const vid = line.variantId;
+          const fid = line.fabricId;
+
+          // Get-or-create the inventory row for this exact SKU. NULLS NOT
+          // DISTINCT means (pid, NULL, NULL) collides with itself, so flat
+          // products don't proliferate rows.
+          const variantCond = vid == null
+            ? isNull(inventoryTable.variantId)
+            : eq(inventoryTable.variantId, vid);
+          const fabricCond = fid == null
+            ? isNull(inventoryTable.fabricId)
+            : eq(inventoryTable.fabricId, fid);
+          let [inv] = await tx
+            .select()
+            .from(inventoryTable)
+            .where(
+              and(
+                eq(inventoryTable.productId, pid),
+                variantCond,
+                fabricCond,
+              ),
+            )
+            .for("update");
+          if (!inv) {
+            const [created] = await tx
+              .insert(inventoryTable)
+              .values({
+                productId: pid,
+                variantId: vid,
+                fabricId: fid,
+                onHand: 0,
+                onHold: 0,
+                reorderThreshold: 0,
+              })
+              .returning();
+            const [locked] = await tx
+              .select()
+              .from(inventoryTable)
+              .where(eq(inventoryTable.id, created!.id))
+              .for("update");
+            inv = locked!;
+          }
+
+          const newOnHand = inv.onHand + line.quantity;
+          await tx
+            .update(inventoryTable)
+            .set({ onHand: newOnHand })
+            .where(eq(inventoryTable.id, inv.id));
+
+          await tx.insert(inventoryAdjustmentsTable).values({
+            productId: pid,
+            variantId: vid,
+            fabricId: fid,
+            inventoryId: inv.id,
+            locationId: restockLocationId,
+            adjustmentType: "vendor_receipt",
+            quantityChange: line.quantity,
+            quantityAfter: newOnHand,
+            vendorOrderId: existing.id,
+            orderId: existing.customerOrderId,
+            performedByUserId: userId,
+          });
+        }
+      }
+
+      return { kind: "received" as const, isRestock };
     });
     if (result.kind === "not_found") {
       res.status(404).json({ error: "Not found" });
@@ -858,6 +971,13 @@ router.post(
     if (result.kind === "invalid") {
       res.status(409).json({
         error: `Cannot mark a '${result.status}' vendor order as received — send it first`,
+      });
+      return;
+    }
+    if (result.kind === "no_default_location") {
+      res.status(400).json({
+        error:
+          "Cannot receive restock: no default inventory location is configured. Set one in Inventory → Locations.",
       });
       return;
     }

@@ -8,6 +8,11 @@
 
 export interface AdjustInventoryResponse {
   productId: number;
+  /** @nullable */
+  variantId: number | null;
+  /** @nullable */
+  fabricId: number | null;
+  inventoryId: number;
   onHand: number;
   adjustmentId: number;
 }

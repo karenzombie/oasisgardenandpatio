@@ -6342,9 +6342,16 @@ components:
       required: [name]
     AdminInventoryItem:
       type: object
-      description: Product with current stock + computed status.
+      description: One stock-keeping unit (product × variant × fabric) with current stock + computed status.
       properties:
+        inventoryId: { type: ["integer", "null"], description: "Null when no inventory row exists yet for this SKU." }
         productId: { type: integer }
+        variantId: { type: ["integer", "null"] }
+        variantName: { type: ["string", "null"] }
+        variantSku: { type: ["string", "null"] }
+        fabricId: { type: ["integer", "null"] }
+        fabricName: { type: ["string", "null"] }
+        fabricItemNumber: { type: ["string", "null"] }
         name: { type: string }
         sku: { type: string }
         slug: { type: string }
@@ -6361,7 +6368,14 @@ components:
         isActive: { type: boolean }
         updatedAt: { type: ["string", "null"], format: date-time }
       required:
+        - inventoryId
         - productId
+        - variantId
+        - variantName
+        - variantSku
+        - fabricId
+        - fabricName
+        - fabricItemNumber
         - name
         - sku
         - slug
@@ -6399,24 +6413,39 @@ components:
         - other
     CreateInventoryAdjustmentRequest:
       type: object
+      description: |
+        Apply a manual change to one inventory SKU. Provide either `quantityChange`
+        (signed delta) for a relative bump OR `setOnHand` (absolute) for an audit
+        recount — exactly one of the two is required. `variantId` and `fabricId`
+        select which (product, variant, fabric) row is being adjusted; both default
+        to null for a flat product.
       properties:
         productId: { type: integer }
+        variantId: { type: ["integer", "null"] }
+        fabricId: { type: ["integer", "null"] }
         locationId:
           type: ["integer", "null"]
           description: Defaults to current default location when null.
         adjustmentType: { $ref: "#/components/schemas/InventoryAdjustmentType" }
         quantityChange:
-          type: integer
-          description: Signed delta (positive to add, negative to remove). Cannot be zero.
+          type: ["integer", "null"]
+          description: Signed delta (positive to add, negative to remove). Cannot be zero. Mutually exclusive with `setOnHand`.
+        setOnHand:
+          type: ["integer", "null"]
+          minimum: 0
+          description: Absolute on-hand value to set (audit recount). Mutually exclusive with `quantityChange`.
         reason: { type: ["string", "null"] }
-      required: [productId, adjustmentType, quantityChange]
+      required: [productId, adjustmentType]
     AdjustInventoryResponse:
       type: object
       properties:
         productId: { type: integer }
+        variantId: { type: ["integer", "null"] }
+        fabricId: { type: ["integer", "null"] }
+        inventoryId: { type: integer }
         onHand: { type: integer }
         adjustmentId: { type: integer }
-      required: [productId, onHand, adjustmentId]
+      required: [productId, variantId, fabricId, inventoryId, onHand, adjustmentId]
     AdminInventoryAdjustment:
       type: object
       properties:
@@ -6424,6 +6453,10 @@ components:
         productId: { type: integer }
         productName: { type: string }
         productSku: { type: string }
+        variantId: { type: ["integer", "null"] }
+        variantName: { type: ["string", "null"] }
+        fabricId: { type: ["integer", "null"] }
+        fabricName: { type: ["string", "null"] }
         locationId: { type: ["integer", "null"] }
         locationName: { type: ["string", "null"] }
         adjustmentType: { type: string }
@@ -6438,6 +6471,10 @@ components:
         - productId
         - productName
         - productSku
+        - variantId
+        - variantName
+        - fabricId
+        - fabricName
         - locationId
         - locationName
         - adjustmentType

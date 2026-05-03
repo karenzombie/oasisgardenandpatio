@@ -12,6 +12,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./users";
 import { productsTable, inventoryTable } from "./products";
+import { productVariantsTable, fabricsTable } from "./variants";
 import { ordersTable } from "./orders";
 import { vendorOrdersTable } from "./vendorOrders";
 
@@ -50,6 +51,16 @@ export const inventoryAdjustmentsTable = pgTable(
     productId: integer("product_id")
       .notNull()
       .references(() => productsTable.id, { onDelete: "cascade" }),
+    // Variant + fabric are nullable so flat-product adjustments still work,
+    // but when set they pin the audit row to the exact (product, variant,
+    // fabric) SKU that was changed — same granularity as inventory rows.
+    variantId: integer("variant_id").references(
+      () => productVariantsTable.id,
+      { onDelete: "set null" },
+    ),
+    fabricId: integer("fabric_id").references(() => fabricsTable.id, {
+      onDelete: "set null",
+    }),
     inventoryId: integer("inventory_id").references(() => inventoryTable.id, {
       onDelete: "set null",
     }),

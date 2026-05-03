@@ -9,6 +9,8 @@ import {
   categoriesTable,
   inventoryLocationsTable,
   inventoryAdjustmentsTable,
+  productVariantsTable,
+  fabricsTable,
   usersTable,
   type InventoryLocation,
 } from "@workspace/db";
@@ -363,9 +365,20 @@ router.get(
 
     const offset = (page - 1) * pageSize;
 
+    // FROM products LEFT JOIN inventory: products with multiple inventory
+    // rows (one per variant+fabric SKU) yield multiple rows here, products
+    // with no inventory yield exactly one row (synthetic 0-on-hand). LEFT
+    // JOINs to variants + fabrics give human-readable labels.
     const rowsP = db
       .select({
+        inventoryId: inventoryTable.id,
         productId: productsTable.id,
+        variantId: inventoryTable.variantId,
+        variantName: productVariantsTable.variantName,
+        variantSku: productVariantsTable.variantSku,
+        fabricId: inventoryTable.fabricId,
+        fabricName: fabricsTable.name,
+        fabricItemNumber: fabricsTable.itemNumber,
         name: productsTable.name,
         sku: productsTable.sku,
         slug: productsTable.slug,
@@ -383,11 +396,13 @@ router.get(
       .from(productsTable)
       .leftJoin(
         inventoryTable,
-        and(
-          eq(inventoryTable.productId, productsTable.id),
-          isNull(inventoryTable.variantId),
-        ),
+        eq(inventoryTable.productId, productsTable.id),
       )
+      .leftJoin(
+        productVariantsTable,
+        eq(productVariantsTable.id, inventoryTable.variantId),
+      )
+      .leftJoin(fabricsTable, eq(fabricsTable.id, inventoryTable.fabricId))
       .leftJoin(
         manufacturersTable,
         eq(manufacturersTable.id, productsTable.manufacturerId),
@@ -399,22 +414,28 @@ router.get(
       .where(whereClause as ReturnType<typeof and>)
       .orderBy(...((): Array<ReturnType<typeof asc>> => {
         const dir = sortOrder === "desc" ? desc : asc;
-        const tb = asc(productsTable.id);
+        // Stable tiebreakers — variant/fabric ids prevent the same product's
+        // SKU rows from reordering between pages.
+        const tb = [
+          asc(productsTable.id),
+          asc(sql`COALESCE(${inventoryTable.variantId}, 0)`),
+          asc(sql`COALESCE(${inventoryTable.fabricId}, 0)`),
+        ];
         switch (sortBy) {
           case "name":
-            return [dir(productsTable.name), tb];
+            return [dir(productsTable.name), ...tb];
           case "sku":
-            return [dir(productsTable.sku), tb];
+            return [dir(productsTable.sku), ...tb];
           case "manufacturer":
-            return [dir(manufacturersTable.name), asc(productsTable.name), tb];
+            return [dir(manufacturersTable.name), asc(productsTable.name), ...tb];
           case "category":
-            return [dir(categoriesTable.name), asc(productsTable.name), tb];
+            return [dir(categoriesTable.name), asc(productsTable.name), ...tb];
           case "onHand":
-            return [dir(ON_HAND_SQL), asc(productsTable.name), tb];
+            return [dir(ON_HAND_SQL), asc(productsTable.name), ...tb];
           case "reorderThreshold":
-            return [dir(REORDER_THRESHOLD_SQL), asc(productsTable.name), tb];
+            return [dir(REORDER_THRESHOLD_SQL), asc(productsTable.name), ...tb];
           default:
-            return [asc(productsTable.name), tb];
+            return [asc(productsTable.name), ...tb];
         }
       })())
       .limit(pageSize)
@@ -425,17 +446,34 @@ router.get(
       .from(productsTable)
       .leftJoin(
         inventoryTable,
-        and(
-          eq(inventoryTable.productId, productsTable.id),
-          isNull(inventoryTable.variantId),
-        ),
+        eq(inventoryTable.productId, productsTable.id),
+      )
+      .leftJoin(
+        productVariantsTable,
+        eq(productVariantsTable.id, inventoryTable.variantId),
+      )
+      .leftJoin(fabricsTable, eq(fabricsTable.id, inventoryTable.fabricId))
+      .leftJoin(
+        manufacturersTable,
+        eq(manufacturersTable.id, productsTable.manufacturerId),
+      )
+      .leftJoin(
+        categoriesTable,
+        eq(categoriesTable.id, productsTable.categoryId),
       )
       .where(whereClause as ReturnType<typeof and>);
 
     const [rows, totalRows] = await Promise.all([rowsP, totalP]);
     res.json({
       items: rows.map((r) => ({
+        inventoryId: r.inventoryId,
         productId: r.productId,
+        variantId: r.variantId,
+        variantName: r.variantName,
+        variantSku: r.variantSku,
+        fabricId: r.fabricId,
+        fabricName: r.fabricName,
+        fabricItemNumber: r.fabricItemNumber,
         name: r.name,
         sku: r.sku,
         slug: r.slug,
@@ -473,11 +511,35 @@ router.post(
         .json({ error: parsed.error.issues[0]?.message ?? "Invalid body" });
       return;
     }
-    const { productId, locationId, adjustmentType, quantityChange, reason } =
-      parsed.data;
+    const {
+      productId,
+      variantId = null,
+      fabricId = null,
+      locationId,
+      adjustmentType,
+      quantityChange,
+      setOnHand,
+      reason,
+    } = parsed.data;
 
-    if (quantityChange === 0) {
+    // Exactly one of quantityChange (delta) or setOnHand (absolute audit
+    // recount) must be provided. delta=0 is a no-op; reject it. Both null
+    // means the caller forgot to specify either mode.
+    const hasDelta = quantityChange != null;
+    const hasAbsolute = setOnHand != null;
+    if (hasDelta === hasAbsolute) {
+      res.status(400).json({
+        error:
+          "Provide exactly one of quantityChange (delta) or setOnHand (absolute).",
+      });
+      return;
+    }
+    if (hasDelta && quantityChange === 0) {
       res.status(400).json({ error: "quantityChange cannot be zero" });
+      return;
+    }
+    if (hasAbsolute && (setOnHand! < 0 || !Number.isInteger(setOnHand!))) {
+      res.status(400).json({ error: "setOnHand must be a non-negative integer" });
       return;
     }
     if (!ALLOWED_ADJUSTMENT_TYPES.has(adjustmentType)) {
@@ -525,7 +587,13 @@ router.post(
     type TxResult =
       | { kind: "product_not_found" }
       | { kind: "would_be_negative"; current: number }
-      | { kind: "ok"; onHand: number; adjustmentId: number };
+      | {
+          kind: "ok";
+          onHand: number;
+          adjustmentId: number;
+          inventoryId: number;
+          delta: number;
+        };
 
     const result = await db.transaction(async (tx): Promise<TxResult> => {
       // Confirm product exists (lock it briefly to avoid TOCTOU).
@@ -536,17 +604,26 @@ router.post(
         .for("update");
       if (!product) return { kind: "product_not_found" };
 
-      // Get-or-create the canonical product-level inventory row (variantId IS
-      // NULL — the schema's partial unique index guarantees at most one such
-      // row per product). Variant-level adjustments are intentionally NOT
-      // exposed here; they would need their own UI.
+      // Get-or-create the (productId, variantId, fabricId) inventory row.
+      // The unique index uses NULLS NOT DISTINCT so each SKU tuple maps to
+      // exactly one row; UM800/red-fabric and UM800/different-finish are
+      // tracked separately.
+      const variantCond =
+        variantId == null
+          ? isNull(inventoryTable.variantId)
+          : eq(inventoryTable.variantId, variantId);
+      const fabricCond =
+        fabricId == null
+          ? isNull(inventoryTable.fabricId)
+          : eq(inventoryTable.fabricId, fabricId);
       let [inv] = await tx
         .select()
         .from(inventoryTable)
         .where(
           and(
             eq(inventoryTable.productId, productId),
-            isNull(inventoryTable.variantId),
+            variantCond,
+            fabricCond,
           ),
         )
         .for("update");
@@ -555,13 +632,13 @@ router.post(
           .insert(inventoryTable)
           .values({
             productId,
-            variantId: null,
+            variantId,
+            fabricId,
             onHand: 0,
             onHold: 0,
             reorderThreshold: 0,
           })
           .returning();
-        // Re-select FOR UPDATE on the freshly-inserted row.
         const [locked] = await tx
           .select()
           .from(inventoryTable)
@@ -570,24 +647,33 @@ router.post(
         inv = locked!;
       }
 
-      const newOnHand = inv.onHand + quantityChange;
+      // Resolve the effective delta. setOnHand=N means "after this audit the
+      // count is exactly N", which is a delta of (N - current). A no-op
+      // recount (delta=0) still writes an audit row so the recount itself is
+      // logged.
+      const delta = hasAbsolute ? setOnHand! - inv.onHand : quantityChange!;
+      const newOnHand = inv.onHand + delta;
       if (newOnHand < 0) {
         return { kind: "would_be_negative", current: inv.onHand };
       }
 
-      await tx
-        .update(inventoryTable)
-        .set({ onHand: newOnHand })
-        .where(eq(inventoryTable.id, inv.id));
+      if (delta !== 0) {
+        await tx
+          .update(inventoryTable)
+          .set({ onHand: newOnHand })
+          .where(eq(inventoryTable.id, inv.id));
+      }
 
       const [adjustment] = await tx
         .insert(inventoryAdjustmentsTable)
         .values({
           productId,
+          variantId,
+          fabricId,
           inventoryId: inv.id,
           locationId: effectiveLocationId,
           adjustmentType,
-          quantityChange,
+          quantityChange: delta,
           quantityAfter: newOnHand,
           reason: reason?.trim() || null,
           performedByUserId: userId,
@@ -598,6 +684,8 @@ router.post(
         kind: "ok",
         onHand: newOnHand,
         adjustmentId: adjustment!.id,
+        inventoryId: inv.id,
+        delta,
       };
     });
 
@@ -617,17 +705,23 @@ router.post(
       changeType: "update",
       snapshot: {
         productId,
+        variantId,
+        fabricId,
+        inventoryId: result.inventoryId,
         onHand: result.onHand,
         adjustmentId: result.adjustmentId,
         adjustmentType,
-        quantityChange,
+        quantityChange: result.delta,
         locationId: effectiveLocationId,
         reason: reason ?? null,
       },
-      notes: `inventory ${adjustmentType} ${quantityChange >= 0 ? "+" : ""}${quantityChange} → onHand ${result.onHand}`,
+      notes: `inventory ${adjustmentType} ${result.delta >= 0 ? "+" : ""}${result.delta} → onHand ${result.onHand}`,
     });
     res.json({
       productId,
+      variantId,
+      fabricId,
+      inventoryId: result.inventoryId,
       onHand: result.onHand,
       adjustmentId: result.adjustmentId,
     });
@@ -680,6 +774,10 @@ router.get(
         productId: inventoryAdjustmentsTable.productId,
         productName: productsTable.name,
         productSku: productsTable.sku,
+        variantId: inventoryAdjustmentsTable.variantId,
+        variantName: productVariantsTable.variantName,
+        fabricId: inventoryAdjustmentsTable.fabricId,
+        fabricName: fabricsTable.name,
         locationId: inventoryAdjustmentsTable.locationId,
         locationName: inventoryLocationsTable.name,
         adjustmentType: inventoryAdjustmentsTable.adjustmentType,
@@ -696,6 +794,14 @@ router.get(
       .leftJoin(
         productsTable,
         eq(productsTable.id, inventoryAdjustmentsTable.productId),
+      )
+      .leftJoin(
+        productVariantsTable,
+        eq(productVariantsTable.id, inventoryAdjustmentsTable.variantId),
+      )
+      .leftJoin(
+        fabricsTable,
+        eq(fabricsTable.id, inventoryAdjustmentsTable.fabricId),
       )
       .leftJoin(
         inventoryLocationsTable,
@@ -738,6 +844,10 @@ router.get(
         productId: r.productId,
         productName: r.productName ?? "(deleted product)",
         productSku: r.productSku ?? "—",
+        variantId: r.variantId,
+        variantName: r.variantName,
+        fabricId: r.fabricId,
+        fabricName: r.fabricName,
         locationId: r.locationId,
         locationName: r.locationName,
         adjustmentType: r.adjustmentType,

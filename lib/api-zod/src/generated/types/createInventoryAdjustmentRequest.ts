@@ -7,16 +7,37 @@
  */
 import type { InventoryAdjustmentType } from "./inventoryAdjustmentType";
 
+/**
+ * Apply a manual change to one inventory SKU. Provide either `quantityChange`
+(signed delta) for a relative bump OR `setOnHand` (absolute) for an audit
+recount — exactly one of the two is required. `variantId` and `fabricId`
+select which (product, variant, fabric) row is being adjusted; both default
+to null for a flat product.
+
+ */
 export interface CreateInventoryAdjustmentRequest {
   productId: number;
+  /** @nullable */
+  variantId?: number | null;
+  /** @nullable */
+  fabricId?: number | null;
   /**
    * Defaults to current default location when null.
    * @nullable
    */
   locationId?: number | null;
   adjustmentType: InventoryAdjustmentType;
-  /** Signed delta (positive to add, negative to remove). Cannot be zero. */
-  quantityChange: number;
+  /**
+   * Signed delta (positive to add, negative to remove). Cannot be zero. Mutually exclusive with `setOnHand`.
+   * @nullable
+   */
+  quantityChange?: number | null;
+  /**
+   * Absolute on-hand value to set (audit recount). Mutually exclusive with `quantityChange`.
+   * @minimum 0
+   * @nullable
+   */
+  setOnHand?: number | null;
   /** @nullable */
   reason?: string | null;
 }

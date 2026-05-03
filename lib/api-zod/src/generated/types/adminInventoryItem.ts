@@ -8,10 +8,27 @@
 import type { AdminInventoryItemStatus } from "./adminInventoryItemStatus";
 
 /**
- * Product with current stock + computed status.
+ * One stock-keeping unit (product × variant × fabric) with current stock + computed status.
  */
 export interface AdminInventoryItem {
+  /**
+   * Null when no inventory row exists yet for this SKU.
+   * @nullable
+   */
+  inventoryId: number | null;
   productId: number;
+  /** @nullable */
+  variantId: number | null;
+  /** @nullable */
+  variantName: string | null;
+  /** @nullable */
+  variantSku: string | null;
+  /** @nullable */
+  fabricId: number | null;
+  /** @nullable */
+  fabricName: string | null;
+  /** @nullable */
+  fabricItemNumber: string | null;
   name: string;
   sku: string;
   slug: string;

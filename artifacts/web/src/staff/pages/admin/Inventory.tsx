@@ -300,6 +300,8 @@ function LevelsTab() {
               <tr>
                 <SortableHeader sortKey="name" state={sort} onSort={handleSort} className="px-4 py-3 font-semibold">Product</SortableHeader>
                 <SortableHeader sortKey="sku" state={sort} onSort={handleSort} className="px-4 py-3 font-semibold">SKU</SortableHeader>
+                <th className="px-4 py-3 font-semibold">Variant</th>
+                <th className="px-4 py-3 font-semibold">Fabric</th>
                 <SortableHeader sortKey="manufacturer" state={sort} onSort={handleSort} className="px-4 py-3 font-semibold">Manufacturer</SortableHeader>
                 <SortableHeader sortKey="category" state={sort} onSort={handleSort} className="px-4 py-3 font-semibold">Category</SortableHeader>
                 <SortableHeader sortKey="onHand" state={sort} onSort={handleSort} align="right" className="px-4 py-3 font-semibold">On hand</SortableHeader>
@@ -315,8 +317,12 @@ function LevelsTab() {
                   row.lowStockThreshold,
                   row.reorderThreshold,
                 );
+                // Each (product, variant, fabric) tuple is a unique SKU row;
+                // include all three in the React key so multiple inventory
+                // rows for the same product don't collide.
+                const rowKey = `${row.productId}:${row.variantId ?? "_"}:${row.fabricId ?? "_"}`;
                 return (
-                  <tr key={row.productId} className="hover:bg-slate-50">
+                  <tr key={rowKey} className="hover:bg-slate-50">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <div className="size-10 rounded bg-slate-100 overflow-hidden flex items-center justify-center shrink-0">
@@ -344,6 +350,34 @@ function LevelsTab() {
                     </td>
                     <td className="px-4 py-3 font-mono text-xs text-slate-600">
                       {row.sku}
+                    </td>
+                    <td className="px-4 py-3 text-slate-700">
+                      {row.variantName ? (
+                        <span>
+                          {row.variantName}
+                          {row.variantSku && (
+                            <span className="ml-1 font-mono text-xs text-slate-400">
+                              {row.variantSku}
+                            </span>
+                          )}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-slate-700">
+                      {row.fabricName ? (
+                        <span>
+                          {row.fabricName}
+                          {row.fabricItemNumber && (
+                            <span className="ml-1 font-mono text-xs text-slate-400">
+                              {row.fabricItemNumber}
+                            </span>
+                          )}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400">—</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-slate-700">
                       {row.manufacturerName ?? "—"}
@@ -437,7 +471,12 @@ function AdjustDialog({
 
   const [locationId, setLocationId] = useState<string>("");
   const [adjustmentType, setAdjustmentType] = useState<string>("cycle_count");
+  // Two adjustment modes: "delta" applies a signed change (e.g. -2 for damage,
+  // +5 for found stock); "absolute" sets the on-hand to an exact value, which
+  // is what staff want during a manual cycle-count audit.
+  const [mode, setMode] = useState<"delta" | "absolute">("delta");
   const [quantityChange, setQuantityChange] = useState<string>("");
+  const [setOnHandValue, setSetOnHandValue] = useState<string>("");
   const [reason, setReason] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
 
@@ -446,7 +485,9 @@ function AdjustDialog({
     if (target) {
       setLocationId(defaultLocation ? String(defaultLocation.id) : "");
       setAdjustmentType("cycle_count");
+      setMode("delta");
       setQuantityChange("");
+      setSetOnHandValue(String(target.onHand));
       setReason("");
       setError(null);
     }
@@ -456,26 +497,53 @@ function AdjustDialog({
     e.preventDefault();
     setError(null);
     if (!target) return;
-    const delta = Number(quantityChange);
-    if (!Number.isInteger(delta) || delta === 0) {
-      setError("Quantity change must be a non-zero integer.");
-      return;
+
+    let computedDelta = 0;
+    const payload: {
+      productId: number;
+      variantId: number | null;
+      fabricId: number | null;
+      locationId: number | null;
+      adjustmentType: string;
+      quantityChange?: number | null;
+      setOnHand?: number | null;
+      reason: string | null;
+    } = {
+      productId: target.productId,
+      variantId: target.variantId,
+      fabricId: target.fabricId,
+      locationId: locationId ? Number(locationId) : null,
+      adjustmentType,
+      reason: reason.trim() || null,
+    };
+
+    if (mode === "delta") {
+      const delta = Number(quantityChange);
+      if (!Number.isInteger(delta) || delta === 0) {
+        setError("Quantity change must be a non-zero integer.");
+        return;
+      }
+      if (target.onHand + delta < 0) {
+        setError(
+          `Cannot reduce by ${Math.abs(delta)} — only ${target.onHand} on hand.`,
+        );
+        return;
+      }
+      payload.quantityChange = delta;
+      computedDelta = delta;
+    } else {
+      const target_ = Number(setOnHandValue);
+      if (!Number.isInteger(target_) || target_ < 0) {
+        setError("Set-to value must be a non-negative integer.");
+        return;
+      }
+      payload.setOnHand = target_;
+      computedDelta = target_ - target.onHand;
     }
-    if (target.onHand + delta < 0) {
-      setError(
-        `Cannot reduce by ${Math.abs(delta)} — only ${target.onHand} on hand.`,
-      );
-      return;
-    }
+
     try {
       await adjustMut.mutateAsync({
-        data: {
-          productId: target.productId,
-          locationId: locationId ? Number(locationId) : null,
-          adjustmentType: adjustmentType as never,
-          quantityChange: delta,
-          reason: reason.trim() || null,
-        },
+        data: payload as never,
       });
       await qc.invalidateQueries({
         queryKey: getAdminListInventoryQueryKey(),
@@ -483,11 +551,10 @@ function AdjustDialog({
       await qc.invalidateQueries({
         queryKey: getAdminListInventoryAdjustmentsQueryKey(),
       });
+      const newOH = target.onHand + computedDelta;
       toast.toast({
         title: "Inventory adjusted",
-        description: `${target.name}: ${delta > 0 ? "+" : ""}${delta} (now ${
-          target.onHand + delta
-        })`,
+        description: `${target.name}: ${computedDelta > 0 ? "+" : ""}${computedDelta} (now ${newOH})`,
       });
       onClose();
     } catch (err: unknown) {
@@ -500,10 +567,20 @@ function AdjustDialog({
   }
 
   const open = target !== null;
-  const newOnHand = target
-    ? target.onHand + (Number.isFinite(Number(quantityChange))
+  const previewDelta =
+    mode === "delta"
+      ? Number.isFinite(Number(quantityChange))
         ? Number(quantityChange)
-        : 0)
+        : 0
+      : Number.isFinite(Number(setOnHandValue))
+        ? Number(setOnHandValue) - (target?.onHand ?? 0)
+        : 0;
+  const newOnHand = target
+    ? mode === "delta"
+      ? target.onHand + previewDelta
+      : Number.isFinite(Number(setOnHandValue))
+        ? Number(setOnHandValue)
+        : target.onHand
     : 0;
 
   return (
@@ -512,9 +589,21 @@ function AdjustDialog({
         <DialogHeader>
           <DialogTitle>Adjust inventory</DialogTitle>
           <DialogDescription>
-            {target
-              ? `${target.name} — currently ${target.onHand} on hand`
-              : ""}
+            {target ? (
+              <span>
+                <span className="font-medium">{target.name}</span>
+                {target.variantName && (
+                  <> · variant <span className="font-medium">{target.variantName}</span></>
+                )}
+                {target.fabricName && (
+                  <> · fabric <span className="font-medium">{target.fabricName}</span></>
+                )}
+                {" — currently "}
+                <span className="font-medium">{target.onHand}</span> on hand
+              </span>
+            ) : (
+              ""
+            )}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -555,22 +644,68 @@ function AdjustDialog({
             </Select>
           </div>
           <div>
-            <Label htmlFor="adj-qty">Quantity change (+/-)</Label>
-            <Input
-              id="adj-qty"
-              type="number"
-              step={1}
-              placeholder="e.g. -2 or 5"
-              value={quantityChange}
-              onChange={(e) => setQuantityChange(e.target.value)}
-              autoFocus
-            />
-            {target && quantityChange.trim() !== "" && (
-              <div className="mt-1.5 text-xs text-slate-600">
-                New on-hand: <span className="font-medium">{newOnHand}</span>
-              </div>
-            )}
+            <Label>Mode</Label>
+            <div className="mt-1 flex gap-2">
+              <Button
+                type="button"
+                variant={mode === "delta" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setMode("delta")}
+              >
+                Adjust by (+/-)
+              </Button>
+              <Button
+                type="button"
+                variant={mode === "absolute" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setMode("absolute")}
+              >
+                Set to (audit)
+              </Button>
+            </div>
           </div>
+          {mode === "delta" ? (
+            <div>
+              <Label htmlFor="adj-qty">Quantity change (+/-)</Label>
+              <Input
+                id="adj-qty"
+                type="number"
+                step={1}
+                placeholder="e.g. -2 or 5"
+                value={quantityChange}
+                onChange={(e) => setQuantityChange(e.target.value)}
+                autoFocus
+              />
+              {target && quantityChange.trim() !== "" && (
+                <div className="mt-1.5 text-xs text-slate-600">
+                  New on-hand: <span className="font-medium">{newOnHand}</span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div>
+              <Label htmlFor="adj-set">Set on-hand to</Label>
+              <Input
+                id="adj-set"
+                type="number"
+                step={1}
+                min={0}
+                placeholder="exact count"
+                value={setOnHandValue}
+                onChange={(e) => setSetOnHandValue(e.target.value)}
+                autoFocus
+              />
+              {target && setOnHandValue.trim() !== "" && (
+                <div className="mt-1.5 text-xs text-slate-600">
+                  Recorded delta:{" "}
+                  <span className="font-medium">
+                    {previewDelta > 0 ? "+" : ""}
+                    {previewDelta}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
           <div>
             <Label htmlFor="adj-reason">Notes (optional)</Label>
             <Textarea

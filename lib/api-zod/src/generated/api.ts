@@ -2641,7 +2641,17 @@ export const AdminListInventoryResponse = zod.object({
   items: zod.array(
     zod
       .object({
+        inventoryId: zod
+          .number()
+          .nullable()
+          .describe("Null when no inventory row exists yet for this SKU."),
         productId: zod.number(),
+        variantId: zod.number().nullable(),
+        variantName: zod.string().nullable(),
+        variantSku: zod.string().nullable(),
+        fabricId: zod.number().nullable(),
+        fabricName: zod.string().nullable(),
+        fabricItemNumber: zod.string().nullable(),
         name: zod.string(),
         sku: zod.string(),
         slug: zod.string(),
@@ -2656,7 +2666,9 @@ export const AdminListInventoryResponse = zod.object({
         isActive: zod.boolean(),
         updatedAt: zod.coerce.date().nullable(),
       })
-      .describe("Product with current stock + computed status."),
+      .describe(
+        "One stock-keeping unit (product × variant × fabric) with current stock + computed status.",
+      ),
   ),
   total: zod.number(),
   page: zod.number(),
@@ -2666,34 +2678,53 @@ export const AdminListInventoryResponse = zod.object({
 /**
  * @summary Atomically apply a manual inventory adjustment + write an audit row
  */
-export const AdminAdjustInventoryBody = zod.object({
-  productId: zod.number(),
-  locationId: zod
-    .number()
-    .nullish()
-    .describe("Defaults to current default location when null."),
-  adjustmentType: zod
-    .enum([
-      "cycle_count",
-      "damage",
-      "loss",
-      "found",
-      "transfer",
-      "return",
-      "manual_correction",
-      "other",
-    ])
-    .describe("Allowed adjustment categories for manual changes."),
-  quantityChange: zod
-    .number()
-    .describe(
-      "Signed delta (positive to add, negative to remove). Cannot be zero.",
-    ),
-  reason: zod.string().nullish(),
-});
+export const adminAdjustInventoryBodySetOnHandMin = 0;
+
+export const AdminAdjustInventoryBody = zod
+  .object({
+    productId: zod.number(),
+    variantId: zod.number().nullish(),
+    fabricId: zod.number().nullish(),
+    locationId: zod
+      .number()
+      .nullish()
+      .describe("Defaults to current default location when null."),
+    adjustmentType: zod
+      .enum([
+        "cycle_count",
+        "damage",
+        "loss",
+        "found",
+        "transfer",
+        "return",
+        "manual_correction",
+        "other",
+      ])
+      .describe("Allowed adjustment categories for manual changes."),
+    quantityChange: zod
+      .number()
+      .nullish()
+      .describe(
+        "Signed delta (positive to add, negative to remove). Cannot be zero. Mutually exclusive with `setOnHand`.",
+      ),
+    setOnHand: zod
+      .number()
+      .min(adminAdjustInventoryBodySetOnHandMin)
+      .nullish()
+      .describe(
+        "Absolute on-hand value to set (audit recount). Mutually exclusive with `quantityChange`.",
+      ),
+    reason: zod.string().nullish(),
+  })
+  .describe(
+    "Apply a manual change to one inventory SKU. Provide either `quantityChange`\n(signed delta) for a relative bump OR `setOnHand` (absolute) for an audit\nrecount — exactly one of the two is required. `variantId` and `fabricId`\nselect which (product, variant, fabric) row is being adjusted; both default\nto null for a flat product.\n",
+  );
 
 export const AdminAdjustInventoryResponse = zod.object({
   productId: zod.number(),
+  variantId: zod.number().nullable(),
+  fabricId: zod.number().nullable(),
+  inventoryId: zod.number(),
   onHand: zod.number(),
   adjustmentId: zod.number(),
 });
@@ -2728,6 +2759,10 @@ export const AdminListInventoryAdjustmentsResponse = zod.object({
       productId: zod.number(),
       productName: zod.string(),
       productSku: zod.string(),
+      variantId: zod.number().nullable(),
+      variantName: zod.string().nullable(),
+      fabricId: zod.number().nullable(),
+      fabricName: zod.string().nullable(),
       locationId: zod.number().nullable(),
       locationName: zod.string().nullable(),
       adjustmentType: zod.string(),
