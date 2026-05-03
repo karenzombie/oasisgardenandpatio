@@ -122,7 +122,7 @@ export default function Home() {
           {(() => {
             const items =
               featuredProducts && featuredProducts.length > 0
-                ? featuredProducts.map((product) => ({
+                ? featuredProducts.slice(0, 2).map((product) => ({
                     key: product.id,
                     href: `/shop/${product.slug}`,
                     name: product.name,
@@ -130,7 +130,7 @@ export default function Home() {
                     manufacturerName: product.manufacturerName ?? null,
                     placeholder: false as const,
                   }))
-                : Array.from({ length: 6 }).map((_, i) => ({
+                : Array.from({ length: 2 }).map((_, i) => ({
                     key: `placeholder-${i}`,
                     href: "/shop",
                     name: "Coming Soon",
@@ -139,63 +139,49 @@ export default function Home() {
                     placeholder: true as const,
                   }));
 
-            const renderTile = (
-              item: (typeof items)[number],
-              keyPrefix: string,
-            ) => {
-              const brandLogo = item.placeholder
-                ? null
-                : getBrandLogo(item.manufacturerName);
-              return (
-                <li
-                  key={`${keyPrefix}-${item.key}`}
-                  className="shrink-0 w-48 md:w-56"
-                >
-                  <Link href={item.href} className="group block">
-                    <div className="aspect-square overflow-hidden mb-3 relative bg-card">
-                      {item.imageUrl ? (
-                        <img
-                          src={item.imageUrl}
-                          alt={item.name}
-                          className="w-full h-full object-cover mix-blend-multiply transition-transform duration-500 group-hover:scale-105"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-secondary/40 text-secondary-foreground/60 font-serif text-xs tracking-widest uppercase transition-colors group-hover:bg-secondary/60">
-                          {item.placeholder ? "Featured Soon" : "Oasis"}
-                        </div>
-                      )}
-                      {brandLogo ? (
-                        <div
-                          className="absolute top-2 left-2 bg-white/95 px-2 py-1 rounded-sm shadow-sm"
-                          aria-hidden="true"
-                        >
-                          <img
-                            src={brandLogo}
-                            alt=""
-                            className="h-4 w-auto object-contain"
-                          />
-                        </div>
-                      ) : null}
-                    </div>
-                    <h3 className="font-serif text-sm md:text-base text-center group-hover:text-primary transition-colors line-clamp-1">
-                      {item.name}
-                    </h3>
-                  </Link>
-                </li>
-              );
-            };
-
             return (
-              <div className="featured-marquee w-full inline-flex flex-nowrap overflow-hidden">
-                <ul className="flex items-start [&_li]:mx-4 animate-infinite-scroll shrink-0">
-                  {items.map((it) => renderTile(it, "a"))}
-                </ul>
-                <ul
-                  aria-hidden="true"
-                  className="flex items-start [&_li]:mx-4 animate-infinite-scroll shrink-0"
-                >
-                  {items.map((it) => renderTile(it, "b"))}
-                </ul>
+              <div className="flex flex-wrap justify-center gap-8 max-w-2xl mx-auto">
+                {items.map((item) => {
+                  const brandLogo = item.placeholder
+                    ? null
+                    : getBrandLogo(item.manufacturerName);
+                  return (
+                    <Link
+                      key={item.key}
+                      href={item.href}
+                      className="group block w-48 md:w-56"
+                    >
+                      <div className="aspect-square overflow-hidden mb-3 relative bg-card">
+                        {item.imageUrl ? (
+                          <img
+                            src={item.imageUrl}
+                            alt={item.name}
+                            className="w-full h-full object-cover mix-blend-multiply transition-transform duration-500 group-hover:scale-105"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-secondary/40 text-secondary-foreground/60 font-serif text-xs tracking-widest uppercase transition-colors group-hover:bg-secondary/60">
+                            {item.placeholder ? "Featured Soon" : "Oasis"}
+                          </div>
+                        )}
+                        {brandLogo ? (
+                          <div
+                            className="absolute top-2 left-2 bg-white/95 px-2 py-1 rounded-sm shadow-sm"
+                            aria-hidden="true"
+                          >
+                            <img
+                              src={brandLogo}
+                              alt=""
+                              className="h-4 w-auto object-contain"
+                            />
+                          </div>
+                        ) : null}
+                      </div>
+                      <h3 className="font-serif text-sm md:text-base text-center group-hover:text-primary transition-colors line-clamp-1">
+                        {item.name}
+                      </h3>
+                    </Link>
+                  );
+                })}
               </div>
             );
           })()}
