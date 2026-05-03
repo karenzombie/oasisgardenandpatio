@@ -459,8 +459,8 @@ function CustomSection(props: {
                     : "border-border bg-background hover:border-muted-foreground"
                 }`}
               >
-                <div className="flex items-center justify-center mb-2 h-32">
-                  <meta.Diagram />
+                <div className="flex items-center justify-center mb-3 h-40">
+                  <meta.Diagram className="max-h-40 max-w-[180px] w-auto h-auto" />
                 </div>
                 <p className="font-medium text-foreground">{meta.label}</p>
                 <p className="text-xs text-muted-foreground mt-1">
@@ -491,7 +491,7 @@ function CustomSection(props: {
                   >
                     <div className="flex items-start gap-4 flex-col md:flex-row">
                       <div className="md:w-48 shrink-0 flex items-center justify-center">
-                        <meta.Diagram />
+                        <meta.Diagram className="max-h-44 max-w-[200px] w-auto h-auto" />
                       </div>
                       <div className="flex-1 w-full">
                         <p className="font-medium mb-3">{meta.label}</p>

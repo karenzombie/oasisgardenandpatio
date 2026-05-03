@@ -1,18 +1,30 @@
 type DiagramProps = { className?: string };
 
-const STROKE = "#333333";
-const LABEL = "#2E5D3B";
-const HIDDEN = "#888888";
+const STROKE = "#222222";
+const LABEL = "#1f4530";
+const DASH = "5 4";
+const ARROW = "#222222";
 
-function L({ x, y, children }: { x: number; y: number; children: string }) {
+function L({
+  x,
+  y,
+  children,
+  italic = true,
+}: {
+  x: number;
+  y: number;
+  children: string;
+  italic?: boolean;
+}) {
   return (
     <text
       x={x}
       y={y}
-      fontSize={12}
-      fontWeight={700}
+      fontSize={13}
+      fontStyle={italic ? "italic" : "normal"}
+      fontWeight={600}
       fill={LABEL}
-      fontFamily="Georgia, serif"
+      fontFamily="Georgia, 'Times New Roman', serif"
       textAnchor="middle"
     >
       {children}
@@ -20,224 +32,272 @@ function L({ x, y, children }: { x: number; y: number; children: string }) {
   );
 }
 
-function defs() {
+function defs(id: string) {
   return (
     <defs>
       <marker
-        id="arrow"
+        id={`arr-${id}`}
         viewBox="0 0 10 10"
-        refX="8"
+        refX="9"
         refY="5"
         markerWidth="6"
         markerHeight="6"
         orient="auto-start-reverse"
       >
-        <path d="M 0 0 L 10 5 L 0 10 z" fill={STROKE} />
+        <path d="M 0 0 L 10 5 L 0 10 z" fill={ARROW} />
       </marker>
     </defs>
   );
 }
 
-const baseSvg = "w-full h-auto max-w-[220px]";
-
-function svgProps(className?: string) {
+function svgProps(className: string | undefined, viewBox = "0 0 240 220") {
   return {
-    viewBox: "0 0 220 200",
+    viewBox,
     xmlns: "http://www.w3.org/2000/svg",
-    className: className ?? baseSvg,
-  };
+    className: className ?? "w-full h-auto max-w-[240px]",
+  } as const;
 }
 
-const arrowProps = {
+function arr(id: string) {
+  return {
+    stroke: ARROW,
+    strokeWidth: 1.2,
+    fill: "none",
+    markerEnd: `url(#arr-${id})`,
+    markerStart: `url(#arr-${id})`,
+  } as const;
+}
+
+const SOLID = { stroke: STROKE, strokeWidth: 2, fill: "none" } as const;
+const DASHED = {
   stroke: STROKE,
-  strokeWidth: 1,
-  markerEnd: "url(#arrow)",
-  markerStart: "url(#arrow)",
+  strokeWidth: 1.5,
+  fill: "none",
+  strokeDasharray: DASH,
 } as const;
 
+// ------------------------------------------------------------------
+// Hinged Chaise / Chair — small upright back/head + long flat leg.
+// L-shape with dashed underside.
+// ------------------------------------------------------------------
 export function HingedChaiseDiagram({ className }: DiagramProps) {
+  const id = "hc";
   return (
     <svg {...svgProps(className)}>
-      {defs()}
-      {/* Seat top face (perspective) */}
-      <polygon
-        points="40,90 160,90 175,75 55,75"
-        fill="#fafafa"
-        stroke={STROKE}
-        strokeWidth={1.5}
+      {defs(id)}
+      {/* Back/head (top, smaller) */}
+      <path d="M 60 30 L 130 30 L 130 95 L 60 95 Z" {...SOLID} />
+      {/* Leg (extends down from back, longer) */}
+      <path d="M 60 95 L 130 95 L 130 200 L 60 200 Z" {...SOLID} />
+      {/* Hinge line */}
+      <line x1={60} y1={95} x2={130} y2={95} {...DASHED} />
+      {/* Underside / depth outline (offset down-right with dashed lines) */}
+      <path
+        d="M 75 40 L 145 40 L 145 105 M 145 105 L 145 210 L 75 210"
+        {...DASHED}
       />
-      {/* Seat front face */}
-      <polygon
-        points="40,90 160,90 160,120 40,120"
-        fill="#f5f5f5"
-        stroke={STROKE}
-        strokeWidth={1.5}
-      />
-      {/* Back portion (shorter, taller) */}
-      <polygon
-        points="55,75 100,75 100,30 55,40"
-        fill="#fafafa"
-        stroke={STROKE}
-        strokeWidth={1.5}
-      />
-      <polygon
-        points="100,75 115,60 115,15 100,30"
-        fill="#f0f0f0"
-        stroke={STROKE}
-        strokeWidth={1.5}
-      />
-      {/* Hinge mark */}
-      <line x1={55} y1={75} x2={100} y2={75} stroke={HIDDEN} strokeDasharray="3 3" />
-      {/* a — width across top */}
-      <line x1={45} y1={138} x2={155} y2={138} {...arrowProps} />
-      <L x={100} y={154}>a</L>
-      {/* b — back height (right side of back) */}
-      <line x1={120} y1={20} x2={120} y2={70} {...arrowProps} />
-      <L x={134} y={48}>b</L>
-      {/* c — diagonal front-right edge */}
-      <line x1={165} y1={92} x2={180} y2={118} {...arrowProps} />
-      <L x={188} y={108}>c</L>
-      {/* d — bottom angled edge */}
-      <line x1={45} y1={128} x2={155} y2={128} stroke={HIDDEN} strokeDasharray="3 3" />
-      <L x={28} y={120}>d</L>
-      {/* e — depth right of seat */}
-      <line x1={185} y1={78} x2={185} y2={92} {...arrowProps} />
-      <L x={200} y={88}>e</L>
-      {/* f — back depth */}
-      <line x1={102} y1={28} x2={113} y2={18} {...arrowProps} />
-      <L x={120} y={14}>f</L>
-    </svg>
-  );
-}
+      <line x1={60} y1={30} x2={75} y2={40} {...DASHED} />
+      <line x1={130} y1={30} x2={145} y2={40} {...DASHED} />
+      <line x1={60} y1={200} x2={75} y2={210} {...DASHED} />
 
-export function ClubChairDiagram({ className }: DiagramProps) {
-  return (
-    <svg {...svgProps(className)}>
-      {defs()}
-      {/* Seat cushion (front) */}
-      <polygon points="20,120 130,120 145,105 35,105" fill="#fafafa" stroke={STROKE} strokeWidth={1.5} />
-      <polygon points="20,120 130,120 130,150 20,150" fill="#f0f0f0" stroke={STROKE} strokeWidth={1.5} />
-      <polygon points="130,120 145,105 145,135 130,150" fill="#e8e8e8" stroke={STROKE} strokeWidth={1.5} />
-      {/* Back cushion (taller, behind) */}
-      <polygon points="150,90 200,90 210,80 160,80" fill="#fafafa" stroke={STROKE} strokeWidth={1.5} />
-      <polygon points="150,90 200,90 200,150 150,150" fill="#f0f0f0" stroke={STROKE} strokeWidth={1.5} />
-      <polygon points="200,90 210,80 210,140 200,150" fill="#e8e8e8" stroke={STROKE} strokeWidth={1.5} />
-      {/* a — width seat top */}
-      <line x1={25} y1={100} x2={140} y2={100} {...arrowProps} />
-      <L x={82} y={94}>a</L>
-      {/* b — depth seat top (going back) */}
-      <line x1={132} y1={118} x2={147} y2={103} {...arrowProps} />
-      <L x={155} y={108}>b</L>
-      {/* c — depth back top */}
-      <line x1={202} y1={88} x2={212} y2={78} {...arrowProps} />
-      <L x={218} y={84}>c</L>
-      {/* d — height seat front */}
-      <line x1={10} y1={122} x2={10} y2={148} {...arrowProps} />
-      <L x={4} y={140}>d</L>
-      {/* e — height back front */}
-      <line x1={144} y1={92} x2={144} y2={148} {...arrowProps} />
-      <L x={138} y={130}>e</L>
-      {/* f — extra seat depth */}
-      <line x1={25} y1={170} x2={130} y2={170} {...arrowProps} />
-      <L x={77} y={184}>f</L>
-    </svg>
-  );
-}
-
-export function TrapezoidDiagram({ className }: DiagramProps) {
-  return (
-    <svg {...svgProps(className)}>
-      {defs()}
-      {/* Trapezoid top face */}
-      <polygon
-        points="35,55 185,55 155,135 65,135"
-        fill="#fafafa"
-        stroke={STROKE}
-        strokeWidth={1.5}
-      />
-      {/* Depth shadow */}
-      <polygon
-        points="35,55 185,55 195,65 45,65"
-        fill="#e8e8e8"
-        stroke={STROKE}
-        strokeWidth={1}
-      />
-      <polygon
-        points="155,135 185,55 195,65 165,145"
-        fill="#dddddd"
-        stroke={STROKE}
-        strokeWidth={1}
-      />
+      {/* Labels */}
       {/* a — top width */}
-      <line x1={40} y1={42} x2={180} y2={42} {...arrowProps} />
-      <L x={110} y={32}>a</L>
+      <line x1={62} y1={20} x2={128} y2={20} {...arr(id)} />
+      <L x={95} y={15}>a</L>
+      {/* b — right side full height */}
+      <line x1={155} y1={42} x2={155} y2={208} {...arr(id)} />
+      <L x={167} y={130}>b</L>
+      {/* c — leg right side */}
+      <line x1={140} y1={108} x2={140} y2={198} {...arr(id)} />
+      <L x={123} y={155}>c</L>
+      {/* e — left side back height */}
+      <line x1={50} y1={32} x2={50} y2={93} {...arr(id)} />
+      <L x={42} y={67}>e</L>
+      {/* f — depth at top */}
+      <line x1={62} y1={28} x2={77} y2={38} {...arr(id)} />
+      <L x={64} y={42}>f</L>
+      {/* d — bottom width (dashed underside) */}
+      <line x1={62} y1={216} x2={128} y2={216} {...arr(id)} />
+      <L x={95} y={228}>d</L>
+    </svg>
+  );
+}
+
+// ------------------------------------------------------------------
+// Club Chair — vertical back cushion plus a seat cushion in front.
+// Two stacked rectangles, lower one extending forward.
+// ------------------------------------------------------------------
+export function ClubChairDiagram({ className }: DiagramProps) {
+  const id = "cc";
+  return (
+    <svg {...svgProps(className)}>
+      {defs(id)}
+      {/* Back cushion (upright, narrower top) */}
+      <path d="M 70 30 L 145 30 L 145 110 L 70 110 Z" {...SOLID} />
+      {/* Back depth */}
+      <path d="M 85 40 L 160 40 L 160 120 L 145 110" {...DASHED} />
+      <line x1={70} y1={30} x2={85} y2={40} {...DASHED} />
+      <line x1={145} y1={30} x2={160} y2={40} {...DASHED} />
+      {/* Seat cushion (in front, lower) */}
+      <path d="M 60 130 L 155 130 L 155 200 L 60 200 Z" {...SOLID} />
+      {/* Seat depth */}
+      <path d="M 75 140 L 170 140 L 170 210 L 155 200" {...DASHED} />
+      <line x1={60} y1={130} x2={75} y2={140} {...DASHED} />
+      <line x1={155} y1={130} x2={170} y2={140} {...DASHED} />
+      <line x1={60} y1={200} x2={75} y2={210} {...DASHED} />
+
+      {/* Labels */}
+      {/* a — back top width */}
+      <line x1={72} y1={22} x2={143} y2={22} {...arr(id)} />
+      <L x={107} y={17}>a</L>
+      {/* b — back right side */}
+      <line x1={172} y1={42} x2={172} y2={118} {...arr(id)} />
+      <L x={183} y={82}>b</L>
+      {/* c — back depth */}
+      <line x1={147} y1={32} x2={162} y2={42} {...arr(id)} />
+      <L x={150} y={45}>c</L>
+      {/* d — seat top width */}
+      <line x1={62} y1={122} x2={153} y2={122} {...arr(id)} />
+      <L x={107} y={117}>d</L>
+      {/* e — seat right side */}
+      <line x1={182} y1={142} x2={182} y2={208} {...arr(id)} />
+      <L x={193} y={178}>e</L>
+      {/* f — seat depth */}
+      <line x1={155} y1={132} x2={170} y2={142} {...arr(id)} />
+      <L x={158} y={144}>f</L>
+    </svg>
+  );
+}
+
+// ------------------------------------------------------------------
+// Trapezoid Seat — wider at top, narrower at bottom, with depth arrow.
+// ------------------------------------------------------------------
+export function TrapezoidDiagram({ className }: DiagramProps) {
+  const id = "tr";
+  return (
+    <svg {...svgProps(className)}>
+      {defs(id)}
+      {/* Trapezoid */}
+      <path d="M 35 50 L 205 50 L 165 175 L 75 175 Z" {...SOLID} />
+      {/* Underside (offset) */}
+      <path
+        d="M 50 60 L 220 60 L 180 185 L 90 185 Z"
+        {...DASHED}
+      />
+      <line x1={35} y1={50} x2={50} y2={60} {...DASHED} />
+      <line x1={205} y1={50} x2={220} y2={60} {...DASHED} />
+      <line x1={75} y1={175} x2={90} y2={185} {...DASHED} />
+      <line x1={165} y1={175} x2={180} y2={185} {...DASHED} />
+
+      {/* Labels */}
+      {/* a — top width */}
+      <line x1={37} y1={42} x2={203} y2={42} {...arr(id)} />
+      <L x={120} y={36}>a</L>
       {/* b — right slanted side */}
-      <line x1={195} y1={55} x2={165} y2={138} {...arrowProps} />
-      <L x={205} y={100}>b</L>
+      <line x1={213} y1={55} x2={173} y2={172} {...arr(id)} />
+      <L x={205} y={120}>b</L>
       {/* d — bottom width */}
-      <line x1={70} y1={155} x2={150} y2={155} {...arrowProps} />
-      <L x={110} y={170}>d</L>
-      {/* e — depth top to bottom */}
-      <line x1={20} y1={58} x2={50} y2={132} {...arrowProps} />
-      <L x={20} y={100}>e</L>
+      <line x1={77} y1={188} x2={163} y2={188} {...arr(id)} />
+      <L x={120} y={203}>d</L>
+      {/* e — depth diagonal inside (slanted up-left to down-right) */}
+      <line x1={120} y1={58} x2={120} y2={170} {...arr(id)} />
+      <L x={108} y={120}>e</L>
     </svg>
   );
 }
 
+// ------------------------------------------------------------------
+// Bench — wide flat rectangle with depth.
+// ------------------------------------------------------------------
 export function BenchDiagram({ className }: DiagramProps) {
+  const id = "bn";
   return (
-    <svg {...svgProps(className)}>
-      {defs()}
-      <polygon points="25,80 175,80 195,60 45,60" fill="#fafafa" stroke={STROKE} strokeWidth={1.5} />
-      <polygon points="25,80 175,80 175,130 25,130" fill="#f0f0f0" stroke={STROKE} strokeWidth={1.5} />
-      <polygon points="175,80 195,60 195,110 175,130" fill="#e8e8e8" stroke={STROKE} strokeWidth={1.5} />
-      {/* a — width */}
-      <line x1={30} y1={48} x2={190} y2={48} {...arrowProps} />
-      <L x={110} y={40}>a</L>
-      {/* b — height/thickness */}
-      <line x1={210} y1={62} x2={210} y2={108} {...arrowProps} />
-      <L x={205} y={88}>b</L>
-      {/* e — depth top */}
-      <line x1={177} y1={78} x2={197} y2={58} {...arrowProps} />
-      <L x={205} y={50}>e</L>
-    </svg>
-  );
-}
+    <svg {...svgProps(className, "0 0 280 180")}>
+      {defs(id)}
+      {/* Top */}
+      <path d="M 30 50 L 245 50 L 245 130 L 30 130 Z" {...SOLID} />
+      {/* Underside */}
+      <path
+        d="M 45 60 L 260 60 L 260 140 L 45 140 Z"
+        {...DASHED}
+      />
+      <line x1={30} y1={50} x2={45} y2={60} {...DASHED} />
+      <line x1={245} y1={50} x2={260} y2={60} {...DASHED} />
+      <line x1={30} y1={130} x2={45} y2={140} {...DASHED} />
+      <line x1={245} y1={130} x2={260} y2={140} {...DASHED} />
 
-export function OttomanDiagram({ className }: DiagramProps) {
-  return (
-    <svg {...svgProps(className)}>
-      {defs()}
-      <polygon points="55,80 145,80 165,60 75,60" fill="#fafafa" stroke={STROKE} strokeWidth={1.5} />
-      <polygon points="55,80 145,80 145,140 55,140" fill="#f0f0f0" stroke={STROKE} strokeWidth={1.5} />
-      <polygon points="145,80 165,60 165,120 145,140" fill="#e8e8e8" stroke={STROKE} strokeWidth={1.5} />
-      {/* a — width */}
-      <line x1={60} y1={48} x2={160} y2={48} {...arrowProps} />
-      <L x={110} y={40}>a</L>
-      {/* b — height */}
-      <line x1={180} y1={62} x2={180} y2={118} {...arrowProps} />
-      <L x={175} y={92}>b</L>
-      {/* e — depth */}
-      <line x1={147} y1={78} x2={167} y2={58} {...arrowProps} />
-      <L x={175} y={48}>e</L>
-    </svg>
-  );
-}
-
-export function DiningChairDiagram({ className }: DiagramProps) {
-  return (
-    <svg {...svgProps(className)}>
-      {defs()}
-      <rect x={60} y={45} width={100} height={120} fill="#fafafa" stroke={STROKE} strokeWidth={1.5} />
-      {/* a — width top */}
-      <line x1={65} y1={32} x2={155} y2={32} {...arrowProps} />
-      <L x={110} y={24}>a</L>
+      {/* a — top width */}
+      <line x1={32} y1={42} x2={243} y2={42} {...arr(id)} />
+      <L x={138} y={36}>a</L>
       {/* b — right side */}
-      <line x1={175} y1={48} x2={175} y2={162} {...arrowProps} />
-      <L x={170} y={108}>b</L>
-      {/* e — full height */}
-      <line x1={45} y1={48} x2={45} y2={162} {...arrowProps} />
-      <L x={32} y={108}>e</L>
+      <line x1={272} y1={62} x2={272} y2={138} {...arr(id)} />
+      <L x={262} y={102}>b</L>
+      {/* e — interior depth (vertical inside) */}
+      <line x1={138} y1={58} x2={138} y2={128} {...arr(id)} />
+      <L x={150} y={94}>e</L>
+    </svg>
+  );
+}
+
+// ------------------------------------------------------------------
+// Ottoman — small square cushion with rounded dashed underside.
+// ------------------------------------------------------------------
+export function OttomanDiagram({ className }: DiagramProps) {
+  const id = "ot";
+  return (
+    <svg {...svgProps(className)}>
+      {defs(id)}
+      {/* Top square */}
+      <path d="M 60 50 L 175 50 L 175 160 L 60 160 Z" {...SOLID} />
+      {/* Rounded dashed underside */}
+      <path
+        d="M 75 65 Q 75 178 117 178 Q 190 178 190 70 Q 190 60 175 60"
+        {...DASHED}
+      />
+      <line x1={60} y1={50} x2={75} y2={65} {...DASHED} />
+      <line x1={175} y1={50} x2={190} y2={65} {...DASHED} />
+
+      {/* a — top width */}
+      <line x1={62} y1={42} x2={173} y2={42} {...arr(id)} />
+      <L x={117} y={36}>a</L>
+      {/* b — right side */}
+      <line x1={203} y1={62} x2={203} y2={158} {...arr(id)} />
+      <L x={213} y={114}>b</L>
+      {/* e — interior depth */}
+      <line x1={117} y1={58} x2={117} y2={158} {...arr(id)} />
+      <L x={129} y={114}>e</L>
+    </svg>
+  );
+}
+
+// ------------------------------------------------------------------
+// Dining Chair — square with rounded dashed bottom (like ottoman but
+// slightly different proportions).
+// ------------------------------------------------------------------
+export function DiningChairDiagram({ className }: DiagramProps) {
+  const id = "dc";
+  return (
+    <svg {...svgProps(className)}>
+      {defs(id)}
+      {/* Top square */}
+      <path d="M 65 45 L 175 45 L 175 165 L 65 165 Z" {...SOLID} />
+      {/* Rounded dashed bottom */}
+      <path
+        d="M 75 175 Q 120 195 165 175"
+        {...DASHED}
+      />
+      <line x1={65} y1={165} x2={75} y2={175} {...DASHED} />
+      <line x1={175} y1={165} x2={165} y2={175} {...DASHED} />
+
+      {/* a — top width */}
+      <line x1={67} y1={37} x2={173} y2={37} {...arr(id)} />
+      <L x={120} y={31}>a</L>
+      {/* b — right side */}
+      <line x1={195} y1={47} x2={195} y2={163} {...arr(id)} />
+      <L x={205} y={108}>b</L>
+      {/* e — interior depth */}
+      <line x1={120} y1={53} x2={120} y2={158} {...arr(id)} />
+      <L x={132} y={108}>e</L>
     </svg>
   );
 }
