@@ -16,7 +16,7 @@ import {
   CUSHION_TYPE_META,
   type CushionTypeKey,
   type MeasurementField,
-} from "@/components/cushions/CushionDiagrams";
+} from "@/components/cushions/cushionTypes";
 import { CheckCircle2, Plus, Trash2, X } from "lucide-react";
 
 type Mode = "custom" | "stock";
