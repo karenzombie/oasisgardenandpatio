@@ -145,6 +145,15 @@ export default function Product() {
 
   const variantOptionLabel = variants[0]?.optionLabel ?? "Variant";
 
+  // A product with no price set in the catalog cannot be checked out online —
+  // the cart endpoint will reject it with "Product has no price set". Treat
+  // those exactly like quote-only items in the UI so the customer is never
+  // shown a clickable "Add to Cart" that the server is guaranteed to refuse.
+  const hasPrice =
+    (data.price != null && Number(data.price) > 0) ||
+    (data.salePrice != null && Number(data.salePrice) > 0);
+  const showQuoteFallback = data.quoteOnly || !hasPrice;
+
   return (
     <div className="container mx-auto px-4 py-10 max-w-7xl">
       {/* Breadcrumb */}
@@ -232,15 +241,19 @@ export default function Product() {
             />
           ) : null}
 
-          {data.quoteOnly ? (
+          {showQuoteFallback ? (
             <div className="border border-border bg-muted/40 p-5 mb-2">
               <p className="text-sm font-semibold uppercase tracking-widest text-foreground mb-1">
-                Available through a sales agent
+                {data.quoteOnly
+                  ? "Available through a sales agent"
+                  : "Contact us for pricing"}
               </p>
               <p className="text-sm text-muted-foreground">
-                {data.manufacturerName ?? "This brand"} is sold exclusively in
-                our showroom. Save it to your wishlist and a member of our
-                team will follow up with pricing, finishes, and lead times — or{" "}
+                {data.quoteOnly
+                  ? `${data.manufacturerName ?? "This brand"} is sold exclusively in our showroom. `
+                  : "This piece isn't currently available for online checkout. "}
+                Save it to your wishlist and a member of our team will follow
+                up with pricing, finishes, and lead times — or{" "}
                 <Link href="/contact" className="text-primary underline">
                   contact us directly
                 </Link>

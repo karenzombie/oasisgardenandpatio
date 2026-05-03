@@ -119,8 +119,10 @@ export function Navbar() {
               ))}
             </nav>
 
-            {/* Right Actions */}
-            <div className="hidden md:flex items-center space-x-5">
+            {/* Right Actions — always visible so customers can reach the cart
+                and their account on every viewport size. Only the main nav
+                links collapse into the hamburger on small screens. */}
+            <div className="flex items-center space-x-4 sm:space-x-5">
               <Link
                 href="/cart"
                 aria-label={`Shopping cart${cartCount > 0 ? ` (${cartCount} items)` : ""}`}
@@ -174,7 +176,7 @@ export function Navbar() {
 
             {/* Mobile Menu Toggle */}
             <button
-              className="md:hidden p-2 text-foreground z-50"
+              className="md:hidden p-2 -mr-2 text-foreground z-50"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               aria-label="Toggle menu"
             >
