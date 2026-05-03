@@ -54,6 +54,9 @@ function svgProps(className: string | undefined, viewBox = "0 0 240 220") {
   return {
     viewBox,
     xmlns: "http://www.w3.org/2000/svg",
+    width: "100%",
+    height: "100%",
+    preserveAspectRatio: "xMidYMid meet",
     className: className ?? "w-full h-auto max-w-[240px]",
   } as const;
 }
