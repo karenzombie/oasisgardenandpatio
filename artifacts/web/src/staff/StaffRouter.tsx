@@ -64,7 +64,11 @@ export default function StaffRouter() {
           {(user) => (
             <StaffShell user={user}>
               <Switch>
-                <Route path="/">{() => <AdminDashboard user={user} />}</Route>
+                {/* Index route — wouter v3 nest can strip `/admin` to `""` or
+                    `/`, so accept both. */}
+                <Route path={/^\/?$/}>
+                  {() => <AdminDashboard user={user} />}
+                </Route>
                 <Route path="/manufacturers" component={Manufacturers} />
                 <Route path="/categories" component={Categories} />
                 <Route path="/products" component={Products} />
@@ -115,7 +119,9 @@ export default function StaffRouter() {
           {(user) => (
             <StaffShell user={user}>
               <Switch>
-                <Route path="/">{() => <AgentDashboard user={user} />}</Route>
+                <Route path={/^\/?$/}>
+                  {() => <AgentDashboard user={user} />}
+                </Route>
                 <Route path="/new-order" component={AgentNewOrder} />
                 <Route path="/orders" component={AgentOrders} />
                 <Route path="/orders/:id" component={AgentOrderDetail} />
