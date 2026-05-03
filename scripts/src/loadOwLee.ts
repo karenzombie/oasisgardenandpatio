@@ -2,9 +2,11 @@
  * One-shot idempotent loader for the OW Lee product catalog.
  *
  * Reads `attached_assets/OWLee_Product_Specs_Master_Updated_*.xlsx` (the
- * latest file matching the prefix), upserts the OW Lee manufacturer +
- * "Outdoor Furniture" parent category + per-collection sub-categories,
- * then upserts every spec row into `products`.
+ * latest file matching the prefix), upserts the OW Lee manufacturer, and
+ * upserts every spec row into `products`. Each product is assigned to one
+ * of the storefront's top-level categories (Chaise Lounges, Deep Seating,
+ * Dining, or Fire Tables) based on its product name. The original
+ * collection name is preserved in `specs.collection`.
  *
  * OW Lee products are not sold online — they are quote-only. The loader
  * sets `quoteOnly = true`, `showPriceOnline = false`, and leaves price
@@ -34,7 +36,31 @@ const ASSETS_DIR = resolve(__dirname, "../../attached_assets");
 
 const MANUFACTURER_NAME = "O.W. Lee";
 const MANUFACTURER_SLUG = "o-w-lee";
-const PARENT_CATEGORY = "Outdoor Furniture";
+
+/**
+ * Map an O.W. Lee product name to one of the storefront's top-level
+ * category slugs. Order matters — more-specific patterns must come first
+ * (e.g. "Adjustable Chaise" before "Lounge Chair", "Dining" before the
+ * generic seating fallback).
+ */
+function categorizeOwLeeProduct(name: string): string {
+  const n = name.toLowerCase();
+  if (n.includes("fire pit")) return "cat-fire-tables";
+  if (n.includes("chaise")) return "cat-chaise-lounges";
+  if (
+    n.includes("bar stool") ||
+    n.includes("counter stool") ||
+    n.includes("dining")
+  )
+    return "cat-dining";
+  if (
+    n.includes("table top") ||
+    n.includes("table base") ||
+    n.includes("pre-designed table")
+  )
+    return "cat-dining";
+  return "cat-deep-seating";
+}
 
 type SpecRow = {
   Collection: string | null;
@@ -94,29 +120,18 @@ async function ensureManufacturer(): Promise<number> {
   return created.id;
 }
 
-async function ensureCategory(
-  name: string,
-  parentId: number | null,
-): Promise<number> {
-  const existing = await db
+async function getCategoryIdBySlug(slug: string): Promise<number> {
+  const [row] = await db
     .select({ id: categoriesTable.id })
     .from(categoriesTable)
-    .where(sql`LOWER(${categoriesTable.name}) = LOWER(${name})`)
+    .where(eq(categoriesTable.slug, slug))
     .limit(1);
-  if (existing[0]) return existing[0].id;
-  const [created] = await db
-    .insert(categoriesTable)
-    .values({
-      name,
-      slug: slugify(name),
-      parentId,
-      displayOrder: 0,
-      isActive: true,
-    })
-    .returning({ id: categoriesTable.id });
-  if (!created) throw new Error(`Failed to create category ${name}`);
-  console.log(`  + category "${name}" (id=${created.id}, parent=${parentId})`);
-  return created.id;
+  if (!row) {
+    throw new Error(
+      `Required category "${slug}" is missing. Seed the storefront's top-level categories before running the loader.`,
+    );
+  }
+  return row.id;
 }
 
 function buildSpecs(r: SpecRow): Record<string, string> {
@@ -148,10 +163,17 @@ async function main(): Promise<void> {
   console.log(`  parsed ${rows.length} spec rows`);
 
   const manufacturerId = await ensureManufacturer();
-  const parentCategoryId = await ensureCategory(PARENT_CATEGORY, null);
 
-  // Cache per-collection categories so we don't hit the DB for every row.
-  const collectionCategoryIds = new Map<string, number>();
+  // Cache the four functional category ids up front.
+  const categoryIdBySlug = new Map<string, number>();
+  for (const slug of [
+    "cat-chaise-lounges",
+    "cat-deep-seating",
+    "cat-dining",
+    "cat-fire-tables",
+  ]) {
+    categoryIdBySlug.set(slug, await getCategoryIdBySlug(slug));
+  }
 
   let created = 0;
   let updated = 0;
@@ -167,13 +189,13 @@ async function main(): Promise<void> {
       continue;
     }
 
-    let categoryId = collectionCategoryIds.get(collection);
+    const fullName = `${collection} ${productName}`;
+    const categorySlug = categorizeOwLeeProduct(fullName);
+    const categoryId = categoryIdBySlug.get(categorySlug);
     if (categoryId === undefined) {
-      categoryId = await ensureCategory(collection, parentCategoryId);
-      collectionCategoryIds.set(collection, categoryId);
+      throw new Error(`Unmapped category slug ${categorySlug}`);
     }
 
-    const fullName = `${collection} ${productName}`;
     const slug = slugify(`owlee-${collection}-${productName}-${sku}`);
     const specs = buildSpecs(r);
     const dimsBits: string[] = [];
@@ -251,7 +273,6 @@ async function main(): Promise<void> {
   console.log(
     `OW Lee load complete: ${created} created, ${updated} updated, ${skipped} skipped (of ${rows.length} rows)`,
   );
-  console.log(`  collections: ${collectionCategoryIds.size}`);
   process.exit(0);
 }
 
