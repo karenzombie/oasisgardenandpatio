@@ -76,7 +76,10 @@ export function Navbar() {
       {/* Top Banner */}
       {activeBanners.length > 0 && (
         <div className="bg-primary text-primary-foreground text-center py-2 px-4 text-sm font-medium tracking-wide">
-          {activeBanners[0].title}: {activeBanners[0].messageText}
+          {activeBanners[0].title}
+          {activeBanners[0].messageText
+            ? `: ${activeBanners[0].messageText}`
+            : ""}
         </div>
       )}
 
