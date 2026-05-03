@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import logoImg from "@/assets/logo.png";
 
 interface GeoCheckResponse {
   country: string | null;
@@ -41,7 +42,7 @@ export function GeoGate({ children }: { children: React.ReactNode }) {
       <div className="fixed inset-0 z-[1000] bg-secondary text-secondary-foreground flex items-center justify-center p-6">
         <div className="max-w-lg text-center">
           <img
-            src="/src/assets/logo.png"
+            src={logoImg}
             alt="Oasis Garden & Patio"
             className="h-16 mx-auto mb-8 object-contain filter brightness-0"
           />

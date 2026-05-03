@@ -1,4 +1,5 @@
 import { Link } from "wouter";
+import logoImg from "@/assets/logo.png";
 
 export function Footer() {
   return (
@@ -9,7 +10,7 @@ export function Footer() {
           <div>
             <Link href="/" className="inline-block mb-6">
               <img
-                src="/src/assets/logo.png"
+                src={logoImg}
                 alt="Oasis Garden & Patio"
                 className="h-12 object-contain filter brightness-0"
               />

@@ -10,6 +10,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Menu, X, ChevronDown, User, ShoppingBag } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth";
+import logoImg from "@/assets/logo.png";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -96,7 +97,7 @@ export function Navbar() {
             {/* Logo */}
             <Link href="/" className="flex items-center z-50">
               <img
-                src="/src/assets/logo.png"
+                src={logoImg}
                 alt="Oasis Garden & Patio"
                 className="h-12 sm:h-14 md:h-20 lg:h-24 xl:h-28 object-contain"
               />

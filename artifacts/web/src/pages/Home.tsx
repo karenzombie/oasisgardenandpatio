@@ -6,14 +6,18 @@ import {
   useListFeaturedProducts,
 } from "@workspace/api-client-react";
 import { BRAND_LOGOS, getBrandLogo } from "@/lib/brandLogos";
+import heroImg from "@/assets/hero.png";
+import categoryShadeImg from "@/assets/category-shade.png";
+import categoryLoungeImg from "@/assets/category-lounge.png";
+import categoryDiningImg from "@/assets/category-dining.png";
 
 const CATEGORY_IMAGES: Record<string, string> = {
-  "cat-umbrellas": "/src/assets/category-shade.png",
-  "cat-chaise-lounges": "/src/assets/category-lounge.png",
-  "cat-dining": "/src/assets/category-dining.png",
-  shade: "/src/assets/category-shade.png",
-  lounge: "/src/assets/category-lounge.png",
-  dining: "/src/assets/category-dining.png",
+  "cat-umbrellas": categoryShadeImg,
+  "cat-chaise-lounges": categoryLoungeImg,
+  "cat-dining": categoryDiningImg,
+  shade: categoryShadeImg,
+  lounge: categoryLoungeImg,
+  dining: categoryDiningImg,
 };
 
 export default function Home() {
@@ -30,7 +34,7 @@ export default function Home() {
       <section className="relative w-full h-[80vh] min-h-[600px] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img
-            src="/src/assets/hero.png"
+            src={heroImg}
             alt="Beautiful outdoor patio furniture"
             className="w-full h-full object-cover"
           />
