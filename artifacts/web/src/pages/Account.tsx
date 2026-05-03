@@ -167,6 +167,9 @@ export default function Account() {
                 <Link href="/account/orders">My Orders</Link>
               </Button>
               <Button asChild variant="outline" className="rounded-none font-serif tracking-wide">
+                <Link href="/account/addresses">My Addresses</Link>
+              </Button>
+              <Button asChild variant="outline" className="rounded-none font-serif tracking-wide">
                 <Link href="/cart">My Cart</Link>
               </Button>
             </div>

@@ -256,6 +256,85 @@ export const CreateAccountAddressResponse = zod.object({
 });
 
 /**
+ * @summary Update one of the signed-in customer's saved addresses
+ */
+export const UpdateAccountAddressParams = zod.object({
+  addressId: zod.coerce.number(),
+});
+
+export const updateAccountAddressBodyTypeDefault = `shipping`;
+
+export const updateAccountAddressBodyStateMin = 2;
+
+export const updateAccountAddressBodyZipMin = 3;
+
+export const updateAccountAddressBodyCountryDefault = `US`;
+export const updateAccountAddressBodyCountryMin = 2;
+
+export const updateAccountAddressBodyIsDefaultDefault = false;
+
+export const UpdateAccountAddressBody = zod.object({
+  type: zod
+    .enum(["shipping", "billing"])
+    .default(updateAccountAddressBodyTypeDefault),
+  recipientName: zod.string().optional(),
+  street1: zod.string().min(1),
+  street2: zod.string().optional(),
+  city: zod.string().min(1),
+  state: zod.string().min(updateAccountAddressBodyStateMin),
+  zip: zod.string().min(updateAccountAddressBodyZipMin),
+  country: zod
+    .string()
+    .min(updateAccountAddressBodyCountryMin)
+    .default(updateAccountAddressBodyCountryDefault),
+  phone: zod.string().optional(),
+  isDefault: zod.boolean().default(updateAccountAddressBodyIsDefaultDefault),
+});
+
+export const UpdateAccountAddressResponse = zod.object({
+  addresses: zod.array(
+    zod.object({
+      id: zod.number(),
+      type: zod.string(),
+      recipientName: zod.string().nullable(),
+      street1: zod.string(),
+      street2: zod.string().nullable(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullable(),
+      isDefault: zod.boolean(),
+    }),
+  ),
+});
+
+/**
+ * @summary Delete one of the signed-in customer's saved addresses
+ */
+export const DeleteAccountAddressParams = zod.object({
+  addressId: zod.coerce.number(),
+});
+
+export const DeleteAccountAddressResponse = zod.object({
+  addresses: zod.array(
+    zod.object({
+      id: zod.number(),
+      type: zod.string(),
+      recipientName: zod.string().nullable(),
+      street1: zod.string(),
+      street2: zod.string().nullable(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullable(),
+      isDefault: zod.boolean(),
+    }),
+  ),
+});
+
+/**
  * @summary List the signed-in customer's orders
  */
 export const ListAccountOrdersResponse = zod.object({

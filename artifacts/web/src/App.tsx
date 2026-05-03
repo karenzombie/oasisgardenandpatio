@@ -21,6 +21,7 @@ import ResetPassword from "@/pages/ResetPassword";
 import VerifyEmail from "@/pages/VerifyEmail";
 import Account from "@/pages/Account";
 import AccountWishlist from "@/pages/AccountWishlist";
+import AccountAddresses from "@/pages/AccountAddresses";
 import Cart from "@/pages/Cart";
 import Checkout from "@/pages/Checkout";
 import OrderConfirmation from "@/pages/OrderConfirmation";
@@ -62,6 +63,7 @@ function CustomerRouter() {
         <Route path="/verify-email" component={VerifyEmail} />
         <Route path="/account" component={Account} />
         <Route path="/account/wishlist" component={AccountWishlist} />
+        <Route path="/account/addresses" component={AccountAddresses} />
         <Route path="/cart" component={Cart} />
         <Route path="/checkout" component={Checkout} />
         <Route path="/order-confirmation/:orderNumber" component={OrderConfirmation} />

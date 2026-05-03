@@ -251,6 +251,77 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /account/addresses/{addressId}:
+    patch:
+      operationId: updateAccountAddress
+      tags: [account]
+      summary: Update one of the signed-in customer's saved addresses
+      parameters:
+        - name: addressId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountAddressInput"
+      responses:
+        "200":
+          description: Updated addresses
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountAddressesResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Address not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: deleteAccountAddress
+      tags: [account]
+      summary: Delete one of the signed-in customer's saved addresses
+      parameters:
+        - name: addressId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated addresses
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountAddressesResponse"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Address not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /account/orders:
     get:
       operationId: listAccountOrders

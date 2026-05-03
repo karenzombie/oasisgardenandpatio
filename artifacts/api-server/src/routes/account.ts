@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, or, sql } from "drizzle-orm";
 import {
   db,
   customersTable,
@@ -122,6 +122,120 @@ router.post(
         isDefault: data.isDefault ?? false,
       });
     });
+
+    res.json(await loadAddresses(req.user!.id));
+  },
+);
+
+router.patch(
+  "/account/addresses/:addressId",
+  requireAuth,
+  async (req: Request, res: Response): Promise<void> => {
+    const addressId = Number(req.params.addressId);
+    if (!Number.isInteger(addressId) || addressId <= 0) {
+      res.status(400).json({ error: "Invalid addressId" });
+      return;
+    }
+    const parsed = CreateAccountAddressBody.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: parsed.error.issues[0]?.message ?? "Invalid body" });
+      return;
+    }
+    const data = parsed.data;
+    const customer = await getOrCreateCustomer(req.user!.id);
+
+    const [existing] = await db
+      .select()
+      .from(addressesTable)
+      .where(
+        and(
+          eq(addressesTable.id, addressId),
+          eq(addressesTable.customerId, customer.id),
+        ),
+      )
+      .limit(1);
+    if (!existing) {
+      res.status(404).json({ error: "Address not found" });
+      return;
+    }
+
+    await db.transaction(async (tx) => {
+      if (data.isDefault) {
+        await tx
+          .update(addressesTable)
+          .set({ isDefault: false })
+          .where(eq(addressesTable.customerId, customer.id));
+      }
+      await tx
+        .update(addressesTable)
+        .set({
+          type: data.type ?? existing.type,
+          recipientName: data.recipientName ?? null,
+          street1: data.street1,
+          street2: data.street2 ?? null,
+          city: data.city,
+          state: data.state,
+          zip: data.zip,
+          country: data.country ?? "US",
+          phone: data.phone ?? null,
+          isDefault: data.isDefault ?? existing.isDefault,
+        })
+        .where(eq(addressesTable.id, addressId));
+    });
+
+    res.json(await loadAddresses(req.user!.id));
+  },
+);
+
+router.delete(
+  "/account/addresses/:addressId",
+  requireAuth,
+  async (req: Request, res: Response): Promise<void> => {
+    const addressId = Number(req.params.addressId);
+    if (!Number.isInteger(addressId) || addressId <= 0) {
+      res.status(400).json({ error: "Invalid addressId" });
+      return;
+    }
+    const customer = await getOrCreateCustomer(req.user!.id);
+
+    const [existing] = await db
+      .select()
+      .from(addressesTable)
+      .where(
+        and(
+          eq(addressesTable.id, addressId),
+          eq(addressesTable.customerId, customer.id),
+        ),
+      )
+      .limit(1);
+    if (!existing) {
+      res.status(404).json({ error: "Address not found" });
+      return;
+    }
+
+    const [referenced] = await db
+      .select({ id: ordersTable.id })
+      .from(ordersTable)
+      .where(
+        or(
+          eq(ordersTable.shippingAddressId, addressId),
+          eq(ordersTable.billingAddressId, addressId),
+        ),
+      )
+      .limit(1);
+    if (referenced) {
+      res.status(409).json({
+        error:
+          "This address is attached to one or more past orders and cannot be deleted. You can edit it or set a different default instead.",
+      });
+      return;
+    }
+
+    await db
+      .delete(addressesTable)
+      .where(eq(addressesTable.id, addressId));
 
     res.json(await loadAddresses(req.user!.id));
   },

@@ -986,6 +986,183 @@ export const useCreateAccountAddress = <
 };
 
 /**
+ * @summary Update one of the signed-in customer's saved addresses
+ */
+export const getUpdateAccountAddressUrl = (addressId: number) => {
+  return `/api/account/addresses/${addressId}`;
+};
+
+export const updateAccountAddress = async (
+  addressId: number,
+  accountAddressInput: AccountAddressInput,
+  options?: RequestInit,
+): Promise<AccountAddressesResponse> => {
+  return customFetch<AccountAddressesResponse>(
+    getUpdateAccountAddressUrl(addressId),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(accountAddressInput),
+    },
+  );
+};
+
+export const getUpdateAccountAddressMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateAccountAddress>>,
+    TError,
+    { addressId: number; data: BodyType<AccountAddressInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateAccountAddress>>,
+  TError,
+  { addressId: number; data: BodyType<AccountAddressInput> },
+  TContext
+> => {
+  const mutationKey = ["updateAccountAddress"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateAccountAddress>>,
+    { addressId: number; data: BodyType<AccountAddressInput> }
+  > = (props) => {
+    const { addressId, data } = props ?? {};
+
+    return updateAccountAddress(addressId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateAccountAddressMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateAccountAddress>>
+>;
+export type UpdateAccountAddressMutationBody = BodyType<AccountAddressInput>;
+export type UpdateAccountAddressMutationError = ErrorType<Error>;
+
+/**
+ * @summary Update one of the signed-in customer's saved addresses
+ */
+export const useUpdateAccountAddress = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateAccountAddress>>,
+    TError,
+    { addressId: number; data: BodyType<AccountAddressInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateAccountAddress>>,
+  TError,
+  { addressId: number; data: BodyType<AccountAddressInput> },
+  TContext
+> => {
+  return useMutation(getUpdateAccountAddressMutationOptions(options));
+};
+
+/**
+ * @summary Delete one of the signed-in customer's saved addresses
+ */
+export const getDeleteAccountAddressUrl = (addressId: number) => {
+  return `/api/account/addresses/${addressId}`;
+};
+
+export const deleteAccountAddress = async (
+  addressId: number,
+  options?: RequestInit,
+): Promise<AccountAddressesResponse> => {
+  return customFetch<AccountAddressesResponse>(
+    getDeleteAccountAddressUrl(addressId),
+    {
+      ...options,
+      method: "DELETE",
+    },
+  );
+};
+
+export const getDeleteAccountAddressMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteAccountAddress>>,
+    TError,
+    { addressId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteAccountAddress>>,
+  TError,
+  { addressId: number },
+  TContext
+> => {
+  const mutationKey = ["deleteAccountAddress"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteAccountAddress>>,
+    { addressId: number }
+  > = (props) => {
+    const { addressId } = props ?? {};
+
+    return deleteAccountAddress(addressId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteAccountAddressMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteAccountAddress>>
+>;
+
+export type DeleteAccountAddressMutationError = ErrorType<Error>;
+
+/**
+ * @summary Delete one of the signed-in customer's saved addresses
+ */
+export const useDeleteAccountAddress = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteAccountAddress>>,
+    TError,
+    { addressId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteAccountAddress>>,
+  TError,
+  { addressId: number },
+  TContext
+> => {
+  return useMutation(getDeleteAccountAddressMutationOptions(options));
+};
+
+/**
  * @summary List the signed-in customer's orders
  */
 export const getListAccountOrdersUrl = () => {
