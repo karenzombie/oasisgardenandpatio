@@ -15,6 +15,7 @@ import {
   BarChart3,
   Settings,
   History,
+  ShieldAlert,
   ShoppingCart,
   type LucideIcon,
 } from "lucide-react";
@@ -72,6 +73,11 @@ export const ADMIN_NAV: NavGroup[] = [
       { label: "Reports", path: "/admin/reports", icon: BarChart3 },
       { label: "Users", path: "/admin/users", icon: Users },
       { label: "Audit Log", path: "/admin/audit-log", icon: History },
+      {
+        label: "Recovery Requests",
+        path: "/admin/recovery-requests",
+        icon: ShieldAlert,
+      },
       { label: "Settings", path: "/admin/settings", icon: Settings },
     ],
   },

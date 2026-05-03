@@ -1173,6 +1173,96 @@ export const StaffDisableTotpResponse = zod.object({
 });
 
 /**
+ * Always returns 200 (does not leak whether the email is registered). If
+the email matches an active staff account, an emailed recovery link is
+scheduled to become usable after a 1-hour cooldown, and all OTHER
+active admins are notified so they can cancel the request before it
+becomes usable.
+
+ * @summary Request a delayed staff account recovery (locked out admins)
+ */
+export const requestStaffRecoveryBodyEmailMax = 320;
+
+export const RequestStaffRecoveryBody = zod.object({
+  email: zod.string().email().max(requestStaffRecoveryBodyEmailMax),
+});
+
+export const RequestStaffRecoveryResponse = zod.object({
+  ok: zod.boolean(),
+});
+
+/**
+ * @summary Check the status of a staff recovery token (public)
+ */
+export const GetStaffRecoveryStatusParams = zod.object({
+  token: zod.coerce.string(),
+});
+
+export const GetStaffRecoveryStatusResponse = zod.object({
+  state: zod.enum([
+    "pending",
+    "ready",
+    "expired",
+    "used",
+    "cancelled",
+    "not_found",
+  ]),
+  availableAt: zod.coerce.date().nullish(),
+  expiresAt: zod.coerce.date().nullish(),
+  emailMasked: zod.string().nullish(),
+});
+
+/**
+ * @summary Use a recovery token to set a new password and clear 2FA (public)
+ */
+export const CompleteStaffRecoveryParams = zod.object({
+  token: zod.coerce.string(),
+});
+
+export const completeStaffRecoveryBodyNewPasswordMin = 12;
+export const completeStaffRecoveryBodyNewPasswordMax = 200;
+
+export const CompleteStaffRecoveryBody = zod.object({
+  newPassword: zod
+    .string()
+    .min(completeStaffRecoveryBodyNewPasswordMin)
+    .max(completeStaffRecoveryBodyNewPasswordMax),
+});
+
+export const CompleteStaffRecoveryResponse = zod.object({
+  ok: zod.boolean(),
+});
+
+/**
+ * @summary List in-flight admin recovery requests (admins only)
+ */
+export const AdminListRecoveryRequestsResponseItem = zod.object({
+  id: zod.number(),
+  userId: zod.number(),
+  userEmail: zod.string(),
+  userRole: zod.string(),
+  requestedAt: zod.coerce.date(),
+  availableAt: zod.coerce.date(),
+  expiresAt: zod.coerce.date(),
+  requestIp: zod.string().nullish(),
+  requestUserAgent: zod.string().nullish(),
+});
+export const AdminListRecoveryRequestsResponse = zod.array(
+  AdminListRecoveryRequestsResponseItem,
+);
+
+/**
+ * @summary Cancel an in-flight admin recovery request (admins only)
+ */
+export const AdminCancelRecoveryRequestParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminCancelRecoveryRequestResponse = zod.object({
+  ok: zod.boolean(),
+});
+
+/**
  * @summary List all manufacturers (active and inactive) for admin
  */
 export const AdminListManufacturersResponseItem = zod.object({

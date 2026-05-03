@@ -252,9 +252,12 @@ function StockBody({
         createElement(Text, { style: [styles.th, styles.stockCellQty] }, "Qty"),
       ),
       ...items.map((it, idx) => {
+        // Prefer snapshot fields so historical PDFs remain stable when
+        // catalog products are renamed/edited; fall back to live catalog
+        // only if the snapshot was never captured.
         const prod = it.productId ? productNameById.get(it.productId) : undefined;
-        const name = prod?.name ?? it.productNameSnapshot ?? "—";
-        const sku = prod?.sku ?? it.productSkuSnapshot ?? "";
+        const name = it.productNameSnapshot ?? prod?.name ?? "—";
+        const sku = it.productSkuSnapshot ?? prod?.sku ?? "";
         const fabric = [it.fabricName, it.fabricItemNumber ? `#${it.fabricItemNumber}` : null]
           .filter(Boolean)
           .join(" ");

@@ -988,6 +988,128 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /auth/staff/recover/request:
+    post:
+      operationId: requestStaffRecovery
+      tags: [staff-auth]
+      summary: Request a delayed staff account recovery (locked out admins)
+      description: |
+        Always returns 200 (does not leak whether the email is registered). If
+        the email matches an active staff account, an emailed recovery link is
+        scheduled to become usable after a 1-hour cooldown, and all OTHER
+        active admins are notified so they can cancel the request before it
+        becomes usable.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RequestStaffRecoveryRequest"
+      responses:
+        "200":
+          description: Always returned, regardless of whether the email exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RequestStaffRecoveryResult"
+        "429":
+          description: Too many requests
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+  /auth/staff/recover/{token}:
+    get:
+      operationId: getStaffRecoveryStatus
+      tags: [staff-auth]
+      summary: Check the status of a staff recovery token (public)
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffRecoveryStatus"
+  /auth/staff/recover/{token}/complete:
+    post:
+      operationId: completeStaffRecovery
+      tags: [staff-auth]
+      summary: Use a recovery token to set a new password and clear 2FA (public)
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompleteStaffRecoveryRequest"
+      responses:
+        "200":
+          description: Recovery completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompleteStaffRecoveryResult"
+        "400":
+          description: Token is not yet usable, expired, used, or cancelled
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+  /admin/recovery-requests:
+    get:
+      operationId: adminListRecoveryRequests
+      tags: [staff-auth]
+      summary: List in-flight admin recovery requests (admins only)
+      responses:
+        "200":
+          description: Active recovery requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AdminRecoveryRequestRow" }
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+  /admin/recovery-requests/{id}/cancel:
+    post:
+      operationId: adminCancelRecoveryRequest
+      tags: [staff-auth]
+      summary: Cancel an in-flight admin recovery request (admins only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Cancelled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                required: [ok]
+        "404":
+          description: Not found or already finalized
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
   /admin/manufacturers:
     get:
       operationId: adminListManufacturers
@@ -6259,3 +6381,46 @@ components:
       properties:
         sent: { type: boolean }
       required: [sent]
+    RequestStaffRecoveryRequest:
+      type: object
+      properties:
+        email: { type: string, format: email, maxLength: 320 }
+      required: [email]
+    RequestStaffRecoveryResult:
+      type: object
+      properties:
+        ok: { type: boolean }
+      required: [ok]
+    StaffRecoveryStatus:
+      type: object
+      properties:
+        state:
+          type: string
+          enum: [pending, ready, expired, used, cancelled, not_found]
+        availableAt: { type: ["string", "null"], format: date-time }
+        expiresAt: { type: ["string", "null"], format: date-time }
+        emailMasked: { type: ["string", "null"] }
+      required: [state]
+    CompleteStaffRecoveryRequest:
+      type: object
+      properties:
+        newPassword: { type: string, minLength: 12, maxLength: 200 }
+      required: [newPassword]
+    CompleteStaffRecoveryResult:
+      type: object
+      properties:
+        ok: { type: boolean }
+      required: [ok]
+    AdminRecoveryRequestRow:
+      type: object
+      properties:
+        id: { type: integer }
+        userId: { type: integer }
+        userEmail: { type: string }
+        userRole: { type: string }
+        requestedAt: { type: string, format: date-time }
+        availableAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+        requestIp: { type: ["string", "null"] }
+        requestUserAgent: { type: ["string", "null"] }
+      required: [id, userId, userEmail, userRole, requestedAt, availableAt, expiresAt]

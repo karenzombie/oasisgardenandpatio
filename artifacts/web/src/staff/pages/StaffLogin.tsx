@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { useLocation, Redirect } from "wouter";
+import { Link, useLocation, Redirect } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useStaffLogin,
@@ -119,6 +119,15 @@ export default function StaffLogin() {
             "Sign in"
           )}
         </Button>
+
+        <div className="text-center text-xs text-slate-500 pt-2">
+          <Link
+            href="/staff/recover"
+            className="underline hover:text-slate-700"
+          >
+            Locked out? Recover staff access
+          </Link>
+        </div>
       </form>
     </StaffAuthShell>
   );

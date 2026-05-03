@@ -2677,6 +2677,63 @@ export interface SendCushionEmailResponse {
   sent: boolean;
 }
 
+export interface RequestStaffRecoveryRequest {
+  /** @maxLength 320 */
+  email: string;
+}
+
+export interface RequestStaffRecoveryResult {
+  ok: boolean;
+}
+
+export type StaffRecoveryStatusState =
+  (typeof StaffRecoveryStatusState)[keyof typeof StaffRecoveryStatusState];
+
+export const StaffRecoveryStatusState = {
+  pending: "pending",
+  ready: "ready",
+  expired: "expired",
+  used: "used",
+  cancelled: "cancelled",
+  not_found: "not_found",
+} as const;
+
+export interface StaffRecoveryStatus {
+  state: StaffRecoveryStatusState;
+  /** @nullable */
+  availableAt?: string | null;
+  /** @nullable */
+  expiresAt?: string | null;
+  /** @nullable */
+  emailMasked?: string | null;
+}
+
+export interface CompleteStaffRecoveryRequest {
+  /**
+   * @minLength 12
+   * @maxLength 200
+   */
+  newPassword: string;
+}
+
+export interface CompleteStaffRecoveryResult {
+  ok: boolean;
+}
+
+export interface AdminRecoveryRequestRow {
+  id: number;
+  userId: number;
+  userEmail: string;
+  userRole: string;
+  requestedAt: string;
+  availableAt: string;
+  expiresAt: string;
+  /** @nullable */
+  requestIp?: string | null;
+  /** @nullable */
+  requestUserAgent?: string | null;
+}
+
 export type ListCatalogProductsParams = {
   q?: string;
   categorySlug?: string;
@@ -2706,6 +2763,10 @@ export const ListCatalogProductsSort = {
 } as const;
 
 export type StaffDisableTotp200 = {
+  ok: boolean;
+};
+
+export type AdminCancelRecoveryRequest200 = {
   ok: boolean;
 };
 

@@ -108,3 +108,33 @@ export const passwordResetTokensTable = pgTable(
   },
   (t) => [index("password_reset_tokens_user_id_idx").on(t.userId)],
 );
+
+export const adminRecoveryTokensTable = pgTable(
+  "admin_recovery_tokens",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => usersTable.id, { onDelete: "cascade" }),
+    tokenHash: text("token_hash").notNull().unique(),
+    requestedAt: timestamp("requested_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    availableAt: timestamp("available_at", { withTimezone: true }).notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    usedAt: timestamp("used_at", { withTimezone: true }),
+    cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
+    cancelledByUserId: integer("cancelled_by_user_id").references(
+      () => usersTable.id,
+      { onDelete: "set null" },
+    ),
+    requestIp: text("request_ip"),
+    requestUserAgent: text("request_user_agent"),
+  },
+  (t) => [
+    index("admin_recovery_tokens_user_id_idx").on(t.userId),
+    index("admin_recovery_tokens_expires_at_idx").on(t.expiresAt),
+  ],
+);
+
+export type AdminRecoveryToken = typeof adminRecoveryTokensTable.$inferSelect;

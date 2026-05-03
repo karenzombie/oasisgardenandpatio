@@ -2,6 +2,8 @@ import { Switch, Route } from "wouter";
 import { RequireStaff } from "./RequireStaff";
 import { StaffShell } from "./StaffShell";
 import StaffLogin from "./pages/StaffLogin";
+import StaffRecoverRequest from "./pages/StaffRecoverRequest";
+import StaffRecoverComplete from "./pages/StaffRecoverComplete";
 import Setup2FA from "./pages/Setup2FA";
 import Verify2FA from "./pages/Verify2FA";
 import ChangePassword from "./pages/ChangePassword";
@@ -35,6 +37,7 @@ import VendorOrders from "./pages/admin/VendorOrders";
 import VendorOrderDetail from "./pages/admin/VendorOrderDetail";
 import CushionOrders from "./pages/admin/CushionOrders";
 import CushionOrderDetail from "./pages/admin/CushionOrderDetail";
+import RecoveryRequests from "./pages/admin/RecoveryRequests";
 import Reports from "./pages/admin/Reports";
 import { PagePlaceholder } from "./pages/PagePlaceholder";
 
@@ -49,6 +52,8 @@ export default function StaffRouter() {
     <Switch>
       {/* Public staff auth routes (no shell) */}
       <Route path="/staff" component={StaffLogin} />
+      <Route path="/staff/recover" component={StaffRecoverRequest} />
+      <Route path="/staff/recover/:token" component={StaffRecoverComplete} />
       <Route path="/staff/setup-2fa" component={Setup2FA} />
       <Route path="/staff/verify-2fa" component={Verify2FA} />
       <Route path="/staff/change-password" component={ChangePassword} />
@@ -77,6 +82,7 @@ export default function StaffRouter() {
                 <Route path="/users" component={Users} />
                 <Route path="/customers" component={Users} />
                 <Route path="/audit-log" component={AuditLog} />
+                <Route path="/recovery-requests" component={RecoveryRequests} />
                 <Route path="/orders" component={Orders} />
                 <Route path="/orders/:id" component={OrderDetail} />
                 <Route path="/vendor-orders" component={VendorOrders} />

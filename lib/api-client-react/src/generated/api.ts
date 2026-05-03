@@ -28,6 +28,7 @@ import type {
   AdminAddress,
   AdminAgentPrivileges,
   AdminBanner,
+  AdminCancelRecoveryRequest200,
   AdminCancellationRequest,
   AdminCategory,
   AdminCouponCode,
@@ -56,6 +57,7 @@ import type {
   AdminProductImage,
   AdminProductInventory,
   AdminProductsPage,
+  AdminRecoveryRequestRow,
   AdminReportsSalesByAgent,
   AdminReportsSalesByAgentParams,
   AdminReportsSalesByCategory,
@@ -84,6 +86,8 @@ import type {
   ChangePasswordRequest,
   CheckoutQuoteRequest,
   CheckoutQuoteResponse,
+  CompleteStaffRecoveryRequest,
+  CompleteStaffRecoveryResult,
   CreateAddressRequest,
   CreateBannerRequest,
   CreateCarrierRequest,
@@ -125,6 +129,8 @@ import type {
   ReorderProductImagesRequest,
   ReplaceSetItemsRequest,
   RequestPasswordResetRequest,
+  RequestStaffRecoveryRequest,
+  RequestStaffRecoveryResult,
   RequestUploadUrlRequest,
   RequestUploadUrlResponseSchema,
   ResetPasswordRequest,
@@ -138,6 +144,7 @@ import type {
   StaffLoginRequest,
   StaffMarkAllReadResponse,
   StaffNotification,
+  StaffRecoveryStatus,
   StaffStageResponse,
   StaffUnreadCount,
   SubmitCushionOrderRequest,
@@ -3639,6 +3646,445 @@ export const useStaffDisableTotp = <
   TContext
 > => {
   return useMutation(getStaffDisableTotpMutationOptions(options));
+};
+
+/**
+ * Always returns 200 (does not leak whether the email is registered). If
+the email matches an active staff account, an emailed recovery link is
+scheduled to become usable after a 1-hour cooldown, and all OTHER
+active admins are notified so they can cancel the request before it
+becomes usable.
+
+ * @summary Request a delayed staff account recovery (locked out admins)
+ */
+export const getRequestStaffRecoveryUrl = () => {
+  return `/api/auth/staff/recover/request`;
+};
+
+export const requestStaffRecovery = async (
+  requestStaffRecoveryRequest: RequestStaffRecoveryRequest,
+  options?: RequestInit,
+): Promise<RequestStaffRecoveryResult> => {
+  return customFetch<RequestStaffRecoveryResult>(getRequestStaffRecoveryUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(requestStaffRecoveryRequest),
+  });
+};
+
+export const getRequestStaffRecoveryMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof requestStaffRecovery>>,
+    TError,
+    { data: BodyType<RequestStaffRecoveryRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof requestStaffRecovery>>,
+  TError,
+  { data: BodyType<RequestStaffRecoveryRequest> },
+  TContext
+> => {
+  const mutationKey = ["requestStaffRecovery"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof requestStaffRecovery>>,
+    { data: BodyType<RequestStaffRecoveryRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return requestStaffRecovery(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RequestStaffRecoveryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof requestStaffRecovery>>
+>;
+export type RequestStaffRecoveryMutationBody =
+  BodyType<RequestStaffRecoveryRequest>;
+export type RequestStaffRecoveryMutationError = ErrorType<Error>;
+
+/**
+ * @summary Request a delayed staff account recovery (locked out admins)
+ */
+export const useRequestStaffRecovery = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof requestStaffRecovery>>,
+    TError,
+    { data: BodyType<RequestStaffRecoveryRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof requestStaffRecovery>>,
+  TError,
+  { data: BodyType<RequestStaffRecoveryRequest> },
+  TContext
+> => {
+  return useMutation(getRequestStaffRecoveryMutationOptions(options));
+};
+
+/**
+ * @summary Check the status of a staff recovery token (public)
+ */
+export const getGetStaffRecoveryStatusUrl = (token: string) => {
+  return `/api/auth/staff/recover/${token}`;
+};
+
+export const getStaffRecoveryStatus = async (
+  token: string,
+  options?: RequestInit,
+): Promise<StaffRecoveryStatus> => {
+  return customFetch<StaffRecoveryStatus>(getGetStaffRecoveryStatusUrl(token), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetStaffRecoveryStatusQueryKey = (token: string) => {
+  return [`/api/auth/staff/recover/${token}`] as const;
+};
+
+export const getGetStaffRecoveryStatusQueryOptions = <
+  TData = Awaited<ReturnType<typeof getStaffRecoveryStatus>>,
+  TError = ErrorType<unknown>,
+>(
+  token: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getStaffRecoveryStatus>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetStaffRecoveryStatusQueryKey(token);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getStaffRecoveryStatus>>
+  > = ({ signal }) =>
+    getStaffRecoveryStatus(token, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!token,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getStaffRecoveryStatus>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetStaffRecoveryStatusQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getStaffRecoveryStatus>>
+>;
+export type GetStaffRecoveryStatusQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Check the status of a staff recovery token (public)
+ */
+
+export function useGetStaffRecoveryStatus<
+  TData = Awaited<ReturnType<typeof getStaffRecoveryStatus>>,
+  TError = ErrorType<unknown>,
+>(
+  token: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getStaffRecoveryStatus>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetStaffRecoveryStatusQueryOptions(token, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Use a recovery token to set a new password and clear 2FA (public)
+ */
+export const getCompleteStaffRecoveryUrl = (token: string) => {
+  return `/api/auth/staff/recover/${token}/complete`;
+};
+
+export const completeStaffRecovery = async (
+  token: string,
+  completeStaffRecoveryRequest: CompleteStaffRecoveryRequest,
+  options?: RequestInit,
+): Promise<CompleteStaffRecoveryResult> => {
+  return customFetch<CompleteStaffRecoveryResult>(
+    getCompleteStaffRecoveryUrl(token),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(completeStaffRecoveryRequest),
+    },
+  );
+};
+
+export const getCompleteStaffRecoveryMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof completeStaffRecovery>>,
+    TError,
+    { token: string; data: BodyType<CompleteStaffRecoveryRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof completeStaffRecovery>>,
+  TError,
+  { token: string; data: BodyType<CompleteStaffRecoveryRequest> },
+  TContext
+> => {
+  const mutationKey = ["completeStaffRecovery"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof completeStaffRecovery>>,
+    { token: string; data: BodyType<CompleteStaffRecoveryRequest> }
+  > = (props) => {
+    const { token, data } = props ?? {};
+
+    return completeStaffRecovery(token, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CompleteStaffRecoveryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof completeStaffRecovery>>
+>;
+export type CompleteStaffRecoveryMutationBody =
+  BodyType<CompleteStaffRecoveryRequest>;
+export type CompleteStaffRecoveryMutationError = ErrorType<Error>;
+
+/**
+ * @summary Use a recovery token to set a new password and clear 2FA (public)
+ */
+export const useCompleteStaffRecovery = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof completeStaffRecovery>>,
+    TError,
+    { token: string; data: BodyType<CompleteStaffRecoveryRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof completeStaffRecovery>>,
+  TError,
+  { token: string; data: BodyType<CompleteStaffRecoveryRequest> },
+  TContext
+> => {
+  return useMutation(getCompleteStaffRecoveryMutationOptions(options));
+};
+
+/**
+ * @summary List in-flight admin recovery requests (admins only)
+ */
+export const getAdminListRecoveryRequestsUrl = () => {
+  return `/api/admin/recovery-requests`;
+};
+
+export const adminListRecoveryRequests = async (
+  options?: RequestInit,
+): Promise<AdminRecoveryRequestRow[]> => {
+  return customFetch<AdminRecoveryRequestRow[]>(
+    getAdminListRecoveryRequestsUrl(),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getAdminListRecoveryRequestsQueryKey = () => {
+  return [`/api/admin/recovery-requests`] as const;
+};
+
+export const getAdminListRecoveryRequestsQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminListRecoveryRequests>>,
+  TError = ErrorType<Error>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminListRecoveryRequests>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getAdminListRecoveryRequestsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminListRecoveryRequests>>
+  > = ({ signal }) => adminListRecoveryRequests({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminListRecoveryRequests>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminListRecoveryRequestsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminListRecoveryRequests>>
+>;
+export type AdminListRecoveryRequestsQueryError = ErrorType<Error>;
+
+/**
+ * @summary List in-flight admin recovery requests (admins only)
+ */
+
+export function useAdminListRecoveryRequests<
+  TData = Awaited<ReturnType<typeof adminListRecoveryRequests>>,
+  TError = ErrorType<Error>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminListRecoveryRequests>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminListRecoveryRequestsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Cancel an in-flight admin recovery request (admins only)
+ */
+export const getAdminCancelRecoveryRequestUrl = (id: number) => {
+  return `/api/admin/recovery-requests/${id}/cancel`;
+};
+
+export const adminCancelRecoveryRequest = async (
+  id: number,
+  options?: RequestInit,
+): Promise<AdminCancelRecoveryRequest200> => {
+  return customFetch<AdminCancelRecoveryRequest200>(
+    getAdminCancelRecoveryRequestUrl(id),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getAdminCancelRecoveryRequestMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCancelRecoveryRequest>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminCancelRecoveryRequest>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["adminCancelRecoveryRequest"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminCancelRecoveryRequest>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return adminCancelRecoveryRequest(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminCancelRecoveryRequestMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminCancelRecoveryRequest>>
+>;
+
+export type AdminCancelRecoveryRequestMutationError = ErrorType<Error>;
+
+/**
+ * @summary Cancel an in-flight admin recovery request (admins only)
+ */
+export const useAdminCancelRecoveryRequest = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCancelRecoveryRequest>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminCancelRecoveryRequest>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getAdminCancelRecoveryRequestMutationOptions(options));
 };
 
 /**

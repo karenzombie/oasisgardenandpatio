@@ -42,6 +42,36 @@ export const twoFactorRateLimiter = rateLimit({
   handler: jsonErrorHandler,
 });
 
+export const adminRecoveryRequestRateLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 5,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    const email = (req.body as { email?: unknown })?.email;
+    const emailKey =
+      typeof email === "string" ? email.trim().toLowerCase() : "";
+    return `${ipKeyGenerator(req.ip ?? "")}:${emailKey}`;
+  },
+  handler: jsonErrorHandler,
+});
+
+export const adminRecoveryStatusRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 60,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  handler: jsonErrorHandler,
+});
+
+export const adminRecoveryCompleteRateLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 10,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  handler: jsonErrorHandler,
+});
+
 export const cushionSubmitRateLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   limit: 10,

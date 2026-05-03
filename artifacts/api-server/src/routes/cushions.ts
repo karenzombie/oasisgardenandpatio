@@ -207,8 +207,13 @@ router.post(
             productNameSnapshot: prod?.name ?? null,
             productSkuSnapshot: prod?.sku ?? null,
             fabricId: it.fabricId ?? null,
-            fabricName: it.fabricName ?? fab?.name ?? null,
-            fabricItemNumber: it.fabricItemNumber ?? fab?.itemNumber ?? null,
+            // When fabricId is supplied, the canonical name/number must come
+            // from the catalog snapshot — not client-supplied text — so the
+            // stored admin record can't be tampered with via the public form.
+            fabricName: fab ? fab.name : (it.fabricName ?? null),
+            fabricItemNumber: fab
+              ? fab.itemNumber
+              : (it.fabricItemNumber ?? null),
           };
         }),
       );
