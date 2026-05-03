@@ -530,6 +530,7 @@ router.post(
                 })
                 .onConflictDoUpdate({
                   target: inventoryTable.productId,
+                  targetWhere: sql`${inventoryTable.variantId} IS NULL`,
                   set: {
                     onHand: r.onHand!,
                     reorderThreshold: r.reorderThreshold!,
