@@ -11,7 +11,6 @@ import ComingSoon from "@/pages/ComingSoon";
 import Shop from "@/pages/Shop";
 import Product from "@/pages/Product";
 import ShippingReturns from "@/pages/ShippingReturns";
-import Warranty from "@/pages/Warranty";
 import Fabrics from "@/pages/Fabrics";
 import Materials from "@/pages/Materials";
 import Manufacturers from "@/pages/Manufacturers";
@@ -55,7 +54,7 @@ function CustomerRouter() {
         <Route path="/shop/category/:slug" component={Shop} />
         <Route path="/shop/:slug" component={Product} />
         <Route path="/shipping-returns" component={ShippingReturns} />
-        <Route path="/warranty" component={Warranty} />
+        <Route path="/warranty" component={ComingSoon} />
         <Route path="/fabrics" component={Fabrics} />
         <Route path="/commercial" component={ComingSoon} />
         <Route path="/cushions" component={Cushions} />
