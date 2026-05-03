@@ -14,6 +14,7 @@ import {
   UpdateCartItemBody,
 } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/requireAuth";
+import { toPublicImageUrl } from "../lib/imageUrl";
 
 const router: IRouter = Router();
 
@@ -74,6 +75,7 @@ async function loadCart(userId: number) {
     subtotal += line;
     return {
       ...r,
+      primaryImageUrl: toPublicImageUrl(r.primaryImageUrl),
       unitPrice: String(r.unitPrice),
       lineTotal: line.toFixed(2),
     };

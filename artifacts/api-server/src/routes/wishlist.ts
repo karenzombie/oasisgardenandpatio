@@ -13,6 +13,7 @@ import {
   AddWishlistItemBody,
 } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/requireAuth";
+import { toPublicImageUrl } from "../lib/imageUrl";
 
 const router: IRouter = Router();
 
@@ -59,6 +60,7 @@ async function loadWishlist(userId: number) {
   return GetWishlistResponse.parse({
     items: rows.map((r) => ({
       ...r,
+      primaryImageUrl: toPublicImageUrl(r.primaryImageUrl),
       createdAt:
         r.createdAt instanceof Date
           ? r.createdAt.toISOString()

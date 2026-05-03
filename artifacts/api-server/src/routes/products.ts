@@ -14,6 +14,7 @@ import {
   ListCatalogProductsResponse,
   GetCatalogProductBySlugResponse,
 } from "@workspace/api-zod";
+import { toPublicImageUrl } from "../lib/imageUrl";
 
 const router: IRouter = Router();
 
@@ -59,6 +60,7 @@ router.get("/products/featured", async (_req, res): Promise<void> => {
     ...r,
     manufacturerName: r.manufacturerName ?? "",
     categoryName: r.categoryName ?? "",
+    primaryImageUrl: toPublicImageUrl(r.primaryImageUrl),
   }));
 
   res.json(ListFeaturedProductsResponse.parse(normalized));
@@ -201,7 +203,10 @@ router.get(
     const [rows, totalResult] = await Promise.all([rowsP, totalP]);
     res.json(
       ListCatalogProductsResponse.parse({
-        products: rows,
+        products: rows.map((r) => ({
+          ...r,
+          primaryImageUrl: toPublicImageUrl(r.primaryImageUrl),
+        })),
         total: totalResult[0]?.count ?? 0,
         page,
         pageSize,
@@ -312,8 +317,8 @@ router.get(
       showPriceOnline: row.showPriceOnline,
       availableOnline: row.availableOnline,
       featured: row.featured,
-      primaryImageUrl: primaryGallery?.url ?? null,
-      images,
+      primaryImageUrl: toPublicImageUrl(primaryGallery?.url ?? null),
+      images: images.map((i) => ({ ...i, url: toPublicImageUrl(i.url) })),
     };
 
     res.json(GetCatalogProductBySlugResponse.parse(payload));
