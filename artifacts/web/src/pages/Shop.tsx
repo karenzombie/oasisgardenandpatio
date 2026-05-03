@@ -140,6 +140,10 @@ export default function Shop() {
                     <div className="absolute top-3 right-3 bg-primary text-primary-foreground px-3 py-1 text-xs uppercase tracking-widest font-semibold">
                       Sale
                     </div>
+                  ) : p.quoteOnly ? (
+                    <div className="absolute top-3 right-3 bg-foreground text-background px-3 py-1 text-xs uppercase tracking-widest font-semibold">
+                      Showroom
+                    </div>
                   ) : null}
                   <div className="absolute bottom-3 right-3 z-10">
                     <WishlistButton productId={p.id} />

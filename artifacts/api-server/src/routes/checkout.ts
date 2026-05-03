@@ -175,6 +175,7 @@ router.post(
             weight: productsTable.weight,
             availableOnline: productsTable.availableOnline,
             isActive: productsTable.isActive,
+            quoteOnly: productsTable.quoteOnly,
           })
           .from(cartItemsTable)
           .innerJoin(
@@ -185,7 +186,7 @@ router.post(
 
         if (lines.length === 0)
           return { error: "Cart is empty", status: 400 };
-        if (lines.some((l) => !l.isActive || !l.availableOnline)) {
+        if (lines.some((l) => !l.isActive || !l.availableOnline || l.quoteOnly)) {
           return {
             error:
               "One or more items in your cart are no longer available. Please update your cart and try again.",

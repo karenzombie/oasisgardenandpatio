@@ -65,6 +65,7 @@ function toAdminPayload(r: ProductRow) {
     showPriceOnline: r.showPriceOnline,
     availableOnline: r.availableOnline,
     inStoreOnly: r.inStoreOnly,
+    quoteOnly: r.quoteOnly,
     featured: r.featured,
     displayOrder: r.displayOrder,
     lowStockThreshold: r.lowStockThreshold,
@@ -136,6 +137,7 @@ function baseSelect() {
       showPriceOnline: productsTable.showPriceOnline,
       availableOnline: productsTable.availableOnline,
       inStoreOnly: productsTable.inStoreOnly,
+      quoteOnly: productsTable.quoteOnly,
       featured: productsTable.featured,
       displayOrder: productsTable.displayOrder,
       lowStockThreshold: productsTable.lowStockThreshold,
@@ -349,6 +351,7 @@ router.post(
           showPriceOnline: parsed.data.showPriceOnline ?? true,
           availableOnline: parsed.data.availableOnline ?? true,
           inStoreOnly: parsed.data.inStoreOnly ?? false,
+          quoteOnly: parsed.data.quoteOnly ?? false,
           featured: parsed.data.featured ?? false,
           displayOrder: parsed.data.displayOrder ?? 0,
           lowStockThreshold: parsed.data.lowStockThreshold ?? 0,
@@ -427,6 +430,9 @@ router.put(
             : {}),
           ...(body.data.inStoreOnly !== undefined
             ? { inStoreOnly: body.data.inStoreOnly }
+            : {}),
+          ...(body.data.quoteOnly !== undefined
+            ? { quoteOnly: body.data.quoteOnly }
             : {}),
           ...(body.data.featured !== undefined
             ? { featured: body.data.featured }

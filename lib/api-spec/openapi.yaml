@@ -3857,6 +3857,8 @@ components:
           type: boolean
         inStoreOnly:
           type: boolean
+        quoteOnly:
+          type: boolean
         featured:
           type: boolean
         displayOrder:
@@ -3900,6 +3902,7 @@ components:
         - showPriceOnline
         - availableOnline
         - inStoreOnly
+        - quoteOnly
         - featured
         - displayOrder
         - lowStockThreshold
@@ -4027,6 +4030,9 @@ components:
         inStoreOnly:
           type: boolean
           default: false
+        quoteOnly:
+          type: boolean
+          default: false
         featured:
           type: boolean
           default: false
@@ -4086,6 +4092,8 @@ components:
         availableOnline:
           type: boolean
         inStoreOnly:
+          type: boolean
+        quoteOnly:
           type: boolean
         featured:
           type: boolean
@@ -4310,6 +4318,8 @@ components:
           type: boolean
         availableOnline:
           type: boolean
+        quoteOnly:
+          type: boolean
         featured:
           type: boolean
         primaryImageUrl:
@@ -4328,6 +4338,7 @@ components:
         - salePrice
         - showPriceOnline
         - availableOnline
+        - quoteOnly
         - featured
         - primaryImageUrl
     CatalogProductsPage:
@@ -4426,6 +4437,8 @@ components:
           type: boolean
         availableOnline:
           type: boolean
+        quoteOnly:
+          type: boolean
         primaryImageUrl:
           type: ["string", "null"]
         createdAt:
@@ -4443,6 +4456,7 @@ components:
         - salePrice
         - showPriceOnline
         - availableOnline
+        - quoteOnly
         - primaryImageUrl
         - createdAt
     WishlistResponse:

@@ -79,6 +79,10 @@ export const productsTable = pgTable(
     showPriceOnline: boolean("show_price_online").notNull().default(true),
     availableOnline: boolean("available_online").notNull().default(true),
     inStoreOnly: boolean("in_store_only").notNull().default(false),
+    // True for vendors whose lines are not sold online — the storefront
+    // hides Add-to-Cart and shows a "Available through a sales agent"
+    // notice. Wishlist still works so customers can flag interest.
+    quoteOnly: boolean("quote_only").notNull().default(false),
     featured: boolean("featured").notNull().default(false),
     displayOrder: integer("display_order").notNull().default(0),
     lowStockThreshold: integer("low_stock_threshold").notNull().default(0),

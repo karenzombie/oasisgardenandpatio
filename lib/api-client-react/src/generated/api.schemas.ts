@@ -524,6 +524,7 @@ export interface AdminProduct {
   showPriceOnline: boolean;
   availableOnline: boolean;
   inStoreOnly: boolean;
+  quoteOnly: boolean;
   featured: boolean;
   displayOrder: number;
   lowStockThreshold: number;
@@ -610,6 +611,7 @@ export interface CreateProductRequest {
   showPriceOnline?: boolean;
   availableOnline?: boolean;
   inStoreOnly?: boolean;
+  quoteOnly?: boolean;
   featured?: boolean;
   displayOrder?: number;
   lowStockThreshold?: number;
@@ -661,6 +663,7 @@ export interface UpdateProductRequest {
   showPriceOnline?: boolean;
   availableOnline?: boolean;
   inStoreOnly?: boolean;
+  quoteOnly?: boolean;
   featured?: boolean;
   displayOrder?: number;
   lowStockThreshold?: number;
@@ -789,6 +792,7 @@ export interface CatalogProduct {
   salePrice: string | null;
   showPriceOnline: boolean;
   availableOnline: boolean;
+  quoteOnly: boolean;
   featured: boolean;
   /** @nullable */
   primaryImageUrl: string | null;
@@ -857,6 +861,7 @@ export interface WishlistItem {
   salePrice: string | null;
   showPriceOnline: boolean;
   availableOnline: boolean;
+  quoteOnly: boolean;
   /** @nullable */
   primaryImageUrl: string | null;
   createdAt: string;

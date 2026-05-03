@@ -30,6 +30,7 @@ router.get("/products/featured", async (_req, res): Promise<void> => {
       price: productsTable.price,
       showPriceOnline: productsTable.showPriceOnline,
       availableOnline: productsTable.availableOnline,
+      quoteOnly: productsTable.quoteOnly,
       primaryImageUrl: sql<string | null>`(
         select ${productImagesTable.url}
         from ${productImagesTable}
@@ -153,6 +154,7 @@ router.get(
         salePrice: productsTable.salePrice,
         showPriceOnline: productsTable.showPriceOnline,
         availableOnline: productsTable.availableOnline,
+        quoteOnly: productsTable.quoteOnly,
         featured: productsTable.featured,
         primaryImageUrl: sql<string | null>`(
           select ${productImagesTable.url}
@@ -246,6 +248,7 @@ router.get(
         tags: productsTable.tags,
         showPriceOnline: productsTable.showPriceOnline,
         availableOnline: productsTable.availableOnline,
+        quoteOnly: productsTable.quoteOnly,
         featured: productsTable.featured,
         isActive: productsTable.isActive,
       })
@@ -316,6 +319,7 @@ router.get(
       tags: tagsArray,
       showPriceOnline: row.showPriceOnline,
       availableOnline: row.availableOnline,
+      quoteOnly: row.quoteOnly,
       featured: row.featured,
       primaryImageUrl: toPublicImageUrl(primaryGallery?.url ?? null),
       images: images.map((i) => ({ ...i, url: toPublicImageUrl(i.url) })),

@@ -123,17 +123,23 @@ export default function AccountWishlist() {
                   ) : null}
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <Button
-                    className="rounded-none"
-                    onClick={() =>
-                      addToCartM.mutate({
-                        data: { productId: item.productId, quantity: 1 },
-                      })
-                    }
-                    disabled={addToCartM.isPending || !item.availableOnline}
-                  >
-                    Move to Cart
-                  </Button>
+                  {item.quoteOnly ? (
+                    <span className="text-xs uppercase tracking-widest text-muted-foreground border border-border px-3 py-2">
+                      Sales agent only
+                    </span>
+                  ) : (
+                    <Button
+                      className="rounded-none"
+                      onClick={() =>
+                        addToCartM.mutate({
+                          data: { productId: item.productId, quantity: 1 },
+                        })
+                      }
+                      disabled={addToCartM.isPending || !item.availableOnline}
+                    >
+                      Move to Cart
+                    </Button>
+                  )}
                   <Button
                     variant="outline"
                     className="rounded-none"

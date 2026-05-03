@@ -170,38 +170,60 @@ export default function Product() {
             />
           ) : null}
 
-          <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
-            <div className="inline-flex items-center border border-input self-start">
-              <button
-                type="button"
-                className="px-3 py-2.5 hover:bg-muted disabled:opacity-40"
-                onClick={() => setQty((q) => Math.max(1, q - 1))}
-                disabled={qty <= 1}
-                aria-label="Decrease quantity"
-              >
-                −
-              </button>
-              <span className="px-4 text-sm w-12 text-center">{qty}</span>
-              <button
-                type="button"
-                className="px-3 py-2.5 hover:bg-muted"
-                onClick={() => setQty((q) => q + 1)}
-                aria-label="Increase quantity"
-              >
-                +
-              </button>
+          {data.quoteOnly ? (
+            <div className="border border-border bg-muted/40 p-5 mb-2">
+              <p className="text-sm font-semibold uppercase tracking-widest text-foreground mb-1">
+                Available through a sales agent
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {data.manufacturerName ?? "This brand"} is sold exclusively in
+                our showroom. Save it to your wishlist and a member of our
+                team will follow up with pricing, finishes, and lead times — or{" "}
+                <Link href="/contact" className="text-primary underline">
+                  contact us directly
+                </Link>
+                .
+              </p>
+              <div className="mt-4">
+                <WishlistButton productId={data.id} variant="button" />
+              </div>
             </div>
-            <button
-              type="button"
-              onClick={handleAddToCart}
-              disabled={addToCartM.isPending || !data.availableOnline}
-              className="flex-1 sm:flex-none bg-primary text-primary-foreground px-8 py-3 text-sm uppercase tracking-widest font-medium hover:bg-primary/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {addToCartM.isPending ? "Adding…" : "Add to Cart"}
-            </button>
-            <WishlistButton productId={data.id} variant="button" />
-          </div>
-          <p className="text-xs text-muted-foreground mt-2">Visit our showroom or contact us for white-glove delivery options.</p>
+          ) : (
+            <>
+              <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+                <div className="inline-flex items-center border border-input self-start">
+                  <button
+                    type="button"
+                    className="px-3 py-2.5 hover:bg-muted disabled:opacity-40"
+                    onClick={() => setQty((q) => Math.max(1, q - 1))}
+                    disabled={qty <= 1}
+                    aria-label="Decrease quantity"
+                  >
+                    −
+                  </button>
+                  <span className="px-4 text-sm w-12 text-center">{qty}</span>
+                  <button
+                    type="button"
+                    className="px-3 py-2.5 hover:bg-muted"
+                    onClick={() => setQty((q) => q + 1)}
+                    aria-label="Increase quantity"
+                  >
+                    +
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAddToCart}
+                  disabled={addToCartM.isPending || !data.availableOnline}
+                  className="flex-1 sm:flex-none bg-primary text-primary-foreground px-8 py-3 text-sm uppercase tracking-widest font-medium hover:bg-primary/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {addToCartM.isPending ? "Adding…" : "Add to Cart"}
+                </button>
+                <WishlistButton productId={data.id} variant="button" />
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">Visit our showroom or contact us for white-glove delivery options.</p>
+            </>
+          )}
 
           {/* Meta */}
           <dl className="mt-8 pt-6 border-t border-border space-y-2 text-sm">

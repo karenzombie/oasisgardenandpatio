@@ -127,6 +127,7 @@ export const ListCatalogProductsResponse = zod.object({
       salePrice: zod.string().nullable(),
       showPriceOnline: zod.boolean(),
       availableOnline: zod.boolean(),
+      quoteOnly: zod.boolean(),
       featured: zod.boolean(),
       primaryImageUrl: zod.string().nullable(),
     }),
@@ -158,6 +159,7 @@ export const GetCatalogProductBySlugResponse = zod
     salePrice: zod.string().nullable(),
     showPriceOnline: zod.boolean(),
     availableOnline: zod.boolean(),
+    quoteOnly: zod.boolean(),
     featured: zod.boolean(),
     primaryImageUrl: zod.string().nullable(),
   })
@@ -574,6 +576,7 @@ export const GetWishlistResponse = zod.object({
       salePrice: zod.string().nullable(),
       showPriceOnline: zod.boolean(),
       availableOnline: zod.boolean(),
+      quoteOnly: zod.boolean(),
       primaryImageUrl: zod.string().nullable(),
       createdAt: zod.coerce.date(),
     }),
@@ -601,6 +604,7 @@ export const AddWishlistItemResponse = zod.object({
       salePrice: zod.string().nullable(),
       showPriceOnline: zod.boolean(),
       availableOnline: zod.boolean(),
+      quoteOnly: zod.boolean(),
       primaryImageUrl: zod.string().nullable(),
       createdAt: zod.coerce.date(),
     }),
@@ -774,6 +778,7 @@ export const RemoveWishlistItemResponse = zod.object({
       salePrice: zod.string().nullable(),
       showPriceOnline: zod.boolean(),
       availableOnline: zod.boolean(),
+      quoteOnly: zod.boolean(),
       primaryImageUrl: zod.string().nullable(),
       createdAt: zod.coerce.date(),
     }),
@@ -1350,6 +1355,7 @@ export const AdminListProductsResponse = zod.object({
       showPriceOnline: zod.boolean(),
       availableOnline: zod.boolean(),
       inStoreOnly: zod.boolean(),
+      quoteOnly: zod.boolean(),
       featured: zod.boolean(),
       displayOrder: zod.number(),
       lowStockThreshold: zod.number(),
@@ -1378,6 +1384,7 @@ export const adminCreateProductBodyPricingModeDefault = `fixed`;
 export const adminCreateProductBodyShowPriceOnlineDefault = true;
 export const adminCreateProductBodyAvailableOnlineDefault = true;
 export const adminCreateProductBodyInStoreOnlyDefault = false;
+export const adminCreateProductBodyQuoteOnlyDefault = false;
 export const adminCreateProductBodyFeaturedDefault = false;
 export const adminCreateProductBodyDisplayOrderDefault = 0;
 export const adminCreateProductBodyLowStockThresholdDefault = 0;
@@ -1408,6 +1415,7 @@ export const AdminCreateProductBody = zod.object({
     .boolean()
     .default(adminCreateProductBodyAvailableOnlineDefault),
   inStoreOnly: zod.boolean().default(adminCreateProductBodyInStoreOnlyDefault),
+  quoteOnly: zod.boolean().default(adminCreateProductBodyQuoteOnlyDefault),
   featured: zod.boolean().default(adminCreateProductBodyFeaturedDefault),
   displayOrder: zod.number().default(adminCreateProductBodyDisplayOrderDefault),
   lowStockThreshold: zod
@@ -1459,6 +1467,7 @@ export const AdminGetProductResponse = zod
     showPriceOnline: zod.boolean(),
     availableOnline: zod.boolean(),
     inStoreOnly: zod.boolean(),
+    quoteOnly: zod.boolean(),
     featured: zod.boolean(),
     displayOrder: zod.number(),
     lowStockThreshold: zod.number(),
@@ -1522,6 +1531,7 @@ export const AdminUpdateProductBody = zod.object({
   showPriceOnline: zod.boolean().optional(),
   availableOnline: zod.boolean().optional(),
   inStoreOnly: zod.boolean().optional(),
+  quoteOnly: zod.boolean().optional(),
   featured: zod.boolean().optional(),
   displayOrder: zod.number().optional(),
   lowStockThreshold: zod.number().optional(),
@@ -1563,6 +1573,7 @@ export const AdminUpdateProductResponse = zod.object({
   showPriceOnline: zod.boolean(),
   availableOnline: zod.boolean(),
   inStoreOnly: zod.boolean(),
+  quoteOnly: zod.boolean(),
   featured: zod.boolean(),
   displayOrder: zod.number(),
   lowStockThreshold: zod.number(),
@@ -1620,6 +1631,7 @@ export const AdminSetProductActiveResponse = zod.object({
   showPriceOnline: zod.boolean(),
   availableOnline: zod.boolean(),
   inStoreOnly: zod.boolean(),
+  quoteOnly: zod.boolean(),
   featured: zod.boolean(),
   displayOrder: zod.number(),
   lowStockThreshold: zod.number(),

@@ -50,6 +50,7 @@ export interface AdminProduct {
   showPriceOnline: boolean;
   availableOnline: boolean;
   inStoreOnly: boolean;
+  quoteOnly: boolean;
   featured: boolean;
   displayOrder: number;
   lowStockThreshold: number;

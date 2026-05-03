@@ -133,6 +133,7 @@ router.post(
         id: productsTable.id,
         price: productsTable.price,
         salePrice: productsTable.salePrice,
+        quoteOnly: productsTable.quoteOnly,
       })
       .from(productsTable)
       .where(
@@ -146,6 +147,13 @@ router.post(
 
     if (!product) {
       res.status(404).json({ error: "Product not found" });
+      return;
+    }
+    if (product.quoteOnly) {
+      res.status(400).json({
+        error:
+          "This product is sold through a sales agent only and cannot be added to the cart.",
+      });
       return;
     }
 

@@ -31,6 +31,7 @@ async function loadWishlist(userId: number) {
       salePrice: productsTable.salePrice,
       showPriceOnline: productsTable.showPriceOnline,
       availableOnline: productsTable.availableOnline,
+      quoteOnly: productsTable.quoteOnly,
       primaryImageUrl: sql<string | null>`(
         select ${productImagesTable.url}
         from ${productImagesTable}

@@ -22,6 +22,7 @@ export interface WishlistItem {
   salePrice: string | null;
   showPriceOnline: boolean;
   availableOnline: boolean;
+  quoteOnly: boolean;
   /** @nullable */
   primaryImageUrl: string | null;
   createdAt: Date;

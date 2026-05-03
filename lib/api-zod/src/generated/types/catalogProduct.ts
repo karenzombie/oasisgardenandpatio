@@ -27,6 +27,7 @@ export interface CatalogProduct {
   salePrice: string | null;
   showPriceOnline: boolean;
   availableOnline: boolean;
+  quoteOnly: boolean;
   featured: boolean;
   /** @nullable */
   primaryImageUrl: string | null;
