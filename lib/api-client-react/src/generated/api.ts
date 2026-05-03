@@ -35,6 +35,7 @@ import type {
   AdminCategory,
   AdminCouponCode,
   AdminCouponCodeUse,
+  AdminCreateCustomerResponse,
   AdminCustomer,
   AdminCustomerDetail,
   AdminCustomerPage,
@@ -133,6 +134,8 @@ import type {
   Material,
   PlaceOrderRequest,
   PlaceOrderResult,
+  QuoteOrderPricingRequest,
+  QuoteOrderPricingResponse,
   ReceiveVendorOrderRequest,
   RecoveryCodeRequest,
   ReorderProductImagesRequest,
@@ -10088,6 +10091,96 @@ export const useAdminDeleteVendorOrder = <
 };
 
 /**
+ * @summary Compute subtotal/tax/delivery for an in-progress order using the same rules as customer checkout
+ */
+export const getAdminQuoteOrderPricingUrl = () => {
+  return `/api/admin/orders/quote-pricing`;
+};
+
+export const adminQuoteOrderPricing = async (
+  quoteOrderPricingRequest: QuoteOrderPricingRequest,
+  options?: RequestInit,
+): Promise<QuoteOrderPricingResponse> => {
+  return customFetch<QuoteOrderPricingResponse>(
+    getAdminQuoteOrderPricingUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(quoteOrderPricingRequest),
+    },
+  );
+};
+
+export const getAdminQuoteOrderPricingMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminQuoteOrderPricing>>,
+    TError,
+    { data: BodyType<QuoteOrderPricingRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminQuoteOrderPricing>>,
+  TError,
+  { data: BodyType<QuoteOrderPricingRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminQuoteOrderPricing"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminQuoteOrderPricing>>,
+    { data: BodyType<QuoteOrderPricingRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return adminQuoteOrderPricing(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminQuoteOrderPricingMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminQuoteOrderPricing>>
+>;
+export type AdminQuoteOrderPricingMutationBody =
+  BodyType<QuoteOrderPricingRequest>;
+export type AdminQuoteOrderPricingMutationError = ErrorType<Error>;
+
+/**
+ * @summary Compute subtotal/tax/delivery for an in-progress order using the same rules as customer checkout
+ */
+export const useAdminQuoteOrderPricing = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminQuoteOrderPricing>>,
+    TError,
+    { data: BodyType<QuoteOrderPricingRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminQuoteOrderPricing>>,
+  TError,
+  { data: BodyType<QuoteOrderPricingRequest> },
+  TContext
+> => {
+  return useMutation(getAdminQuoteOrderPricingMutationOptions(options));
+};
+
+/**
  * @summary Auto-generate vendor orders for unassigned items in a customer order, grouped by manufacturer
  */
 export const getAdminGenerateVendorOrdersUrl = (orderId: number) => {
@@ -12718,8 +12811,8 @@ export const getAdminCreateCustomerUrl = () => {
 export const adminCreateCustomer = async (
   createCustomerRequest: CreateCustomerRequest,
   options?: RequestInit,
-): Promise<AdminCustomer> => {
-  return customFetch<AdminCustomer>(getAdminCreateCustomerUrl(), {
+): Promise<AdminCreateCustomerResponse> => {
+  return customFetch<AdminCreateCustomerResponse>(getAdminCreateCustomerUrl(), {
     ...options,
     method: "POST",
     headers: { "Content-Type": "application/json", ...options?.headers },

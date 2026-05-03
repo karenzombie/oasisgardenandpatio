@@ -465,6 +465,10 @@ router.post(
           status: order.status,
         };
       }
+      // Quick in-stock sales are flagged to skip vendor restock orders.
+      if (order.skipVendorOrder) {
+        return { kind: "skipped" as const };
+      }
 
       // Pull all unassigned items joined to product so we can read the
       // manufacturer. Items without a productId or whose product has no
@@ -545,6 +549,13 @@ router.post(
     if (result.kind === "bad_state") {
       res.status(409).json({
         error: `Cannot generate vendor orders for an order in status '${result.status}'`,
+      });
+      return;
+    }
+    if (result.kind === "skipped") {
+      res.status(409).json({
+        error:
+          "This order is flagged to skip vendor restock orders (in-stock sale).",
       });
       return;
     }

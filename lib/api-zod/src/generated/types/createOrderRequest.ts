@@ -9,7 +9,11 @@ import type { CreateOrderItemRequest } from "./createOrderItemRequest";
 import type { CreateOrderRequestOrderType } from "./createOrderRequestOrderType";
 
 export interface CreateOrderRequest {
-  customerId: number;
+  /**
+   * Required unless isQuickOrder=true
+   * @nullable
+   */
+  customerId?: number | null;
   /** @minItems 1 */
   items: CreateOrderItemRequest[];
   /** @nullable */
@@ -36,4 +40,17 @@ export interface CreateOrderRequest {
   notes?: string | null;
   orderType?: CreateOrderRequestOrderType;
   status?: string;
+  /** Quick in-store sale of stock on hand. Allows null customerId and unlocks skipVendorOrder. */
+  isQuickOrder?: boolean;
+  /** When true, vendor PO generation is blocked for this order. Use for quick stock-on-hand sales that should not trigger restock. */
+  skipVendorOrder?: boolean;
+  /**
+   * Optional walk-in customer name when no customerId is provided
+   * @nullable
+   */
+  walkInName?: string | null;
+  /** @nullable */
+  walkInEmail?: string | null;
+  /** @nullable */
+  walkInPhone?: string | null;
 }

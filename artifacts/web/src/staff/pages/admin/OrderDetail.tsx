@@ -713,14 +713,35 @@ export default function OrderDetail() {
           <div className="space-y-4">
             <div className="rounded-md border bg-white p-4 space-y-3">
               <div>
-                <div className="text-xs font-medium text-slate-500 uppercase mb-1">
+                <div className="text-xs font-medium text-slate-500 uppercase mb-1 flex items-center gap-2">
                   Customer
+                  {order.isQuickOrder && (
+                    <span className="rounded bg-amber-100 text-amber-800 px-1.5 py-0.5 text-[10px] font-semibold normal-case">
+                      Quick order
+                    </span>
+                  )}
                 </div>
                 <div className="text-sm">
-                  <div>{order.customerName ?? "—"}</div>
-                  <div className="text-slate-500">
-                    {order.customerEmail ?? ""}
-                  </div>
+                  {order.customerName ? (
+                    <>
+                      <div>{order.customerName}</div>
+                      <div className="text-slate-500">
+                        {order.customerEmail ?? ""}
+                      </div>
+                    </>
+                  ) : order.isQuickOrder ? (
+                    <>
+                      <div>{order.walkInName ?? "Walk-in customer"}</div>
+                      {order.walkInEmail && (
+                        <div className="text-slate-500">{order.walkInEmail}</div>
+                      )}
+                      {order.walkInPhone && (
+                        <div className="text-slate-500">{order.walkInPhone}</div>
+                      )}
+                    </>
+                  ) : (
+                    <div>—</div>
+                  )}
                 </div>
               </div>
               <div>
@@ -752,17 +773,24 @@ export default function OrderDetail() {
                 <div className="text-xs font-medium text-slate-500 uppercase">
                   Vendor orders
                 </div>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="secondary"
-                  onClick={handleGenerateVendorOrders}
-                  disabled={generateVendorOrders.isPending}
-                >
-                  Generate vendor orders
-                </Button>
+                {!order.skipVendorOrder && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    onClick={handleGenerateVendorOrders}
+                    disabled={generateVendorOrders.isPending}
+                  >
+                    Generate vendor orders
+                  </Button>
+                )}
               </div>
-              {order.vendorOrders.length === 0 ? (
+              {order.skipVendorOrder ? (
+                <div className="text-sm text-slate-500">
+                  This order is flagged as an in-stock sale —
+                  vendor restock orders are skipped.
+                </div>
+              ) : order.vendorOrders.length === 0 ? (
                 <div className="text-sm text-slate-500">
                   No vendor orders yet. Click{" "}
                   <span className="font-medium">Generate vendor orders</span> to

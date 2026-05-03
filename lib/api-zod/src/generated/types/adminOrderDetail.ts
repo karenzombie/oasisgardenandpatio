@@ -40,4 +40,9 @@ export interface AdminOrderDetail {
   statusHistory: AdminOrderStatusEvent[];
   vendorOrders: AdminOrderVendorOrder[];
   cancellationRequests: AdminCancellationRequest[];
+  isQuickOrder: boolean;
+  skipVendorOrder: boolean;
+  walkInName: string | null;
+  walkInEmail: string | null;
+  walkInPhone: string | null;
 }

@@ -76,6 +76,11 @@ export const ordersTable = pgTable(
     orderConfirmationPdfUrl: text("order_confirmation_pdf_url"),
     deliverySheetPdfUrl: text("delivery_sheet_pdf_url"),
     notes: text("notes"),
+    isQuickOrder: boolean("is_quick_order").notNull().default(false),
+    skipVendorOrder: boolean("skip_vendor_order").notNull().default(false),
+    walkInName: text("walk_in_name"),
+    walkInEmail: text("walk_in_email"),
+    walkInPhone: text("walk_in_phone"),
     placedAt: timestamp("placed_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

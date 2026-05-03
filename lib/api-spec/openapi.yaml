@@ -2920,6 +2920,23 @@ paths:
         "204": { description: Deleted }
         "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
         "409": { description: Cannot delete after sending, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+  /admin/orders/quote-pricing:
+    post:
+      operationId: adminQuoteOrderPricing
+      tags: [admin-orders]
+      summary: Compute subtotal/tax/delivery for an in-progress order using the same rules as customer checkout
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/QuoteOrderPricingRequest" }
+      responses:
+        "200":
+          description: Pricing quote
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/QuoteOrderPricingResponse" }
+        "400": { description: Bad request, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
   /admin/orders/{orderId}/vendor-orders/generate:
     post:
       operationId: adminGenerateVendorOrders
@@ -2942,6 +2959,11 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/GenerateVendorOrdersResponse" }
         "404": { description: Order not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+        "409":
+          description: Order is in a state that cannot generate vendor orders
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
   /admin/vendor-orders/{id}/send:
     post:
       operationId: adminSendVendorOrder
@@ -3523,7 +3545,7 @@ paths:
           description: Created
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/AdminCustomer" }
+              schema: { $ref: "#/components/schemas/AdminCreateCustomerResponse" }
         "400": { description: Bad request, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
         "409": { description: Conflict, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
   /admin/customers/{id}:
@@ -4130,8 +4152,13 @@ components:
         cancellationRequests:
           type: array
           items: { $ref: "#/components/schemas/AdminCancellationRequest" }
+        isQuickOrder: { type: boolean }
+        skipVendorOrder: { type: boolean }
+        walkInName: { type: string, nullable: true }
+        walkInEmail: { type: string, nullable: true }
+        walkInPhone: { type: string, nullable: true }
       required:
-        [id, orderNumber, status, orderType, subtotal, taxAmount, deliveryAmount, total, depositAmount, balanceDue, customerId, customerName, customerEmail, agentId, agentName, salespersonName, shippingMethod, specialInstructions, notes, merchandiseReceived, placedAt, updatedAt, shippingAddress, billingAddress, items, statusHistory, vendorOrders, cancellationRequests]
+        [id, orderNumber, status, orderType, subtotal, taxAmount, deliveryAmount, total, depositAmount, balanceDue, customerId, customerName, customerEmail, agentId, agentName, salespersonName, shippingMethod, specialInstructions, notes, merchandiseReceived, placedAt, updatedAt, shippingAddress, billingAddress, items, statusHistory, vendorOrders, cancellationRequests, isQuickOrder, skipVendorOrder, walkInName, walkInEmail, walkInPhone]
     StaffNotification:
       type: object
       properties:
@@ -6486,6 +6513,15 @@ components:
           items: { $ref: "#/components/schemas/AdminCustomer" }
         total: { type: integer }
       required: [rows, total]
+    AdminCreateCustomerResponse:
+      allOf:
+        - $ref: "#/components/schemas/AdminCustomer"
+        - type: object
+          properties:
+            inviteSent:
+              type: ["boolean", "null"]
+              description: "true=invite emailed, false=invite attempted but email send failed, null=no invite was requested."
+          required: [inviteSent]
     CreateCustomerRequest:
       type: object
       properties:
@@ -6496,6 +6532,7 @@ components:
         companyName: { type: ["string", "null"] }
         customerType: { type: string, enum: [residential, commercial], default: residential }
         notes: { type: ["string", "null"] }
+        sendInvite: { type: boolean, default: false, description: "When true, also creates a User account in pending state and emails a 'set your password' link." }
       required: [email, firstName, lastName]
     UpdateCustomerRequest:
       type: object
@@ -6550,7 +6587,7 @@ components:
     CreateOrderRequest:
       type: object
       properties:
-        customerId: { type: integer }
+        customerId: { type: ["integer", "null"], description: "Required unless isQuickOrder=true" }
         items:
           type: array
           minItems: 1
@@ -6566,7 +6603,39 @@ components:
         notes: { type: ["string", "null"] }
         orderType: { type: string, enum: [online, in_store, phone], default: in_store }
         status: { type: string, default: pending }
-      required: [customerId, items]
+        isQuickOrder: { type: boolean, default: false, description: "Quick in-store sale of stock on hand. Allows null customerId and unlocks skipVendorOrder." }
+        skipVendorOrder: { type: boolean, default: false, description: "When true, vendor PO generation is blocked for this order. Use for quick stock-on-hand sales that should not trigger restock." }
+        walkInName: { type: ["string", "null"], description: "Optional walk-in customer name when no customerId is provided" }
+        walkInEmail: { type: ["string", "null"] }
+        walkInPhone: { type: ["string", "null"] }
+      required: [items]
+    QuoteOrderPricingRequest:
+      type: object
+      properties:
+        items:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            properties:
+              quantity: { type: integer, minimum: 1 }
+              unitPrice: { type: number, minimum: 0 }
+              discountAmount: { type: number, minimum: 0, default: 0 }
+              productId: { type: ["integer", "null"] }
+            required: [quantity, unitPrice]
+        shippingState: { type: ["string", "null"], description: "2-letter US state code; tax computed only for CA" }
+        shippingZip: { type: ["string", "null"] }
+      required: [items]
+    QuoteOrderPricingResponse:
+      type: object
+      properties:
+        subtotal: { type: number }
+        taxRate: { type: number }
+        taxAmount: { type: number }
+        taxJurisdiction: { type: string }
+        deliveryAmount: { type: number }
+        total: { type: number }
+      required: [subtotal, taxRate, taxAmount, taxJurisdiction, deliveryAmount, total]
     CushionOrderItemInput:
       type: object
       properties:

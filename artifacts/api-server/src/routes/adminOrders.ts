@@ -342,6 +342,11 @@ async function loadOrderDetail(orderId: number) {
         cr.c.refundAmount === null ? null : Number(cr.c.refundAmount),
       createdAt: cr.c.createdAt.toISOString(),
     })),
+    isQuickOrder: o.isQuickOrder,
+    skipVendorOrder: o.skipVendorOrder,
+    walkInName: o.walkInName,
+    walkInEmail: o.walkInEmail,
+    walkInPhone: o.walkInPhone,
   };
 }
 
@@ -876,18 +881,42 @@ router.post(
       return;
     }
     const data = parsed.data;
+    const isQuickOrder = data.isQuickOrder ?? false;
+    const skipVendorOrder = data.skipVendorOrder ?? false;
 
-    const [customer] = await db
-      .select()
-      .from(customersTable)
-      .where(eq(customersTable.id, data.customerId))
-      .limit(1);
-    if (!customer) {
-      res.status(400).json({ error: "Customer not found" });
+    if (skipVendorOrder && !isQuickOrder) {
+      res.status(400).json({
+        error: "skipVendorOrder is only allowed on quick orders",
+      });
+      return;
+    }
+
+    let customer: { id: number } | null = null;
+    if (data.customerId != null) {
+      const [row] = await db
+        .select()
+        .from(customersTable)
+        .where(eq(customersTable.id, data.customerId))
+        .limit(1);
+      if (!row) {
+        res.status(400).json({ error: "Customer not found" });
+        return;
+      }
+      customer = row;
+    } else if (!isQuickOrder) {
+      res.status(400).json({
+        error: "customerId is required unless isQuickOrder is true",
+      });
       return;
     }
 
     if (data.shippingAddressId != null) {
+      if (!customer) {
+        res.status(400).json({
+          error: "Cannot attach an address to a quick order without a customer",
+        });
+        return;
+      }
       const [a] = await db
         .select()
         .from(addressesTable)
@@ -906,6 +935,12 @@ router.post(
       }
     }
     if (data.billingAddressId != null) {
+      if (!customer) {
+        res.status(400).json({
+          error: "Cannot attach an address to a quick order without a customer",
+        });
+        return;
+      }
       const [a] = await db
         .select()
         .from(addressesTable)
@@ -1032,7 +1067,7 @@ router.post(
           .insert(ordersTable)
           .values({
             orderNumber: generateOrderNumber(),
-            customerId: data.customerId,
+            customerId: data.customerId ?? null,
             createdByAgentId: req.user?.id ?? null,
             orderType: data.orderType ?? "in_store",
             status,
@@ -1048,6 +1083,11 @@ router.post(
             salespersonName: data.salespersonName ?? null,
             specialInstructions: data.specialInstructions ?? null,
             notes: data.notes ?? null,
+            isQuickOrder,
+            skipVendorOrder,
+            walkInName: data.walkInName?.trim() || null,
+            walkInEmail: data.walkInEmail?.trim().toLowerCase() || null,
+            walkInPhone: data.walkInPhone?.trim() || null,
           })
           .returning();
         if (!order) throw new Error("Order insert returned no row");

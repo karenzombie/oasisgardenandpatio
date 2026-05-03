@@ -3255,9 +3255,14 @@ export const adminCreateOrderBodyDepositAmountMin = 0;
 
 export const adminCreateOrderBodyOrderTypeDefault = `in_store`;
 export const adminCreateOrderBodyStatusDefault = `pending`;
+export const adminCreateOrderBodyIsQuickOrderDefault = false;
+export const adminCreateOrderBodySkipVendorOrderDefault = false;
 
 export const AdminCreateOrderBody = zod.object({
-  customerId: zod.number(),
+  customerId: zod
+    .number()
+    .nullish()
+    .describe("Required unless isQuickOrder=true"),
   items: zod
     .array(
       zod.object({
@@ -3300,6 +3305,24 @@ export const AdminCreateOrderBody = zod.object({
     .enum(["online", "in_store", "phone"])
     .default(adminCreateOrderBodyOrderTypeDefault),
   status: zod.string().default(adminCreateOrderBodyStatusDefault),
+  isQuickOrder: zod
+    .boolean()
+    .default(adminCreateOrderBodyIsQuickOrderDefault)
+    .describe(
+      "Quick in-store sale of stock on hand. Allows null customerId and unlocks skipVendorOrder.",
+    ),
+  skipVendorOrder: zod
+    .boolean()
+    .default(adminCreateOrderBodySkipVendorOrderDefault)
+    .describe(
+      "When true, vendor PO generation is blocked for this order. Use for quick stock-on-hand sales that should not trigger restock.",
+    ),
+  walkInName: zod
+    .string()
+    .nullish()
+    .describe("Optional walk-in customer name when no customerId is provided"),
+  walkInEmail: zod.string().nullish(),
+  walkInPhone: zod.string().nullish(),
 });
 
 /**
@@ -3463,6 +3486,11 @@ export const AdminGetOrderResponse = zod.object({
       createdAt: zod.coerce.date(),
     }),
   ),
+  isQuickOrder: zod.boolean(),
+  skipVendorOrder: zod.boolean(),
+  walkInName: zod.string().nullable(),
+  walkInEmail: zod.string().nullable(),
+  walkInPhone: zod.string().nullable(),
 });
 
 /**
@@ -3587,6 +3615,11 @@ export const AdminUpdateOrderStatusResponse = zod.object({
       createdAt: zod.coerce.date(),
     }),
   ),
+  isQuickOrder: zod.boolean(),
+  skipVendorOrder: zod.boolean(),
+  walkInName: zod.string().nullable(),
+  walkInEmail: zod.string().nullable(),
+  walkInPhone: zod.string().nullable(),
 });
 
 /**
@@ -3728,6 +3761,11 @@ export const AdminUpdateOrderTotalsResponse = zod.object({
       createdAt: zod.coerce.date(),
     }),
   ),
+  isQuickOrder: zod.boolean(),
+  skipVendorOrder: zod.boolean(),
+  walkInName: zod.string().nullable(),
+  walkInEmail: zod.string().nullable(),
+  walkInPhone: zod.string().nullable(),
 });
 
 /**
@@ -3851,6 +3889,11 @@ export const AdminUpdateOrderNotesResponse = zod.object({
       createdAt: zod.coerce.date(),
     }),
   ),
+  isQuickOrder: zod.boolean(),
+  skipVendorOrder: zod.boolean(),
+  walkInName: zod.string().nullable(),
+  walkInEmail: zod.string().nullable(),
+  walkInPhone: zod.string().nullable(),
 });
 
 /**
@@ -4090,6 +4133,47 @@ export const AdminUpdateVendorOrderResponse = zod.object({
  */
 export const AdminDeleteVendorOrderParams = zod.object({
   id: zod.coerce.number(),
+});
+
+/**
+ * @summary Compute subtotal/tax/delivery for an in-progress order using the same rules as customer checkout
+ */
+
+export const adminQuoteOrderPricingBodyItemsItemUnitPriceMin = 0;
+
+export const adminQuoteOrderPricingBodyItemsItemDiscountAmountDefault = 0;
+export const adminQuoteOrderPricingBodyItemsItemDiscountAmountMin = 0;
+
+export const AdminQuoteOrderPricingBody = zod.object({
+  items: zod
+    .array(
+      zod.object({
+        quantity: zod.number().min(1),
+        unitPrice: zod
+          .number()
+          .min(adminQuoteOrderPricingBodyItemsItemUnitPriceMin),
+        discountAmount: zod
+          .number()
+          .min(adminQuoteOrderPricingBodyItemsItemDiscountAmountMin)
+          .default(adminQuoteOrderPricingBodyItemsItemDiscountAmountDefault),
+        productId: zod.number().nullish(),
+      }),
+    )
+    .min(1),
+  shippingState: zod
+    .string()
+    .nullish()
+    .describe("2-letter US state code; tax computed only for CA"),
+  shippingZip: zod.string().nullish(),
+});
+
+export const AdminQuoteOrderPricingResponse = zod.object({
+  subtotal: zod.number(),
+  taxRate: zod.number(),
+  taxAmount: zod.number(),
+  taxJurisdiction: zod.string(),
+  deliveryAmount: zod.number(),
+  total: zod.number(),
 });
 
 /**
@@ -5085,6 +5169,7 @@ export const AdminListCustomersResponse = zod.object({
  */
 
 export const adminCreateCustomerBodyCustomerTypeDefault = `residential`;
+export const adminCreateCustomerBodySendInviteDefault = false;
 
 export const AdminCreateCustomerBody = zod.object({
   email: zod.string().min(1),
@@ -5096,6 +5181,12 @@ export const AdminCreateCustomerBody = zod.object({
     .enum(["residential", "commercial"])
     .default(adminCreateCustomerBodyCustomerTypeDefault),
   notes: zod.string().nullish(),
+  sendInvite: zod
+    .boolean()
+    .default(adminCreateCustomerBodySendInviteDefault)
+    .describe(
+      "When true, also creates a User account in pending state and emails a 'set your password' link.",
+    ),
 });
 
 /**

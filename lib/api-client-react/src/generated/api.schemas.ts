@@ -351,6 +351,11 @@ export interface AdminOrderDetail {
   statusHistory: AdminOrderStatusEvent[];
   vendorOrders: AdminOrderVendorOrder[];
   cancellationRequests: AdminCancellationRequest[];
+  isQuickOrder: boolean;
+  skipVendorOrder: boolean;
+  walkInName: string | null;
+  walkInEmail: string | null;
+  walkInPhone: string | null;
 }
 
 export interface StaffNotification {
@@ -2274,6 +2279,14 @@ export interface AdminCustomerPage {
   total: number;
 }
 
+export type AdminCreateCustomerResponse = AdminCustomer & {
+  /**
+   * true=invite emailed, false=invite attempted but email send failed, null=no invite was requested.
+   * @nullable
+   */
+  inviteSent: boolean | null;
+};
+
 export type CreateCustomerRequestCustomerType =
   (typeof CreateCustomerRequestCustomerType)[keyof typeof CreateCustomerRequestCustomerType];
 
@@ -2296,6 +2309,8 @@ export interface CreateCustomerRequest {
   customerType?: CreateCustomerRequestCustomerType;
   /** @nullable */
   notes?: string | null;
+  /** When true, also creates a User account in pending state and emails a 'set your password' link. */
+  sendInvite?: boolean;
 }
 
 export type UpdateCustomerRequestCustomerType =
@@ -2409,7 +2424,11 @@ export const CreateOrderRequestOrderType = {
 } as const;
 
 export interface CreateOrderRequest {
-  customerId: number;
+  /**
+   * Required unless isQuickOrder=true
+   * @nullable
+   */
+  customerId?: number | null;
   /** @minItems 1 */
   items: CreateOrderItemRequest[];
   /** @nullable */
@@ -2436,6 +2455,51 @@ export interface CreateOrderRequest {
   notes?: string | null;
   orderType?: CreateOrderRequestOrderType;
   status?: string;
+  /** Quick in-store sale of stock on hand. Allows null customerId and unlocks skipVendorOrder. */
+  isQuickOrder?: boolean;
+  /** When true, vendor PO generation is blocked for this order. Use for quick stock-on-hand sales that should not trigger restock. */
+  skipVendorOrder?: boolean;
+  /**
+   * Optional walk-in customer name when no customerId is provided
+   * @nullable
+   */
+  walkInName?: string | null;
+  /** @nullable */
+  walkInEmail?: string | null;
+  /** @nullable */
+  walkInPhone?: string | null;
+}
+
+export type QuoteOrderPricingRequestItemsItem = {
+  /** @minimum 1 */
+  quantity: number;
+  /** @minimum 0 */
+  unitPrice: number;
+  /** @minimum 0 */
+  discountAmount?: number;
+  /** @nullable */
+  productId?: number | null;
+};
+
+export interface QuoteOrderPricingRequest {
+  /** @minItems 1 */
+  items: QuoteOrderPricingRequestItemsItem[];
+  /**
+   * 2-letter US state code; tax computed only for CA
+   * @nullable
+   */
+  shippingState?: string | null;
+  /** @nullable */
+  shippingZip?: string | null;
+}
+
+export interface QuoteOrderPricingResponse {
+  subtotal: number;
+  taxRate: number;
+  taxAmount: number;
+  taxJurisdiction: string;
+  deliveryAmount: number;
+  total: number;
 }
 
 /**

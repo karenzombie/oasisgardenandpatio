@@ -129,3 +129,20 @@ User explicitly directed: **ask rather than assume on ambiguous build decisions*
 - **History**: per-product `entity_history` rows are written — `entityType="product"` for scalar updates and `entityType="product_fabrics"` (changeType `replace`) for fabric changes — both tagged `notes="bulk update"` so an existing product's HistoryPanel surfaces them.
 - **UI**: `Products.tsx` admin list now has a checkbox column + select-all-on-page (with indeterminate state); a floating bottom toolbar appears whenever any rows are selected and opens `BulkUpdateProductsDialog`. Selection persists across pagination so admins can build a multi-page set before applying.
 - **Why per-product loop instead of one mass UPDATE**: the fabric mutations need per-product previous→next snapshots for history, and individual scalar updates also need per-product history rows. Cap is 500 ids/request to keep one call bounded.
+
+## Staff order creation (May 2026)
+
+- **Goal**: turn `/agent/orders/new` into a complete in-store order desk that mirrors the customer checkout (variants, fabrics, auto tax/shipping) but also supports walk-in / cash-and-carry sales.
+- **Schema** (`orders` table, applied via direct psql ALTER):
+  - `is_quick_order boolean not null default false`
+  - `skip_vendor_order boolean not null default false`
+  - `walk_in_name | walk_in_email | walk_in_phone text` — used when `customer_id IS NULL`
+  - `customer_id` was already nullable, so no change required there.
+- **Customer create with invite** (`POST /api/admin/customers` with `sendInvite: true`): wraps customer + `users` insert in a tx, generates a `password_reset_tokens` row, and emails the link via the existing `sendPasswordResetEmail` helper. Random bcryptjs password is set so the row is unusable until the customer completes the reset flow.
+- **Quick orders** (`POST /api/admin/orders` with `isQuickOrder: true`): customerId becomes optional, walk-in fields are accepted, address validation is skipped, and `skipVendorOrder` is honored only in this mode (server enforces). When `skipVendorOrder=true`, `POST /admin/vendor-orders/generate` short-circuits with a 409 (`kind: "skipped"`) so admins can't accidentally create restock POs against an in-stock sale.
+- **Pricing parity** (`POST /api/admin/orders/quote-pricing`): reuses `loadPricingSettings`, `computeTax`, and `computeShipping` from `checkoutPricing.ts` so the staff desk gets the exact same numbers as the customer cart. The frontend debounces this call and only switches to manual numbers when the operator clicks "Override" on the tax or delivery row.
+- **UI** (`artifacts/web/src/staff/pages/agent/NewOrder.tsx`):
+  - Customer block uses `Tabs` with `existing` / `new` / `quick` modes.
+  - Product picker dialog loads `useGetCatalogProductBySlug` for the chosen product to surface `variants[]` (frame finish/size) and `fabricOptions[]` (grouped by manufacturer); "Add to order" stays disabled until each required pick is made. Selected variantId/fabricId are persisted on the line so downstream routing (vendor-order generation, fulfillment) can use them.
+  - Per-line unit price is auto-filled from `price + variantPriceAdjustment` and shows an `(override)` indicator the moment the operator types a different number — preserves the long-standing manual-override behavior.
+- **Order detail surfacing** (`agent/OrderDetail.tsx`, `admin/OrderDetail.tsx`): a "Quick order" pill appears next to the Customer label and walk-in name/email/phone render in place of the customer block when there's no `customer_id`; the admin "Generate vendor orders" button is hidden when `skip_vendor_order=true` with a one-line explanation.
