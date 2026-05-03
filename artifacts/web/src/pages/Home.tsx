@@ -157,12 +157,23 @@ export default function Home() {
               })}
             </div>
           ) : (
-            <div className="text-center max-w-md mx-auto py-12">
-              <h3 className="font-serif text-2xl mb-4 text-foreground/80">New Collections Coming Soon</h3>
-              <p className="text-muted-foreground mb-8">We are currently curating our online featured selection. Visit our Santa Clarita showroom to view our full range of luxury patio furniture.</p>
-              <Button variant="outline" className="rounded-none border-primary text-primary hover:bg-primary hover:text-white" asChild>
-                <Link href="/contact">Visit Showroom</Link>
-              </Button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Link
+                  key={i}
+                  href="/shop"
+                  className="group block cursor-pointer"
+                  aria-label="Featured collection coming soon"
+                >
+                  <div className="aspect-square bg-secondary/40 overflow-hidden mb-4 flex items-center justify-center text-secondary-foreground/60 font-serif text-xs tracking-widest uppercase transition-colors group-hover:bg-secondary/60">
+                    Featured Soon
+                  </div>
+                  <div className="space-y-2 text-center">
+                    <div className="h-6" aria-hidden="true" />
+                    <h3 className="font-serif text-lg text-muted-foreground">Coming Soon</h3>
+                  </div>
+                </Link>
+              ))}
             </div>
           )}
         </div>
