@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import { asc, eq, inArray, sql } from "drizzle-orm";
 import {
   db,
   fabricsTable,
@@ -366,8 +366,5 @@ router.put(
     res.json(rows);
   },
 );
-
-// silence unused import warning when no usage of `and`
-void and;
 
 export default router;
