@@ -291,6 +291,8 @@ router.get(
       includeInactive = false,
       page = 1,
       pageSize = 50,
+      sortBy,
+      sortOrder = "asc",
     } = parsed.data;
 
     const conditions = [];
@@ -362,7 +364,26 @@ router.get(
         eq(categoriesTable.id, productsTable.categoryId),
       )
       .where(whereClause as ReturnType<typeof and>)
-      .orderBy(asc(productsTable.name))
+      .orderBy(...((): Array<ReturnType<typeof asc>> => {
+        const dir = sortOrder === "desc" ? desc : asc;
+        const tb = asc(productsTable.id);
+        switch (sortBy) {
+          case "name":
+            return [dir(productsTable.name), tb];
+          case "sku":
+            return [dir(productsTable.sku), tb];
+          case "manufacturer":
+            return [dir(manufacturersTable.name), asc(productsTable.name), tb];
+          case "category":
+            return [dir(categoriesTable.name), asc(productsTable.name), tb];
+          case "onHand":
+            return [dir(ON_HAND_SQL), asc(productsTable.name), tb];
+          case "reorderThreshold":
+            return [dir(REORDER_THRESHOLD_SQL), asc(productsTable.name), tb];
+          default:
+            return [asc(productsTable.name), tb];
+        }
+      })())
       .limit(pageSize)
       .offset(offset);
 

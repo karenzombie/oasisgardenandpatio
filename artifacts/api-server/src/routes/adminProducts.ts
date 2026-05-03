@@ -223,6 +223,8 @@ router.get(
       featured,
       page = 1,
       pageSize = 50,
+      sortBy,
+      sortOrder = "asc",
     } = parsed.data;
 
     const conditions = [];
@@ -251,9 +253,31 @@ router.get(
     const whereClause = conditions.length ? and(...conditions) : undefined;
 
     const offset = (page - 1) * pageSize;
+    const dir = sortOrder === "desc" ? desc : asc;
+    const sortColumn = (() => {
+      switch (sortBy) {
+        case "name":
+          return productsTable.name;
+        case "sku":
+          return productsTable.sku;
+        case "manufacturer":
+          return manufacturersTable.name;
+        case "category":
+          return categoriesTable.name;
+        case "price":
+          return productsTable.price;
+        case "onHand":
+          return ON_HAND_SQL;
+        default:
+          return null;
+      }
+    })();
+    const orderClause = sortColumn
+      ? [dir(sortColumn), asc(productsTable.id)]
+      : [asc(productsTable.displayOrder), asc(productsTable.name)];
     const rowsP = baseSelect()
       .where(whereClause as ReturnType<typeof and>)
-      .orderBy(asc(productsTable.displayOrder), asc(productsTable.name))
+      .orderBy(...orderClause)
       .limit(pageSize)
       .offset(offset);
     const totalP = db

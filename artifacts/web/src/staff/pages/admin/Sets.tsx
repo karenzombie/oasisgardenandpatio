@@ -44,6 +44,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { PageBody, PageHeader } from "../../StaffShell";
+import { SortableHeader, sortRows, toggleSort, type SortState } from "../../lib/sortable";
+
+type SetsSortKey = "name" | "sku" | "manufacturerName" | "itemCount" | "setPrice";
 
 function slugify(input: string): string {
   return input
@@ -110,13 +113,14 @@ export default function Sets() {
   const [error, setError] = useState<string | null>(null);
   const [confirmDeactivate, setConfirmDeactivate] =
     useState<AdminSetSummary | null>(null);
+  const [sort, setSort] = useState<SortState<SetsSortKey>>({ by: null, order: "desc" });
 
   const rows = list.data ?? [];
   const manufacturers = mfgList.data ?? [];
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return rows
+    const base = rows
       .filter((r) => (showInactive ? true : r.isActive))
       .filter((r) => {
         if (!q) return true;
@@ -127,7 +131,10 @@ export default function Sets() {
           (r.manufacturerName ?? "").toLowerCase().includes(q)
         );
       });
-  }, [rows, search, showInactive]);
+    return sortRows(base, sort, (row, key) => row[key]);
+  }, [rows, search, showInactive, sort]);
+
+  const handleSort = (key: SetsSortKey) => setSort((prev) => toggleSort(prev, key));
 
   function openCreate(): void {
     setForm(emptyForm());
@@ -269,13 +276,11 @@ export default function Sets() {
             <table className="w-full text-sm">
               <thead className="bg-slate-50 text-slate-600 text-xs uppercase tracking-wide">
                 <tr>
-                  <th className="text-left font-medium px-4 py-2.5">Name</th>
-                  <th className="text-left font-medium px-4 py-2.5">SKU</th>
-                  <th className="text-left font-medium px-4 py-2.5">
-                    Manufacturer
-                  </th>
-                  <th className="text-right font-medium px-4 py-2.5">Items</th>
-                  <th className="text-right font-medium px-4 py-2.5">Price</th>
+                  <SortableHeader sortKey="name" state={sort} onSort={handleSort} className="font-medium px-4 py-2.5">Name</SortableHeader>
+                  <SortableHeader sortKey="sku" state={sort} onSort={handleSort} className="font-medium px-4 py-2.5">SKU</SortableHeader>
+                  <SortableHeader sortKey="manufacturerName" state={sort} onSort={handleSort} className="font-medium px-4 py-2.5">Manufacturer</SortableHeader>
+                  <SortableHeader sortKey="itemCount" state={sort} onSort={handleSort} align="right" className="font-medium px-4 py-2.5">Items</SortableHeader>
+                  <SortableHeader sortKey="setPrice" state={sort} onSort={handleSort} align="right" className="font-medium px-4 py-2.5">Price</SortableHeader>
                   <th className="text-center font-medium px-4 py-2.5">
                     Status
                   </th>

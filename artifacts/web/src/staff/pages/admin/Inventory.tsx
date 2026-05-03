@@ -63,6 +63,9 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { PageBody, PageHeader } from "../../StaffShell";
 import { getStaffObjectUrl } from "../../lib/upload";
+import { SortableHeader, toggleSort, type SortState } from "../../lib/sortable";
+
+type InventorySortKey = "name" | "sku" | "manufacturer" | "category" | "onHand" | "reorderThreshold";
 
 const PAGE_SIZE = 25;
 const ANY = "any";
@@ -165,9 +168,15 @@ function LevelsTab() {
   const [manufacturerId, setManufacturerId] = useState<string>(ANY);
   const [categoryId, setCategoryId] = useState<string>(ANY);
   const [page, setPage] = useState(1);
+  const [sort, setSort] = useState<SortState<InventorySortKey>>({ by: null, order: "desc" });
   const [adjustTarget, setAdjustTarget] = useState<AdminInventoryItem | null>(
     null,
   );
+
+  const handleSort = (key: InventorySortKey) => {
+    setSort((prev) => toggleSort(prev, key));
+    setPage(1);
+  };
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -186,8 +195,12 @@ function LevelsTab() {
     if (statusFilter !== ANY) p["status"] = statusFilter;
     if (manufacturerId !== ANY) p["manufacturerId"] = Number(manufacturerId);
     if (categoryId !== ANY) p["categoryId"] = Number(categoryId);
+    if (sort.by) {
+      p["sortBy"] = sort.by;
+      p["sortOrder"] = sort.order;
+    }
     return p;
-  }, [search, statusFilter, manufacturerId, categoryId, page]);
+  }, [search, statusFilter, manufacturerId, categoryId, page, sort]);
 
   const list = useAdminListInventory(params as never);
   const mfgList = useAdminListManufacturers();
@@ -285,12 +298,12 @@ function LevelsTab() {
           <table className="w-full text-sm">
             <thead className="bg-slate-50 border-b text-left text-xs uppercase tracking-wide text-slate-500">
               <tr>
-                <th className="px-4 py-3 font-semibold">Product</th>
-                <th className="px-4 py-3 font-semibold">SKU</th>
-                <th className="px-4 py-3 font-semibold">Manufacturer</th>
-                <th className="px-4 py-3 font-semibold">Category</th>
-                <th className="px-4 py-3 font-semibold text-right">On hand</th>
-                <th className="px-4 py-3 font-semibold text-right">Reorder at</th>
+                <SortableHeader sortKey="name" state={sort} onSort={handleSort} className="px-4 py-3 font-semibold">Product</SortableHeader>
+                <SortableHeader sortKey="sku" state={sort} onSort={handleSort} className="px-4 py-3 font-semibold">SKU</SortableHeader>
+                <SortableHeader sortKey="manufacturer" state={sort} onSort={handleSort} className="px-4 py-3 font-semibold">Manufacturer</SortableHeader>
+                <SortableHeader sortKey="category" state={sort} onSort={handleSort} className="px-4 py-3 font-semibold">Category</SortableHeader>
+                <SortableHeader sortKey="onHand" state={sort} onSort={handleSort} align="right" className="px-4 py-3 font-semibold">On hand</SortableHeader>
+                <SortableHeader sortKey="reorderThreshold" state={sort} onSort={handleSort} align="right" className="px-4 py-3 font-semibold">Reorder at</SortableHeader>
                 <th className="px-4 py-3 font-semibold">Status</th>
                 <th className="px-4 py-3 font-semibold text-right">Actions</th>
               </tr>

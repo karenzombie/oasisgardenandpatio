@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Pencil, Plus, Search, Power, Trash2, ChevronLeft, ChevronRight, Star, Upload } from "lucide-react";
+import { SortableHeader, toggleSort, type SortState } from "../../lib/sortable";
+
+type ProductsSortKey = "name" | "manufacturer" | "category" | "price" | "onHand";
 import {
   useAdminListProducts,
   useAdminSetProductActive,
@@ -49,7 +52,13 @@ export default function Products() {
   const [statusFilter, setStatusFilter] = useState<string>("active");
   const [featuredFilter, setFeaturedFilter] = useState<string>("any");
   const [page, setPage] = useState(1);
+  const [sort, setSort] = useState<SortState<ProductsSortKey>>({ by: null, order: "desc" });
   const [confirmDeactivate, setConfirmDeactivate] = useState<AdminProduct | null>(null);
+
+  const handleSort = (key: ProductsSortKey) => {
+    setSort((prev) => toggleSort(prev, key));
+    setPage(1);
+  };
 
   // Debounce search input
   useEffect(() => {
@@ -73,8 +82,12 @@ export default function Products() {
     if (statusFilter === "inactive") p.isActive = false;
     if (featuredFilter === "yes") p.featured = true;
     if (featuredFilter === "no") p.featured = false;
+    if (sort.by) {
+      p.sortBy = sort.by;
+      p.sortOrder = sort.order;
+    }
     return p;
-  }, [page, search, manufacturerId, categoryId, statusFilter, featuredFilter]);
+  }, [page, search, manufacturerId, categoryId, statusFilter, featuredFilter, sort]);
 
   const list = useAdminListProducts(queryParams, {
     query: {
@@ -225,11 +238,11 @@ export default function Products() {
                 <thead className="bg-slate-50 text-slate-600 text-left">
                   <tr>
                     <th className="px-4 py-2.5 font-medium w-16">Image</th>
-                    <th className="px-4 py-2.5 font-medium">Name / SKU</th>
-                    <th className="px-4 py-2.5 font-medium">Brand</th>
-                    <th className="px-4 py-2.5 font-medium">Category</th>
-                    <th className="px-4 py-2.5 font-medium w-24 text-right">Price</th>
-                    <th className="px-4 py-2.5 font-medium w-20 text-right">On hand</th>
+                    <SortableHeader sortKey="name" state={sort} onSort={handleSort} className="px-4 py-2.5 font-medium">Name / SKU</SortableHeader>
+                    <SortableHeader sortKey="manufacturer" state={sort} onSort={handleSort} className="px-4 py-2.5 font-medium">Brand</SortableHeader>
+                    <SortableHeader sortKey="category" state={sort} onSort={handleSort} className="px-4 py-2.5 font-medium">Category</SortableHeader>
+                    <SortableHeader sortKey="price" state={sort} onSort={handleSort} align="right" className="px-4 py-2.5 font-medium w-24">Price</SortableHeader>
+                    <SortableHeader sortKey="onHand" state={sort} onSort={handleSort} align="right" className="px-4 py-2.5 font-medium w-20">On hand</SortableHeader>
                     <th className="px-4 py-2.5 font-medium w-32">Flags</th>
                     <th className="px-4 py-2.5 font-medium w-28 text-right">Actions</th>
                   </tr>

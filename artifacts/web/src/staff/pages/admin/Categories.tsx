@@ -52,6 +52,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { SortableHeader, sortRows, toggleSort, type SortState } from "../../lib/sortable";
+
+type CategoriesSortKey = "name" | "slug" | "displayOrder";
 import { PageBody, PageHeader } from "../../StaffShell";
 import { uploadFile, getStaffObjectUrl } from "../../lib/upload";
 
@@ -200,6 +203,8 @@ export default function Categories() {
   const [uploading, setUploading] = useState(false);
   const [confirmDeactivate, setConfirmDeactivate] =
     useState<AdminCategory | null>(null);
+  const [sort, setSort] = useState<SortState<CategoriesSortKey>>({ by: null, order: "desc" });
+  const handleSort = (key: CategoriesSortKey) => setSort((prev) => toggleSort(prev, key));
 
   const rows = list.data ?? [];
 
@@ -210,21 +215,23 @@ export default function Categories() {
 
   const tree = useMemo(() => buildTree(visibleRows), [visibleRows]);
 
-  // When searching, flatten and filter; otherwise use tree
+  // When searching or sorting, flatten and filter/sort; otherwise use tree
   const displayRows = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (q) {
-      // flat list of matches, no nesting indent
-      return visibleRows
-        .filter(
-          (r) =>
-            r.name.toLowerCase().includes(q) ||
-            r.slug.toLowerCase().includes(q),
-        )
-        .map((r) => ({ ...r, children: [], depth: 0 }) as CategoryNode);
+    if (q || sort.by) {
+      // flat list, no nesting indent
+      const base = (q
+        ? visibleRows.filter(
+            (r) =>
+              r.name.toLowerCase().includes(q) ||
+              r.slug.toLowerCase().includes(q),
+          )
+        : visibleRows
+      ).map((r) => ({ ...r, children: [], depth: 0 }) as CategoryNode);
+      return sortRows(base, sort, (row, key) => row[key]);
     }
     return flattenForDisplay(tree, expanded);
-  }, [tree, expanded, search, visibleRows]);
+  }, [tree, expanded, search, visibleRows, sort]);
 
   function toggle(id: number) {
     setExpanded((prev) => {
@@ -386,6 +393,7 @@ export default function Categories() {
   }
 
   const isSearching = search.trim().length > 0;
+  const isFlat = isSearching || sort.by !== null;
 
   return (
     <>
@@ -415,7 +423,7 @@ export default function Categories() {
               />
             </div>
             <div className="flex items-center gap-3">
-              {!isSearching && (
+              {!isFlat && (
                 <>
                   <Button variant="ghost" size="sm" onClick={expandAll}>
                     Expand all
@@ -461,14 +469,12 @@ export default function Categories() {
               <table className="w-full text-sm">
                 <thead className="bg-slate-50 text-slate-600 text-left">
                   <tr>
-                    <th className="px-4 py-2.5 font-medium">Name</th>
-                    <th className="px-4 py-2.5 font-medium">Slug</th>
+                    <SortableHeader sortKey="name" state={sort} onSort={handleSort} className="px-4 py-2.5 font-medium">Name</SortableHeader>
+                    <SortableHeader sortKey="slug" state={sort} onSort={handleSort} className="px-4 py-2.5 font-medium">Slug</SortableHeader>
                     <th className="px-4 py-2.5 font-medium w-24 text-center">
                       Products
                     </th>
-                    <th className="px-4 py-2.5 font-medium w-20 text-center">
-                      Order
-                    </th>
+                    <SortableHeader sortKey="displayOrder" state={sort} onSort={handleSort} align="center" className="px-4 py-2.5 font-medium w-20">Order</SortableHeader>
                     <th className="px-4 py-2.5 font-medium w-24">Status</th>
                     <th className="px-4 py-2.5 font-medium w-36 text-right">
                       Actions

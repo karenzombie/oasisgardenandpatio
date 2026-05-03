@@ -45,6 +45,9 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { PageBody, PageHeader } from "../../StaffShell";
 import { uploadFile, getStaffObjectUrl } from "../../lib/upload";
+import { SortableHeader, sortRows, toggleSort, type SortState } from "../../lib/sortable";
+
+type MfgSortKey = "name" | "slug" | "displayOrder";
 
 function slugify(input: string): string {
   return input
@@ -117,19 +120,23 @@ export default function Manufacturers() {
   const [uploading, setUploading] = useState(false);
   const [confirmDeactivate, setConfirmDeactivate] =
     useState<AdminManufacturer | null>(null);
+  const [sort, setSort] = useState<SortState<MfgSortKey>>({ by: null, order: "desc" });
 
   const rows = list.data ?? [];
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return rows.filter((r) => {
+    const base = rows.filter((r) => {
       if (!showInactive && !r.isActive) return false;
       if (!q) return true;
       return (
         r.name.toLowerCase().includes(q) || r.slug.toLowerCase().includes(q)
       );
     });
-  }, [rows, search, showInactive]);
+    return sortRows(base, sort, (row, key) => row[key]);
+  }, [rows, search, showInactive, sort]);
+
+  const handleSort = (key: MfgSortKey) => setSort((prev) => toggleSort(prev, key));
 
   function openNew() {
     setEditing(null);
@@ -331,12 +338,10 @@ export default function Manufacturers() {
                 <thead className="bg-slate-50 text-slate-600 text-left">
                   <tr>
                     <th className="px-4 py-2.5 font-medium w-16">Logo</th>
-                    <th className="px-4 py-2.5 font-medium">Name</th>
-                    <th className="px-4 py-2.5 font-medium">Slug</th>
+                    <SortableHeader sortKey="name" state={sort} onSort={handleSort} className="px-4 py-2.5 font-medium">Name</SortableHeader>
+                    <SortableHeader sortKey="slug" state={sort} onSort={handleSort} className="px-4 py-2.5 font-medium">Slug</SortableHeader>
                     <th className="px-4 py-2.5 font-medium">Website</th>
-                    <th className="px-4 py-2.5 font-medium w-20 text-center">
-                      Order
-                    </th>
+                    <SortableHeader sortKey="displayOrder" state={sort} onSort={handleSort} align="center" className="px-4 py-2.5 font-medium w-20">Order</SortableHeader>
                     <th className="px-4 py-2.5 font-medium w-24">Status</th>
                     <th className="px-4 py-2.5 font-medium w-28 text-right">
                       Actions

@@ -5,6 +5,8 @@
  * Oasis Garden & Patio API
  * OpenAPI spec version: 0.1.0
  */
+import type { AdminListProductsSortBy } from "./adminListProductsSortBy";
+import type { AdminListProductsSortOrder } from "./adminListProductsSortOrder";
 
 export type AdminListProductsParams = {
   q?: string;
@@ -21,4 +23,6 @@ export type AdminListProductsParams = {
    * @maximum 200
    */
   pageSize?: number;
+  sortBy?: AdminListProductsSortBy;
+  sortOrder?: AdminListProductsSortOrder;
 };

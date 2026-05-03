@@ -1491,6 +1491,8 @@ export const adminListProductsQueryPageDefault = 1;
 export const adminListProductsQueryPageSizeDefault = 50;
 export const adminListProductsQueryPageSizeMax = 200;
 
+export const adminListProductsQuerySortOrderDefault = `asc`;
+
 export const AdminListProductsQueryParams = zod.object({
   q: zod.coerce.string().optional(),
   manufacturerId: zod.coerce.number().optional(),
@@ -1503,6 +1505,12 @@ export const AdminListProductsQueryParams = zod.object({
     .min(1)
     .max(adminListProductsQueryPageSizeMax)
     .default(adminListProductsQueryPageSizeDefault),
+  sortBy: zod
+    .enum(["name", "sku", "manufacturer", "category", "price", "onHand"])
+    .optional(),
+  sortOrder: zod
+    .enum(["asc", "desc"])
+    .default(adminListProductsQuerySortOrderDefault),
 });
 
 export const AdminListProductsResponse = zod.object({
@@ -2305,6 +2313,8 @@ export const adminListInventoryQueryPageDefault = 1;
 export const adminListInventoryQueryPageSizeDefault = 50;
 export const adminListInventoryQueryPageSizeMax = 200;
 
+export const adminListInventoryQuerySortOrderDefault = `asc`;
+
 export const AdminListInventoryQueryParams = zod.object({
   q: zod.coerce.string().optional(),
   status: zod.enum(["in_stock", "low_stock", "out_of_stock"]).optional(),
@@ -2319,6 +2329,19 @@ export const AdminListInventoryQueryParams = zod.object({
     .min(1)
     .max(adminListInventoryQueryPageSizeMax)
     .default(adminListInventoryQueryPageSizeDefault),
+  sortBy: zod
+    .enum([
+      "name",
+      "sku",
+      "manufacturer",
+      "category",
+      "onHand",
+      "reorderThreshold",
+    ])
+    .optional(),
+  sortOrder: zod
+    .enum(["asc", "desc"])
+    .default(adminListInventoryQuerySortOrderDefault),
 });
 
 export const AdminListInventoryResponse = zod.object({

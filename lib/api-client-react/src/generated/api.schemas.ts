@@ -2785,7 +2785,29 @@ export type AdminListProductsParams = {
    * @maximum 200
    */
   pageSize?: number;
+  sortBy?: AdminListProductsSortBy;
+  sortOrder?: AdminListProductsSortOrder;
 };
+
+export type AdminListProductsSortBy =
+  (typeof AdminListProductsSortBy)[keyof typeof AdminListProductsSortBy];
+
+export const AdminListProductsSortBy = {
+  name: "name",
+  sku: "sku",
+  manufacturer: "manufacturer",
+  category: "category",
+  price: "price",
+  onHand: "onHand",
+} as const;
+
+export type AdminListProductsSortOrder =
+  (typeof AdminListProductsSortOrder)[keyof typeof AdminListProductsSortOrder];
+
+export const AdminListProductsSortOrder = {
+  asc: "asc",
+  desc: "desc",
+} as const;
 
 export type AdminListInventoryParams = {
   q?: string;
@@ -2802,6 +2824,8 @@ export type AdminListInventoryParams = {
    * @maximum 200
    */
   pageSize?: number;
+  sortBy?: AdminListInventorySortBy;
+  sortOrder?: AdminListInventorySortOrder;
 };
 
 export type AdminListInventoryStatus =
@@ -2811,6 +2835,26 @@ export const AdminListInventoryStatus = {
   in_stock: "in_stock",
   low_stock: "low_stock",
   out_of_stock: "out_of_stock",
+} as const;
+
+export type AdminListInventorySortBy =
+  (typeof AdminListInventorySortBy)[keyof typeof AdminListInventorySortBy];
+
+export const AdminListInventorySortBy = {
+  name: "name",
+  sku: "sku",
+  manufacturer: "manufacturer",
+  category: "category",
+  onHand: "onHand",
+  reorderThreshold: "reorderThreshold",
+} as const;
+
+export type AdminListInventorySortOrder =
+  (typeof AdminListInventorySortOrder)[keyof typeof AdminListInventorySortOrder];
+
+export const AdminListInventorySortOrder = {
+  asc: "asc",
+  desc: "desc",
 } as const;
 
 export type AdminListInventoryAdjustmentsParams = {
