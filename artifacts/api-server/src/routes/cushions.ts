@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { desc, eq, inArray, sql } from "drizzle-orm";
 import {
   db,
   cushionOrdersTable,
@@ -13,6 +13,7 @@ import {
   UpdateCushionOrderBody,
 } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
+import { cushionSubmitRateLimiter } from "../middlewares/rateLimit";
 import {
   sendCustomerConfirmationEmail,
   sendAdminAlertEmail,
@@ -22,15 +23,6 @@ import { renderCushionOrderPdf } from "../lib/cushionPdf";
 import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
-
-const TYPE_LABELS: Record<string, string> = {
-  hinged_chaise: "Hinged Chaise / Chair",
-  club_chair: "Club Chair (Seat & Back)",
-  trapezoid: "Trapezoid Seat",
-  bench: "Bench",
-  ottoman: "Ottoman",
-  dining_chair: "Dining Chair",
-};
 
 function generateOrderNumber(): string {
   const d = new Date();
@@ -59,6 +51,7 @@ function summarizeRows(
 // ---------- Public submit ----------
 router.post(
   "/cushions/orders",
+  cushionSubmitRateLimiter,
   async (req: Request, res: Response): Promise<void> => {
     const parsed = SubmitCushionOrderBody.safeParse(req.body);
     if (!parsed.success) {
@@ -89,6 +82,43 @@ router.post(
         res.status(400).json({
           error: "Each replacement-cushion item must reference a product",
         });
+        return;
+      }
+    }
+
+    // Pre-validate referenced product/fabric ids so we return a clean 400
+    // instead of a 500 on FK failure inside the transaction.
+    const referencedProductIds = Array.from(
+      new Set(
+        data.items
+          .map((i) => i.productId)
+          .filter((v): v is number => typeof v === "number"),
+      ),
+    );
+    const referencedFabricIds = Array.from(
+      new Set(
+        data.items
+          .map((i) => i.fabricId)
+          .filter((v): v is number => typeof v === "number"),
+      ),
+    );
+    if (referencedProductIds.length) {
+      const found = await db
+        .select({ id: productsTable.id })
+        .from(productsTable)
+        .where(inArray(productsTable.id, referencedProductIds));
+      if (found.length !== referencedProductIds.length) {
+        res.status(400).json({ error: "One or more selected products no longer exist" });
+        return;
+      }
+    }
+    if (referencedFabricIds.length) {
+      const found = await db
+        .select({ id: fabricsTable.id })
+        .from(fabricsTable)
+        .where(inArray(fabricsTable.id, referencedFabricIds));
+      if (found.length !== referencedFabricIds.length) {
+        res.status(400).json({ error: "One or more selected fabrics no longer exist" });
         return;
       }
     }
@@ -127,11 +157,8 @@ router.post(
       if (!inserted) throw new Error("Insert failed");
 
       // Snapshot product names for stock items
-      const productIds = data.items
-        .map((i) => i.productId)
-        .filter((v): v is number => typeof v === "number");
       const productMap = new Map<number, { name: string; sku: string }>();
-      if (productIds.length) {
+      if (referencedProductIds.length) {
         const prods = await tx
           .select({
             id: productsTable.id,
@@ -139,13 +166,30 @@ router.post(
             sku: productsTable.sku,
           })
           .from(productsTable)
-          .where(sql`${productsTable.id} = ANY(${productIds})`);
+          .where(inArray(productsTable.id, referencedProductIds));
         for (const p of prods) productMap.set(p.id, { name: p.name, sku: p.sku });
+      }
+
+      // Snapshot fabric name + item number for stock items so the admin/PDF
+      // is stable even if the catalog fabric is later renamed/removed.
+      const fabricMap = new Map<number, { name: string; itemNumber: string | null }>();
+      if (referencedFabricIds.length) {
+        const fabs = await tx
+          .select({
+            id: fabricsTable.id,
+            name: fabricsTable.name,
+            itemNumber: fabricsTable.itemNumber,
+          })
+          .from(fabricsTable)
+          .where(inArray(fabricsTable.id, referencedFabricIds));
+        for (const f of fabs)
+          fabricMap.set(f.id, { name: f.name, itemNumber: f.itemNumber ?? null });
       }
 
       await tx.insert(cushionOrderItemsTable).values(
         data.items.map((it, idx) => {
           const prod = it.productId ? productMap.get(it.productId) : undefined;
+          const fab = it.fabricId ? fabricMap.get(it.fabricId) : undefined;
           return {
             orderId: inserted.id,
             position: idx,
@@ -163,8 +207,8 @@ router.post(
             productNameSnapshot: prod?.name ?? null,
             productSkuSnapshot: prod?.sku ?? null,
             fabricId: it.fabricId ?? null,
-            fabricName: it.fabricName ?? null,
-            fabricItemNumber: it.fabricItemNumber ?? null,
+            fabricName: it.fabricName ?? fab?.name ?? null,
+            fabricItemNumber: it.fabricItemNumber ?? fab?.itemNumber ?? null,
           };
         }),
       );
@@ -188,7 +232,12 @@ router.post(
         orderNumber: orderRow.orderNumber,
         itemSummary: summary,
         orderKind: data.orderKind,
-      });
+      }).catch((err) =>
+        logger.error(
+          { err, orderNumber: orderRow.orderNumber },
+          "Cushion customer confirmation email failed",
+        ),
+      );
     }
     const adminEmail = process.env["ADMIN_EMAIL"];
     if (adminEmail) {
@@ -204,7 +253,12 @@ router.post(
         itemSummary: summary,
         detailUrl: `${baseUrl}/admin/cushion-orders/${orderRow.id}`,
         orderKind: data.orderKind,
-      });
+      }).catch((err) =>
+        logger.error(
+          { err, orderNumber: orderRow.orderNumber },
+          "Cushion admin alert email failed",
+        ),
+      );
     }
 
     res.json({ id: orderRow.id, orderNumber: orderRow.orderNumber });
@@ -261,7 +315,7 @@ router.get(
           productName: cushionOrderItemsTable.productNameSnapshot,
         })
         .from(cushionOrderItemsTable)
-        .where(sql`${cushionOrderItemsTable.orderId} = ANY(${ids})`);
+        .where(inArray(cushionOrderItemsTable.orderId, ids));
       for (const it of itemRows) {
         const list = itemsByOrder.get(it.orderId) ?? [];
         list.push({
@@ -520,7 +574,7 @@ router.get(
           sku: productsTable.sku,
         })
         .from(productsTable)
-        .where(sql`${productsTable.id} = ANY(${productIds})`);
+        .where(inArray(productsTable.id, productIds));
       for (const p of rows) productMap.set(p.id, { name: p.name, sku: p.sku });
     }
     try {
@@ -541,8 +595,5 @@ router.get(
     }
   },
 );
-
-// Silence unused import lint
-void fabricsTable;
 
 export default router;

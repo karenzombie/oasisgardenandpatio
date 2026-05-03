@@ -39,6 +39,12 @@ export default function Login() {
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         setErrorMessage("Invalid email or password.");
+      } else if (err instanceof ApiError && err.status === 403) {
+        // Staff accounts are not allowed through the public customer login —
+        // they must use the dedicated /staff portal (with 2FA).
+        setErrorMessage(
+          "This account belongs to a staff member. Please sign in at the staff portal.",
+        );
       } else {
         setErrorMessage("Something went wrong. Please try again.");
       }

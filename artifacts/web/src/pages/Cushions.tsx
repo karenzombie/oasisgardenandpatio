@@ -212,7 +212,7 @@ export default function Cushions() {
             ...baseFields,
             fabricName: fabricSelection.label.trim(),
             fabricItemNumber: fabricSelection.itemNumber.trim() || null,
-            contrastingFabric: contrastingFabric.trim() || null,
+            contrastingFabricName: contrastingFabric.trim() || null,
             ties: (ties || null) as never,
             seatWelt: (seatWelt || null) as never,
             backWelt: (backWelt || null) as never,

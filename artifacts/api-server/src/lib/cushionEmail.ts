@@ -1,4 +1,3 @@
-import { logger } from "./logger";
 import { sendEmail } from "./email";
 
 interface CushionItemSummary {
@@ -55,16 +54,15 @@ export async function sendCustomerConfirmationEmail(
       If you have questions, reply to this email or call (661) 255-9909.
     </p>
   `;
-  try {
-    await sendEmail({
-      to: args.to,
-      subject: `Cushion order received — ${args.orderNumber}`,
-      title: "Cushion order received",
-      bodyHtml: body,
-    });
-  } catch (err) {
-    logger.error({ err, orderNumber: args.orderNumber }, "Cushion customer email failed");
-  }
+  // Intentionally do NOT swallow errors here — callers (the public submit
+  // path uses `void` to fire-and-forget; the staff resend path awaits and
+  // needs the rejection to propagate so it can return a truthful 5xx).
+  await sendEmail({
+    to: args.to,
+    subject: `Cushion order received — ${args.orderNumber}`,
+    title: "Cushion order received",
+    bodyHtml: body,
+  });
 }
 
 interface AdminAlertArgs {
@@ -88,16 +86,14 @@ export async function sendAdminAlertEmail(args: AdminAlertArgs): Promise<void> {
       <a href="${escapeHtml(args.detailUrl)}">View in admin dashboard</a>
     </p>
   `;
-  try {
-    await sendEmail({
-      to: args.to,
-      subject: `New cushion order — ${args.orderNumber}`,
-      title: "New cushion order received",
-      bodyHtml: body,
-    });
-  } catch (err) {
-    logger.error({ err, orderNumber: args.orderNumber }, "Cushion admin email failed");
-  }
+  // Same rationale as customer email — let the caller decide what to do
+  // with delivery failures.
+  await sendEmail({
+    to: args.to,
+    subject: `New cushion order — ${args.orderNumber}`,
+    title: "New cushion order received",
+    bodyHtml: body,
+  });
 }
 
 function escapeHtml(s: string): string {

@@ -178,6 +178,19 @@ router.post("/auth/login", loginRateLimiter, async (req, res): Promise<void> => 
     return;
   }
 
+  // Staff (agent / admin) accounts must sign in through the dedicated
+  // /staff portal so they pass the 2FA + password-rotation gates. Reject
+  // them here only AFTER verifying the password so this endpoint can't be
+  // used as an oracle to discover which addresses are staff accounts.
+  if (user.role !== "customer") {
+    res.status(403).json({
+      error:
+        "This account belongs to a staff member. Please sign in through the staff portal at /staff.",
+      code: "staff_account",
+    });
+    return;
+  }
+
   await db
     .update(usersTable)
     .set({ lastLoginAt: new Date() })

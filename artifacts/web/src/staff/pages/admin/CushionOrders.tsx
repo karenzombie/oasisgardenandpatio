@@ -38,12 +38,23 @@ export default function CushionOrders() {
   const [q, setQ] = useState("");
 
   const { data, isLoading } = useListCushionOrders({
-    pageSize: 100,
+    limit: 100,
     ...(status !== "all" ? { status } : {}),
-    ...(q.trim() ? { q: q.trim() } : {}),
-  } as never);
+  });
 
-  const rows = data?.rows ?? [];
+  // Client-side filter on the loaded page (server doesn't support free-text
+  // search yet — keep the UI affordance but apply locally).
+  const allRows = data?.rows ?? [];
+  const needle = q.trim().toLowerCase();
+  const rows = needle
+    ? allRows.filter(
+        (r) =>
+          r.orderNumber.toLowerCase().includes(needle) ||
+          r.customerName.toLowerCase().includes(needle) ||
+          (r.customerEmail ?? "").toLowerCase().includes(needle) ||
+          (r.itemSummary ?? "").toLowerCase().includes(needle),
+      )
+    : allRows;
 
   return (
     <>
