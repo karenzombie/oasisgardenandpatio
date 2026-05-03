@@ -3063,6 +3063,7 @@ export const AdminUpdateOrderShippingMethodResponse = zod.object({
   walkInName: zod.string().nullable(),
   walkInEmail: zod.string().nullable(),
   walkInPhone: zod.string().nullable(),
+  isInternalRestock: zod.boolean(),
   shipments: zod.array(
     zod.object({
       id: zod.number(),
@@ -3351,6 +3352,7 @@ export const AdminMarkOrderPaidInFullResponse = zod.object({
   walkInName: zod.string().nullable(),
   walkInEmail: zod.string().nullable(),
   walkInPhone: zod.string().nullable(),
+  isInternalRestock: zod.boolean(),
   shipments: zod.array(
     zod.object({
       id: zod.number(),
@@ -3521,6 +3523,7 @@ export const AdminUpdateOrderPaymentResponse = zod.object({
   walkInName: zod.string().nullable(),
   walkInEmail: zod.string().nullable(),
   walkInPhone: zod.string().nullable(),
+  isInternalRestock: zod.boolean(),
   shipments: zod.array(
     zod.object({
       id: zod.number(),
@@ -3680,6 +3683,7 @@ export const AdminDeleteOrderPaymentResponse = zod.object({
   walkInName: zod.string().nullable(),
   walkInEmail: zod.string().nullable(),
   walkInPhone: zod.string().nullable(),
+  isInternalRestock: zod.boolean(),
   shipments: zod.array(
     zod.object({
       id: zod.number(),
@@ -4036,6 +4040,7 @@ export const adminCreateOrderBodyOrderTypeDefault = `in_store`;
 export const adminCreateOrderBodyStatusDefault = `pending`;
 export const adminCreateOrderBodyIsQuickOrderDefault = false;
 export const adminCreateOrderBodySkipVendorOrderDefault = false;
+export const adminCreateOrderBodyIsInternalRestockDefault = false;
 
 export const AdminCreateOrderBody = zod.object({
   customerId: zod
@@ -4102,6 +4107,12 @@ export const AdminCreateOrderBody = zod.object({
     .describe("Optional walk-in customer name when no customerId is provided"),
   walkInEmail: zod.string().nullish(),
   walkInPhone: zod.string().nullish(),
+  isInternalRestock: zod
+    .boolean()
+    .default(adminCreateOrderBodyIsInternalRestockDefault)
+    .describe(
+      "Internal inventory restock order with no customer, addresses, pricing, or tax. Items are grouped by manufacturer into vendor orders automatically on creation.",
+    ),
 });
 
 /**
@@ -4119,6 +4130,12 @@ export const AdminListOrdersQueryParams = zod.object({
     .describe("Match order number, customer email, or customer name"),
   customerId: zod.coerce.number().optional(),
   agentId: zod.coerce.number().optional(),
+  includeRestocks: zod.coerce
+    .boolean()
+    .optional()
+    .describe(
+      "Include internal inventory-restock orders in the results. Defaults to false.",
+    ),
   limit: zod.coerce
     .number()
     .min(1)
@@ -4143,6 +4160,7 @@ export const AdminListOrdersResponse = zod.object({
       agentName: zod.string().nullable(),
       itemCount: zod.number(),
       placedAt: zod.coerce.date(),
+      isInternalRestock: zod.boolean(),
     }),
   ),
   total: zod.number(),
@@ -4270,6 +4288,7 @@ export const AdminGetOrderResponse = zod.object({
   walkInName: zod.string().nullable(),
   walkInEmail: zod.string().nullable(),
   walkInPhone: zod.string().nullable(),
+  isInternalRestock: zod.boolean(),
   shipments: zod.array(
     zod.object({
       id: zod.number(),
@@ -4433,6 +4452,7 @@ export const AdminUpdateOrderStatusResponse = zod.object({
   walkInName: zod.string().nullable(),
   walkInEmail: zod.string().nullable(),
   walkInPhone: zod.string().nullable(),
+  isInternalRestock: zod.boolean(),
   shipments: zod.array(
     zod.object({
       id: zod.number(),
@@ -4613,6 +4633,7 @@ export const AdminUpdateOrderTotalsResponse = zod.object({
   walkInName: zod.string().nullable(),
   walkInEmail: zod.string().nullable(),
   walkInPhone: zod.string().nullable(),
+  isInternalRestock: zod.boolean(),
   shipments: zod.array(
     zod.object({
       id: zod.number(),
@@ -4775,6 +4796,7 @@ export const AdminUpdateOrderNotesResponse = zod.object({
   walkInName: zod.string().nullable(),
   walkInEmail: zod.string().nullable(),
   walkInPhone: zod.string().nullable(),
+  isInternalRestock: zod.boolean(),
   shipments: zod.array(
     zod.object({
       id: zod.number(),

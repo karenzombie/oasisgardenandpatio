@@ -81,6 +81,9 @@ export const ordersTable = pgTable(
     walkInName: text("walk_in_name"),
     walkInEmail: text("walk_in_email"),
     walkInPhone: text("walk_in_phone"),
+    isInternalRestock: boolean("is_internal_restock")
+      .notNull()
+      .default(false),
     placedAt: timestamp("placed_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

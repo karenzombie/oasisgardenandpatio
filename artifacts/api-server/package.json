@@ -30,7 +30,8 @@
     "pino-http": "^10",
     "qrcode": "^1.5.4",
     "react": "catalog:",
-    "resend": "^6.12.2"
+    "resend": "^6.12.2",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@types/bcryptjs": "^3.0.0",

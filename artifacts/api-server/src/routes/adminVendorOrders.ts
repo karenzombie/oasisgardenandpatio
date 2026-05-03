@@ -80,7 +80,7 @@ function itemToPayload(it: OrderItem) {
 // concurrent generate calls serialize through the SELECT max + INSERT without
 // risking duplicate numbers.
 const VO_NUMBER_LOCK_TAG = 0x564f; // 'VO'
-async function nextVendorOrderNumber(
+export async function nextVendorOrderNumber(
   tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
 ): Promise<string> {
   const year = new Date().getUTCFullYear();

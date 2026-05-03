@@ -1,4 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
+import { z } from "zod";
 import { and, asc, desc, eq, ilike, or, sql, inArray } from "drizzle-orm";
 import {
   db,
@@ -37,6 +38,7 @@ import { recordAudit } from "../lib/audit";
 import { recordHistory } from "../lib/history";
 import { loadOrderShipments } from "./adminOrderShipments";
 import { loadOrderPayments } from "./adminOrderPayments";
+import { nextVendorOrderNumber } from "./adminVendorOrders";
 
 const router: IRouter = Router();
 const DEFAULT_LIMIT = 50;
@@ -110,7 +112,8 @@ router.get(
       res.status(400).json({ error: "Invalid query" });
       return;
     }
-    const { status, q, customerId, limit, offset } = parsed.data;
+    const { status, q, customerId, limit, offset, includeRestocks } =
+      parsed.data;
     // Agents are scoped to orders they created. Admins may filter by any agent.
     const agentId =
       req.user?.role === "agent" ? req.user.id : parsed.data.agentId;
@@ -120,6 +123,10 @@ router.get(
       conditions.push(eq(ordersTable.customerId, customerId));
     if (agentId !== undefined)
       conditions.push(eq(ordersTable.createdByAgentId, agentId));
+    // Internal inventory-restock orders are hidden from the standard order
+    // list — they are visible from the vendor-orders area instead.
+    if (!includeRestocks)
+      conditions.push(eq(ordersTable.isInternalRestock, false));
     if (q && q.trim()) {
       const needle = `%${q.trim()}%`;
       const orExpr = or(
@@ -176,6 +183,7 @@ router.get(
         agentName: r.agent ? nameOf(r.agent.firstName, r.agent.lastName) : null,
         itemCount: r.itemCount,
         placedAt: r.order.placedAt.toISOString(),
+        isInternalRestock: r.order.isInternalRestock,
       })),
       total: countRow?.count ?? 0,
     });
@@ -353,6 +361,7 @@ export async function loadOrderDetail(orderId: number) {
     walkInName: o.walkInName,
     walkInEmail: o.walkInEmail,
     walkInPhone: o.walkInPhone,
+    isInternalRestock: o.isInternalRestock,
   };
 }
 
@@ -874,12 +883,51 @@ function money(n: number): string {
   return (Math.round(n * 100) / 100).toFixed(2);
 }
 
+// Restock invariants enforced at the schema level so generated clients and
+// route logic agree: an internal restock has no customer/addresses and every
+// line item must reference a real product (so we can group by manufacturer).
+const AdminCreateOrderBodyChecked = AdminCreateOrderBody.superRefine(
+  (data, ctx) => {
+    if (!data.isInternalRestock) return;
+    if (data.customerId != null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["customerId"],
+        message: "Inventory restock orders cannot be tied to a customer",
+      });
+    }
+    if (data.shippingAddressId != null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["shippingAddressId"],
+        message: "Inventory restock orders do not accept a shipping address",
+      });
+    }
+    if (data.billingAddressId != null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["billingAddressId"],
+        message: "Inventory restock orders do not accept a billing address",
+      });
+    }
+    data.items.forEach((it, i) => {
+      if (it.productId == null) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["items", i, "productId"],
+          message: "Each restock line must reference a product",
+        });
+      }
+    });
+  },
+);
+
 router.post(
   "/admin/orders",
   requireAuth,
   requireRole("admin", "agent"),
   async (req: Request, res: Response): Promise<void> => {
-    const parsed = AdminCreateOrderBody.safeParse(req.body);
+    const parsed = AdminCreateOrderBodyChecked.safeParse(req.body);
     if (!parsed.success) {
       res
         .status(400)
@@ -887,14 +935,42 @@ router.post(
       return;
     }
     const data = parsed.data;
-    const isQuickOrder = data.isQuickOrder ?? false;
-    const skipVendorOrder = data.skipVendorOrder ?? false;
+    const isInternalRestock = data.isInternalRestock ?? false;
+    const isQuickOrder = isInternalRestock ? false : (data.isQuickOrder ?? false);
+    const skipVendorOrder = isInternalRestock
+      ? false
+      : (data.skipVendorOrder ?? false);
 
     if (skipVendorOrder && !isQuickOrder) {
       res.status(400).json({
         error: "skipVendorOrder is only allowed on quick orders",
       });
       return;
+    }
+
+    if (isInternalRestock) {
+      if (data.customerId != null) {
+        res.status(400).json({
+          error: "Inventory restock orders cannot be tied to a customer",
+        });
+        return;
+      }
+      if (data.shippingAddressId != null || data.billingAddressId != null) {
+        res.status(400).json({
+          error: "Inventory restock orders do not accept shipping or billing addresses",
+        });
+        return;
+      }
+      // Restock orders are internal — no per-line manual pricing required.
+      // Every item must reference a real product so we can group by manufacturer.
+      for (const it of data.items) {
+        if (it.productId == null) {
+          res.status(400).json({
+            error: "Each restock line must reference a product",
+          });
+          return;
+        }
+      }
     }
 
     let customer: { id: number } | null = null;
@@ -909,7 +985,7 @@ router.post(
         return;
       }
       customer = row;
-    } else if (!isQuickOrder) {
+    } else if (!isQuickOrder && !isInternalRestock) {
       res.status(400).json({
         error: "customerId is required unless isQuickOrder is true",
       });
@@ -971,7 +1047,7 @@ router.post(
     }
 
     try {
-      const orderId = await db.transaction(async (tx) => {
+      const txResult = await db.transaction(async (tx) => {
         let subtotal = 0;
         const prepared: Array<{
           productId: number | null;
@@ -1061,11 +1137,14 @@ router.post(
           });
         }
 
-        const taxRate = data.taxRate ?? 0;
-        const taxAmount = subtotal * taxRate;
-        const deliveryAmount = data.deliveryAmount ?? 0;
-        const total = subtotal + taxAmount + deliveryAmount;
-        const deposit = data.depositAmount ?? 0;
+        // Restock orders are zero-priced internal records — pricing/tax/
+        // delivery/deposit fields are forced to zero regardless of payload.
+        const taxRate = isInternalRestock ? 0 : (data.taxRate ?? 0);
+        const effectiveSubtotal = isInternalRestock ? 0 : subtotal;
+        const taxAmount = effectiveSubtotal * taxRate;
+        const deliveryAmount = isInternalRestock ? 0 : (data.deliveryAmount ?? 0);
+        const total = effectiveSubtotal + taxAmount + deliveryAmount;
+        const deposit = isInternalRestock ? 0 : (data.depositAmount ?? 0);
         const balanceDue = total - deposit;
 
         const status = data.status ?? "pending";
@@ -1077,7 +1156,7 @@ router.post(
             createdByAgentId: req.user?.id ?? null,
             orderType: data.orderType ?? "in_store",
             status,
-            subtotal: money(subtotal),
+            subtotal: money(effectiveSubtotal),
             taxAmount: money(taxAmount),
             deliveryAmount: money(deliveryAmount),
             total: money(total),
@@ -1094,13 +1173,25 @@ router.post(
             walkInName: data.walkInName?.trim() || null,
             walkInEmail: data.walkInEmail?.trim().toLowerCase() || null,
             walkInPhone: data.walkInPhone?.trim() || null,
+            isInternalRestock,
           })
           .returning();
         if (!order) throw new Error("Order insert returned no row");
 
-        await tx
+        // For restock orders we wipe pricing-related fields on each line
+        // (unitPrice/amount/discount stay at zero in the snapshot).
+        const itemValues = prepared.map((p) => ({
+          ...p,
+          unitPrice: isInternalRestock ? money(0) : p.unitPrice,
+          amount: isInternalRestock ? money(0) : p.amount,
+          discountAmount: isInternalRestock ? money(0) : p.discountAmount,
+          discountReason: isInternalRestock ? null : p.discountReason,
+          orderId: order.id,
+        }));
+        const insertedItems = await tx
           .insert(orderItemsTable)
-          .values(prepared.map((p) => ({ ...p, orderId: order.id })));
+          .values(itemValues)
+          .returning();
 
         await tx.insert(orderStatusHistoryTable).values({
           orderId: order.id,
@@ -1110,14 +1201,79 @@ router.post(
           note: "Order created",
         });
 
-        return order.id;
+        // Auto-generate vendor orders for inventory restocks: group items by
+        // their product's manufacturer and create one vendor_order per group,
+        // assigning vendor_order_id back to the matching order_items rows.
+        let restockVendorOrderIds: number[] = [];
+        if (isInternalRestock) {
+          const productIds = Array.from(
+            new Set(
+              insertedItems
+                .map((it) => it.productId)
+                .filter((id): id is number => id != null),
+            ),
+          );
+          const prods = productIds.length
+            ? await tx
+                .select({
+                  id: productsTable.id,
+                  manufacturerId: productsTable.manufacturerId,
+                })
+                .from(productsTable)
+                .where(inArray(productsTable.id, productIds))
+            : [];
+          const mfgByProductId = new Map(
+            prods.map((p) => [p.id, p.manufacturerId]),
+          );
+          const itemsByMfg = new Map<number, number[]>();
+          for (const it of insertedItems) {
+            if (it.productId == null) continue;
+            const mfg = mfgByProductId.get(it.productId);
+            if (mfg == null) {
+              throw new Error(
+                `Product ${it.productId} has no manufacturer assigned — cannot create restock vendor order`,
+              );
+            }
+            const arr = itemsByMfg.get(mfg) ?? [];
+            arr.push(it.id);
+            itemsByMfg.set(mfg, arr);
+          }
+          for (const [manufacturerId, itemIds] of itemsByMfg) {
+            const number = await nextVendorOrderNumber(tx);
+            const [vo] = await tx
+              .insert(vendorOrdersTable)
+              .values({
+                vendorOrderNumber: number,
+                customerOrderId: order.id,
+                manufacturerId,
+                status: "pending",
+                notes: data.notes ?? null,
+                createdByUserId: req.user?.id ?? null,
+              })
+              .returning();
+            if (!vo) continue;
+            await tx
+              .update(orderItemsTable)
+              .set({ vendorOrderId: vo.id })
+              .where(inArray(orderItemsTable.id, itemIds));
+            restockVendorOrderIds.push(vo.id);
+          }
+        }
+
+        return { id: order.id, restockVendorOrderIds };
       });
 
+      const { id: orderId, restockVendorOrderIds } = txResult;
+
       await recordAudit(req, {
-        action: "order.create",
+        action: isInternalRestock ? "order.create_restock" : "order.create",
         entityType: "order",
         entityId: orderId,
-        changes: { itemCount: data.items.length },
+        changes: {
+          itemCount: data.items.length,
+          isInternalRestock,
+          vendorOrderIds: restockVendorOrderIds,
+        },
       });
 
       const [createdRow] = await db

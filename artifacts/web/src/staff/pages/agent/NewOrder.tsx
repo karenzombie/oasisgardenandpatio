@@ -33,7 +33,7 @@ import { useToast } from "@/hooks/use-toast";
 import { PageBody, PageHeader } from "../../StaffShell";
 import { useStaffSession } from "../../lib/staffSession";
 
-type CustomerMode = "existing" | "new" | "quick";
+type CustomerMode = "existing" | "new" | "quick" | "restock";
 
 interface LineItem {
   productId: number | null;
@@ -125,6 +125,7 @@ export default function AgentNewOrder() {
   const [pickProductFor, setPickProductFor] = useState<number | null>(null);
 
   const isQuickOrder = customerMode === "quick";
+  const isRestockOrder = customerMode === "restock";
 
   // Reset side-state when changing modes.
   useEffect(() => {
@@ -134,6 +135,13 @@ export default function AgentNewOrder() {
     }
     if (customerMode !== "quick") {
       setSkipVendorOrder(false);
+    }
+    if (customerMode === "restock") {
+      // Restock orders are zero-priced internal records — clear pricing
+      // toggles so the user is never confused by stale auto-quote numbers.
+      setTaxMode("auto");
+      setDeliveryMode("auto");
+      setDepositAmount("0");
     }
   }, [customerMode]);
 
@@ -165,6 +173,7 @@ export default function AgentNewOrder() {
   // can't overwrite a newer one when the user is typing quickly.
   const quoteSeqRef = useRef(0);
   useEffect(() => {
+    if (isRestockOrder) return; // No pricing on internal restock orders.
     if (taxMode === "manual" && deliveryMode === "manual") return;
     const cleanItems = items
       .filter((it) => it.quantity > 0 && it.unitPrice >= 0 && (it.description.trim() || it.productId))
@@ -203,7 +212,7 @@ export default function AgentNewOrder() {
     }, 350);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items, shippingState, shippingZip, taxMode, deliveryMode]);
+  }, [items, shippingState, shippingZip, taxMode, deliveryMode, isRestockOrder]);
 
   const taxRate = taxMode === "auto" ? autoTaxRate : (Number(taxRatePctManual) || 0) / 100;
   const taxAmount = taxMode === "auto" ? autoTaxAmount : subtotal * taxRate;
@@ -256,7 +265,9 @@ export default function AgentNewOrder() {
 
     let customerIdToUse: number | null = null;
 
-    if (customerMode === "existing") {
+    if (isRestockOrder) {
+      // Validated below — every line must reference a product.
+    } else if (customerMode === "existing") {
       if (!customer) {
         toast({ title: "Pick a customer", variant: "destructive" });
         return;
@@ -309,12 +320,21 @@ export default function AgentNewOrder() {
       toast({ title: "Add at least one item with a description", variant: "destructive" });
       return;
     }
+    if (isRestockOrder && cleanItems.some((it) => it.productId == null)) {
+      toast({
+        title: "Pick a product for every restock line",
+        description: "Inventory restock lines must reference a product so the system can group them by manufacturer.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
       const order = await createOrder.mutateAsync({
         data: {
           customerId: customerIdToUse,
           isQuickOrder,
+          isInternalRestock: isRestockOrder,
           skipVendorOrder: isQuickOrder ? skipVendorOrder : false,
           walkInName: isQuickOrder ? walkIn.name.trim() || null : null,
           walkInEmail: isQuickOrder ? walkIn.email.trim() || null : null,
@@ -323,11 +343,11 @@ export default function AgentNewOrder() {
             customerMode === "existing" && shippingAddressId ? Number(shippingAddressId) : null,
           billingAddressId:
             customerMode === "existing" && shippingAddressId ? Number(shippingAddressId) : null,
-          taxRate,
-          deliveryAmount: delivery,
-          depositAmount: deposit,
+          taxRate: isRestockOrder ? 0 : taxRate,
+          deliveryAmount: isRestockOrder ? 0 : delivery,
+          depositAmount: isRestockOrder ? 0 : deposit,
           orderType: "in_store",
-          salespersonName: salespersonName.trim() || null,
+          salespersonName: isRestockOrder ? null : salespersonName.trim() || null,
           specialInstructions: specialInstructions.trim() || null,
           items: cleanItems.map((it) => ({
             productId: it.productId,
@@ -335,14 +355,25 @@ export default function AgentNewOrder() {
             fabricId: it.fabricId,
             description: it.description.trim(),
             quantity: it.quantity,
-            unitPrice: it.unitPrice,
+            unitPrice: isRestockOrder ? 0 : it.unitPrice,
             discountAmount: 0,
             discountReason: null,
             notes: null,
           })),
         },
       });
-      toast({ title: `Order ${order.orderNumber} created` });
+      if (isRestockOrder) {
+        const voCount = order.vendorOrders?.length ?? 0;
+        toast({
+          title: `Restock created`,
+          description:
+            voCount > 0
+              ? `${voCount} vendor order${voCount === 1 ? "" : "s"} generated.`
+              : "No vendor orders were generated — check that each product has a manufacturer.",
+        });
+      } else {
+        toast({ title: `Order ${order.orderNumber} created` });
+      }
       navigate(`${orderRoutePrefix}/${order.id}`);
     } catch (err: unknown) {
       toast({
@@ -356,21 +387,30 @@ export default function AgentNewOrder() {
   const submitDisabled =
     createOrder.isPending ||
     createCustomer.isPending ||
-    (customerMode === "existing" && !customer);
+    (customerMode === "existing" && !customer) ||
+    (isRestockOrder && items.some((it) => it.description.trim() && it.productId == null));
 
   return (
     <>
-      <PageHeader title="New Order" subtitle="Build an in-store order for a customer." />
+      <PageHeader
+        title="New Order"
+        subtitle={
+          isRestockOrder
+            ? "Create an internal inventory restock — items will be grouped into vendor orders by manufacturer."
+            : "Build an in-store order for a customer."
+        }
+      />
       <PageBody>
         <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2 space-y-4">
             <div className="rounded-md border bg-white p-4">
               <div className="text-xs font-medium text-slate-500 uppercase mb-2">Customer</div>
               <Tabs value={customerMode} onValueChange={(v) => setCustomerMode(v as CustomerMode)}>
-                <TabsList className="grid grid-cols-3 w-full">
+                <TabsList className="grid grid-cols-4 w-full">
                   <TabsTrigger value="existing">Existing</TabsTrigger>
                   <TabsTrigger value="new">New</TabsTrigger>
                   <TabsTrigger value="quick">Quick / walk-in</TabsTrigger>
+                  <TabsTrigger value="restock">Inventory restock</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="existing" className="mt-3">
@@ -463,6 +503,17 @@ export default function AgentNewOrder() {
                     </div>
                   </div>
                 </TabsContent>
+
+                <TabsContent value="restock" className="mt-3 space-y-2">
+                  <div className="text-sm text-slate-700">
+                    No customer or pricing — this is an internal inventory restock.
+                  </div>
+                  <div className="text-xs text-slate-500">
+                    Add as many products as you need. On submit, the system groups them
+                    by manufacturer and creates one vendor order per manufacturer
+                    automatically. Tax, delivery, and deposits are skipped.
+                  </div>
+                </TabsContent>
               </Tabs>
             </div>
 
@@ -518,16 +569,23 @@ export default function AgentNewOrder() {
                     </div>
                     <div className="col-span-2">
                       <Label className="text-xs">
-                        Unit price{it.unitPriceOverridden && <span className="text-amber-600"> (override)</span>}
+                        {isRestockOrder ? (
+                          <span className="text-slate-400">Unit price (n/a)</span>
+                        ) : (
+                          <>Unit price{it.unitPriceOverridden && <span className="text-amber-600"> (override)</span>}</>
+                        )}
                       </Label>
-                      <Input type="number" min={0} step="0.01" value={it.unitPrice}
+                      <Input type="number" min={0} step="0.01" value={isRestockOrder ? 0 : it.unitPrice}
+                        disabled={isRestockOrder}
                         onChange={(e) => updateItem(idx, {
                           unitPrice: Number(e.target.value) || 0,
                           unitPriceOverridden: true,
                         })} />
                     </div>
                     <div className="col-span-2 text-right text-sm pt-5">
-                      {fmtMoney((Number(it.quantity) || 0) * (Number(it.unitPrice) || 0))}
+                      {isRestockOrder
+                        ? <span className="text-slate-400">—</span>
+                        : fmtMoney((Number(it.quantity) || 0) * (Number(it.unitPrice) || 0))}
                     </div>
                     <div className="col-span-1">
                       <Button type="button" variant="ghost" size="sm" onClick={() => removeItem(idx)}
@@ -541,12 +599,14 @@ export default function AgentNewOrder() {
             </div>
 
             <div className="rounded-md border bg-white p-4 grid grid-cols-2 gap-3">
-              <div>
-                <Label>Salesperson name</Label>
-                <Input value={salespersonName} onChange={(e) => setSalespersonName(e.target.value)} />
-              </div>
-              <div className="col-span-2">
-                <Label>Special instructions</Label>
+              {!isRestockOrder && (
+                <div>
+                  <Label>Salesperson name</Label>
+                  <Input value={salespersonName} onChange={(e) => setSalespersonName(e.target.value)} />
+                </div>
+              )}
+              <div className={isRestockOrder ? "col-span-2" : "col-span-2"}>
+                <Label>{isRestockOrder ? "Notes" : "Special instructions"}</Label>
                 <Textarea rows={2} value={specialInstructions}
                   onChange={(e) => setSpecialInstructions(e.target.value)} />
               </div>
@@ -554,6 +614,34 @@ export default function AgentNewOrder() {
           </div>
 
           <div className="space-y-4">
+            {isRestockOrder ? (
+              <div className="rounded-md border bg-white p-4 space-y-3">
+                <div className="text-xs font-medium text-slate-500 uppercase">Restock summary</div>
+                <div className="text-sm text-slate-600">
+                  This is an internal inventory order. No customer, pricing, tax,
+                  delivery, or deposit will be recorded. Each line must reference
+                  a product so the system can group lines by manufacturer into
+                  vendor orders.
+                </div>
+                <div className="text-sm border-t pt-3 space-y-1">
+                  <div className="flex justify-between">
+                    <span>Lines</span>
+                    <span>{items.filter((it) => it.description.trim()).length}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Total units</span>
+                    <span>
+                      {items
+                        .filter((it) => it.description.trim())
+                        .reduce((s, it) => s + (Number(it.quantity) || 0), 0)}
+                    </span>
+                  </div>
+                </div>
+                <Button type="submit" className="w-full" disabled={submitDisabled}>
+                  {createOrder.isPending ? "Creating restock…" : "Create restock & vendor orders"}
+                </Button>
+              </div>
+            ) : (
             <div className="rounded-md border bg-white p-4 space-y-3">
               <div className="text-xs font-medium text-slate-500 uppercase">Totals</div>
 
@@ -618,6 +706,7 @@ export default function AgentNewOrder() {
                 {createOrder.isPending || createCustomer.isPending ? "Creating…" : "Create order"}
               </Button>
             </div>
+            )}
           </div>
         </form>
 

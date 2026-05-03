@@ -168,3 +168,20 @@ User explicitly directed: **ask rather than assume on ambiguous build decisions*
 - **Order detail payload**: `loadOrderDetail` now also returns `payments[]`, plus the convenience `amountPaid` and `paidInFull` flags. All mutation endpoints respond with the full `AdminOrderDetail` so the client cache replaces atomically (no extra refetch round-trip needed).
 - **UI** (`artifacts/web/src/staff/pages/admin/PaymentsPanel.tsx`, mounted in admin `OrderDetail.tsx` directly above the Delivery card): summary row shows order total / amount paid / balance due, with a "Paid in full" / "Partial" / "Unpaid" badge. "Record payment" opens a dialog with amount (with a one-click "Use remaining balance" shortcut), method, status, received-at, reference / check #, optional card type + last 4, and notes. "Mark paid in full" is a one-click flow that just asks for the method and reference. All payments render in a table with edit/delete actions and the recorder's email; deletes prompt for confirmation and recompute the balance.
 - **History**: each create/update/delete writes an `entity_history` row tagged `entityType="order"` with the payment id and amount in the note, so the existing HistoryPanel surfaces payment changes alongside totals and shipping edits.
+
+## Inventory restock vendor orders (May 2026)
+
+Staff can now create vendor orders that aren't tied to a customer order, for restocking inventory across multiple vendors in one go.
+
+- **Schema additions**: `orders.is_internal_restock boolean not null default false` (+ `orders_is_internal_restock_idx`). Applied via direct ALTER and mirrored in `lib/db/src/schema/orders.ts`. No vendor-orders schema change — restocks reuse the existing `vendor_orders → customer_order_id → orders` link by way of a zero-priced internal "shell" order that holds the line items.
+- **Endpoint**: `POST /api/admin/orders` accepts a new `isInternalRestock: true` mode. When set:
+  - `customerId`, `shippingAddressId`, `billingAddressId` must be null; tax/delivery/deposit are forced to 0; `walkInName/Email/Phone` are ignored; `isQuickOrder` and `skipVendorOrder` are forced false.
+  - Every line item must reference a real `productId` so the system can look up `products.manufacturer_id` for grouping.
+  - After inserting the shell order + items, the same handler groups items by `manufacturer_id`, mints a vendor-order number per group via the shared `nextVendorOrderNumber(tx)` helper (now exported from `adminVendorOrders.ts`), inserts one `vendor_orders` row per manufacturer, and assigns `order_items.vendor_order_id` back. Returns the full `AdminOrderDetail` (which already includes `vendorOrders[]`).
+- **List filtering**: `GET /api/admin/orders` excludes restock shell orders by default to keep the customer-orders list clean. Pass `?includeRestocks=true` to include them.
+- **Surfacing on existing schemas**: `AdminOrderSummary` and `AdminOrderDetail` both expose `isInternalRestock` so the UI can badge them where they do appear (vendor-order detail, audit log).
+- **UI** (`artifacts/web/src/staff/pages/agent/NewOrder.tsx`): added a 4th customer-mode tab "Inventory restock" alongside Existing / New / Quick. Selecting it:
+  - Hides the customer/address blocks, the salesperson field, the Totals card, and disables the per-line unit-price input.
+  - Replaces the right-hand Totals card with a "Restock summary" panel that shows the line and total-units count and a "Create restock & vendor orders" submit button.
+  - Submits with `isInternalRestock: true` and shows a toast like "Restock created — 3 vendor orders generated", then navigates to the shell order detail (which lists the generated vendor orders in the existing vendor-orders panel).
+- **Auditing**: restock creation is logged as `order.create_restock` with the generated `vendorOrderIds` recorded in the audit changes payload.

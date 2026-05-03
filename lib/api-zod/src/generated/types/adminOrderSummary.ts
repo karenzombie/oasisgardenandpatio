@@ -20,4 +20,5 @@ export interface AdminOrderSummary {
   agentName: string | null;
   itemCount: number;
   placedAt: Date;
+  isInternalRestock: boolean;
 }

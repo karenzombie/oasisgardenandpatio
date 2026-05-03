@@ -68,6 +68,7 @@ export interface AdminOrderSummary {
   agentName: string | null;
   itemCount: number;
   placedAt: string;
+  isInternalRestock: boolean;
 }
 
 export interface AdminOrderPage {
@@ -386,6 +387,7 @@ export interface AdminOrderDetail {
   walkInName: string | null;
   walkInEmail: string | null;
   walkInPhone: string | null;
+  isInternalRestock: boolean;
   shipments: AdminOrderShipment[];
   payments: AdminOrderPayment[];
   amountPaid: number;
@@ -2553,6 +2555,8 @@ export interface CreateOrderRequest {
   walkInEmail?: string | null;
   /** @nullable */
   walkInPhone?: string | null;
+  /** Internal inventory restock order with no customer, addresses, pricing, or tax. Items are grouped by manufacturer into vendor orders automatically on creation. */
+  isInternalRestock?: boolean;
 }
 
 export type QuoteOrderPricingRequestItemsItem = {
@@ -3352,6 +3356,10 @@ export type AdminListOrdersParams = {
   q?: string;
   customerId?: number;
   agentId?: number;
+  /**
+   * Include internal inventory-restock orders in the results. Defaults to false.
+   */
+  includeRestocks?: boolean;
   /**
    * @minimum 1
    * @maximum 200

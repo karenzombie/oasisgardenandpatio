@@ -53,4 +53,6 @@ export interface CreateOrderRequest {
   walkInEmail?: string | null;
   /** @nullable */
   walkInPhone?: string | null;
+  /** Internal inventory restock order with no customer, addresses, pricing, or tax. Items are grouped by manufacturer into vendor orders automatically on creation. */
+  isInternalRestock?: boolean;
 }

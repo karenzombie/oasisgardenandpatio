@@ -15,6 +15,10 @@ export type AdminListOrdersParams = {
   customerId?: number;
   agentId?: number;
   /**
+   * Include internal inventory-restock orders in the results. Defaults to false.
+   */
+  includeRestocks?: boolean;
+  /**
    * @minimum 1
    * @maximum 200
    */
