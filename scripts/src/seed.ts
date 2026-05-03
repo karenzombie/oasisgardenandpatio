@@ -33,7 +33,7 @@ const TOP_LEVEL_CATEGORIES: SeedCategory[] = [
     name: "Umbrellas & Shade",
     slug: "umbrellas-shade",
     description:
-      "Market umbrellas, cantilever shades, and bases built to handle Southern California sun.",
+      "Market umbrellas, cantilever shades, and bases built to handle harsh outdoor climates.",
     displayOrder: 30,
   },
   {

@@ -23,7 +23,7 @@ export default function Materials() {
         </h1>
         <p className="text-muted-foreground max-w-2xl mb-10 leading-relaxed">
           Browse outdoor furniture by frame material. Each is built for years
-          of California sun, wind, and weather.
+          of outdoor climates — sun, wind, and weather.
         </p>
 
         {isLoading && (

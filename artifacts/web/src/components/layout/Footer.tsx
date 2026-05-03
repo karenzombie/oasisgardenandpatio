@@ -16,7 +16,7 @@ export function Footer() {
             </Link>
             <p className="italic text-secondary-foreground/80 max-w-xs text-sm leading-relaxed mb-6">
               Family-owned outdoor patio furniture retailer in Santa Clarita, CA.
-              Quietly confident craftsmanship for your California outdoor living space.
+              Quietly confident craftsmanship for your outdoor living space.
             </p>
           </div>
 

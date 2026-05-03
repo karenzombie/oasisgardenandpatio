@@ -23,7 +23,7 @@ export default function Manufacturers() {
         </h1>
         <p className="text-muted-foreground max-w-2xl mb-10 leading-relaxed">
           We carry trusted outdoor furniture and fabric brands, hand-picked
-          for quality and built to last in the California climate.
+          for quality and built to last in outdoor climates.
         </p>
 
         {isLoading && (
