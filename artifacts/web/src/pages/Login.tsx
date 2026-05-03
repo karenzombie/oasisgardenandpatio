@@ -17,8 +17,8 @@ export default function Login() {
   const search = useSearch();
   const nextPath = (() => {
     const raw = new URLSearchParams(search).get("next");
-    if (!raw) return "/account";
-    return raw.startsWith("/") && !raw.startsWith("//") ? raw : "/account";
+    if (!raw) return "/";
+    return raw.startsWith("/") && !raw.startsWith("//") ? raw : "/";
   })();
   const queryClient = useQueryClient();
   const [email, setEmail] = useState("");

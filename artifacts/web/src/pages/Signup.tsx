@@ -52,7 +52,7 @@ export default function Signup() {
       await queryClient.invalidateQueries({
         queryKey: getGetCurrentUserQueryKey(),
       });
-      navigate(nextPath ?? "/account?welcome=1");
+      navigate(nextPath ?? "/?welcome=1");
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
         setErrorMessage("An account with that email already exists.");
