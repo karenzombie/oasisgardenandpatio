@@ -72,11 +72,30 @@ async function loadAddresses(userId: number) {
   const rows = await db
     .select()
     .from(addressesTable)
-    .where(eq(addressesTable.customerId, customer.id))
+    .where(
+      and(
+        eq(addressesTable.customerId, customer.id),
+        eq(addressesTable.archived, false),
+      ),
+    )
     .orderBy(desc(addressesTable.isDefault), desc(addressesTable.id));
   return ListAccountAddressesResponse.parse({
     addresses: rows.map(serializeAddress),
   });
+}
+
+async function isAddressReferencedByOrders(addressId: number) {
+  const [referenced] = await db
+    .select({ id: ordersTable.id })
+    .from(ordersTable)
+    .where(
+      or(
+        eq(ordersTable.shippingAddressId, addressId),
+        eq(ordersTable.billingAddressId, addressId),
+      ),
+    )
+    .limit(1);
+  return Boolean(referenced);
 }
 
 router.get(
@@ -153,6 +172,7 @@ router.patch(
         and(
           eq(addressesTable.id, addressId),
           eq(addressesTable.customerId, customer.id),
+          eq(addressesTable.archived, false),
         ),
       )
       .limit(1);
@@ -161,28 +181,44 @@ router.patch(
       return;
     }
 
+    const referenced = await isAddressReferencedByOrders(addressId);
+    const nextIsDefault = data.isDefault ?? existing.isDefault;
+    const nextValues = {
+      customerId: customer.id,
+      type: data.type ?? existing.type,
+      recipientName: data.recipientName ?? null,
+      street1: data.street1,
+      street2: data.street2 ?? null,
+      city: data.city,
+      state: data.state,
+      zip: data.zip,
+      country: data.country ?? "US",
+      phone: data.phone ?? null,
+      isDefault: nextIsDefault,
+    };
+
     await db.transaction(async (tx) => {
-      if (data.isDefault) {
+      if (nextIsDefault) {
         await tx
           .update(addressesTable)
           .set({ isDefault: false })
           .where(eq(addressesTable.customerId, customer.id));
       }
-      await tx
-        .update(addressesTable)
-        .set({
-          type: data.type ?? existing.type,
-          recipientName: data.recipientName ?? null,
-          street1: data.street1,
-          street2: data.street2 ?? null,
-          city: data.city,
-          state: data.state,
-          zip: data.zip,
-          country: data.country ?? "US",
-          phone: data.phone ?? null,
-          isDefault: data.isDefault ?? existing.isDefault,
-        })
-        .where(eq(addressesTable.id, addressId));
+      if (referenced) {
+        // Clone-on-edit: keep the original row intact for order history,
+        // archive it from the customer's address book, and insert a new
+        // active row with the updated values.
+        await tx
+          .update(addressesTable)
+          .set({ archived: true, isDefault: false })
+          .where(eq(addressesTable.id, addressId));
+        await tx.insert(addressesTable).values(nextValues);
+      } else {
+        await tx
+          .update(addressesTable)
+          .set(nextValues)
+          .where(eq(addressesTable.id, addressId));
+      }
     });
 
     res.json(await loadAddresses(req.user!.id));
@@ -215,27 +251,19 @@ router.delete(
       return;
     }
 
-    const [referenced] = await db
-      .select({ id: ordersTable.id })
-      .from(ordersTable)
-      .where(
-        or(
-          eq(ordersTable.shippingAddressId, addressId),
-          eq(ordersTable.billingAddressId, addressId),
-        ),
-      )
-      .limit(1);
+    const referenced = await isAddressReferencedByOrders(addressId);
     if (referenced) {
-      res.status(409).json({
-        error:
-          "This address is attached to one or more past orders and cannot be deleted. You can edit it or set a different default instead.",
-      });
-      return;
+      // Soft-delete: keep the row attached to its order(s) but hide it
+      // from the customer's address book.
+      await db
+        .update(addressesTable)
+        .set({ archived: true, isDefault: false })
+        .where(eq(addressesTable.id, addressId));
+    } else {
+      await db
+        .delete(addressesTable)
+        .where(eq(addressesTable.id, addressId));
     }
-
-    await db
-      .delete(addressesTable)
-      .where(eq(addressesTable.id, addressId));
 
     res.json(await loadAddresses(req.user!.id));
   },

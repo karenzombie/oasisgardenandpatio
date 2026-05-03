@@ -72,6 +72,7 @@ export const addressesTable = pgTable(
     country: text("country").notNull().default("US"),
     phone: text("phone"),
     isDefault: boolean("is_default").notNull().default(false),
+    archived: boolean("archived").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
