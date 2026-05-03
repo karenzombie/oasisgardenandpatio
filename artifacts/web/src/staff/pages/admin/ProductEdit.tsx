@@ -289,6 +289,29 @@ export default function ProductEdit() {
     [detailQuery.data],
   );
 
+  // Group all fabrics by manufacturer for the picker UI.
+  const fabricsByMfg = useMemo(() => {
+    const map = new Map<
+      number,
+      { manufacturerId: number; manufacturerName: string; fabrics: AdminFabric[] }
+    >();
+    for (const f of fabricsList.data ?? []) {
+      const cur = map.get(f.manufacturerId);
+      if (cur) {
+        cur.fabrics.push(f);
+      } else {
+        map.set(f.manufacturerId, {
+          manufacturerId: f.manufacturerId,
+          manufacturerName: f.manufacturerName,
+          fabrics: [f],
+        });
+      }
+    }
+    return Array.from(map.values()).sort((a, b) =>
+      a.manufacturerName.localeCompare(b.manufacturerName),
+    );
+  }, [fabricsList.data]);
+
   function buildPayload(): Record<string, unknown> | null {
     const name = form.name.trim();
     const slug = form.slug.trim();
@@ -644,29 +667,6 @@ export default function ProductEdit() {
     inventoryMut.isPending ||
     fabricsMut.isPending ||
     attributesMut.isPending;
-
-  // Group all fabrics by manufacturer for the picker UI.
-  const fabricsByMfg = useMemo(() => {
-    const map = new Map<
-      number,
-      { manufacturerId: number; manufacturerName: string; fabrics: AdminFabric[] }
-    >();
-    for (const f of fabricsList.data ?? []) {
-      const cur = map.get(f.manufacturerId);
-      if (cur) {
-        cur.fabrics.push(f);
-      } else {
-        map.set(f.manufacturerId, {
-          manufacturerId: f.manufacturerId,
-          manufacturerName: f.manufacturerName,
-          fabrics: [f],
-        });
-      }
-    }
-    return Array.from(map.values()).sort((a, b) =>
-      a.manufacturerName.localeCompare(b.manufacturerName),
-    );
-  }, [fabricsList.data]);
 
   function togglePool(manufacturerId: number) {
     setPoolManufacturerIds((cur) =>
