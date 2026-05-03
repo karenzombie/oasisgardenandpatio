@@ -41,8 +41,8 @@ export default function Contact() {
                   <div>
                     <h3 className="font-medium text-lg mb-1">Hours</h3>
                     <div className="text-muted-foreground leading-relaxed space-y-1">
-                      <p className="flex justify-between w-48"><span>Monday–Saturday</span> <span>10am – 6pm</span></p>
-                      <p className="flex justify-between w-48"><span>Sunday</span> <span>11am – 5pm</span></p>
+                      <p className="flex justify-between w-64"><span>Sunday – Saturday (DST)</span> <span>10:00am – 6:00pm</span></p>
+                      <p className="flex justify-between w-64"><span>Sunday – Saturday (PST)</span> <span>10:00am – 5:00pm</span></p>
                     </div>
                   </div>
                 </div>
@@ -73,12 +73,6 @@ export default function Contact() {
               </div>
             </div>
             
-            <div className="p-8 border border-border bg-muted/30">
-              <h3 className="font-serif text-xl mb-4">Appointments Available</h3>
-              <p className="text-muted-foreground mb-0">
-                While walk-ins are always welcome, you can also call ahead to schedule a dedicated consultation with one of our patio design specialists.
-              </p>
-            </div>
           </div>
 
           {/* Map Section */}

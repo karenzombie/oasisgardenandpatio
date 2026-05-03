@@ -51,8 +51,8 @@ export function Footer() {
           <div>
             <h3 className="font-serif text-xl font-medium mb-6">Hours & Links</h3>
             <div className="text-secondary-foreground/80 text-sm mb-6 space-y-1">
-              <p>Mon–Sat: 10am – 6pm</p>
-              <p>Sun: 11am – 5pm</p>
+              <p>Sun–Sat (DST): 10:00am – 6:00pm</p>
+              <p>Sun–Sat (PST): 10:00am – 5:00pm</p>
             </div>
             <ul className="space-y-3 text-sm">
               <li>
