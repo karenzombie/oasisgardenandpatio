@@ -138,6 +138,22 @@ export const ListCatalogProductsResponse = zod.object({
 });
 
 /**
+ * @summary Public list of all active fabrics offered as product options
+ */
+export const ListCatalogFabricsResponse = zod.object({
+  fabrics: zod.array(
+    zod.object({
+      id: zod.number(),
+      name: zod.string(),
+      itemNumber: zod.string(),
+      manufacturerName: zod.string(),
+      swatchImageUrl: zod.string().nullable(),
+      displayOrder: zod.number(),
+    }),
+  ),
+});
+
+/**
  * @summary Public product detail page payload
  */
 export const GetCatalogProductBySlugParams = zod.object({
@@ -183,6 +199,40 @@ export const GetCatalogProductBySlugResponse = zod
           imageKind: zod.enum(["gallery", "spec"]),
         }),
       ),
+      variants: zod
+        .array(
+          zod.object({
+            id: zod.number(),
+            sku: zod.string(),
+            name: zod.string(),
+            optionLabel: zod
+              .string()
+              .describe(
+                'Group label for this set of variants (e.g. \"Frame Finish\").',
+              ),
+            priceAdjustment: zod
+              .string()
+              .describe(
+                "Decimal added to the base price when this variant is selected.",
+              ),
+            displayOrder: zod.number(),
+          }),
+        )
+        .describe(
+          "Frame finish \/ size \/ colorway choices the customer must pick.",
+        ),
+      fabricOptions: zod
+        .array(
+          zod.object({
+            id: zod.number(),
+            name: zod.string(),
+            itemNumber: zod.string(),
+            manufacturerName: zod.string(),
+            swatchImageUrl: zod.string().nullable(),
+            displayOrder: zod.number(),
+          }),
+        )
+        .describe("Fabrics this product accepts."),
     }),
   );
 
@@ -631,6 +681,11 @@ export const GetCartResponse = zod.object({
       quantity: zod.number().min(1),
       lineTotal: zod.string(),
       availableOnline: zod.boolean(),
+      variantId: zod.number().nullable(),
+      variantName: zod.string().nullable(),
+      fabricId: zod.number().nullable(),
+      fabricName: zod.string().nullable(),
+      fabricItemNumber: zod.string().nullable(),
     }),
   ),
   itemCount: zod.number().describe("Sum of quantities across all line items."),
@@ -657,6 +712,11 @@ export const ClearCartResponse = zod.object({
       quantity: zod.number().min(1),
       lineTotal: zod.string(),
       availableOnline: zod.boolean(),
+      variantId: zod.number().nullable(),
+      variantName: zod.string().nullable(),
+      fabricId: zod.number().nullable(),
+      fabricName: zod.string().nullable(),
+      fabricItemNumber: zod.string().nullable(),
     }),
   ),
   itemCount: zod.number().describe("Sum of quantities across all line items."),
@@ -671,6 +731,14 @@ export const addCartItemBodyQuantityDefault = 1;
 export const AddCartItemBody = zod.object({
   productId: zod.number(),
   quantity: zod.number().min(1).default(addCartItemBodyQuantityDefault),
+  variantId: zod
+    .number()
+    .nullish()
+    .describe("Required when the product has variants (e.g. frame finish)."),
+  fabricId: zod
+    .number()
+    .nullish()
+    .describe("Required when the product has fabric options."),
 });
 
 export const AddCartItemResponse = zod.object({
@@ -689,6 +757,11 @@ export const AddCartItemResponse = zod.object({
       quantity: zod.number().min(1),
       lineTotal: zod.string(),
       availableOnline: zod.boolean(),
+      variantId: zod.number().nullable(),
+      variantName: zod.string().nullable(),
+      fabricId: zod.number().nullable(),
+      fabricName: zod.string().nullable(),
+      fabricItemNumber: zod.string().nullable(),
     }),
   ),
   itemCount: zod.number().describe("Sum of quantities across all line items."),
@@ -722,6 +795,11 @@ export const UpdateCartItemResponse = zod.object({
       quantity: zod.number().min(1),
       lineTotal: zod.string(),
       availableOnline: zod.boolean(),
+      variantId: zod.number().nullable(),
+      variantName: zod.string().nullable(),
+      fabricId: zod.number().nullable(),
+      fabricName: zod.string().nullable(),
+      fabricItemNumber: zod.string().nullable(),
     }),
   ),
   itemCount: zod.number().describe("Sum of quantities across all line items."),
@@ -751,6 +829,11 @@ export const RemoveCartItemResponse = zod.object({
       quantity: zod.number().min(1),
       lineTotal: zod.string(),
       availableOnline: zod.boolean(),
+      variantId: zod.number().nullable(),
+      variantName: zod.string().nullable(),
+      fabricId: zod.number().nullable(),
+      fabricName: zod.string().nullable(),
+      fabricItemNumber: zod.string().nullable(),
     }),
   ),
   itemCount: zod.number().describe("Sum of quantities across all line items."),

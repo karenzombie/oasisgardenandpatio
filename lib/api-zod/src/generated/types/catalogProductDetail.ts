@@ -5,9 +5,11 @@
  * Oasis Garden & Patio API
  * OpenAPI spec version: 0.1.0
  */
+import type { CatalogFabricOption } from "./catalogFabricOption";
 import type { CatalogProduct } from "./catalogProduct";
 import type { CatalogProductDetailSpecs } from "./catalogProductDetailSpecs";
 import type { CatalogProductImage } from "./catalogProductImage";
+import type { CatalogProductVariant } from "./catalogProductVariant";
 
 export type CatalogProductDetail = CatalogProduct & {
   /** @nullable */
@@ -23,4 +25,8 @@ export type CatalogProductDetail = CatalogProduct & {
   specs: CatalogProductDetailSpecs;
   tags: string[];
   images: CatalogProductImage[];
+  /** Frame finish / size / colorway choices the customer must pick. */
+  variants: CatalogProductVariant[];
+  /** Fabrics this product accepts. */
+  fabricOptions: CatalogFabricOption[];
 };

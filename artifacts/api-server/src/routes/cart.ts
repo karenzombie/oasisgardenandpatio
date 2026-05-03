@@ -7,6 +7,9 @@ import {
   productsTable,
   productImagesTable,
   manufacturersTable,
+  productVariantsTable,
+  productFabricOptionsTable,
+  fabricsTable,
 } from "@workspace/db";
 import {
   GetCartResponse,
@@ -46,6 +49,11 @@ async function loadCart(userId: number) {
       availableOnline: productsTable.availableOnline,
       unitPrice: cartItemsTable.price,
       quantity: cartItemsTable.quantity,
+      variantId: cartItemsTable.variantId,
+      variantName: productVariantsTable.variantName,
+      fabricId: cartItemsTable.fabricId,
+      fabricName: fabricsTable.name,
+      fabricItemNumber: fabricsTable.itemNumber,
       primaryImageUrl: sql<string | null>`(
         select ${productImagesTable.url}
         from ${productImagesTable}
@@ -64,6 +72,11 @@ async function loadCart(userId: number) {
       manufacturersTable,
       eq(manufacturersTable.id, productsTable.manufacturerId),
     )
+    .leftJoin(
+      productVariantsTable,
+      eq(productVariantsTable.id, cartItemsTable.variantId),
+    )
+    .leftJoin(fabricsTable, eq(fabricsTable.id, cartItemsTable.fabricId))
     .where(eq(cartItemsTable.cartId, cart.id))
     .orderBy(cartItemsTable.id);
 
@@ -119,6 +132,8 @@ router.post(
     }
     const productId = parsed.data.productId;
     const quantity = parsed.data.quantity ?? 1;
+    const variantId = parsed.data.variantId ?? null;
+    const fabricId = parsed.data.fabricId ?? null;
     if (!Number.isInteger(productId) || productId <= 0) {
       res.status(400).json({ error: "Invalid productId" });
       return;
@@ -157,45 +172,135 @@ router.post(
       return;
     }
 
-    const snapshotPrice =
-      product.salePrice && Number(product.salePrice) > 0
-        ? product.salePrice
-        : product.price;
-    if (!snapshotPrice) {
-      res.status(400).json({ error: "Product has no price set" });
+    // Determine which option groups this product requires.
+    const variantCountRow = await db
+      .select({ n: sql<number>`count(*)::int` })
+      .from(productVariantsTable)
+      .where(
+        and(
+          eq(productVariantsTable.productId, productId),
+          eq(productVariantsTable.isActive, true),
+        ),
+      );
+    const requiresVariant = (variantCountRow[0]?.n ?? 0) > 0;
+
+    // Count only ACTIVE fabrics linked to this product so the server matches
+    // what the PDP exposes (PDP filters fabricsTable.isActive=true).
+    const fabricCountRow = await db
+      .select({ n: sql<number>`count(*)::int` })
+      .from(productFabricOptionsTable)
+      .innerJoin(
+        fabricsTable,
+        eq(fabricsTable.id, productFabricOptionsTable.fabricId),
+      )
+      .where(
+        and(
+          eq(productFabricOptionsTable.productId, productId),
+          eq(fabricsTable.isActive, true),
+        ),
+      );
+    const requiresFabric = (fabricCountRow[0]?.n ?? 0) > 0;
+
+    if (requiresVariant && !variantId) {
+      res.status(400).json({
+        error:
+          "Please choose a finish (or other variant) before adding this item to your cart.",
+      });
+      return;
+    }
+    if (!requiresVariant && variantId) {
+      res
+        .status(400)
+        .json({ error: "This product does not have variant options." });
+      return;
+    }
+    if (requiresFabric && !fabricId) {
+      res.status(400).json({
+        error: "Please choose a fabric before adding this item to your cart.",
+      });
+      return;
+    }
+    if (!requiresFabric && fabricId) {
+      res
+        .status(400)
+        .json({ error: "This product does not have fabric options." });
       return;
     }
 
+    let variantPriceAdj = 0;
+    if (variantId) {
+      const [variant] = await db
+        .select({
+          id: productVariantsTable.id,
+          priceAdjustment: productVariantsTable.priceAdjustment,
+        })
+        .from(productVariantsTable)
+        .where(
+          and(
+            eq(productVariantsTable.id, variantId),
+            eq(productVariantsTable.productId, productId),
+            eq(productVariantsTable.isActive, true),
+          ),
+        )
+        .limit(1);
+      if (!variant) {
+        res
+          .status(400)
+          .json({ error: "Selected variant is not available for this product." });
+        return;
+      }
+      variantPriceAdj = Number(variant.priceAdjustment ?? 0);
+    }
+
+    if (fabricId) {
+      const [option] = await db
+        .select({ id: productFabricOptionsTable.id })
+        .from(productFabricOptionsTable)
+        .innerJoin(
+          fabricsTable,
+          eq(fabricsTable.id, productFabricOptionsTable.fabricId),
+        )
+        .where(
+          and(
+            eq(productFabricOptionsTable.productId, productId),
+            eq(productFabricOptionsTable.fabricId, fabricId),
+            eq(fabricsTable.isActive, true),
+          ),
+        )
+        .limit(1);
+      if (!option) {
+        res
+          .status(400)
+          .json({ error: "Selected fabric is not offered for this product." });
+        return;
+      }
+    }
+
+    const basePriceStr =
+      product.salePrice && Number(product.salePrice) > 0
+        ? product.salePrice
+        : product.price;
+    if (!basePriceStr) {
+      res.status(400).json({ error: "Product has no price set" });
+      return;
+    }
+    const snapshotPrice = (Number(basePriceStr) + variantPriceAdj).toFixed(2);
+
     const cart = await getOrCreateCart(req.user!.id);
 
-    // If a line item for this product (no variant/fabric) already exists,
-    // increase the quantity instead of inserting a duplicate row.
-    const [existing] = await db
-      .select()
-      .from(cartItemsTable)
-      .where(
-        and(
-          eq(cartItemsTable.cartId, cart.id),
-          eq(cartItemsTable.productId, productId),
-          sql`${cartItemsTable.variantId} is null`,
-          sql`${cartItemsTable.fabricId} is null`,
-        ),
+    // Atomic upsert against the partial unique index on
+    // (cart_id, product_id, COALESCE(variant_id,0), COALESCE(fabric_id,0)) so
+    // concurrent adds of the same tuple merge into a single row instead of
+    // racing into duplicates.
+    await db.execute(sql`
+      INSERT INTO cart_items (cart_id, product_id, variant_id, fabric_id, quantity, price)
+      VALUES (
+        ${cart.id}, ${productId}, ${variantId}, ${fabricId},
+        ${quantity}, ${snapshotPrice}
       )
-      .limit(1);
-
-    if (existing) {
-      await db
-        .update(cartItemsTable)
-        .set({ quantity: existing.quantity + quantity })
-        .where(eq(cartItemsTable.id, existing.id));
-    } else {
-      await db.insert(cartItemsTable).values({
-        cartId: cart.id,
-        productId,
-        quantity,
-        price: snapshotPrice,
-      });
-    }
+      ON CONFLICT (cart_id, product_id, (COALESCE(variant_id, 0)), (COALESCE(fabric_id, 0)))
+      DO UPDATE SET quantity = cart_items.quantity + EXCLUDED.quantity
+    `);
 
     res.json(await loadCart(req.user!.id));
   },

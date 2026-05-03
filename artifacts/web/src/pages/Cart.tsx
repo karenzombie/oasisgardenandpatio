@@ -102,6 +102,24 @@ export default function Cart() {
                     {item.name}
                   </Link>
                   <p className="text-xs text-muted-foreground mt-1">SKU {item.sku}</p>
+                  {item.variantName ? (
+                    <p className="text-xs text-foreground/80 mt-0.5">
+                      <span className="text-muted-foreground">Finish:</span>{" "}
+                      {item.variantName}
+                    </p>
+                  ) : null}
+                  {item.fabricName ? (
+                    <p className="text-xs text-foreground/80 mt-0.5">
+                      <span className="text-muted-foreground">Fabric:</span>{" "}
+                      {item.fabricName}
+                      {item.fabricItemNumber ? (
+                        <span className="text-muted-foreground">
+                          {" "}
+                          ({item.fabricItemNumber})
+                        </span>
+                      ) : null}
+                    </p>
+                  ) : null}
                   <p className="text-sm mt-1">{formatMoney(item.unitPrice)} each</p>
                   <div className="mt-3 flex items-center gap-3">
                     <div className="inline-flex items-center border border-input">

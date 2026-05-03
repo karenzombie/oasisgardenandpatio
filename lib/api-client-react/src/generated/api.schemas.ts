@@ -823,6 +823,31 @@ export interface CatalogProductImage {
   imageKind: CatalogProductImageImageKind;
 }
 
+export interface CatalogProductVariant {
+  id: number;
+  sku: string;
+  name: string;
+  /** Group label for this set of variants (e.g. "Frame Finish"). */
+  optionLabel: string;
+  /** Decimal added to the base price when this variant is selected. */
+  priceAdjustment: string;
+  displayOrder: number;
+}
+
+export interface CatalogFabricOption {
+  id: number;
+  name: string;
+  itemNumber: string;
+  manufacturerName: string;
+  /** @nullable */
+  swatchImageUrl: string | null;
+  displayOrder: number;
+}
+
+export interface CatalogFabricsResponse {
+  fabrics: CatalogFabricOption[];
+}
+
 /**
  * Free-form spec sheet (key/value pairs).
  * @nullable
@@ -843,6 +868,10 @@ export type CatalogProductDetail = CatalogProduct & {
   specs: CatalogProductDetailSpecs;
   tags: string[];
   images: CatalogProductImage[];
+  /** Frame finish / size / colorway choices the customer must pick. */
+  variants: CatalogProductVariant[];
+  /** Fabrics this product accepts. */
+  fabricOptions: CatalogFabricOption[];
 };
 
 export interface WishlistItem {
@@ -891,6 +920,16 @@ export interface CartItem {
   quantity: number;
   lineTotal: string;
   availableOnline: boolean;
+  /** @nullable */
+  variantId: number | null;
+  /** @nullable */
+  variantName: string | null;
+  /** @nullable */
+  fabricId: number | null;
+  /** @nullable */
+  fabricName: string | null;
+  /** @nullable */
+  fabricItemNumber: string | null;
 }
 
 export interface CartResponse {
@@ -904,6 +943,16 @@ export interface AddCartItemRequest {
   productId: number;
   /** @minimum 1 */
   quantity?: number;
+  /**
+   * Required when the product has variants (e.g. frame finish).
+   * @nullable
+   */
+  variantId?: number | null;
+  /**
+   * Required when the product has fabric options.
+   * @nullable
+   */
+  fabricId?: number | null;
 }
 
 export interface UpdateCartItemRequest {

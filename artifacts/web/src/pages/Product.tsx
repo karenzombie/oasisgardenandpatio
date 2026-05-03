@@ -1,5 +1,5 @@
 import { Link, useLocation, useRoute } from "wouter";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useGetCatalogProductBySlug,
@@ -12,9 +12,9 @@ import { WishlistButton } from "@/components/WishlistButton";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 
-function formatMoney(v: string | null | undefined): string {
+function formatMoney(v: string | number | null | undefined): string {
   if (v == null || v === "") return "";
-  const n = Number(v);
+  const n = typeof v === "number" ? v : Number(v);
   if (!Number.isFinite(n)) return "";
   return `$${n.toFixed(2)}`;
 }
@@ -34,6 +34,8 @@ export default function Product() {
   const [tab, setTab] = useState<TabId>("description");
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   const [qty, setQty] = useState(1);
+  const [variantId, setVariantId] = useState<number | null>(null);
+  const [fabricId, setFabricId] = useState<number | null>(null);
 
   const { isAuthenticated } = useAuth();
   const [location, navigate] = useLocation();
@@ -48,14 +50,47 @@ export default function Product() {
           description: `${qty} × ${data?.name ?? "item"}`,
         });
       },
-      onError: () => {
-        toast({
-          title: "Could not add to cart",
-          description: "Please try again.",
-        });
+      onError: (err: unknown) => {
+        const message =
+          (err as { response?: { data?: { error?: string } } })?.response?.data
+            ?.error ?? "Please try again.";
+        toast({ title: "Could not add to cart", description: message });
       },
     },
   });
+
+  const variants = data?.variants ?? [];
+  const fabricOptions = data?.fabricOptions ?? [];
+  const requiresVariant = variants.length > 0;
+  const requiresFabric = fabricOptions.length > 0;
+
+  // Reset selections when the user navigates between products so a stale
+  // variantId/fabricId from a previous PDP can't unlock the gate here.
+  useEffect(() => {
+    setVariantId(null);
+    setFabricId(null);
+    setActiveImageIdx(0);
+    setQty(1);
+  }, [data?.id]);
+
+  const selectedVariant = useMemo(
+    () => variants.find((v) => v.id === variantId) ?? null,
+    [variants, variantId],
+  );
+  const selectedFabric = useMemo(
+    () => fabricOptions.find((f) => f.id === fabricId) ?? null,
+    [fabricOptions, fabricId],
+  );
+
+  const missingSelections: string[] = [];
+  if (requiresVariant && !selectedVariant) {
+    missingSelections.push(variants[0]?.optionLabel ?? "Variant");
+  }
+  if (requiresFabric && !selectedFabric) missingSelections.push("Fabric");
+  const optionsMissingMsg =
+    missingSelections.length > 0
+      ? `Please choose ${missingSelections.join(" and ")} first.`
+      : "";
 
   function handleAddToCart() {
     if (!isAuthenticated) {
@@ -67,7 +102,18 @@ export default function Product() {
       return;
     }
     if (!data) return;
-    addToCartM.mutate({ data: { productId: data.id, quantity: qty } });
+    if (optionsMissingMsg) {
+      toast({ title: "Selection required", description: optionsMissingMsg });
+      return;
+    }
+    addToCartM.mutate({
+      data: {
+        productId: data.id,
+        quantity: qty,
+        ...(selectedVariant ? { variantId: selectedVariant.id } : {}),
+        ...(selectedFabric ? { fabricId: selectedFabric.id } : {}),
+      },
+    });
   }
 
   if (isLoading) {
@@ -88,6 +134,16 @@ export default function Product() {
   const activeImage = galleryImages[activeImageIdx] ?? galleryImages[0] ?? null;
   const onSale = data.salePrice && data.price && Number(data.salePrice) < Number(data.price);
   const brandLogo = getBrandLogo(data.manufacturerName);
+
+  const basePrice = Number(
+    (data.salePrice && Number(data.salePrice) > 0
+      ? data.salePrice
+      : data.price) ?? 0,
+  );
+  const variantAdj = Number(selectedVariant?.priceAdjustment ?? 0);
+  const effectivePrice = basePrice + variantAdj;
+
+  const variantOptionLabel = variants[0]?.optionLabel ?? "Variant";
 
   return (
     <div className="container mx-auto px-4 py-10 max-w-7xl">
@@ -153,11 +209,17 @@ export default function Product() {
               {onSale ? (
                 <>
                   <span className="text-muted-foreground line-through mr-3">{formatMoney(data.price)}</span>
-                  <span className="text-primary font-semibold">{formatMoney(data.salePrice)}</span>
+                  <span className="text-primary font-semibold">{formatMoney(effectivePrice)}</span>
                 </>
               ) : (
-                <span>{formatMoney(data.price)}</span>
+                <span>{formatMoney(effectivePrice)}</span>
               )}
+              {variantAdj !== 0 ? (
+                <span className="text-sm text-muted-foreground ml-2">
+                  ({variantAdj > 0 ? "+" : ""}
+                  {formatMoney(variantAdj)} for {selectedVariant?.name})
+                </span>
+              ) : null}
             </div>
           ) : (
             <p className="text-sm text-muted-foreground mb-6">Contact us for pricing.</p>
@@ -190,6 +252,77 @@ export default function Product() {
             </div>
           ) : (
             <>
+              {/* Variant selector (e.g. Frame Finish) */}
+              {requiresVariant ? (
+                <div className="mb-5">
+                  <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">
+                    {variantOptionLabel}
+                    <span className="text-destructive ml-1">*</span>
+                    {selectedVariant ? (
+                      <span className="ml-2 normal-case tracking-normal text-foreground">
+                        {selectedVariant.name}
+                      </span>
+                    ) : null}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {variants.map((v) => (
+                      <button
+                        key={v.id}
+                        type="button"
+                        onClick={() => setVariantId(v.id)}
+                        className={`px-3 py-2 border text-sm transition-colors ${
+                          variantId === v.id
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-input hover:border-foreground"
+                        }`}
+                      >
+                        {v.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Fabric selector */}
+              {requiresFabric ? (
+                <div className="mb-5">
+                  <label
+                    htmlFor="fabric-select"
+                    className="block text-sm uppercase tracking-widest text-muted-foreground mb-2"
+                  >
+                    Fabric
+                    <span className="text-destructive ml-1">*</span>
+                    {selectedFabric ? (
+                      <span className="ml-2 normal-case tracking-normal text-foreground">
+                        {selectedFabric.name} ({selectedFabric.itemNumber})
+                      </span>
+                    ) : null}
+                  </label>
+                  <select
+                    id="fabric-select"
+                    value={fabricId ?? ""}
+                    onChange={(e) =>
+                      setFabricId(e.target.value ? Number(e.target.value) : null)
+                    }
+                    className="w-full border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  >
+                    <option value="">— Select a fabric —</option>
+                    {fabricOptions.map((f) => (
+                      <option key={f.id} value={f.id}>
+                        {f.manufacturerName} · {f.name} ({f.itemNumber})
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Browse the full fabric library on our{" "}
+                    <Link href="/fabrics" className="text-primary underline">
+                      Fabrics page
+                    </Link>
+                    .
+                  </p>
+                </div>
+              ) : null}
+
               <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
                 <div className="inline-flex items-center border border-input self-start">
                   <button
@@ -214,14 +347,30 @@ export default function Product() {
                 <button
                   type="button"
                   onClick={handleAddToCart}
-                  disabled={addToCartM.isPending || !data.availableOnline}
+                  disabled={
+                    addToCartM.isPending ||
+                    !data.availableOnline ||
+                    Boolean(optionsMissingMsg)
+                  }
+                  title={optionsMissingMsg || undefined}
                   className="flex-1 sm:flex-none bg-primary text-primary-foreground px-8 py-3 text-sm uppercase tracking-widest font-medium hover:bg-primary/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {addToCartM.isPending ? "Adding…" : "Add to Cart"}
                 </button>
-                <WishlistButton productId={data.id} variant="button" />
+                <WishlistButton
+                  productId={data.id}
+                  variant="button"
+                  disabled={Boolean(optionsMissingMsg)}
+                  disabledReason={optionsMissingMsg}
+                />
               </div>
-              <p className="text-xs text-muted-foreground mt-2">Visit our showroom or contact us for white-glove delivery options.</p>
+              {optionsMissingMsg ? (
+                <p className="text-xs text-destructive mt-2">{optionsMissingMsg}</p>
+              ) : (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Visit our showroom or contact us for white-glove delivery options.
+                </p>
+              )}
             </>
           )}
 

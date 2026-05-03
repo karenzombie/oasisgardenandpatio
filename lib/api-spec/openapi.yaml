@@ -180,6 +180,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CatalogProductsPage"
+  /catalog/fabrics:
+    get:
+      operationId: listCatalogFabrics
+      tags: [products]
+      summary: Public list of all active fabrics offered as product options
+      responses:
+        "200":
+          description: Active fabrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CatalogFabricsResponse"
   /products/by-slug/{slug}:
     get:
       operationId: getCatalogProductBySlug
@@ -4382,6 +4394,61 @@ components:
         - isPrimary
         - displayOrder
         - imageKind
+    CatalogProductVariant:
+      type: object
+      properties:
+        id:
+          type: integer
+        sku:
+          type: string
+        name:
+          type: string
+        optionLabel:
+          type: string
+          description: Group label for this set of variants (e.g. "Frame Finish").
+        priceAdjustment:
+          type: string
+          description: Decimal added to the base price when this variant is selected.
+        displayOrder:
+          type: integer
+      required:
+        - id
+        - sku
+        - name
+        - optionLabel
+        - priceAdjustment
+        - displayOrder
+    CatalogFabricOption:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        itemNumber:
+          type: string
+        manufacturerName:
+          type: string
+        swatchImageUrl:
+          type: ["string", "null"]
+        displayOrder:
+          type: integer
+      required:
+        - id
+        - name
+        - itemNumber
+        - manufacturerName
+        - swatchImageUrl
+        - displayOrder
+    CatalogFabricsResponse:
+      type: object
+      properties:
+        fabrics:
+          type: array
+          items:
+            $ref: "#/components/schemas/CatalogFabricOption"
+      required:
+        - fabrics
     CatalogProductDetail:
       allOf:
         - $ref: "#/components/schemas/CatalogProduct"
@@ -4405,6 +4472,16 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/CatalogProductImage"
+            variants:
+              type: array
+              description: Frame finish / size / colorway choices the customer must pick.
+              items:
+                $ref: "#/components/schemas/CatalogProductVariant"
+            fabricOptions:
+              type: array
+              description: Fabrics this product accepts.
+              items:
+                $ref: "#/components/schemas/CatalogFabricOption"
           required:
             - description
             - dimensions
@@ -4412,6 +4489,8 @@ components:
             - specs
             - tags
             - images
+            - variants
+            - fabricOptions
     WishlistItem:
       type: object
       properties:
@@ -4502,6 +4581,16 @@ components:
           type: string
         availableOnline:
           type: boolean
+        variantId:
+          type: ["integer", "null"]
+        variantName:
+          type: ["string", "null"]
+        fabricId:
+          type: ["integer", "null"]
+        fabricName:
+          type: ["string", "null"]
+        fabricItemNumber:
+          type: ["string", "null"]
       required:
         - id
         - productId
@@ -4514,6 +4603,11 @@ components:
         - quantity
         - lineTotal
         - availableOnline
+        - variantId
+        - variantName
+        - fabricId
+        - fabricName
+        - fabricItemNumber
     CartResponse:
       type: object
       properties:
@@ -4539,6 +4633,12 @@ components:
           type: integer
           minimum: 1
           default: 1
+        variantId:
+          type: ["integer", "null"]
+          description: Required when the product has variants (e.g. frame finish).
+        fabricId:
+          type: ["integer", "null"]
+          description: Required when the product has fabric options.
       required:
         - productId
     UpdateCartItemRequest:

@@ -17,10 +17,14 @@ export function WishlistButton({
   productId,
   variant = "icon",
   className = "",
+  disabled = false,
+  disabledReason,
 }: {
   productId: number;
   variant?: Variant;
   className?: string;
+  disabled?: boolean;
+  disabledReason?: string;
 }) {
   const { isAuthenticated } = useAuth();
   const [location, navigate] = useLocation();
@@ -62,6 +66,12 @@ export function WishlistButton({
   function handleClick(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
+    if (disabled) {
+      if (disabledReason) {
+        toast({ title: "Selection required", description: disabledReason });
+      }
+      return;
+    }
     if (!isAuthenticated) {
       const next = encodeURIComponent(location);
       toast({
@@ -83,8 +93,9 @@ export function WishlistButton({
       <button
         type="button"
         onClick={handleClick}
-        disabled={pending}
-        className={`inline-flex items-center justify-center gap-2 px-6 py-3 text-sm uppercase tracking-widest font-medium border border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-colors disabled:opacity-60 ${className}`}
+        disabled={pending || disabled}
+        title={disabled ? disabledReason : undefined}
+        className={`inline-flex items-center justify-center gap-2 px-6 py-3 text-sm uppercase tracking-widest font-medium border border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${className}`}
       >
         <Heart
           className={`w-4 h-4 ${inWishlist ? "fill-current" : ""}`}
@@ -98,10 +109,16 @@ export function WishlistButton({
     <button
       type="button"
       onClick={handleClick}
-      disabled={pending}
+      disabled={pending || disabled}
       aria-label={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
-      title={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
-      className={`inline-flex items-center justify-center w-9 h-9 rounded-full bg-white/95 shadow-sm hover:bg-white transition-colors disabled:opacity-60 ${className}`}
+      title={
+        disabled
+          ? disabledReason
+          : inWishlist
+            ? "Remove from wishlist"
+            : "Add to wishlist"
+      }
+      className={`inline-flex items-center justify-center w-9 h-9 rounded-full bg-white/95 shadow-sm hover:bg-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${className}`}
     >
       <Heart
         className={`w-4 h-4 ${inWishlist ? "fill-primary text-primary" : "text-foreground/70"}`}

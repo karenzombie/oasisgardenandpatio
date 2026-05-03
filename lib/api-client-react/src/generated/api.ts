@@ -77,6 +77,7 @@ import type {
   CancelVendorOrderRequest,
   Carrier,
   CartResponse,
+  CatalogFabricsResponse,
   CatalogProductDetail,
   CatalogProductsPage,
   Category,
@@ -727,6 +728,81 @@ export function useListCatalogProducts<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getListCatalogProductsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Public list of all active fabrics offered as product options
+ */
+export const getListCatalogFabricsUrl = () => {
+  return `/api/catalog/fabrics`;
+};
+
+export const listCatalogFabrics = async (
+  options?: RequestInit,
+): Promise<CatalogFabricsResponse> => {
+  return customFetch<CatalogFabricsResponse>(getListCatalogFabricsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListCatalogFabricsQueryKey = () => {
+  return [`/api/catalog/fabrics`] as const;
+};
+
+export const getListCatalogFabricsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listCatalogFabrics>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listCatalogFabrics>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListCatalogFabricsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listCatalogFabrics>>
+  > = ({ signal }) => listCatalogFabrics({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listCatalogFabrics>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListCatalogFabricsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listCatalogFabrics>>
+>;
+export type ListCatalogFabricsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Public list of all active fabrics offered as product options
+ */
+
+export function useListCatalogFabrics<
+  TData = Awaited<ReturnType<typeof listCatalogFabrics>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listCatalogFabrics>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListCatalogFabricsQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

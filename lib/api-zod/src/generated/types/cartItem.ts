@@ -22,4 +22,14 @@ export interface CartItem {
   quantity: number;
   lineTotal: string;
   availableOnline: boolean;
+  /** @nullable */
+  variantId: number | null;
+  /** @nullable */
+  variantName: string | null;
+  /** @nullable */
+  fabricId: number | null;
+  /** @nullable */
+  fabricName: string | null;
+  /** @nullable */
+  fabricItemNumber: string | null;
 }

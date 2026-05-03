@@ -7,6 +7,9 @@ import {
   manufacturersTable,
   categoriesTable,
   materialsTable,
+  productVariantsTable,
+  productFabricOptionsTable,
+  fabricsTable,
 } from "@workspace/db";
 import {
   ListFeaturedProductsResponse,
@@ -294,6 +297,57 @@ router.get(
       images.find((i) => i.imageKind === "gallery") ??
       null;
 
+    const variantRows = await db
+      .select({
+        id: productVariantsTable.id,
+        sku: productVariantsTable.variantSku,
+        name: productVariantsTable.variantName,
+        optionLabel: productVariantsTable.optionLabel,
+        priceAdjustment: productVariantsTable.priceAdjustment,
+        displayOrder: productVariantsTable.displayOrder,
+      })
+      .from(productVariantsTable)
+      .where(
+        and(
+          eq(productVariantsTable.productId, row.id),
+          eq(productVariantsTable.isActive, true),
+        ),
+      )
+      .orderBy(
+        asc(productVariantsTable.displayOrder),
+        asc(productVariantsTable.variantName),
+      );
+
+    const fabricRows = await db
+      .select({
+        id: fabricsTable.id,
+        name: fabricsTable.name,
+        itemNumber: fabricsTable.itemNumber,
+        manufacturerName: manufacturersTable.name,
+        swatchImageUrl: fabricsTable.swatchImageUrl,
+        displayOrder: productFabricOptionsTable.displayOrder,
+      })
+      .from(productFabricOptionsTable)
+      .innerJoin(
+        fabricsTable,
+        eq(fabricsTable.id, productFabricOptionsTable.fabricId),
+      )
+      .innerJoin(
+        manufacturersTable,
+        eq(manufacturersTable.id, fabricsTable.manufacturerId),
+      )
+      .where(
+        and(
+          eq(productFabricOptionsTable.productId, row.id),
+          eq(fabricsTable.isActive, true),
+        ),
+      )
+      .orderBy(
+        asc(productFabricOptionsTable.displayOrder),
+        asc(manufacturersTable.name),
+        asc(fabricsTable.name),
+      );
+
     const tagsArray: string[] = Array.isArray(row.tags) ? (row.tags as string[]) : [];
     const specsObj: Record<string, unknown> | null =
       row.specs && typeof row.specs === "object" && !Array.isArray(row.specs)
@@ -323,6 +377,18 @@ router.get(
       featured: row.featured,
       primaryImageUrl: toPublicImageUrl(primaryGallery?.url ?? null),
       images: images.map((i) => ({ ...i, url: toPublicImageUrl(i.url) })),
+      variants: variantRows.map((v) => ({
+        ...v,
+        priceAdjustment: String(v.priceAdjustment ?? "0"),
+      })),
+      fabricOptions: fabricRows.map((f) => ({
+        id: f.id,
+        name: f.name,
+        itemNumber: f.itemNumber,
+        manufacturerName: f.manufacturerName,
+        swatchImageUrl: f.swatchImageUrl,
+        displayOrder: f.displayOrder,
+      })),
     };
 
     res.json(GetCatalogProductBySlugResponse.parse(payload));

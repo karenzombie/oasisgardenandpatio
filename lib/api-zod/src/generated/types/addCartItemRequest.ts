@@ -10,4 +10,14 @@ export interface AddCartItemRequest {
   productId: number;
   /** @minimum 1 */
   quantity?: number;
+  /**
+   * Required when the product has variants (e.g. frame finish).
+   * @nullable
+   */
+  variantId?: number | null;
+  /**
+   * Required when the product has fabric options.
+   * @nullable
+   */
+  fabricId?: number | null;
 }

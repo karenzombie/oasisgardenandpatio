@@ -84,6 +84,14 @@ export const cartItemsTable = pgTable(
   },
   (t) => [
     index("cart_items_cart_id_idx").on(t.cartId),
+    // Enforce one row per (cart, product, variant, fabric). NULLs collapsed
+    // via COALESCE so duplicate "no-variant" / "no-fabric" rows can't race in.
+    uniqueIndex("cart_items_cart_product_variant_fabric_unique").on(
+      t.cartId,
+      t.productId,
+      sql`COALESCE(${t.variantId}, 0)`,
+      sql`COALESCE(${t.fabricId}, 0)`,
+    ),
     // Composite FKs mirror order_items: a cart can't hold a (product, variant)
     // pair where variant doesn't belong to product, or a fabric that isn't a
     // configured option for the product.
