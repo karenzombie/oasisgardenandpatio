@@ -39,11 +39,10 @@ import CushionOrders from "./pages/admin/CushionOrders";
 import CushionOrderDetail from "./pages/admin/CushionOrderDetail";
 import RecoveryRequests from "./pages/admin/RecoveryRequests";
 import Reports from "./pages/admin/Reports";
+import Notifications from "./pages/admin/Notifications";
 import { PagePlaceholder } from "./pages/PagePlaceholder";
 
-const ADMIN_PLACEHOLDERS: Array<{ path: string; title: string; comingIn: string }> = [
-  { path: "/notifications", title: "Notifications", comingIn: "Phase 6.18" },
-];
+const ADMIN_PLACEHOLDERS: Array<{ path: string; title: string; comingIn: string }> = [];
 
 const AGENT_PLACEHOLDERS: Array<{ path: string; title: string; comingIn: string }> = [];
 
@@ -95,6 +94,7 @@ export default function StaffRouter() {
                 <Route path="/admin/cushion-orders" component={CushionOrders} />
                 <Route path="/admin/cushion-orders/:id" component={CushionOrderDetail} />
                 <Route path="/admin/reports" component={Reports} />
+                <Route path="/admin/notifications" component={Notifications} />
                 {ADMIN_PLACEHOLDERS.map(({ path, title, comingIn }) => (
                   <Route key={path} path={`/admin${path}`}>
                     {() => <PagePlaceholder title={title} comingIn={comingIn} />}
