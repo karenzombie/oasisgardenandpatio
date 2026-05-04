@@ -663,13 +663,15 @@ router.post(
         .for("update")
         .limit(1);
       if (!existing) return { kind: "not_found" as const };
-      if (TERMINAL_STATUSES.has(existing.status)) {
+      const isResend = existing.sentAt !== null;
+      // Terminal statuses block initial sends, but resends (where the PO was
+      // already delivered at least once) are always permitted regardless of status.
+      if (!isResend && TERMINAL_STATUSES.has(existing.status)) {
         return {
           kind: "terminal" as const,
           status: existing.status,
         };
       }
-      const isResend = existing.sentAt !== null;
       const updates: Partial<VendorOrder> = {};
       if (existing.status === "pending") updates.status = "sent";
       if (!existing.sentAt) updates.sentAt = new Date();

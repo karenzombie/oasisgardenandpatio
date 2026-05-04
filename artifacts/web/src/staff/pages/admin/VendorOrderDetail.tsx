@@ -161,7 +161,7 @@ export default function VendorOrderDetail() {
       {
         onSuccess: () => {
           const wasResend = vo?.sentAt !== null;
-          toast({ title: wasResend ? "Resend recorded" : "Vendor order sent" });
+          toast({ title: wasResend ? "Order resent to vendor" : "Vendor order sent" });
           setSendOpen(false);
           setSendEmail("");
           setSendNote("");
@@ -493,7 +493,7 @@ export default function VendorOrderDetail() {
               <div className="text-xs font-medium text-slate-500 uppercase">
                 Actions
               </div>
-              {!isTerminal && (
+              {(!isTerminal || vo.sentAt) && (
                 <Button
                   type="button"
                   className="w-full"
@@ -600,7 +600,7 @@ export default function VendorOrderDetail() {
                 Cancel
               </Button>
               <Button onClick={submitSend} disabled={send.isPending}>
-                {vo.sentAt ? "Record resend" : "Send"}
+                {vo.sentAt ? "Resend" : "Send"}
               </Button>
             </DialogFooter>
           </DialogContent>
