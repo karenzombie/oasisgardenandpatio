@@ -59,14 +59,25 @@ async function getResendClient(): Promise<{ client: Resend; from: string }> {
   return { client: new Resend(apiKey), from: fromEmail };
 }
 
+function getSiteBaseUrl(): string | null {
+  const domains = process.env["REPLIT_DOMAINS"];
+  if (!domains) return null;
+  const first = domains.split(",")[0]?.trim();
+  return first ? `https://${first}` : null;
+}
+
 function emailLayout(title: string, body: string): string {
+  const baseUrl = getSiteBaseUrl();
+  const logoHtml = baseUrl
+    ? `<img src="${baseUrl}/logo.png" alt="Oasis Garden &amp; Patio" style="height:64px;width:auto;display:block;margin:0 auto;" />`
+    : `<div style="font-size:28px;letter-spacing:2px;font-weight:bold;color:#1a3c5e;">OASIS</div>
+        <div style="font-size:14px;font-style:italic;color:#5b8a72;">Garden &amp; Patio</div>`;
   return `<!DOCTYPE html>
 <html>
   <body style="margin:0;padding:0;background:#f5f3ee;font-family:Georgia,'Times New Roman',serif;color:#3a3a3a;">
     <div style="max-width:560px;margin:0 auto;padding:32px 24px;">
       <div style="text-align:center;margin-bottom:32px;">
-        <div style="font-size:28px;letter-spacing:2px;font-weight:bold;color:#1a3c5e;">OASIS</div>
-        <div style="font-size:14px;font-style:italic;color:#5b8a72;">Garden &amp; Patio</div>
+        ${logoHtml}
       </div>
       <div style="background:#ffffff;padding:32px 28px;border-radius:4px;border:1px solid #e8e2d6;">
         <h1 style="font-size:22px;color:#1a3c5e;margin:0 0 16px 0;">${title}</h1>
