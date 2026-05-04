@@ -82,7 +82,7 @@ function CustomerRouter() {
 function Router() {
   const [loc] = useLocation();
 
-  if (loc === "/staff-portal-guide" || loc.startsWith("/staff-portal-guide/")) {
+  if (loc === "/staff-portal-guide" && window.location.pathname !== "/staff-portal-guide/") {
     window.location.replace("/staff-portal-guide/");
     return null;
   }
