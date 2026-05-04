@@ -19,6 +19,33 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+const URL_RE = /https?:\/\/[^\s,;)'"]+/g;
+
+function renderWithLinks(text: string) {
+  const parts: React.ReactNode[] = [];
+  let last = 0;
+  let match: RegExpExecArray | null;
+  URL_RE.lastIndex = 0;
+  while ((match = URL_RE.exec(text)) !== null) {
+    if (match.index > last) parts.push(text.slice(last, match.index));
+    const url = match[0];
+    parts.push(
+      <a
+        key={match.index}
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="underline underline-offset-2 hover:opacity-80"
+      >
+        {url}
+      </a>,
+    );
+    last = match.index + url.length;
+  }
+  if (last < text.length) parts.push(text.slice(last));
+  return parts;
+}
+
 const NAV_LINKS = [
   { href: "/", label: "Home" },
   { href: "/manufacturers", label: "Manufacturers" },
@@ -77,10 +104,11 @@ export function Navbar() {
       {/* Top Banner */}
       {activeBanners.length > 0 && (
         <div className="bg-primary text-primary-foreground text-center py-2 px-4 text-sm font-medium tracking-wide">
-          {activeBanners[0].title}
-          {activeBanners[0].messageText
-            ? `: ${activeBanners[0].messageText}`
-            : ""}
+          {renderWithLinks(
+            activeBanners[0].messageText
+              ? `${activeBanners[0].title}: ${activeBanners[0].messageText}`
+              : activeBanners[0].title,
+          )}
         </div>
       )}
 
