@@ -1,6 +1,7 @@
 import { Link } from "wouter";
 import { useListMaterials } from "@workspace/api-client-react";
 import { Spinner } from "@/components/ui/spinner";
+import fabricsImg from "@/assets/category-fabrics.webp";
 
 export default function Materials() {
   const { data, isLoading, isError } = useListMaterials();
@@ -40,6 +41,30 @@ export default function Materials() {
 
         {!isLoading && !isError && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Fabrics — static card */}
+            <Link
+              href="/fabrics"
+              className="group bg-card border border-border rounded-md overflow-hidden flex flex-col hover:border-primary/40 transition-colors"
+            >
+              <div className="aspect-[4/3] bg-muted overflow-hidden">
+                <img
+                  src={fabricsImg}
+                  alt="Fabrics"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  loading="lazy"
+                />
+              </div>
+              <div className="p-5 flex-1 flex flex-col">
+                <h2 className="font-serif text-2xl text-foreground mb-1">Fabrics</h2>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Explore our selection of outdoor performance fabrics, including Sunbrella and other premium options built to resist fading and weather.
+                </p>
+                <span className="mt-4 text-xs uppercase tracking-wide text-primary/70 group-hover:text-primary transition-colors">
+                  Browse fabrics →
+                </span>
+              </div>
+            </Link>
+
             {materials.map((m) => {
               const imgSrc = m.imageUrl
                 ? m.imageUrl.startsWith("http")
