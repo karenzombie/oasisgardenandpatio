@@ -286,7 +286,7 @@ export default function Cushions() {
       <p className="text-muted-foreground max-w-2xl mb-8">
         Order replacement cushions for your existing patio furniture, or design
         a custom set with your own measurements. We'll follow up to confirm
-        pricing and lead time.
+        your requirements, pricing and lead time.
       </p>
 
       {/* Mode toggle */}
