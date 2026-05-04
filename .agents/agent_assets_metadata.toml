@@ -1,5 +1,4 @@
 uploads = []
-outputs = []
 
 [[generated]]
 id = "WrpV4js2zT-lFMWrOaOIY"
@@ -30,3 +29,9 @@ id = "oy9ePbPZFFNopExUliBnf"
 uri = "file://artifacts/web/src/assets/showroom.png"
 type = "image"
 title = "patio furniture showroom"
+
+[[outputs]]
+id = "Ex16P6fG-bseElPocDn2s"
+uri = "file://.local/outputs/Oasis-Garden-and-Patio.pdf"
+type = "pdf"
+title = "Oasis Garden and Patio.pdf"

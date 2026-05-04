@@ -35,72 +35,24 @@ export default function Slide04AdminSales() {
           </div>
         </div>
 
-        {/* RIGHT: mockup */}
+        {/* RIGHT: autoplay video */}
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '5vh 4vw 5vh 1.5vw' }}>
-          <div style={{ width: '100%', height: '82%', borderRadius: '1vh', overflow: 'hidden', boxShadow: '0 2vh 5vh rgba(26,60,94,0.18)', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ height: '3.2vh', background: '#E8ECF0', display: 'flex', alignItems: 'center', padding: '0 1.2vh', gap: '0.6vh', flexShrink: 0 }}>
-              <div style={{ width: '0.8vh', height: '0.8vh', borderRadius: '50%', background: '#FC6058' }}></div>
-              <div style={{ width: '0.8vh', height: '0.8vh', borderRadius: '50%', background: '#FEC02F' }}></div>
-              <div style={{ width: '0.8vh', height: '0.8vh', borderRadius: '50%', background: '#2ACA44' }}></div>
-              <div style={{ flex: 1, height: '1.5vh', background: '#D0D5DB', borderRadius: '0.3vh', marginLeft: '0.8vh' }}></div>
-            </div>
-            <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-              {/* Sidebar */}
-              <div style={{ width: '22%', background: '#1A3C5E', padding: '1vh 0', flexShrink: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                <div style={{ margin: '0 0.6vh 0.8vh', background: 'white', borderRadius: '0.3vh', height: '2.2vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <div style={{ width: '55%', height: '0.7vh', background: '#1A3C5E', borderRadius: '0.15vh' }}></div>
-                </div>
-                <div style={{ padding: '0.3vh 0.6vh 0.2vh' }}><div style={{ height: '0.4vh', width: '50%', background: 'rgba(255,255,255,0.28)', borderRadius: '0.1vh' }}></div></div>
-                {[60,72].map((w,i) => (<div key={i} style={{ margin: '0.12vh 0.35vh', height: '1.1vh', borderRadius: '0.18vh', background: 'rgba(255,255,255,0.1)', width: `${w}%` }}></div>))}
-                {/* SALES - active */}
-                <div style={{ padding: '0.5vh 0.6vh 0.2vh' }}><div style={{ height: '0.4vh', width: '38%', background: 'rgba(255,255,255,0.5)', borderRadius: '0.1vh' }}></div></div>
-                <div style={{ margin: '0.12vh 0.35vh', height: '1.3vh', borderRadius: '0.2vh', background: 'rgba(255,255,255,0.25)', width: '68%' }}></div>
-                <div style={{ margin: '0.12vh 0.35vh', height: '1.3vh', borderRadius: '0.2vh', background: 'rgba(255,255,255,0.88)', display: 'flex', alignItems: 'center', paddingLeft: '0.4vh' }}>
-                  <div style={{ height: '0.5vh', width: '55%', background: '#1A3C5E', borderRadius: '0.1vh' }}></div>
-                </div>
-                <div style={{ margin: '0.12vh 0.35vh', height: '1.3vh', borderRadius: '0.2vh', background: 'rgba(255,255,255,0.25)', width: '72%' }}></div>
-                <div style={{ margin: '0.12vh 0.35vh', height: '1.3vh', borderRadius: '0.2vh', background: 'rgba(255,255,255,0.25)', width: '68%' }}></div>
-                <div style={{ margin: '0.12vh 0.35vh', height: '1.3vh', borderRadius: '0.2vh', background: 'rgba(255,255,255,0.25)', width: '60%' }}></div>
-                <div style={{ margin: '0.12vh 0.35vh', height: '1.3vh', borderRadius: '0.2vh', background: 'rgba(255,255,255,0.25)', width: '65%' }}></div>
-                {/* remaining sections */}
-                <div style={{ padding: '0.5vh 0.6vh 0.2vh' }}><div style={{ height: '0.4vh', width: '44%', background: 'rgba(255,255,255,0.28)', borderRadius: '0.1vh' }}></div></div>
-                {[70,62,55,68,75,58].map((w,i) => (<div key={i} style={{ margin: '0.12vh 0.35vh', height: '1.1vh', borderRadius: '0.18vh', background: 'rgba(255,255,255,0.1)', width: `${w}%` }}></div>))}
-                <div style={{ padding: '0.5vh 0.6vh 0.2vh' }}><div style={{ height: '0.4vh', width: '30%', background: 'rgba(255,255,255,0.28)', borderRadius: '0.1vh' }}></div></div>
-                {[62,50].map((w,i) => (<div key={i} style={{ margin: '0.12vh 0.35vh', height: '1.1vh', borderRadius: '0.18vh', background: 'rgba(255,255,255,0.1)', width: `${w}%` }}></div>))}
-              </div>
-              {/* Content - Orders page */}
-              <div style={{ flex: 1, background: '#F5F7FA', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                <div style={{ height: '4.5vh', background: '#1A3C5E', flexShrink: 0 }}></div>
-                <div style={{ background: 'white', padding: '1vh 1.5vh', borderBottom: '1px solid #E2E8F0', flexShrink: 0 }}>
-                  <div style={{ height: '1.6vh', width: '22%', background: '#1E293B', borderRadius: '0.25vh', opacity: 0.75 }}></div>
-                </div>
-                <div style={{ flex: 1, padding: '1.2vh 1.5vh', overflow: 'hidden' }}>
-                  {/* Search row */}
-                  <div style={{ display: 'flex', gap: '0.8vh', marginBottom: '1vh', alignItems: 'center' }}>
-                    <div style={{ flex: 1, height: '2.2vh', background: 'white', borderRadius: '0.4vh', border: '1px solid #E2E8F0' }}></div>
-                    <div style={{ width: '14%', height: '2.2vh', background: 'white', borderRadius: '0.4vh', border: '1px solid #E2E8F0' }}></div>
-                    <div style={{ width: '14%', height: '2.2vh', background: 'white', borderRadius: '0.4vh', border: '1px solid #E2E8F0' }}></div>
-                  </div>
-                  {/* Orders table */}
-                  <div style={{ background: 'white', borderRadius: '0.5vh', boxShadow: '0 0.15vh 0.6vh rgba(0,0,0,0.05)', overflow: 'hidden' }}>
-                    <div style={{ display: 'flex', padding: '0.7vh 1vh', background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', gap: '0.7vh', alignItems: 'center' }}>
-                      {[10,24,16,15].map((w,i) => (<div key={i} style={{ height: '0.5vh', width: `${w}%`, background: '#94A3B8', borderRadius: '0.1vh' }}></div>))}
-                      <div style={{ height: '0.5vh', width: '12%', background: '#94A3B8', borderRadius: '0.1vh', marginLeft: 'auto' }}></div>
-                    </div>
-                    {[['#DCFCE7',22,16],['#FEF3C7',28,16],['#E0F2FE',20,18],['#F1F5F9',25,14],['#FEE2E2',18,16]].map(([bg,nw,sw],i) => (
-                      <div key={i} style={{ display: 'flex', padding: '0.65vh 1vh', borderBottom: i < 4 ? '1px solid #F1F5F9' : 'none', alignItems: 'center', gap: '0.7vh' }}>
-                        <div style={{ height: '0.6vh', width: '10%', background: '#1A3C5E', borderRadius: '0.1vh', opacity: 0.65 }}></div>
-                        <div style={{ height: '0.6vh', width: `${nw}%`, background: '#334155', borderRadius: '0.1vh', opacity: 0.55 }}></div>
-                        <div style={{ height: '0.6vh', width: '16%', background: '#334155', borderRadius: '0.1vh', opacity: 0.38 }}></div>
-                        <div style={{ height: '0.6vh', width: '15%', background: '#334155', borderRadius: '0.1vh', opacity: 0.4 }}></div>
-                        <div style={{ height: '1.2vh', width: `${sw}%`, background: bg as string, borderRadius: '1vh', marginLeft: 'auto' }}></div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <video
+            src={import.meta.env.BASE_URL + 'slide4.mov'}
+            autoPlay
+            muted
+            loop
+            playsInline
+            style={{
+              width: '100%',
+              height: '82%',
+              objectFit: 'contain',
+              objectPosition: 'center',
+              borderRadius: '1vh',
+              boxShadow: '0 2vh 5vh rgba(26,60,94,0.18)',
+              background: '#000',
+            }}
+          />
         </div>
       </div>
     </div>
