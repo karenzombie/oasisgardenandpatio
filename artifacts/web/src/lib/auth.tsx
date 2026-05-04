@@ -23,7 +23,14 @@ export function useAuth(): {
   const isUnauthorized =
     error instanceof ApiError && error.status === 401;
 
-  const user = query.data && !isUnauthorized ? query.data : null;
+  const rawUser = query.data && !isUnauthorized ? query.data : null;
+
+  // The customer-facing site and the staff portal share a single session
+  // cookie. Staff (admin / agent) sessions must NOT appear as "logged in"
+  // on the customer site — internal users have no customer account context
+  // (no orders, no wishlist, etc.) and showing their name in the storefront
+  // navbar is confusing. Treat any non-customer role as anonymous here.
+  const user = rawUser && rawUser.role === "customer" ? rawUser : null;
 
   return {
     user,
