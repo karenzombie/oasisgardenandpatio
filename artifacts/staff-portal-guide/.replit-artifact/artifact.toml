@@ -11,7 +11,7 @@ version = "1.0.0"
 
 [[services]]
 name = "web"
-paths = [ "/staff-portal-guide/" ]
+paths = [ "/staff-portal-guide/", "/staff-portal-guide" ]
 localPort = 23190
 
 [services.development]
