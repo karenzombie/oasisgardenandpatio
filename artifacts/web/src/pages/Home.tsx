@@ -10,14 +10,29 @@ import heroImg from "@/assets/hero.png";
 import categoryShadeImg from "@/assets/category-shade.png";
 import categoryLoungeImg from "@/assets/category-lounge.png";
 import categoryDiningImg from "@/assets/category-dining.png";
+import categoryLightingImg from "@/assets/category-lighting.png";
+import categoryFireImg from "@/assets/category-fire.jpg";
+import categoryDeepSeatingImg from "@/assets/category-deep-seating.jpg";
+import categoryChaisseImg from "@/assets/category-chaise.png";
+import categoryBasesImg from "@/assets/category-bases.png";
+import categoryCommercialImg from "@/assets/category-commercial.png";
 
 const CATEGORY_IMAGES: Record<string, string> = {
   "cat-umbrellas": categoryShadeImg,
-  "cat-chaise-lounges": categoryLoungeImg,
+  "cat-chaise-lounges": categoryChaisseImg,
   "cat-dining": categoryDiningImg,
+  "cat-lighting": categoryLightingImg,
+  "cat-fire-tables": categoryFireImg,
+  "cat-deep-seating": categoryDeepSeatingImg,
+  "cat-umbrella-bases": categoryBasesImg,
+  "cat-commercial": categoryCommercialImg,
   shade: categoryShadeImg,
   lounge: categoryLoungeImg,
   dining: categoryDiningImg,
+  lighting: categoryLightingImg,
+  fire: categoryFireImg,
+  "deep-seating": categoryDeepSeatingImg,
+  commercial: categoryCommercialImg,
 };
 
 export default function Home() {
