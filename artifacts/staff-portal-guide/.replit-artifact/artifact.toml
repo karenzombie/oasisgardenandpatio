@@ -1,0 +1,31 @@
+kind = "slides"
+previewPath = "/staff-portal-guide/"
+title = "Staff Portal Reference Guide"
+version = "1.0.0"
+id = "artifacts/staff-portal-guide"
+router = "path"
+
+[[integratedSkills]]
+name = "slides"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/staff-portal-guide/" ]
+localPort = 23190
+
+[services.development]
+run = "pnpm --filter @workspace/staff-portal-guide run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/staff-portal-guide", "run", "build" ]
+publicDir = "artifacts/staff-portal-guide/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23190"
+BASE_PATH = "/staff-portal-guide/"
