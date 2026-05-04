@@ -93,11 +93,6 @@ export default function VendorOrderDetail() {
     if (vo) {
       setNotesDraft(vo.notes ?? "");
       setEtaDraft(isoToDateInput(vo.vendorEstimatedDeliveryDate));
-      // Pre-populate the send dialog with the manufacturer's order email
-      // only when the dialog hasn't been opened yet (avoid overwriting edits).
-      setSendEmail((prev) =>
-        prev === "" ? (vo.manufacturerOrderEmail ?? "") : prev,
-      );
     }
   }, [vo]);
 
@@ -163,7 +158,6 @@ export default function VendorOrderDetail() {
           const wasResend = vo?.sentAt !== null;
           toast({ title: wasResend ? "Order resent to vendor" : "Vendor order sent" });
           setSendOpen(false);
-          setSendEmail("");
           setSendNote("");
           invalidate();
         },
@@ -509,7 +503,10 @@ export default function VendorOrderDetail() {
                 <Button
                   type="button"
                   className="w-full"
-                  onClick={() => setSendOpen(true)}
+                  onClick={() => {
+                    setSendEmail(vo.manufacturerOrderEmail ?? "");
+                    setSendOpen(true);
+                  }}
                 >
                   {vo.sentAt ? "Resend to vendor" : "Send to vendor"}
                 </Button>
