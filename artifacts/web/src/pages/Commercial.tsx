@@ -41,10 +41,12 @@ export default function Commercial() {
               <Link href="/contact">Visit Showroom</Link>
             </Button>
             <Button asChild variant="outline" className="rounded-none px-6 font-serif tracking-wide">
-              <a href={`mailto:${CONTACT_EMAIL}`}>Contact</a>
+              <a href="tel:6612559909">Call (661) 255-9909</a>
+            </Button>
+            <Button asChild variant="outline" className="rounded-none px-6 font-serif tracking-wide">
+              <a href={`mailto:${CONTACT_EMAIL}`}>Email {CONTACT_EMAIL}</a>
             </Button>
           </div>
-          <p className="mt-4 text-xs text-muted-foreground">{CONTACT_EMAIL}</p>
         </div>
       </div>
 
