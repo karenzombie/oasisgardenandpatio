@@ -13,6 +13,7 @@ import {
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import { isUniqueViolation } from "../lib/dbErrors";
 import { recordHistory } from "../lib/history";
+import { toPublicImageUrl } from "../lib/imageUrl";
 
 const router: IRouter = Router();
 
@@ -32,7 +33,11 @@ router.get("/manufacturers", async (_req, res): Promise<void> => {
       sql`${manufacturersTable.name} asc`,
     );
 
-  res.json(ListManufacturersResponse.parse(manufacturers));
+  res.json(
+    ListManufacturersResponse.parse(
+      manufacturers.map((m) => ({ ...m, logoUrl: toPublicImageUrl(m.logoUrl) })),
+    ),
+  );
 });
 
 // ----- Admin endpoints -----
@@ -43,7 +48,7 @@ function toAdminPayload(row: Manufacturer) {
     name: row.name,
     slug: row.slug,
     description: row.description,
-    logoUrl: row.logoUrl,
+    logoUrl: toPublicImageUrl(row.logoUrl),
     website: row.website,
     displayOrder: row.displayOrder,
     dealerRate: row.dealerRate,

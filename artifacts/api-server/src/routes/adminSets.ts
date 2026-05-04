@@ -22,6 +22,7 @@ import {
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import { isUniqueViolation } from "../lib/dbErrors";
 import { recordHistory } from "../lib/history";
+import { toPublicImageUrl } from "../lib/imageUrl";
 
 const router: IRouter = Router();
 
@@ -91,7 +92,10 @@ async function loadSetItems(setId: number): Promise<ItemRow[]> {
       asc(productSetItemsTable.displayOrder),
       asc(productSetItemsTable.id),
     );
-  return rows;
+  return rows.map((r) => ({
+    ...r,
+    productPrimaryImageUrl: toPublicImageUrl(r.productPrimaryImageUrl),
+  }));
 }
 
 async function loadSummary(setId: number): Promise<SummaryRow | null> {

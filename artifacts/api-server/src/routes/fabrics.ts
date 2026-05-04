@@ -6,6 +6,7 @@ import {
   manufacturersTable,
 } from "@workspace/db";
 import { ListCatalogFabricsResponse } from "@workspace/api-zod";
+import { toPublicImageUrl } from "../lib/imageUrl";
 
 const router: IRouter = Router();
 
@@ -36,7 +37,14 @@ router.get(
         asc(fabricsTable.name),
       );
 
-    res.json(ListCatalogFabricsResponse.parse({ fabrics: rows }));
+    res.json(
+      ListCatalogFabricsResponse.parse({
+        fabrics: rows.map((r) => ({
+          ...r,
+          swatchImageUrl: toPublicImageUrl(r.swatchImageUrl),
+        })),
+      }),
+    );
   },
 );
 

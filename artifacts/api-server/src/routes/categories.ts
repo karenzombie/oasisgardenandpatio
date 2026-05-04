@@ -18,6 +18,7 @@ import {
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import { isUniqueViolation } from "../lib/dbErrors";
 import { recordHistory } from "../lib/history";
+import { toPublicImageUrl } from "../lib/imageUrl";
 
 const router: IRouter = Router();
 
@@ -50,7 +51,7 @@ function toAdminPayload(row: Category, productCount: number) {
     slug: row.slug,
     description: row.description,
     parentId: row.parentId,
-    imageUrl: row.imageUrl,
+    imageUrl: toPublicImageUrl(row.imageUrl),
     displayOrder: row.displayOrder,
     isActive: row.isActive,
     productCount,

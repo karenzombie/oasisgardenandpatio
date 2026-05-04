@@ -19,6 +19,7 @@ import {
 } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import { recordHistory } from "../lib/history";
+import { toPublicImageUrl } from "../lib/imageUrl";
 
 const router: IRouter = Router();
 
@@ -52,7 +53,12 @@ router.get(
         asc(fabricsTable.displayOrder),
         asc(fabricsTable.name),
       );
-    res.json(rows);
+    res.json(
+      rows.map((r) => ({
+        ...r,
+        swatchImageUrl: toPublicImageUrl(r.swatchImageUrl),
+      })),
+    );
   },
 );
 

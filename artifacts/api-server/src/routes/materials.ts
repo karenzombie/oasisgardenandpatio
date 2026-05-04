@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { eq, sql } from "drizzle-orm";
 import { db, materialsTable } from "@workspace/db";
+import { toPublicImageUrl } from "../lib/imageUrl";
 
 const router: IRouter = Router();
 
@@ -20,7 +21,7 @@ router.get("/materials", async (_req, res): Promise<void> => {
       sql`${materialsTable.displayOrder} asc`,
       sql`${materialsTable.name} asc`,
     );
-  res.json(rows);
+  res.json(rows.map((r) => ({ ...r, imageUrl: toPublicImageUrl(r.imageUrl) })));
 });
 
 export default router;

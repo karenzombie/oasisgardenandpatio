@@ -40,6 +40,7 @@ import { recordHistory } from "../lib/history";
 import { sendVendorOrderEmail } from "../lib/vendorOrderEmail";
 import { generateVendorOrderPdf } from "../lib/vendorOrderPdf";
 import { uploadBufferToStorage } from "../lib/objectStorage";
+import { toPublicImageUrl } from "../lib/imageUrl";
 
 const router: IRouter = Router();
 const DEFAULT_LIMIT = 50;
@@ -287,7 +288,7 @@ async function loadVendorOrderDetail(id: number) {
       sentToEmail: row.s.sentToEmail,
       isResend: row.s.isResend,
       resendNote: row.s.resendNote,
-      pdfStorageUrl: row.s.pdfStorageUrl,
+      pdfStorageUrl: toPublicImageUrl(row.s.pdfStorageUrl),
     })),
   };
 }

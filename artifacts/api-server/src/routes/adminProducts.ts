@@ -28,6 +28,7 @@ import {
   AdminUpdateProductInventoryBody,
 } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
+import { toPublicImageUrl } from "../lib/imageUrl";
 import { isUniqueViolation } from "../lib/dbErrors";
 import { recordHistory } from "../lib/history";
 
@@ -71,7 +72,7 @@ function toAdminPayload(r: ProductRow) {
     displayOrder: r.displayOrder,
     lowStockThreshold: r.lowStockThreshold,
     isActive: r.isActive,
-    primaryImageUrl: r.primaryImageUrl,
+    primaryImageUrl: toPublicImageUrl(r.primaryImageUrl),
     imageCount: r.imageCount,
     onHand: r.onHand,
     createdAt: r.createdAt.toISOString(),
@@ -83,7 +84,7 @@ function imageToPayload(img: ProductImage) {
   return {
     id: img.id,
     productId: img.productId,
-    url: img.url,
+    url: toPublicImageUrl(img.url) ?? img.url,
     altText: img.altText,
     isPrimary: img.isPrimary,
     displayOrder: img.displayOrder,

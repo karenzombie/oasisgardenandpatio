@@ -25,6 +25,11 @@ Full-stack e-commerce platform for Oasis Garden & Patio — a luxury outdoor fur
 - **Tax**: TaxJar for online orders; flat 10.25% (Santa Clarita) for agent/in-store orders.
 - **Staff portal palette**: sidebar/headers `#1A3C5E`, content background `#F5F7FA`.
 - **Customer brand**: refined coastal-California aesthetic. Logo at `artifacts/web/src/assets/logo.png` appears on every customer page.
+- **Images — must render in published builds, not just dev**:
+  - **Static images** (logos, hero, fixed category tiles, brand marks): drop the file in `attached_assets/` (or `artifacts/web/src/assets/`) and `import` it. Vite hashes + bundles it. Never reference raw filenames as strings — they break in prod. `artifacts/web/vite.config.ts` aliases `@assets` → `attached_assets/` and `@/assets` → `src/assets/`.
+  - **Files in `artifacts/web/public/`** are served at the site root in both dev and prod (e.g. `/logo.png`, `/manufacturers/foo.jpg`). Use these for stable, well-known paths the email system or external tools reference.
+  - **Admin-uploaded images** (categories, banners, products, materials, manufacturers, fabrics) are stored in Replit Object Storage and the DB column holds the canonical id (`/objects/<...>`). The browser must request `/api/storage/objects/<...>` (the api-server route). **Every public-facing API route that returns one of these URLs MUST wrap it with `toPublicImageUrl()` from `artifacts/api-server/src/lib/imageUrl.ts`.** In dev a missing wrap may "work" because of Vite's catch-all, but in prod the `/*` SPA rewrite turns the request into `index.html` and you get a broken image. When adding a new endpoint that returns an image url, **wrap it** — covered today: products, cart, wishlist, materials, manufacturers, categories (admin), fabrics, adminProducts, adminSets.
+  - **Email images** must be absolute https URLs (use `REPLIT_DOMAINS` to build the base). Email clients won't resolve relative paths.
 
 ## Build Plan (7 phases)
 
