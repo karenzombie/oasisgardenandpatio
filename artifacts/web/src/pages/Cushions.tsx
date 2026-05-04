@@ -80,6 +80,7 @@ function emptyStockItem(): StockItem {
 export default function Cushions() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [, navigate] = useLocation();
+  void navigate; // kept for potential future use
 
   const [mode, setMode] = useState<Mode>("custom");
   const [customItems, setCustomItems] = useState<Record<string, CustomItem>>({});
@@ -90,12 +91,7 @@ export default function Cushions() {
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerNotes, setCustomerNotes] = useState("");
 
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      trackEvent("auth_prompt", { reason: "cushions" });
-      navigate("/login?next=%2Fcushions");
-    }
-  }, [authLoading, isAuthenticated, navigate]);
+  const [showAuthGate, setShowAuthGate] = useState(false);
 
   // Pre-populate name once user loads
   useEffect(() => {
@@ -192,6 +188,14 @@ export default function Cushions() {
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    if (!isAuthenticated) {
+      trackEvent("auth_prompt", { reason: "cushions_submit" });
+      setShowAuthGate(true);
+      setTimeout(() => {
+        document.getElementById("cushion-auth-gate")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 50);
+      return;
+    }
     const v = validate();
     if (v) {
       setError(v);
@@ -368,9 +372,11 @@ export default function Cushions() {
           <h2 className="text-2xl font-serif text-foreground mb-1">
             Your Information
           </h2>
-          <p className="text-sm text-muted-foreground mb-4">
-            Signed in as <span className="text-foreground">{user?.email}</span>
-          </p>
+          {isAuthenticated && user?.email && (
+            <p className="text-sm text-muted-foreground mb-4">
+              Signed in as <span className="text-foreground">{user.email}</span>
+            </p>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="cname">Name <span className="text-destructive">*</span></Label>
@@ -405,6 +411,29 @@ export default function Cushions() {
         {error && (
           <div className="p-4 bg-destructive/10 border border-destructive/30 rounded text-destructive text-sm">
             {error}
+          </div>
+        )}
+
+        {showAuthGate && !isAuthenticated && (
+          <div
+            id="cushion-auth-gate"
+            className="rounded-md border border-primary/30 bg-primary/5 p-6 space-y-3"
+          >
+            <p className="font-serif text-lg text-foreground">
+              Create a free account to submit your order
+            </p>
+            <p className="text-sm text-muted-foreground">
+              An account lets you track your cushion orders and saves your contact
+              info for future requests. It only takes a minute.
+            </p>
+            <div className="flex flex-wrap gap-3 pt-1">
+              <Link href={`/signup?next=${encodeURIComponent("/cushions")}`}>
+                <Button size="sm">Create account</Button>
+              </Link>
+              <Link href={`/login?next=${encodeURIComponent("/cushions")}`}>
+                <Button size="sm" variant="outline">Sign in</Button>
+              </Link>
+            </div>
           </div>
         )}
 
