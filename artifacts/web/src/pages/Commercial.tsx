@@ -10,7 +10,7 @@ const CONTACT_EMAIL = "sales@oasisgardenandpatio.com";
 export default function Commercial() {
   return (
     <div className="bg-background min-h-[60vh]">
-      {/* ── Intro section ─────────────────────────────────────── */}
+      {/* ── Intro / CTA section ───────────────────────────────── */}
       <div className="max-w-6xl mx-auto px-4 pt-12 pb-10">
         <nav className="text-xs uppercase tracking-wide text-muted-foreground mb-6">
           <Link href="/" className="hover:text-foreground transition-colors">
@@ -20,28 +20,31 @@ export default function Commercial() {
           <span>Commercial</span>
         </nav>
 
-        <h1 className="font-serif text-4xl md:text-5xl font-medium tracking-tight text-foreground mb-5">
+        <h1 className="font-serif text-4xl md:text-5xl font-medium tracking-tight text-foreground mb-8">
           Commercial
         </h1>
-        <p className="text-lg md:text-xl text-foreground/80 max-w-2xl leading-relaxed mb-10">
-          Specializing in commercial sales, give us a call for your next
-          project.
-        </p>
 
-        <div className="flex flex-wrap gap-3">
-          <Button asChild variant="default" className="rounded-none px-6 font-serif tracking-wide">
-            <Link href="/">Return Home</Link>
-          </Button>
-          <Button asChild variant="outline" className="rounded-none px-6 font-serif tracking-wide">
-            <Link href="/contact">Visit Showroom</Link>
-          </Button>
-          <Button
-            asChild
-            variant="outline"
-            className="rounded-none px-6 font-serif tracking-wide"
-          >
-            <a href={`mailto:${CONTACT_EMAIL}`}>Contact</a>
-          </Button>
+        <div className="border border-border rounded-sm p-8 md:p-12 text-center bg-muted/30 mb-10">
+          <h2 className="font-serif text-2xl md:text-3xl text-foreground mb-3">
+            Ready to start your project?
+          </h2>
+          <p className="text-muted-foreground max-w-xl mx-auto mb-8 leading-relaxed">
+            From boutique hotels to large resort properties, we supply the
+            commercial-grade outdoor furniture your project demands. Get in
+            touch and let's talk.
+          </p>
+          <div className="flex flex-wrap justify-center gap-3">
+            <Button asChild className="rounded-none px-6 font-serif tracking-wide">
+              <Link href="/">Return Home</Link>
+            </Button>
+            <Button asChild variant="outline" className="rounded-none px-6 font-serif tracking-wide">
+              <Link href="/contact">Visit Showroom</Link>
+            </Button>
+            <Button asChild variant="outline" className="rounded-none px-6 font-serif tracking-wide">
+              <a href={`mailto:${CONTACT_EMAIL}`}>Contact</a>
+            </Button>
+          </div>
+          <p className="mt-4 text-xs text-muted-foreground">{CONTACT_EMAIL}</p>
         </div>
       </div>
 
@@ -86,35 +89,6 @@ export default function Commercial() {
           </div>
         </div>
 
-        {/* ── Call-to-action strip ─────────────────────────────── */}
-        <div className="mt-14 border border-border rounded-sm p-8 md:p-12 text-center bg-muted/30">
-          <h2 className="font-serif text-2xl md:text-3xl text-foreground mb-3">
-            Ready to start your project?
-          </h2>
-          <p className="text-muted-foreground max-w-xl mx-auto mb-8 leading-relaxed">
-            From boutique hotels to large resort properties, we supply the
-            commercial-grade outdoor furniture your project demands. Get in
-            touch and let's talk.
-          </p>
-          <div className="flex flex-wrap justify-center gap-3">
-            <Button
-              asChild
-              className="rounded-none px-8 font-serif tracking-wide"
-            >
-              <a href={`mailto:${CONTACT_EMAIL}`}>
-                Email Us
-              </a>
-            </Button>
-            <Button
-              asChild
-              variant="outline"
-              className="rounded-none px-8 font-serif tracking-wide"
-            >
-              <a href="tel:6612559909">Call (661) 255-9909</a>
-            </Button>
-          </div>
-          <p className="mt-4 text-xs text-muted-foreground">{CONTACT_EMAIL}</p>
-        </div>
       </div>
     </div>
   );
