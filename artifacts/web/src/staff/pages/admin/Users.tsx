@@ -115,7 +115,7 @@ function UsersPanel({ group }: { group: Group }) {
         )}
       </div>
 
-      <div className="bg-white rounded-lg border overflow-hidden">
+      <div className="bg-white rounded-lg border overflow-x-auto">
         {list.isLoading ? (
           <div className="p-8 flex justify-center">
             <Spinner />

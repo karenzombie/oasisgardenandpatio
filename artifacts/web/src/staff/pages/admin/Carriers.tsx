@@ -64,7 +64,7 @@ export default function Carriers() {
         }
       />
       <PageBody>
-        <div className="bg-white rounded-lg border overflow-hidden">
+        <div className="bg-white rounded-lg border overflow-x-auto">
           {list.isLoading ? (
             <div className="p-12 flex justify-center">
               <Spinner />

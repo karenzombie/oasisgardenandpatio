@@ -35,7 +35,7 @@ export function StaffShell({ user, children }: StaffShellProps) {
 
       <div className="flex-1 flex flex-col min-w-0">
         <Topbar user={user} onMenu={() => setMobileOpen(true)} />
-        <main className="flex-1 overflow-y-auto">{children}</main>
+        <main className="flex-1 overflow-auto">{children}</main>
       </div>
     </div>
   );

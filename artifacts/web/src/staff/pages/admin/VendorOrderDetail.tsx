@@ -284,7 +284,7 @@ export default function VendorOrderDetail() {
         <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
           <div className="space-y-4">
             {/* Items */}
-            <div className="rounded-md border bg-white">
+            <div className="rounded-md border bg-white overflow-x-auto">
               <div className="px-4 py-3 border-b font-medium">Items</div>
               {vo.items.length === 0 ? (
                 <div className="px-4 py-8 text-center text-sm text-slate-500">

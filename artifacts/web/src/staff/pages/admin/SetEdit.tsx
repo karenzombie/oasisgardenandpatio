@@ -611,7 +611,7 @@ export default function SetEdit() {
                 No products in this set yet. Add some above.
               </div>
             ) : (
-              <div className="border border-slate-200 rounded overflow-hidden">
+              <div className="border border-slate-200 rounded overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-slate-50 text-slate-600 text-xs uppercase tracking-wide">
                     <tr>

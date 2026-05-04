@@ -257,7 +257,7 @@ export default function Sets() {
           </label>
         </div>
 
-        <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+        <div className="bg-white rounded-lg border border-slate-200 overflow-x-auto">
           {list.isLoading ? (
             <div className="p-12 flex justify-center">
               <Spinner />

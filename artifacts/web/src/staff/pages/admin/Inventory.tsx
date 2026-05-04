@@ -281,7 +281,7 @@ function LevelsTab() {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg border overflow-hidden">
+      <div className="bg-white rounded-lg border overflow-x-auto">
         {list.isLoading ? (
           <div className="p-12 flex justify-center">
             <Spinner />
@@ -802,7 +802,7 @@ function AdjustmentsTab() {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg border overflow-hidden">
+      <div className="bg-white rounded-lg border overflow-x-auto">
         {list.isLoading ? (
           <div className="p-12 flex justify-center">
             <Spinner />
@@ -983,7 +983,7 @@ function LocationsTab() {
         </Button>
       </div>
 
-      <div className="bg-white rounded-lg border overflow-hidden">
+      <div className="bg-white rounded-lg border overflow-x-auto">
         {list.isLoading ? (
           <div className="p-12 flex justify-center">
             <Spinner />

@@ -168,7 +168,7 @@ export default function AgentOrderDetail() {
               </div>
             </div>
 
-            <div className="rounded-md border bg-white">
+            <div className="rounded-md border bg-white overflow-x-auto">
               <div className="px-4 py-3 border-b font-medium">Items</div>
               <table className="w-full text-sm">
                 <thead className="bg-slate-50 text-left">

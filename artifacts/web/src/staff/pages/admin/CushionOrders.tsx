@@ -96,7 +96,7 @@ export default function CushionOrders() {
             No cushion orders match your filters.
           </div>
         ) : (
-          <div className="border border-border rounded-md overflow-hidden bg-card">
+          <div className="border border-border rounded-md overflow-x-auto bg-card">
             <table className="w-full text-sm">
               <thead className="bg-muted/40 text-left">
                 <tr>
