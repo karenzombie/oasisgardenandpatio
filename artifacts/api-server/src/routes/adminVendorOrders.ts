@@ -741,6 +741,7 @@ router.post(
           vendorOrderNumber: detail.vendorOrderNumber,
           dateOrdered: detail.createdAt,
           customerOrderNumber: detail.customerOrderNumber,
+          customerName: detail.customerName,
           notes: detail.notes,
           items: detail.items,
           manufacturerName: detail.manufacturerName,

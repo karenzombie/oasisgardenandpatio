@@ -224,6 +224,7 @@ export interface VendorOrderPdfArgs {
   vendorOrderNumber: string;
   dateOrdered: string;
   customerOrderNumber: string | null;
+  customerName: string | null;
   notes: string | null;
   items: PdfVendorOrderItem[];
   manufacturerName: string | null;
@@ -320,7 +321,7 @@ function VendorOrderDocument(args: VendorOrderPdfArgs) {
             <View style={s.metaTable}>
               {/* Header row */}
               <View style={[s.metaRow, { backgroundColor: "#e8e8e5", borderBottom: `1px solid ${BORDER}` }]}>
-                {["PO Number", "Date Ordered", "Customer Order #", "Freight", "Terms"].map((label, i, arr) => (
+                {["PO Number", "Date Ordered", "Customer Order #", "Customer Name", "Freight", "Terms"].map((label, i, arr) => (
                   <View key={label} style={i < arr.length - 1 ? s.metaCell : s.metaCellLast}>
                     <Text style={s.metaLabel}>{label}</Text>
                   </View>
@@ -336,6 +337,9 @@ function VendorOrderDocument(args: VendorOrderPdfArgs) {
                 </View>
                 <View style={s.metaCell}>
                   <Text style={s.metaValue}>{args.customerOrderNumber ?? "—"}</Text>
+                </View>
+                <View style={s.metaCell}>
+                  <Text style={s.metaValue}>{args.customerName ?? "—"}</Text>
                 </View>
                 <View style={s.metaCell}>
                   <Text style={s.metaValue}>—</Text>
@@ -372,21 +376,35 @@ function VendorOrderDocument(args: VendorOrderPdfArgs) {
 
           {/* Rows */}
           {items.map((it, idx) => {
-            const sku =
-              it.variantSkuSnapshot ?? it.productSkuSnapshot ?? "";
-            const desc = [
-              it.description,
+            const sku = it.variantSkuSnapshot ?? it.productSkuSnapshot ?? "";
+            const mainDesc = it.description || "—";
+            const options: string[] = [
               it.variantNameSnapshot,
               it.fabricNameSnapshot,
-            ]
-              .filter(Boolean)
-              .join(" — ");
-            const rowStyle = idx % 2 === 0 ? s.tdRow : s.tdRowAlt;
+            ].filter((v): v is string => Boolean(v));
+            const rowBg = idx % 2 === 0 ? "#fff" : LIGHT_BG;
             return (
               <React.Fragment key={idx}>
-                <View style={rowStyle}>
+                <View style={[s.tdRow, { backgroundColor: rowBg }]}>
                   <Text style={[s.td, s.colItem]}>{sku}</Text>
-                  <Text style={[s.td, s.colDesc]}>{desc || "—"}</Text>
+                  {/* Description cell: main text + indented option lines */}
+                  <View style={[s.colDesc, { paddingVertical: 2 }]}>
+                    <Text style={[s.td, { paddingVertical: 0 }]}>{mainDesc}</Text>
+                    {options.map((opt, oi) => (
+                      <Text
+                        key={oi}
+                        style={{
+                          fontSize: 6.5,
+                          color: "#555",
+                          fontFamily: "Helvetica-Oblique",
+                          paddingLeft: 8,
+                          lineHeight: 1.4,
+                        }}
+                      >
+                        › {opt}
+                      </Text>
+                    ))}
+                  </View>
                   <Text style={[s.td, s.colQty]}>{it.quantity}</Text>
                   <Text style={[s.td, s.colUnit]}>{fmtMoney(it.unitPrice)}</Text>
                   <Text style={[s.td, s.colTotal]}>{fmtMoney(it.amount)}</Text>
