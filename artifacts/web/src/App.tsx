@@ -82,9 +82,14 @@ function CustomerRouter() {
 function Router() {
   const [loc] = useLocation();
 
-  if (loc === "/staff-portal-guide" && window.location.pathname !== "/staff-portal-guide/") {
-    window.location.replace("/staff-portal-guide/");
-    return null;
+  if (loc === "/staff-portal-guide" || loc.startsWith("/staff-portal-guide/")) {
+    const key = "spg-redirect-ts";
+    const last = Number(sessionStorage.getItem(key) ?? "0");
+    if (Date.now() - last > 5000) {
+      sessionStorage.setItem(key, String(Date.now()));
+      window.location.replace("/staff-portal-guide/");
+      return null;
+    }
   }
 
   const isStaff =
