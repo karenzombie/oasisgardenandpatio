@@ -27,6 +27,7 @@ export interface AdminVendorOrderDetail {
   updatedAt: Date;
   manufacturerId: number | null;
   manufacturerName: string | null;
+  manufacturerOrderEmail: string | null;
   customerOrderId: number;
   customerOrderNumber: string | null;
   customerOrderStatus: string | null;

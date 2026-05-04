@@ -93,6 +93,11 @@ export default function VendorOrderDetail() {
     if (vo) {
       setNotesDraft(vo.notes ?? "");
       setEtaDraft(isoToDateInput(vo.vendorEstimatedDeliveryDate));
+      // Pre-populate the send dialog with the manufacturer's order email
+      // only when the dialog hasn't been opened yet (avoid overwriting edits).
+      setSendEmail((prev) =>
+        prev === "" ? (vo.manufacturerOrderEmail ?? "") : prev,
+      );
     }
   }, [vo]);
 
@@ -563,7 +568,7 @@ export default function VendorOrderDetail() {
             </DialogHeader>
             <div className="space-y-3">
               <div>
-                <Label htmlFor="send-email">Vendor email (optional)</Label>
+                <Label htmlFor="send-email">Vendor email</Label>
                 <Input
                   id="send-email"
                   type="email"
@@ -572,8 +577,9 @@ export default function VendorOrderDetail() {
                   placeholder="orders@vendor.com"
                 />
                 <p className="text-xs text-slate-500 mt-1">
-                  Recorded against the send for audit. Outbound email delivery
-                  comes in a future phase.
+                  An email with the purchase order details will be sent to this
+                  address. If left blank, the manufacturer's configured order
+                  email will be used (if set).
                 </p>
               </div>
               {vo.sentAt && (

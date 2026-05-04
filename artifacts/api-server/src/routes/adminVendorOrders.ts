@@ -37,6 +37,7 @@ import {
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import { recordAudit } from "../lib/audit";
 import { recordHistory } from "../lib/history";
+import { sendVendorOrderEmail } from "../lib/vendorOrderEmail";
 
 const router: IRouter = Router();
 const DEFAULT_LIMIT = 50;
@@ -261,6 +262,7 @@ async function loadVendorOrderDetail(id: number) {
     updatedAt: vo.updatedAt.toISOString(),
     manufacturerId: vo.manufacturerId,
     manufacturerName: mfg?.name ?? null,
+    manufacturerOrderEmail: mfg?.orderEmail ?? null,
     customerOrderId: vo.customerOrderId,
     customerOrderNumber: order?.orderNumber ?? null,
     customerOrderStatus: order?.status ?? null,
@@ -717,6 +719,42 @@ router.post(
       });
     }
     const detail = await loadVendorOrderDetail(params.data.id);
+
+    // Resolve the destination email: explicit override from the request body,
+    // or fall back to the manufacturer's configured order email.
+    const toEmail =
+      body.data.sentToEmail?.trim() || detail?.manufacturerOrderEmail || null;
+
+    if (toEmail && detail) {
+      try {
+        await sendVendorOrderEmail({
+          to: toEmail,
+          vendorOrderNumber: detail.vendorOrderNumber,
+          customerOrderNumber: detail.customerOrderNumber,
+          manufacturerName: detail.manufacturerName,
+          notes: detail.notes,
+          items: detail.items,
+        });
+        req.log.info(
+          { vendorOrderId: params.data.id, to: toEmail },
+          "Vendor order email sent",
+        );
+      } catch (err) {
+        // Log but do not fail the request — the send has already been
+        // recorded in the DB and status updated. A Resend outage should
+        // not roll back the recorded state.
+        req.log.error(
+          { err, vendorOrderId: params.data.id, to: toEmail },
+          "Failed to send vendor order email",
+        );
+      }
+    } else if (!toEmail) {
+      req.log.warn(
+        { vendorOrderId: params.data.id },
+        "Vendor order send recorded but no email address available — set an order email on the manufacturer or enter one in the send dialog",
+      );
+    }
+
     res.json(detail);
   },
 );
