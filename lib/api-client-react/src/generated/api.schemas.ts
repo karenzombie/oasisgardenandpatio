@@ -3275,6 +3275,10 @@ export type ListCatalogProductsParams = {
   categorySlug?: string;
   manufacturerSlug?: string;
   materialSlug?: string;
+  /**
+   * Filter by frame finish (case-insensitive variant name, e.g. "Black")
+   */
+  finish?: string;
   sort?: ListCatalogProductsSort;
   /**
    * @minimum 1

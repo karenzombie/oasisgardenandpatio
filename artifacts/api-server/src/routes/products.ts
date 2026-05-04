@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, exists, ilike, or, sql } from "drizzle-orm";
 import {
   db,
   productsTable,
@@ -87,6 +87,7 @@ router.get(
       categorySlug,
       manufacturerSlug,
       materialSlug,
+      finish,
       sort,
       page,
       pageSize,
@@ -115,6 +116,22 @@ router.get(
     }
     if (materialSlug) {
       conditions.push(ilike(materialsTable.slug, materialSlug));
+    }
+    if (finish) {
+      conditions.push(
+        exists(
+          db
+            .select({ one: sql`1` })
+            .from(productVariantsTable)
+            .where(
+              and(
+                eq(productVariantsTable.productId, productsTable.id),
+                eq(productVariantsTable.optionLabel, "Frame Finish"),
+                ilike(productVariantsTable.variantName, finish),
+              ),
+            ),
+        ),
+      );
     }
     const whereClause = and(...conditions);
 
@@ -217,6 +234,30 @@ router.get(
         pageSize,
       }),
     );
+  },
+);
+
+// Public: distinct frame finish values (for shop filter)
+router.get(
+  "/catalog/finishes",
+  async (_req, res): Promise<void> => {
+    const rows = await db
+      .selectDistinct({ finish: productVariantsTable.variantName })
+      .from(productVariantsTable)
+      .innerJoin(
+        productsTable,
+        eq(productsTable.id, productVariantsTable.productId),
+      )
+      .where(
+        and(
+          eq(productVariantsTable.optionLabel, "Frame Finish"),
+          eq(productVariantsTable.isActive, true),
+          eq(productsTable.isActive, true),
+          eq(productsTable.availableOnline, true),
+        ),
+      )
+      .orderBy(productVariantsTable.variantName);
+    res.json(rows.map((r) => r.finish));
   },
 );
 

@@ -114,6 +114,12 @@ export const ListCatalogProductsQueryParams = zod.object({
   categorySlug: zod.coerce.string().optional(),
   manufacturerSlug: zod.coerce.string().optional(),
   materialSlug: zod.coerce.string().optional(),
+  finish: zod.coerce
+    .string()
+    .optional()
+    .describe(
+      'Filter by frame finish (case-insensitive variant name, e.g. \"Black\")',
+    ),
   sort: zod
     .enum(["featured", "newest", "price_asc", "price_desc", "name_asc"])
     .default(listCatalogProductsQuerySortDefault),
@@ -150,6 +156,14 @@ export const ListCatalogProductsResponse = zod.object({
   page: zod.number(),
   pageSize: zod.number(),
 });
+
+/**
+ * @summary Distinct frame finish values across all active products
+ */
+export const ListCatalogFinishesResponseItem = zod.string();
+export const ListCatalogFinishesResponse = zod.array(
+  ListCatalogFinishesResponseItem,
+);
 
 /**
  * @summary Public list of all active fabrics offered as product options

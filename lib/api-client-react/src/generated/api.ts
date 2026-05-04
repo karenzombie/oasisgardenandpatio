@@ -850,6 +850,81 @@ export function useListCatalogProducts<
 }
 
 /**
+ * @summary Distinct frame finish values across all active products
+ */
+export const getListCatalogFinishesUrl = () => {
+  return `/api/catalog/finishes`;
+};
+
+export const listCatalogFinishes = async (
+  options?: RequestInit,
+): Promise<string[]> => {
+  return customFetch<string[]>(getListCatalogFinishesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListCatalogFinishesQueryKey = () => {
+  return [`/api/catalog/finishes`] as const;
+};
+
+export const getListCatalogFinishesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listCatalogFinishes>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listCatalogFinishes>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListCatalogFinishesQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listCatalogFinishes>>
+  > = ({ signal }) => listCatalogFinishes({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listCatalogFinishes>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListCatalogFinishesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listCatalogFinishes>>
+>;
+export type ListCatalogFinishesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Distinct frame finish values across all active products
+ */
+
+export function useListCatalogFinishes<
+  TData = Awaited<ReturnType<typeof listCatalogFinishes>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listCatalogFinishes>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListCatalogFinishesQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
  * @summary Public list of all active fabrics offered as product options
  */
 export const getListCatalogFabricsUrl = () => {
