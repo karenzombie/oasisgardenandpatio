@@ -26,9 +26,36 @@ if (!basePath) {
   );
 }
 
+const trailingSlashRedirect = {
+  name: "trailing-slash-redirect",
+  configureServer(server: { middlewares: { use: (fn: (req: { url?: string }, res: { writeHead: (status: number, headers: Record<string, string>) => void; end: () => void }, next: () => void) => void) => void } }) {
+    const baseNoSlash = basePath.replace(/\/$/, "");
+    server.middlewares.use((req, res, next) => {
+      if (req.url === baseNoSlash) {
+        res.writeHead(302, { Location: basePath });
+        res.end();
+        return;
+      }
+      next();
+    });
+  },
+  configurePreviewServer(server: { middlewares: { use: (fn: (req: { url?: string }, res: { writeHead: (status: number, headers: Record<string, string>) => void; end: () => void }, next: () => void) => void) => void } }) {
+    const baseNoSlash = basePath.replace(/\/$/, "");
+    server.middlewares.use((req, res, next) => {
+      if (req.url === baseNoSlash) {
+        res.writeHead(302, { Location: basePath });
+        res.end();
+        return;
+      }
+      next();
+    });
+  },
+};
+
 export default defineConfig({
   base: basePath,
   plugins: [
+    trailingSlashRedirect,
     react(),
     runtimeErrorOverlay(),
     tailwindcss(),
