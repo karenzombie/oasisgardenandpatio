@@ -16,6 +16,7 @@ import categoryDeepSeatingImg from "@/assets/category-deep-seating.jpg";
 import categoryChaisseImg from "@/assets/category-chaise.png";
 import categoryBasesImg from "@/assets/category-bases.png";
 import categoryCommercialImg from "@/assets/category-commercial.png";
+import categoryReplacementPartsImg from "@/assets/category-replacement-parts.jpg";
 
 const CATEGORY_IMAGES: Record<string, string> = {
   "cat-umbrellas": categoryShadeImg,
@@ -26,6 +27,7 @@ const CATEGORY_IMAGES: Record<string, string> = {
   "cat-deep-seating": categoryDeepSeatingImg,
   "cat-umbrella-bases": categoryBasesImg,
   "cat-commercial": categoryCommercialImg,
+  "cat-replacement-parts": categoryReplacementPartsImg,
   shade: categoryShadeImg,
   lounge: categoryLoungeImg,
   dining: categoryDiningImg,
