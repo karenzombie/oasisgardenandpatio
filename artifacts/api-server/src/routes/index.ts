@@ -39,6 +39,7 @@ import cartRouter from "./cart";
 import accountRouter from "./account";
 import checkoutRouter from "./checkout";
 import cushionsRouter from "./cushions";
+import analyticsRouter from "./analytics";
 
 const router: IRouter = Router();
 
@@ -82,5 +83,6 @@ router.use(cartRouter);
 router.use(accountRouter);
 router.use(checkoutRouter);
 router.use(cushionsRouter);
+router.use(analyticsRouter);
 
 export default router;

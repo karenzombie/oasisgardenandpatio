@@ -32,6 +32,8 @@ tags:
     description: Admin CRUD for product categories
   - name: cushions
     description: Custom cushion order form (public submit, staff review)
+  - name: analytics
+    description: Visitor / funnel analytics ingestion (public) and reporting (admin)
 paths:
   /healthz:
     get:
@@ -3411,6 +3413,41 @@ paths:
               schema: { $ref: "#/components/schemas/AdminReportsSalesByCategory" }
             text/csv:
               schema: { type: string }
+  /analytics/track:
+    post:
+      operationId: trackAnalyticsEvent
+      tags: [analytics]
+      summary: Record a single visitor / funnel event (public; anon allowed)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TrackAnalyticsEventRequest" }
+      responses:
+        "204":
+          description: Event accepted (no body)
+  /admin/reports/visitor-funnel:
+    get:
+      operationId: adminReportsVisitorFunnel
+      tags: [admin-reports]
+      summary: Daily visitor funnel — landings, login prompts, completions, and abandonment
+      parameters:
+        - name: dateFrom
+          in: query
+          required: false
+          description: Inclusive lower bound (ISO date or datetime). Defaults to 30 days ago.
+          schema: { type: string }
+        - name: dateTo
+          in: query
+          required: false
+          description: Inclusive upper bound (ISO date or datetime). Defaults to now.
+          schema: { type: string }
+      responses:
+        "200":
+          description: Visitor funnel breakdown
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminReportsVisitorFunnel" }
   /staff/notifications:
     get:
       operationId: staffListNotifications
@@ -4335,6 +4372,52 @@ components:
           type: array
           items: { $ref: "#/components/schemas/AdminReportsCategoryRow" }
       required: [range, rows]
+    TrackAnalyticsEventRequest:
+      type: object
+      properties:
+        eventType:
+          type: string
+          enum: [visit, auth_prompt, signup_completed, login_completed]
+        anonymousId: { type: string, nullable: true }
+        path: { type: string, nullable: true }
+        reason: { type: string, nullable: true, description: "For auth_prompt: which gated page (cushions, checkout, account, …)" }
+        referrer: { type: string, nullable: true }
+      required: [eventType]
+    AdminReportsVisitorFunnelRow:
+      type: object
+      properties:
+        day: { type: string, description: "YYYY-MM-DD" }
+        visitors: { type: integer }
+        prompted: { type: integer, description: "Distinct anon ids shown a login/signup prompt" }
+        completed: { type: integer, description: "Distinct anon ids who completed signup or login" }
+        signups: { type: integer }
+        logins: { type: integer }
+        abandoned: { type: integer, description: "prompted - completed (non-negative)" }
+      required: [day, visitors, prompted, completed, signups, logins, abandoned]
+    AdminReportsVisitorFunnelTotals:
+      type: object
+      properties:
+        visitors: { type: integer }
+        prompted: { type: integer }
+        completed: { type: integer }
+        signups: { type: integer }
+        logins: { type: integer }
+        abandoned: { type: integer }
+      required: [visitors, prompted, completed, signups, logins, abandoned]
+    AdminReportsVisitorFunnel:
+      type: object
+      properties:
+        range:
+          type: object
+          properties:
+            dateFrom: { type: string, format: date-time }
+            dateTo: { type: string, format: date-time }
+          required: [dateFrom, dateTo]
+        totals: { $ref: "#/components/schemas/AdminReportsVisitorFunnelTotals" }
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/AdminReportsVisitorFunnelRow" }
+      required: [range, totals, rows]
     AdminCancellationRequest:
       type: object
       properties:

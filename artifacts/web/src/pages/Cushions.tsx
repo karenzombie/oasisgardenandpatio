@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
+import { trackEvent } from "@/lib/analytics";
 import {
   useListCatalogFabrics,
   useListCatalogProducts,
@@ -90,7 +91,10 @@ export default function Cushions() {
   const [customerNotes, setCustomerNotes] = useState("");
 
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) navigate("/login?next=%2Fcushions");
+    if (!authLoading && !isAuthenticated) {
+      trackEvent("auth_prompt", { reason: "cushions" });
+      navigate("/login?next=%2Fcushions");
+    }
   }, [authLoading, isAuthenticated, navigate]);
 
   // Pre-populate name once user loads

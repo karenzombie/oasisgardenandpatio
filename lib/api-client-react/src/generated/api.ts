@@ -79,6 +79,8 @@ import type {
   AdminReportsSalesByManufacturerParams,
   AdminReportsSalesSummary,
   AdminReportsSalesSummaryParams,
+  AdminReportsVisitorFunnel,
+  AdminReportsVisitorFunnelParams,
   AdminResetPasswordResponse,
   AdminSet,
   AdminSetSummary,
@@ -172,6 +174,7 @@ import type {
   SystemSettingsUpdate,
   TotpCodeRequest,
   TotpSetupInitResponse,
+  TrackAnalyticsEventRequest,
   UpdateAddressRequest,
   UpdateBannerRequest,
   UpdateCarrierRequest,
@@ -11985,6 +11988,202 @@ export function useAdminReportsSalesByCategory<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getAdminReportsSalesByCategoryQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Record a single visitor / funnel event (public; anon allowed)
+ */
+export const getTrackAnalyticsEventUrl = () => {
+  return `/api/analytics/track`;
+};
+
+export const trackAnalyticsEvent = async (
+  trackAnalyticsEventRequest: TrackAnalyticsEventRequest,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getTrackAnalyticsEventUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(trackAnalyticsEventRequest),
+  });
+};
+
+export const getTrackAnalyticsEventMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof trackAnalyticsEvent>>,
+    TError,
+    { data: BodyType<TrackAnalyticsEventRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof trackAnalyticsEvent>>,
+  TError,
+  { data: BodyType<TrackAnalyticsEventRequest> },
+  TContext
+> => {
+  const mutationKey = ["trackAnalyticsEvent"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof trackAnalyticsEvent>>,
+    { data: BodyType<TrackAnalyticsEventRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return trackAnalyticsEvent(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type TrackAnalyticsEventMutationResult = NonNullable<
+  Awaited<ReturnType<typeof trackAnalyticsEvent>>
+>;
+export type TrackAnalyticsEventMutationBody =
+  BodyType<TrackAnalyticsEventRequest>;
+export type TrackAnalyticsEventMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Record a single visitor / funnel event (public; anon allowed)
+ */
+export const useTrackAnalyticsEvent = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof trackAnalyticsEvent>>,
+    TError,
+    { data: BodyType<TrackAnalyticsEventRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof trackAnalyticsEvent>>,
+  TError,
+  { data: BodyType<TrackAnalyticsEventRequest> },
+  TContext
+> => {
+  return useMutation(getTrackAnalyticsEventMutationOptions(options));
+};
+
+/**
+ * @summary Daily visitor funnel — landings, login prompts, completions, and abandonment
+ */
+export const getAdminReportsVisitorFunnelUrl = (
+  params?: AdminReportsVisitorFunnelParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/admin/reports/visitor-funnel?${stringifiedParams}`
+    : `/api/admin/reports/visitor-funnel`;
+};
+
+export const adminReportsVisitorFunnel = async (
+  params?: AdminReportsVisitorFunnelParams,
+  options?: RequestInit,
+): Promise<AdminReportsVisitorFunnel> => {
+  return customFetch<AdminReportsVisitorFunnel>(
+    getAdminReportsVisitorFunnelUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getAdminReportsVisitorFunnelQueryKey = (
+  params?: AdminReportsVisitorFunnelParams,
+) => {
+  return [
+    `/api/admin/reports/visitor-funnel`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getAdminReportsVisitorFunnelQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminReportsVisitorFunnel>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: AdminReportsVisitorFunnelParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminReportsVisitorFunnel>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getAdminReportsVisitorFunnelQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminReportsVisitorFunnel>>
+  > = ({ signal }) =>
+    adminReportsVisitorFunnel(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminReportsVisitorFunnel>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminReportsVisitorFunnelQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminReportsVisitorFunnel>>
+>;
+export type AdminReportsVisitorFunnelQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Daily visitor funnel — landings, login prompts, completions, and abandonment
+ */
+
+export function useAdminReportsVisitorFunnel<
+  TData = Awaited<ReturnType<typeof adminReportsVisitorFunnel>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: AdminReportsVisitorFunnelParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminReportsVisitorFunnel>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminReportsVisitorFunnelQueryOptions(
     params,
     options,
   );

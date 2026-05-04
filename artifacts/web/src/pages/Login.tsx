@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { AuthShell } from "./auth/AuthShell";
+import { trackEvent } from "@/lib/analytics";
 
 export default function Login() {
   const [, navigate] = useLocation();
@@ -32,6 +33,7 @@ export default function Login() {
     setErrorMessage(null);
     try {
       await loginMutation.mutateAsync({ data: { email, password } });
+      trackEvent("login_completed");
       await queryClient.invalidateQueries({
         queryKey: getGetCurrentUserQueryKey(),
       });

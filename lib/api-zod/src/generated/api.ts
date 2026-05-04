@@ -5617,6 +5617,73 @@ export const AdminReportsSalesByCategoryResponse = zod.object({
 });
 
 /**
+ * @summary Record a single visitor / funnel event (public; anon allowed)
+ */
+export const TrackAnalyticsEventBody = zod.object({
+  eventType: zod.enum([
+    "visit",
+    "auth_prompt",
+    "signup_completed",
+    "login_completed",
+  ]),
+  anonymousId: zod.string().nullish(),
+  path: zod.string().nullish(),
+  reason: zod
+    .string()
+    .nullish()
+    .describe(
+      "For auth_prompt: which gated page (cushions, checkout, account, …)",
+    ),
+  referrer: zod.string().nullish(),
+});
+
+/**
+ * @summary Daily visitor funnel — landings, login prompts, completions, and abandonment
+ */
+export const AdminReportsVisitorFunnelQueryParams = zod.object({
+  dateFrom: zod.coerce
+    .string()
+    .optional()
+    .describe(
+      "Inclusive lower bound (ISO date or datetime). Defaults to 30 days ago.",
+    ),
+  dateTo: zod.coerce
+    .string()
+    .optional()
+    .describe("Inclusive upper bound (ISO date or datetime). Defaults to now."),
+});
+
+export const AdminReportsVisitorFunnelResponse = zod.object({
+  range: zod.object({
+    dateFrom: zod.coerce.date(),
+    dateTo: zod.coerce.date(),
+  }),
+  totals: zod.object({
+    visitors: zod.number(),
+    prompted: zod.number(),
+    completed: zod.number(),
+    signups: zod.number(),
+    logins: zod.number(),
+    abandoned: zod.number(),
+  }),
+  rows: zod.array(
+    zod.object({
+      day: zod.string().describe("YYYY-MM-DD"),
+      visitors: zod.number(),
+      prompted: zod
+        .number()
+        .describe("Distinct anon ids shown a login\/signup prompt"),
+      completed: zod
+        .number()
+        .describe("Distinct anon ids who completed signup or login"),
+      signups: zod.number(),
+      logins: zod.number(),
+      abandoned: zod.number().describe("prompted - completed (non-negative)"),
+    }),
+  ),
+});
+
+/**
  * @summary List the current staff user's notifications (newest first)
  */
 export const staffListNotificationsQueryLimitMax = 100;

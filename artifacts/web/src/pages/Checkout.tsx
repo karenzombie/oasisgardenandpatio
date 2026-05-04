@@ -12,6 +12,7 @@ import {
   type CheckoutQuoteResponse,
 } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
+import { trackEvent } from "@/lib/analytics";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,8 +53,10 @@ export default function Checkout() {
   const qc = useQueryClient();
 
   useEffect(() => {
-    if (!authLoading && !isAuthenticated)
+    if (!authLoading && !isAuthenticated) {
+      trackEvent("auth_prompt", { reason: "checkout" });
       navigate("/login?next=%2Fcheckout");
+    }
   }, [authLoading, isAuthenticated, navigate]);
 
   const { data: cart, isLoading: cartLoading } = useGetCart({

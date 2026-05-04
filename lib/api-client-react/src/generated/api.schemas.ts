@@ -315,6 +315,59 @@ export interface AdminReportsSalesByCategory {
   rows: AdminReportsCategoryRow[];
 }
 
+export type TrackAnalyticsEventRequestEventType =
+  (typeof TrackAnalyticsEventRequestEventType)[keyof typeof TrackAnalyticsEventRequestEventType];
+
+export const TrackAnalyticsEventRequestEventType = {
+  visit: "visit",
+  auth_prompt: "auth_prompt",
+  signup_completed: "signup_completed",
+  login_completed: "login_completed",
+} as const;
+
+export interface TrackAnalyticsEventRequest {
+  eventType: TrackAnalyticsEventRequestEventType;
+  anonymousId?: string | null;
+  path?: string | null;
+  /** For auth_prompt: which gated page (cushions, checkout, account, …) */
+  reason?: string | null;
+  referrer?: string | null;
+}
+
+export interface AdminReportsVisitorFunnelRow {
+  /** YYYY-MM-DD */
+  day: string;
+  visitors: number;
+  /** Distinct anon ids shown a login/signup prompt */
+  prompted: number;
+  /** Distinct anon ids who completed signup or login */
+  completed: number;
+  signups: number;
+  logins: number;
+  /** prompted - completed (non-negative) */
+  abandoned: number;
+}
+
+export interface AdminReportsVisitorFunnelTotals {
+  visitors: number;
+  prompted: number;
+  completed: number;
+  signups: number;
+  logins: number;
+  abandoned: number;
+}
+
+export type AdminReportsVisitorFunnelRange = {
+  dateFrom: string;
+  dateTo: string;
+};
+
+export interface AdminReportsVisitorFunnel {
+  range: AdminReportsVisitorFunnelRange;
+  totals: AdminReportsVisitorFunnelTotals;
+  rows: AdminReportsVisitorFunnelRow[];
+}
+
 export interface AdminCancellationRequest {
   id: number;
   orderId: number;
@@ -3527,6 +3580,17 @@ export const AdminReportsSalesByCategoryFormat = {
   json: "json",
   csv: "csv",
 } as const;
+
+export type AdminReportsVisitorFunnelParams = {
+  /**
+   * Inclusive lower bound (ISO date or datetime). Defaults to 30 days ago.
+   */
+  dateFrom?: string;
+  /**
+   * Inclusive upper bound (ISO date or datetime). Defaults to now.
+   */
+  dateTo?: string;
+};
 
 export type StaffListNotificationsParams = {
   unreadOnly?: boolean;

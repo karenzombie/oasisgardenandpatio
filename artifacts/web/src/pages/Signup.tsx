@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { AuthShell } from "./auth/AuthShell";
+import { trackEvent } from "@/lib/analytics";
 
 export default function Signup() {
   const [, navigate] = useLocation();
@@ -49,6 +50,7 @@ export default function Signup() {
           ...(phone.trim() ? { phone: phone.trim() } : {}),
         },
       });
+      trackEvent("signup_completed");
       await queryClient.invalidateQueries({
         queryKey: getGetCurrentUserQueryKey(),
       });

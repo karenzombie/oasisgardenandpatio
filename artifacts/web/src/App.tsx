@@ -1,9 +1,11 @@
+import { useEffect } from "react";
 import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Layout } from "@/components/layout/Layout";
 import NotFound from "@/pages/not-found";
+import { trackVisitOnce } from "@/lib/analytics";
 
 import Home from "@/pages/Home";
 import Contact from "@/pages/Contact";
@@ -91,6 +93,9 @@ function Router() {
 }
 
 function App() {
+  useEffect(() => {
+    trackVisitOnce();
+  }, []);
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>

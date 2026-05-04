@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
-import { Download, BarChart3 } from "lucide-react";
+import { Download, BarChart3, Users } from "lucide-react";
 import {
   useAdminReportsSalesSummary,
   useAdminReportsSalesByAgent,
   useAdminReportsSalesByManufacturer,
   useAdminReportsSalesByCategory,
+  useAdminReportsVisitorFunnel,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -100,6 +101,10 @@ export default function Reports() {
   const byAgent = useAdminReportsSalesByAgent(params);
   const byManufacturer = useAdminReportsSalesByManufacturer(params);
   const byCategory = useAdminReportsSalesByCategory(params);
+  const visitorFunnel = useAdminReportsVisitorFunnel({
+    dateFrom: applied.dateFrom,
+    dateTo: applied.dateTo,
+  });
 
   // The CSV-capable endpoints have a union response type (JSON | string).
   // We never request CSV via the hooks, so we know the runtime shape is JSON.
@@ -242,6 +247,97 @@ export default function Reports() {
             )
           }
         />
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Visitor funnel
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Tracks unique anonymous visitors landing on the site, how many
+              were prompted to log in or create an account (when they tried to
+              place a cushion order, check out, or open their account), and
+              how many completed sign-up or sign-in vs. left without doing so.
+            </p>
+            {visitorFunnel.isLoading ? (
+              <Spinner />
+            ) : visitorFunnel.isError ? (
+              <p className="text-sm text-destructive">
+                Failed to load visitor funnel.
+              </p>
+            ) : visitorFunnel.data ? (
+              <>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+                  <Stat
+                    label="Visitors"
+                    value={fmtInt(visitorFunnel.data.totals.visitors)}
+                  />
+                  <Stat
+                    label="Account prompts shown"
+                    value={fmtInt(visitorFunnel.data.totals.prompted)}
+                  />
+                  <Stat
+                    label="Signed in or signed up"
+                    value={fmtInt(visitorFunnel.data.totals.completed)}
+                  />
+                  <Stat
+                    label="Left after prompt"
+                    value={fmtInt(visitorFunnel.data.totals.abandoned)}
+                  />
+                </div>
+                {visitorFunnel.data.rows.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    No visitor activity in the selected range.
+                  </p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
+                          <th className="py-2 pr-4">Date</th>
+                          <th className="py-2 pr-4 text-right">Visitors</th>
+                          <th className="py-2 pr-4 text-right">Prompted</th>
+                          <th className="py-2 pr-4 text-right">Sign-ups</th>
+                          <th className="py-2 pr-4 text-right">Logins</th>
+                          <th className="py-2 pr-4 text-right">Completed</th>
+                          <th className="py-2 pr-4 text-right">Left after prompt</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {visitorFunnel.data.rows.map((r) => (
+                          <tr key={r.day} className="border-b last:border-0">
+                            <td className="py-2 pr-4">{r.day}</td>
+                            <td className="py-2 pr-4 text-right tabular-nums">
+                              {fmtInt(r.visitors)}
+                            </td>
+                            <td className="py-2 pr-4 text-right tabular-nums">
+                              {fmtInt(r.prompted)}
+                            </td>
+                            <td className="py-2 pr-4 text-right tabular-nums">
+                              {fmtInt(r.signups)}
+                            </td>
+                            <td className="py-2 pr-4 text-right tabular-nums">
+                              {fmtInt(r.logins)}
+                            </td>
+                            <td className="py-2 pr-4 text-right tabular-nums">
+                              {fmtInt(r.completed)}
+                            </td>
+                            <td className="py-2 pr-4 text-right tabular-nums">
+                              {fmtInt(r.abandoned)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
+            ) : null}
+          </CardContent>
+        </Card>
 
         <ReportTable
           title="Sales by category"
