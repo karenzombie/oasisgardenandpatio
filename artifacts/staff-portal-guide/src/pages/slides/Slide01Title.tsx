@@ -28,13 +28,13 @@ export default function Slide01Title() {
 
         {/* Subtitle */}
         <div style={{ fontFamily: 'var(--font-display-family)', fontSize: '2.2vw', color: 'rgba(255,255,255,0.72)', fontStyle: 'italic', fontWeight: 400, maxWidth: '40vw', lineHeight: 1.4, textWrap: 'balance' }}>
-          Admin &amp; Sales Agent Reference Guide
+          Admin &amp; Sales Agent Views
         </div>
       </div>
 
       {/* Bottom label */}
       <div className="absolute" style={{ bottom: '5vh', left: '8vw', fontSize: '1.5vw', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.06em', fontFamily: 'var(--font-body-family)' }}>
-        2026 · Internal Reference
+        2026 · Built by Zombie Platforms LLC
       </div>
 
       {/* Right decorative portal frame sketch */}
