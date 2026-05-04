@@ -25,6 +25,21 @@ export default function Contact() {
             title="Oasis Garden & Patio Location Map"
           />
         </div>
+
+        {/* Storefront Photos */}
+        <div className="max-w-6xl mx-auto mt-16 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <img
+            src="/storefront1.png"
+            alt="Oasis Garden & Patio storefront entrance"
+            className="w-full h-72 md:h-96 object-cover rounded-sm border border-border"
+          />
+          <img
+            src="/storefront2.jpeg"
+            alt="Oasis Garden & Patio building exterior"
+            className="w-full h-72 md:h-96 object-cover rounded-sm border border-border"
+          />
+        </div>
+
       </div>
     </div>
   );
