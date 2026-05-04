@@ -35,3 +35,9 @@ id = "Ex16P6fG-bseElPocDn2s"
 uri = "file://.local/outputs/Oasis-Garden-and-Patio.pdf"
 type = "pdf"
 title = "Oasis Garden and Patio.pdf"
+
+[[outputs]]
+id = "bOv_T0ZV2aKrf-fOyQZWI"
+uri = "file://.local/outputs/Oasis-Staff-Portal-Reference-Guide.pptx"
+type = "slides"
+title = "Oasis Staff Portal Reference Guide (PPTX)"
