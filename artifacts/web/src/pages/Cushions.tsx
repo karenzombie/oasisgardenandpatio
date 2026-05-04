@@ -1,5 +1,6 @@
-import { useMemo, useState, type FormEvent } from "react";
-import { Link } from "wouter";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { Link, useLocation } from "wouter";
+import { useAuth } from "@/lib/auth";
 import {
   useListCatalogFabrics,
   useListCatalogProducts,
@@ -76,15 +77,30 @@ function emptyStockItem(): StockItem {
 }
 
 export default function Cushions() {
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const [, navigate] = useLocation();
+
   const [mode, setMode] = useState<Mode>("custom");
   const [customItems, setCustomItems] = useState<Record<string, CustomItem>>({});
   const [stockItems, setStockItems] = useState<StockItem[]>([emptyStockItem()]);
 
   // Customer info
   const [customerName, setCustomerName] = useState("");
-  const [customerEmail, setCustomerEmail] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerNotes, setCustomerNotes] = useState("");
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) navigate("/login?next=%2Fcushions");
+  }, [authLoading, isAuthenticated, navigate]);
+
+  // Pre-populate name once user loads
+  useEffect(() => {
+    setCustomerName((prev) =>
+      prev
+        ? prev
+        : [user?.firstName, user?.lastName].filter(Boolean).join(" ") || ""
+    );
+  }, [user]);
 
   // Custom-mode fabric & options
   const [fabricSelection, setFabricSelection] = useState<{
@@ -140,12 +156,6 @@ export default function Cushions() {
 
   function validate(): string | null {
     if (!customerName.trim()) return "Please enter your name.";
-    if (
-      customerEmail &&
-      !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(customerEmail.trim())
-    ) {
-      return "Please enter a valid email address.";
-    }
     if (mode === "custom") {
       const items = Object.values(customItems);
       if (items.length === 0) {
@@ -187,7 +197,7 @@ export default function Cushions() {
 
     const baseFields = {
       customerName: customerName.trim(),
-      customerEmail: customerEmail.trim() || null,
+      customerEmail: user?.email ?? null,
       customerPhone: customerPhone.trim() || null,
       customerNotes: customerNotes.trim() || null,
     };
@@ -245,6 +255,14 @@ export default function Cushions() {
     }
   }
 
+  if (authLoading) {
+    return (
+      <div className="flex justify-center py-24">
+        <Spinner className="h-8 w-8" />
+      </div>
+    );
+  }
+
   if (success) {
     return (
       <div className="container mx-auto px-4 py-16 max-w-2xl text-center">
@@ -261,7 +279,7 @@ export default function Cushions() {
           Order #{success.orderNumber}
         </p>
         <p className="text-sm text-muted-foreground mb-8">
-          {customerEmail
+          {user?.email
             ? "A confirmation email is on its way. We'll be in touch soon to confirm details and pricing."
             : "We'll be in touch soon to confirm details and pricing."}
         </p>
@@ -343,9 +361,12 @@ export default function Cushions() {
 
         {/* Customer info */}
         <section>
-          <h2 className="text-2xl font-serif text-foreground mb-4">
+          <h2 className="text-2xl font-serif text-foreground mb-1">
             Your Information
           </h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            Signed in as <span className="text-foreground">{user?.email}</span>
+          </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="cname">Name <span className="text-destructive">*</span></Label>
@@ -354,16 +375,6 @@ export default function Cushions() {
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
                 required
-              />
-            </div>
-            <div>
-              <Label htmlFor="cemail">Email</Label>
-              <Input
-                id="cemail"
-                type="email"
-                value={customerEmail}
-                onChange={(e) => setCustomerEmail(e.target.value)}
-                placeholder="for confirmation and follow-up"
               />
             </div>
             <div>
