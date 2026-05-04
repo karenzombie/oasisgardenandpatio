@@ -8,6 +8,7 @@ import { buildSessionMiddleware } from "./lib/session";
 const app: Express = express();
 
 app.set("trust proxy", 1);
+app.disable("etag");
 
 app.use(
   pinoHttp({

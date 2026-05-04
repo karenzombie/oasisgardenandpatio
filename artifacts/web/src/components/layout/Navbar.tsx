@@ -62,7 +62,7 @@ export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const { data: banners } = useListActiveBanners();
-  const activeBanners = banners?.filter(b => b.type === "banner") || [];
+  const activeBanners = Array.isArray(banners) ? banners.filter(b => b.type === "banner") : [];
 
   const { user, isAuthenticated } = useAuth();
   const logoutMutation = useLogout();
