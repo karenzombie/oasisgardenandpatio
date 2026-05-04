@@ -14,6 +14,7 @@ import ShippingReturns from "@/pages/ShippingReturns";
 import Fabrics from "@/pages/Fabrics";
 import Materials from "@/pages/Materials";
 import Manufacturers from "@/pages/Manufacturers";
+import Commercial from "@/pages/Commercial";
 import Cushions from "@/pages/Cushions";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import TermsAndConditions from "@/pages/TermsAndConditions";
@@ -53,7 +54,7 @@ function CustomerRouter() {
         <Route path="/shipping-returns" component={ShippingReturns} />
         <Route path="/warranty">{() => <ComingSoon />}</Route>
         <Route path="/fabrics" component={Fabrics} />
-        <Route path="/commercial">{() => <ComingSoon />}</Route>
+        <Route path="/commercial" component={Commercial} />
         <Route path="/cushions" component={Cushions} />
         <Route path="/login" component={Login} />
         <Route path="/signup" component={Signup} />
