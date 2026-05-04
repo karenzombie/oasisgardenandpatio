@@ -37,6 +37,31 @@ export class ObjectNotFoundError extends Error {
   }
 }
 
+/**
+ * Upload a Buffer directly to GCS object storage from server code.
+ * Returns the normalized object path (e.g. `/objects/uploads/<uuid>`) that
+ * can be stored in the database and later served via the storage route.
+ */
+export async function uploadBufferToStorage(
+  buffer: Buffer,
+  contentType: string,
+  subdir = "uploads",
+): Promise<string> {
+  const privateDir = process.env.PRIVATE_OBJECT_DIR;
+  if (!privateDir) {
+    throw new Error(
+      "PRIVATE_OBJECT_DIR not set — object storage must be provisioned first",
+    );
+  }
+  const id = randomUUID();
+  const fullPath = `${privateDir.replace(/\/$/, "")}/${subdir}/${id}`;
+  const { bucketName, objectName } = parseObjectPath(fullPath);
+  const bucket = objectStorageClient.bucket(bucketName);
+  const file = bucket.file(objectName);
+  await file.save(buffer, { contentType, resumable: false });
+  return `/objects/${subdir}/${id}`;
+}
+
 export class ObjectStorageService {
   constructor() {}
 

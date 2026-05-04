@@ -4204,6 +4204,13 @@ components:
         manufacturerId: { type: integer, nullable: true }
         manufacturerName: { type: string, nullable: true }
         manufacturerOrderEmail: { type: string, nullable: true }
+        manufacturerAddressLine1: { type: string, nullable: true }
+        manufacturerAddressLine2: { type: string, nullable: true }
+        manufacturerCity: { type: string, nullable: true }
+        manufacturerState: { type: string, nullable: true }
+        manufacturerPostalCode: { type: string, nullable: true }
+        manufacturerPhone: { type: string, nullable: true }
+        manufacturerFax: { type: string, nullable: true }
         customerOrderId: { type: integer }
         customerOrderNumber: { type: string, nullable: true }
         customerOrderStatus: { type: string, nullable: true }
@@ -4215,7 +4222,7 @@ components:
           type: array
           items: { $ref: "#/components/schemas/AdminVendorOrderSend" }
       required:
-        [id, vendorOrderNumber, status, notes, vendorEstimatedDeliveryDate, sentAt, acknowledgedAt, fulfilledAt, receivedAt, receivedByUserId, receivedByEmail, itemsReceived, createdByUserId, createdByEmail, createdAt, updatedAt, manufacturerId, manufacturerName, manufacturerOrderEmail, customerOrderId, customerOrderNumber, customerOrderStatus, customerName, items, sends]
+        [id, vendorOrderNumber, status, notes, vendorEstimatedDeliveryDate, sentAt, acknowledgedAt, fulfilledAt, receivedAt, receivedByUserId, receivedByEmail, itemsReceived, createdByUserId, createdByEmail, createdAt, updatedAt, manufacturerId, manufacturerName, manufacturerOrderEmail, manufacturerAddressLine1, manufacturerAddressLine2, manufacturerCity, manufacturerState, manufacturerPostalCode, manufacturerPhone, manufacturerFax, customerOrderId, customerOrderNumber, customerOrderStatus, customerName, items, sends]
     GenerateVendorOrdersRequest:
       type: object
       properties:

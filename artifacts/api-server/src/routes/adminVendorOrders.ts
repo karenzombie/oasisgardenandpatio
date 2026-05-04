@@ -38,6 +38,8 @@ import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import { recordAudit } from "../lib/audit";
 import { recordHistory } from "../lib/history";
 import { sendVendorOrderEmail } from "../lib/vendorOrderEmail";
+import { generateVendorOrderPdf } from "../lib/vendorOrderPdf";
+import { uploadBufferToStorage } from "../lib/objectStorage";
 
 const router: IRouter = Router();
 const DEFAULT_LIMIT = 50;
@@ -263,6 +265,13 @@ async function loadVendorOrderDetail(id: number) {
     manufacturerId: vo.manufacturerId,
     manufacturerName: mfg?.name ?? null,
     manufacturerOrderEmail: mfg?.orderEmail ?? null,
+    manufacturerAddressLine1: mfg?.addressLine1 ?? null,
+    manufacturerAddressLine2: mfg?.addressLine2 ?? null,
+    manufacturerCity: mfg?.city ?? null,
+    manufacturerState: mfg?.state ?? null,
+    manufacturerPostalCode: mfg?.postalCode ?? null,
+    manufacturerPhone: mfg?.phone ?? null,
+    manufacturerFax: mfg?.fax ?? null,
     customerOrderId: vo.customerOrderId,
     customerOrderNumber: order?.orderNumber ?? null,
     customerOrderStatus: order?.status ?? null,
@@ -722,6 +731,55 @@ router.post(
     }
     const detail = await loadVendorOrderDetail(params.data.id);
 
+    // Generate PDF and upload to object storage (non-fatal — email and DB
+    // state are not rolled back if PDF generation or upload fails).
+    let pdfStorageUrl: string | null = null;
+    let pdfBuffer: Buffer | undefined;
+    if (detail) {
+      try {
+        pdfBuffer = await generateVendorOrderPdf({
+          vendorOrderNumber: detail.vendorOrderNumber,
+          dateOrdered: detail.createdAt,
+          customerOrderNumber: detail.customerOrderNumber,
+          notes: detail.notes,
+          items: detail.items,
+          manufacturerName: detail.manufacturerName,
+          manufacturerAddressLine1: detail.manufacturerAddressLine1,
+          manufacturerAddressLine2: detail.manufacturerAddressLine2,
+          manufacturerCity: detail.manufacturerCity,
+          manufacturerState: detail.manufacturerState,
+          manufacturerPostalCode: detail.manufacturerPostalCode,
+          manufacturerPhone: detail.manufacturerPhone,
+          manufacturerFax: detail.manufacturerFax,
+          manufacturerEmail: detail.manufacturerOrderEmail,
+        });
+        pdfStorageUrl = await uploadBufferToStorage(
+          pdfBuffer,
+          "application/pdf",
+          "vendor-orders",
+        );
+        // Back-fill the PDF URL on the send row that was just inserted.
+        await db
+          .update(vendorOrderSendsTable)
+          .set({ pdfStorageUrl })
+          .where(
+            and(
+              eq(vendorOrderSendsTable.vendorOrderId, params.data.id),
+              isNull(vendorOrderSendsTable.pdfStorageUrl),
+            ),
+          );
+        req.log.info(
+          { vendorOrderId: params.data.id, pdfStorageUrl },
+          "Vendor order PDF generated and stored",
+        );
+      } catch (err) {
+        req.log.error(
+          { err, vendorOrderId: params.data.id },
+          "Failed to generate or upload vendor order PDF",
+        );
+      }
+    }
+
     // Resolve the destination email: explicit override from the request body,
     // or fall back to the manufacturer's configured order email.
     const toEmail =
@@ -736,15 +794,13 @@ router.post(
           manufacturerName: detail.manufacturerName,
           notes: detail.notes,
           items: detail.items,
+          pdfBuffer,
         });
         req.log.info(
           { vendorOrderId: params.data.id, to: toEmail },
           "Vendor order email sent",
         );
       } catch (err) {
-        // Log but do not fail the request — the send has already been
-        // recorded in the DB and status updated. A Resend outage should
-        // not roll back the recorded state.
         req.log.error(
           { err, vendorOrderId: params.data.id, to: toEmail },
           "Failed to send vendor order email",
@@ -757,7 +813,9 @@ router.post(
       );
     }
 
-    res.json(detail);
+    // Reload detail so the PDF URL is present in the response.
+    const finalDetail = await loadVendorOrderDetail(params.data.id);
+    res.json(finalDetail);
   },
 );
 

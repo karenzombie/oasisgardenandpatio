@@ -28,6 +28,13 @@ export interface AdminVendorOrderDetail {
   manufacturerId: number | null;
   manufacturerName: string | null;
   manufacturerOrderEmail: string | null;
+  manufacturerAddressLine1: string | null;
+  manufacturerAddressLine2: string | null;
+  manufacturerCity: string | null;
+  manufacturerState: string | null;
+  manufacturerPostalCode: string | null;
+  manufacturerPhone: string | null;
+  manufacturerFax: string | null;
   customerOrderId: number;
   customerOrderNumber: string | null;
   customerOrderStatus: string | null;

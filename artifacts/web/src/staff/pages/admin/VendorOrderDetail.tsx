@@ -414,8 +414,20 @@ export default function VendorOrderDetail() {
                         <span className="text-slate-600">
                           {s.sentToEmail ?? "(no email recorded)"}
                         </span>
-                        <span className="ml-auto text-xs text-slate-500">
-                          {fmtDateTime(s.sentAt)}
+                        <span className="ml-auto flex items-center gap-2">
+                          {s.pdfStorageUrl && (
+                            <a
+                              href={`/api/storage${s.pdfStorageUrl}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-blue-600 hover:underline"
+                            >
+                              View PO
+                            </a>
+                          )}
+                          <span className="text-xs text-slate-500">
+                            {fmtDateTime(s.sentAt)}
+                          </span>
                         </span>
                       </div>
                       {s.sentByEmail && (
