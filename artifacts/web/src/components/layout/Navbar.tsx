@@ -9,6 +9,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { Menu, X, ChevronDown, User, ShoppingBag } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useClerk } from "@clerk/react";
 import { useAuth } from "@/lib/auth";
 import logoImg from "@/assets/logo.png";
 import {
@@ -67,6 +68,7 @@ export function Navbar() {
   const { user, isAuthenticated } = useAuth();
   const logoutMutation = useLogout();
   const queryClient = useQueryClient();
+  const { signOut: clerkSignOut } = useClerk();
 
   const { data: cart } = useGetCart({
     query: {
@@ -80,7 +82,11 @@ export function Navbar() {
 
   const handleLogout = async () => {
     try {
-      await logoutMutation.mutateAsync();
+      // End the Clerk session first so its cookie is cleared, then drop
+      // the local Express session. Both can fail independently — keep the
+      // client-side cleanup running either way.
+      await clerkSignOut().catch(() => {});
+      await logoutMutation.mutateAsync().catch(() => {});
     } finally {
       await queryClient.invalidateQueries({
         queryKey: getGetCurrentUserQueryKey(),
@@ -195,10 +201,10 @@ export function Navbar() {
                 </DropdownMenu>
               ) : (
                 <Link
-                  href="/login"
+                  href="/sign-in"
                   className="text-sm font-medium text-foreground/70 hover:text-primary transition-colors"
                 >
-                  Log In
+                  Sign In
                 </Link>
               )}
             </div>
@@ -252,11 +258,11 @@ export function Navbar() {
               </>
             ) : (
               <Link
-                href="/login"
+                href="/sign-in"
                 className="text-lg font-serif text-muted-foreground hover:text-primary transition-colors"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                Log In
+                Sign In
               </Link>
             )}
           </nav>

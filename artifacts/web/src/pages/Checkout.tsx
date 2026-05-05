@@ -364,7 +364,7 @@ export default function Checkout() {
               <h2 className="font-serif text-xl">Contact</h2>
               {!isAuthenticated ? (
                 <Link
-                  href="/login?next=%2Fcheckout"
+                  href="/sign-in?redirect_url=%2Fcheckout"
                   className="text-xs uppercase tracking-widest text-muted-foreground hover:text-primary"
                 >
                   Sign in for faster checkout →
@@ -708,7 +708,7 @@ export default function Checkout() {
               <p className="text-[11px] text-muted-foreground mt-3 text-center">
                 You can{" "}
                 <Link
-                  href="/signup?next=%2Fcheckout"
+                  href="/sign-up?redirect_url=%2Fcheckout"
                   className="underline hover:text-primary"
                 >
                   create an account after checkout

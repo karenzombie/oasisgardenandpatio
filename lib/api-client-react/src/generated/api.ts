@@ -2753,6 +2753,92 @@ export const useLogout = <
 };
 
 /**
+ * Called by the web client whenever the Clerk user transitions from
+signed-out to signed-in. Finds or provisions a local users row
+(linked by clerk_user_id), creates a matching customer record,
+merges any guest cart, and sets the local session cookie.
+
+ * @summary Bridge a Clerk session to a local user + session cookie
+ */
+export const getClerkSyncUrl = () => {
+  return `/api/auth/clerk-sync`;
+};
+
+export const clerkSync = async (
+  options?: RequestInit,
+): Promise<CurrentUser> => {
+  return customFetch<CurrentUser>(getClerkSyncUrl(), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getClerkSyncMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof clerkSync>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof clerkSync>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["clerkSync"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof clerkSync>>,
+    void
+  > = () => {
+    return clerkSync(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ClerkSyncMutationResult = NonNullable<
+  Awaited<ReturnType<typeof clerkSync>>
+>;
+
+export type ClerkSyncMutationError = ErrorType<Error>;
+
+/**
+ * @summary Bridge a Clerk session to a local user + session cookie
+ */
+export const useClerkSync = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof clerkSync>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof clerkSync>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getClerkSyncMutationOptions(options));
+};
+
+/**
  * @summary Get the currently authenticated user
  */
 export const getGetCurrentUserUrl = () => {

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 64" role="img" aria-label="Oasis Garden &amp; Patio">
+  <defs>
+    <style>
+      .brand { font-family: 'Playfair Display', Georgia, serif; font-weight: 500; font-size: 22px; fill: #4a6c5e; letter-spacing: 0.02em; }
+      .sub { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; font-size: 9px; fill: #6b6760; letter-spacing: 0.28em; text-transform: uppercase; }
+    </style>
+  </defs>
+  <g transform="translate(8 12)">
+    <path d="M20 8 C12 16 12 28 20 36 C28 28 28 16 20 8 Z" fill="#7ba892" opacity="0.85"/>
+    <line x1="20" y1="36" x2="20" y2="44" stroke="#4a6c5e" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+  <text class="brand" x="56" y="32">Oasis Garden</text>
+  <text class="sub" x="56" y="48">&amp; Patio</text>
+</svg>

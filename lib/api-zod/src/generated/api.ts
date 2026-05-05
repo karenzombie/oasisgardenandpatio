@@ -975,6 +975,23 @@ export const LoginResponse = zod.object({
 });
 
 /**
+ * Called by the web client whenever the Clerk user transitions from
+signed-out to signed-in. Finds or provisions a local users row
+(linked by clerk_user_id), creates a matching customer record,
+merges any guest cart, and sets the local session cookie.
+
+ * @summary Bridge a Clerk session to a local user + session cookie
+ */
+export const ClerkSyncResponse = zod.object({
+  id: zod.number(),
+  email: zod.string().email(),
+  firstName: zod.string().nullable(),
+  lastName: zod.string().nullable(),
+  role: zod.enum(["customer", "agent", "admin"]),
+  emailVerified: zod.boolean(),
+});
+
+/**
  * @summary Get the currently authenticated user
  */
 export const GetCurrentUserResponse = zod.object({

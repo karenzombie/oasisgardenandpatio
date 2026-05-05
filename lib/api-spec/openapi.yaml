@@ -770,6 +770,35 @@ paths:
       responses:
         "204":
           description: Session ended
+  /auth/clerk-sync:
+    post:
+      operationId: clerkSync
+      tags: [auth]
+      summary: Bridge a Clerk session to a local user + session cookie
+      description: |
+        Called by the web client whenever the Clerk user transitions from
+        signed-out to signed-in. Finds or provisions a local users row
+        (linked by clerk_user_id), creates a matching customer record,
+        merges any guest cart, and sets the local session cookie.
+      responses:
+        "200":
+          description: Local user provisioned / linked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentUser"
+        "401":
+          description: No Clerk session present on the request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Email already used by a legacy local account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /auth/me:
     get:
       operationId: getCurrentUser

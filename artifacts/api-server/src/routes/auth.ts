@@ -2,6 +2,7 @@ import { Router, type IRouter, type Request } from "express";
 import { randomBytes, createHash } from "node:crypto";
 import { and, eq, isNull, gt, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
+import { getAuth, clerkClient } from "@clerk/express";
 import {
   db,
   usersTable,
@@ -260,6 +261,13 @@ router.post("/auth/login", loginRateLimiter, async (req, res): Promise<void> => 
     return;
   }
 
+  // Clerk-only accounts (signed up via Google / Apple / Clerk email) have
+  // no password hash — they must sign in through Clerk, not this endpoint.
+  if (!user.passwordHash) {
+    res.status(401).json({ error: "Invalid email or password" });
+    return;
+  }
+
   const ok = await bcrypt.compare(parsed.data.password, user.passwordHash);
   if (!ok) {
     res.status(401).json({ error: "Invalid email or password" });
@@ -463,6 +471,195 @@ router.post("/auth/reset-password", async (req, res): Promise<void> => {
   });
 
   res.status(204).end();
+});
+
+/**
+ * Bridge a Clerk session to a local user row + session cookie.
+ *
+ * The customer-facing site uses Clerk for sign-up / sign-in (Google, Apple,
+ * email). All cart / wishlist / order code keys off `req.session.userId`
+ * (a local users.id), so after Clerk authenticates we need to:
+ *   1. Find or create a local users row keyed by clerk_user_id
+ *   2. Create a matching customers row (so orders can attach to it)
+ *   3. Bind req.session.userId and merge any guest cart
+ *
+ * The frontend calls this once whenever the Clerk user transitions from
+ * signed-out to signed-in, then refetches /auth/me.
+ */
+router.post("/auth/clerk-sync", async (req, res): Promise<void> => {
+  const auth = getAuth(req);
+  const clerkUserId = auth?.userId;
+  if (!clerkUserId) {
+    res.status(401).json({ error: "Not signed in to Clerk" });
+    return;
+  }
+
+  let cu;
+  try {
+    cu = await clerkClient.users.getUser(clerkUserId);
+  } catch (err) {
+    req.log.error({ err, clerkUserId }, "Failed to fetch Clerk user");
+    res.status(502).json({ error: "Could not load Clerk profile" });
+    return;
+  }
+
+  const primaryEmailId = cu.primaryEmailAddressId;
+  const primary = cu.emailAddresses.find((e) => e.id === primaryEmailId);
+  const email = primary?.emailAddress?.trim().toLowerCase();
+  if (!email) {
+    res.status(400).json({ error: "Clerk profile is missing an email" });
+    return;
+  }
+  const verified = primary?.verification?.status === "verified";
+
+  // 1) Existing link by clerk_user_id?
+  let [user] = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.clerkUserId, clerkUserId))
+    .limit(1);
+
+  if (!user) {
+    // 2) Email collision with a legacy local account?
+    const [byEmail] = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.email, email))
+      .limit(1);
+
+    if (byEmail) {
+      // Refuse to silently take over a legacy account. The user requested
+      // a "start fresh" model — anyone whose email matches an existing
+      // record needs help from support to consolidate. We also refuse if
+      // the row is already linked to a *different* Clerk user, otherwise
+      // a new Clerk identity could hijack a previously-claimed row.
+      if (
+        byEmail.role !== "customer" ||
+        byEmail.passwordHash ||
+        (byEmail.clerkUserId && byEmail.clerkUserId !== clerkUserId)
+      ) {
+        res.status(409).json({
+          error:
+            "An existing account uses this email address. Please contact support to link your accounts.",
+          code: "email_collision",
+        });
+        return;
+      }
+      // Pure orphan row (no password, no clerk link) — safe to claim.
+      // Run claim + customers backfill in one transaction so the mirror
+      // invariant (every customer-role users row has a customers row)
+      // holds before we bind the session below.
+      const claimed = await db.transaction(async (tx) => {
+        const [u] = await tx
+          .update(usersTable)
+          .set({
+            clerkUserId,
+            firstName: cu.firstName ?? byEmail.firstName,
+            lastName: cu.lastName ?? byEmail.lastName,
+            emailVerifiedAt: verified ? new Date() : byEmail.emailVerifiedAt,
+          })
+          .where(eq(usersTable.id, byEmail.id))
+          .returning();
+        if (!u) throw new Error("Failed to claim user row");
+        await tx
+          .insert(customersTable)
+          .values({
+            userId: u.id,
+            email,
+            firstName: cu.firstName ?? u.firstName ?? "",
+            lastName: cu.lastName ?? u.lastName ?? "",
+            phone: cu.primaryPhoneNumberId
+              ? cu.phoneNumbers.find((p) => p.id === cu.primaryPhoneNumberId)
+                  ?.phoneNumber ?? null
+              : null,
+            customerType: "residential",
+          })
+          .onConflictDoNothing({ target: customersTable.userId });
+        return u;
+      });
+      user = claimed;
+    } else {
+      // 3) Brand-new Clerk-backed customer. Two concurrent syncs for the
+      // same Clerk user could race here; handle that by retrying once and
+      // re-reading by clerk_user_id on a unique-constraint violation.
+      try {
+        user = await db.transaction(async (tx) => {
+          const [u] = await tx
+            .insert(usersTable)
+            .values({
+              email,
+              passwordHash: null,
+              clerkUserId,
+              firstName: cu.firstName,
+              lastName: cu.lastName,
+              role: "customer",
+              emailVerifiedAt: verified ? new Date() : null,
+            })
+            .returning();
+          if (!u) throw new Error("Failed to create user");
+          await tx
+            .insert(customersTable)
+            .values({
+              userId: u.id,
+              email,
+              firstName: cu.firstName ?? "",
+              lastName: cu.lastName ?? "",
+              phone: cu.primaryPhoneNumberId
+                ? cu.phoneNumbers.find((p) => p.id === cu.primaryPhoneNumberId)
+                    ?.phoneNumber ?? null
+                : null,
+              customerType: "residential",
+            })
+            .onConflictDoNothing({ target: customersTable.userId });
+          return u;
+        });
+      } catch (err) {
+        // Likely a unique-violation on clerk_user_id or email from a
+        // concurrent sync. Re-read; if still missing, surface the error.
+        const [racedRow] = await db
+          .select()
+          .from(usersTable)
+          .where(eq(usersTable.clerkUserId, clerkUserId))
+          .limit(1);
+        if (!racedRow) {
+          req.log.error({ err, clerkUserId, email }, "clerk-sync insert failed");
+          res.status(500).json({ error: "Could not provision account" });
+          return;
+        }
+        user = racedRow;
+      }
+    }
+  }
+
+  if (!user) {
+    res.status(500).json({ error: "Could not provision account" });
+    return;
+  }
+
+  if (!user.isActive) {
+    res.status(403).json({ error: "This account has been disabled" });
+    return;
+  }
+
+  await db
+    .update(usersTable)
+    .set({ lastLoginAt: new Date() })
+    .where(eq(usersTable.id, user.id));
+
+  // If this Clerk user is already bound to the current Express session,
+  // skip session regeneration / cart merging.
+  if (req.session.userId === user.id) {
+    res.status(200).json(toCurrentUser(user));
+    return;
+  }
+
+  const guestSessionId = req.session.id;
+  await regenerateSession(req);
+  req.session.userId = user.id;
+  await mergeGuestCartIntoUserCart(req, guestSessionId, user.id);
+  await saveSession(req);
+
+  res.status(200).json(toCurrentUser(user));
 });
 
 export default router;

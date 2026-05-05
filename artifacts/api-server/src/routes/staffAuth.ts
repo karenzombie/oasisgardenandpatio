@@ -109,6 +109,10 @@ router.post(
       return;
     }
 
+    if (!user.passwordHash) {
+      res.status(401).json({ error: "Invalid email or password" });
+      return;
+    }
     const ok = await bcrypt.compare(parsed.data.password, user.passwordHash);
     if (!ok) {
       res.status(401).json({ error: "Invalid email or password" });
@@ -355,6 +359,10 @@ router.post(
       return;
     }
 
+    if (!user.passwordHash) {
+      res.status(400).json({ error: "Current password is incorrect" });
+      return;
+    }
     const ok = await bcrypt.compare(
       parsed.data.currentPassword,
       user.passwordHash,

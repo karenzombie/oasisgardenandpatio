@@ -26,7 +26,7 @@ export default function Account() {
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      navigate("/login");
+      navigate("/sign-in");
     }
   }, [isLoading, isAuthenticated, navigate]);
 

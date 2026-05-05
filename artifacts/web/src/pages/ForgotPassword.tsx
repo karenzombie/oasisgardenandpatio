@@ -37,7 +37,7 @@ export default function ForgotPassword() {
             variant="outline"
             className="rounded-none font-serif tracking-wide border-primary text-primary hover:bg-primary hover:text-primary-foreground"
           >
-            <Link href="/login">Back to sign in</Link>
+            <Link href="/sign-in">Back to sign in</Link>
           </Button>
         </div>
       </AuthShell>
@@ -80,7 +80,7 @@ export default function ForgotPassword() {
 
         <p className="text-sm text-center text-muted-foreground pt-2">
           Remembered it?{" "}
-          <Link href="/login" className="text-primary hover:underline font-medium">
+          <Link href="/sign-in" className="text-primary hover:underline font-medium">
             Sign in
           </Link>
         </p>

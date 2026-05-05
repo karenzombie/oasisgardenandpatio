@@ -1,9 +1,16 @@
 import express, { type Express } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
+import { clerkMiddleware } from "@clerk/express";
+import { publishableKeyFromHost } from "@clerk/shared/keys";
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { buildSessionMiddleware } from "./lib/session";
+import {
+  CLERK_PROXY_PATH,
+  clerkProxyMiddleware,
+  getClerkProxyHost,
+} from "./middlewares/clerkProxyMiddleware";
 
 const app: Express = express();
 
@@ -29,6 +36,10 @@ app.use(
     },
   }),
 );
+// Clerk proxy must be mounted BEFORE body parsers — it streams raw bytes
+// to Clerk's frontend API. The proxy path is /api/__clerk.
+app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
+
 app.use(cors({ origin: true, credentials: true }));
 // Use a generous JSON body limit. CSV product imports send the whole sheet as
 // JSON (`{ csvText, mapping }`); real vendor exports can easily be a few MB.
@@ -70,6 +81,17 @@ app.use((_req, res, next) => {
 });
 
 app.use(buildSessionMiddleware());
+
+// Attach Clerk auth context (Authorization header / __session cookie) to
+// every request. Routes that opt in read it via getAuth(req).
+app.use(
+  clerkMiddleware((req) => ({
+    publishableKey: publishableKeyFromHost(
+      getClerkProxyHost(req) ?? "",
+      process.env["CLERK_PUBLISHABLE_KEY"],
+    ),
+  })),
+);
 
 app.use("/api", router);
 
