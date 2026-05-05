@@ -1164,6 +1164,11 @@ export interface AddWishlistItemRequest {
   productId: number;
 }
 
+export interface SyncWishlistRequest {
+  /** @maxItems 200 */
+  productIds: number[];
+}
+
 export interface CartItem {
   id: number;
   productId: number;
@@ -1310,7 +1315,23 @@ export interface AccountOrderDetail {
   items: AccountOrderLine[];
 }
 
+/**
+ * Required when checking out without a customer account. Captures the minimum contact info needed for our team to reach the buyer for delivery scheduling and payment collection.
+ */
+export interface GuestContact {
+  /** @minLength 3 */
+  email: string;
+  /** @minLength 1 */
+  firstName: string;
+  /** @minLength 1 */
+  lastName: string;
+  /** @minLength 7 */
+  phone: string;
+}
+
 export interface PlaceOrderRequest {
+  /** Required when the request is unauthenticated (guest checkout). Ignored if the caller is signed in. */
+  guestContact?: GuestContact;
   /** Use an existing saved address ID instead of providing a new one. */
   shippingAddressId?: number;
   shippingAddress?: AccountAddressInput;

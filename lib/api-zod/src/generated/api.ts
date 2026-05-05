@@ -548,6 +548,10 @@ export const QuoteCheckoutResponse = zod.object({
 /**
  * @summary Place an order from the signed-in customer's cart
  */
+export const placeOrderBodyGuestContactEmailMin = 3;
+
+export const placeOrderBodyGuestContactPhoneMin = 7;
+
 export const placeOrderBodyShippingAddressTypeDefault = `shipping`;
 
 export const placeOrderBodyShippingAddressStateMin = 2;
@@ -573,6 +577,17 @@ export const placeOrderBodyShippingMethodDefault = `standard`;
 export const placeOrderBodySaveShippingAddressDefault = true;
 
 export const PlaceOrderBody = zod.object({
+  guestContact: zod
+    .object({
+      email: zod.string().email().min(placeOrderBodyGuestContactEmailMin),
+      firstName: zod.string().min(1),
+      lastName: zod.string().min(1),
+      phone: zod.string().min(placeOrderBodyGuestContactPhoneMin),
+    })
+    .optional()
+    .describe(
+      "Required when the request is unauthenticated (guest checkout). Ignored if the caller is signed in.",
+    ),
   shippingAddressId: zod
     .number()
     .optional()
@@ -866,6 +881,38 @@ export const RemoveCartItemResponse = zod.object({
   ),
   itemCount: zod.number().describe("Sum of quantities across all line items."),
   subtotal: zod.string(),
+});
+
+/**
+ * Used after sign-up or login to merge a guest's locally-held wishlist into the user's persistent wishlist. Existing items are silently skipped via ON CONFLICT DO NOTHING.
+ * @summary Bulk-add products to the signed-in user's wishlist
+ */
+
+export const syncWishlistBodyProductIdsMax = 200;
+
+export const SyncWishlistBody = zod.object({
+  productIds: zod.array(zod.number().min(1)).max(syncWishlistBodyProductIdsMax),
+});
+
+export const SyncWishlistResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      productId: zod.number(),
+      name: zod.string(),
+      slug: zod.string(),
+      sku: zod.string(),
+      manufacturerName: zod.string().nullable(),
+      categoryName: zod.string().nullable(),
+      price: zod.string().nullable(),
+      salePrice: zod.string().nullable(),
+      showPriceOnline: zod.boolean(),
+      availableOnline: zod.boolean(),
+      quoteOnly: zod.boolean(),
+      primaryImageUrl: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
 });
 
 /**

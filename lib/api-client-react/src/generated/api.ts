@@ -170,6 +170,7 @@ import type {
   StaffStageResponse,
   StaffUnreadCount,
   SubmitCushionOrderRequest,
+  SyncWishlistRequest,
   SystemSettings,
   SystemSettingsUpdate,
   TotpCodeRequest,
@@ -2327,6 +2328,93 @@ export const useRemoveCartItem = <
   TContext
 > => {
   return useMutation(getRemoveCartItemMutationOptions(options));
+};
+
+/**
+ * Used after sign-up or login to merge a guest's locally-held wishlist into the user's persistent wishlist. Existing items are silently skipped via ON CONFLICT DO NOTHING.
+ * @summary Bulk-add products to the signed-in user's wishlist
+ */
+export const getSyncWishlistUrl = () => {
+  return `/api/wishlist/sync`;
+};
+
+export const syncWishlist = async (
+  syncWishlistRequest: SyncWishlistRequest,
+  options?: RequestInit,
+): Promise<WishlistResponse> => {
+  return customFetch<WishlistResponse>(getSyncWishlistUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(syncWishlistRequest),
+  });
+};
+
+export const getSyncWishlistMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof syncWishlist>>,
+    TError,
+    { data: BodyType<SyncWishlistRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof syncWishlist>>,
+  TError,
+  { data: BodyType<SyncWishlistRequest> },
+  TContext
+> => {
+  const mutationKey = ["syncWishlist"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof syncWishlist>>,
+    { data: BodyType<SyncWishlistRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return syncWishlist(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SyncWishlistMutationResult = NonNullable<
+  Awaited<ReturnType<typeof syncWishlist>>
+>;
+export type SyncWishlistMutationBody = BodyType<SyncWishlistRequest>;
+export type SyncWishlistMutationError = ErrorType<Error>;
+
+/**
+ * @summary Bulk-add products to the signed-in user's wishlist
+ */
+export const useSyncWishlist = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof syncWishlist>>,
+    TError,
+    { data: BodyType<SyncWishlistRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof syncWishlist>>,
+  TError,
+  { data: BodyType<SyncWishlistRequest> },
+  TContext
+> => {
+  return useMutation(getSyncWishlistMutationOptions(options));
 };
 
 /**

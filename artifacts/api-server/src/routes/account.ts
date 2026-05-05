@@ -309,18 +309,33 @@ router.get(
 
 router.get(
   "/account/orders/:orderNumber",
-  requireAuth,
   async (req: Request, res: Response): Promise<void> => {
-    const customer = await getOrCreateCustomer(req.user!.id);
+    const orderNumber = String(req.params.orderNumber);
+    // Authenticated customers can fetch any of their own orders. Guests can
+    // only fetch orders that the current session itself just placed (recorded
+    // in `req.session.guestOrders` by /checkout). This is what powers the
+    // post-checkout confirmation page for guests.
+    const guestOrderNumbers = req.session.guestOrders ?? [];
+    const isGuestSelfFetch =
+      !req.session.userId && guestOrderNumbers.includes(orderNumber);
+    if (!req.session.userId && !isGuestSelfFetch) {
+      res.status(404).json({ error: "Order not found" });
+      return;
+    }
+
+    const orderWhere = req.session.userId
+      ? and(
+          eq(ordersTable.orderNumber, orderNumber),
+          eq(
+            ordersTable.customerId,
+            (await getOrCreateCustomer(req.session.userId)).id,
+          ),
+        )
+      : eq(ordersTable.orderNumber, orderNumber);
     const [order] = await db
       .select()
       .from(ordersTable)
-      .where(
-        and(
-          eq(ordersTable.orderNumber, String(req.params.orderNumber)),
-          eq(ordersTable.customerId, customer.id),
-        ),
-      )
+      .where(orderWhere)
       .limit(1);
     if (!order) {
       res.status(404).json({ error: "Order not found" });

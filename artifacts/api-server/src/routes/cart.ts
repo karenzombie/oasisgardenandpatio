@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import {
   db,
   cartsTable,
@@ -16,27 +16,76 @@ import {
   AddCartItemBody,
   UpdateCartItemBody,
 } from "@workspace/api-zod";
-import { requireAuth } from "../middlewares/requireAuth";
 import { toPublicImageUrl } from "../lib/imageUrl";
 
 const router: IRouter = Router();
 
-async function getOrCreateCart(userId: number) {
+/**
+ * Resolve which cart owner identity to use for the request. Authenticated
+ * customers are keyed by `userId`; guests fall back to the session id (the
+ * connect.sid value), which lets the cart persist across page reloads in the
+ * same browser without an account.
+ */
+type CartOwner = { userId: number } | { sessionId: string };
+
+function ownerFor(req: Request): CartOwner {
+  if (req.session.userId) return { userId: req.session.userId };
+  return { sessionId: req.session.id };
+}
+
+/**
+ * Express session is configured with `saveUninitialized: false`, which means
+ * the session cookie is NOT sent until something is written to `req.session`.
+ * Guest carts use `req.session.id` as the cart key, so without this marker
+ * the browser would receive a fresh session id on every request and lose
+ * its cart between page loads. Setting `guestCart` and forcing a save on the
+ * first guest interaction guarantees a stable session id from then on.
+ */
+async function ensureSessionPersisted(req: Request): Promise<void> {
+  if (req.session.userId) return; // authed sessions are already persisted
+  if (req.session.guestCart) return;
+  req.session.guestCart = true;
+  await new Promise<void>((resolve, reject) => {
+    req.session.save((err) => (err ? reject(err) : resolve()));
+  });
+}
+
+async function getOrCreateCart(owner: CartOwner) {
+  if ("userId" in owner) {
+    const [existing] = await db
+      .select()
+      .from(cartsTable)
+      .where(eq(cartsTable.userId, owner.userId))
+      .limit(1);
+    if (existing) return existing;
+    const [created] = await db
+      .insert(cartsTable)
+      .values({ userId: owner.userId })
+      .returning();
+    return created;
+  }
+  // Guest cart keyed by session id. Only consider rows where userId IS NULL —
+  // a session id should never alias an existing user cart.
   const [existing] = await db
     .select()
     .from(cartsTable)
-    .where(eq(cartsTable.userId, userId))
+    .where(
+      and(
+        eq(cartsTable.sessionId, owner.sessionId),
+        isNull(cartsTable.userId),
+      ),
+    )
     .limit(1);
   if (existing) return existing;
   const [created] = await db
     .insert(cartsTable)
-    .values({ userId })
+    .values({ sessionId: owner.sessionId })
     .returning();
   return created;
 }
 
-async function loadCart(userId: number) {
-  const cart = await getOrCreateCart(userId);
+async function loadCart(owner: CartOwner) {
+  const cart = await getOrCreateCart(owner);
 
   const rows = await db
     .select({
@@ -103,25 +152,25 @@ async function loadCart(userId: number) {
 
 router.get(
   "/cart",
-  requireAuth,
   async (req: Request, res: Response): Promise<void> => {
-    res.json(await loadCart(req.user!.id));
+    await ensureSessionPersisted(req);
+    res.json(await loadCart(ownerFor(req)));
   },
 );
 
 router.delete(
   "/cart",
-  requireAuth,
   async (req: Request, res: Response): Promise<void> => {
-    const cart = await getOrCreateCart(req.user!.id);
+    await ensureSessionPersisted(req);
+    const owner = ownerFor(req);
+    const cart = await getOrCreateCart(owner);
     await db.delete(cartItemsTable).where(eq(cartItemsTable.cartId, cart.id));
-    res.json(await loadCart(req.user!.id));
+    res.json(await loadCart(owner));
   },
 );
 
 router.post(
   "/cart/items",
-  requireAuth,
   async (req: Request, res: Response): Promise<void> => {
     const parsed = AddCartItemBody.safeParse(req.body);
     if (!parsed.success) {
@@ -286,7 +335,9 @@ router.post(
     }
     const snapshotPrice = (Number(basePriceStr) + variantPriceAdj).toFixed(2);
 
-    const cart = await getOrCreateCart(req.user!.id);
+    await ensureSessionPersisted(req);
+    const owner = ownerFor(req);
+    const cart = await getOrCreateCart(owner);
 
     // Atomic upsert against the partial unique index on
     // (cart_id, product_id, COALESCE(variant_id,0), COALESCE(fabric_id,0)) so
@@ -302,13 +353,12 @@ router.post(
       DO UPDATE SET quantity = cart_items.quantity + EXCLUDED.quantity
     `);
 
-    res.json(await loadCart(req.user!.id));
+    res.json(await loadCart(owner));
   },
 );
 
 router.patch(
   "/cart/items/:itemId",
-  requireAuth,
   async (req: Request, res: Response): Promise<void> => {
     const itemId = Number(req.params.itemId);
     if (!Number.isInteger(itemId) || itemId <= 0) {
@@ -327,7 +377,9 @@ router.patch(
       return;
     }
 
-    const cart = await getOrCreateCart(req.user!.id);
+    await ensureSessionPersisted(req);
+    const owner = ownerFor(req);
+    const cart = await getOrCreateCart(owner);
     const result = await db
       .update(cartItemsTable)
       .set({ quantity: parsed.data.quantity })
@@ -344,20 +396,21 @@ router.patch(
       return;
     }
 
-    res.json(await loadCart(req.user!.id));
+    res.json(await loadCart(owner));
   },
 );
 
 router.delete(
   "/cart/items/:itemId",
-  requireAuth,
   async (req: Request, res: Response): Promise<void> => {
     const itemId = Number(req.params.itemId);
     if (!Number.isInteger(itemId) || itemId <= 0) {
       res.status(400).json({ error: "Invalid itemId" });
       return;
     }
-    const cart = await getOrCreateCart(req.user!.id);
+    await ensureSessionPersisted(req);
+    const owner = ownerFor(req);
+    const cart = await getOrCreateCart(owner);
     await db
       .delete(cartItemsTable)
       .where(
@@ -366,7 +419,7 @@ router.delete(
           eq(cartItemsTable.cartId, cart.id),
         ),
       );
-    res.json(await loadCart(req.user!.id));
+    res.json(await loadCart(owner));
   },
 );
 

@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import {
   db,
   wishlistItemsTable,
@@ -11,6 +11,7 @@ import {
 import {
   GetWishlistResponse,
   AddWishlistItemBody,
+  SyncWishlistBody,
 } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/requireAuth";
 import { toPublicImageUrl } from "../lib/imageUrl";
@@ -117,6 +118,54 @@ router.post(
       .onConflictDoNothing({
         target: [wishlistItemsTable.userId, wishlistItemsTable.productId],
       });
+
+    res.json(await loadWishlist(req.user!.id));
+  },
+);
+
+// Bulk merge endpoint used by the client immediately after sign-up or login
+// to drain the localStorage-held "guest" wishlist into the user's persistent
+// wishlist. Existing entries are silently skipped via ON CONFLICT DO NOTHING.
+router.post(
+  "/wishlist/sync",
+  requireAuth,
+  async (req: Request, res: Response): Promise<void> => {
+    const parsed = SyncWishlistBody.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: parsed.error.issues[0]?.message ?? "Invalid body" });
+      return;
+    }
+    const ids = Array.from(
+      new Set(parsed.data.productIds.filter((n) => Number.isInteger(n) && n > 0)),
+    );
+    if (ids.length === 0) {
+      res.json(await loadWishlist(req.user!.id));
+      return;
+    }
+
+    // Filter to products that are actually visible. Hidden / inactive /
+    // archived products silently drop out of the merge.
+    const visible = await db
+      .select({ id: productsTable.id })
+      .from(productsTable)
+      .where(
+        and(
+          inArray(productsTable.id, ids),
+          eq(productsTable.isActive, true),
+          eq(productsTable.availableOnline, true),
+        ),
+      );
+
+    if (visible.length > 0) {
+      await db
+        .insert(wishlistItemsTable)
+        .values(visible.map((p) => ({ userId: req.user!.id, productId: p.id })))
+        .onConflictDoNothing({
+          target: [wishlistItemsTable.userId, wishlistItemsTable.productId],
+        });
+    }
 
     res.json(await loadWishlist(req.user!.id));
   },

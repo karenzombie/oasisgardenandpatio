@@ -656,6 +656,34 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /wishlist/sync:
+    post:
+      operationId: syncWishlist
+      tags: [wishlist]
+      summary: Bulk-add products to the signed-in user's wishlist
+      description: >-
+        Used after sign-up or login to merge a guest's locally-held wishlist
+        into the user's persistent wishlist. Existing items are silently
+        skipped via ON CONFLICT DO NOTHING.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SyncWishlistRequest"
+      responses:
+        "200":
+          description: Wishlist after merge
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WishlistResponse"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /wishlist/{productId}:
     delete:
       operationId: removeWishlistItem
@@ -5616,6 +5644,17 @@ components:
           type: integer
       required:
         - productId
+    SyncWishlistRequest:
+      type: object
+      properties:
+        productIds:
+          type: array
+          items:
+            type: integer
+            minimum: 1
+          maxItems: 200
+      required:
+        - productIds
     CartItem:
       type: object
       properties:
@@ -5898,9 +5937,39 @@ components:
         - shippingAddress
         - billingAddress
         - items
+    GuestContact:
+      type: object
+      description: >-
+        Required when checking out without a customer account. Captures the
+        minimum contact info needed for our team to reach the buyer for
+        delivery scheduling and payment collection.
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 3
+        firstName:
+          type: string
+          minLength: 1
+        lastName:
+          type: string
+          minLength: 1
+        phone:
+          type: string
+          minLength: 7
+      required:
+        - email
+        - firstName
+        - lastName
+        - phone
     PlaceOrderRequest:
       type: object
       properties:
+        guestContact:
+          $ref: "#/components/schemas/GuestContact"
+          description: >-
+            Required when the request is unauthenticated (guest checkout).
+            Ignored if the caller is signed in.
         shippingAddressId:
           type: integer
           description: Use an existing saved address ID instead of providing a new one.

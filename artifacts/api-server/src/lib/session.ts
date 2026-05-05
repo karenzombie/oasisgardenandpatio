@@ -12,6 +12,19 @@ declare module "express-session" {
       | "needs_2fa_verify"
       | "needs_password_change";
     pendingTotpSecret?: string;
+    /**
+     * Order numbers placed by this browser as a guest. Lets the order
+     * confirmation page show the just-placed order without requiring an
+     * account. Capped at the most recent 25 entries.
+     */
+    guestOrders?: string[];
+    /**
+     * Set the first time this browser interacts with the cart as a guest.
+     * Forces express-session (configured with `saveUninitialized: false`)
+     * to persist the session and issue `Set-Cookie`, so subsequent requests
+     * carry the same session id we used as the cart's `sessionId` key.
+     */
+    guestCart?: boolean;
   }
 }
 

@@ -1,5 +1,4 @@
-import { useEffect } from "react";
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { Trash2, Minus, Plus, ShoppingBag } from "lucide-react";
 import {
@@ -20,19 +19,14 @@ function formatMoney(v: string | null | undefined): string {
 }
 
 export default function Cart() {
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
-  const [, navigate] = useLocation();
+  const { isAuthenticated } = useAuth();
   const qc = useQueryClient();
 
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated)
-      navigate("/login?next=%2Fcart");
-  }, [authLoading, isAuthenticated, navigate]);
-
+  // Cart is now anonymous-friendly: the API uses `req.session.id` to track a
+  // guest cart so we no longer gate the page on authentication.
   const { data, isLoading } = useGetCart({
     query: {
       queryKey: getGetCartQueryKey(),
-      enabled: isAuthenticated,
       retry: false,
     },
   });
@@ -48,7 +42,7 @@ export default function Cart() {
     },
   });
 
-  if (authLoading || isLoading) {
+  if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-24 text-center">
         <Spinner className="size-8 text-primary mx-auto" />
@@ -84,6 +78,20 @@ export default function Cart() {
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+          {!isAuthenticated ? (
+            <div className="lg:col-span-3 -mt-2 border border-border bg-muted/30 p-4 text-sm flex flex-wrap items-center justify-between gap-3">
+              <p className="text-muted-foreground">
+                Checking out as a guest is fine — no account required.{" "}
+                <span className="text-foreground">Have an account?</span>
+              </p>
+              <Link
+                href="/login?next=%2Fcheckout"
+                className="text-xs uppercase tracking-widest font-medium hover:text-primary"
+              >
+                Sign in for faster checkout →
+              </Link>
+            </div>
+          ) : null}
           <ul className="lg:col-span-2 divide-y divide-border border-y border-border">
             {items.map((item) => (
               <li key={item.id} className="py-5 flex gap-5">

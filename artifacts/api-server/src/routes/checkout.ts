@@ -1,14 +1,16 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import {
   db,
   cartsTable,
   cartItemsTable,
+  customersTable,
   ordersTable,
   orderItemsTable,
   orderStatusHistoryTable,
   addressesTable,
   productsTable,
+  type Customer,
 } from "@workspace/db";
 import {
   PlaceOrderResponse as PlaceOrderResultSchema,
@@ -16,7 +18,6 @@ import {
   QuoteCheckoutBody,
   QuoteCheckoutResponse,
 } from "@workspace/api-zod";
-import { requireAuth } from "../middlewares/requireAuth";
 import { getOrCreateCustomer } from "./account";
 import {
   loadPricingSettings,
@@ -41,9 +42,69 @@ function toCents(price: string | number): number {
   return Math.round(Number(price) * 100);
 }
 
+/**
+ * Resolve which cart this checkout request is operating against. Authenticated
+ * users use their userId-keyed cart; guests use the session id-keyed cart that
+ * cart.ts also reads/writes.
+ */
+type CartLookup =
+  | { kind: "user"; userId: number }
+  | { kind: "guest"; sessionId: string };
+
+function cartLookupFor(req: Request): CartLookup {
+  if (req.session.userId) return { kind: "user", userId: req.session.userId };
+  return { kind: "guest", sessionId: req.session.id };
+}
+
+async function loadCartForCheckout(lookup: CartLookup) {
+  if (lookup.kind === "user") {
+    const [cart] = await db
+      .select()
+      .from(cartsTable)
+      .where(eq(cartsTable.userId, lookup.userId))
+      .limit(1);
+    return cart ?? null;
+  }
+  const [cart] = await db
+    .select()
+    .from(cartsTable)
+    .where(
+      and(
+        eq(cartsTable.sessionId, lookup.sessionId),
+        isNull(cartsTable.userId),
+      ),
+    )
+    .limit(1);
+  return cart ?? null;
+}
+
+/**
+ * Create a brand-new customer row for a guest checkout. Guest customers have
+ * `userId = null` and store the contact info collected on the checkout form so
+ * staff can follow up about delivery and payment.
+ */
+async function createGuestCustomer(input: {
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+}): Promise<Customer> {
+  const [created] = await db
+    .insert(customersTable)
+    .values({
+      userId: null,
+      email: input.email.trim().toLowerCase(),
+      firstName: input.firstName.trim(),
+      lastName: input.lastName.trim(),
+      phone: input.phone.trim(),
+      customerType: "residential",
+    })
+    .returning();
+  return created;
+}
+
 router.post(
   "/checkout",
-  requireAuth,
   async (req: Request, res: Response): Promise<void> => {
     const parsed = PlaceOrderBody.safeParse(req.body);
     if (!parsed.success) {
@@ -53,9 +114,33 @@ router.post(
       return;
     }
     const data = parsed.data;
-    const userId = req.user!.id;
+    const isGuest = !req.session.userId;
 
-    const customer = await getOrCreateCustomer(userId);
+    // For guests, require contact info + a fresh shipping address (no saved
+    // address book). Authenticated users may use saved addresses.
+    if (isGuest) {
+      if (!data.guestContact) {
+        res.status(400).json({
+          error:
+            "Please provide your contact info (email, name, phone) to place a guest order, or sign in to use a saved profile.",
+        });
+        return;
+      }
+      if (data.shippingAddressId) {
+        res.status(400).json({
+          error: "Guest checkout cannot use a saved address.",
+        });
+        return;
+      }
+      if (!data.shippingAddress) {
+        res.status(400).json({ error: "Shipping address is required" });
+        return;
+      }
+    }
+
+    const customer: Customer = isGuest
+      ? await createGuestCustomer(data.guestContact!)
+      : await getOrCreateCustomer(req.session.userId!);
 
     // Resolve / persist shipping + billing addresses (outside the txn so any
     // validation 4xx returns cleanly without an open transaction).
@@ -88,14 +173,18 @@ router.post(
         .values({
           customerId: customer.id,
           type: "shipping",
-          recipientName: a.recipientName ?? null,
+          recipientName:
+            a.recipientName
+            ?? (isGuest
+              ? `${data.guestContact!.firstName} ${data.guestContact!.lastName}`.trim()
+              : null),
           street1: a.street1,
           street2: a.street2 ?? null,
           city: a.city,
           state: a.state,
           zip: a.zip,
           country: a.country ?? "US",
-          phone: a.phone ?? null,
+          phone: a.phone ?? (isGuest ? data.guestContact!.phone : null),
           isDefault: false,
         })
         .returning();
@@ -148,19 +237,25 @@ router.post(
     }
 
     const pricingSettings = await loadPricingSettings();
-
     const orderNumber = generateOrderNumber();
+    const cartLookup = cartLookupFor(req);
 
-    // Read cart + lines, create order, and clear cart inside one transaction
-    // with a row lock on the cart record. This prevents the same cart from
-    // being checked out twice from concurrent requests (double-click, retry).
     let result: { totalCents: number } | { error: string; status: number };
     try {
       result = await db.transaction(async (tx) => {
+        // SELECT ... FOR UPDATE on the cart row so concurrent submits of the
+        // same cart serialise instead of double-charging.
+        const cartWhere =
+          cartLookup.kind === "user"
+            ? eq(cartsTable.userId, cartLookup.userId)
+            : and(
+                eq(cartsTable.sessionId, cartLookup.sessionId),
+                isNull(cartsTable.userId),
+              );
         const [cart] = await tx
           .select()
           .from(cartsTable)
-          .where(eq(cartsTable.userId, userId))
+          .where(cartWhere)
           .for("update")
           .limit(1);
         if (!cart) return { error: "Cart is empty", status: 400 };
@@ -255,7 +350,9 @@ router.post(
           orderId: order.id,
           fromStatus: null,
           toStatus: "pending_payment",
-          note: "Order placed by customer (payment pending)",
+          note: isGuest
+            ? "Order placed by guest (payment pending)"
+            : "Order placed by customer (payment pending)",
         });
 
         // Clear the cart now that the order exists.
@@ -276,6 +373,14 @@ router.post(
       return;
     }
 
+    // Remember this order on the session so the guest can land on the order
+    // confirmation page without an account. Cap the list to keep the cookie
+    // session payload bounded.
+    if (isGuest) {
+      const existing = req.session.guestOrders ?? [];
+      req.session.guestOrders = [orderNumber, ...existing].slice(0, 25);
+    }
+
     res.json(
       PlaceOrderResultSchema.parse({
         orderNumber,
@@ -287,7 +392,6 @@ router.post(
 
 router.post(
   "/checkout/quote",
-  requireAuth,
   async (req: Request, res: Response): Promise<void> => {
     const parsed = QuoteCheckoutBody.safeParse(req.body);
     if (!parsed.success) {
@@ -296,14 +400,8 @@ router.post(
         .json({ error: parsed.error.issues[0]?.message ?? "Invalid body" });
       return;
     }
-    const userId = req.user!.id;
 
-    // Compute subtotal from cart contents (don't trust the client).
-    const [cart] = await db
-      .select()
-      .from(cartsTable)
-      .where(eq(cartsTable.userId, userId))
-      .limit(1);
+    const cart = await loadCartForCheckout(cartLookupFor(req));
 
     let subtotalCents = 0;
     let lineInputs: { weightLbs: number | null; quantity: number }[] = [];

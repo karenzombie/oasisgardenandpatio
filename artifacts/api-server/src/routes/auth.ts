@@ -1,11 +1,13 @@
 import { Router, type IRouter, type Request } from "express";
 import { randomBytes, createHash } from "node:crypto";
-import { and, eq, isNull, gt } from "drizzle-orm";
+import { and, eq, isNull, gt, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import {
   db,
   usersTable,
   customersTable,
+  cartsTable,
+  cartItemsTable,
   emailVerificationTokensTable,
   passwordResetTokensTable,
   type User,
@@ -62,6 +64,88 @@ async function regenerateSession(req: Request): Promise<void> {
   return new Promise((resolve, reject) => {
     req.session.regenerate((err) => (err ? reject(err) : resolve()));
   });
+}
+
+/**
+ * Merge the cart that was being built under a guest session id into the
+ * authenticated user's cart.
+ *
+ * Behaviour:
+ * - If the guest cart has no items, simply delete the guest cart (if any).
+ * - If the user has no existing cart, re-key the guest cart by setting
+ *   `userId` and clearing `sessionId`.
+ * - If the user already has a cart, copy each guest line into the user cart
+ *   using the same partial unique index used by /cart/items so identical
+ *   tuples merge their quantities, then drop the guest cart.
+ *
+ * Failures are logged but never bubble up — login/signup must still succeed
+ * even if cart merging hits a transient db error.
+ */
+async function mergeGuestCartIntoUserCart(
+  req: Request,
+  guestSessionId: string,
+  userId: number,
+): Promise<void> {
+  try {
+    const [guestCart] = await db
+      .select()
+      .from(cartsTable)
+      .where(
+        and(
+          eq(cartsTable.sessionId, guestSessionId),
+          isNull(cartsTable.userId),
+        ),
+      )
+      .limit(1);
+    if (!guestCart) return;
+
+    const guestItems = await db
+      .select({ id: cartItemsTable.id })
+      .from(cartItemsTable)
+      .where(eq(cartItemsTable.cartId, guestCart.id))
+      .limit(1);
+
+    if (guestItems.length === 0) {
+      await db.delete(cartsTable).where(eq(cartsTable.id, guestCart.id));
+      return;
+    }
+
+    const [userCart] = await db
+      .select()
+      .from(cartsTable)
+      .where(eq(cartsTable.userId, userId))
+      .limit(1);
+
+    if (!userCart) {
+      // Re-key the guest cart in place — preserves the cart's createdAt and
+      // avoids copying every line.
+      await db
+        .update(cartsTable)
+        .set({ userId, sessionId: null })
+        .where(eq(cartsTable.id, guestCart.id));
+      return;
+    }
+
+    // Existing user cart — copy lines using the same upsert tuple as
+    // /cart/items so duplicates accumulate quantities atomically.
+    await db.execute(sql`
+      INSERT INTO cart_items (cart_id, product_id, variant_id, fabric_id, quantity, price)
+      SELECT ${userCart.id}, product_id, variant_id, fabric_id, quantity, price
+      FROM cart_items
+      WHERE cart_id = ${guestCart.id}
+      ON CONFLICT (cart_id, product_id, (COALESCE(variant_id, 0)), (COALESCE(fabric_id, 0)))
+      DO UPDATE SET quantity = cart_items.quantity + EXCLUDED.quantity
+    `);
+    await db
+      .delete(cartItemsTable)
+      .where(eq(cartItemsTable.cartId, guestCart.id));
+    await db.delete(cartsTable).where(eq(cartsTable.id, guestCart.id));
+  } catch (err) {
+    req.log?.warn(
+      { err, userId, guestSessionId },
+      "failed to merge guest cart into user cart",
+    );
+  }
 }
 
 async function saveSession(req: Request): Promise<void> {
@@ -145,8 +229,12 @@ router.post("/auth/signup", async (req, res): Promise<void> => {
     req.log.error({ err, userId: created.id }, "Failed to send verification email on signup");
   }
 
+  // Capture the pre-regenerate session id so any guest cart built up under
+  // it can be merged into the new user's cart.
+  const guestSessionId = req.session.id;
   await regenerateSession(req);
   req.session.userId = created.id;
+  await mergeGuestCartIntoUserCart(req, guestSessionId, created.id);
   await saveSession(req);
 
   res.status(201).json(toCurrentUser(created));
@@ -196,8 +284,10 @@ router.post("/auth/login", loginRateLimiter, async (req, res): Promise<void> => 
     .set({ lastLoginAt: new Date() })
     .where(eq(usersTable.id, user.id));
 
+  const guestSessionId = req.session.id;
   await regenerateSession(req);
   req.session.userId = user.id;
+  await mergeGuestCartIntoUserCart(req, guestSessionId, user.id);
   await saveSession(req);
 
   res.status(200).json(toCurrentUser(user));

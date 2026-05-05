@@ -36,6 +36,13 @@ interface AddressForm {
   phone: string;
 }
 
+interface GuestContactForm {
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+}
+
 const EMPTY_FORM: AddressForm = {
   recipientName: "",
   street1: "",
@@ -46,23 +53,27 @@ const EMPTY_FORM: AddressForm = {
   phone: "",
 };
 
+const EMPTY_GUEST: GuestContactForm = {
+  email: "",
+  firstName: "",
+  lastName: "",
+  phone: "",
+};
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function Checkout() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const qc = useQueryClient();
 
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      trackEvent("auth_prompt", { reason: "checkout" });
-      navigate("/login?next=%2Fcheckout");
-    }
-  }, [authLoading, isAuthenticated, navigate]);
-
+  // Cart works for both authed users and guests now (session-keyed on the
+  // server). No more redirect to /login — guests can complete a purchase by
+  // providing their contact info.
   const { data: cart, isLoading: cartLoading } = useGetCart({
     query: {
       queryKey: getGetCartQueryKey(),
-      enabled: isAuthenticated,
       retry: false,
     },
   });
@@ -75,16 +86,19 @@ export default function Checkout() {
   });
 
   const addresses = addrData?.addresses ?? [];
+  // Guests don't have a saved address book, so default to the new-address
+  // form rather than picking from an empty list.
   const [selectedId, setSelectedId] = useState<number | "new">("new");
   const [form, setForm] = useState<AddressForm>(() => ({
     ...EMPTY_FORM,
     recipientName:
       [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "",
   }));
+  const [guest, setGuest] = useState<GuestContactForm>(EMPTY_GUEST);
   const [shippingMethod, setShippingMethod] = useState("standard");
   const [specialInstructions, setSpecialInstructions] = useState("");
 
-  // Default to first saved address when they load
+  // Default to first saved address when they load (authed only)
   useEffect(() => {
     if (addresses.length > 0 && selectedId === "new") {
       const def = addresses.find((a) => a.isDefault) ?? addresses[0];
@@ -104,6 +118,25 @@ export default function Checkout() {
           },
     );
   }, [user]);
+
+  // For guests, mirror the contact name into the shipping recipient unless
+  // they've typed something different there.
+  useEffect(() => {
+    if (isAuthenticated) return;
+    setForm((f) => {
+      const auto = `${guest.firstName} ${guest.lastName}`.trim();
+      const previousAuto = f.recipientName.trim();
+      // Only auto-fill while the field is blank or still matches the prior
+      // computed value — never clobber a custom recipient the user typed.
+      if (
+        previousAuto === ""
+        || /^[A-Za-z' .-]+ [A-Za-z' .-]+$/.test(previousAuto)
+      ) {
+        return { ...f, recipientName: auto };
+      }
+      return f;
+    });
+  }, [isAuthenticated, guest.firstName, guest.lastName]);
 
   const placeOrderM = usePlaceOrder({
     mutation: {
@@ -138,26 +171,16 @@ export default function Checkout() {
     (selectedAddress?.state ?? form.state).toUpperCase().trim();
   const shippingZip = (selectedAddress?.zip ?? form.zip).trim();
 
-  // Live quote: re-fetched whenever the destination state/ZIP or cart
-  // changes. The server is the source of truth for shipping + tax. We
-  // remember which inputs each quote was issued for so we can block
-  // checkout submission until the displayed total matches the address.
+  // Live quote — same monotonic-request guard as before so out-of-order
+  // responses can't overwrite the displayed totals.
   const quoteM = useQuoteCheckout();
   const quoteMutate = quoteM.mutate;
-  // We keep the quote *payload* in component state alongside the request
-  // key it was issued for. The displayed totals always read from this
-  // confirmed value rather than the raw mutation `data`, so an out-of-
-  // order response from a prior request can never overwrite the totals
-  // shown to the customer.
   const [confirmedQuote, setConfirmedQuote] = useState<{
     key: { state: string; zip: string; subtotal: string };
     data: CheckoutQuoteResponse;
   } | null>(null);
-  // Monotonic request id — only the response whose id still matches the
-  // latest dispatched request is allowed to update `confirmedQuote`.
   const quoteSeq = useRef(0);
   useEffect(() => {
-    if (!isAuthenticated) return;
     if (!cart || cart.items.length === 0) return;
     const subtotalKey = String(cart.subtotal ?? "");
     const myReq = ++quoteSeq.current;
@@ -184,7 +207,6 @@ export default function Checkout() {
     );
   }, [
     quoteMutate,
-    isAuthenticated,
     shippingState,
     shippingZip,
     cart?.itemCount,
@@ -207,6 +229,25 @@ export default function Checkout() {
   function setField<K extends keyof AddressForm>(key: K, value: string) {
     setForm((f) => ({ ...f, [key]: value }));
   }
+  function setGuestField<K extends keyof GuestContactForm>(
+    key: K,
+    value: string,
+  ) {
+    setGuest((g) => ({ ...g, [key]: value }));
+  }
+
+  function validateGuestContact(): string | null {
+    if (!guest.email.trim() || !EMAIL_RE.test(guest.email.trim())) {
+      return "Enter a valid email address.";
+    }
+    if (!guest.firstName.trim() || !guest.lastName.trim()) {
+      return "Enter your first and last name.";
+    }
+    if (guest.phone.trim().replace(/\D/g, "").length < 7) {
+      return "Enter a phone number we can reach you at.";
+    }
+    return null;
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -218,6 +259,24 @@ export default function Checkout() {
           "We're calculating your final shipping and tax. Try again in a second.",
       });
       return;
+    }
+
+    const guestPayload = !isAuthenticated
+      ? {
+          email: guest.email.trim(),
+          firstName: guest.firstName.trim(),
+          lastName: guest.lastName.trim(),
+          phone: guest.phone.trim(),
+        }
+      : undefined;
+
+    if (!isAuthenticated) {
+      const err = validateGuestContact();
+      if (err) {
+        toast({ title: "Contact info needed", description: err });
+        trackEvent("guest_checkout_validation_failed", { reason: err });
+        return;
+      }
     }
 
     if (typeof selectedId === "number") {
@@ -247,6 +306,7 @@ export default function Checkout() {
 
     placeOrderM.mutate({
       data: {
+        ...(guestPayload ? { guestContact: guestPayload } : {}),
         shippingAddress: {
           recipientName: form.recipientName || undefined,
           street1: form.street1,
@@ -255,7 +315,7 @@ export default function Checkout() {
           state: form.state,
           zip: form.zip,
           country: "US",
-          phone: form.phone || undefined,
+          phone: form.phone || guestPayload?.phone || undefined,
         },
         billingSameAsShipping: true,
         shippingMethod,
@@ -302,17 +362,84 @@ export default function Checkout() {
         <div className="lg:col-span-2 space-y-10">
           {/* Contact */}
           <section>
-            <h2 className="font-serif text-xl mb-3">Contact</h2>
-            <p className="text-sm text-muted-foreground">
-              Signed in as <span className="text-foreground">{user?.email}</span>
-            </p>
+            <div className="flex items-baseline justify-between mb-3">
+              <h2 className="font-serif text-xl">Contact</h2>
+              {!isAuthenticated ? (
+                <Link
+                  href="/login?next=%2Fcheckout"
+                  className="text-xs uppercase tracking-widest text-muted-foreground hover:text-primary"
+                >
+                  Sign in for faster checkout →
+                </Link>
+              ) : null}
+            </div>
+            {isAuthenticated ? (
+              <p className="text-sm text-muted-foreground">
+                Signed in as <span className="text-foreground">{user?.email}</span>
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <Label htmlFor="contact-email">Email *</Label>
+                  <Input
+                    id="contact-email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    value={guest.email}
+                    onChange={(e) => setGuestField("email", e.target.value)}
+                    className="rounded-none"
+                  />
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    We'll send your order confirmation here.
+                  </p>
+                </div>
+                <div>
+                  <Label htmlFor="contact-first">First name *</Label>
+                  <Input
+                    id="contact-first"
+                    autoComplete="given-name"
+                    required
+                    value={guest.firstName}
+                    onChange={(e) => setGuestField("firstName", e.target.value)}
+                    className="rounded-none"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="contact-last">Last name *</Label>
+                  <Input
+                    id="contact-last"
+                    autoComplete="family-name"
+                    required
+                    value={guest.lastName}
+                    onChange={(e) => setGuestField("lastName", e.target.value)}
+                    className="rounded-none"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Label htmlFor="contact-phone">Phone *</Label>
+                  <Input
+                    id="contact-phone"
+                    type="tel"
+                    autoComplete="tel"
+                    required
+                    value={guest.phone}
+                    onChange={(e) => setGuestField("phone", e.target.value)}
+                    className="rounded-none"
+                  />
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Used to schedule delivery and confirm payment.
+                  </p>
+                </div>
+              </div>
+            )}
           </section>
 
           {/* Shipping address */}
           <section>
             <h2 className="font-serif text-xl mb-4">Shipping Address</h2>
 
-            {addresses.length > 0 ? (
+            {isAuthenticated && addresses.length > 0 ? (
               <div className="space-y-2 mb-4">
                 {addresses.map((a) => (
                   <label
@@ -430,7 +557,9 @@ export default function Checkout() {
                   </div>
                 </div>
                 <div className="md:col-span-2">
-                  <Label htmlFor="phone">Phone</Label>
+                  <Label htmlFor="phone">
+                    Phone {!isAuthenticated ? "(uses your contact phone if blank)" : ""}
+                  </Label>
                   <Input
                     id="phone"
                     type="tel"
@@ -577,6 +706,18 @@ export default function Checkout() {
                   ? "Calculating…"
                   : "Place Order"}
             </Button>
+            {!isAuthenticated ? (
+              <p className="text-[11px] text-muted-foreground mt-3 text-center">
+                You can{" "}
+                <Link
+                  href="/signup?next=%2Fcheckout"
+                  className="underline hover:text-primary"
+                >
+                  create an account after checkout
+                </Link>{" "}
+                to track your order and save your wishlist.
+              </p>
+            ) : null}
             <p className="text-[11px] text-muted-foreground mt-3 text-center">
               By placing this order you agree to our terms. Payment will be
               collected separately.

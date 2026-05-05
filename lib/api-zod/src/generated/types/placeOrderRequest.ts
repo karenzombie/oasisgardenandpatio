@@ -6,8 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { AccountAddressInput } from "./accountAddressInput";
+import type { GuestContact } from "./guestContact";
 
 export interface PlaceOrderRequest {
+  /** Required when the request is unauthenticated (guest checkout). Ignored if the caller is signed in. */
+  guestContact?: GuestContact;
   /** Use an existing saved address ID instead of providing a new one. */
   shippingAddressId?: number;
   shippingAddress?: AccountAddressInput;

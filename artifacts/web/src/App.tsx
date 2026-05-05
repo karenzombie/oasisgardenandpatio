@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Layout } from "@/components/layout/Layout";
 import NotFound from "@/pages/not-found";
 import { trackVisitOnce } from "@/lib/analytics";
+import { useDrainPendingWishlistOnLogin } from "@/lib/auth";
 
 import Home from "@/pages/Home";
 import Contact from "@/pages/Contact";
@@ -89,6 +90,11 @@ function Router() {
     loc.startsWith("/admin/") ||
     loc === "/agent" ||
     loc.startsWith("/agent/");
+
+  // Drain any localStorage-held guest wishlist into the server once the
+  // user authenticates. Mounted here (not in a leaf page) so the merge runs
+  // even if the user lands directly on / after signing in elsewhere.
+  useDrainPendingWishlistOnLogin();
 
   return isStaff ? <StaffRouter /> : <CustomerRouter />;
 }
