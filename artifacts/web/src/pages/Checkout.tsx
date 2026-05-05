@@ -12,7 +12,6 @@ import {
   type CheckoutQuoteResponse,
 } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
-import { trackEvent } from "@/lib/analytics";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -274,7 +273,6 @@ export default function Checkout() {
       const err = validateGuestContact();
       if (err) {
         toast({ title: "Contact info needed", description: err });
-        trackEvent("guest_checkout_validation_failed", { reason: err });
         return;
       }
     }

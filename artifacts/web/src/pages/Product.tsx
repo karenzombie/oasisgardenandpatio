@@ -1,4 +1,4 @@
-import { Link, useLocation, useRoute } from "wouter";
+import { Link, useRoute } from "wouter";
 import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -9,7 +9,6 @@ import {
 import { getBrandLogo } from "@/lib/brandLogos";
 import { sanitizeHtml } from "@/lib/sanitize";
 import { WishlistButton } from "@/components/WishlistButton";
-import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 
 function formatMoney(v: string | number | null | undefined): string {
@@ -37,8 +36,6 @@ export default function Product() {
   const [variantId, setVariantId] = useState<number | null>(null);
   const [fabricId, setFabricId] = useState<number | null>(null);
 
-  const { isAuthenticated } = useAuth();
-  const [location, navigate] = useLocation();
   const { toast } = useToast();
   const qc = useQueryClient();
   const addToCartM = useAddCartItem({
@@ -93,14 +90,6 @@ export default function Product() {
       : "";
 
   function handleAddToCart() {
-    if (!isAuthenticated) {
-      toast({
-        title: "Sign in required",
-        description: "Create an account or sign in to add items to your cart.",
-      });
-      navigate(`/login?next=${encodeURIComponent(location)}`);
-      return;
-    }
     if (!data) return;
     if (optionsMissingMsg) {
       toast({ title: "Selection required", description: optionsMissingMsg });
