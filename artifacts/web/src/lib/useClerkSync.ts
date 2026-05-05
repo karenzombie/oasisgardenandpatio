@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useAuth as useClerkAuth } from "@clerk/react";
+import { useAuth as useClerkAuth, useClerk } from "@clerk/react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   clerkSync,
@@ -7,6 +7,14 @@ import {
   ApiError,
 } from "@workspace/api-client-react";
 import { useAuth } from "./auth";
+
+function extractErrorMessage(err: ApiError, fallback: string): string {
+  const data = err.data as { error?: unknown } | null | undefined;
+  if (data && typeof data.error === "string" && data.error.length > 0) {
+    return data.error;
+  }
+  return fallback;
+}
 
 /**
  * Bridge Clerk auth state to the local Express session.
@@ -21,6 +29,7 @@ import { useAuth } from "./auth";
  */
 export function useClerkSync(): void {
   const { isLoaded, isSignedIn, sessionId } = useClerkAuth();
+  const { signOut: clerkSignOut } = useClerk();
   const { user: localUser, isLoading: localLoading } = useAuth();
   const qc = useQueryClient();
   const syncedSessionRef = useRef<string | null>(null);
@@ -47,7 +56,31 @@ export function useClerkSync(): void {
         syncedSessionRef.current = sessionId;
         return qc.invalidateQueries({ queryKey: getGetCurrentUserQueryKey() });
       })
-      .catch((err) => {
+      .catch(async (err) => {
+        if (err instanceof ApiError && err.status === 403) {
+          const data = err.data as
+            | { code?: unknown }
+            | null
+            | undefined;
+          if (data?.code === "account_disabled") {
+            // Account disabled by an admin. Sign out of Clerk so the user
+            // can't keep retrying, then surface the explanation.
+            syncedSessionRef.current = sessionId;
+            const message = extractErrorMessage(
+              err,
+              "This account has been disabled. Please contact Oasis Garden & Patio to have it restored.",
+            );
+            try {
+              await clerkSignOut();
+            } catch {
+              // ignore — we still want to show the message
+            }
+            if (typeof window !== "undefined") {
+              window.alert(message);
+            }
+            return;
+          }
+        }
         if (err instanceof ApiError && err.status === 409) {
           // Email collides with a legacy account — we surface this in the
           // UI elsewhere; just don't keep retrying in a tight loop.
@@ -59,5 +92,5 @@ export function useClerkSync(): void {
       .finally(() => {
         inFlightRef.current = false;
       });
-  }, [isLoaded, isSignedIn, sessionId, localUser, localLoading, qc]);
+  }, [isLoaded, isSignedIn, sessionId, localUser, localLoading, qc, clerkSignOut]);
 }

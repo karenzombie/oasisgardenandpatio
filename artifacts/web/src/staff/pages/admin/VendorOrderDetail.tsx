@@ -655,13 +655,15 @@ export default function VendorOrderDetail() {
         <Dialog open={confirmCancel} onOpenChange={setConfirmCancel}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Cancel this vendor order?</DialogTitle>
+              <DialogTitle>Are you sure you want to cancel this vendor order?</DialogTitle>
             </DialogHeader>
             <div className="space-y-3 text-sm">
               <p>
                 The status will move to{" "}
                 <span className="font-medium">canceled</span> and items on this
                 vendor order will be un-assigned so they can be regrouped.
+                The record is kept for reporting and the cancellation is logged
+                with your name and the time.
               </p>
               <div>
                 <Label htmlFor="cancel-note">Reason (optional)</Label>

@@ -47,7 +47,18 @@ export default function StaffLogin() {
       navigate(pathForStage(res.stage, res.user?.role));
     } catch (err) {
       if (err instanceof ApiError) {
-        if (err.status === 401) {
+        const data = err.data as
+          | { error?: unknown; code?: unknown }
+          | null
+          | undefined;
+        if (err.status === 403 && data?.code === "account_disabled") {
+          const message =
+            typeof data.error === "string"
+              ? data.error
+              : "This staff account has been disabled. Please contact a super admin at Oasis Garden & Patio to have it restored.";
+          setError(message);
+          if (typeof window !== "undefined") window.alert(message);
+        } else if (err.status === 401) {
           setError("Invalid email or password.");
         } else if (err.status === 429) {
           setError(

@@ -256,7 +256,7 @@ router.post("/auth/login", loginRateLimiter, async (req, res): Promise<void> => 
     .where(eq(usersTable.email, normalizedEmail))
     .limit(1);
 
-  if (!user || !user.isActive) {
+  if (!user) {
     res.status(401).json({ error: "Invalid email or password" });
     return;
   }
@@ -271,6 +271,17 @@ router.post("/auth/login", loginRateLimiter, async (req, res): Promise<void> => 
   const ok = await bcrypt.compare(parsed.data.password, user.passwordHash);
   if (!ok) {
     res.status(401).json({ error: "Invalid email or password" });
+    return;
+  }
+
+  // Verified password — only now disclose that the account is disabled,
+  // so this endpoint can't be used as an email-enumeration oracle.
+  if (!user.isActive) {
+    res.status(403).json({
+      error:
+        "This account has been disabled. Please contact Oasis Garden & Patio at (661) 255-9909 or sales@oasisgardenandpatio.com to have it restored.",
+      code: "account_disabled",
+    });
     return;
   }
 
@@ -637,7 +648,11 @@ router.post("/auth/clerk-sync", async (req, res): Promise<void> => {
   }
 
   if (!user.isActive) {
-    res.status(403).json({ error: "This account has been disabled" });
+    res.status(403).json({
+      error:
+        "This account has been disabled. Please contact Oasis Garden & Patio at (661) 255-9909 or sales@oasisgardenandpatio.com to have it restored.",
+      code: "account_disabled",
+    });
     return;
   }
 

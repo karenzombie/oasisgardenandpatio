@@ -125,6 +125,7 @@ export default function OrderDetail() {
   const [shippingDraft, setShippingDraft] = useState("");
   const [taxDraft, setTaxDraft] = useState("");
   const [totalsNote, setTotalsNote] = useState("");
+  const [confirmCancel, setConfirmCancel] = useState(false);
 
   useEffect(() => {
     if (order) {
@@ -189,7 +190,7 @@ export default function OrderDetail() {
     );
   }
 
-  function handleStatusUpdate() {
+  function performStatusUpdate() {
     if (!order || pendingStatus === order.status) return;
     updateStatus.mutate(
       {
@@ -200,6 +201,7 @@ export default function OrderDetail() {
         onSuccess: () => {
           toast({ title: "Status updated" });
           setStatusNote("");
+          setConfirmCancel(false);
           invalidate();
         },
         onError: (e: unknown) => {
@@ -211,6 +213,18 @@ export default function OrderDetail() {
         },
       },
     );
+  }
+
+  function handleStatusUpdate() {
+    if (!order || pendingStatus === order.status) return;
+    // Cancellation is a destructive, money-affecting transition: require an
+    // explicit confirmation that reminds the operator a manual refund may
+    // still be needed (we don't auto-refund through the gateway).
+    if (pendingStatus === "canceled") {
+      setConfirmCancel(true);
+      return;
+    }
+    performStatusUpdate();
   }
 
   function handleTotalsSave() {
@@ -894,6 +908,50 @@ export default function OrderDetail() {
                   : reviewing?.decision === "approved"
                     ? "Approve"
                     : "Deny"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Cancel customer order confirmation */}
+        <Dialog open={confirmCancel} onOpenChange={setConfirmCancel}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Cancel this order?</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3 text-sm">
+              <p>
+                The order will be moved to{" "}
+                <span className="font-medium">canceled</span>. The record is
+                kept for reporting and the cancellation is logged with your
+                name and the time.
+              </p>
+              <div className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-amber-900">
+                <strong>Heads up:</strong> if the customer was already charged,
+                you may need to issue a refund manually through the payment
+                processor — cancelling here does not refund the card
+                automatically.
+              </div>
+              {statusNote && (
+                <p className="text-xs text-slate-600">
+                  Note that will be saved: <em>"{statusNote}"</em>
+                </p>
+              )}
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setConfirmCancel(false)}
+                disabled={updateStatus.isPending}
+              >
+                Keep order
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={performStatusUpdate}
+                disabled={updateStatus.isPending}
+              >
+                {updateStatus.isPending ? "Cancelling…" : "Cancel order"}
               </Button>
             </DialogFooter>
           </DialogContent>

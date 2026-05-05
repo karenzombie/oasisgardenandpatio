@@ -102,7 +102,6 @@ router.post(
 
     if (
       !user ||
-      !user.isActive ||
       (user.role !== "agent" && user.role !== "admin")
     ) {
       res.status(401).json({ error: "Invalid email or password" });
@@ -116,6 +115,17 @@ router.post(
     const ok = await bcrypt.compare(parsed.data.password, user.passwordHash);
     if (!ok) {
       res.status(401).json({ error: "Invalid email or password" });
+      return;
+    }
+
+    // Verified password — disclose disabled state only after the password
+    // is correct so the response can't be used to enumerate staff emails.
+    if (!user.isActive) {
+      res.status(403).json({
+        error:
+          "This staff account has been disabled. Please contact a super admin at Oasis Garden & Patio to have it restored.",
+        code: "account_disabled",
+      });
       return;
     }
 
@@ -139,8 +149,26 @@ router.get("/auth/staff/state", async (req, res): Promise<void> => {
       .from(usersTable)
       .where(eq(usersTable.id, req.session.userId))
       .limit(1);
-    if (user && (user.role === "agent" || user.role === "admin")) {
+    if (
+      user &&
+      user.isActive &&
+      (user.role === "agent" || user.role === "admin")
+    ) {
       res.json({ stage: "complete", user: toStaffUser(user) });
+      return;
+    }
+    // Stale or just-disabled session — clear it so the staff shell drops
+    // back to the sign-in screen instead of showing a half-authenticated UI.
+    if (user && !user.isActive) {
+      req.session.destroy(() => {});
+      res
+        .status(403)
+        .json({
+          stage: "anonymous",
+          error:
+            "This staff account has been disabled. Please contact a super admin at Oasis Garden & Patio to have it restored.",
+          code: "account_disabled",
+        });
       return;
     }
   }
