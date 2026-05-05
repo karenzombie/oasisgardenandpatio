@@ -202,3 +202,186 @@ export async function sendVendorOrderEmail(
     throw new Error(`Failed to send vendor order email: ${result.error.message}`);
   }
 }
+
+export interface SendVendorOrderCancellationEmailArgs {
+  to: string;
+  vendorOrderNumber: string;
+  manufacturerName: string | null;
+  scope: "full" | "partial";
+  reason: string | null;
+  cancelledItems: VendorOrderItem[];
+  remainingItems: VendorOrderItem[];
+  pdfBuffer?: Buffer;
+}
+
+function renderItemRows(items: VendorOrderItem[], struck: boolean): string {
+  return items
+    .map((it) => {
+      const sku = [it.variantSkuSnapshot ?? it.productSkuSnapshot]
+        .filter(Boolean)
+        .join("");
+      const desc = [it.description, it.variantNameSnapshot, it.fabricNameSnapshot]
+        .filter(Boolean)
+        .join(" — ");
+      const cellStyle = struck
+        ? "text-decoration:line-through;color:#888;"
+        : "";
+      return `
+        <tr>
+          <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:13px;${cellStyle}">${escapeHtml(sku)}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:13px;${cellStyle}">${escapeHtml(desc || "—")}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:13px;text-align:center;${cellStyle}">${it.quantity}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:13px;text-align:right;${cellStyle}">${fmtMoney(it.unitPrice)}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:13px;text-align:right;${cellStyle}">${fmtMoney(it.amount)}</td>
+        </tr>
+      `;
+    })
+    .join("");
+}
+
+export async function sendVendorOrderCancellationEmail(
+  args: SendVendorOrderCancellationEmailArgs,
+): Promise<void> {
+  const {
+    to,
+    vendorOrderNumber,
+    manufacturerName,
+    scope,
+    reason,
+    cancelledItems,
+    remainingItems,
+  } = args;
+
+  const headline =
+    scope === "full"
+      ? `Purchase Order ${vendorOrderNumber} has been CANCELLED`
+      : `Purchase Order ${vendorOrderNumber} has been REVISED — partial cancellation`;
+
+  const intro =
+    scope === "full"
+      ? `<p style="margin:0 0 16px 0;">Please be advised that the following purchase order has been <strong style="color:#b91c1c;">cancelled in full</strong>. Please do not ship these items.</p>`
+      : `<p style="margin:0 0 16px 0;">Please be advised that the items listed below have been <strong style="color:#b91c1c;">cancelled</strong> from purchase order ${escapeHtml(vendorOrderNumber)}. The remaining items on this PO still apply — please ship those as originally agreed.</p>`;
+
+  const vendorLine = manufacturerName
+    ? `<p style="margin:0 0 8px 0;"><strong>Vendor:</strong> ${escapeHtml(manufacturerName)}</p>`
+    : "";
+
+  const reasonBlock = reason
+    ? `<div style="border:1px solid #f1d4d4;background:#fff5f5;padding:10px 12px;margin:0 0 16px 0;border-radius:3px;">
+         <div style="font-size:11px;text-transform:uppercase;color:#b91c1c;font-weight:bold;margin-bottom:4px;">Cancellation reason</div>
+         <div style="font-size:13px;color:#3a3a3a;">${escapeHtml(reason)}</div>
+       </div>`
+    : "";
+
+  const tableHead = `
+    <thead>
+      <tr style="background:#f5f3ee;">
+        <th style="padding:8px 10px;text-align:left;font-size:12px;color:#666;border-bottom:2px solid #e8e2d6;">SKU</th>
+        <th style="padding:8px 10px;text-align:left;font-size:12px;color:#666;border-bottom:2px solid #e8e2d6;">Description</th>
+        <th style="padding:8px 10px;text-align:center;font-size:12px;color:#666;border-bottom:2px solid #e8e2d6;">Qty</th>
+        <th style="padding:8px 10px;text-align:right;font-size:12px;color:#666;border-bottom:2px solid #e8e2d6;">Unit</th>
+        <th style="padding:8px 10px;text-align:right;font-size:12px;color:#666;border-bottom:2px solid #e8e2d6;">Total</th>
+      </tr>
+    </thead>`;
+
+  const cancelledTotal = cancelledItems.reduce((s, it) => s + it.amount, 0);
+  const remainingTotal = remainingItems.reduce((s, it) => s + it.amount, 0);
+
+  const cancelledTable = `
+    <h2 style="font-size:14px;color:#b91c1c;margin:20px 0 8px 0;text-transform:uppercase;letter-spacing:0.5px;">Cancelled items (${cancelledItems.length})</h2>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
+      ${tableHead}
+      <tbody>
+        ${renderItemRows(cancelledItems, true)}
+        <tr>
+          <td colspan="4" style="padding:10px;text-align:right;font-weight:bold;font-size:13px;">Cancelled total:</td>
+          <td style="padding:10px;text-align:right;font-weight:bold;font-size:13px;">${fmtMoney(cancelledTotal)}</td>
+        </tr>
+      </tbody>
+    </table>`;
+
+  const remainingTable =
+    scope === "partial" && remainingItems.length > 0
+      ? `
+    <h2 style="font-size:14px;color:#1a3c5e;margin:20px 0 8px 0;text-transform:uppercase;letter-spacing:0.5px;">Remaining items still on this PO (${remainingItems.length})</h2>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
+      ${tableHead}
+      <tbody>
+        ${renderItemRows(remainingItems, false)}
+        <tr>
+          <td colspan="4" style="padding:10px;text-align:right;font-weight:bold;font-size:13px;">Remaining total:</td>
+          <td style="padding:10px;text-align:right;font-weight:bold;font-size:13px;">${fmtMoney(remainingTotal)}</td>
+        </tr>
+      </tbody>
+    </table>`
+      : "";
+
+  const body = `
+    ${intro}
+    <div style="margin-bottom:16px;">
+      <p style="margin:0 0 8px 0;"><strong>PO number:</strong> ${escapeHtml(vendorOrderNumber)}</p>
+      ${vendorLine}
+    </div>
+    ${reasonBlock}
+    ${cancelledTable}
+    ${remainingTable}
+    <p style="margin:20px 0 0 0;font-size:13px;color:#666;">
+      A revised purchase order PDF is attached for your records. Please reply to this email to confirm the cancellation, or reach us at (661) 255-9909 or <a href="mailto:sales@oasisgardenandpatio.com">sales@oasisgardenandpatio.com</a> with any questions.
+    </p>
+  `;
+
+  const subject =
+    scope === "full"
+      ? `CANCELLED: Purchase Order ${vendorOrderNumber} — Oasis Garden & Patio`
+      : `REVISED: Purchase Order ${vendorOrderNumber} — Oasis Garden & Patio`;
+  const BRAND_NAME = "Oasis Garden & Patio";
+
+  const html = `<!DOCTYPE html>
+<html>
+  <body style="margin:0;padding:0;background:#f5f3ee;font-family:Georgia,'Times New Roman',serif;color:#3a3a3a;">
+    <div style="max-width:600px;margin:0 auto;padding:32px 24px;">
+      <div style="text-align:center;margin-bottom:32px;">
+        <div style="font-size:28px;letter-spacing:2px;font-weight:bold;color:#1a3c5e;">OASIS</div>
+        <div style="font-size:14px;font-style:italic;color:#5b8a72;">Garden &amp; Patio</div>
+      </div>
+      <div style="background:#ffffff;padding:32px 28px;border-radius:4px;border:1px solid #e8e2d6;">
+        <h1 style="font-size:22px;color:#b91c1c;margin:0 0 16px 0;">${escapeHtml(headline)}</h1>
+        ${body}
+      </div>
+      <div style="text-align:center;margin-top:24px;font-size:12px;color:#8a8a8a;">
+        <p style="margin:4px 0;">${BRAND_NAME}</p>
+        <p style="margin:4px 0;">21182 Centre Pointe Pkwy #100, Santa Clarita, CA 91350</p>
+        <p style="margin:4px 0;">(661) 255-9909 &middot; sales@oasisgardenandpatio.com</p>
+      </div>
+    </div>
+  </body>
+</html>`;
+
+  const filename =
+    scope === "full"
+      ? `PO-${vendorOrderNumber}-CANCELLED.pdf`
+      : `PO-${vendorOrderNumber}-REVISED.pdf`;
+
+  const { client, from } = await getResendClient();
+  const result = await client.emails.send({
+    from,
+    to,
+    subject,
+    html,
+    ...(args.pdfBuffer
+      ? {
+          attachments: [{ filename, content: args.pdfBuffer }],
+        }
+      : {}),
+  });
+
+  if (result.error) {
+    logger.error(
+      { err: result.error, to, subject },
+      "Failed to send vendor cancellation email",
+    );
+    throw new Error(
+      `Failed to send vendor cancellation email: ${result.error.message}`,
+    );
+  }
+}

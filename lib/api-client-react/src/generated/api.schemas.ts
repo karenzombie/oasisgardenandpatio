@@ -176,6 +176,27 @@ export interface AdminVendorOrderSend {
   pdfStorageUrl: string | null;
 }
 
+export type AdminVendorOrderCancellationScope =
+  (typeof AdminVendorOrderCancellationScope)[keyof typeof AdminVendorOrderCancellationScope];
+
+export const AdminVendorOrderCancellationScope = {
+  full: "full",
+  partial: "partial",
+} as const;
+
+export interface AdminVendorOrderCancellation {
+  id: number;
+  scope: AdminVendorOrderCancellationScope;
+  reason: string | null;
+  cancelledByUserId: number | null;
+  cancelledByEmail: string | null;
+  cancelledAt: string;
+  pdfStorageUrl: string | null;
+  emailedAt: string | null;
+  emailedTo: string | null;
+  itemCount: number;
+}
+
 export interface AdminVendorOrderDetail {
   id: number;
   vendorOrderNumber: string;
@@ -209,6 +230,7 @@ export interface AdminVendorOrderDetail {
   customerName: string | null;
   items: AdminVendorOrderItem[];
   sends: AdminVendorOrderSend[];
+  cancellations: AdminVendorOrderCancellation[];
 }
 
 export interface GenerateVendorOrdersRequest {
@@ -245,8 +267,31 @@ export interface ReceiveVendorOrderRequest {
   notes?: string | null;
 }
 
+export type CancelVendorOrderRequestScope =
+  (typeof CancelVendorOrderRequestScope)[keyof typeof CancelVendorOrderRequestScope];
+
+export const CancelVendorOrderRequestScope = {
+  full: "full",
+  partial: "partial",
+} as const;
+
+/**
+ * Cancel a vendor order in full or partially. For 'full' scope all
+items are un-assigned and the PO status moves to 'canceled'. For
+'partial' scope only the listed itemIds are un-assigned; the PO
+status is preserved. A cancellation PDF is generated and stored
+regardless; if sendEmail is true it is also emailed to the vendor.
+
+ */
 export interface CancelVendorOrderRequest {
-  note?: string | null;
+  scope: CancelVendorOrderRequestScope;
+  /** Required when scope=partial. Must reference items currently on this vendor order. */
+  itemIds?: number[];
+  reason?: string | null;
+  /** When true, email the cancellation PDF to the vendor. Defaults to false. */
+  sendEmail?: boolean;
+  /** Override the recipient address. Falls back to the manufacturer's order email. */
+  sentToEmail?: string | null;
 }
 
 export interface UpdateVendorOrderRequest {

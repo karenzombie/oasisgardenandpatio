@@ -5120,6 +5120,20 @@ export const AdminGetVendorOrderResponse = zod.object({
       pdfStorageUrl: zod.string().nullable(),
     }),
   ),
+  cancellations: zod.array(
+    zod.object({
+      id: zod.number(),
+      scope: zod.enum(["full", "partial"]),
+      reason: zod.string().nullable(),
+      cancelledByUserId: zod.number().nullable(),
+      cancelledByEmail: zod.string().nullable(),
+      cancelledAt: zod.coerce.date(),
+      pdfStorageUrl: zod.string().nullable(),
+      emailedAt: zod.coerce.date().nullable(),
+      emailedTo: zod.string().nullable(),
+      itemCount: zod.number(),
+    }),
+  ),
 });
 
 /**
@@ -5190,6 +5204,20 @@ export const AdminUpdateVendorOrderResponse = zod.object({
       isResend: zod.boolean(),
       resendNote: zod.string().nullable(),
       pdfStorageUrl: zod.string().nullable(),
+    }),
+  ),
+  cancellations: zod.array(
+    zod.object({
+      id: zod.number(),
+      scope: zod.enum(["full", "partial"]),
+      reason: zod.string().nullable(),
+      cancelledByUserId: zod.number().nullable(),
+      cancelledByEmail: zod.string().nullable(),
+      cancelledAt: zod.coerce.date(),
+      pdfStorageUrl: zod.string().nullable(),
+      emailedAt: zod.coerce.date().nullable(),
+      emailedTo: zod.string().nullable(),
+      itemCount: zod.number(),
     }),
   ),
 });
@@ -5351,6 +5379,20 @@ export const AdminSendVendorOrderResponse = zod.object({
       pdfStorageUrl: zod.string().nullable(),
     }),
   ),
+  cancellations: zod.array(
+    zod.object({
+      id: zod.number(),
+      scope: zod.enum(["full", "partial"]),
+      reason: zod.string().nullable(),
+      cancelledByUserId: zod.number().nullable(),
+      cancelledByEmail: zod.string().nullable(),
+      cancelledAt: zod.coerce.date(),
+      pdfStorageUrl: zod.string().nullable(),
+      emailedAt: zod.coerce.date().nullable(),
+      emailedTo: zod.string().nullable(),
+      itemCount: zod.number(),
+    }),
+  ),
 });
 
 /**
@@ -5421,6 +5463,20 @@ export const AdminUpdateVendorOrderStatusResponse = zod.object({
       isResend: zod.boolean(),
       resendNote: zod.string().nullable(),
       pdfStorageUrl: zod.string().nullable(),
+    }),
+  ),
+  cancellations: zod.array(
+    zod.object({
+      id: zod.number(),
+      scope: zod.enum(["full", "partial"]),
+      reason: zod.string().nullable(),
+      cancelledByUserId: zod.number().nullable(),
+      cancelledByEmail: zod.string().nullable(),
+      cancelledAt: zod.coerce.date(),
+      pdfStorageUrl: zod.string().nullable(),
+      emailedAt: zod.coerce.date().nullable(),
+      emailedTo: zod.string().nullable(),
+      itemCount: zod.number(),
     }),
   ),
 });
@@ -5494,6 +5550,20 @@ export const AdminReceiveVendorOrderResponse = zod.object({
       pdfStorageUrl: zod.string().nullable(),
     }),
   ),
+  cancellations: zod.array(
+    zod.object({
+      id: zod.number(),
+      scope: zod.enum(["full", "partial"]),
+      reason: zod.string().nullable(),
+      cancelledByUserId: zod.number().nullable(),
+      cancelledByEmail: zod.string().nullable(),
+      cancelledAt: zod.coerce.date(),
+      pdfStorageUrl: zod.string().nullable(),
+      emailedAt: zod.coerce.date().nullable(),
+      emailedTo: zod.string().nullable(),
+      itemCount: zod.number(),
+    }),
+  ),
 });
 
 /**
@@ -5503,9 +5573,32 @@ export const AdminCancelVendorOrderParams = zod.object({
   id: zod.coerce.number(),
 });
 
-export const AdminCancelVendorOrderBody = zod.object({
-  note: zod.string().nullish(),
-});
+export const AdminCancelVendorOrderBody = zod
+  .object({
+    scope: zod.enum(["full", "partial"]),
+    itemIds: zod
+      .array(zod.number())
+      .optional()
+      .describe(
+        "Required when scope=partial. Must reference items currently on this vendor order.",
+      ),
+    reason: zod.string().nullish(),
+    sendEmail: zod
+      .boolean()
+      .optional()
+      .describe(
+        "When true, email the cancellation PDF to the vendor. Defaults to false.",
+      ),
+    sentToEmail: zod
+      .string()
+      .nullish()
+      .describe(
+        "Override the recipient address. Falls back to the manufacturer's order email.",
+      ),
+  })
+  .describe(
+    "Cancel a vendor order in full or partially. For 'full' scope all\nitems are un-assigned and the PO status moves to 'canceled'. For\n'partial' scope only the listed itemIds are un-assigned; the PO\nstatus is preserved. A cancellation PDF is generated and stored\nregardless; if sendEmail is true it is also emailed to the vendor.\n",
+  );
 
 export const AdminCancelVendorOrderResponse = zod.object({
   id: zod.number(),
@@ -5563,6 +5656,20 @@ export const AdminCancelVendorOrderResponse = zod.object({
       isResend: zod.boolean(),
       resendNote: zod.string().nullable(),
       pdfStorageUrl: zod.string().nullable(),
+    }),
+  ),
+  cancellations: zod.array(
+    zod.object({
+      id: zod.number(),
+      scope: zod.enum(["full", "partial"]),
+      reason: zod.string().nullable(),
+      cancelledByUserId: zod.number().nullable(),
+      cancelledByEmail: zod.string().nullable(),
+      cancelledAt: zod.coerce.date(),
+      pdfStorageUrl: zod.string().nullable(),
+      emailedAt: zod.coerce.date().nullable(),
+      emailedTo: zod.string().nullable(),
+      itemCount: zod.number(),
     }),
   ),
 });

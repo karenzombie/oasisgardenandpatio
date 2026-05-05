@@ -7,6 +7,7 @@ import {
   integer,
   numeric,
   index,
+  jsonb,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
@@ -98,6 +99,38 @@ export const insertVendorOrderSendSchema = createInsertSchema(
 ).omit({ id: true, sentAt: true });
 export type InsertVendorOrderSend = z.infer<typeof insertVendorOrderSendSchema>;
 export type VendorOrderSend = typeof vendorOrderSendsTable.$inferSelect;
+
+export const vendorOrderCancellationsTable = pgTable(
+  "vendor_order_cancellations",
+  {
+    id: serial("id").primaryKey(),
+    vendorOrderId: integer("vendor_order_id")
+      .notNull()
+      .references(() => vendorOrdersTable.id, { onDelete: "cascade" }),
+    scope: text("scope").notNull(), // 'full' | 'partial'
+    reason: text("reason"),
+    cancelledByUserId: integer("cancelled_by_user_id").references(
+      () => usersTable.id,
+      { onDelete: "set null" },
+    ),
+    cancelledAt: timestamp("cancelled_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    pdfStorageUrl: text("pdf_storage_url"),
+    emailedAt: timestamp("emailed_at", { withTimezone: true }),
+    emailedTo: text("emailed_to"),
+    // Snapshot of the items that were cancelled. Each entry is the same
+    // shape as PdfVendorOrderItem so the cancellation row remains valid even
+    // if the underlying order_items rows are deleted or reassigned.
+    items: jsonb("items").notNull(),
+  },
+  (t) => [
+    index("vendor_order_cancellations_vendor_order_idx").on(t.vendorOrderId),
+  ],
+);
+
+export type VendorOrderCancellation =
+  typeof vendorOrderCancellationsTable.$inferSelect;
 
 export const cancellationRequestsTable = pgTable(
   "cancellation_requests",

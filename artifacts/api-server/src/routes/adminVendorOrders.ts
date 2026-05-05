@@ -4,6 +4,7 @@ import {
   db,
   vendorOrdersTable,
   vendorOrderSendsTable,
+  vendorOrderCancellationsTable,
   ordersTable,
   orderItemsTable,
   manufacturersTable,
@@ -37,8 +38,15 @@ import {
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import { recordAudit } from "../lib/audit";
 import { recordHistory } from "../lib/history";
-import { sendVendorOrderEmail } from "../lib/vendorOrderEmail";
-import { generateVendorOrderPdf } from "../lib/vendorOrderPdf";
+import {
+  sendVendorOrderEmail,
+  sendVendorOrderCancellationEmail,
+} from "../lib/vendorOrderEmail";
+import {
+  generateVendorOrderPdf,
+  generateVendorOrderCancellationPdf,
+  type PdfVendorOrderItem,
+} from "../lib/vendorOrderPdf";
 import { uploadBufferToStorage } from "../lib/objectStorage";
 import { toPublicImageUrl } from "../lib/imageUrl";
 
@@ -234,6 +242,16 @@ async function loadVendorOrderDetail(id: number) {
     .where(eq(vendorOrderSendsTable.vendorOrderId, id))
     .orderBy(desc(vendorOrderSendsTable.sentAt));
 
+  const cancellations = await db
+    .select({ c: vendorOrderCancellationsTable, canceller: usersTable })
+    .from(vendorOrderCancellationsTable)
+    .leftJoin(
+      usersTable,
+      eq(usersTable.id, vendorOrderCancellationsTable.cancelledByUserId),
+    )
+    .where(eq(vendorOrderCancellationsTable.vendorOrderId, id))
+    .orderBy(desc(vendorOrderCancellationsTable.cancelledAt));
+
   const [receiver] = vo.receivedByUserId
     ? await db
         .select({ email: usersTable.email })
@@ -289,6 +307,18 @@ async function loadVendorOrderDetail(id: number) {
       isResend: row.s.isResend,
       resendNote: row.s.resendNote,
       pdfStorageUrl: toPublicImageUrl(row.s.pdfStorageUrl),
+    })),
+    cancellations: cancellations.map((row) => ({
+      id: row.c.id,
+      scope: row.c.scope as "full" | "partial",
+      reason: row.c.reason,
+      cancelledByUserId: row.c.cancelledByUserId,
+      cancelledByEmail: row.canceller?.email ?? null,
+      cancelledAt: row.c.cancelledAt.toISOString(),
+      pdfStorageUrl: toPublicImageUrl(row.c.pdfStorageUrl),
+      emailedAt: row.c.emailedAt ? row.c.emailedAt.toISOString() : null,
+      emailedTo: row.c.emailedTo,
+      itemCount: Array.isArray(row.c.items) ? row.c.items.length : 0,
     })),
   };
 }
@@ -1107,6 +1137,26 @@ router.post(
   },
 );
 
+function orderItemToPdfItem(it: OrderItem): PdfVendorOrderItem {
+  return {
+    productSkuSnapshot: it.productSkuSnapshot,
+    variantSkuSnapshot: it.variantSkuSnapshot,
+    variantNameSnapshot: it.variantNameSnapshot,
+    fabricNameSnapshot: it.fabricNameSnapshot,
+    description: it.description,
+    quantity: it.quantity,
+    unitPrice: Number(it.unitPrice),
+    amount: Number(it.amount),
+    notes: it.notes,
+  };
+}
+
+// Cancel a vendor order in full or partially.
+//   - scope=full: un-assign all items, set status=canceled (terminal).
+//   - scope=partial: un-assign only the given itemIds, leave status alone
+//     so the remaining items continue through the normal pipeline.
+// In both cases we snapshot the cancelled items and generate a cancellation
+// PDF (revised PO for partial), store it, and optionally email the vendor.
 router.post(
   "/admin/vendor-orders/:id/cancel",
   requireAuth,
@@ -1124,7 +1174,34 @@ router.post(
         .json({ error: body.error.issues[0]?.message ?? "Invalid body" });
       return;
     }
-    const result = await db.transaction(async (tx) => {
+    const userId = req.session?.userId ?? null;
+    const scope = body.data.scope;
+    const reason = body.data.reason?.trim() || null;
+    const requestedItemIds = body.data.itemIds ?? [];
+
+    if (scope === "partial" && requestedItemIds.length === 0) {
+      res
+        .status(400)
+        .json({ error: "Partial cancellation requires at least one itemId" });
+      return;
+    }
+
+    type CancelTxResult =
+      | { kind: "not_found" }
+      | { kind: "already_canceled" }
+      | { kind: "received" }
+      | { kind: "bad_items" }
+      | {
+          kind: "ok";
+          effectiveScope: "full" | "partial";
+          cancelItems: PdfVendorOrderItem[];
+          remainingItems: PdfVendorOrderItem[];
+          cancellationId: number;
+          cancelledAt: Date;
+        };
+    let txResult: CancelTxResult;
+    try {
+      txResult = await db.transaction<CancelTxResult>(async (tx) => {
       const [existing] = await tx
         .select()
         .from(vendorOrdersTable)
@@ -1132,54 +1209,272 @@ router.post(
         .for("update")
         .limit(1);
       if (!existing) return { kind: "not_found" as const };
-      if (existing.status === "canceled") return { kind: "noop" as const };
+      if (existing.status === "canceled") {
+        return { kind: "already_canceled" as const };
+      }
       if (existing.status === "received") {
         return { kind: "received" as const };
       }
-      await tx
-        .update(vendorOrdersTable)
-        .set({ status: "canceled" })
-        .where(eq(vendorOrdersTable.id, existing.id));
-      // Un-assign the items so they can be regrouped into a fresh VO.
-      await tx
-        .update(orderItemsTable)
-        .set({ vendorOrderId: null })
-        .where(eq(orderItemsTable.vendorOrderId, existing.id));
-      return { kind: "canceled" as const };
+
+      // Pull every line currently assigned to this VO so we can split them
+      // into "to-cancel" and "remaining" buckets.
+      const allItems = await tx
+        .select()
+        .from(orderItemsTable)
+        .where(eq(orderItemsTable.vendorOrderId, existing.id))
+        .orderBy(asc(orderItemsTable.id));
+
+      let cancelItems: OrderItem[];
+      let remainingItems: OrderItem[];
+      if (scope === "full") {
+        cancelItems = allItems;
+        remainingItems = [];
+      } else {
+        const requestedSet = new Set(requestedItemIds);
+        cancelItems = allItems.filter((it) => requestedSet.has(it.id));
+        remainingItems = allItems.filter((it) => !requestedSet.has(it.id));
+        if (cancelItems.length !== requestedSet.size) {
+          return { kind: "bad_items" as const };
+        }
+        if (cancelItems.length === 0) {
+          return { kind: "bad_items" as const };
+        }
+        // Cancelling every line via partial = treat as full so the PO closes.
+        if (remainingItems.length === 0) {
+          // upgrade to full
+          cancelItems = allItems;
+        }
+      }
+
+      const effectiveScope: "full" | "partial" =
+        remainingItems.length === 0 ? "full" : "partial";
+
+      // Un-assign just the cancelled lines. The extra
+      // `vendorOrderId = existing.id` predicate guards against a row
+      // being re-assigned to a different VO between our select and update.
+      const cancelIds = cancelItems.map((it) => it.id);
+      if (cancelIds.length > 0) {
+        const updated = await tx
+          .update(orderItemsTable)
+          .set({ vendorOrderId: null })
+          .where(
+            and(
+              inArray(orderItemsTable.id, cancelIds),
+              eq(orderItemsTable.vendorOrderId, existing.id),
+            ),
+          )
+          .returning({ id: orderItemsTable.id });
+        if (updated.length !== cancelIds.length) {
+          // Concurrent modification detected — abort the tx so nothing leaks.
+          throw new Error("__STALE_ITEMS__");
+        }
+      }
+
+      if (effectiveScope === "full") {
+        await tx
+          .update(vendorOrdersTable)
+          .set({ status: "canceled" })
+          .where(eq(vendorOrdersTable.id, existing.id));
+      }
+
+      const itemsSnapshot = cancelItems.map(orderItemToPdfItem);
+      const [cancellationRow] = await tx
+        .insert(vendorOrderCancellationsTable)
+        .values({
+          vendorOrderId: existing.id,
+          scope: effectiveScope,
+          reason,
+          cancelledByUserId: userId,
+          items: itemsSnapshot,
+        })
+        .returning();
+
+      return {
+        kind: "ok" as const,
+        effectiveScope,
+        cancelItems: itemsSnapshot,
+        remainingItems: remainingItems.map(orderItemToPdfItem),
+        cancellationId: cancellationRow!.id,
+        cancelledAt: cancellationRow!.cancelledAt,
+      };
     });
-    if (result.kind === "not_found") {
+    } catch (err) {
+      if (err instanceof Error && err.message === "__STALE_ITEMS__") {
+        res.status(409).json({
+          error:
+            "One or more items were modified by another action. Refresh and try again.",
+        });
+        return;
+      }
+      throw err;
+    }
+
+    if (txResult.kind === "not_found") {
       res.status(404).json({ error: "Not found" });
       return;
     }
-    if (result.kind === "received") {
+    if (txResult.kind === "already_canceled") {
+      res.status(409).json({ error: "Vendor order is already canceled" });
+      return;
+    }
+    if (txResult.kind === "received") {
       res
         .status(409)
         .json({ error: "Cannot cancel a received vendor order" });
       return;
     }
-    if (result.kind === "canceled") {
-      await recordAudit(req, {
-        action: "vendor_order.cancel",
+    if (txResult.kind === "bad_items") {
+      res.status(400).json({
+        error:
+          "One or more itemIds do not belong to this vendor order, or none were provided",
+      });
+      return;
+    }
+
+    // Audit + history.
+    await recordAudit(req, {
+      action:
+        txResult.effectiveScope === "full"
+          ? "vendor_order.cancel"
+          : "vendor_order.cancel_partial",
+      entityType: "vendor_order",
+      entityId: params.data.id,
+      changes: {
+        scope: txResult.effectiveScope,
+        reason,
+        cancelledItemCount: txResult.cancelItems.length,
+      },
+    });
+    const [voRow] = await db
+      .select()
+      .from(vendorOrdersTable)
+      .where(eq(vendorOrdersTable.id, params.data.id));
+    if (voRow) {
+      await recordHistory(req, {
         entityType: "vendor_order",
         entityId: params.data.id,
-        changes: { note: body.data.note ?? null },
+        changeType: "update",
+        snapshot: voRow,
+        notes:
+          txResult.effectiveScope === "full"
+            ? `canceled${reason ? `: ${reason}` : ""}`
+            : `partial cancel — ${txResult.cancelItems.length} item(s)${reason ? `: ${reason}` : ""}`,
       });
-      const [voRow] = await db
-        .select()
-        .from(vendorOrdersTable)
-        .where(eq(vendorOrdersTable.id, params.data.id));
-      if (voRow) {
-        await recordHistory(req, {
-          entityType: "vendor_order",
-          entityId: params.data.id,
-          changeType: "update",
-          snapshot: voRow,
-          notes: `canceled${body.data.note ? `: ${body.data.note}` : ""}`,
+    }
+
+    // Generate the cancellation/revised PO PDF and upload. Failures here are
+    // non-fatal — the cancellation row is already persisted and the items
+    // already un-assigned; we just won't have a stored PDF.
+    const detailNow = await loadVendorOrderDetail(params.data.id);
+    let pdfStorageUrl: string | null = null;
+    let pdfBuffer: Buffer | undefined;
+    if (detailNow) {
+      try {
+        pdfBuffer = await generateVendorOrderCancellationPdf({
+          vendorOrderNumber: detailNow.vendorOrderNumber,
+          dateOrdered: detailNow.createdAt,
+          customerOrderNumber: detailNow.customerOrderNumber,
+          customerName: detailNow.customerName,
+          notes: detailNow.notes,
+          items: txResult.cancelItems, // unused in cancellation doc but required by base shape
+          manufacturerName: detailNow.manufacturerName,
+          manufacturerAddressLine1: detailNow.manufacturerAddressLine1,
+          manufacturerAddressLine2: detailNow.manufacturerAddressLine2,
+          manufacturerCity: detailNow.manufacturerCity,
+          manufacturerState: detailNow.manufacturerState,
+          manufacturerPostalCode: detailNow.manufacturerPostalCode,
+          manufacturerPhone: detailNow.manufacturerPhone,
+          manufacturerFax: detailNow.manufacturerFax,
+          manufacturerEmail: detailNow.manufacturerOrderEmail,
+          scope: txResult.effectiveScope,
+          reason,
+          cancelledItems: txResult.cancelItems,
+          remainingItems: txResult.remainingItems,
+          cancelledAt: txResult.cancelledAt.toISOString(),
         });
+        pdfStorageUrl = await uploadBufferToStorage(
+          pdfBuffer,
+          "application/pdf",
+          "vendor-order-cancellations",
+        );
+        await db
+          .update(vendorOrderCancellationsTable)
+          .set({ pdfStorageUrl })
+          .where(eq(vendorOrderCancellationsTable.id, txResult.cancellationId));
+        req.log.info(
+          {
+            vendorOrderId: params.data.id,
+            cancellationId: txResult.cancellationId,
+            pdfStorageUrl,
+          },
+          "Vendor cancellation PDF generated and stored",
+        );
+      } catch (err) {
+        req.log.error(
+          { err, vendorOrderId: params.data.id },
+          "Failed to generate or upload vendor cancellation PDF",
+        );
       }
     }
-    const detail = await loadVendorOrderDetail(params.data.id);
-    res.json(detail);
+
+    // Optionally email the vendor. Surface delivery status back to the
+    // caller so the UI can show a truthful confirmation instead of always
+    // claiming the email went out.
+    const sendEmail = body.data.sendEmail === true;
+    const toEmail =
+      body.data.sentToEmail?.trim() ||
+      detailNow?.manufacturerOrderEmail ||
+      null;
+    let emailStatus: "skipped" | "sent" | "failed" | "no_address" = "skipped";
+    let emailError: string | null = null;
+    if (sendEmail) {
+      if (toEmail && detailNow) {
+        try {
+          await sendVendorOrderCancellationEmail({
+            to: toEmail,
+            vendorOrderNumber: detailNow.vendorOrderNumber,
+            manufacturerName: detailNow.manufacturerName,
+            scope: txResult.effectiveScope,
+            reason,
+            cancelledItems: txResult.cancelItems,
+            remainingItems: txResult.remainingItems,
+            pdfBuffer,
+          });
+          await db
+            .update(vendorOrderCancellationsTable)
+            .set({ emailedAt: new Date(), emailedTo: toEmail })
+            .where(
+              eq(vendorOrderCancellationsTable.id, txResult.cancellationId),
+            );
+          emailStatus = "sent";
+          req.log.info(
+            {
+              vendorOrderId: params.data.id,
+              cancellationId: txResult.cancellationId,
+              to: toEmail,
+            },
+            "Vendor cancellation email sent",
+          );
+        } catch (err) {
+          emailStatus = "failed";
+          emailError =
+            err instanceof Error ? err.message : "Unknown email error";
+          req.log.error(
+            { err, vendorOrderId: params.data.id, to: toEmail },
+            "Failed to send vendor cancellation email",
+          );
+        }
+      } else {
+        emailStatus = "no_address";
+        req.log.warn(
+          { vendorOrderId: params.data.id },
+          "Vendor cancellation recorded but no email address available",
+        );
+      }
+    }
+
+    const finalDetail = await loadVendorOrderDetail(params.data.id);
+    res.json({ ...finalDetail, emailStatus, emailError });
   },
 );
 

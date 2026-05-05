@@ -21,6 +21,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -86,7 +87,11 @@ export default function VendorOrderDetail() {
   const [confirmReceive, setConfirmReceive] = useState(false);
   const [receiveNotes, setReceiveNotes] = useState("");
   const [confirmCancel, setConfirmCancel] = useState(false);
-  const [cancelNote, setCancelNote] = useState("");
+  const [cancelScope, setCancelScope] = useState<"full" | "partial">("full");
+  const [cancelItemIds, setCancelItemIds] = useState<Set<number>>(new Set());
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelSendEmail, setCancelSendEmail] = useState(true);
+  const [cancelEmail, setCancelEmail] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
@@ -194,14 +199,70 @@ export default function VendorOrderDetail() {
     );
   }
 
+  function openCancelDialog() {
+    setCancelScope("full");
+    setCancelItemIds(new Set());
+    setCancelReason("");
+    setCancelSendEmail(true);
+    setCancelEmail(vo?.manufacturerOrderEmail ?? "");
+    setConfirmCancel(true);
+  }
+
+  function toggleCancelItem(itemId: number) {
+    setCancelItemIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(itemId)) next.delete(itemId);
+      else next.add(itemId);
+      return next;
+    });
+  }
+
   function submitCancel() {
+    if (cancelScope === "partial" && cancelItemIds.size === 0) {
+      toast({
+        title: "Select at least one item to cancel",
+        variant: "destructive",
+      });
+      return;
+    }
     cancelMut.mutate(
-      { id, data: { note: cancelNote.trim() || null } },
       {
-        onSuccess: () => {
-          toast({ title: "Vendor order canceled" });
+        id,
+        data: {
+          scope: cancelScope,
+          ...(cancelScope === "partial"
+            ? { itemIds: Array.from(cancelItemIds) }
+            : {}),
+          reason: cancelReason.trim() || null,
+          sendEmail: cancelSendEmail,
+          sentToEmail: cancelSendEmail ? cancelEmail.trim() || null : null,
+        },
+      },
+      {
+        onSuccess: (resp) => {
+          const r = resp as unknown as {
+            emailStatus?: "skipped" | "sent" | "failed" | "no_address";
+            emailError?: string | null;
+          };
+          const status = r?.emailStatus;
+          const baseTitle =
+            cancelScope === "full"
+              ? "Vendor order canceled"
+              : `${cancelItemIds.size} item(s) canceled`;
+          let description = "Cancellation PDF generated.";
+          let variant: "default" | "destructive" = "default";
+          if (status === "sent") {
+            description = "Cancellation notice emailed to vendor.";
+          } else if (status === "failed") {
+            description = `PDF generated, but email failed: ${r.emailError ?? "unknown error"}`;
+            variant = "destructive";
+          } else if (status === "no_address") {
+            description =
+              "PDF generated, but no vendor email address was available.";
+            variant = "destructive";
+          }
+          toast({ title: baseTitle, description, variant });
           setConfirmCancel(false);
-          setCancelNote("");
           invalidate();
         },
         onError: handleErr("Cancel failed"),
@@ -390,6 +451,60 @@ export default function VendorOrderDetail() {
               )}
             </div>
 
+            {/* Cancellations */}
+            {vo.cancellations.length > 0 && (
+              <div className="rounded-md border bg-white">
+                <div className="px-4 py-3 border-b font-medium text-red-700">
+                  Cancellation history
+                </div>
+                <ul className="divide-y">
+                  {vo.cancellations.map((c) => (
+                    <li key={c.id} className="px-4 py-2 text-sm">
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant={c.scope === "full" ? "destructive" : "outline"}
+                        >
+                          {c.scope === "full"
+                            ? "full cancel"
+                            : `partial · ${c.itemCount} item${c.itemCount === 1 ? "" : "s"}`}
+                        </Badge>
+                        <span className="ml-auto flex items-center gap-2">
+                          {c.pdfStorageUrl && (
+                            <a
+                              href={`/api/storage${c.pdfStorageUrl}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-blue-600 hover:underline"
+                            >
+                              View PDF
+                            </a>
+                          )}
+                          <span className="text-xs text-slate-500">
+                            {fmtDateTime(c.cancelledAt)}
+                          </span>
+                        </span>
+                      </div>
+                      {c.cancelledByEmail && (
+                        <div className="text-xs text-slate-500 mt-0.5">
+                          by {c.cancelledByEmail}
+                        </div>
+                      )}
+                      {c.emailedAt && c.emailedTo && (
+                        <div className="text-xs text-slate-500 mt-0.5">
+                          Emailed to {c.emailedTo} at {fmtDateTime(c.emailedAt)}
+                        </div>
+                      )}
+                      {c.reason && (
+                        <div className="text-slate-600 mt-0.5">
+                          Reason: {c.reason}
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             {/* Sends */}
             <div className="rounded-md border bg-white">
               <div className="px-4 py-3 border-b font-medium">Send history</div>
@@ -558,7 +673,7 @@ export default function VendorOrderDetail() {
                   type="button"
                   variant="destructive"
                   className="w-full"
-                  onClick={() => setConfirmCancel(true)}
+                  onClick={openCancelDialog}
                 >
                   Cancel vendor order
                 </Button>
@@ -653,26 +768,157 @@ export default function VendorOrderDetail() {
 
         {/* Cancel dialog */}
         <Dialog open={confirmCancel} onOpenChange={setConfirmCancel}>
-          <DialogContent>
+          <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Are you sure you want to cancel this vendor order?</DialogTitle>
+              <DialogTitle>Cancel vendor order</DialogTitle>
             </DialogHeader>
-            <div className="space-y-3 text-sm">
-              <p>
-                The status will move to{" "}
-                <span className="font-medium">canceled</span> and items on this
-                vendor order will be un-assigned so they can be regrouped.
-                The record is kept for reporting and the cancellation is logged
-                with your name and the time.
+            <div className="space-y-4 text-sm">
+              <p className="text-slate-600">
+                Choose whether to cancel the entire purchase order or only specific
+                line items. The cancelled items will be un-assigned from this PO so
+                they can be regrouped onto a different vendor order. A revised PO
+                PDF will be generated and stored, and (optionally) emailed to the
+                vendor. The cancellation is logged with your name and the time.
               </p>
+
+              {/* Scope */}
+              <div className="rounded-md border p-3 space-y-2">
+                <label className="flex items-start gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="cancel-scope"
+                    checked={cancelScope === "full"}
+                    onChange={() => setCancelScope("full")}
+                    className="mt-1"
+                  />
+                  <div>
+                    <div className="font-medium">Cancel entire PO</div>
+                    <div className="text-xs text-slate-500">
+                      All {vo.items.length} item(s) will be cancelled and the PO
+                      status will move to{" "}
+                      <span className="font-medium">canceled</span>.
+                    </div>
+                  </div>
+                </label>
+                <label className="flex items-start gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="cancel-scope"
+                    checked={cancelScope === "partial"}
+                    onChange={() => setCancelScope("partial")}
+                    className="mt-1"
+                    disabled={vo.items.length < 2}
+                  />
+                  <div>
+                    <div className="font-medium">Cancel specific items</div>
+                    <div className="text-xs text-slate-500">
+                      Pick the line items to remove. The remaining items stay on
+                      this PO and the vendor receives a revised purchase order.
+                      {vo.items.length < 2 && " (Need at least 2 items.)"}
+                    </div>
+                  </div>
+                </label>
+              </div>
+
+              {/* Item picker (partial only) */}
+              {cancelScope === "partial" && (
+                <div className="rounded-md border max-h-56 overflow-y-auto">
+                  <table className="w-full text-xs">
+                    <thead className="bg-slate-50 sticky top-0">
+                      <tr>
+                        <th className="px-2 py-1 w-8"></th>
+                        <th className="px-2 py-1 text-left">SKU</th>
+                        <th className="px-2 py-1 text-left">Description</th>
+                        <th className="px-2 py-1 text-right">Qty</th>
+                        <th className="px-2 py-1 text-right">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {vo.items.map((it) => {
+                        const checked = cancelItemIds.has(it.id);
+                        return (
+                          <tr
+                            key={it.id}
+                            className={`border-t cursor-pointer ${
+                              checked ? "bg-red-50" : ""
+                            }`}
+                            onClick={() => toggleCancelItem(it.id)}
+                          >
+                            <td className="px-2 py-1">
+                              <Checkbox
+                                checked={checked}
+                                onCheckedChange={() => toggleCancelItem(it.id)}
+                                aria-label={`Cancel item ${it.id}`}
+                              />
+                            </td>
+                            <td className="px-2 py-1 font-mono">
+                              {it.variantSkuSnapshot ??
+                                it.productSkuSnapshot ??
+                                "—"}
+                            </td>
+                            <td className="px-2 py-1">
+                              <div className={checked ? "line-through" : ""}>
+                                {it.description}
+                              </div>
+                            </td>
+                            <td className="px-2 py-1 text-right">
+                              {it.quantity}
+                            </td>
+                            <td className="px-2 py-1 text-right">
+                              {fmtMoney(it.amount)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* Reason */}
               <div>
-                <Label htmlFor="cancel-note">Reason (optional)</Label>
+                <Label htmlFor="cancel-reason">Reason (optional)</Label>
                 <Textarea
-                  id="cancel-note"
-                  value={cancelNote}
-                  onChange={(e) => setCancelNote(e.target.value)}
-                  rows={3}
+                  id="cancel-reason"
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  placeholder="Customer request, vendor unable to fulfill, etc."
+                  rows={2}
                 />
+                <p className="text-xs text-slate-500 mt-1">
+                  Shown to the vendor on the cancellation PDF and email.
+                </p>
+              </div>
+
+              {/* Email */}
+              <div className="rounded-md border bg-slate-50 p-3 space-y-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox
+                    checked={cancelSendEmail}
+                    onCheckedChange={(v) => setCancelSendEmail(v === true)}
+                  />
+                  <span className="font-medium">
+                    Email cancellation notice to vendor
+                  </span>
+                </label>
+                {cancelSendEmail && (
+                  <div>
+                    <Label htmlFor="cancel-email" className="text-xs">
+                      Vendor email
+                    </Label>
+                    <Input
+                      id="cancel-email"
+                      type="email"
+                      value={cancelEmail}
+                      onChange={(e) => setCancelEmail(e.target.value)}
+                      placeholder="orders@vendor.com"
+                    />
+                    <p className="text-xs text-slate-500 mt-1">
+                      Defaults to the manufacturer's configured order email. The
+                      revised PO PDF will be attached.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
             <DialogFooter>
@@ -687,7 +933,9 @@ export default function VendorOrderDetail() {
                 onClick={submitCancel}
                 disabled={cancelMut.isPending}
               >
-                Cancel vendor order
+                {cancelScope === "full"
+                  ? "Cancel entire PO"
+                  : `Cancel ${cancelItemIds.size || ""} item${cancelItemIds.size === 1 ? "" : "s"}`.trim()}
               </Button>
             </DialogFooter>
           </DialogContent>

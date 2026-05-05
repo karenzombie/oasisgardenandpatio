@@ -4335,8 +4335,11 @@ components:
         sends:
           type: array
           items: { $ref: "#/components/schemas/AdminVendorOrderSend" }
+        cancellations:
+          type: array
+          items: { $ref: "#/components/schemas/AdminVendorOrderCancellation" }
       required:
-        [id, vendorOrderNumber, status, notes, vendorEstimatedDeliveryDate, sentAt, acknowledgedAt, fulfilledAt, receivedAt, receivedByUserId, receivedByEmail, itemsReceived, createdByUserId, createdByEmail, createdAt, updatedAt, manufacturerId, manufacturerName, manufacturerOrderEmail, manufacturerAddressLine1, manufacturerAddressLine2, manufacturerCity, manufacturerState, manufacturerPostalCode, manufacturerPhone, manufacturerFax, customerOrderId, customerOrderNumber, customerOrderStatus, customerName, items, sends]
+        [id, vendorOrderNumber, status, notes, vendorEstimatedDeliveryDate, sentAt, acknowledgedAt, fulfilledAt, receivedAt, receivedByUserId, receivedByEmail, itemsReceived, createdByUserId, createdByEmail, createdAt, updatedAt, manufacturerId, manufacturerName, manufacturerOrderEmail, manufacturerAddressLine1, manufacturerAddressLine2, manufacturerCity, manufacturerState, manufacturerPostalCode, manufacturerPhone, manufacturerFax, customerOrderId, customerOrderNumber, customerOrderStatus, customerName, items, sends, cancellations]
     GenerateVendorOrdersRequest:
       type: object
       properties:
@@ -4368,8 +4371,46 @@ components:
         notes: { type: string, nullable: true }
     CancelVendorOrderRequest:
       type: object
+      description: |
+        Cancel a vendor order in full or partially. For 'full' scope all
+        items are un-assigned and the PO status moves to 'canceled'. For
+        'partial' scope only the listed itemIds are un-assigned; the PO
+        status is preserved. A cancellation PDF is generated and stored
+        regardless; if sendEmail is true it is also emailed to the vendor.
       properties:
-        note: { type: string, nullable: true }
+        scope:
+          type: string
+          enum: [full, partial]
+        itemIds:
+          type: array
+          items: { type: integer }
+          description: Required when scope=partial. Must reference items currently on this vendor order.
+        reason:
+          type: string
+          nullable: true
+        sendEmail:
+          type: boolean
+          description: When true, email the cancellation PDF to the vendor. Defaults to false.
+        sentToEmail:
+          type: string
+          nullable: true
+          description: Override the recipient address. Falls back to the manufacturer's order email.
+      required: [scope]
+    AdminVendorOrderCancellation:
+      type: object
+      properties:
+        id: { type: integer }
+        scope: { type: string, enum: [full, partial] }
+        reason: { type: string, nullable: true }
+        cancelledByUserId: { type: integer, nullable: true }
+        cancelledByEmail: { type: string, nullable: true }
+        cancelledAt: { type: string, format: date-time }
+        pdfStorageUrl: { type: string, nullable: true }
+        emailedAt: { type: string, format: date-time, nullable: true }
+        emailedTo: { type: string, nullable: true }
+        itemCount: { type: integer }
+      required:
+        [id, scope, reason, cancelledByUserId, cancelledByEmail, cancelledAt, pdfStorageUrl, emailedAt, emailedTo, itemCount]
     UpdateVendorOrderRequest:
       type: object
       properties:

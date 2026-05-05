@@ -5,7 +5,23 @@
  * Oasis Garden & Patio API
  * OpenAPI spec version: 0.1.0
  */
+import type { CancelVendorOrderRequestScope } from "./cancelVendorOrderRequestScope";
 
+/**
+ * Cancel a vendor order in full or partially. For 'full' scope all
+items are un-assigned and the PO status moves to 'canceled'. For
+'partial' scope only the listed itemIds are un-assigned; the PO
+status is preserved. A cancellation PDF is generated and stored
+regardless; if sendEmail is true it is also emailed to the vendor.
+
+ */
 export interface CancelVendorOrderRequest {
-  note?: string | null;
+  scope: CancelVendorOrderRequestScope;
+  /** Required when scope=partial. Must reference items currently on this vendor order. */
+  itemIds?: number[];
+  reason?: string | null;
+  /** When true, email the cancellation PDF to the vendor. Defaults to false. */
+  sendEmail?: boolean;
+  /** Override the recipient address. Falls back to the manufacturer's order email. */
+  sentToEmail?: string | null;
 }

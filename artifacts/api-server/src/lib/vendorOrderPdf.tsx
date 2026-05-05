@@ -469,3 +469,323 @@ export async function generateVendorOrderPdf(
 ): Promise<Buffer> {
   return renderToBuffer(<VendorOrderDocument {...args} />);
 }
+
+/* ─────────────────────────────────────────────────────────────────────
+ * Cancellation notice PDF
+ * Same shell as the PO, but with a red banner, a cancelled-items table
+ * (struck through) and an optional remaining-items table for partial
+ * cancellations so the vendor can clearly see the revised PO.
+ * ───────────────────────────────────────────────────────────────────── */
+
+const CANCEL_RED = "#b91c1c";
+
+const cs = StyleSheet.create({
+  banner: {
+    backgroundColor: CANCEL_RED,
+    color: "#fff",
+    padding: "6px 8px",
+    marginBottom: 8,
+    fontSize: 12,
+    fontFamily: "Helvetica-Bold",
+    letterSpacing: 1,
+    textAlign: "center",
+  },
+  sectionLabel: {
+    fontFamily: "Helvetica-Bold",
+    fontSize: 9,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginTop: 6,
+    marginBottom: 3,
+    color: HEADER_BG,
+  },
+  sectionLabelCancelled: {
+    fontFamily: "Helvetica-Bold",
+    fontSize: 9,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginTop: 6,
+    marginBottom: 3,
+    color: CANCEL_RED,
+  },
+  cancelledStrike: {
+    textDecoration: "line-through",
+    color: "#666",
+  },
+  reasonBox: {
+    border: `1px solid ${CANCEL_RED}`,
+    backgroundColor: "#fff5f5",
+    padding: "4px 6px",
+    marginBottom: 6,
+  },
+  reasonLabel: {
+    fontSize: 7,
+    fontFamily: "Helvetica-Bold",
+    textTransform: "uppercase",
+    color: CANCEL_RED,
+    marginBottom: 2,
+  },
+  reasonText: { fontSize: 8, lineHeight: 1.4 },
+});
+
+export interface VendorOrderCancellationPdfArgs extends VendorOrderPdfArgs {
+  scope: "full" | "partial";
+  reason: string | null;
+  cancelledItems: PdfVendorOrderItem[];
+  remainingItems: PdfVendorOrderItem[];
+  cancelledAt: string;
+}
+
+function ItemsTable({
+  items,
+  struck,
+}: {
+  items: PdfVendorOrderItem[];
+  struck: boolean;
+}) {
+  if (items.length === 0) return null;
+  const total = items.reduce((sum, it) => sum + it.amount, 0);
+  return (
+    <View>
+      <View style={s.thRow}>
+        <Text style={[s.th, s.colItem]}>Item #</Text>
+        <Text style={[s.th, s.colDesc]}>Item Description</Text>
+        <Text style={[s.th, s.colQty]}>Qty</Text>
+        <Text style={[s.th, s.colUnit, { textAlign: "right" }]}>Unit Price</Text>
+        <Text style={[s.th, s.colTotal, { textAlign: "right" }]}>Total</Text>
+      </View>
+      {items.map((it, idx) => {
+        const sku = it.variantSkuSnapshot ?? it.productSkuSnapshot ?? "";
+        const mainDesc = it.description || "—";
+        const options: string[] = [
+          it.variantNameSnapshot,
+          it.fabricNameSnapshot,
+        ].filter((v): v is string => Boolean(v));
+        const rowBg = idx % 2 === 0 ? "#fff" : LIGHT_BG;
+        const cellStyle = struck ? cs.cancelledStrike : {};
+        return (
+          <React.Fragment key={idx}>
+            <View style={[s.tdRow, { backgroundColor: rowBg }]}>
+              <Text style={[s.td, s.colItem, cellStyle]}>{sku}</Text>
+              <View style={[s.colDesc, { paddingVertical: 2 }]}>
+                <Text style={[s.td, { paddingVertical: 0 }, cellStyle]}>
+                  {mainDesc}
+                </Text>
+                {options.map((opt, oi) => (
+                  <Text
+                    key={oi}
+                    style={{
+                      fontSize: 6.5,
+                      color: "#555",
+                      fontFamily: "Helvetica-Oblique",
+                      paddingLeft: 8,
+                      lineHeight: 1.4,
+                      ...(struck ? { textDecoration: "line-through" } : {}),
+                    }}
+                  >
+                    › {opt}
+                  </Text>
+                ))}
+              </View>
+              <Text style={[s.td, s.colQty, cellStyle]}>{it.quantity}</Text>
+              <Text style={[s.td, s.colUnit, cellStyle]}>
+                {fmtMoney(it.unitPrice)}
+              </Text>
+              <Text style={[s.td, s.colTotal, cellStyle]}>
+                {fmtMoney(it.amount)}
+              </Text>
+            </View>
+          </React.Fragment>
+        );
+      })}
+      <View style={s.totalRow}>
+        <Text style={s.totalLabel}>
+          {struck ? "Cancelled total:" : "Remaining total:"}
+        </Text>
+        <Text style={s.totalValue}>{fmtMoney(total)}</Text>
+      </View>
+    </View>
+  );
+}
+
+function VendorOrderCancellationDocument(args: VendorOrderCancellationPdfArgs) {
+  const {
+    vendorOrderNumber,
+    dateOrdered,
+    notes,
+    manufacturerName,
+    manufacturerAddressLine1,
+    manufacturerAddressLine2,
+    manufacturerCity,
+    manufacturerState,
+    manufacturerPostalCode,
+    manufacturerPhone,
+    manufacturerFax,
+    manufacturerEmail,
+    scope,
+    reason,
+    cancelledItems,
+    remainingItems,
+    cancelledAt,
+  } = args;
+
+  const cityStateZip = [
+    [manufacturerCity, manufacturerState].filter(Boolean).join(", "),
+    manufacturerPostalCode,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const headlineLabel =
+    scope === "full"
+      ? "PURCHASE ORDER CANCELLATION"
+      : "REVISED PURCHASE ORDER — PARTIAL CANCELLATION";
+
+  return (
+    <Document>
+      <Page size="LETTER" orientation="landscape" style={s.page}>
+        <View style={s.row}>
+          <View style={s.headerLeft}>
+            <Text style={s.brandTitle}>OASIS</Text>
+            <Text style={s.brandSub}>Garden &amp; Patio</Text>
+
+            <View style={s.vendorBox}>
+              <Text style={s.vendorLabel}>Vendor</Text>
+              {manufacturerName ? (
+                <Text style={s.vendorName}>{manufacturerName}</Text>
+              ) : (
+                <Text style={[s.vendorName, { color: "#999" }]}>—</Text>
+              )}
+              {manufacturerAddressLine1 && (
+                <Text style={s.vendorLine}>{manufacturerAddressLine1}</Text>
+              )}
+              {manufacturerAddressLine2 && (
+                <Text style={s.vendorLine}>{manufacturerAddressLine2}</Text>
+              )}
+              {cityStateZip ? <Text style={s.vendorLine}>{cityStateZip}</Text> : null}
+              {manufacturerPhone && (
+                <Text style={s.vendorLine}>Phone: {manufacturerPhone}</Text>
+              )}
+              {manufacturerFax && (
+                <Text style={s.vendorLine}>Fax: {manufacturerFax}</Text>
+              )}
+              {manufacturerEmail && (
+                <Text style={s.vendorLine}>{manufacturerEmail}</Text>
+              )}
+            </View>
+
+            <View style={s.addrBlock}>
+              <Text style={s.addrTitle}>Ship To</Text>
+              <Text style={s.addrLine}>{OASIS_NAME}</Text>
+              <Text style={s.addrLine}>{OASIS_ADDR1}</Text>
+              <Text style={s.addrLine}>{OASIS_ADDR2}</Text>
+              <Text style={s.addrLine}>Phone: {OASIS_PHONE}</Text>
+              <Text style={s.addrLine}>Fax: {OASIS_FAX}</Text>
+            </View>
+          </View>
+
+          <View style={s.headerRight}>
+            <Text style={[s.poTitle, { color: CANCEL_RED, borderBottom: `2px solid ${CANCEL_RED}` }]}>
+              {headlineLabel}
+            </Text>
+
+            <View style={s.metaTable}>
+              <View style={[s.metaRow, { backgroundColor: "#e8e8e5", borderBottom: `1px solid ${BORDER}` }]}>
+                {["PO Number", "Date Ordered", "Cancelled On", "Customer Order #", "Customer Name", "Scope"].map(
+                  (label, i, arr) => (
+                    <View key={label} style={i < arr.length - 1 ? s.metaCell : s.metaCellLast}>
+                      <Text style={s.metaLabel}>{label}</Text>
+                    </View>
+                  ),
+                )}
+              </View>
+              <View style={s.metaRow}>
+                <View style={s.metaCell}>
+                  <Text style={s.metaValue}>{vendorOrderNumber}</Text>
+                </View>
+                <View style={s.metaCell}>
+                  <Text style={s.metaValue}>{fmtDate(dateOrdered)}</Text>
+                </View>
+                <View style={s.metaCell}>
+                  <Text style={s.metaValue}>{fmtDate(cancelledAt)}</Text>
+                </View>
+                <View style={s.metaCell}>
+                  <Text style={s.metaValue}>{args.customerOrderNumber ?? "—"}</Text>
+                </View>
+                <View style={s.metaCell}>
+                  <Text style={s.metaValue}>{args.customerName ?? "—"}</Text>
+                </View>
+                <View style={s.metaCellLast}>
+                  <Text style={[s.metaValue, { color: CANCEL_RED }]}>
+                    {scope === "full" ? "Full" : "Partial"}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            <View style={s.addrBlock}>
+              <Text style={s.addrTitle}>Bill To</Text>
+              <Text style={s.addrLine}>{OASIS_NAME}</Text>
+              <Text style={s.addrLine}>{OASIS_ADDR1}</Text>
+              <Text style={s.addrLine}>{OASIS_ADDR2}</Text>
+              <Text style={s.addrLine}>{OASIS_EMAIL}</Text>
+            </View>
+          </View>
+        </View>
+
+        <Text style={cs.banner}>
+          {scope === "full"
+            ? "THIS PURCHASE ORDER HAS BEEN CANCELLED IN FULL — DO NOT SHIP"
+            : "THE FOLLOWING ITEMS HAVE BEEN CANCELLED — REMAINING ITEMS BELOW STILL APPLY"}
+        </Text>
+
+        {reason ? (
+          <View style={cs.reasonBox}>
+            <Text style={cs.reasonLabel}>Cancellation reason</Text>
+            <Text style={cs.reasonText}>{reason}</Text>
+          </View>
+        ) : null}
+
+        <Text style={cs.sectionLabelCancelled}>
+          Cancelled items ({cancelledItems.length})
+        </Text>
+        <View style={[s.itemsTable, { flex: 0 }]}>
+          <ItemsTable items={cancelledItems} struck />
+        </View>
+
+        {scope === "partial" && remainingItems.length > 0 ? (
+          <>
+            <Text style={cs.sectionLabel}>
+              Remaining items still on this PO ({remainingItems.length})
+            </Text>
+            <View style={[s.itemsTable, { flex: 0 }]}>
+              <ItemsTable items={remainingItems} struck={false} />
+            </View>
+          </>
+        ) : null}
+
+        <View style={s.bottomRow}>
+          <View style={s.notesBox} />
+          <View style={s.sigsBox}>
+            <View style={s.sigRow}>
+              <View style={s.sigField}>
+                <Text style={s.sigLabel}>Auth Sign</Text>
+                <View style={s.sigLine} />
+              </View>
+              <View style={s.sigField}>
+                <Text style={s.sigLabel}>Cancellation Date</Text>
+                <View style={s.sigLine} />
+              </View>
+            </View>
+          </View>
+        </View>
+      </Page>
+    </Document>
+  );
+}
+
+export async function generateVendorOrderCancellationPdf(
+  args: VendorOrderCancellationPdfArgs,
+): Promise<Buffer> {
+  return renderToBuffer(<VendorOrderCancellationDocument {...args} />);
+}
