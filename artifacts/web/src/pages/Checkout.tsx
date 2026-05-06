@@ -250,76 +250,7 @@ export default function Checkout() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (placeOrderM.isPending) return;
-    if (!quoteFresh) {
-      toast({
-        title: "One moment",
-        description:
-          "We're calculating your final shipping and tax. Try again in a second.",
-      });
-      return;
-    }
-
-    const guestPayload = !isAuthenticated
-      ? {
-          email: guest.email.trim(),
-          firstName: guest.firstName.trim(),
-          lastName: guest.lastName.trim(),
-          phone: guest.phone.trim(),
-        }
-      : undefined;
-
-    if (!isAuthenticated) {
-      const err = validateGuestContact();
-      if (err) {
-        toast({ title: "Contact info needed", description: err });
-        return;
-      }
-    }
-
-    if (typeof selectedId === "number") {
-      placeOrderM.mutate({
-        data: {
-          shippingAddressId: selectedId,
-          billingSameAsShipping: true,
-          shippingMethod,
-          specialInstructions: specialInstructions || undefined,
-        },
-      });
-      return;
-    }
-
-    if (
-      !form.street1 ||
-      !form.city ||
-      !form.state ||
-      !form.zip
-    ) {
-      toast({
-        title: "Missing address",
-        description: "Street, city, state, and zip are required.",
-      });
-      return;
-    }
-
-    placeOrderM.mutate({
-      data: {
-        ...(guestPayload ? { guestContact: guestPayload } : {}),
-        shippingAddress: {
-          recipientName: form.recipientName || undefined,
-          street1: form.street1,
-          street2: form.street2 || undefined,
-          city: form.city,
-          state: form.state,
-          zip: form.zip,
-          country: "US",
-          phone: form.phone || guestPayload?.phone || undefined,
-        },
-        billingSameAsShipping: true,
-        shippingMethod,
-        specialInstructions: specialInstructions || undefined,
-      },
-    });
+    // Online ordering is disabled while the site is under construction.
   }
 
   if (authLoading || cartLoading) {
@@ -700,30 +631,23 @@ export default function Checkout() {
             </div>
             <Button
               type="submit"
-              disabled={placeOrderM.isPending || !quoteFresh}
-              className="w-full rounded-none mt-6 font-serif tracking-widest uppercase"
+              disabled
+              className="w-full rounded-none mt-6 font-serif tracking-widest uppercase opacity-50 cursor-not-allowed"
             >
-              {placeOrderM.isPending
-                ? "Placing Order…"
-                : !quoteFresh
-                  ? "Calculating…"
-                  : "Place Order"}
+              Place Order
             </Button>
-            {!isAuthenticated ? (
-              <p className="text-[11px] text-muted-foreground mt-3 text-center">
-                You can{" "}
-                <Link
-                  href="/sign-up?redirect_url=%2Fcheckout"
-                  className="underline hover:text-primary"
-                >
-                  create an account after checkout
-                </Link>{" "}
-                to track your order and save your wishlist.
-              </p>
-            ) : null}
             <p className="text-[11px] text-muted-foreground mt-3 text-center">
-              By placing this order you agree to our terms. Payment will be
-              collected separately.
+              This site is still under construction and not available for
+              online purchasing. Please visit{" "}
+              <a
+                href="https://www.oasispatioumbrellas.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-primary"
+              >
+                oasispatioumbrellas.com
+              </a>{" "}
+              to make a purchase.
             </p>
           </div>
         </aside>
