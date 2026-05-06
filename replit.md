@@ -1,209 +1,88 @@
 # Oasis Garden & Patio
 
-## Overview
+A full-stack e-commerce platform for a luxury outdoor furniture retailer, supporting online orders, in-store sales, inventory, purchasing, and CMS.
 
-Full-stack e-commerce platform for Oasis Garden & Patio — a luxury outdoor furniture retailer in Santa Clarita, CA. Two completely separate UI shells: customer-facing storefront and staff/admin portal (role-based access). The platform supports online orders, in-store agent-created orders/quotes, inventory, purchasing, and CMS-managed content.
+## Run & Operate
 
-**Store**: 21182 Centre Pointe Pkwy #100, Santa Clarita, CA 91350 · (661) 255-9909 · sales@oasisgardenandpatio.com
-**Hours**: Mon–Sat 10am–6pm, Sun 11am–5pm
+- `pnpm run typecheck`: Runs a full typecheck across all packages.
+- `pnpm --filter @workspace/api-spec run codegen`: Regenerate API hooks and Zod schemas after editing `lib/api-spec/openapi.yaml`.
+- `pnpm --filter @workspace/db run push`: Push DB schema changes (development only).
+- `pnpm --filter @workspace/scripts exec tsx src/seed.ts`: Run the idempotent seed script.
+- **Required Env Vars**: `RESEND_API`, `RESEND_FROM_EMAIL` (for transactional emails).
 
 ## Stack
 
 - **Monorepo**: pnpm workspaces, TypeScript 5.9, Node.js 24
-- **Frontend**: React + Vite (`artifacts/web`), wouter routing, TanStack Query, Tailwind + shadcn/ui
-- **API**: Express 5 (`artifacts/api-server`), contract-first via OpenAPI (`lib/api-spec`), Orval codegen → React Query hooks + Zod schemas
-- **DB**: PostgreSQL + Drizzle ORM (`lib/db`), schema split by domain into 12 files
-- **Validation**: Zod (`zod/v4`), `drizzle-zod`
-- **Logging**: Pino (`req.log` in routes, `logger` elsewhere — never `console.log` in server code)
+- **Frontend**: React + Vite, wouter, TanStack Query, Tailwind + shadcn/ui
+- **API**: Express 5, OpenAPI (contract-first), Orval codegen
+- **DB**: PostgreSQL + Drizzle ORM
+- **Validation**: Zod, `drizzle-zod`
+- **Logging**: Pino (server-side)
 
-## Architecture Decisions
+## Where things live
 
-- **Two-shell UI**: Customer shell (site header + footer) and staff shell (sidebar + topbar) share **zero** layout components. Customer routes: `/`, `/shop`, `/account`, `/cart`, `/checkout`. Staff routes: `/staff`, `/agent`, `/admin`.
-- **Identity model**: Two-table — `users` (auth credentials) and `customers` (contact/order info). One customer per user account is enforced via a partial unique index on `customers.user_id` (where not null), so in-store customers without accounts are still allowed.
-- **Order numbering**: `OG-YYYY-XXXXX` format.
-- **Payments**: Authorize.net via Accept.js (client-side tokenization). Agent-created orders skip the payment step entirely (in-store payment handled at register).
-- **Tax**: TaxJar for online orders; flat 10.25% (Santa Clarita) for agent/in-store orders.
-- **Staff portal palette**: sidebar/headers `#1A3C5E`, content background `#F5F7FA`.
-- **Customer brand**: refined coastal-California aesthetic. Logo at `artifacts/web/src/assets/logo.png` appears on every customer page.
-- **Images — must render in published builds, not just dev**:
-  - **Static images** (logos, hero, fixed category tiles, brand marks): drop the file in `attached_assets/` (or `artifacts/web/src/assets/`) and `import` it. Vite hashes + bundles it. Never reference raw filenames as strings — they break in prod. `artifacts/web/vite.config.ts` aliases `@assets` → `attached_assets/` and `@/assets` → `src/assets/`.
-  - **Files in `artifacts/web/public/`** are served at the site root in both dev and prod (e.g. `/logo.png`, `/manufacturers/foo.jpg`). Use these for stable, well-known paths the email system or external tools reference.
-  - **Admin-uploaded images** (categories, banners, products, materials, manufacturers, fabrics) are stored in Replit Object Storage and the DB column holds the canonical id (`/objects/<...>`). The browser must request `/api/storage/objects/<...>` (the api-server route). **Every public-facing API route that returns one of these URLs MUST wrap it with `toPublicImageUrl()` from `artifacts/api-server/src/lib/imageUrl.ts`.** In dev a missing wrap may "work" because of Vite's catch-all, but in prod the `/*` SPA rewrite turns the request into `index.html` and you get a broken image. When adding a new endpoint that returns an image url, **wrap it** — covered today: products, cart, wishlist, materials, manufacturers, categories (admin), fabrics, adminProducts, adminSets.
-  - **Email images** must be absolute https URLs (use `REPLIT_DOMAINS` to build the base). Email clients won't resolve relative paths.
+- `lib/db/src/schema/index.ts`: Database schema barrel file.
+- `lib/api-spec/openapi.yaml`: Single source of truth for the API contract.
+- `artifacts/api-server/src/routes/index.ts`: API route registry.
+- `scripts/src/seed.ts`: Idempotent seed script.
+- `artifacts/web/src/App.tsx`: Frontend routing entry point.
+- `attached_assets/Oasis_Build_Spec_v2.5_*.docx`: Primary functional specification.
+- `attached_assets/Oasis_Addendum_1_*.docx`: Staff/admin portal specification.
+- `attached_assets/`: Static images (logos, hero, fixed category tiles, brand marks).
+- `artifacts/web/public/`: Files served at the site root.
+- `artifacts/api-server/src/lib/imageUrl.ts`: Image URL helper, especially `toPublicImageUrl()`.
 
-## Build Plan (7 phases)
+## Architecture decisions
 
-1. **Foundation** ✅ — DB schema, OpenAPI spec, public read-only routes (legal, banners, manufacturers, categories, products/featured), customer site shell
-2. **Customer auth** ✅ — Clerk handles customer sign-up / sign-in (Google, Apple, email + password), with a thin server bridge that mirrors each Clerk identity into the local `users` + `customers` tables (this preserves the existing `req.session.userId` contract, so cart / wishlist / orders need no changes). Bridge endpoint: `POST /api/auth/clerk-sync` — called by `useClerkSync()` in the web client whenever Clerk transitions to signed-in. New users get `users.clerk_user_id` set, `password_hash` left null, and a fresh customer row. Email collisions with legacy local accounts (those with a `password_hash`) return 409 — no automatic linking. Sign-in / sign-up routes: `/sign-in/*?` and `/sign-up/*?` (legacy `/login` and `/signup` redirect). Logout calls Clerk `signOut()` then `POST /api/auth/logout`. The legacy email/password endpoints (`/api/auth/login`, `/api/auth/signup`, verify-email, password-reset) are still mounted but Clerk-only customers can't authenticate through them. Staff portal (`/staff`) **does not** use Clerk and keeps its own bcryptjs + 2FA + password-rotation flow — Clerk doesn't currently support 2FA. Shared session cookie (`oasis.sid`) keys off the local `users.id`. Branded transactional emails (verification, password reset, order confirmations) go through Resend.
-   - **Disable / restore accounts**: Super admins toggle `users.isActive` from the Users page (works for both staff and customers tabs). All login paths (`/auth/login`, `/auth/staff/login`, `/auth/clerk-sync`) return `403 { code: "account_disabled" }` *after* password verification, so the response can't be used as an email-enumeration oracle. The web client surfaces a popup ("Please contact Oasis Garden & Patio…") and signs the user out of Clerk if they came in that way. `GET /auth/staff/state` also clears any stale session for a staff user that has just been disabled.
-   - **Order cancellation**: Customer order cancel and vendor (purchase) order cancel both require an explicit "Are you sure?" dialog. Customer cancel additionally warns that a manual refund may be needed (we never auto-refund the gateway). Cancellations are recorded with who/when via `order_status_history` (customer) and `vendor_order_history` (vendor). Reports already exclude `canceled` and `refunded` (`adminReports.EXCLUDED_STATUSES`). Vendor cancellation supports **partial cancel** (staff selects "cancel entire PO" or specific line items). Cancelled lines are un-assigned from the VO so they can be regrouped; for full cancel the VO status moves to `canceled`, for partial the VO stays put with the remaining items. Each cancellation snapshots the cancelled lines to `vendor_order_cancellations` (with reason, scope, who/when), generates a "Cancellation Notice" / "Revised Purchase Order" PDF (red banner, struck-through cancelled items, plus remaining items for partial) via `generateVendorOrderCancellationPdf`, uploads it to object storage, and optionally emails the vendor with the PDF attached via `sendVendorOrderCancellationEmail`. Cancellation history with View-PDF links is shown on the VO detail page.
-3. **Staff portal (in progress)** — building admin + agent shells *before* customer catalog, per user request, so real products can be loaded from a vendor spreadsheet.
-   - ✅ Schema additions, admin bootstrap from env, role-aware shell + 2FA + first-login flow
-   - ✅ Manufacturers CRUD, Categories CRUD (with tree), Object Storage wiring
-   - ✅ Products CRUD (multi-image drag/reorder, primary, inventory tab)
-   - ✅ **CSV Import** (`/admin/products/import`): upload → auto-map columns → dry-run validation → atomic commit. Resolves manufacturer/category by name (case-insensitive), upserts by SKU, inventory via `onConflictDoUpdate`. Body limit raised to 25 MB; rejects dangerous header names (`__proto__`/`constructor`/`prototype`).
-   - ✅ **Variants + fabrics + vendor-data load** — added parent-product / per-finish-variant / shared-fabric-library model with composite-FK and CHECK-constraint enforcement. Loaded real vendor data: 98 Sunbrella fabrics, 14 Treasure Garden umbrella models, 42 frame-finish variants, 1,372 product↔fabric links, 42 per-variant inventory rows.
-   - ✅ **Product attributes + image kinds** — `product_attributes` table holds Feature / Option / Replacement Part rows with CHECK constraints (`attribute_type IN (...)` and `part_name` required iff type=`replacement_part`). `product_images.image_kind` (`gallery` | `spec`) separates carousel photos from technical-drawing/spec illustrations (CHECK + composite index). Loader extended (`scripts/src/loadVendorData.ts`): parses the attributes CSV, wipe-then-reinsert per product in a tx (vendor sheet is source of truth); uploads `attached_assets/TG_<SKU>[_Specs]_*.png` to Replit Object Storage at deterministic path `vendor-imports/TG_<SKU>_<kind>.png` (overwrites cleanly), then upserts `product_images` rows by URL. First load: 208 attribute rows across 14 models (94 features / 36 options / 78 parts), 20 images uploaded (10 gallery + 10 spec) for UM800/UM800LX/UM801/UM810/UM812. URL convention matches admin-upload flow: store `/objects/...`, frontend resolves via `getStaffObjectUrl`.
-   - ✅ T011 Inventory: per-product `variantId IS NULL` canonical row; locations CRUD with default flag; manual adjustments inside a tx (FOR UPDATE on product+inventory) writing audit rows; UI with Levels / Adjustments / Locations tabs.
-   - ✅ T012 Carriers: list/add/edit/active-toggle (no hard delete — `shipments.carrier_id` ON DELETE SET NULL relies on `isActive`). UNIQUE on `code` is null-friendly via a `nullify()` helper that trims+empties→null. Tracking-URL field uses `{trackingNumber}` placeholder convention (frontend validates + previews; backend stores raw). Seeds UPS/FedEx/USPS on first boot only.
-   - ✅ T013 Banners: full CRUD on `site_notifications` (type=banner|popup CHECK constraint). Hard delete allowed (no FKs). Date range stored as nullable timestamptz; `end<=start` rejected 400 on both create+update. Public `/banners/active` filter pre-existed (active+within window). Admin UI shows three statuses: Live (active+in window), Scheduled (active+outside window), Off. Frontend uses datetime-local inputs with local↔ISO helpers.
-   - ✅ T014 Legal CMS: versioned `legal_documents` (privacy_policy | terms_and_conditions). Publishing new version + restoring prior both deactivate current active and flip target inside one tx. Auto-version numbering scans `^v(\d+)$` and increments max (existing seeded `2026-05-01` versions are ignored by the pattern → first new auto is `v1`). Frontend tabs by type with Published card + history table; preview dialog + restore confirm. Date handling: zod coerces `format: date` to JS Date; backend converts back to YYYY-MM-DD via `dateToString()` (Drizzle `date()` column is typed string). All "today" defaults use UTC for deterministic server-side behavior.
-   - ✅ T015 Settings: typed JSON facade (`SystemSettings`) over KV `system_settings` table. Boot-time `seedDefaultSettings()` is idempotent (`onConflictDoNothing`). PUT accepts a partial `SystemSettingsUpdate`; admin route runs N upserts inside a tx and only writes the `value` column (description stays). Frontend has 5 panels (Tax / Shipping / Inventory&Vendor / Sales Agents / Order Numbering) with sticky save bar, diff-only PUT (only changed keys sent), Discard reverts to last server state. Percentages displayed ×100 in UI, ÷100 on the wire. Order-number preview shows next `YYYY-NNNNN`.
-   - ✅ T016 Discounts: two resources behind one admin router. **Discount events** (site-wide promotions: name/type/value/window/stackable/active) and **coupon codes** (checkout codes: code/discountType/value/minOrder/maxUses/singleUse/window). UNIQUE on `coupon_codes.code` is enforced server-side (trimmed + uppercased on write) and 23505 is mapped to 409 via `isUniqueViolation`. Percentage values capped at 100 (server-side guard); end-date ≤ start-date rejected for both event window and coupon expiration. Numeric fields are stringified on insert (Drizzle `numeric(10,2)` is typed string) and re-coerced via `Number()` for the JSON payload. Hard delete on coupons cascades `coupon_code_uses` (schema FK) — flagged as a product question for historical reporting, not a defect. Frontend: `<Tabs>` Events|Coupons, edit/delete dialogs with AlertDialog confirm, plus an Eye action that opens a `UsesDialog` joining `users.email` + `orders.orderNumber` (`leftJoin` so guest/null-user redemptions still render). Orval-generated `useAdminListCouponCodeUses` requires an explicit `queryKey` when `query` options are passed, so the dialog provides one alongside `enabled: coupon !== null`. UI exposes only `appliesTo: global` for v1; schema/API already supports category/manufacturer/product targeting via `targetIds[]` for the upcoming order/checkout flow.
-   - ✅ T017 Users: single Users page with `<Tabs>` Staff|Customers; both `/admin/users` and `/admin/customers` resolve to it. Backend: `GET /admin/users` accepts `?group=staff|customers` (omitted = all) + `?q` (ILIKE on email/firstName/lastName) and returns summary rows; `GET /admin/users/:id` returns detail + `agentPrivileges` (null for non-agents). `POST /admin/users` (create staff) requires `role ∈ {agent,admin}` + `password ≥ 8`; on agent creation, an `agent_privileges` row is auto-inserted with safe defaults; new staff get `mustChangePassword=true` + `emailVerified=true`. `PUT /admin/users/:id` updates name/role/active; empty body returns existing row. `POST /admin/users/:id/reset-password` generates a 12-char temp password (Node `crypto.getRandomValues`, alphabet excludes 0/O/1/l/I), bcrypts (rounds=12), sets `mustChangePassword=true`, **and within the same tx deletes all existing sessions for the target user** (`DELETE FROM sessions WHERE (sess->>'userId')::int = :id`) so any stolen/active cookie is invalidated. Returns plaintext **once**. `PUT /admin/users/:id/agent-privileges` rejects non-agent (400). Self-protect: cannot self-deactivate or self-role-change (400). Email uniqueness via `isUniqueViolation` → 409 (case-insensitive collation on `users.email`). Drizzle SQL gotcha: `or(...)` returns `SQL | undefined`, so extract → push only if truthy to keep `where(and(...))` typed. Frontend: search debounced 250ms; `RoleBadge` distinguishes admin/agent/customer; status column shows Active/Disabled + Pwd-reset/2FA chips; create-staff dialog (email/name/role/password); manage dialog combines name+role+isActive form (role+isActive Switch disabled when self), Reset-Password button with one-time temp-pw card (select-all + amber alert styling), and agent-privileges sub-section that only renders when role==='agent' (6 toggles + max-discount input that empties → `null`). Customer rows expose a "View order history" link to `/admin/customers/:id`. Generated query-params suffix is `AdminListUsersQueryParams` (not `AdminListUsersParams`) — Orval uses the latter for path-only params.
-   - ✅ T018 Notifications: per-user notifications scoped to current `req.session.userId`; staff endpoints under `/staff/notifications` (`requireRole('agent','admin')`). `GET /staff/notifications` (params: `unreadOnly?`, `limit?` ≤100, default 25; ordered by `createdAt DESC`); `GET /staff/notifications/unread-count` (returns `{unread}`, used for the badge); `POST /staff/notifications/:id/read` (404 if not found OR not owner — single `WHERE id=:id AND userId=:me` filter avoids info-leak); `POST /staff/notifications/read-all` (returns `{updated}`). Cross-user check verified: agent cannot read or mark admin's notifications. Customer (role=customer) gets 403 from middleware. Topbar `<NotificationBell>` uses Radix Popover with badge (red dot for >0, "99+" cap); polls unread-count every 60s with `refetchOnWindowFocus`; list query is gated on `enabled: open` so it only fetches when the dropdown is opened. Click-through on a notification with `linkUrl` marks read + invalidates count + navigates via wouter. "Mark all read" button greys out at 0 unread.
-   - ✅ T019 Audit log infrastructure: `audit_log` table already in schema (cols: userId FK SET NULL, action, entityType, entityId, changes jsonb, ipAddress, userAgent, createdAt; indexes on userId, (entityType,entityId), createdAt). Reusable `recordAudit(req, {action, entityType?, entityId?, changes?})` helper in `lib/audit.ts` — best-effort insert (try/catch + `logger.warn` on failure so it can never break the calling mutation), reads `userId` from `req.session?.userId`, captures client IP from `x-forwarded-for` first segment (fallback `req.ip`), and `User-Agent` header. Wired into representative mutations as a starter set: `user.create`, `user.update` (only if updates non-empty), `user.reset_password`, `settings.update` — additional mutations (Discounts, Carriers, Banners, Legal, Inventory adjustments, Orders, Vendor Orders) get wired as those modules ship. Endpoint `GET /admin/audit-log` (`requireRole('admin')`) supports `userId`, `action`, `entityType`, `entityId`, `q` (ILIKE on action OR entityType OR users.email — left-joined so system rows with userId=NULL still appear), plus `limit` (≤200, default 50) + `offset` pagination; returns `{rows, total}` (count via second query against same predicate). Frontend `/admin/audit-log` page: search box (Search/Clear), table (When | User | Action | Entity | IP | view), Eye action opens dialog showing full entry incl. UA + pretty-printed JSON `changes`. Pager appears when `total > PAGE_SIZE`. Route added to `StaffRouter.tsx`; placeholder removed from `ADMIN_PLACEHOLDERS`. Smoke tests verified (admin login → settings update → row appears with userEmail join, q=karen finds it, entityType=settings filters, agent gets 403, unauth 401, negative offset 400).
-   - ✅ Pricing schema allowance (forward-looking, no data yet): `products` got `msrp numeric(10,2)`, `markup_percent numeric(5,2)`, `pricing_mode text NOT NULL DEFAULT 'fixed'` (CHECK in `'fixed'|'cost_plus_markup'|'msrp_minus_dealer_rate'`); `manufacturers` got `dealer_rate numeric(5,2)`. `price` remains the checkout source-of-truth; pricing_mode is metadata describing how it was/should be derived. Pure helper `computeSuggestedPrice()` in `lib/db/src/pricing.ts` (returns null when inputs insufficient, returns `price` for `fixed`). OpenAPI/routes/web forms wired: ProductEdit has Pricing-mode Select + MSRP + Markup% inputs; Manufacturers form has Dealer rate (%) input with 0–100 validation. Routes use conditional spread on `pricingMode`/`dealerRate` updates so older clients can omit them safely. Schema applied to live DB via psql (drizzle push blocked by unrelated pre-existing `product_variants_product_id_id_unique` interactive prompt; column adds are idempotent and verified). Architect-reviewed: model + API + UI all coherent.
-   - ✅ T021 Orders module: 6 admin endpoints in `routes/adminOrders.ts` (`GET /admin/orders` with status/q/customerId/agentId filters + pagination, `GET /admin/orders/:id` returns full detail with items/addresses/history/vendor orders/cancellations, `POST /admin/orders/:id/status` transitions w/ FOR UPDATE + writes order_status_history transactionally, `POST /admin/orders/:id/notes`, `GET /admin/cancellation-requests`, `POST /admin/cancellation-requests/:id/review` — approval flips order to canceled + writes history). Mutations are audit-logged (only when actually mutated; no-op status updates and re-reviews skip audit). Status machine: `completed` and `refunded` are terminal (409 on transition out); `canceled` is intentionally non-terminal so admins can restore an order. Cancellation review rejects `refundAmount` when `decision=denied` (400) and returns 409 if request is already reviewed. Detail payload populates `reviewedByEmail` for cancellation rows. OpenAPI extracted 3 named request component schemas (`UpdateOrderStatusRequest`, `UpdateOrderNotesRequest`, `ReviewCancellationRequest`) to avoid orval type/value collisions. Frontend pages `staff/pages/admin/Orders.tsx` (list+filter+pagination) and `OrderDetail.tsx` (status form, items table w/ totals, internal notes editor, status timeline, cancellation review dialog w/ refund amount). Routes wired in `StaffRouter.tsx`; orders removed from `ADMIN_PLACEHOLDERS`. Smoke tests via `artifacts/api-server/smoke.mjs` (pure-Node TOTP, reads existing 2FA secret from DB when admin already enrolled).
-   - ✅ T022 Vendor Orders module: 9 admin endpoints in `routes/adminVendorOrders.ts` — `GET /admin/vendor-orders` (bucket=needs_action|sent + status/manufacturerId/customerOrderId/q filters, paginated, with itemCount subquery), `GET/PATCH/DELETE /admin/vendor-orders/:id`, `POST /admin/orders/:orderId/vendor-orders/generate` (groups unassigned items by manufacturerId via products join; items with null manufacturer skipped+counted), `POST /admin/vendor-orders/:id/send` (first send sets status=sent+sentAt; subsequent sends recorded as resends in `vendor_order_sends` w/ resendNote), `POST /admin/vendor-orders/:id/status` (only acknowledged|fulfilled — bespoke endpoints handle send/receive/cancel), `POST /admin/vendor-orders/:id/receive` (status→received + creates `inventory_receipts` row + sets receivedByUserId — idempotent), `POST /admin/vendor-orders/:id/cancel` (un-assigns items so they can be regenerated; idempotent; rejects received w/ 409). Status machine: pending→sent→acknowledged→fulfilled→received (terminal); any non-received→canceled (terminal). VO numbering: `VO-YYYY-NNNNN` scoped by year, generated inside tx with `pg_advisory_xact_lock(tag, year)` to serialize concurrent generates. Generate rejects orders in canceled/refunded status w/ 409. Delete only allowed when status=pending (un-assigns items first; audit captures unassignedItemCount). All mutations audit-logged. Manufacturers table has NO email field — `manufacturerEmail` deliberately omitted from detail schema/route. Frontend: `VendorOrders.tsx` (Tabs: Needs Action / Sent to Vendor; search by VO# or customer order#; clickable rows), `VendorOrderDetail.tsx` (items table w/ totals, notes+ETA editor, send dialog w/ vendor email + resend reason, status action buttons, receive/cancel/delete dialogs, sends history, sidebar w/ customer order link + timeline + people). `OrderDetail.tsx` gained a Generate button + made VO list rows link to detail. Routes wired in `StaffRouter.tsx`; vendor-orders removed from `ADMIN_PLACEHOLDERS`. End-to-end smoke verified: generate→send→resend→ack→/status rejects 'received' (zod 400)→duplicate generate is empty→receive (inventory_receipts row created)→cancel after received 409→delete after received 409→bucket=sent list shows VO.
-   - ✅ T023 Reports module: 4 admin endpoints in `routes/adminReports.ts` — `GET /admin/reports/sales-summary` (orders, items, gross, subtotal, tax, delivery, discounts, average order), `GET /admin/reports/sales-by-agent` (LEFT JOIN users; correlated `(SELECT sum(quantity) FROM order_items WHERE order_id = orders.id)` subquery for itemCount — chosen over `JOIN order_items` because the latter would row-fan-out and break `count(*)` for orderCount; `order_items_order_id_idx` keeps it cheap), `GET /admin/reports/sales-by-manufacturer` and `GET /admin/reports/sales-by-category` (both join `order_items → products`, group by manufacturer/category, use `count(distinct orders.id)` for orderCount and `sum(amount - discount_amount)` for revenue, NULLs surface as "(no manufacturer)"/"(uncategorized)"). All endpoints filter by `placedAt BETWEEN dateFrom AND dateTo` (defaults: last 30 days, ISO datetime) and exclude `canceled+refunded` unless `includeCanceled=true`. The 3 grouped endpoints support `format=csv` returning `text/csv` with `Content-Disposition: attachment`. CSV escape wraps every cell in quotes AND prefixes values starting with `=+-@\t\r` with a single quote to defuse spreadsheet formula injection (verified live with crafted email `=cmd|test@evil` → emitted as `'=cmd|test@evil`). Frontend `Reports.tsx`: date range inputs (start-of-day / end-of-day local→ISO), include-canceled toggle, summary stat cards (8 metrics), 3 tables with per-table "Download CSV" buttons (plain `fetch` with credentials:include since orval client doesn't expose customFetch as subpath export). Stat labels deliberately disambiguate "Gross collected (incl. tax + delivery)" vs "Product subtotal" so the per-manufacturer/category "Product revenue" totals (which exclude tax+delivery+non-product fees) won't be mistaken for a discrepancy. Page subtitle spells out the same caveat. Route added to `StaffRouter.tsx`; reports removed from `ADMIN_PLACEHOLDERS`. Smoke verified: all 4 endpoints return correct aggregates against live data, CSV download has correct content-type and filename, bad date returns 400, unauth returns 401.
-   - ✅ T024 Agent shell: 7 agent pages under `staff/pages/agent/` (Orders, OrderDetail, Products, Inventory, Reports, Customers, NewOrder) wired in `StaffRouter.tsx`; `AGENT_PLACEHOLDERS` cleared. Agent pages reuse the same StaffShell layout but render slimmer admin endpoints. RBAC: orders endpoints (`GET /admin/orders`, `/:id`, `POST /:id/status`, `POST /:id/notes`) now allow `agent` and self-scope to `createdByAgentId === req.user.id` (list overrides `agentId` query param; detail returns 404 cross-agent; status mutation re-checks ownership inside the same `FOR UPDATE` tx; notes mutation pre-checks ownership). Agent reports endpoints (`sales-summary`, `sales-by-agent`) also self-scope; admin-only `sales-by-manufacturer` / `sales-by-category` are excluded from the agent UI. Agent Products + Inventory pages use **public** `useListManufacturers` / `useListCategories` (no admin role required) for filter dropdowns. Customers page: ALL staff can access ALL customers (intentional — agents must be able to look up walk-ins; documented in `adminCustomers.ts` header comment). Typed `AdminListProductsParams` / `AdminListInventoryParams` replace prior `as never` casts in agent pages. NewOrder is a step-by-step in-store order builder (customer pick → product pick → review → POST `/admin/orders`). Smoke test (`/tmp/smoke_t024.mjs`) verifies the full admin order flow remains intact. Architect-reviewed; remaining `as never` in admin Inventory/ProductEdit are out of T024 scope (T011/T008 work).
-4. **Catalog browsing** — product list, filters, PDP
-5. **Cart + checkout** — Authorize.net, TaxJar, shipping
-6. **Customer account** — order history, addresses
-7. **Admin portal extras / final pass**
+- **Two-shell UI**: Distinct layouts for customer (header/footer) and staff (sidebar/topbar) interfaces, with no shared layout components.
+- **Identity Model**: Separates `users` (authentication) from `customers` (contact/order info), allowing for in-store customers without full user accounts.
+- **Image Handling**: Differentiates between static assets (bundled), public directory files (served directly), and admin-uploaded images (Replit Object Storage via API proxy). Public-facing API routes must wrap image URLs with `toPublicImageUrl()`.
+- **Order Numbering**: Follows `OG-YYYY-XXXXX` for customer orders and `VO-YYYY-NNNNN` for vendor orders.
+- **Payment & Tax**: Authorize.net for online payments, with TaxJar for online order tax calculations. In-store orders may bypass payment steps and use a flat local tax rate.
 
-## Integrations
+## Product
 
-- **Resend** ✅ — transactional email. API key in `Resend_API` secret (preferred); falls back to the Replit connector. Sender comes from `RESEND_FROM_EMAIL` (env), else `onboarding@resend.dev`. **Currently in test mode**: account has no verified sender domain, so emails only deliver to the Resend account owner's address. Before launch: verify `oasisgardenandpatio.com` (or another domain) at resend.com/domains and set `RESEND_FROM_EMAIL` to e.g. `noreply@oasisgardenandpatio.com`. All other auth flows work regardless.
-- Authorize.net (payments), TaxJar (tax), Google Drive (PO attachments), Replit Object Storage (product images) — planned.
+- **Customer-facing Storefront**: Product browsing (list, filters, detail pages), shopping cart, checkout, customer account management (order history, addresses).
+- **Staff/Admin Portal**:
+    - **CRUD Operations**: Manufacturers, categories, products (with variants, fabrics, multi-image management), carriers, banners, legal documents.
+    - **Inventory Management**: Manual adjustments, location tracking, and linking to vendor orders.
+    - **Order Management**: View, filter, and manage customer orders, including status transitions, notes, and cancellation reviews.
+    - **Vendor Order Management**: Generate, send, track, and receive vendor orders, including partial cancellations and inventory restocks.
+    - **User Management**: Create/manage staff accounts (with roles, 2FA, password reset), manage customer accounts (activate/deactivate).
+    - **Reporting**: Sales summaries, sales by agent, manufacturer, and category, with CSV export.
+    - **Audit Log**: Tracks user actions, changes, and system events.
+    - **Bulk Product Update**: Efficiently update multiple product fields and fabric associations.
+    - **Staff Order Creation**: In-store order building for walk-in/existing customers, including quick orders and internal restock orders.
+    - **Order Delivery Tracking**: Manage shipping methods and shipment details for orders.
+    - **Order Partial Payments**: Record and track deposits and partial payments for orders.
+- **Key Integrations**: Resend (transactional email), Authorize.net (payments), TaxJar (tax), Replit Object Storage (product images).
 
-## Key Commands
+## User preferences
 
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks + Zod schemas after editing `lib/api-spec/openapi.yaml`
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- `pnpm --filter @workspace/scripts exec tsx src/seed.ts` — idempotent seed (categories, legal docs, banners)
+- I want iterative development.
+- Ask me for clarification instead of making assumptions on ambiguous build decisions.
+- Do not make changes to files outside the `artifacts/web` and `artifacts/api-server` directories without explicit instruction.
+- I prefer clear, concise communication and detailed explanations for complex technical concepts.
 
-## Important Files
+## Gotchas
 
-- `lib/db/src/schema/index.ts` — barrel for 12 domain schema files
-- `lib/api-spec/openapi.yaml` — single source of truth for API contract
-- `artifacts/api-server/src/routes/index.ts` — route registry
-- `scripts/src/seed.ts` — idempotent seed script
-- `artifacts/web/src/App.tsx` — frontend routing entry
-- `attached_assets/Oasis_Build_Spec_v2.5_*.docx` — primary spec
-- `attached_assets/Oasis_Addendum_1_*.docx` — staff/admin portal spec
+- When adding a new API endpoint that returns an image URL from Object Storage, **always** wrap it with `toPublicImageUrl()` from `artifacts/api-server/src/lib/imageUrl.ts` to ensure images render correctly in production.
+- Client-side image references to raw filenames in `artifacts/web/src/assets/` will break in production; always `import` them or use aliases.
+- Email images must be absolute HTTPS URLs; relative paths will not resolve in email clients.
+- The `Resend` integration is currently in test mode; emails only deliver to the Resend account owner's address until a sender domain is verified and `RESEND_FROM_EMAIL` is configured.
+- `drizzle-kit push` may be blocked by unrelated interactive prompts; direct psql ALTER commands are sometimes used for schema changes.
+- `onConflictDoUpdate` is not used in the vendor data loader; concurrent runs could lead to issues.
+- The inventory mode exclusivity (variant rows vs. variant-null rows for the same product) is enforced at the application layer, not purely via DB constraints.
+- Admin portal pricing calculations (tax, shipping) for new orders mirror customer-facing logic; overrides are possible.
 
-## Working style with this user
+## Pointers
 
-User explicitly directed: **ask rather than assume on ambiguous build decisions** — never guess direction on anything material.
-
-## Product decisions
-
-- **Signup email enumeration**: intentionally returning a clear 409 ("An account with that email already exists") on duplicate signup. Friendlier UX over the more private silent/no-enumeration alternative. Password-reset, by contrast, IS no-enumeration (always 204).
-- **Variant + fabric model** (locked):
-  - `products` is the *parent model* customers browse (e.g. "9' Auto Tilt").
-  - `product_variants` rows are the actual orderable SKUs (frame finishes), keyed by `variant_sku`. Inventory is per-variant; one inventory row per variant via partial unique index.
-  - `fabrics` is a shared library, keyed by `(manufacturer_id, item_number)`. Linked to products via `product_fabric_options` (M:N).
-  - **Every order line carries three identifiers** — product SKU, variant SKU, fabric item number — captured as snapshot columns on `order_items` so vendor PDFs and order history never lose them. CHECK constraints enforce snapshot completeness conditional on which FK is set.
-  - **Composite FKs** on `order_items`/`cart_items`/`inventory` `(product_id, variant_id)` and `(product_id, fabric_id)` guarantee a variant belongs to its product and a chosen fabric is configured as an option for that product. Vendor-side line items live on the same `order_items` rows (linked via `vendor_order_id`) — single source of truth.
-  - Inventory mode exclusivity (variant rows vs. variant-null rows for the same product) is enforced at the application layer; pure-DB enforcement would require a trigger and is deferred.
-- **Vendor data loader**: `pnpm --filter @workspace/scripts run load-vendor-data` is idempotent (re-runnable; keyed on natural keys: fabric `item_number`, product `sku`, variant `variant_sku`). Reads the latest matching CSVs from `attached_assets/`. One-shot CLI, single-runner — uses lookup-then-insert/update; if it ever needs to run concurrently, switch to `onConflictDoUpdate`.
-
-## Customer catalog (T026–T031, May 2026)
-
-- **PLP** at `/shop` (and `/shop/category/:slug`): `useListCatalogProducts` →
-  `GET /api/products` with filters (q, categorySlug, manufacturerSlug,
-  materialSlug), sort modes (featured | newest | price_asc | price_desc |
-  name_asc), and offset pagination. Public list filters `isActive=true AND
-  availableOnline=true`. Featured price sort uses `COALESCE(salePrice, price)`.
-  Card UI: brand-logo corner badge + title + SALE/strikethrough.
-- **PDP** at `/shop/:slug`: `useGetCatalogProductBySlug` →
-  `GET /api/products/by-slug/{slug}`. **Public visibility match**: server
-  returns 404 unless `isActive AND availableOnline` (prevents direct-link leak
-  of in-store-only products). Layout: gallery hover-zoom + thumbs | brand logo
-  + title + price + sanitized short description + disabled Add-to-Cart +
-  SKU/Category/Manufacturer/Tags meta + tabbed Description/Specs/Care/Warranty.
-- **HTML sanitization**: any product `description`/`shortDescription`
-  rendered with `dangerouslySetInnerHTML` flows through `sanitizeHtml()` in
-  `artifacts/web/src/lib/sanitize.ts` (DOMPurify with a small allowlist of
-  tags + `href/rel/target/title` attrs). Until admin-side sanitization on
-  write is added, the client allowlist is the source of truth.
-- **Schema additions**: `products.sale_price numeric(10,2)` (when set <
-  price → SALE badge + strikethrough) and `products.tags jsonb default '[]'`
-  (surfaced in PDP meta; future search). Added via direct psql ALTER because
-  `drizzle-kit push` is gated on an unrelated interactive prompt about
-  `product_variants_product_id_id_unique`.
-- **Static pages**: `/shipping-returns`, `/warranty`, `/fabrics` —
-  hand-authored content, linked from footer "Hours & Links" column.
-- **Deferred**: header search dropdown (T029). PLP already accepts `?q=`, so
-  a future header `<form action="/shop">` is a simple interim wire-up.
-
-## Bulk product update (May 2026)
-
-- **Endpoint**: `POST /api/admin/products/bulk-update` — body `{ productIds, fields?, fabricPools?, fabricPicks? }`. `fields` covers scalar booleans (isActive, featured, inStoreOnly, availableOnline, quoteOnly, showPriceOnline) and FK ids (categoryId, manufacturerId, materialId; pass null to clear). `fabricPools` and `fabricPicks` each take `{ mode: replace|add|remove|clear, manufacturerIds|fabricIds }` so admins can layer brands onto an existing pool instead of overwriting.
-- **History**: per-product `entity_history` rows are written — `entityType="product"` for scalar updates and `entityType="product_fabrics"` (changeType `replace`) for fabric changes — both tagged `notes="bulk update"` so an existing product's HistoryPanel surfaces them.
-- **UI**: `Products.tsx` admin list now has a checkbox column + select-all-on-page (with indeterminate state); a floating bottom toolbar appears whenever any rows are selected and opens `BulkUpdateProductsDialog`. Selection persists across pagination so admins can build a multi-page set before applying.
-- **Why per-product loop instead of one mass UPDATE**: the fabric mutations need per-product previous→next snapshots for history, and individual scalar updates also need per-product history rows. Cap is 500 ids/request to keep one call bounded.
-
-## Staff order creation (May 2026)
-
-- **Goal**: turn `/agent/orders/new` into a complete in-store order desk that mirrors the customer checkout (variants, fabrics, auto tax/shipping) but also supports walk-in / cash-and-carry sales.
-- **Schema** (`orders` table, applied via direct psql ALTER):
-  - `is_quick_order boolean not null default false`
-  - `skip_vendor_order boolean not null default false`
-  - `walk_in_name | walk_in_email | walk_in_phone text` — used when `customer_id IS NULL`
-  - `customer_id` was already nullable, so no change required there.
-- **Customer create with invite** (`POST /api/admin/customers` with `sendInvite: true`): wraps customer + `users` insert in a tx, generates a `password_reset_tokens` row, and emails the link via the existing `sendPasswordResetEmail` helper. Random bcryptjs password is set so the row is unusable until the customer completes the reset flow.
-- **Quick orders** (`POST /api/admin/orders` with `isQuickOrder: true`): customerId becomes optional, walk-in fields are accepted, address validation is skipped, and `skipVendorOrder` is honored only in this mode (server enforces). When `skipVendorOrder=true`, `POST /admin/vendor-orders/generate` short-circuits with a 409 (`kind: "skipped"`) so admins can't accidentally create restock POs against an in-stock sale.
-- **Pricing parity** (`POST /api/admin/orders/quote-pricing`): reuses `loadPricingSettings`, `computeTax`, and `computeShipping` from `checkoutPricing.ts` so the staff desk gets the exact same numbers as the customer cart. The frontend debounces this call and only switches to manual numbers when the operator clicks "Override" on the tax or delivery row.
-- **UI** (`artifacts/web/src/staff/pages/agent/NewOrder.tsx`):
-  - Customer block uses `Tabs` with `existing` / `new` / `quick` modes.
-  - Product picker dialog loads `useGetCatalogProductBySlug` for the chosen product to surface `variants[]` (frame finish/size) and `fabricOptions[]` (grouped by manufacturer); "Add to order" stays disabled until each required pick is made. Selected variantId/fabricId are persisted on the line so downstream routing (vendor-order generation, fulfillment) can use them.
-  - Per-line unit price is auto-filled from `price + variantPriceAdjustment` and shows an `(override)` indicator the moment the operator types a different number — preserves the long-standing manual-override behavior.
-- **Order detail surfacing** (`agent/OrderDetail.tsx`, `admin/OrderDetail.tsx`): a "Quick order" pill appears next to the Customer label and walk-in name/email/phone render in place of the customer block when there's no `customer_id`; the admin "Generate vendor orders" button is hidden when `skip_vendor_order=true` with a one-line explanation.
-
-## Order delivery tracking (May 2026)
-
-- **Schema reuse**: `carriers` (id, name, code, tracking_url_template, is_active) and `shipments` (orderId → carrierId, trackingNumber, shippedAt, deliveredAt, notes) already existed; this work just wires them into the order detail UI. Seeded a `Local Delivery` carrier (code `LOCAL`) so admins can record local-delivery dispatch the same way as UPS/FedEx/USPS/R+L.
-- **Endpoints** (admin-only, added in `artifacts/api-server/src/routes/adminOrderShipments.ts`):
-  - `PATCH /api/admin/orders/{id}/shipping-method` — quick free-text/datalist update of `orders.shipping_method`. Returns the full `AdminOrderDetail` so the client can replace cache atomically.
-  - `GET/POST /api/admin/orders/{id}/shipments` and `PUT/DELETE /api/admin/orders/{id}/shipments/{shipmentId}` — CRUD. Carrier id is validated to exist + be active when set; both timestamps are optional and stored as `timestamptz`. All mutations write `entity_history` rows tagged `entityType="order"` so the existing HistoryPanel surfaces shipment changes alongside other order edits.
-- **Order detail payload**: `loadOrderDetail` (now exported from `adminOrders.ts`) calls `loadOrderShipments(orderId)` and includes `shipments[]` on `AdminOrderDetail`. Each shipment is enriched with `carrierName`, `carrierCode`, and a computed `trackingUrl` (substitutes `{tracking}` / `{trackingNumber}` in the carrier's `tracking_url_template`, or appends the encoded number when no token is present).
-- **UI** (`artifacts/web/src/staff/pages/admin/DeliveryPanel.tsx`, mounted in admin `OrderDetail.tsx` between the customer/address card and the vendor-orders card): one card combines an editable Delivery method input (with a `<datalist>` of common options + active carriers) and a Shipments & tracking list. Each shipment row shows carrier + tracking number (linked to the carrier's tracking URL when available) + shipped/delivered timestamps + notes, with edit/delete actions. Add/edit dialog uses a Select for carrier (active carriers only) and `datetime-local` inputs converted to/from ISO strings for the timestamps.
-
-## Order partial payments (May 2026)
-
-- **Schema additions** to `payments`: `notes text`, `received_at timestamptz`, `recorded_by_user_id integer references users(id) on delete set null`. Applied via direct ALTER and mirrored in `lib/db/src/schema/orders.ts`.
-- **Endpoints** (in `artifacts/api-server/src/routes/adminOrderPayments.ts`, mounted alongside the other admin-orders routers; allowed for `admin` and `agent` so the staff desk can record deposits without escalation):
-  - `GET /api/admin/orders/{id}/payments`
-  - `POST /api/admin/orders/{id}/payments` — record any amount (deposit, partial, full); validates amount > 0 with at most 2 decimals and an allow-listed `paymentMethod` (`cash`, `check`, `credit_card`, `debit_card`, `ach`, `wire`, `financing`, `store_credit`, `gift_card`, `other`) and `status` (`completed` default, plus `pending`, `refunded`, `failed`, `voided`).
-  - `POST /api/admin/orders/{id}/payments/mark-paid-in-full` — convenience endpoint that records a single payment for the current `balance_due` and 400s when there is nothing left to pay.
-  - `PUT /api/admin/orders/{id}/payments/{paymentId}` and `DELETE /api/admin/orders/{id}/payments/{paymentId}`.
-- **Atomic balance recompute**: every mutation runs inside a `db.transaction`, takes a `SELECT … FOR UPDATE` on the order row, then sets `orders.deposit_amount = SUM(payments.amount WHERE status='completed')` and `orders.balance_due = max(0, total - deposit_amount)`. This means the balance shown on the order detail is always derived from the payments table and stays consistent under concurrent edits. Update/delete WHERE clauses include both `id` and `order_id` so stray ids from another order can't be touched.
-- **Order detail payload**: `loadOrderDetail` now also returns `payments[]`, plus the convenience `amountPaid` and `paidInFull` flags. All mutation endpoints respond with the full `AdminOrderDetail` so the client cache replaces atomically (no extra refetch round-trip needed).
-- **UI** (`artifacts/web/src/staff/pages/admin/PaymentsPanel.tsx`, mounted in admin `OrderDetail.tsx` directly above the Delivery card): summary row shows order total / amount paid / balance due, with a "Paid in full" / "Partial" / "Unpaid" badge. "Record payment" opens a dialog with amount (with a one-click "Use remaining balance" shortcut), method, status, received-at, reference / check #, optional card type + last 4, and notes. "Mark paid in full" is a one-click flow that just asks for the method and reference. All payments render in a table with edit/delete actions and the recorder's email; deletes prompt for confirmation and recompute the balance.
-- **History**: each create/update/delete writes an `entity_history` row tagged `entityType="order"` with the payment id and amount in the note, so the existing HistoryPanel surfaces payment changes alongside totals and shipping edits.
-
-## Inventory restock vendor orders (May 2026)
-
-Staff can now create vendor orders that aren't tied to a customer order, for restocking inventory across multiple vendors in one go.
-
-- **Schema additions**: `orders.is_internal_restock boolean not null default false` (+ `orders_is_internal_restock_idx`). Applied via direct ALTER and mirrored in `lib/db/src/schema/orders.ts`. No vendor-orders schema change — restocks reuse the existing `vendor_orders → customer_order_id → orders` link by way of a zero-priced internal "shell" order that holds the line items.
-- **Endpoint**: `POST /api/admin/orders` accepts a new `isInternalRestock: true` mode. When set:
-  - `customerId`, `shippingAddressId`, `billingAddressId` must be null; tax/delivery/deposit are forced to 0; `walkInName/Email/Phone` are ignored; `isQuickOrder` and `skipVendorOrder` are forced false.
-  - Every line item must reference a real `productId` so the system can look up `products.manufacturer_id` for grouping.
-  - After inserting the shell order + items, the same handler groups items by `manufacturer_id`, mints a vendor-order number per group via the shared `nextVendorOrderNumber(tx)` helper (now exported from `adminVendorOrders.ts`), inserts one `vendor_orders` row per manufacturer, and assigns `order_items.vendor_order_id` back. Returns the full `AdminOrderDetail` (which already includes `vendorOrders[]`).
-- **List filtering**: `GET /api/admin/orders` excludes restock shell orders by default to keep the customer-orders list clean. Pass `?includeRestocks=true` to include them.
-- **Surfacing on existing schemas**: `AdminOrderSummary` and `AdminOrderDetail` both expose `isInternalRestock` so the UI can badge them where they do appear (vendor-order detail, audit log).
-- **UI** (`artifacts/web/src/staff/pages/agent/NewOrder.tsx`): added a 4th customer-mode tab "Inventory restock" alongside Existing / New / Quick. Selecting it:
-  - Hides the customer/address blocks, the salesperson field, the Totals card, and disables the per-line unit-price input.
-  - Replaces the right-hand Totals card with a "Restock summary" panel that shows the line and total-units count and a "Create restock & vendor orders" submit button.
-  - Submits with `isInternalRestock: true` and shows a toast like "Restock created — 3 vendor orders generated", then navigates to the shell order detail (which lists the generated vendor orders in the existing vendor-orders panel).
-- **Auditing**: restock creation is logged as `order.create_restock` with the generated `vendorOrderIds` recorded in the audit changes payload.
-
-## Inventory restock receipts (May 2026)
-
-Closing the loop on the restock flow above: when a restock vendor order is **received**, on-hand stock now actually moves at SKU granularity. Customer (direct-ship) vendor orders intentionally do **not** touch inventory.
-
-- **Schema additions** (applied via direct ALTER, mirrored in `lib/db/src/schema/products.ts` + `inventoryAdjustments.ts`):
-  - `inventory.fabric_id` (FK → `fabrics.id` ON DELETE CASCADE).
-  - Replaced the old `inventory_variant_unique` + `inventory_product_no_variant_unique` pair with a single `inventory_pvf_unique` UNIQUE on `(product_id, variant_id, fabric_id)` with `NULLS NOT DISTINCT` (PG 16). This means UM800/red-fabric and UM800/different-finish are tracked as separate inventory rows, while a flat product (no variant, no fabric) is still pinned to exactly one row. The Drizzle 0.x version pinned in this workspace doesn't expose `.nullsNotDistinct()` on `uniqueIndex` — the SQL option lives in the DB only; runtime queries don't depend on it.
-  - `inventory_adjustments.variant_id` + `fabric_id` so the audit trail can pin every entry to the exact SKU it changed.
-- **Receive flow** (`POST /admin/vendor-orders/:id/receive` in `adminVendorOrders.ts`): wraps the existing receipt logic in a tx that, when the parent order's `is_internal_restock=true`, walks the linked `order_items`, get-or-creates the `(productId, variantId, fabricId)` inventory row at the system default location, bumps `on_hand += quantity`, and writes one `inventory_adjustments` row per item with `adjustment_type='vendor_receipt'`. If no default location is configured the route returns 400 (`no_default_location`) with a "set one in Inventory → Locations" message rather than silently dropping receipts.
-- **Manual adjustments** (`POST /admin/inventory/adjust`): now accepts `variantId`, `fabricId`, and either `quantityChange` (signed delta — historical mode) or `setOnHand` (absolute audit recount — new). Exactly one mode must be supplied; `setOnHand=N` is recorded as a delta of `(N - current)` so the audit row still tells you what moved. Cycle-count recounts that match current stock write a delta-0 audit entry on purpose so the recount itself is logged. The handler locks the product row, get-or-creates the SKU-specific inventory row, and refuses transitions that would drive `on_hand` negative.
-- **Inventory list** (`GET /admin/inventory`): now `LEFT JOIN`s products → inventory → variants → fabrics, returning one row per SKU. Products with no inventory rows still show up as a single synthetic row (variantId/fabricId both null, onHand=0) so admins can create the first row by adjusting it. New response fields: `inventoryId`, `variantId`, `variantName`, `variantSku`, `fabricId`, `fabricName`, `fabricItemNumber`. Sort tiebreakers include `variantId` and `fabricId` so the same product's SKU rows stay in stable order across pages.
-- **Adjustments list** (`GET /admin/inventory/adjustments`): joins variants + fabrics and returns `variantName`/`fabricName` so the audit table can show "UM800 / Sand finish / Sunbrella Canvas Heather Beige".
-- **UI** (`artifacts/web/src/staff/pages/admin/Inventory.tsx`): adds Variant + Fabric columns to the Levels table (each shows the human label plus a faded mono SKU/item-number). The Adjust dialog now has a Mode toggle ("Adjust by ±N" vs "Set to N"), shows the variant/fabric in its description so staff know exactly which SKU they're touching, and passes `variantId`/`fabricId` from the row through to the API. The "Set to" preview shows the recorded delta so staff understand what's getting written to the audit log.
-- **What still does NOT bump inventory**: customer orders going through normal vendor-fulfillment, payment captures, shipment status changes, refunds. Direct-ship is the default; only restock receipts move stock.
+- **OpenAPI Specification**: `lib/api-spec/openapi.yaml` for API contract details.
+- **DB Schema**: `lib/db/src/schema/index.ts` for database structure.
+- **Drizzle ORM Documentation**: _Populate as you build_
+- **Tailwind CSS Documentation**: _Populate as you build_
+- **React Query Documentation**: _Populate as you build_
+- **Clerk Authentication Documentation**: _Populate as you build_
+- **Authorize.net Accept.js Documentation**: _Populate as you build_
+- **TaxJar API Documentation**: _Populate as you build_
+- **Resend API Documentation**: _Populate as you build_

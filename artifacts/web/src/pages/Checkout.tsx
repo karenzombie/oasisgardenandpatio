@@ -610,13 +610,18 @@ export default function Checkout() {
           <section>
             <h2 className="font-serif text-xl mb-3">Payment</h2>
             <div className="border border-dashed border-border p-5 bg-card text-sm text-muted-foreground">
-              <p className="font-medium text-foreground mb-1">
-                Online payment coming soon
-              </p>
               <p>
-                Your order will be reserved with status <em>Pending Payment</em>.
-                Our team will contact you to securely collect payment via phone
-                or email. (Authorize.Net integration is in progress.)
+                This site is still under construction and not available for
+                online purchasing. Please visit{" "}
+                <a
+                  href="https://www.oasispatioumbrellas.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline text-foreground hover:text-primary"
+                >
+                  oasispatioumbrellas.com
+                </a>{" "}
+                if you're looking to make a purchase.
               </p>
             </div>
           </section>
