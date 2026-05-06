@@ -3336,6 +3336,12 @@ export interface EntityHistoryEntry {
   createdAt: string;
 }
 
+export type GetPopularProduct200 = {
+  product: FeaturedProduct | null;
+  /** ISO timestamp when the cache was last refreshed. */
+  refreshedAt: string;
+};
+
 export type ListCatalogProductsParams = {
   q?: string;
   categorySlug?: string;

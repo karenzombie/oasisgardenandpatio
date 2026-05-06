@@ -3,7 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   useListCategories,
-  useListFeaturedProducts,
+  useGetPopularProduct,
 } from "@workspace/api-client-react";
 import { BRAND_LOGOS, getBrandLogo } from "@/lib/brandLogos";
 import heroImg from "@/assets/hero.png";
@@ -39,7 +39,8 @@ const CATEGORY_IMAGES: Record<string, string> = {
 
 export default function Home() {
   const { data: categories } = useListCategories();
-  const { data: featuredProducts } = useListFeaturedProducts();
+  const { data: popularData } = useGetPopularProduct();
+  const popularProduct = popularData?.product ?? null;
 
   const topLevelCategories = (categories?.filter(c => c.parentId === null) || [])
     .slice()
@@ -132,77 +133,71 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Featured Products Section */}
+      {/* Popular Products Section — single most-loved item, refreshed weekly */}
       <section className="py-24 bg-muted/30 border-y border-border">
         <div className="container mx-auto px-4 md:px-6">
-          <div className="flex flex-col items-center text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-serif mb-4">Featured Collections</h2>
-            <div className="h-px w-24 bg-primary/40" />
+          <div className="flex flex-col items-center text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-serif mb-4">Popular Products</h2>
+            <div className="h-px w-24 bg-primary/40 mb-4" />
+            <p className="text-sm text-muted-foreground max-w-md">
+              The piece our customers are loving most this week.
+            </p>
           </div>
 
           {(() => {
-            const items =
-              featuredProducts && featuredProducts.length > 0
-                ? featuredProducts.slice(0, 2).map((product) => ({
-                    key: product.id,
-                    href: `/shop/${product.slug}`,
-                    name: product.name,
-                    imageUrl: product.primaryImageUrl ?? null,
-                    manufacturerName: product.manufacturerName ?? null,
-                    placeholder: false as const,
-                  }))
-                : Array.from({ length: 2 }).map((_, i) => ({
-                    key: `placeholder-${i}`,
-                    href: "/shop",
-                    name: "Coming Soon",
-                    imageUrl: null,
-                    manufacturerName: null,
-                    placeholder: true as const,
-                  }));
-
+            const item = popularProduct
+              ? {
+                  href: `/shop/${popularProduct.slug}`,
+                  name: popularProduct.name,
+                  imageUrl: popularProduct.primaryImageUrl ?? null,
+                  manufacturerName: popularProduct.manufacturerName ?? null,
+                  placeholder: false as const,
+                }
+              : {
+                  href: "/shop",
+                  name: "Coming Soon",
+                  imageUrl: null,
+                  manufacturerName: null,
+                  placeholder: true as const,
+                };
+            const brandLogo = item.placeholder
+              ? null
+              : getBrandLogo(item.manufacturerName);
             return (
-              <div className="flex flex-wrap justify-center gap-8 max-w-2xl mx-auto">
-                {items.map((item) => {
-                  const brandLogo = item.placeholder
-                    ? null
-                    : getBrandLogo(item.manufacturerName);
-                  return (
-                    <Link
-                      key={item.key}
-                      href={item.href}
-                      className="group block w-48 md:w-56"
-                    >
-                      <div className="aspect-square overflow-hidden mb-3 relative bg-card">
-                        {item.imageUrl ? (
-                          <img
-                            src={item.imageUrl}
-                            alt={item.name}
-                            className="w-full h-full object-cover mix-blend-multiply transition-transform duration-500 group-hover:scale-105"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-secondary/40 text-secondary-foreground/60 font-serif text-xs tracking-widest uppercase transition-colors group-hover:bg-secondary/60">
-                            {item.placeholder ? "Featured Soon" : "Oasis"}
-                          </div>
-                        )}
-                        {brandLogo ? (
-                          <div
-                            className="absolute top-2 left-2 bg-white/95 px-2 py-1 rounded-sm shadow-sm"
-                            aria-hidden="true"
-                          >
-                            <img
-                              src={brandLogo}
-                              alt=""
-                              className="h-4 w-auto object-contain"
-                            />
-                          </div>
-                        ) : null}
+              <div className="flex justify-center max-w-md mx-auto">
+                <Link
+                  href={item.href}
+                  className="group block w-64 md:w-80"
+                >
+                  <div className="aspect-square overflow-hidden mb-4 relative bg-card">
+                    {item.imageUrl ? (
+                      <img
+                        src={item.imageUrl}
+                        alt={item.name}
+                        className="w-full h-full object-cover mix-blend-multiply transition-transform duration-500 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-secondary/40 text-secondary-foreground/60 font-serif text-xs tracking-widest uppercase transition-colors group-hover:bg-secondary/60">
+                        {item.placeholder ? "Popular Pick Coming Soon" : "Oasis"}
                       </div>
-                      <h3 className="font-serif text-sm md:text-base text-center group-hover:text-primary transition-colors line-clamp-1">
-                        {item.name}
-                      </h3>
-                    </Link>
-                  );
-                })}
+                    )}
+                    {brandLogo ? (
+                      <div
+                        className="absolute top-2 left-2 bg-white/95 px-2 py-1 rounded-sm shadow-sm"
+                        aria-hidden="true"
+                      >
+                        <img
+                          src={brandLogo}
+                          alt=""
+                          className="h-4 w-auto object-contain"
+                        />
+                      </div>
+                    ) : null}
+                  </div>
+                  <h3 className="font-serif text-base md:text-lg text-center group-hover:text-primary transition-colors line-clamp-1">
+                    {item.name}
+                  </h3>
+                </Link>
               </div>
             );
           })()}

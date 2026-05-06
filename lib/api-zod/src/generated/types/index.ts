@@ -207,6 +207,7 @@ export * from "./error";
 export * from "./featuredProduct";
 export * from "./generateVendorOrdersRequest";
 export * from "./generateVendorOrdersResponse";
+export * from "./getPopularProduct200";
 export * from "./guestContact";
 export * from "./healthStatus";
 export * from "./importProductsCommitResult";

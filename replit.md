@@ -24,6 +24,7 @@ A full-stack e-commerce platform for a luxury outdoor furniture retailer, suppor
 - `lib/db/src/schema/index.ts`: Database schema barrel file.
 - `lib/api-spec/openapi.yaml`: Single source of truth for the API contract.
 - `artifacts/api-server/src/routes/index.ts`: API route registry.
+- `artifacts/api-server/src/routes/popularProducts.ts`: Weekly-refreshed "most popular product" computation (orders + wishlist score).
 - `scripts/src/seed.ts`: Idempotent seed script.
 - `artifacts/web/src/App.tsx`: Frontend routing entry point.
 - `attached_assets/Oasis_Build_Spec_v2.5_*.docx`: Primary functional specification.
@@ -42,7 +43,7 @@ A full-stack e-commerce platform for a luxury outdoor furniture retailer, suppor
 
 ## Product
 
-- **Customer-facing Storefront**: Product browsing (list, filters, detail pages), shopping cart, checkout, customer account management (order history, addresses).
+- **Customer-facing Storefront**: Product browsing (list, filters, detail pages), shopping cart, checkout (guest + registered), customer account management (order history, addresses), homepage "Popular Products" tile (refreshed weekly from purchases + wishlist).
 - **Staff/Admin Portal**:
     - **CRUD Operations**: Manufacturers, categories, products (with variants, fabrics, multi-image management), carriers, banners, legal documents.
     - **Inventory Management**: Manual adjustments, location tracking, and linking to vendor orders.

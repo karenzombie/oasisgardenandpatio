@@ -143,6 +143,34 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/FeaturedProduct"
+  /products/popular:
+    get:
+      operationId: getPopularProduct
+      tags: [products]
+      summary: The single most popular product (refreshed weekly)
+      description: >
+        Returns the single product with the highest combined popularity score
+        across all order types (online + in-store) and wishlist additions over
+        the most recent scoring window. Result is cached server-side and
+        refreshed once per week.
+      responses:
+        "200":
+          description: The most popular product, or null if none can be computed yet.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  product:
+                    oneOf:
+                      - $ref: "#/components/schemas/FeaturedProduct"
+                      - type: "null"
+                  refreshedAt:
+                    type: string
+                    description: ISO timestamp when the cache was last refreshed.
+                required:
+                  - product
+                  - refreshedAt
   /products:
     get:
       operationId: listCatalogProducts
