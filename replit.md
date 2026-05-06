@@ -74,6 +74,7 @@ A full-stack e-commerce platform for a luxury outdoor furniture retailer, suppor
 - Email images must be absolute HTTPS URLs; relative paths will not resolve in email clients.
 - The `Resend` integration is currently in test mode; emails only deliver to the Resend account owner's address until a sender domain is verified and `RESEND_FROM_EMAIL` is configured.
 - `drizzle-kit push` may be blocked by unrelated interactive prompts; direct psql ALTER commands are sometimes used for schema changes.
+- `customers.user_id` MUST be a plain `UNIQUE` constraint (not a partial unique index). Postgres can't infer a partial index for `INSERT … ON CONFLICT (user_id) DO NOTHING`, which silently breaks Clerk signup (clerk-sync 500s, user never gets a local session, no row in the staff customer list). Walk-in customers (user_id NULL) still coexist freely because PG treats multiple NULLs as distinct under a regular UNIQUE.
 - `onConflictDoUpdate` is not used in the vendor data loader; concurrent runs could lead to issues.
 - The inventory mode exclusivity (variant rows vs. variant-null rows for the same product) is enforced at the application layer, not purely via DB constraints.
 - Admin portal pricing calculations (tax, shipping) for new orders mirror customer-facing logic; overrides are possible.

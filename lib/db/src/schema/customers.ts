@@ -6,9 +6,8 @@ import {
   timestamp,
   integer,
   index,
-  uniqueIndex,
+  unique,
 } from "drizzle-orm/pg-core";
-import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./users";
@@ -41,9 +40,12 @@ export const customersTable = pgTable(
   },
   (t) => [
     index("customers_email_idx").on(t.email),
-    uniqueIndex("customers_user_id_unique")
-      .on(t.userId)
-      .where(sql`${t.userId} is not null`),
+    // Plain UNIQUE constraint (not a partial unique index) so Postgres can
+    // match it for `INSERT … ON CONFLICT (user_id) DO NOTHING` in the
+    // Clerk-sync handler. Postgres treats multiple NULLs as distinct under
+    // a regular UNIQUE constraint, so walk-in customers (user_id NULL)
+    // still coexist freely.
+    unique("customers_user_id_unique").on(t.userId),
   ],
 );
 
