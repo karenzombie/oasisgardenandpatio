@@ -19,6 +19,7 @@ import {
   QuoteCheckoutResponse,
 } from "@workspace/api-zod";
 import { getOrCreateCustomer } from "./account";
+import { autoGenerateVendorOrders } from "../lib/autoGenerateVendorOrders";
 import {
   loadPricingSettings,
   computeShipping,
@@ -354,6 +355,11 @@ router.post(
             ? "Order placed by guest (payment pending)"
             : "Order placed by customer (payment pending)",
         });
+
+        // Auto-create pending vendor POs grouped by manufacturer so staff
+        // can review/send them from the vendor-orders page. Online orders
+        // always ship-to-store (default), so the PO Ship-To stays Oasis.
+        await autoGenerateVendorOrders(tx, order.id, null, null);
 
         // Clear the cart now that the order exists.
         await tx

@@ -3203,6 +3203,7 @@ export const AdminUpdateOrderShippingMethodResponse = zod.object({
   walkInEmail: zod.string().nullable(),
   walkInPhone: zod.string().nullable(),
   isInternalRestock: zod.boolean(),
+  shipToStore: zod.boolean(),
   shipments: zod.array(
     zod.object({
       id: zod.number(),
@@ -3492,6 +3493,7 @@ export const AdminMarkOrderPaidInFullResponse = zod.object({
   walkInEmail: zod.string().nullable(),
   walkInPhone: zod.string().nullable(),
   isInternalRestock: zod.boolean(),
+  shipToStore: zod.boolean(),
   shipments: zod.array(
     zod.object({
       id: zod.number(),
@@ -3663,6 +3665,7 @@ export const AdminUpdateOrderPaymentResponse = zod.object({
   walkInEmail: zod.string().nullable(),
   walkInPhone: zod.string().nullable(),
   isInternalRestock: zod.boolean(),
+  shipToStore: zod.boolean(),
   shipments: zod.array(
     zod.object({
       id: zod.number(),
@@ -3823,6 +3826,7 @@ export const AdminDeleteOrderPaymentResponse = zod.object({
   walkInEmail: zod.string().nullable(),
   walkInPhone: zod.string().nullable(),
   isInternalRestock: zod.boolean(),
+  shipToStore: zod.boolean(),
   shipments: zod.array(
     zod.object({
       id: zod.number(),
@@ -4180,6 +4184,7 @@ export const adminCreateOrderBodyStatusDefault = `pending`;
 export const adminCreateOrderBodyIsQuickOrderDefault = false;
 export const adminCreateOrderBodySkipVendorOrderDefault = false;
 export const adminCreateOrderBodyIsInternalRestockDefault = false;
+export const adminCreateOrderBodyShipToStoreDefault = true;
 
 export const AdminCreateOrderBody = zod.object({
   customerId: zod
@@ -4251,6 +4256,12 @@ export const AdminCreateOrderBody = zod.object({
     .default(adminCreateOrderBodyIsInternalRestockDefault)
     .describe(
       "Internal inventory restock order with no customer, addresses, pricing, or tax. Items are grouped by manufacturer into vendor orders automatically on creation.",
+    ),
+  shipToStore: zod
+    .boolean()
+    .default(adminCreateOrderBodyShipToStoreDefault)
+    .describe(
+      "When true (default) vendor PO ships to Oasis store. When false, requires shippingAddressId so vendor drop-ships direct to the customer.",
     ),
 });
 
@@ -4428,6 +4439,7 @@ export const AdminGetOrderResponse = zod.object({
   walkInEmail: zod.string().nullable(),
   walkInPhone: zod.string().nullable(),
   isInternalRestock: zod.boolean(),
+  shipToStore: zod.boolean(),
   shipments: zod.array(
     zod.object({
       id: zod.number(),
@@ -4592,6 +4604,7 @@ export const AdminUpdateOrderStatusResponse = zod.object({
   walkInEmail: zod.string().nullable(),
   walkInPhone: zod.string().nullable(),
   isInternalRestock: zod.boolean(),
+  shipToStore: zod.boolean(),
   shipments: zod.array(
     zod.object({
       id: zod.number(),
@@ -4773,6 +4786,7 @@ export const AdminUpdateOrderTotalsResponse = zod.object({
   walkInEmail: zod.string().nullable(),
   walkInPhone: zod.string().nullable(),
   isInternalRestock: zod.boolean(),
+  shipToStore: zod.boolean(),
   shipments: zod.array(
     zod.object({
       id: zod.number(),
@@ -4936,6 +4950,7 @@ export const AdminUpdateOrderNotesResponse = zod.object({
   walkInEmail: zod.string().nullable(),
   walkInPhone: zod.string().nullable(),
   isInternalRestock: zod.boolean(),
+  shipToStore: zod.boolean(),
   shipments: zod.array(
     zod.object({
       id: zod.number(),

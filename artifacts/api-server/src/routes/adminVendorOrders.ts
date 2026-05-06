@@ -11,6 +11,7 @@ import {
   productsTable,
   customersTable,
   usersTable,
+  addressesTable,
   inventoryReceiptsTable,
   inventoryAdjustmentsTable,
   inventoryLocationsTable,
@@ -81,6 +82,7 @@ function itemToPayload(it: OrderItem) {
     productSkuSnapshot: it.productSkuSnapshot,
     variantSkuSnapshot: it.variantSkuSnapshot,
     variantNameSnapshot: it.variantNameSnapshot,
+    fabricItemNumberSnapshot: it.fabricItemNumberSnapshot,
     fabricNameSnapshot: it.fabricNameSnapshot,
     description: it.description,
     quantity: it.quantity,
@@ -215,6 +217,7 @@ async function loadVendorOrderDetail(id: number) {
       order: ordersTable,
       customer: customersTable,
       creator: usersTable,
+      shipAddr: addressesTable,
     })
     .from(vendorOrdersTable)
     .leftJoin(
@@ -224,10 +227,11 @@ async function loadVendorOrderDetail(id: number) {
     .leftJoin(ordersTable, eq(ordersTable.id, vendorOrdersTable.customerOrderId))
     .leftJoin(customersTable, eq(customersTable.id, ordersTable.customerId))
     .leftJoin(usersTable, eq(usersTable.id, vendorOrdersTable.createdByUserId))
+    .leftJoin(addressesTable, eq(addressesTable.id, ordersTable.shippingAddressId))
     .where(eq(vendorOrdersTable.id, id))
     .limit(1);
   if (!row) return null;
-  const { vo, mfg, order, customer, creator } = row;
+  const { vo, mfg, order, customer, creator, shipAddr } = row;
 
   const items = await db
     .select()
@@ -294,9 +298,29 @@ async function loadVendorOrderDetail(id: number) {
     customerOrderId: vo.customerOrderId,
     customerOrderNumber: order?.orderNumber ?? null,
     customerOrderStatus: order?.status ?? null,
+    // Customer name for the PO header. For walk-in / quick orders there's no
+    // customers row, so fall back to the order's walkInName so the vendor
+    // can still see who the items are for.
     customerName: customer
       ? nameOf(customer.firstName, customer.lastName)
+      : (order?.walkInName ?? null),
+    // Drop-ship support: when the customer order is flagged ship-to-store=false,
+    // the PO Ship-To block uses the customer's shipping address instead of
+    // Oasis's. We forward the resolved address so the PDF helper has
+    // everything it needs without a second DB round-trip.
+    shipToStore: order?.shipToStore ?? true,
+    shipToName: shipAddr
+      ? (shipAddr.recipientName ||
+        (customer ? nameOf(customer.firstName, customer.lastName) : null) ||
+        order?.walkInName ||
+        null)
       : null,
+    shipToLine1: shipAddr?.street1 ?? null,
+    shipToLine2: shipAddr?.street2 ?? null,
+    shipToCity: shipAddr?.city ?? null,
+    shipToState: shipAddr?.state ?? null,
+    shipToPostalCode: shipAddr?.zip ?? null,
+    shipToPhone: shipAddr?.phone ?? null,
     items: items.map(itemToPayload),
     sends: sends.map((row) => ({
       id: row.s.id,
@@ -784,6 +808,14 @@ router.post(
           manufacturerPhone: detail.manufacturerPhone,
           manufacturerFax: detail.manufacturerFax,
           manufacturerEmail: detail.manufacturerOrderEmail,
+          shipToStore: detail.shipToStore,
+          shipToName: detail.shipToName,
+          shipToLine1: detail.shipToLine1,
+          shipToLine2: detail.shipToLine2,
+          shipToCity: detail.shipToCity,
+          shipToState: detail.shipToState,
+          shipToPostalCode: detail.shipToPostalCode,
+          shipToPhone: detail.shipToPhone,
         });
         pdfStorageUrl = await uploadBufferToStorage(
           pdfBuffer,
@@ -1142,6 +1174,7 @@ function orderItemToPdfItem(it: OrderItem): PdfVendorOrderItem {
     productSkuSnapshot: it.productSkuSnapshot,
     variantSkuSnapshot: it.variantSkuSnapshot,
     variantNameSnapshot: it.variantNameSnapshot,
+    fabricItemNumberSnapshot: it.fabricItemNumberSnapshot,
     fabricNameSnapshot: it.fabricNameSnapshot,
     description: it.description,
     quantity: it.quantity,
@@ -1386,6 +1419,14 @@ router.post(
           manufacturerPhone: detailNow.manufacturerPhone,
           manufacturerFax: detailNow.manufacturerFax,
           manufacturerEmail: detailNow.manufacturerOrderEmail,
+          shipToStore: detailNow.shipToStore,
+          shipToName: detailNow.shipToName,
+          shipToLine1: detailNow.shipToLine1,
+          shipToLine2: detailNow.shipToLine2,
+          shipToCity: detailNow.shipToCity,
+          shipToState: detailNow.shipToState,
+          shipToPostalCode: detailNow.shipToPostalCode,
+          shipToPhone: detailNow.shipToPhone,
           scope: txResult.effectiveScope,
           reason,
           cancelledItems: txResult.cancelItems,

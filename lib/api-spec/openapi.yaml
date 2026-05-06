@@ -4632,6 +4632,7 @@ components:
         walkInEmail: { type: string, nullable: true }
         walkInPhone: { type: string, nullable: true }
         isInternalRestock: { type: boolean }
+        shipToStore: { type: boolean }
         shipments:
           type: array
           items: { $ref: "#/components/schemas/AdminOrderShipment" }
@@ -4641,7 +4642,7 @@ components:
         amountPaid: { type: number }
         paidInFull: { type: boolean }
       required:
-        [id, orderNumber, status, orderType, subtotal, taxAmount, deliveryAmount, total, depositAmount, balanceDue, customerId, customerName, customerEmail, agentId, agentName, salespersonName, shippingMethod, specialInstructions, notes, merchandiseReceived, placedAt, updatedAt, shippingAddress, billingAddress, items, statusHistory, vendorOrders, cancellationRequests, isQuickOrder, skipVendorOrder, walkInName, walkInEmail, walkInPhone, isInternalRestock, shipments, payments, amountPaid, paidInFull]
+        [id, orderNumber, status, orderType, subtotal, taxAmount, deliveryAmount, total, depositAmount, balanceDue, customerId, customerName, customerEmail, agentId, agentName, salespersonName, shippingMethod, specialInstructions, notes, merchandiseReceived, placedAt, updatedAt, shippingAddress, billingAddress, items, statusHistory, vendorOrders, cancellationRequests, isQuickOrder, skipVendorOrder, walkInName, walkInEmail, walkInPhone, isInternalRestock, shipToStore, shipments, payments, amountPaid, paidInFull]
     AdminOrderPayment:
       type: object
       properties:
@@ -7257,6 +7258,7 @@ components:
         walkInEmail: { type: ["string", "null"] }
         walkInPhone: { type: ["string", "null"] }
         isInternalRestock: { type: boolean, default: false, description: "Internal inventory restock order with no customer, addresses, pricing, or tax. Items are grouped by manufacturer into vendor orders automatically on creation." }
+        shipToStore: { type: boolean, default: true, description: "When true (default) vendor PO ships to Oasis store. When false, requires shippingAddressId so vendor drop-ships direct to the customer." }
       required: [items]
     QuoteOrderPricingRequest:
       type: object

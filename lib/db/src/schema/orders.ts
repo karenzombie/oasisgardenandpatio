@@ -84,6 +84,10 @@ export const ordersTable = pgTable(
     isInternalRestock: boolean("is_internal_restock")
       .notNull()
       .default(false),
+    // True (default) means the manufacturer ships to the Oasis store; false
+    // means the manufacturer drop-ships directly to the customer's
+    // shippingAddressId. Drives the Ship-To block on vendor PO PDFs.
+    shipToStore: boolean("ship_to_store").notNull().default(true),
     placedAt: timestamp("placed_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

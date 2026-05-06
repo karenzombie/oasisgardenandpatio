@@ -48,6 +48,7 @@ export interface AdminOrderDetail {
   walkInEmail: string | null;
   walkInPhone: string | null;
   isInternalRestock: boolean;
+  shipToStore: boolean;
   shipments: AdminOrderShipment[];
   payments: AdminOrderPayment[];
   amountPaid: number;

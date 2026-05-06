@@ -494,6 +494,7 @@ export interface AdminOrderDetail {
   walkInEmail: string | null;
   walkInPhone: string | null;
   isInternalRestock: boolean;
+  shipToStore: boolean;
   shipments: AdminOrderShipment[];
   payments: AdminOrderPayment[];
   amountPaid: number;
@@ -2735,6 +2736,8 @@ export interface CreateOrderRequest {
   walkInPhone?: string | null;
   /** Internal inventory restock order with no customer, addresses, pricing, or tax. Items are grouped by manufacturer into vendor orders automatically on creation. */
   isInternalRestock?: boolean;
+  /** When true (default) vendor PO ships to Oasis store. When false, requires shippingAddressId so vendor drop-ships direct to the customer. */
+  shipToStore?: boolean;
 }
 
 export type QuoteOrderPricingRequestItemsItem = {

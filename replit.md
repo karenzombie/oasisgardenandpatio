@@ -25,6 +25,8 @@ A full-stack e-commerce platform for a luxury outdoor furniture retailer, suppor
 - `lib/api-spec/openapi.yaml`: Single source of truth for the API contract.
 - `artifacts/api-server/src/routes/index.ts`: API route registry.
 - `artifacts/api-server/src/routes/popularProducts.ts`: Weekly-refreshed "most popular product" computation (orders + wishlist score).
+- `artifacts/api-server/src/lib/autoGenerateVendorOrders.ts`: Shared helper that auto-creates pending vendor POs (grouped by manufacturer) on every customer order. Called by `/checkout` and `/admin/orders`. Locks candidate rows `FOR UPDATE` for idempotency.
+- `artifacts/api-server/src/lib/vendorOrderPdf.tsx`: React-PDF vendor PO + cancellation docs. Logo is inlined via `oasisLogoData.ts` (base64) so it survives the esbuild bundle. PO Ship-To uses Oasis address by default; switches to customer shipping address when `orders.shipToStore = false`.
 - `scripts/src/seed.ts`: Idempotent seed script.
 - `artifacts/web/src/App.tsx`: Frontend routing entry point.
 - `attached_assets/Oasis_Build_Spec_v2.5_*.docx`: Primary functional specification.

@@ -99,6 +99,9 @@ export default function AgentNewOrder() {
   const [walkIn, setWalkIn] = useState<WalkInForm>({ name: "", email: "", phone: "" });
 
   const [shippingAddressId, setShippingAddressId] = useState<string>("");
+  // Default true — manufacturer ships to the Oasis store. Toggle off when
+  // staff wants the manufacturer to drop-ship direct to the customer.
+  const [shipToStore, setShipToStore] = useState<boolean>(true);
   const [items, setItems] = useState<LineItem[]>([emptyLine()]);
 
   // Tax/Delivery: auto by default, manual override per-field.
@@ -336,6 +339,11 @@ export default function AgentNewOrder() {
           isQuickOrder,
           isInternalRestock: isRestockOrder,
           skipVendorOrder: isQuickOrder ? skipVendorOrder : false,
+          // Restocks always ship to the store. Customer orders default to
+          // ship-to-store (PO ships to Oasis); when unchecked we drop-ship
+          // direct to the customer's address (server enforces this requires
+          // shippingAddressId).
+          shipToStore: isRestockOrder ? true : shipToStore,
           walkInName: isQuickOrder ? walkIn.name.trim() || null : null,
           walkInEmail: isQuickOrder ? walkIn.email.trim() || null : null,
           walkInPhone: isQuickOrder ? walkIn.phone.trim() || null : null,
@@ -517,9 +525,52 @@ export default function AgentNewOrder() {
               </Tabs>
             </div>
 
+            {!isRestockOrder && (
+              <div className="rounded-md border bg-white p-4 space-y-3">
+                <label className="flex items-start gap-2 cursor-pointer">
+                  <Checkbox
+                    checked={shipToStore}
+                    onCheckedChange={(v) => setShipToStore(v === true)}
+                    className="mt-0.5"
+                  />
+                  <div>
+                    <div className="text-sm font-medium">
+                      Ship to Oasis store
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      Manufacturer ships the items to the Oasis store. Uncheck
+                      to have the manufacturer drop-ship the items direct to
+                      the customer's address (a customer + shipping address are
+                      required).
+                    </div>
+                  </div>
+                </label>
+                {!shipToStore && customerMode !== "existing" && (
+                  <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1.5">
+                    Direct ship requires picking an existing customer with a
+                    saved shipping address.
+                  </div>
+                )}
+                {!shipToStore &&
+                  customerMode === "existing" &&
+                  customer &&
+                  addresses.length === 0 && (
+                    <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1.5">
+                      This customer has no saved shipping addresses — add one
+                      from their profile before drop-shipping.
+                    </div>
+                  )}
+              </div>
+            )}
+
             {customerMode === "existing" && customer && addresses.length > 0 && (
               <div className="rounded-md border bg-white p-4">
-                <Label>Shipping address</Label>
+                <Label>
+                  Shipping address
+                  {!shipToStore && (
+                    <span className="ml-1 text-red-600" title="Required">*</span>
+                  )}
+                </Label>
                 <Select value={shippingAddressId} onValueChange={setShippingAddressId}>
                   <SelectTrigger className="mt-1.5"><SelectValue placeholder="Pick an address" /></SelectTrigger>
                   <SelectContent>
@@ -530,6 +581,12 @@ export default function AgentNewOrder() {
                     ))}
                   </SelectContent>
                 </Select>
+                {!shipToStore && !shippingAddressId && (
+                  <div className="mt-2 text-xs text-amber-700">
+                    Pick an address — drop-ship orders need somewhere to send
+                    the items.
+                  </div>
+                )}
               </div>
             )}
 

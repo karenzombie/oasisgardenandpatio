@@ -4,9 +4,11 @@ import {
   Page,
   Text,
   View,
+  Image,
   StyleSheet,
   renderToBuffer,
 } from "@react-pdf/renderer";
+import { OASIS_LOGO_DATA_URL } from "./oasisLogoData";
 
 const OASIS_NAME = "Oasis Garden & Patio";
 const OASIS_ADDR1 = "21182 Centre Pointe Parkway #100";
@@ -14,6 +16,11 @@ const OASIS_ADDR2 = "Santa Clarita, CA 91350";
 const OASIS_PHONE = "(661) 255-9909";
 const OASIS_FAX = "(661) 255-9915";
 const OASIS_EMAIL = "sales@oasisgardenandpatio.com";
+
+// Logo is inlined as a base64 data URL (see ./oasisLogoData.ts) so the PNG
+// survives the esbuild bundle into a single-file dist — esbuild doesn't
+// copy the src/assets dir.
+const LOGO_SRC = OASIS_LOGO_DATA_URL;
 
 const BORDER = "#888";
 const HEADER_BG = "#1a1a1a";
@@ -33,19 +40,11 @@ const s = StyleSheet.create({
   headerLeft: { width: "38%", paddingRight: 12 },
   headerRight: { width: "62%" },
 
-  brandTitle: {
-    fontSize: 32,
-    fontFamily: "Helvetica-Bold",
-    letterSpacing: 4,
-    color: HEADER_BG,
-    lineHeight: 1,
-  },
-  brandSub: {
-    fontSize: 11,
-    fontFamily: "Helvetica-Oblique",
-    color: "#444",
-    marginBottom: 8,
-    letterSpacing: 1.5,
+  brandLogo: {
+    width: 160,
+    height: 72,
+    objectFit: "contain",
+    marginBottom: 6,
   },
   poTitle: {
     fontSize: 18,
@@ -58,28 +57,34 @@ const s = StyleSheet.create({
   },
 
   /* ── PO meta grid ─────────────────────────────────────────────── */
+  // Two-row meta: left half = PO Number / Date Ordered / Customer Order # /
+  // Customer Name; right half = Freight / Terms. The long values
+  // (PO number, order number) get wider cells so they don't bleed.
   metaTable: {
     border: `1px solid ${BORDER}`,
     marginBottom: 8,
   },
   metaRow: { flexDirection: "row" },
   metaCell: {
-    flex: 1,
     borderRight: `1px solid ${BORDER}`,
     padding: "2px 4px",
+    overflow: "hidden",
   },
-  metaCellLast: { flex: 1, padding: "2px 4px" },
+  metaCellLast: { padding: "2px 4px", overflow: "hidden" },
   metaLabel: {
     fontSize: 6,
     color: SECTION_LABEL,
     textTransform: "uppercase",
     marginBottom: 2,
   },
-  metaValue: { fontSize: 8, fontFamily: "Helvetica-Bold" },
+  metaValue: { fontSize: 7.5, fontFamily: "Helvetica-Bold" },
 
   /* ── Address blocks ───────────────────────────────────────────── */
   addrRow: { flexDirection: "row", marginTop: 6 },
-  addrBlock: { flex: 1, paddingRight: 8 },
+  // Block used inside a column container — no flex:1 so it doesn't try to
+  // stretch and overlap siblings (was causing the items table to draw on
+  // top of the Ship-To text).
+  addrBlock: { paddingRight: 8 },
   addrTitle: {
     fontSize: 7,
     fontFamily: "Helvetica-Bold",
@@ -212,6 +217,7 @@ export interface PdfVendorOrderItem {
   productSkuSnapshot: string | null;
   variantSkuSnapshot: string | null;
   variantNameSnapshot: string | null;
+  fabricItemNumberSnapshot: string | null;
   fabricNameSnapshot: string | null;
   description: string | null;
   quantity: number;
@@ -236,6 +242,149 @@ export interface VendorOrderPdfArgs {
   manufacturerPhone: string | null;
   manufacturerFax: string | null;
   manufacturerEmail: string | null;
+  // Ship-To block. When omitted (or shipToStore=true with no address), the
+  // store's own address is used.
+  shipToStore?: boolean;
+  shipToName?: string | null;
+  shipToLine1?: string | null;
+  shipToLine2?: string | null;
+  shipToCity?: string | null;
+  shipToState?: string | null;
+  shipToPostalCode?: string | null;
+  shipToPhone?: string | null;
+}
+
+interface ShipToBlock {
+  name: string;
+  line1: string | null;
+  line2: string | null;
+  cityStateZip: string | null;
+  phone: string | null;
+  fax: string | null;
+  email: string | null;
+}
+
+function resolveShipTo(args: VendorOrderPdfArgs): ShipToBlock {
+  const useDirect =
+    args.shipToStore === false &&
+    Boolean(args.shipToLine1 && args.shipToCity && args.shipToState);
+  if (useDirect) {
+    const cityStateZip = [
+      [args.shipToCity, args.shipToState].filter(Boolean).join(", "),
+      args.shipToPostalCode,
+    ]
+      .filter(Boolean)
+      .join(" ");
+    return {
+      name: args.shipToName || args.customerName || "Customer",
+      line1: args.shipToLine1 ?? null,
+      line2: args.shipToLine2 ?? null,
+      cityStateZip: cityStateZip || null,
+      phone: args.shipToPhone ?? null,
+      fax: null,
+      email: null,
+    };
+  }
+  return {
+    name: OASIS_NAME,
+    line1: OASIS_ADDR1,
+    line2: null,
+    cityStateZip: OASIS_ADDR2,
+    phone: OASIS_PHONE,
+    fax: OASIS_FAX,
+    email: null,
+  };
+}
+
+function ShipToView({ shipTo }: { shipTo: ShipToBlock }) {
+  return (
+    <View style={s.addrBlock}>
+      <Text style={s.addrTitle}>Ship To</Text>
+      <Text style={s.addrLine}>{shipTo.name}</Text>
+      {shipTo.line1 ? <Text style={s.addrLine}>{shipTo.line1}</Text> : null}
+      {shipTo.line2 ? <Text style={s.addrLine}>{shipTo.line2}</Text> : null}
+      {shipTo.cityStateZip ? (
+        <Text style={s.addrLine}>{shipTo.cityStateZip}</Text>
+      ) : null}
+      {shipTo.phone ? (
+        <Text style={s.addrLine}>Phone: {shipTo.phone}</Text>
+      ) : null}
+      {shipTo.fax ? <Text style={s.addrLine}>Fax: {shipTo.fax}</Text> : null}
+    </View>
+  );
+}
+
+// "Anthracite (UM851-02)" — combine an option's display name with its SKU /
+// item number so the vendor can match the line to their catalog at a glance.
+function optionWithSku(name: string | null, sku: string | null): string | null {
+  if (!name) return null;
+  if (!sku) return name;
+  return `${name} (${sku})`;
+}
+
+function itemOptions(it: PdfVendorOrderItem): string[] {
+  return [
+    optionWithSku(it.variantNameSnapshot, it.variantSkuSnapshot),
+    optionWithSku(it.fabricNameSnapshot, it.fabricItemNumberSnapshot),
+  ].filter((v): v is string => Boolean(v));
+}
+
+// Two-cell wide layout: long values (PO Number, Date Ordered, Customer Order #,
+// Customer Name) get the full top half, then Freight + Terms on the bottom
+// half. Wider cells let the long order numbers fit without bleeding into the
+// next column.
+function MetaTable(args: {
+  vendorOrderNumber: string;
+  dateOrdered: string;
+  customerOrderNumber: string | null;
+  customerName: string | null;
+}) {
+  const { vendorOrderNumber, dateOrdered, customerOrderNumber, customerName } =
+    args;
+  return (
+    <View style={s.metaTable}>
+      {/* Row 1: PO Number | Date Ordered */}
+      <View
+        style={[
+          s.metaRow,
+          { borderBottom: `1px solid ${BORDER}` },
+        ]}
+      >
+        <View style={[s.metaCell, { width: "50%" }]}>
+          <Text style={s.metaLabel}>PO Number</Text>
+          <Text style={s.metaValue}>{vendorOrderNumber}</Text>
+        </View>
+        <View style={[s.metaCellLast, { width: "50%" }]}>
+          <Text style={s.metaLabel}>Date Ordered</Text>
+          <Text style={s.metaValue}>{fmtDate(dateOrdered)}</Text>
+        </View>
+      </View>
+      {/* Row 2: Customer Order # | Customer Name */}
+      <View
+        style={[s.metaRow, { borderBottom: `1px solid ${BORDER}` }]}
+      >
+        <View style={[s.metaCell, { width: "50%" }]}>
+          <Text style={s.metaLabel}>Customer Order #</Text>
+          <Text style={s.metaValue}>{customerOrderNumber ?? "—"}</Text>
+        </View>
+        <View style={[s.metaCellLast, { width: "50%" }]}>
+          <Text style={s.metaLabel}>Customer Name</Text>
+          <Text style={s.metaValue}>{customerName ?? "—"}</Text>
+        </View>
+      </View>
+      {/* Row 3: Freight | Terms */}
+      <View style={s.metaRow}>
+        <View style={[s.metaCell, { width: "50%" }]}>
+          <Text style={s.metaLabel}>Freight</Text>
+          <Text style={s.metaValue}>—</Text>
+        </View>
+        <View style={[s.metaCellLast, { width: "50%" }]}>
+          <Text style={s.metaLabel}>Terms</Text>
+          <Text style={s.metaValue}>—</Text>
+        </View>
+      </View>
+    </View>
+  );
 }
 
 function VendorOrderDocument(args: VendorOrderPdfArgs) {
@@ -264,15 +413,16 @@ function VendorOrderDocument(args: VendorOrderPdfArgs) {
     .filter(Boolean)
     .join(" ");
 
+  const shipTo = resolveShipTo(args);
+
   return (
     <Document>
       <Page size="LETTER" orientation="landscape" style={s.page}>
         {/* ── Header ───────────────────────────────────────────── */}
         <View style={s.row}>
-          {/* Left: branding + vendor */}
+          {/* Left: branding + vendor + ship-to */}
           <View style={s.headerLeft}>
-            <Text style={s.brandTitle}>OASIS</Text>
-            <Text style={s.brandSub}>Garden &amp; Patio</Text>
+            <Image src={LOGO_SRC} style={s.brandLogo} />
 
             {/* Vendor box */}
             <View style={s.vendorBox}>
@@ -302,53 +452,19 @@ function VendorOrderDocument(args: VendorOrderPdfArgs) {
               )}
             </View>
 
-            {/* Ship To */}
-            <View style={s.addrBlock}>
-              <Text style={s.addrTitle}>Ship To</Text>
-              <Text style={s.addrLine}>{OASIS_NAME}</Text>
-              <Text style={s.addrLine}>{OASIS_ADDR1}</Text>
-              <Text style={s.addrLine}>{OASIS_ADDR2}</Text>
-              <Text style={s.addrLine}>Phone: {OASIS_PHONE}</Text>
-              <Text style={s.addrLine}>Fax: {OASIS_FAX}</Text>
-            </View>
+            <ShipToView shipTo={shipTo} />
           </View>
 
           {/* Right: PO meta + bill to */}
           <View style={s.headerRight}>
             <Text style={s.poTitle}>PURCHASE ORDER</Text>
 
-            {/* Meta table */}
-            <View style={s.metaTable}>
-              {/* Header row */}
-              <View style={[s.metaRow, { backgroundColor: "#e8e8e5", borderBottom: `1px solid ${BORDER}` }]}>
-                {["PO Number", "Date Ordered", "Customer Order #", "Customer Name", "Freight", "Terms"].map((label, i, arr) => (
-                  <View key={label} style={i < arr.length - 1 ? s.metaCell : s.metaCellLast}>
-                    <Text style={s.metaLabel}>{label}</Text>
-                  </View>
-                ))}
-              </View>
-              {/* Values row */}
-              <View style={s.metaRow}>
-                <View style={s.metaCell}>
-                  <Text style={s.metaValue}>{vendorOrderNumber}</Text>
-                </View>
-                <View style={s.metaCell}>
-                  <Text style={s.metaValue}>{fmtDate(dateOrdered)}</Text>
-                </View>
-                <View style={s.metaCell}>
-                  <Text style={s.metaValue}>{args.customerOrderNumber ?? "—"}</Text>
-                </View>
-                <View style={s.metaCell}>
-                  <Text style={s.metaValue}>{args.customerName ?? "—"}</Text>
-                </View>
-                <View style={s.metaCell}>
-                  <Text style={s.metaValue}>—</Text>
-                </View>
-                <View style={s.metaCellLast}>
-                  <Text style={s.metaValue}>—</Text>
-                </View>
-              </View>
-            </View>
+            <MetaTable
+              vendorOrderNumber={vendorOrderNumber}
+              dateOrdered={dateOrdered}
+              customerOrderNumber={args.customerOrderNumber}
+              customerName={args.customerName}
+            />
 
             {/* Bill To */}
             <View style={s.addrBlock}>
@@ -378,10 +494,7 @@ function VendorOrderDocument(args: VendorOrderPdfArgs) {
           {items.map((it, idx) => {
             const sku = it.variantSkuSnapshot ?? it.productSkuSnapshot ?? "";
             const mainDesc = it.description || "—";
-            const options: string[] = [
-              it.variantNameSnapshot,
-              it.fabricNameSnapshot,
-            ].filter((v): v is string => Boolean(v));
+            const options = itemOptions(it);
             const rowBg = idx % 2 === 0 ? "#fff" : LIGHT_BG;
             return (
               <React.Fragment key={idx}>
@@ -557,10 +670,7 @@ function ItemsTable({
       {items.map((it, idx) => {
         const sku = it.variantSkuSnapshot ?? it.productSkuSnapshot ?? "";
         const mainDesc = it.description || "—";
-        const options: string[] = [
-          it.variantNameSnapshot,
-          it.fabricNameSnapshot,
-        ].filter((v): v is string => Boolean(v));
+        const options = itemOptions(it);
         const rowBg = idx % 2 === 0 ? "#fff" : LIGHT_BG;
         const cellStyle = struck ? cs.cancelledStrike : {};
         return (
@@ -641,13 +751,14 @@ function VendorOrderCancellationDocument(args: VendorOrderCancellationPdfArgs) {
       ? "PURCHASE ORDER CANCELLATION"
       : "REVISED PURCHASE ORDER — PARTIAL CANCELLATION";
 
+  const shipTo = resolveShipTo(args);
+
   return (
     <Document>
       <Page size="LETTER" orientation="landscape" style={s.page}>
         <View style={s.row}>
           <View style={s.headerLeft}>
-            <Text style={s.brandTitle}>OASIS</Text>
-            <Text style={s.brandSub}>Garden &amp; Patio</Text>
+            <Image src={LOGO_SRC} style={s.brandLogo} />
 
             <View style={s.vendorBox}>
               <Text style={s.vendorLabel}>Vendor</Text>
@@ -674,54 +785,18 @@ function VendorOrderCancellationDocument(args: VendorOrderCancellationPdfArgs) {
               )}
             </View>
 
-            <View style={s.addrBlock}>
-              <Text style={s.addrTitle}>Ship To</Text>
-              <Text style={s.addrLine}>{OASIS_NAME}</Text>
-              <Text style={s.addrLine}>{OASIS_ADDR1}</Text>
-              <Text style={s.addrLine}>{OASIS_ADDR2}</Text>
-              <Text style={s.addrLine}>Phone: {OASIS_PHONE}</Text>
-              <Text style={s.addrLine}>Fax: {OASIS_FAX}</Text>
-            </View>
+            <ShipToView shipTo={shipTo} />
           </View>
 
           <View style={s.headerRight}>
-            <Text style={[s.poTitle, { color: CANCEL_RED, borderBottom: `2px solid ${CANCEL_RED}` }]}>
-              {headlineLabel}
-            </Text>
+            <Text style={[cs.banner]}>{headlineLabel}</Text>
 
-            <View style={s.metaTable}>
-              <View style={[s.metaRow, { backgroundColor: "#e8e8e5", borderBottom: `1px solid ${BORDER}` }]}>
-                {["PO Number", "Date Ordered", "Cancelled On", "Customer Order #", "Customer Name", "Scope"].map(
-                  (label, i, arr) => (
-                    <View key={label} style={i < arr.length - 1 ? s.metaCell : s.metaCellLast}>
-                      <Text style={s.metaLabel}>{label}</Text>
-                    </View>
-                  ),
-                )}
-              </View>
-              <View style={s.metaRow}>
-                <View style={s.metaCell}>
-                  <Text style={s.metaValue}>{vendorOrderNumber}</Text>
-                </View>
-                <View style={s.metaCell}>
-                  <Text style={s.metaValue}>{fmtDate(dateOrdered)}</Text>
-                </View>
-                <View style={s.metaCell}>
-                  <Text style={s.metaValue}>{fmtDate(cancelledAt)}</Text>
-                </View>
-                <View style={s.metaCell}>
-                  <Text style={s.metaValue}>{args.customerOrderNumber ?? "—"}</Text>
-                </View>
-                <View style={s.metaCell}>
-                  <Text style={s.metaValue}>{args.customerName ?? "—"}</Text>
-                </View>
-                <View style={s.metaCellLast}>
-                  <Text style={[s.metaValue, { color: CANCEL_RED }]}>
-                    {scope === "full" ? "Full" : "Partial"}
-                  </Text>
-                </View>
-              </View>
-            </View>
+            <MetaTable
+              vendorOrderNumber={vendorOrderNumber}
+              dateOrdered={dateOrdered}
+              customerOrderNumber={args.customerOrderNumber}
+              customerName={args.customerName}
+            />
 
             <View style={s.addrBlock}>
               <Text style={s.addrTitle}>Bill To</Text>
@@ -733,39 +808,38 @@ function VendorOrderCancellationDocument(args: VendorOrderCancellationPdfArgs) {
           </View>
         </View>
 
-        <Text style={cs.banner}>
-          {scope === "full"
-            ? "THIS PURCHASE ORDER HAS BEEN CANCELLED IN FULL — DO NOT SHIP"
-            : "THE FOLLOWING ITEMS HAVE BEEN CANCELLED — REMAINING ITEMS BELOW STILL APPLY"}
-        </Text>
+        <View style={s.divider} />
 
         {reason ? (
           <View style={cs.reasonBox}>
-            <Text style={cs.reasonLabel}>Cancellation reason</Text>
+            <Text style={cs.reasonLabel}>Reason for cancellation</Text>
             <Text style={cs.reasonText}>{reason}</Text>
           </View>
         ) : null}
 
         <Text style={cs.sectionLabelCancelled}>
-          Cancelled items ({cancelledItems.length})
+          Cancelled items
+          {scope === "partial" ? " (no longer ordered)" : ""}
         </Text>
-        <View style={[s.itemsTable, { flex: 0 }]}>
-          <ItemsTable items={cancelledItems} struck />
-        </View>
+        <ItemsTable items={cancelledItems} struck={true} />
 
         {scope === "partial" && remainingItems.length > 0 ? (
           <>
             <Text style={cs.sectionLabel}>
-              Remaining items still on this PO ({remainingItems.length})
+              Remaining items (this PO is still open for the items below)
             </Text>
-            <View style={[s.itemsTable, { flex: 0 }]}>
-              <ItemsTable items={remainingItems} struck={false} />
-            </View>
+            <ItemsTable items={remainingItems} struck={false} />
           </>
         ) : null}
 
         <View style={s.bottomRow}>
-          <View style={s.notesBox} />
+          <View style={s.notesBox}>
+            <Text style={s.notesLabel}>Additional Notes</Text>
+            <Text style={s.notesText}>
+              {notes || "—"}
+              {"\n"}Cancelled at: {fmtDate(cancelledAt)}
+            </Text>
+          </View>
           <View style={s.sigsBox}>
             <View style={s.sigRow}>
               <View style={s.sigField}>
@@ -773,7 +847,7 @@ function VendorOrderCancellationDocument(args: VendorOrderCancellationPdfArgs) {
                 <View style={s.sigLine} />
               </View>
               <View style={s.sigField}>
-                <Text style={s.sigLabel}>Cancellation Date</Text>
+                <Text style={s.sigLabel}>Date</Text>
                 <View style={s.sigLine} />
               </View>
             </View>

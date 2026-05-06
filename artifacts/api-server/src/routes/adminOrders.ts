@@ -38,7 +38,7 @@ import { recordAudit } from "../lib/audit";
 import { recordHistory } from "../lib/history";
 import { loadOrderShipments } from "./adminOrderShipments";
 import { loadOrderPayments } from "./adminOrderPayments";
-import { nextVendorOrderNumber } from "./adminVendorOrders";
+import { autoGenerateVendorOrders } from "../lib/autoGenerateVendorOrders";
 
 const router: IRouter = Router();
 const DEFAULT_LIMIT = 50;
@@ -362,6 +362,7 @@ export async function loadOrderDetail(orderId: number) {
     walkInEmail: o.walkInEmail,
     walkInPhone: o.walkInPhone,
     isInternalRestock: o.isInternalRestock,
+    shipToStore: o.shipToStore,
   };
 }
 
@@ -948,6 +949,18 @@ router.post(
       return;
     }
 
+    // Drop-ship guard: when staff unchecks "ship to store" the order must
+    // have a real shipping address so the PO Ship-To block can be filled
+    // with the customer's address. Restocks always ship to store.
+    const shipToStore = isInternalRestock ? true : (data.shipToStore ?? true);
+    if (!shipToStore && data.shippingAddressId == null) {
+      res.status(400).json({
+        error:
+          "Direct-ship orders (ship to store unchecked) require a shippingAddressId",
+      });
+      return;
+    }
+
     if (isInternalRestock) {
       if (data.customerId != null) {
         res.status(400).json({
@@ -1174,6 +1187,7 @@ router.post(
             walkInEmail: data.walkInEmail?.trim().toLowerCase() || null,
             walkInPhone: data.walkInPhone?.trim() || null,
             isInternalRestock,
+            shipToStore,
           })
           .returning();
         if (!order) throw new Error("Order insert returned no row");
@@ -1201,69 +1215,59 @@ router.post(
           note: "Order created",
         });
 
-        // Auto-generate vendor orders for inventory restocks: group items by
-        // their product's manufacturer and create one vendor_order per group,
-        // assigning vendor_order_id back to the matching order_items rows.
-        let restockVendorOrderIds: number[] = [];
-        if (isInternalRestock) {
-          const productIds = Array.from(
-            new Set(
-              insertedItems
-                .map((it) => it.productId)
-                .filter((id): id is number => id != null),
-            ),
-          );
-          const prods = productIds.length
-            ? await tx
-                .select({
-                  id: productsTable.id,
-                  manufacturerId: productsTable.manufacturerId,
-                })
-                .from(productsTable)
-                .where(inArray(productsTable.id, productIds))
-            : [];
-          const mfgByProductId = new Map(
-            prods.map((p) => [p.id, p.manufacturerId]),
-          );
-          const itemsByMfg = new Map<number, number[]>();
-          for (const it of insertedItems) {
-            if (it.productId == null) continue;
-            const mfg = mfgByProductId.get(it.productId);
-            if (mfg == null) {
-              throw new Error(
-                `Product ${it.productId} has no manufacturer assigned — cannot create restock vendor order`,
-              );
+        // Auto-create pending vendor POs for every customer order. Restock
+        // orders MUST produce vendor POs (that's their entire purpose) so we
+        // throw if any line has no manufacturer. Regular orders skip silently
+        // when a line can't be grouped (no productId / no manufacturer / quick
+        // order with skipVendorOrder=true). Helper is shared with /checkout.
+        let createdVendorOrderIds: number[] = [];
+        const shouldAutoGen = !skipVendorOrder;
+        if (shouldAutoGen) {
+          if (isInternalRestock) {
+            // Pre-validate every line has a manufacturer before delegating —
+            // matches the historical "every restock line must have one" rule.
+            const productIds = Array.from(
+              new Set(
+                insertedItems
+                  .map((it) => it.productId)
+                  .filter((id): id is number => id != null),
+              ),
+            );
+            const prods = productIds.length
+              ? await tx
+                  .select({
+                    id: productsTable.id,
+                    manufacturerId: productsTable.manufacturerId,
+                  })
+                  .from(productsTable)
+                  .where(inArray(productsTable.id, productIds))
+              : [];
+            const mfgByProductId = new Map(
+              prods.map((p) => [p.id, p.manufacturerId]),
+            );
+            for (const it of insertedItems) {
+              if (it.productId == null) continue;
+              const mfg = mfgByProductId.get(it.productId);
+              if (mfg == null) {
+                throw new Error(
+                  `Product ${it.productId} has no manufacturer assigned — cannot create restock vendor order`,
+                );
+              }
             }
-            const arr = itemsByMfg.get(mfg) ?? [];
-            arr.push(it.id);
-            itemsByMfg.set(mfg, arr);
           }
-          for (const [manufacturerId, itemIds] of itemsByMfg) {
-            const number = await nextVendorOrderNumber(tx);
-            const [vo] = await tx
-              .insert(vendorOrdersTable)
-              .values({
-                vendorOrderNumber: number,
-                customerOrderId: order.id,
-                manufacturerId,
-                status: "pending",
-                notes: data.notes ?? null,
-                createdByUserId: req.user?.id ?? null,
-              })
-              .returning();
-            if (!vo) continue;
-            await tx
-              .update(orderItemsTable)
-              .set({ vendorOrderId: vo.id })
-              .where(inArray(orderItemsTable.id, itemIds));
-            restockVendorOrderIds.push(vo.id);
-          }
+          const result = await autoGenerateVendorOrders(
+            tx,
+            order.id,
+            req.user?.id ?? null,
+            data.notes ?? null,
+          );
+          createdVendorOrderIds = result.createdVendorOrderIds;
         }
 
-        return { id: order.id, restockVendorOrderIds };
+        return { id: order.id, createdVendorOrderIds };
       });
 
-      const { id: orderId, restockVendorOrderIds } = txResult;
+      const { id: orderId, createdVendorOrderIds } = txResult;
 
       await recordAudit(req, {
         action: isInternalRestock ? "order.create_restock" : "order.create",
@@ -1272,7 +1276,7 @@ router.post(
         changes: {
           itemCount: data.items.length,
           isInternalRestock,
-          vendorOrderIds: restockVendorOrderIds,
+          vendorOrderIds: createdVendorOrderIds,
         },
       });
 
