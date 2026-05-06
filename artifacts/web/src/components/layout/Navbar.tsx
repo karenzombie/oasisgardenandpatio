@@ -20,7 +20,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const URL_RE = /https?:\/\/[^\s,;)'"]+/g;
+// Matches full URLs (http/https) OR bare domains like oasispatioumbrellas.com
+const URL_RE =
+  /https?:\/\/[^\s,;)'"]+|(?<![.\w])(?:www\.)[^\s,;)'"]+|(?<![.\w])[a-zA-Z0-9-]+\.(?:com|net|org|io|co|us|info|biz|shop|store)[^\s,;)'".]*/g;
 
 function renderWithLinks(text: string) {
   const parts: React.ReactNode[] = [];
@@ -29,19 +31,20 @@ function renderWithLinks(text: string) {
   URL_RE.lastIndex = 0;
   while ((match = URL_RE.exec(text)) !== null) {
     if (match.index > last) parts.push(text.slice(last, match.index));
-    const url = match[0];
+    const raw = match[0];
+    const href = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
     parts.push(
       <a
         key={match.index}
-        href={url}
+        href={href}
         target="_blank"
         rel="noopener noreferrer"
         className="underline underline-offset-2 hover:opacity-80"
       >
-        {url}
+        {raw}
       </a>,
     );
-    last = match.index + url.length;
+    last = match.index + raw.length;
   }
   if (last < text.length) parts.push(text.slice(last));
   return parts;
