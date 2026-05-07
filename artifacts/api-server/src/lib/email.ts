@@ -60,14 +60,14 @@ async function getResendClient(): Promise<{ client: Resend; from: string }> {
 
 const BRAND_NAME = "Oasis Garden & Patio";
 
-function getSiteBaseUrl(): string | null {
+export function getSiteBaseUrl(): string | null {
   const domains = process.env["REPLIT_DOMAINS"];
   if (!domains) return null;
   const first = domains.split(",")[0]?.trim();
   return first ? `https://${first}` : null;
 }
 
-function emailLayout(title: string, body: string): string {
+export function emailLayout(title: string, body: string, titleColor = "#1a3c5e"): string {
   const baseUrl = getSiteBaseUrl();
   const logoHtml = baseUrl
     ? `<img src="${baseUrl}/logo.png" alt="Oasis Garden &amp; Patio" style="height:64px;width:auto;display:block;margin:0 auto;" />`
@@ -81,7 +81,7 @@ function emailLayout(title: string, body: string): string {
         ${logoHtml}
       </div>
       <div style="background:#ffffff;padding:32px 28px;border-radius:4px;border:1px solid #e8e2d6;">
-        <h1 style="font-size:22px;color:#1a3c5e;margin:0 0 16px 0;">${title}</h1>
+        <h1 style="font-size:22px;color:${titleColor};margin:0 0 16px 0;">${title}</h1>
         ${body}
       </div>
       <div style="text-align:center;margin-top:24px;font-size:12px;color:#8a8a8a;">

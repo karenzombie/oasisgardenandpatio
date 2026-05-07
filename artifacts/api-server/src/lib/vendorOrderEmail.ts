@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { logger } from "./logger";
+import { emailLayout } from "./email";
 
 async function getResendClient(): Promise<{ client: Resend; from: string }> {
   const directApiKey =
@@ -151,30 +152,6 @@ export async function sendVendorOrderEmail(
   `;
 
   const subject = `Purchase Order ${vendorOrderNumber} — Oasis Garden & Patio`;
-  const BRAND_NAME = "Oasis Garden & Patio";
-
-  function emailLayout(title: string, innerBody: string): string {
-    return `<!DOCTYPE html>
-<html>
-  <body style="margin:0;padding:0;background:#f5f3ee;font-family:Georgia,'Times New Roman',serif;color:#3a3a3a;">
-    <div style="max-width:560px;margin:0 auto;padding:32px 24px;">
-      <div style="text-align:center;margin-bottom:32px;">
-        <div style="font-size:28px;letter-spacing:2px;font-weight:bold;color:#1a3c5e;">OASIS</div>
-        <div style="font-size:14px;font-style:italic;color:#5b8a72;">Garden &amp; Patio</div>
-      </div>
-      <div style="background:#ffffff;padding:32px 28px;border-radius:4px;border:1px solid #e8e2d6;">
-        <h1 style="font-size:22px;color:#1a3c5e;margin:0 0 16px 0;">${title}</h1>
-        ${innerBody}
-      </div>
-      <div style="text-align:center;margin-top:24px;font-size:12px;color:#8a8a8a;">
-        <p style="margin:4px 0;">${BRAND_NAME}</p>
-        <p style="margin:4px 0;">21182 Centre Pointe Pkwy #100, Santa Clarita, CA 91350</p>
-        <p style="margin:4px 0;">(661) 255-9909 &middot; sales@oasisgardenandpatio.com</p>
-      </div>
-    </div>
-  </body>
-</html>`;
-  }
 
   const { client, from } = await getResendClient();
   const result = await client.emails.send({
@@ -334,28 +311,8 @@ export async function sendVendorOrderCancellationEmail(
     scope === "full"
       ? `CANCELLED: Purchase Order ${vendorOrderNumber} — Oasis Garden & Patio`
       : `REVISED: Purchase Order ${vendorOrderNumber} — Oasis Garden & Patio`;
-  const BRAND_NAME = "Oasis Garden & Patio";
 
-  const html = `<!DOCTYPE html>
-<html>
-  <body style="margin:0;padding:0;background:#f5f3ee;font-family:Georgia,'Times New Roman',serif;color:#3a3a3a;">
-    <div style="max-width:600px;margin:0 auto;padding:32px 24px;">
-      <div style="text-align:center;margin-bottom:32px;">
-        <div style="font-size:28px;letter-spacing:2px;font-weight:bold;color:#1a3c5e;">OASIS</div>
-        <div style="font-size:14px;font-style:italic;color:#5b8a72;">Garden &amp; Patio</div>
-      </div>
-      <div style="background:#ffffff;padding:32px 28px;border-radius:4px;border:1px solid #e8e2d6;">
-        <h1 style="font-size:22px;color:#b91c1c;margin:0 0 16px 0;">${escapeHtml(headline)}</h1>
-        ${body}
-      </div>
-      <div style="text-align:center;margin-top:24px;font-size:12px;color:#8a8a8a;">
-        <p style="margin:4px 0;">${BRAND_NAME}</p>
-        <p style="margin:4px 0;">21182 Centre Pointe Pkwy #100, Santa Clarita, CA 91350</p>
-        <p style="margin:4px 0;">(661) 255-9909 &middot; sales@oasisgardenandpatio.com</p>
-      </div>
-    </div>
-  </body>
-</html>`;
+  const html = emailLayout(escapeHtml(headline), body, "#b91c1c");
 
   const filename =
     scope === "full"
