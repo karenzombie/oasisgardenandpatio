@@ -44,9 +44,9 @@ const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30;
 function buildSessionPool(): pg.Pool {
   const pool = new pg.Pool({
     connectionString: process.env.DATABASE_URL,
-    max: 5,
+    max: 2,
     connectionTimeoutMillis: 5_000,
-    idleTimeoutMillis: 30_000,
+    idleTimeoutMillis: 10_000,
   });
   pool.on("error", (err: Error) => {
     logger.error({ err }, "session-pool idle client error");
