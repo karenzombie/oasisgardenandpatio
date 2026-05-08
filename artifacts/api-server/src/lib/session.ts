@@ -1,7 +1,8 @@
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
-import { pool } from "@workspace/db";
+import pg from "pg";
 import type { RequestHandler } from "express";
+import { logger } from "./logger";
 
 declare module "express-session" {
   interface SessionData {
@@ -32,6 +33,27 @@ const PgStore = connectPgSimple(session);
 
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30;
 
+/**
+ * Dedicated pool for the session store. Kept separate from the main app
+ * pool so that session-store connection failures don't exhaust the shared
+ * pool and block non-session DB queries. A short connectionTimeoutMillis
+ * ensures session operations fail fast (≤5 s) instead of hanging the
+ * entire request pipeline when the DB control plane is temporarily
+ * unavailable.
+ */
+function buildSessionPool(): pg.Pool {
+  const pool = new pg.Pool({
+    connectionString: process.env.DATABASE_URL,
+    max: 5,
+    connectionTimeoutMillis: 5_000,
+    idleTimeoutMillis: 30_000,
+  });
+  pool.on("error", (err: Error) => {
+    logger.error({ err }, "session-pool idle client error");
+  });
+  return pool;
+}
+
 export function buildSessionMiddleware(): RequestHandler {
   const secret = process.env["SESSION_SECRET"];
   if (!secret) {
@@ -47,17 +69,28 @@ export function buildSessionMiddleware(): RequestHandler {
   const isHttps = process.env["NODE_ENV"] === "production"
     || Boolean(process.env["REPLIT_DOMAINS"]);
 
+  const store = new PgStore({
+    pool: buildSessionPool(),
+    tableName: "sessions",
+    // Auto-create the sessions table if it doesn't exist yet (e.g. on a
+    // fresh production deploy before the Drizzle migration has run, or if
+    // the table was accidentally dropped). connect-pg-simple uses the
+    // official CREATE TABLE statement from its own bundled SQL, which matches
+    // the schema declared in lib/db/src/schema/users.ts.
+    createTableIfMissing: true,
+  });
+
+  store.on("error", (err: Error) => {
+    logger.error({ err }, "session-store error");
+  });
+
   return session({
     name: "oasis.sid",
     secret,
     resave: false,
     saveUninitialized: false,
     rolling: true,
-    store: new PgStore({
-      pool,
-      tableName: "sessions",
-      createTableIfMissing: false,
-    }),
+    store,
     cookie: {
       httpOnly: true,
       secure: isHttps,
