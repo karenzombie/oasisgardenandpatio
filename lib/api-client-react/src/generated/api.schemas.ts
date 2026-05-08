@@ -2680,6 +2680,31 @@ export interface CreateOrderItemRequest {
   notes?: string | null;
 }
 
+/**
+ * One-off direct-ship address entered by staff. Only valid when shipToStore=false and shippingAddressId is null. Server creates a new addresses row attached to the order's customer (so it shows on the receipt and the vendor PO Ship-To). Requires a customerId (existing or newly-created), so not available for quick orders.
+ * @nullable
+ */
+export type CreateOrderRequestCustomShippingAddress = {
+  /** @nullable */
+  recipientName?: string | null;
+  /** @minLength 1 */
+  street1: string;
+  /** @nullable */
+  street2?: string | null;
+  /** @minLength 1 */
+  city: string;
+  /**
+   * @minLength 2
+   * @maxLength 2
+   */
+  state: string;
+  /** @minLength 1 */
+  zip: string;
+  country?: string;
+  /** @nullable */
+  phone?: string | null;
+} | null;
+
 export type CreateOrderRequestOrderType =
   (typeof CreateOrderRequestOrderType)[keyof typeof CreateOrderRequestOrderType];
 
@@ -2701,6 +2726,11 @@ export interface CreateOrderRequest {
   shippingAddressId?: number | null;
   /** @nullable */
   billingAddressId?: number | null;
+  /**
+   * One-off direct-ship address entered by staff. Only valid when shipToStore=false and shippingAddressId is null. Server creates a new addresses row attached to the order's customer (so it shows on the receipt and the vendor PO Ship-To). Requires a customerId (existing or newly-created), so not available for quick orders.
+   * @nullable
+   */
+  customShippingAddress?: CreateOrderRequestCustomShippingAddress;
   /** @nullable */
   shippingMethod?: string | null;
   /** @minimum 0 */

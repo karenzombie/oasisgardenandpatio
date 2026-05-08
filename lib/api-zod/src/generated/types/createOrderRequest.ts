@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { CreateOrderItemRequest } from "./createOrderItemRequest";
+import type { CreateOrderRequestCustomShippingAddress } from "./createOrderRequestCustomShippingAddress";
 import type { CreateOrderRequestOrderType } from "./createOrderRequestOrderType";
 
 export interface CreateOrderRequest {
@@ -20,6 +21,11 @@ export interface CreateOrderRequest {
   shippingAddressId?: number | null;
   /** @nullable */
   billingAddressId?: number | null;
+  /**
+   * One-off direct-ship address entered by staff. Only valid when shipToStore=false and shippingAddressId is null. Server creates a new addresses row attached to the order's customer (so it shows on the receipt and the vendor PO Ship-To). Requires a customerId (existing or newly-created), so not available for quick orders.
+   * @nullable
+   */
+  customShippingAddress?: CreateOrderRequestCustomShippingAddress;
   /** @nullable */
   shippingMethod?: string | null;
   /** @minimum 0 */

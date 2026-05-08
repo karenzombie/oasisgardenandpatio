@@ -4169,6 +4169,10 @@ export const adminCreateOrderBodyItemsItemUnitPriceMin = 0;
 export const adminCreateOrderBodyItemsItemDiscountAmountDefault = 0;
 export const adminCreateOrderBodyItemsItemDiscountAmountMin = 0;
 
+export const adminCreateOrderBodyCustomShippingAddressStateMin = 2;
+export const adminCreateOrderBodyCustomShippingAddressStateMax = 2;
+
+export const adminCreateOrderBodyCustomShippingAddressCountryDefault = `US`;
 export const adminCreateOrderBodyDeliveryAmountDefault = 0;
 export const adminCreateOrderBodyDeliveryAmountMin = 0;
 
@@ -4211,6 +4215,26 @@ export const AdminCreateOrderBody = zod.object({
     .min(1),
   shippingAddressId: zod.number().nullish(),
   billingAddressId: zod.number().nullish(),
+  customShippingAddress: zod
+    .object({
+      recipientName: zod.string().nullish(),
+      street1: zod.string().min(1),
+      street2: zod.string().nullish(),
+      city: zod.string().min(1),
+      state: zod
+        .string()
+        .min(adminCreateOrderBodyCustomShippingAddressStateMin)
+        .max(adminCreateOrderBodyCustomShippingAddressStateMax),
+      zip: zod.string().min(1),
+      country: zod
+        .string()
+        .default(adminCreateOrderBodyCustomShippingAddressCountryDefault),
+      phone: zod.string().nullish(),
+    })
+    .nullish()
+    .describe(
+      "One-off direct-ship address entered by staff. Only valid when shipToStore=false and shippingAddressId is null. Server creates a new addresses row attached to the order's customer (so it shows on the receipt and the vendor PO Ship-To). Requires a customerId (existing or newly-created), so not available for quick orders.",
+    ),
   shippingMethod: zod.string().nullish(),
   deliveryAmount: zod
     .number()

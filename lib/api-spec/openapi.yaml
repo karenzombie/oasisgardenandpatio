@@ -7243,6 +7243,19 @@ components:
           items: { $ref: "#/components/schemas/CreateOrderItemRequest" }
         shippingAddressId: { type: ["integer", "null"] }
         billingAddressId: { type: ["integer", "null"] }
+        customShippingAddress:
+          description: "One-off direct-ship address entered by staff. Only valid when shipToStore=false and shippingAddressId is null. Server creates a new addresses row attached to the order's customer (so it shows on the receipt and the vendor PO Ship-To). Requires a customerId (existing or newly-created), so not available for quick orders."
+          type: ["object", "null"]
+          properties:
+            recipientName: { type: ["string", "null"] }
+            street1: { type: string, minLength: 1 }
+            street2: { type: ["string", "null"] }
+            city: { type: string, minLength: 1 }
+            state: { type: string, minLength: 2, maxLength: 2 }
+            zip: { type: string, minLength: 1 }
+            country: { type: string, default: "US" }
+            phone: { type: ["string", "null"] }
+          required: [street1, city, state, zip]
         shippingMethod: { type: ["string", "null"] }
         deliveryAmount: { type: number, minimum: 0, default: 0 }
         taxRate: { type: number, minimum: 0, maximum: 1, default: 0, description: "Decimal tax rate, e.g. 0.0875 for 8.75%" }

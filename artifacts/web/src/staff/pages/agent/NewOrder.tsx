@@ -63,6 +63,33 @@ interface WalkInForm {
   phone: string;
 }
 
+interface CustomShipAddressForm {
+  recipientName: string;
+  street1: string;
+  street2: string;
+  city: string;
+  state: string;
+  zip: string;
+  phone: string;
+}
+
+function emptyCustomAddress(): CustomShipAddressForm {
+  return {
+    recipientName: "",
+    street1: "",
+    street2: "",
+    city: "",
+    state: "",
+    zip: "",
+    phone: "",
+  };
+}
+
+// "saved" = pick from the customer's saved addresses (existing customers only).
+// "custom" = staff types a one-off direct-ship address that gets attached to
+// the customer and used on the receipt + vendor PO Ship-To.
+type DirectShipAddressMode = "saved" | "custom";
+
 function fmtMoney(n: number): string {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
 }
@@ -102,6 +129,13 @@ export default function AgentNewOrder() {
   // Default true — manufacturer ships to the Oasis store. Toggle off when
   // staff wants the manufacturer to drop-ship direct to the customer.
   const [shipToStore, setShipToStore] = useState<boolean>(true);
+  // Direct-ship address source: pick a saved address on the customer, or
+  // type a one-off address inline. New customers start in "custom" mode
+  // because they don't have saved addresses yet.
+  const [directShipMode, setDirectShipMode] =
+    useState<DirectShipAddressMode>("saved");
+  const [customShipAddr, setCustomShipAddr] =
+    useState<CustomShipAddressForm>(emptyCustomAddress);
   const [items, setItems] = useState<LineItem[]>([emptyLine()]);
 
   // Tax/Delivery: auto by default, manual override per-field.
@@ -145,6 +179,13 @@ export default function AgentNewOrder() {
       setTaxMode("auto");
       setDeliveryMode("auto");
       setDepositAmount("0");
+    }
+    // New customers can't have saved addresses yet, so default the
+    // direct-ship address source to the inline custom form.
+    if (customerMode === "new") {
+      setDirectShipMode("custom");
+    } else if (customerMode === "existing") {
+      setDirectShipMode("saved");
     }
   }, [customerMode]);
 
@@ -266,6 +307,49 @@ export default function AgentNewOrder() {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
 
+    // Pre-flight validation that must run BEFORE we make any side-effecting
+    // calls (e.g. creating a new customer). Direct-ship + custom address
+    // failures here used to leak a half-created customer record because the
+    // address validation lived after createCustomer.
+    const willUseCustomAddress =
+      !shipToStore &&
+      !isRestockOrder &&
+      !isQuickOrder &&
+      (customerMode === "new" ||
+        (customerMode === "existing" &&
+          (directShipMode === "custom" || addresses.length === 0)));
+    if (willUseCustomAddress) {
+      const c = customShipAddr;
+      if (!c.street1.trim() || !c.city.trim() || !c.state.trim() || !c.zip.trim()) {
+        toast({
+          title: "Direct-ship address is incomplete",
+          description: "Street, city, state, and ZIP are required.",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (c.state.trim().length !== 2) {
+        toast({ title: "State must be a 2-letter code", variant: "destructive" });
+        return;
+      }
+    }
+    // Saved-address direct-ship: must have picked an address up-front.
+    if (
+      !shipToStore &&
+      !isRestockOrder &&
+      !isQuickOrder &&
+      !willUseCustomAddress &&
+      customerMode === "existing" &&
+      !shippingAddressId
+    ) {
+      toast({
+        title: "Pick a shipping address",
+        description: "Drop-ship orders need somewhere to send the items.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     let customerIdToUse: number | null = null;
 
     if (isRestockOrder) {
@@ -332,6 +416,30 @@ export default function AgentNewOrder() {
       return;
     }
 
+    // Same predicate as the pre-flight check above — kept local so we can
+    // build the request payload right here without re-deriving conditions.
+    const usingCustomAddress = willUseCustomAddress;
+
+    const customShippingAddress = usingCustomAddress
+      ? {
+          recipientName: customShipAddr.recipientName.trim() || null,
+          street1: customShipAddr.street1.trim(),
+          street2: customShipAddr.street2.trim() || null,
+          city: customShipAddr.city.trim(),
+          state: customShipAddr.state.trim().toUpperCase(),
+          zip: customShipAddr.zip.trim(),
+          country: "US",
+          phone: customShipAddr.phone.trim() || null,
+        }
+      : null;
+
+    const savedShippingAddressId =
+      !usingCustomAddress &&
+      customerMode === "existing" &&
+      shippingAddressId
+        ? Number(shippingAddressId)
+        : null;
+
     try {
       const order = await createOrder.mutateAsync({
         data: {
@@ -341,16 +449,15 @@ export default function AgentNewOrder() {
           skipVendorOrder: isQuickOrder ? skipVendorOrder : false,
           // Restocks always ship to the store. Customer orders default to
           // ship-to-store (PO ships to Oasis); when unchecked we drop-ship
-          // direct to the customer's address (server enforces this requires
-          // shippingAddressId).
+          // direct to the customer's address — either a saved address or a
+          // one-off `customShippingAddress` typed inline.
           shipToStore: isRestockOrder ? true : shipToStore,
           walkInName: isQuickOrder ? walkIn.name.trim() || null : null,
           walkInEmail: isQuickOrder ? walkIn.email.trim() || null : null,
           walkInPhone: isQuickOrder ? walkIn.phone.trim() || null : null,
-          shippingAddressId:
-            customerMode === "existing" && shippingAddressId ? Number(shippingAddressId) : null,
-          billingAddressId:
-            customerMode === "existing" && shippingAddressId ? Number(shippingAddressId) : null,
+          shippingAddressId: savedShippingAddressId,
+          customShippingAddress,
+          billingAddressId: savedShippingAddressId,
           taxRate: isRestockOrder ? 0 : taxRate,
           deliveryAmount: isRestockOrder ? 0 : delivery,
           depositAmount: isRestockOrder ? 0 : deposit,
@@ -545,32 +652,184 @@ export default function AgentNewOrder() {
                     </div>
                   </div>
                 </label>
-                {!shipToStore && customerMode !== "existing" && (
+                {!shipToStore && isQuickOrder && (
                   <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1.5">
-                    Direct ship requires picking an existing customer with a
-                    saved shipping address.
+                    Direct ship isn't available for quick / walk-in orders.
+                    Use the "Existing" or "New" customer tab to drop-ship.
                   </div>
                 )}
-                {!shipToStore &&
-                  customerMode === "existing" &&
-                  customer &&
-                  addresses.length === 0 && (
-                    <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1.5">
-                      This customer has no saved shipping addresses — add one
-                      from their profile before drop-shipping.
-                    </div>
-                  )}
               </div>
             )}
 
-            {customerMode === "existing" && customer && addresses.length > 0 && (
-              <div className="rounded-md border bg-white p-4">
-                <Label>
-                  Shipping address
-                  {!shipToStore && (
-                    <span className="ml-1 text-red-600" title="Required">*</span>
+            {!shipToStore && !isQuickOrder && !isRestockOrder && (
+              <div className="rounded-md border bg-white p-4 space-y-3">
+                <div className="text-sm font-medium">
+                  Direct-ship address
+                  <span className="ml-1 text-red-600" title="Required">*</span>
+                </div>
+                <div className="text-xs text-slate-500">
+                  Where the manufacturer should drop-ship this order. Used on
+                  the printable receipt and the vendor PO Ship-To block.
+                </div>
+
+                {customerMode === "existing" && customer && addresses.length > 0 && (
+                  <div className="flex gap-2 text-xs">
+                    <button
+                      type="button"
+                      className={`px-2.5 py-1 rounded border ${
+                        directShipMode === "saved"
+                          ? "bg-slate-900 text-white border-slate-900"
+                          : "bg-white text-slate-700 border-slate-300"
+                      }`}
+                      onClick={() => setDirectShipMode("saved")}
+                    >
+                      Use saved address
+                    </button>
+                    <button
+                      type="button"
+                      className={`px-2.5 py-1 rounded border ${
+                        directShipMode === "custom"
+                          ? "bg-slate-900 text-white border-slate-900"
+                          : "bg-white text-slate-700 border-slate-300"
+                      }`}
+                      onClick={() => setDirectShipMode("custom")}
+                    >
+                      Enter a new address
+                    </button>
+                  </div>
+                )}
+
+                {customerMode === "existing" &&
+                  customer &&
+                  addresses.length === 0 && (
+                    <div className="text-xs text-slate-600">
+                      This customer has no saved shipping addresses — enter
+                      one below. It'll be saved to their profile and used for
+                      this order.
+                    </div>
                   )}
-                </Label>
+
+                {customerMode === "existing" && !customer && (
+                  <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1.5">
+                    Pick an existing customer above, or switch to the "New"
+                    tab to create one with this shipping address.
+                  </div>
+                )}
+
+                {customerMode === "existing" &&
+                  customer &&
+                  directShipMode === "saved" &&
+                  addresses.length > 0 && (
+                    <div>
+                      <Label>Saved address</Label>
+                      <Select value={shippingAddressId} onValueChange={setShippingAddressId}>
+                        <SelectTrigger className="mt-1.5">
+                          <SelectValue placeholder="Pick an address" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {addresses.map((a) => (
+                            <SelectItem key={a.id} value={String(a.id)}>
+                              {a.street1}, {a.city} {a.state} {a.zip}
+                              {a.isDefault ? " (default)" : ""}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {!shippingAddressId && (
+                        <div className="mt-2 text-xs text-amber-700">
+                          Pick an address — drop-ship orders need somewhere
+                          to send the items.
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                {((customerMode === "existing" &&
+                  (directShipMode === "custom" || addresses.length === 0) &&
+                  customer) ||
+                  customerMode === "new") && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="col-span-2">
+                      <Label>Recipient name</Label>
+                      <Input
+                        value={customShipAddr.recipientName}
+                        placeholder="Defaults to customer name"
+                        onChange={(e) =>
+                          setCustomShipAddr((a) => ({ ...a, recipientName: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Label>Street address *</Label>
+                      <Input
+                        value={customShipAddr.street1}
+                        onChange={(e) =>
+                          setCustomShipAddr((a) => ({ ...a, street1: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Label>Apt / suite</Label>
+                      <Input
+                        value={customShipAddr.street2}
+                        onChange={(e) =>
+                          setCustomShipAddr((a) => ({ ...a, street2: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <div>
+                      <Label>City *</Label>
+                      <Input
+                        value={customShipAddr.city}
+                        onChange={(e) =>
+                          setCustomShipAddr((a) => ({ ...a, city: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label>State *</Label>
+                        <Input
+                          maxLength={2}
+                          value={customShipAddr.state}
+                          onChange={(e) =>
+                            setCustomShipAddr((a) => ({
+                              ...a,
+                              state: e.target.value.toUpperCase(),
+                            }))
+                          }
+                        />
+                      </div>
+                      <div>
+                        <Label>ZIP *</Label>
+                        <Input
+                          value={customShipAddr.zip}
+                          onChange={(e) =>
+                            setCustomShipAddr((a) => ({ ...a, zip: e.target.value }))
+                          }
+                        />
+                      </div>
+                    </div>
+                    <div className="col-span-2">
+                      <Label>Phone</Label>
+                      <Input
+                        value={customShipAddr.phone}
+                        onChange={(e) =>
+                          setCustomShipAddr((a) => ({ ...a, phone: e.target.value }))
+                        }
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {shipToStore &&
+              customerMode === "existing" &&
+              customer &&
+              addresses.length > 0 && (
+              <div className="rounded-md border bg-white p-4">
+                <Label>Customer shipping address (optional)</Label>
                 <Select value={shippingAddressId} onValueChange={setShippingAddressId}>
                   <SelectTrigger className="mt-1.5"><SelectValue placeholder="Pick an address" /></SelectTrigger>
                   <SelectContent>
@@ -581,12 +840,6 @@ export default function AgentNewOrder() {
                     ))}
                   </SelectContent>
                 </Select>
-                {!shipToStore && !shippingAddressId && (
-                  <div className="mt-2 text-xs text-amber-700">
-                    Pick an address — drop-ship orders need somewhere to send
-                    the items.
-                  </div>
-                )}
               </div>
             )}
 

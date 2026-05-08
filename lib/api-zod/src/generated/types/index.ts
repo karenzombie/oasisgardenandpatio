@@ -182,6 +182,7 @@ export * from "./createManufacturerRequest";
 export * from "./createManufacturerRequestOrderMethod";
 export * from "./createOrderItemRequest";
 export * from "./createOrderRequest";
+export * from "./createOrderRequestCustomShippingAddress";
 export * from "./createOrderRequestOrderType";
 export * from "./createProductRequest";
 export * from "./createProductRequestPricingMode";

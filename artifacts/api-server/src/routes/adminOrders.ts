@@ -951,12 +951,46 @@ router.post(
 
     // Drop-ship guard: when staff unchecks "ship to store" the order must
     // have a real shipping address so the PO Ship-To block can be filled
-    // with the customer's address. Restocks always ship to store.
+    // with the customer's address. Restocks always ship to store. Staff may
+    // either pick a saved address (shippingAddressId) OR enter a one-off
+    // address (customShippingAddress) which we'll persist as a new addresses
+    // row attached to the order's customer.
     const shipToStore = isInternalRestock ? true : (data.shipToStore ?? true);
-    if (!shipToStore && data.shippingAddressId == null) {
+    if (
+      !shipToStore &&
+      data.shippingAddressId == null &&
+      data.customShippingAddress == null
+    ) {
       res.status(400).json({
         error:
-          "Direct-ship orders (ship to store unchecked) require a shippingAddressId",
+          "Direct-ship orders (ship to store unchecked) require either a saved shippingAddressId or a customShippingAddress",
+      });
+      return;
+    }
+    if (data.customShippingAddress != null && data.shippingAddressId != null) {
+      res.status(400).json({
+        error:
+          "Provide either shippingAddressId or customShippingAddress, not both",
+      });
+      return;
+    }
+    if (data.customShippingAddress != null && shipToStore) {
+      res.status(400).json({
+        error:
+          "customShippingAddress is only valid when shipToStore is false",
+      });
+      return;
+    }
+    if (data.customShippingAddress != null && isQuickOrder) {
+      res.status(400).json({
+        error:
+          "Quick / walk-in orders cannot use customShippingAddress — direct ship is not supported for quick orders",
+      });
+      return;
+    }
+    if (data.customShippingAddress != null && isInternalRestock) {
+      res.status(400).json({
+        error: "Inventory restock orders cannot use customShippingAddress",
       });
       return;
     }
@@ -1029,6 +1063,13 @@ router.post(
         return;
       }
     }
+    if (data.customShippingAddress != null && !customer) {
+      res.status(400).json({
+        error:
+          "A one-off direct-ship address requires a customer (existing or new). Quick orders cannot use customShippingAddress.",
+      });
+      return;
+    }
     if (data.billingAddressId != null) {
       if (!customer) {
         res.status(400).json({
@@ -1061,6 +1102,34 @@ router.post(
 
     try {
       const txResult = await db.transaction(async (tx) => {
+        // If staff entered a one-off direct-ship address, persist it as a
+        // new addresses row attached to the order's customer so the receipt
+        // and vendor PO Ship-To resolve through the same join path as
+        // saved addresses.
+        let resolvedShippingAddressId: number | null =
+          data.shippingAddressId ?? null;
+        if (data.customShippingAddress != null && customer) {
+          const c = data.customShippingAddress;
+          const [addr] = await tx
+            .insert(addressesTable)
+            .values({
+              customerId: customer.id,
+              type: "shipping",
+              recipientName: c.recipientName?.trim() || null,
+              street1: c.street1.trim(),
+              street2: c.street2?.trim() || null,
+              city: c.city.trim(),
+              state: c.state.trim().toUpperCase(),
+              zip: c.zip.trim(),
+              country: (c.country?.trim() || "US").toUpperCase(),
+              phone: c.phone?.trim() || null,
+              isDefault: false,
+            })
+            .returning();
+          if (!addr) throw new Error("Custom shipping address insert failed");
+          resolvedShippingAddressId = addr.id;
+        }
+
         let subtotal = 0;
         const prepared: Array<{
           productId: number | null;
@@ -1175,7 +1244,7 @@ router.post(
             total: money(total),
             depositAmount: money(deposit),
             balanceDue: money(balanceDue),
-            shippingAddressId: data.shippingAddressId ?? null,
+            shippingAddressId: resolvedShippingAddressId,
             billingAddressId: data.billingAddressId ?? null,
             shippingMethod: data.shippingMethod ?? null,
             salespersonName: data.salespersonName ?? null,
