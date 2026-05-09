@@ -4,13 +4,15 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   useLogout,
   useResendVerification,
+  useGetWishlist,
   getGetCurrentUserQueryKey,
+  getGetWishlistQueryKey,
 } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
-import { MailWarning, CheckCircle2, LogOut } from "lucide-react";
+import { MailWarning, CheckCircle2, LogOut, Heart } from "lucide-react";
 
 export default function Account() {
   const { user, isLoading, isAuthenticated } = useAuth();
@@ -23,6 +25,21 @@ export default function Account() {
   const logoutMutation = useLogout();
   const resendMutation = useResendVerification();
   const [resendSent, setResendSent] = useState(false);
+
+  // Wishlist preview for the account card. Auth-only fetch — guests never
+  // reach this page (the redirect above sends them to /sign-in), which
+  // matches the spec: guest wishlists are device-only and surfaced via the
+  // header heart icon, not here.
+  const { data: wishlist } = useGetWishlist({
+    query: {
+      queryKey: getGetWishlistQueryKey(),
+      enabled: isAuthenticated,
+      retry: false,
+      staleTime: 30_000,
+    },
+  });
+  const wishlistItems = wishlist?.items ?? [];
+  const wishlistPreview = wishlistItems.slice(0, 4);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -157,6 +174,68 @@ export default function Account() {
               </dd>
             </div>
           </dl>
+
+          <div className="border-t border-border pt-8 mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Heart
+                  className={`w-5 h-5 ${
+                    wishlistItems.length > 0
+                      ? "fill-primary text-primary"
+                      : "text-primary"
+                  }`}
+                />
+                <h2 className="font-serif text-xl">My Wishlist</h2>
+                {wishlistItems.length > 0 && (
+                  <Badge variant="secondary" className="text-[10px]">
+                    {wishlistItems.length}
+                  </Badge>
+                )}
+              </div>
+              <Link
+                href="/account/wishlist"
+                className="text-xs uppercase tracking-widest text-primary hover:underline"
+              >
+                View all
+              </Link>
+            </div>
+            {wishlistItems.length === 0 ? (
+              <div className="border border-border bg-muted/30 px-4 py-6 text-sm text-muted-foreground text-center">
+                Your wishlist is empty.{" "}
+                <Link href="/shop" className="text-primary hover:underline">
+                  Browse products
+                </Link>{" "}
+                to start saving favorites.
+              </div>
+            ) : (
+              <ul className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {wishlistPreview.map((item) => (
+                  <li key={item.id}>
+                    <Link
+                      href={`/shop/${item.slug}`}
+                      className="block group"
+                      title={item.name}
+                    >
+                      <div className="aspect-square bg-card border border-border overflow-hidden">
+                        {item.primaryImageUrl ? (
+                          <img
+                            src={item.primaryImageUrl}
+                            alt={item.name}
+                            className="w-full h-full object-cover mix-blend-multiply transition-transform group-hover:scale-105"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-muted" />
+                        )}
+                      </div>
+                      <p className="mt-2 text-xs font-serif line-clamp-2 group-hover:text-primary transition-colors">
+                        {item.name}
+                      </p>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
 
           <div className="border-t border-border pt-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
             <div className="flex flex-col sm:flex-row gap-3 text-sm">

@@ -11,6 +11,7 @@ import { Menu, X, ChevronDown, User, ShoppingBag } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useClerk } from "@clerk/react";
 import { useAuth } from "@/lib/auth";
+import { WishlistIconLink } from "@/components/layout/WishlistIconLink";
 import logoImg from "@/assets/logo.png";
 import {
   DropdownMenu,
@@ -161,6 +162,7 @@ export function Navbar() {
                 and their account on every viewport size. Only the main nav
                 links collapse into the hamburger on small screens. */}
             <div className="flex items-center space-x-4 sm:space-x-5">
+              <WishlistIconLink />
               <Link
                 href="/cart"
                 aria-label={`Shopping cart${cartCount > 0 ? ` (${cartCount} items)` : ""}`}
