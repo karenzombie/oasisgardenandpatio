@@ -684,6 +684,31 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /wishlist/lookup:
+    post:
+      operationId: lookupWishlistItems
+      tags: [wishlist]
+      summary: Public lookup — hydrate a list of product IDs into wishlist items
+      description: >
+        Used by the guest wishlist page to render the device-local
+        wishlist (held in localStorage). Returns the same shape as
+        GET /wishlist; for guest items, `id` is set to `productId` and
+        `createdAt` is set to the current time since there is no
+        underlying wishlist row. Hidden / inactive products are silently
+        omitted, mirroring the auth wishlist visibility rules.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SyncWishlistRequest"
+      responses:
+        "200":
+          description: Hydrated items
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WishlistResponse"
   /wishlist/sync:
     post:
       operationId: syncWishlist

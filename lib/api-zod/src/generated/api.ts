@@ -910,6 +910,41 @@ export const RemoveCartItemResponse = zod.object({
 });
 
 /**
+ * Used by the guest wishlist page to render the device-local wishlist (held in localStorage). Returns the same shape as GET /wishlist; for guest items, `id` is set to `productId` and `createdAt` is set to the current time since there is no underlying wishlist row. Hidden / inactive products are silently omitted, mirroring the auth wishlist visibility rules.
+
+ * @summary Public lookup — hydrate a list of product IDs into wishlist items
+ */
+
+export const lookupWishlistItemsBodyProductIdsMax = 200;
+
+export const LookupWishlistItemsBody = zod.object({
+  productIds: zod
+    .array(zod.number().min(1))
+    .max(lookupWishlistItemsBodyProductIdsMax),
+});
+
+export const LookupWishlistItemsResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      productId: zod.number(),
+      name: zod.string(),
+      slug: zod.string(),
+      sku: zod.string(),
+      manufacturerName: zod.string().nullable(),
+      categoryName: zod.string().nullable(),
+      price: zod.string().nullable(),
+      salePrice: zod.string().nullable(),
+      showPriceOnline: zod.boolean(),
+      availableOnline: zod.boolean(),
+      quoteOnly: zod.boolean(),
+      primaryImageUrl: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+/**
  * Used after sign-up or login to merge a guest's locally-held wishlist into the user's persistent wishlist. Existing items are silently skipped via ON CONFLICT DO NOTHING.
  * @summary Bulk-add products to the signed-in user's wishlist
  */

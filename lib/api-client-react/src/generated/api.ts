@@ -2409,6 +2409,94 @@ export const useRemoveCartItem = <
 };
 
 /**
+ * Used by the guest wishlist page to render the device-local wishlist (held in localStorage). Returns the same shape as GET /wishlist; for guest items, `id` is set to `productId` and `createdAt` is set to the current time since there is no underlying wishlist row. Hidden / inactive products are silently omitted, mirroring the auth wishlist visibility rules.
+
+ * @summary Public lookup — hydrate a list of product IDs into wishlist items
+ */
+export const getLookupWishlistItemsUrl = () => {
+  return `/api/wishlist/lookup`;
+};
+
+export const lookupWishlistItems = async (
+  syncWishlistRequest: SyncWishlistRequest,
+  options?: RequestInit,
+): Promise<WishlistResponse> => {
+  return customFetch<WishlistResponse>(getLookupWishlistItemsUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(syncWishlistRequest),
+  });
+};
+
+export const getLookupWishlistItemsMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof lookupWishlistItems>>,
+    TError,
+    { data: BodyType<SyncWishlistRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof lookupWishlistItems>>,
+  TError,
+  { data: BodyType<SyncWishlistRequest> },
+  TContext
+> => {
+  const mutationKey = ["lookupWishlistItems"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof lookupWishlistItems>>,
+    { data: BodyType<SyncWishlistRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return lookupWishlistItems(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type LookupWishlistItemsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof lookupWishlistItems>>
+>;
+export type LookupWishlistItemsMutationBody = BodyType<SyncWishlistRequest>;
+export type LookupWishlistItemsMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Public lookup — hydrate a list of product IDs into wishlist items
+ */
+export const useLookupWishlistItems = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof lookupWishlistItems>>,
+    TError,
+    { data: BodyType<SyncWishlistRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof lookupWishlistItems>>,
+  TError,
+  { data: BodyType<SyncWishlistRequest> },
+  TContext
+> => {
+  return useMutation(getLookupWishlistItemsMutationOptions(options));
+};
+
+/**
  * Used after sign-up or login to merge a guest's locally-held wishlist into the user's persistent wishlist. Existing items are silently skipped via ON CONFLICT DO NOTHING.
  * @summary Bulk-add products to the signed-in user's wishlist
  */

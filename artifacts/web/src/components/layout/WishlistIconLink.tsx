@@ -38,7 +38,7 @@ export function WishlistIconLink() {
 
   return (
     <Link
-      href="/account/wishlist"
+      href="/wishlist"
       aria-label={`Wishlist${hasItems ? ` (${count} items)` : ""}`}
       className="relative text-foreground/80 hover:text-primary transition-colors"
     >

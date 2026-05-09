@@ -71,6 +71,89 @@ async function loadWishlist(userId: number) {
   });
 }
 
+// Public hydration endpoint — given a list of product IDs (typically held
+// in a guest's localStorage), return the same payload shape as the auth
+// wishlist endpoint. Used by the public /wishlist page so guests can see
+// what they've saved without an account. Hidden / inactive products are
+// silently omitted, matching the auth wishlist visibility rules.
+router.post(
+  "/wishlist/lookup",
+  async (req: Request, res: Response): Promise<void> => {
+    const parsed = SyncWishlistBody.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: parsed.error.issues[0]?.message ?? "Invalid body" });
+      return;
+    }
+    const ids = Array.from(
+      new Set(
+        parsed.data.productIds.filter((n) => Number.isInteger(n) && n > 0),
+      ),
+    );
+    if (ids.length === 0) {
+      res.json(GetWishlistResponse.parse({ items: [] }));
+      return;
+    }
+
+    const rows = await db
+      .select({
+        productId: productsTable.id,
+        name: productsTable.name,
+        slug: productsTable.slug,
+        sku: productsTable.sku,
+        manufacturerName: manufacturersTable.name,
+        categoryName: categoriesTable.name,
+        price: productsTable.price,
+        salePrice: productsTable.salePrice,
+        showPriceOnline: productsTable.showPriceOnline,
+        availableOnline: productsTable.availableOnline,
+        quoteOnly: productsTable.quoteOnly,
+        primaryImageUrl: sql<string | null>`(
+          select ${productImagesTable.url}
+          from ${productImagesTable}
+          where ${productImagesTable.productId} = ${productsTable.id}
+            and ${productImagesTable.imageKind} = 'gallery'
+          order by ${productImagesTable.isPrimary} desc, ${productImagesTable.displayOrder} asc, ${productImagesTable.id} asc
+          limit 1
+        )`,
+      })
+      .from(productsTable)
+      .leftJoin(
+        manufacturersTable,
+        eq(manufacturersTable.id, productsTable.manufacturerId),
+      )
+      .leftJoin(
+        categoriesTable,
+        eq(categoriesTable.id, productsTable.categoryId),
+      )
+      .where(
+        and(
+          inArray(productsTable.id, ids),
+          eq(productsTable.isActive, true),
+          eq(productsTable.availableOnline, true),
+        ),
+      );
+
+    // Preserve the order the client sent (most-recently-added-first by
+    // convention in localStorage). Synthesize id / createdAt because there
+    // is no underlying wishlist row for guests.
+    const byId = new Map(rows.map((r) => [r.productId, r]));
+    const now = new Date().toISOString();
+    const items = ids
+      .map((id) => byId.get(id))
+      .filter((r): r is NonNullable<typeof r> => Boolean(r))
+      .map((r) => ({
+        ...r,
+        id: r.productId,
+        primaryImageUrl: toPublicImageUrl(r.primaryImageUrl),
+        createdAt: now,
+      }));
+
+    res.json(GetWishlistResponse.parse({ items }));
+  },
+);
+
 router.get(
   "/wishlist",
   requireAuth,
