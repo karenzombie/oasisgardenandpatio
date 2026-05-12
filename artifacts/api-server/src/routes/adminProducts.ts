@@ -289,9 +289,22 @@ router.get(
       .orderBy(...orderClause)
       .limit(pageSize)
       .offset(offset);
+    // Mirror the joins from baseSelect() — the whereClause can reference
+    // joined tables (e.g. manufacturers.name in the search OR), so the
+    // count query has to provide the same FROM shape or Postgres throws
+    // "missing FROM-clause entry for table 'manufacturers'".
     const totalP = db
       .select({ count: sql<number>`count(*)::int` })
       .from(productsTable)
+      .leftJoin(
+        manufacturersTable,
+        eq(manufacturersTable.id, productsTable.manufacturerId),
+      )
+      .leftJoin(
+        categoriesTable,
+        eq(categoriesTable.id, productsTable.categoryId),
+      )
+      .leftJoin(materialsTable, eq(materialsTable.id, productsTable.materialId))
       .where(whereClause as ReturnType<typeof and>);
 
     const [rows, totalResult] = await Promise.all([rowsP, totalP]);
