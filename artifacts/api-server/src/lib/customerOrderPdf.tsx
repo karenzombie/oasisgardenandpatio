@@ -349,7 +349,7 @@ export interface PdfCustomerOrderArgs {
   specialInstructions: string | null;
   payments: PdfCustomerOrderPayment[];
   merchandiseReceived: boolean;
-  copy: "customer" | "store";
+  copy: "customer" | "store" | "delivery";
 }
 
 function CustomerInfo({ args }: { args: PdfCustomerOrderArgs }) {
@@ -551,7 +551,11 @@ function PaymentsBlock({ payments }: { payments: PdfCustomerOrderPayment[] }) {
 
 function CustomerOrderDocument(args: PdfCustomerOrderArgs) {
   const copyLabel =
-    args.copy === "customer" ? "Customer Copy" : "Store Copy";
+    args.copy === "customer"
+      ? "Customer Copy"
+      : args.copy === "store"
+        ? "Store Copy"
+        : "Delivery Copy";
   return (
     <Document>
       <Page size="LETTER" style={s.page}>
@@ -592,36 +596,40 @@ function CustomerOrderDocument(args: PdfCustomerOrderArgs) {
 
         <PaymentsBlock payments={args.payments} />
 
-        <View style={s.receivedRow}>
-          <View style={s.receivedBox}>
-            {args.merchandiseReceived ? (
-              <Text
-                style={{
-                  fontSize: 11,
-                  textAlign: "center",
-                  fontFamily: "Helvetica-Bold",
-                  marginTop: -1,
-                }}
-              >
-                X
+        {args.copy === "delivery" && (
+          <>
+            <View style={s.receivedRow}>
+              <View style={s.receivedBox}>
+                {args.merchandiseReceived ? (
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      textAlign: "center",
+                      fontFamily: "Helvetica-Bold",
+                      marginTop: -1,
+                    }}
+                  >
+                    X
+                  </Text>
+                ) : null}
+              </View>
+              <Text style={s.receivedLabel}>
+                Merchandise Received in Good Condition
               </Text>
-            ) : null}
-          </View>
-          <Text style={s.receivedLabel}>
-            Merchandise Received in Good Condition
-          </Text>
-        </View>
+            </View>
 
-        <View style={s.sigRow}>
-          <View style={s.sigField}>
-            <View style={s.sigLine} />
-            <Text style={s.sigLabel}>Customer Signature</Text>
-          </View>
-          <View style={{ width: 140 }}>
-            <View style={s.sigLine} />
-            <Text style={s.sigLabel}>Date</Text>
-          </View>
-        </View>
+            <View style={s.sigRow}>
+              <View style={s.sigField}>
+                <View style={s.sigLine} />
+                <Text style={s.sigLabel}>Customer Signature</Text>
+              </View>
+              <View style={{ width: 140 }}>
+                <View style={s.sigLine} />
+                <Text style={s.sigLabel}>Date</Text>
+              </View>
+            </View>
+          </>
+        )}
 
         <Text style={s.copyFooter} fixed>
           {copyLabel}

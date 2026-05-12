@@ -394,7 +394,7 @@ export default function OrderDetail() {
             <Button
               type="button"
               size="sm"
-              className="bg-[#F4A982] hover:bg-[#EE9468] text-black font-bold border-0 shadow-sm"
+              className="bg-[#F4A982] hover:bg-[#EE9468] text-black border-0 shadow-sm"
               onClick={() => {
                 window.open(
                   `/api/admin/orders/${order.id}/pdf?copy=customer`,
@@ -409,7 +409,7 @@ export default function OrderDetail() {
             <Button
               type="button"
               size="sm"
-              className="bg-[#F4A982] hover:bg-[#EE9468] text-black font-bold border-0 shadow-sm"
+              className="bg-[#F4A982] hover:bg-[#EE9468] text-black border-0 shadow-sm"
               onClick={() => {
                 window.open(
                   `/api/admin/orders/${order.id}/pdf?copy=store`,
@@ -420,6 +420,21 @@ export default function OrderDetail() {
             >
               <Printer className="size-4 mr-1.5" />
               Print store copy
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              className="bg-[#F4A982] hover:bg-[#EE9468] text-black border-0 shadow-sm"
+              onClick={() => {
+                window.open(
+                  `/api/admin/orders/${order.id}/pdf?copy=delivery`,
+                  "_blank",
+                  "noopener,noreferrer",
+                );
+              }}
+            >
+              <Printer className="size-4 mr-1.5" />
+              Print delivery copy
             </Button>
           </div>
         </div>

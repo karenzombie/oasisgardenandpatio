@@ -1399,7 +1399,7 @@ router.post(
 // each time).
 // ────────────────────────────────────────────────────────────────────
 const PdfQuery = z.object({
-  copy: z.enum(["customer", "store"]).optional(),
+  copy: z.enum(["customer", "store", "delivery"]).optional(),
 });
 
 router.get(
