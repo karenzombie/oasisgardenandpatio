@@ -393,8 +393,8 @@ export default function OrderDetail() {
           <div className="flex items-center gap-2">
             <Button
               type="button"
-              variant="outline"
               size="sm"
+              className="bg-[#F4A982] hover:bg-[#EE9468] text-white border-0 shadow-sm"
               onClick={() => {
                 window.open(
                   `/api/admin/orders/${order.id}/pdf?copy=customer`,
@@ -408,8 +408,8 @@ export default function OrderDetail() {
             </Button>
             <Button
               type="button"
-              variant="outline"
               size="sm"
+              className="bg-[#F4A982] hover:bg-[#EE9468] text-white border-0 shadow-sm"
               onClick={() => {
                 window.open(
                   `/api/admin/orders/${order.id}/pdf?copy=store`,
