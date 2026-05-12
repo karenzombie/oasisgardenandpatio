@@ -314,7 +314,10 @@ export default function AgentNewOrder() {
     setItems((curr) => curr.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
   }
   function removeItem(idx: number) {
-    setItems((curr) => curr.filter((_, i) => i !== idx));
+    setItems((curr) => {
+      const next = curr.filter((_, i) => i !== idx);
+      return next.length > 0 ? next : [emptyLine()];
+    });
   }
   function addItem() {
     setItems((curr) => [...curr, emptyLine()]);
@@ -1070,8 +1073,7 @@ export default function AgentNewOrder() {
                         : fmtMoney((Number(it.quantity) || 0) * (Number(it.unitPrice) || 0))}
                     </div>
                     <div className="col-span-1">
-                      <Button type="button" variant="ghost" size="sm" onClick={() => removeItem(idx)}
-                        disabled={items.length === 1}>
+                      <Button type="button" variant="ghost" size="sm" onClick={() => removeItem(idx)}>
                         <Trash2 className="size-4 text-red-600" />
                       </Button>
                     </div>
@@ -1300,6 +1302,10 @@ function ProductPickerDialog({
     query: {
       queryKey: getAdminGetProductPickerQueryKey(pickedId),
       enabled: !!picked,
+      // Always fetch fresh — the user may have just added variants/fabrics
+      // to this product in another tab, and a stale "no variants" result
+      // would silently keep the Add button disabled or skip required picks.
+      staleTime: 0,
     },
   });
   const variants = detail.data?.variants ?? [];
