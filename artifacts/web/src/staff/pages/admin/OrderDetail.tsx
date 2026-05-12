@@ -394,7 +394,7 @@ export default function OrderDetail() {
             <Button
               type="button"
               size="sm"
-              className="bg-[#F4A982] hover:bg-[#EE9468] text-white border-0 shadow-sm"
+              className="bg-[#F4A982] hover:bg-[#EE9468] text-black font-bold border-0 shadow-sm"
               onClick={() => {
                 window.open(
                   `/api/admin/orders/${order.id}/pdf?copy=customer`,
@@ -409,7 +409,7 @@ export default function OrderDetail() {
             <Button
               type="button"
               size="sm"
-              className="bg-[#F4A982] hover:bg-[#EE9468] text-white border-0 shadow-sm"
+              className="bg-[#F4A982] hover:bg-[#EE9468] text-black font-bold border-0 shadow-sm"
               onClick={() => {
                 window.open(
                   `/api/admin/orders/${order.id}/pdf?copy=store`,
