@@ -10,6 +10,7 @@ import {
   useAdminQuoteOrderPricing,
   useGetCatalogProductBySlug,
   getAdminGetCustomerQueryKey,
+  getAdminListProductsQueryKey,
   getGetCatalogProductBySlugQueryKey,
   type AdminProduct,
   type AdminCustomer,
@@ -159,7 +160,40 @@ export default function AgentNewOrder() {
   const [quoteState, setQuoteState] = useState("CA");
   const [quoteZip, setQuoteZip] = useState("");
 
-  const [pickProductFor, setPickProductFor] = useState<number | null>(null);
+  const [pickProductFor, setPickProductFor] = useState<{
+    idx: number;
+    preselect: AdminProduct | null;
+  } | null>(null);
+
+  // Inline product typeahead on the description field. We track which
+  // line is "active" (focused) plus the live + debounced query so a
+  // single useAdminListProducts hook serves all lines without N hooks.
+  const [typeaheadIdx, setTypeaheadIdx] = useState<number | null>(null);
+  const [typeaheadQuery, setTypeaheadQuery] = useState("");
+  const [typeaheadDebounced, setTypeaheadDebounced] = useState("");
+  useEffect(() => {
+    const t = setTimeout(
+      () => setTypeaheadDebounced(typeaheadQuery.trim()),
+      200,
+    );
+    return () => clearTimeout(t);
+  }, [typeaheadQuery]);
+  const typeaheadEnabled =
+    typeaheadIdx !== null && typeaheadDebounced.length >= 2;
+  const typeaheadParams = {
+    page: 1,
+    pageSize: 8,
+    ...(typeaheadDebounced ? { q: typeaheadDebounced } : {}),
+  };
+  const typeaheadResults = useAdminListProducts(typeaheadParams, {
+    query: {
+      queryKey: getAdminListProductsQueryKey(typeaheadParams),
+      enabled: typeaheadEnabled,
+    },
+  });
+  const typeaheadProducts = typeaheadEnabled
+    ? typeaheadResults.data?.products ?? []
+    : [];
 
   const isQuickOrder = customerMode === "quick";
   const isRestockOrder = customerMode === "restock";
@@ -302,6 +336,8 @@ export default function AgentNewOrder() {
       unitPriceOverridden: false,
     });
     setPickProductFor(null);
+    setTypeaheadIdx(null);
+    setTypeaheadQuery("");
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -853,17 +889,97 @@ export default function AgentNewOrder() {
               <div className="p-4 space-y-3">
                 {items.map((it, idx) => (
                   <div key={idx} className="grid grid-cols-12 gap-2 items-end">
-                    <div className="col-span-5">
+                    <div className="col-span-5 relative">
                       <Label className="text-xs">Description</Label>
                       <div className="flex gap-1">
-                        <Input value={it.description}
-                          onChange={(e) => updateItem(idx, { description: e.target.value })}
-                          placeholder="Item description" />
+                        <Input
+                          value={it.description}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            // Clear linked product whenever the user manually
+                            // edits the description so we never silently keep
+                            // a stale productId tied to a different label.
+                            updateItem(idx, {
+                              description: v,
+                              productId: null,
+                              productSlug: null,
+                              variantId: null,
+                              variantName: null,
+                              fabricId: null,
+                              fabricName: null,
+                            });
+                            setTypeaheadIdx(idx);
+                            setTypeaheadQuery(v);
+                          }}
+                          onFocus={() => {
+                            setTypeaheadIdx(idx);
+                            setTypeaheadQuery(it.description);
+                          }}
+                          onBlur={() => {
+                            // Delay so a click on a suggestion can fire
+                            // before the dropdown unmounts.
+                            setTimeout(() => {
+                              setTypeaheadIdx((curr) => (curr === idx ? null : curr));
+                            }, 150);
+                          }}
+                          placeholder="Type a name, SKU, or vendor to search…"
+                        />
                         <Button type="button" variant="outline" size="sm"
-                          onClick={() => setPickProductFor(idx)} title="Pick product">
+                          onClick={() => setPickProductFor({ idx, preselect: null })}
+                          title="Browse all products">
                           <Search className="size-4" />
                         </Button>
                       </div>
+                      {typeaheadIdx === idx &&
+                        typeaheadDebounced.length >= 2 && (
+                          <div className="absolute left-0 right-10 top-full mt-1 z-50 rounded-md border bg-white shadow-lg max-h-64 overflow-y-auto">
+                            {typeaheadResults.isFetching ? (
+                              <div className="p-3 flex justify-center">
+                                <Spinner />
+                              </div>
+                            ) : typeaheadProducts.length === 0 ? (
+                              <div className="p-3 text-xs text-slate-500">
+                                No matching products
+                              </div>
+                            ) : (
+                              typeaheadProducts.map((p) => (
+                                <button
+                                  key={p.id}
+                                  type="button"
+                                  // mousedown fires before the input blurs,
+                                  // so capturing it here keeps the click from
+                                  // being swallowed by the blur-driven hide.
+                                  onMouseDown={(e) => e.preventDefault()}
+                                  onClick={() => {
+                                    setTypeaheadIdx(null);
+                                    setTypeaheadQuery("");
+                                    setPickProductFor({ idx, preselect: p });
+                                  }}
+                                  className="w-full text-left px-3 py-2 hover:bg-slate-50 border-t first:border-t-0"
+                                >
+                                  <div className="flex justify-between items-start gap-2">
+                                    <div className="min-w-0">
+                                      <div className="font-medium text-sm truncate">
+                                        {p.name}
+                                      </div>
+                                      <div className="text-[11px] text-slate-500 font-mono truncate">
+                                        {p.sku}
+                                        {p.manufacturerName
+                                          ? ` · ${p.manufacturerName}`
+                                          : ""}
+                                      </div>
+                                    </div>
+                                    <div className="text-xs tabular-nums shrink-0">
+                                      {p.price != null
+                                        ? fmtMoney(Number(p.price))
+                                        : "—"}
+                                    </div>
+                                  </div>
+                                </button>
+                              ))
+                            )}
+                          </div>
+                        )}
                       {it.productId && (
                         <div className="text-xs text-slate-500 mt-0.5">
                           Product #{it.productId}
@@ -1022,8 +1138,12 @@ export default function AgentNewOrder() {
 
         <ProductPickerDialog
           open={pickProductFor !== null}
+          initialProduct={pickProductFor?.preselect ?? null}
           onOpenChange={(v) => !v && setPickProductFor(null)}
-          onApply={(p, variant, fabric) => pickProductFor !== null && applyPickedProduct(pickProductFor, p, variant, fabric)}
+          onApply={(p, variant, fabric) =>
+            pickProductFor !== null &&
+            applyPickedProduct(pickProductFor.idx, p, variant, fabric)
+          }
         />
       </PageBody>
     </>
@@ -1075,9 +1195,10 @@ function CustomerPicker({ onPick }: { onPick: (c: AdminCustomer) => void }) {
 }
 
 function ProductPickerDialog({
-  open, onOpenChange, onApply,
+  open, initialProduct, onOpenChange, onApply,
 }: {
   open: boolean;
+  initialProduct?: AdminProduct | null;
   onOpenChange: (v: boolean) => void;
   onApply: (p: AdminProduct, variant: CatalogProductVariant | null, fabric: CatalogFabricOption | null) => void;
 }) {
@@ -1093,6 +1214,9 @@ function ProductPickerDialog({
   }, [searchInput]);
 
   // Reset selections whenever the dialog opens or product changes.
+  // When opening with an `initialProduct` (clicked from the inline
+  // typeahead), seed `picked` so the dialog jumps straight to the
+  // variant/fabric step instead of forcing the user to search again.
   useEffect(() => {
     if (!open) {
       setPicked(null);
@@ -1100,8 +1224,10 @@ function ProductPickerDialog({
       setFabricId("");
       setSearchInput("");
       setSearch("");
+    } else if (initialProduct) {
+      setPicked(initialProduct);
     }
-  }, [open]);
+  }, [open, initialProduct]);
   useEffect(() => {
     setVariantId("");
     setFabricId("");

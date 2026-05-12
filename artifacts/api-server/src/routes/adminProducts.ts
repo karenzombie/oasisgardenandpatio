@@ -232,11 +232,18 @@ router.get(
     const conditions = [];
     if (q && q.trim()) {
       const needle = `%${q.trim()}%`;
+      // Match across the most useful "find this product" fields:
+      // name (style/title), SKU/slug (item identifiers), description and
+      // shortDescription (free-text), and manufacturer name (vendor).
+      // Powers the inline typeahead on the staff "New order" page.
       conditions.push(
         or(
           ilike(productsTable.name, needle),
           ilike(productsTable.sku, needle),
           ilike(productsTable.slug, needle),
+          ilike(productsTable.description, needle),
+          ilike(productsTable.shortDescription, needle),
+          ilike(manufacturersTable.name, needle),
         ),
       );
     }
