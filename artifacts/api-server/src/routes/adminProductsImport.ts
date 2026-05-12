@@ -535,8 +535,11 @@ router.post(
                   reorderThreshold: r.reorderThreshold!,
                 })
                 .onConflictDoUpdate({
-                  target: inventoryTable.productId,
-                  targetWhere: sql`${inventoryTable.variantId} IS NULL`,
+                  target: [
+                    inventoryTable.productId,
+                    inventoryTable.variantId,
+                    inventoryTable.fabricId,
+                  ],
                   set: {
                     onHand: r.onHand!,
                     reorderThreshold: r.reorderThreshold!,
