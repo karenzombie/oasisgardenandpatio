@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ChevronRight, Printer } from "lucide-react";
 import {
   useAdminGetOrder,
   useAdminUpdateOrderStatus,
@@ -382,13 +382,47 @@ export default function OrderDetail() {
     <>
       <PageHeader title={`Order ${order.orderNumber}`} />
       <PageBody>
-        <Link
-          href="/admin/orders"
-          className="text-sm text-slate-600 hover:underline inline-flex items-center gap-1 mb-3"
-        >
-          <ArrowLeft className="size-3" />
-          Back to orders
-        </Link>
+        <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+          <Link
+            href="/admin/orders"
+            className="text-sm text-slate-600 hover:underline inline-flex items-center gap-1"
+          >
+            <ArrowLeft className="size-3" />
+            Back to orders
+          </Link>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                window.open(
+                  `/api/admin/orders/${order.id}/pdf?copy=customer`,
+                  "_blank",
+                  "noopener,noreferrer",
+                );
+              }}
+            >
+              <Printer className="size-4 mr-1.5" />
+              Print customer copy
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                window.open(
+                  `/api/admin/orders/${order.id}/pdf?copy=store`,
+                  "_blank",
+                  "noopener,noreferrer",
+                );
+              }}
+            >
+              <Printer className="size-4 mr-1.5" />
+              Print store copy
+            </Button>
+          </div>
+        </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Header / status / financials */}
           <div className="lg:col-span-2 space-y-4">

@@ -40,6 +40,12 @@ import { loadOrderShipments } from "./adminOrderShipments";
 import { loadOrderPayments } from "./adminOrderPayments";
 import { autoGenerateVendorOrders } from "../lib/autoGenerateVendorOrders";
 import { sendOrderStatusEmail } from "../lib/orderStatusEmail";
+import {
+  generateCustomerOrderPdf,
+  type PdfCustomerOrderItem,
+  type PdfCustomerOrderPayment,
+} from "../lib/customerOrderPdf";
+import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
 const DEFAULT_LIMIT = 50;
@@ -1380,6 +1386,220 @@ router.post(
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to create order";
       res.status(400).json({ error: msg });
+    }
+  },
+);
+
+// ────────────────────────────────────────────────────────────────────
+// Printable customer order receipt (Customer Copy / Store Copy).
+// Both copies are produced by the same renderer; the only difference is
+// the footer label. There's no print-count limit — agents may reprint
+// either copy at any time from the order detail screen, including after
+// recording new partial payments (the PDF re-reads the latest payments
+// each time).
+// ────────────────────────────────────────────────────────────────────
+const PdfQuery = z.object({
+  copy: z.enum(["customer", "store"]).optional(),
+});
+
+router.get(
+  "/admin/orders/:id/pdf",
+  requireAuth,
+  requireRole("admin", "agent"),
+  async (req: Request, res: Response): Promise<void> => {
+    const params = AdminGetOrderParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: "Invalid id" });
+      return;
+    }
+    const query = PdfQuery.safeParse(req.query);
+    if (!query.success) {
+      res.status(400).json({ error: "Invalid query" });
+      return;
+    }
+    const copy = query.data.copy ?? "customer";
+    const orderId = params.data.id;
+
+    // Pull base order + items + addresses + customer.
+    const [orderRow] = await db
+      .select({
+        order: ordersTable,
+        customer: customersTable,
+      })
+      .from(ordersTable)
+      .leftJoin(customersTable, eq(customersTable.id, ordersTable.customerId))
+      .where(eq(ordersTable.id, orderId))
+      .limit(1);
+    if (!orderRow) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+    // Agents are scoped to orders they created — same rule as the rest
+    // of the admin order endpoints.
+    if (
+      req.user?.role === "agent" &&
+      orderRow.order.createdByAgentId !== req.user.id
+    ) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+    const o = orderRow.order;
+
+    const [shippingAddr, billingAddr, items, vos, payments] = await Promise.all(
+      [
+        o.shippingAddressId
+          ? db
+              .select()
+              .from(addressesTable)
+              .where(eq(addressesTable.id, o.shippingAddressId))
+              .limit(1)
+              .then((r) => r[0] ?? null)
+          : Promise.resolve(null),
+        o.billingAddressId
+          ? db
+              .select()
+              .from(addressesTable)
+              .where(eq(addressesTable.id, o.billingAddressId))
+              .limit(1)
+              .then((r) => r[0] ?? null)
+          : Promise.resolve(null),
+        db
+          .select()
+          .from(orderItemsTable)
+          .where(eq(orderItemsTable.orderId, orderId))
+          .orderBy(asc(orderItemsTable.id)),
+        db
+          .select({ vo: vendorOrdersTable, mfg: manufacturersTable })
+          .from(vendorOrdersTable)
+          .leftJoin(
+            manufacturersTable,
+            eq(manufacturersTable.id, vendorOrdersTable.manufacturerId),
+          )
+          .where(eq(vendorOrdersTable.customerOrderId, orderId)),
+        loadOrderPayments(orderId),
+      ],
+    );
+
+    // Items can also be linked to a vendor (manufacturer) directly via
+    // products → manufacturer, even when no vendor PO has been generated
+    // yet. Fall back to that mapping so the customer copy always shows a
+    // vendor when one is known.
+    const productIds = Array.from(
+      new Set(
+        items
+          .map((it) => it.productId)
+          .filter((v): v is number => typeof v === "number"),
+      ),
+    );
+    const productMfg = productIds.length
+      ? await db
+          .select({
+            productId: productsTable.id,
+            manufacturerName: manufacturersTable.name,
+          })
+          .from(productsTable)
+          .leftJoin(
+            manufacturersTable,
+            eq(manufacturersTable.id, productsTable.manufacturerId),
+          )
+          .where(inArray(productsTable.id, productIds))
+      : [];
+    const productVendorById = new Map<number, string | null>();
+    for (const row of productMfg) {
+      productVendorById.set(row.productId, row.manufacturerName);
+    }
+
+    const vendorByVoId = new Map<number, string | null>();
+    for (const v of vos) {
+      vendorByVoId.set(v.vo.id, v.mfg?.name ?? null);
+    }
+
+    const pdfItems: PdfCustomerOrderItem[] = items.map((it) => ({
+      department: it.department,
+      description: it.description,
+      variantNameSnapshot: it.variantNameSnapshot,
+      fabricNameSnapshot: it.fabricNameSnapshot,
+      productSkuSnapshot: it.productSkuSnapshot,
+      variantSkuSnapshot: it.variantSkuSnapshot,
+      quantity: it.quantity,
+      unitPrice: Number(it.unitPrice),
+      amount: Number(it.amount),
+      vendorName:
+        (it.vendorOrderId != null
+          ? (vendorByVoId.get(it.vendorOrderId) ?? null)
+          : null) ??
+        (it.productId != null
+          ? (productVendorById.get(it.productId) ?? null)
+          : null),
+    }));
+
+    const pdfPayments: PdfCustomerOrderPayment[] = payments.map((p) => ({
+      receivedAt: p.receivedAt,
+      paymentMethod: p.paymentMethod,
+      status: p.status,
+      amount: p.amount,
+      cardLast4: p.cardLast4,
+      cardType: p.cardType,
+      transactionId: p.transactionId,
+    }));
+
+    // Customer info: prefer the linked customer record; fall back to
+    // walk-in fields captured on the order itself for in-store orders
+    // without a customer row.
+    const fullName = orderRow.customer
+      ? nameOf(orderRow.customer.firstName, orderRow.customer.lastName)
+      : (o.walkInName?.trim() || null);
+    const phone =
+      orderRow.customer?.phone ??
+      shippingAddr?.phone ??
+      billingAddr?.phone ??
+      o.walkInPhone ??
+      null;
+    const addrSrc = shippingAddr ?? billingAddr ?? null;
+
+    try {
+      const buf = await generateCustomerOrderPdf({
+        orderNumber: o.orderNumber,
+        placedAt: o.placedAt.toISOString(),
+        salespersonName: o.salespersonName,
+        customerName: fullName,
+        customerPhone: phone,
+        customerAddress: addrSrc
+          ? {
+              street1: addrSrc.street1,
+              street2: addrSrc.street2,
+              city: addrSrc.city,
+              state: addrSrc.state,
+              zip: addrSrc.zip,
+            }
+          : null,
+        items: pdfItems,
+        subtotal: Number(o.subtotal),
+        taxAmount: Number(o.taxAmount),
+        deliveryAmount: Number(o.deliveryAmount),
+        total: Number(o.total),
+        depositAmount: Number(o.depositAmount),
+        balanceDue: Number(o.balanceDue),
+        specialInstructions: o.specialInstructions,
+        payments: pdfPayments,
+        merchandiseReceived: o.merchandiseReceived,
+        copy,
+      });
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader(
+        "Content-Disposition",
+        `inline; filename="${o.orderNumber}-${copy}.pdf"`,
+      );
+      // Don't let the browser cache stale copies — payments / status can
+      // change between prints and the agent must always see the latest.
+      res.setHeader("Cache-Control", "no-store");
+      res.end(buf);
+    } catch (err) {
+      logger.error(
+        { err, orderId, copy },
+        "Customer order PDF render failed",
+      );
+      res.status(500).json({ error: "Failed to render PDF" });
     }
   },
 );
