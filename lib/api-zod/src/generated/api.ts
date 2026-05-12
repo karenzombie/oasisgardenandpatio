@@ -2091,6 +2091,47 @@ export const AdminDeleteProductImageParams = zod.object({
 });
 
 /**
+ * @summary Variants and fabric options for the staff order picker (no visibility filter)
+ */
+export const AdminGetProductPickerParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminGetProductPickerResponse = zod
+  .object({
+    productId: zod.number(),
+    variants: zod.array(
+      zod.object({
+        id: zod.number(),
+        sku: zod.string(),
+        name: zod.string(),
+        optionLabel: zod
+          .string()
+          .describe(
+            'Group label for this set of variants (e.g. \"Frame Finish\").',
+          ),
+        priceAdjustment: zod
+          .string()
+          .describe(
+            "Decimal added to the base price when this variant is selected.",
+          ),
+        displayOrder: zod.number(),
+      }),
+    ),
+    fabricOptions: zod.array(
+      zod.object({
+        id: zod.number(),
+        name: zod.string(),
+        itemNumber: zod.string(),
+        manufacturerName: zod.string(),
+        swatchImageUrl: zod.string().nullable(),
+        displayOrder: zod.number(),
+      }),
+    ),
+  })
+  .describe("Variants and fabric options for the staff order picker.");
+
+/**
  * @summary Set on-hand and reorder threshold for a product
  */
 export const AdminUpdateProductInventoryParams = zod.object({

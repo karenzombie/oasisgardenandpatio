@@ -1785,6 +1785,30 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /admin/products/{id}/picker:
+    get:
+      operationId: adminGetProductPicker
+      tags: [admin-products]
+      summary: Variants and fabric options for the staff order picker (no visibility filter)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Picker detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminProductPickerDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /admin/products/{id}/inventory:
     put:
       operationId: adminUpdateProductInventory
@@ -5705,6 +5729,24 @@ components:
         - manufacturerName
         - swatchImageUrl
         - displayOrder
+    AdminProductPickerDetail:
+      type: object
+      description: Variants and fabric options for the staff order picker.
+      properties:
+        productId:
+          type: integer
+        variants:
+          type: array
+          items:
+            $ref: "#/components/schemas/CatalogProductVariant"
+        fabricOptions:
+          type: array
+          items:
+            $ref: "#/components/schemas/CatalogFabricOption"
+      required:
+        - productId
+        - variants
+        - fabricOptions
     CatalogFabricsResponse:
       type: object
       properties:

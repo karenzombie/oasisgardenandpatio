@@ -1169,6 +1169,15 @@ export interface CatalogFabricOption {
   displayOrder: number;
 }
 
+/**
+ * Variants and fabric options for the staff order picker.
+ */
+export interface AdminProductPickerDetail {
+  productId: number;
+  variants: CatalogProductVariant[];
+  fabricOptions: CatalogFabricOption[];
+}
+
 export interface CatalogFabricsResponse {
   fabrics: CatalogFabricOption[];
 }

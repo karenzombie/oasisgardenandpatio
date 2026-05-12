@@ -93,6 +93,7 @@ export * from "./adminProductFabricPool";
 export * from "./adminProductFabricsConfig";
 export * from "./adminProductImage";
 export * from "./adminProductInventory";
+export * from "./adminProductPickerDetail";
 export * from "./adminProductPricingMode";
 export * from "./adminProductsPage";
 export * from "./adminRecoveryRequestRow";

@@ -69,6 +69,7 @@ import type {
   AdminProductFabricsConfig,
   AdminProductImage,
   AdminProductInventory,
+  AdminProductPickerDetail,
   AdminProductsPage,
   AdminRecoveryRequestRow,
   AdminReportsSalesByAgent,
@@ -5902,6 +5903,97 @@ export const useAdminDeleteProductImage = <
 > => {
   return useMutation(getAdminDeleteProductImageMutationOptions(options));
 };
+
+/**
+ * @summary Variants and fabric options for the staff order picker (no visibility filter)
+ */
+export const getAdminGetProductPickerUrl = (id: number) => {
+  return `/api/admin/products/${id}/picker`;
+};
+
+export const adminGetProductPicker = async (
+  id: number,
+  options?: RequestInit,
+): Promise<AdminProductPickerDetail> => {
+  return customFetch<AdminProductPickerDetail>(
+    getAdminGetProductPickerUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getAdminGetProductPickerQueryKey = (id: number) => {
+  return [`/api/admin/products/${id}/picker`] as const;
+};
+
+export const getAdminGetProductPickerQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminGetProductPicker>>,
+  TError = ErrorType<Error>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminGetProductPicker>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getAdminGetProductPickerQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminGetProductPicker>>
+  > = ({ signal }) => adminGetProductPicker(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetProductPicker>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminGetProductPickerQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminGetProductPicker>>
+>;
+export type AdminGetProductPickerQueryError = ErrorType<Error>;
+
+/**
+ * @summary Variants and fabric options for the staff order picker (no visibility filter)
+ */
+
+export function useAdminGetProductPicker<
+  TData = Awaited<ReturnType<typeof adminGetProductPicker>>,
+  TError = ErrorType<Error>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminGetProductPicker>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminGetProductPickerQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Set on-hand and reorder threshold for a product

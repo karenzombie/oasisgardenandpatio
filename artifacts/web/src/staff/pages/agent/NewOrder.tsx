@@ -9,10 +9,10 @@ import {
   useAdminCreateOrder,
   useAdminCreateCustomer,
   useAdminQuoteOrderPricing,
-  useGetCatalogProductBySlug,
+  useAdminGetProductPicker,
   getAdminGetCustomerQueryKey,
   getAdminListProductsQueryKey,
-  getGetCatalogProductBySlugQueryKey,
+  getAdminGetProductPickerQueryKey,
   type AdminProduct,
   type AdminCustomer,
   type CatalogProductVariant,
@@ -1295,11 +1295,11 @@ function ProductPickerDialog({
     ...(search ? { q: search } : {}),
   });
 
-  const detailSlug = picked?.slug ?? "";
-  const detail = useGetCatalogProductBySlug(detailSlug, {
+  const pickedId = picked?.id ?? 0;
+  const detail = useAdminGetProductPicker(pickedId, {
     query: {
-      queryKey: getGetCatalogProductBySlugQueryKey(detailSlug),
-      enabled: !!picked?.slug,
+      queryKey: getAdminGetProductPickerQueryKey(pickedId),
+      enabled: !!picked,
     },
   });
   const variants = detail.data?.variants ?? [];

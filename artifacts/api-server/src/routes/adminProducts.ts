@@ -4,6 +4,9 @@ import {
   db,
   productsTable,
   productImagesTable,
+  productVariantsTable,
+  productFabricOptionsTable,
+  fabricsTable,
   inventoryTable,
   manufacturersTable,
   categoriesTable,
@@ -26,6 +29,7 @@ import {
   AdminDeleteProductImageParams,
   AdminUpdateProductInventoryParams,
   AdminUpdateProductInventoryBody,
+  AdminGetProductPickerParams,
 } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import { toPublicImageUrl } from "../lib/imageUrl";
@@ -771,6 +775,94 @@ router.delete(
       notes: `deleted image #${img.id}`,
     });
     res.status(204).end();
+  },
+);
+
+router.get(
+  "/admin/products/:id/picker",
+  requireAuth,
+  requireRole("admin", "agent"),
+  async (req: Request, res: Response): Promise<void> => {
+    const params = AdminGetProductPickerParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: "Invalid product id" });
+      return;
+    }
+    const [product] = await db
+      .select({ id: productsTable.id })
+      .from(productsTable)
+      .where(eq(productsTable.id, params.data.id))
+      .limit(1);
+    if (!product) {
+      res.status(404).json({ error: "Product not found" });
+      return;
+    }
+    const [variantRows, fabricRows] = await Promise.all([
+      db
+        .select({
+          id: productVariantsTable.id,
+          sku: productVariantsTable.variantSku,
+          name: productVariantsTable.variantName,
+          optionLabel: productVariantsTable.optionLabel,
+          priceAdjustment: productVariantsTable.priceAdjustment,
+          displayOrder: productVariantsTable.displayOrder,
+        })
+        .from(productVariantsTable)
+        .where(
+          and(
+            eq(productVariantsTable.productId, product.id),
+            eq(productVariantsTable.isActive, true),
+          ),
+        )
+        .orderBy(
+          asc(productVariantsTable.displayOrder),
+          asc(productVariantsTable.variantName),
+        ),
+      db
+        .select({
+          id: fabricsTable.id,
+          name: fabricsTable.name,
+          itemNumber: fabricsTable.itemNumber,
+          manufacturerName: manufacturersTable.name,
+          swatchImageUrl: fabricsTable.swatchImageUrl,
+          displayOrder: productFabricOptionsTable.displayOrder,
+        })
+        .from(productFabricOptionsTable)
+        .innerJoin(
+          fabricsTable,
+          eq(fabricsTable.id, productFabricOptionsTable.fabricId),
+        )
+        .innerJoin(
+          manufacturersTable,
+          eq(manufacturersTable.id, fabricsTable.manufacturerId),
+        )
+        .where(
+          and(
+            eq(productFabricOptionsTable.productId, product.id),
+            eq(fabricsTable.isActive, true),
+          ),
+        )
+        .orderBy(
+          asc(productFabricOptionsTable.displayOrder),
+          asc(manufacturersTable.name),
+          asc(fabricsTable.name),
+        ),
+    ]);
+    res.json({
+      productId: product.id,
+      variants: variantRows.map((v) => ({
+        ...v,
+        priceAdjustment: String(v.priceAdjustment ?? "0"),
+      })),
+      fabricOptions: fabricRows.map((f) => ({
+        id: f.id,
+        name: f.name,
+        itemNumber: f.itemNumber,
+        manufacturerName: f.manufacturerName,
+        swatchImageUrl: toPublicImageUrl(f.swatchImageUrl),
+        displayOrder: f.displayOrder,
+      })),
+    });
   },
 );
 
