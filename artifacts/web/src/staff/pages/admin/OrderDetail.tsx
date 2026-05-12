@@ -17,6 +17,7 @@ import {
   type AdminOrderAddress,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -113,6 +114,9 @@ export default function OrderDetail() {
   });
   const order: AdminOrderDetail | undefined = detail.data;
 
+  const [printCopies, setPrintCopies] = useState<Set<"customer" | "store" | "delivery">>(
+    new Set(["customer"]),
+  );
   const [pendingStatus, setPendingStatus] = useState<string>("");
   const [statusNote, setStatusNote] = useState("");
   const [notesDraft, setNotesDraft] = useState("");
@@ -390,51 +394,48 @@ export default function OrderDetail() {
             <ArrowLeft className="size-3" />
             Back to orders
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3 flex-wrap">
+            {(
+              [
+                { id: "customer", label: "Customer copy" },
+                { id: "store", label: "Store copy" },
+                { id: "delivery", label: "Delivery copy" },
+              ] as const
+            ).map(({ id, label }) => (
+              <label
+                key={id}
+                className="flex items-center gap-1.5 cursor-pointer select-none text-sm text-slate-700"
+              >
+                <Checkbox
+                  checked={printCopies.has(id)}
+                  onCheckedChange={(checked) => {
+                    setPrintCopies((prev) => {
+                      const next = new Set(prev);
+                      checked ? next.add(id) : next.delete(id);
+                      return next;
+                    });
+                  }}
+                />
+                {label}
+              </label>
+            ))}
             <Button
               type="button"
               size="sm"
-              className="bg-[#F4A982] hover:bg-[#EE9468] text-black border-0 shadow-sm"
+              disabled={printCopies.size === 0}
+              className="bg-[#F4A982] hover:bg-[#EE9468] text-black border-0 shadow-sm disabled:opacity-50"
               onClick={() => {
-                window.open(
-                  `/api/admin/orders/${order.id}/pdf?copy=customer`,
-                  "_blank",
-                  "noopener,noreferrer",
-                );
+                for (const copy of printCopies) {
+                  window.open(
+                    `/api/admin/orders/${order.id}/pdf?copy=${copy}`,
+                    "_blank",
+                    "noopener,noreferrer",
+                  );
+                }
               }}
             >
               <Printer className="size-4 mr-1.5" />
-              Print customer copy
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              className="bg-[#F4A982] hover:bg-[#EE9468] text-black border-0 shadow-sm"
-              onClick={() => {
-                window.open(
-                  `/api/admin/orders/${order.id}/pdf?copy=store`,
-                  "_blank",
-                  "noopener,noreferrer",
-                );
-              }}
-            >
-              <Printer className="size-4 mr-1.5" />
-              Print store copy
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              className="bg-[#F4A982] hover:bg-[#EE9468] text-black border-0 shadow-sm"
-              onClick={() => {
-                window.open(
-                  `/api/admin/orders/${order.id}/pdf?copy=delivery`,
-                  "_blank",
-                  "noopener,noreferrer",
-                );
-              }}
-            >
-              <Printer className="size-4 mr-1.5" />
-              Print delivery copy
+              Print
             </Button>
           </div>
         </div>
