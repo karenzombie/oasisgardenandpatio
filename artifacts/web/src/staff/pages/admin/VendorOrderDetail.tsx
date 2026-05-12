@@ -329,7 +329,7 @@ export default function VendorOrderDetail() {
     <>
       <PageHeader
         title={vo.vendorOrderNumber}
-        subtitle={`${vo.status.replace(/_/g, " ")} · ${vo.manufacturerName ?? "No manufacturer"}`}
+        subtitle={`${vo.status.replace(/_/g, " ")} · ${vo.manufacturerName ?? "No vendor"}`}
       />
       <PageBody>
         <div className="mb-4">
@@ -702,7 +702,7 @@ export default function VendorOrderDetail() {
                 />
                 <p className="text-xs text-slate-500 mt-1">
                   An email with the purchase order details will be sent to this
-                  address. If left blank, the manufacturer's configured order
+                  address. If left blank, the vendor's configured order
                   email will be used (if set).
                 </p>
               </div>
@@ -914,7 +914,7 @@ export default function VendorOrderDetail() {
                       placeholder="orders@vendor.com"
                     />
                     <p className="text-xs text-slate-500 mt-1">
-                      Defaults to the manufacturer's configured order email. The
+                      Defaults to the vendor's configured order email. The
                       revised PO PDF will be attached.
                     </p>
                   </div>

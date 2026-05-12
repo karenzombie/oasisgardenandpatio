@@ -298,10 +298,10 @@ export default function Manufacturers() {
     try {
       if (editing) {
         await updateMut.mutateAsync({ id: editing.id, data: payload });
-        toast.toast({ title: "Manufacturer updated" });
+        toast.toast({ title: "Vendor updated" });
       } else {
         await createMut.mutateAsync({ data: payload });
-        toast.toast({ title: "Manufacturer created" });
+        toast.toast({ title: "Vendor created" });
       }
       await qc.invalidateQueries({
         queryKey: getAdminListManufacturersQueryKey(),
@@ -310,9 +310,9 @@ export default function Manufacturers() {
     } catch (err: unknown) {
       const e = err as { response?: { status?: number }; message?: string };
       if (e?.response?.status === 409) {
-        setError("A manufacturer with that slug already exists.");
+        setError("A vendor with that slug already exists.");
       } else {
-        setError(e?.message ?? "Could not save manufacturer.");
+        setError(e?.message ?? "Could not save vendor.");
       }
     }
   }
@@ -327,7 +327,7 @@ export default function Manufacturers() {
         queryKey: getAdminListManufacturersQueryKey(),
       });
       toast.toast({
-        title: isActive ? "Manufacturer activated" : "Manufacturer deactivated",
+        title: isActive ? "Vendor activated" : "Vendor deactivated",
       });
     } catch (err) {
       toast.toast({
@@ -341,7 +341,7 @@ export default function Manufacturers() {
   return (
     <>
       <PageHeader
-        title="Manufacturers"
+        title="Vendors"
         subtitle="Brands you carry. Logos appear on storefront category pages."
         action={
           <Button
@@ -349,7 +349,7 @@ export default function Manufacturers() {
             className="bg-[#1A3C5E] hover:bg-[#15314c] text-white"
           >
             <Plus className="size-4" />
-            New manufacturer
+            New vendor
           </Button>
         }
       />
@@ -380,7 +380,7 @@ export default function Manufacturers() {
             </div>
           ) : list.isError ? (
             <div className="p-12 text-center text-sm text-red-600">
-              Could not load manufacturers.{" "}
+              Could not load vendors.{" "}
               <button
                 className="underline"
                 onClick={() => list.refetch()}
@@ -392,7 +392,7 @@ export default function Manufacturers() {
           ) : filtered.length === 0 ? (
             <div className="p-12 text-center text-sm text-slate-500">
               {rows.length === 0
-                ? "No manufacturers yet. Click New manufacturer to add your first."
+                ? "No vendors yet. Click New vendor to add your first."
                 : "No matches for your search."}
             </div>
           ) : (
@@ -508,7 +508,7 @@ export default function Manufacturers() {
           <form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1">
             <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
               <DialogTitle>
-                {editing ? "Edit manufacturer" : "New manufacturer"}
+                {editing ? "Edit vendor" : "New vendor"}
               </DialogTitle>
               <DialogDescription>
                 Brands you carry. The slug is used in URLs and CSV imports.
@@ -669,7 +669,7 @@ export default function Manufacturers() {
                     Active
                   </Label>
                   <p className="text-xs text-slate-500">
-                    Inactive manufacturers are hidden from the storefront.
+                    Inactive vendors are hidden from the storefront.
                   </p>
                 </div>
                 <Switch
@@ -872,7 +872,7 @@ export default function Manufacturers() {
                   ? "Saving…"
                   : editing
                     ? "Save changes"
-                    : "Create manufacturer"}
+                    : "Create vendor"}
               </Button>
             </DialogFooter>
           </form>
@@ -886,10 +886,10 @@ export default function Manufacturers() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Deactivate manufacturer?</AlertDialogTitle>
+            <AlertDialogTitle>Deactivate vendor?</AlertDialogTitle>
             <AlertDialogDescription>
               {confirmDeactivate?.name} will be hidden from the storefront.
-              Existing products keep their manufacturer link and you can
+              Existing products keep their vendor link and you can
               reactivate at any time.
             </AlertDialogDescription>
           </AlertDialogHeader>

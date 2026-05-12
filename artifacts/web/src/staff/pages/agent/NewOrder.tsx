@@ -446,7 +446,7 @@ export default function AgentNewOrder() {
     if (isRestockOrder && cleanItems.some((it) => it.productId == null)) {
       toast({
         title: "Pick a product for every restock line",
-        description: "Inventory restock lines must reference a product so the system can group them by manufacturer.",
+        description: "Inventory restock lines must reference a product so the system can group them by vendor.",
         variant: "destructive",
       });
       return;
@@ -520,7 +520,7 @@ export default function AgentNewOrder() {
           description:
             voCount > 0
               ? `${voCount} vendor order${voCount === 1 ? "" : "s"} generated.`
-              : "No vendor orders were generated — check that each product has a manufacturer.",
+              : "No vendor orders were generated — check that each product has a vendor.",
         });
       } else {
         toast({ title: `Order ${order.orderNumber} created` });
@@ -547,7 +547,7 @@ export default function AgentNewOrder() {
         title="New Order"
         subtitle={
           isRestockOrder
-            ? "Create an internal inventory restock — items will be grouped into vendor orders by manufacturer."
+            ? "Create an internal inventory restock — items will be grouped into vendor orders by vendor."
             : "Build an in-store order for a customer."
         }
       />
@@ -639,7 +639,7 @@ export default function AgentNewOrder() {
                   <label className="inline-flex items-center gap-2 text-sm">
                     <Checkbox checked={skipVendorOrder}
                       onCheckedChange={(v) => setSkipVendorOrder(!!v)} />
-                    Skip vendor order (in-stock sale — do not create a manufacturer PO).
+                    Skip vendor order (in-stock sale — do not create a vendor PO).
                   </label>
                   <div className="grid grid-cols-2 gap-3 pt-2 border-t">
                     <div>
@@ -661,7 +661,7 @@ export default function AgentNewOrder() {
                   </div>
                   <div className="text-xs text-slate-500">
                     Add as many products as you need. On submit, the system groups them
-                    by manufacturer and creates one vendor order per manufacturer
+                    by vendor and creates one vendor order for each
                     automatically. Tax, delivery, and deposits are skipped.
                   </div>
                 </TabsContent>
@@ -681,8 +681,8 @@ export default function AgentNewOrder() {
                       Ship to Oasis store
                     </div>
                     <div className="text-xs text-slate-500">
-                      Manufacturer ships the items to the Oasis store. Uncheck
-                      to have the manufacturer drop-ship the items direct to
+                      Vendor ships the items to the Oasis store. Uncheck
+                      to have the vendor drop-ship the items direct to
                       the customer's address (a customer + shipping address are
                       required).
                     </div>
@@ -704,7 +704,7 @@ export default function AgentNewOrder() {
                   <span className="ml-1 text-red-600" title="Required">*</span>
                 </div>
                 <div className="text-xs text-slate-500">
-                  Where the manufacturer should drop-ship this order. Used on
+                  Where the vendor should drop-ship this order. Used on
                   the printable receipt and the vendor PO Ship-To block.
                 </div>
 
@@ -1046,7 +1046,7 @@ export default function AgentNewOrder() {
                 <div className="text-sm text-slate-600">
                   This is an internal inventory order. No customer, pricing, tax,
                   delivery, or deposit will be recorded. Each line must reference
-                  a product so the system can group lines by manufacturer into
+                  a product so the system can group lines by vendor into
                   vendor orders.
                 </div>
                 <div className="text-sm border-t pt-3 space-y-1">

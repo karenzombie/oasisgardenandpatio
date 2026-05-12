@@ -38,7 +38,7 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
           </h2>
           <ol className="text-sm text-slate-700 space-y-2 list-decimal pl-5">
             <li>
-              Add manufacturers in <strong>Catalog → Manufacturers</strong>.
+              Add vendors in <strong>Catalog → Vendors</strong>.
             </li>
             <li>
               Build your category tree in <strong>Catalog → Categories</strong>.

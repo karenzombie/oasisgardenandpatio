@@ -248,10 +248,10 @@ function LevelsTab() {
             }}
           >
             <SelectTrigger>
-              <SelectValue placeholder="All manufacturers" />
+              <SelectValue placeholder="All vendors" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ANY}>All manufacturers</SelectItem>
+              <SelectItem value={ANY}>All vendors</SelectItem>
               {(mfgList.data ?? []).map((m) => (
                 <SelectItem key={m.id} value={String(m.id)}>
                   {m.name}
@@ -302,7 +302,7 @@ function LevelsTab() {
                 <SortableHeader sortKey="sku" state={sort} onSort={handleSort} className="px-4 py-3 font-semibold">SKU</SortableHeader>
                 <th className="px-4 py-3 font-semibold">Variant</th>
                 <th className="px-4 py-3 font-semibold">Fabric</th>
-                <SortableHeader sortKey="manufacturer" state={sort} onSort={handleSort} className="px-4 py-3 font-semibold">Manufacturer</SortableHeader>
+                <SortableHeader sortKey="manufacturer" state={sort} onSort={handleSort} className="px-4 py-3 font-semibold">Vendor</SortableHeader>
                 <SortableHeader sortKey="category" state={sort} onSort={handleSort} className="px-4 py-3 font-semibold">Category</SortableHeader>
                 <SortableHeader sortKey="onHand" state={sort} onSort={handleSort} align="right" className="px-4 py-3 font-semibold">On hand</SortableHeader>
                 <SortableHeader sortKey="reorderThreshold" state={sort} onSort={handleSort} align="right" className="px-4 py-3 font-semibold">Reorder at</SortableHeader>

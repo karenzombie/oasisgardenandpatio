@@ -242,7 +242,7 @@ export default function Sets() {
           <div className="relative flex-1 min-w-[240px] max-w-md">
             <Search className="absolute left-2.5 top-2.5 size-4 text-slate-400" />
             <Input
-              placeholder="Search by name, slug, SKU, manufacturer…"
+              placeholder="Search by name, slug, SKU, vendor…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-8"
@@ -278,7 +278,7 @@ export default function Sets() {
                 <tr>
                   <SortableHeader sortKey="name" state={sort} onSort={handleSort} className="font-medium px-4 py-2.5">Name</SortableHeader>
                   <SortableHeader sortKey="sku" state={sort} onSort={handleSort} className="font-medium px-4 py-2.5">SKU</SortableHeader>
-                  <SortableHeader sortKey="manufacturerName" state={sort} onSort={handleSort} className="font-medium px-4 py-2.5">Manufacturer</SortableHeader>
+                  <SortableHeader sortKey="manufacturerName" state={sort} onSort={handleSort} className="font-medium px-4 py-2.5">Vendor</SortableHeader>
                   <SortableHeader sortKey="itemCount" state={sort} onSort={handleSort} align="right" className="font-medium px-4 py-2.5">Items</SortableHeader>
                   <SortableHeader sortKey="setPrice" state={sort} onSort={handleSort} align="right" className="font-medium px-4 py-2.5">Price</SortableHeader>
                   <th className="text-center font-medium px-4 py-2.5">
@@ -424,7 +424,7 @@ export default function Sets() {
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="manufacturerId">Manufacturer</Label>
+              <Label htmlFor="manufacturerId">Vendor</Label>
               <Select
                 value={form.manufacturerId}
                 onValueChange={(v) =>
@@ -432,7 +432,7 @@ export default function Sets() {
                 }
               >
                 <SelectTrigger id="manufacturerId">
-                  <SelectValue placeholder="Select manufacturer" />
+                  <SelectValue placeholder="Select vendor" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={NO_MANUFACTURER}>

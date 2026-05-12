@@ -129,7 +129,7 @@ export default function Reports() {
     <>
       <PageHeader
         title="Reports"
-        subtitle="Sales totals across a date range. Excludes canceled and refunded orders unless toggled. Gross totals include tax and delivery; the per-manufacturer and per-category tables show product revenue only (net of line discounts)."
+        subtitle="Sales totals across a date range. Excludes canceled and refunded orders unless toggled. Gross totals include tax and delivery; the per-vendor and per-category tables show product revenue only (net of line discounts)."
       />
       <PageBody>
         <Card>
@@ -228,12 +228,12 @@ export default function Reports() {
         />
 
         <ReportTable
-          title="Sales by manufacturer"
-          headers={["Manufacturer", "Orders", "Items", "Product revenue"]}
+          title="Sales by vendor"
+          headers={["Vendor", "Orders", "Items", "Product revenue"]}
           isLoading={byManufacturer.isLoading}
           isError={byManufacturer.isError}
           rows={(manufacturerData?.rows ?? []).map((r) => [
-            r.manufacturerName ?? "(no manufacturer)",
+            r.manufacturerName ?? "(no vendor)",
             fmtInt(r.orderCount),
             fmtInt(r.itemCount),
             fmtMoney(r.revenue),
@@ -243,7 +243,7 @@ export default function Reports() {
             downloadCsv(
               "sales-by-manufacturer",
               params,
-              "sales-by-manufacturer.csv",
+              "sales-by-vendor.csv",
             )
           }
         />

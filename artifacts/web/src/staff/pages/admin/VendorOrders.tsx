@@ -62,7 +62,7 @@ export default function VendorOrders() {
     <>
       <PageHeader
         title="Vendor Orders"
-        subtitle="Generate and track purchase orders sent to manufacturers."
+        subtitle="Generate and track purchase orders sent to vendors."
       />
       <PageBody>
         <Tabs
@@ -127,7 +127,7 @@ export default function VendorOrders() {
                   <tr>
                     <th className="px-3 py-2 font-medium">VO #</th>
                     <th className="px-3 py-2 font-medium">Status</th>
-                    <th className="px-3 py-2 font-medium">Manufacturer</th>
+                    <th className="px-3 py-2 font-medium">Vendor</th>
                     <th className="px-3 py-2 font-medium">Customer order</th>
                     <th className="px-3 py-2 font-medium">Items</th>
                     <th className="px-3 py-2 font-medium">Vendor ETA</th>

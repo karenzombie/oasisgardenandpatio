@@ -292,7 +292,7 @@ export function BulkUpdateProductsDialog({
                 ]}
               />
               <FieldSelect
-                label="Brand / manufacturer"
+                label="Brand / vendor"
                 value={manufacturerId}
                 onChange={setManufacturerId}
                 options={[

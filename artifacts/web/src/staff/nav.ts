@@ -57,7 +57,7 @@ export const ADMIN_NAV: NavGroup[] = [
       { label: "Categories", path: "/admin/categories", icon: Tags },
       { label: "Sets", path: "/admin/sets", icon: Layers },
       { label: "Inventory", path: "/admin/inventory", icon: Boxes },
-      { label: "Manufacturers", path: "/admin/manufacturers", icon: Building2 },
+      { label: "Vendors", path: "/admin/manufacturers", icon: Building2 },
       { label: "Carriers", path: "/admin/carriers", icon: Truck },
     ],
   },

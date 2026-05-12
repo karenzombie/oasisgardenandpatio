@@ -58,7 +58,7 @@ const OPTIONAL_FIELDS: ProductField[] = [
 const FIELD_LABELS: Record<ProductField, string> = {
   name: "Name *",
   sku: "SKU *",
-  manufacturer: "Manufacturer (by name) *",
+  manufacturer: "Vendor (by name) *",
   category: "Category (by name) *",
   price: "Price *",
   slug: "Slug",
@@ -335,7 +335,7 @@ export default function ProductsImport() {
               </h2>
               <p className="text-sm text-slate-600 mb-4">
                 Required fields are marked with <span className="text-red-600">*</span>.
-                Manufacturer and category are matched by name (case-insensitive) and must
+                Vendor and category are matched by name (case-insensitive) and must
                 already exist.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 mb-5">

@@ -794,7 +794,7 @@ export default function ProductEdit() {
                 </p>
               </div>
               <div>
-                <Label htmlFor="p-mfg">Manufacturer</Label>
+                <Label htmlFor="p-mfg">Vendor</Label>
                 <Select
                   value={form.manufacturerId}
                   onValueChange={(v) => setForm((f) => ({ ...f, manufacturerId: v }))}
@@ -942,7 +942,7 @@ export default function ProductEdit() {
                   placeholder="0.00"
                   inputMode="decimal"
                 />
-                <p className="text-xs text-slate-500 mt-1">Manufacturer list.</p>
+                <p className="text-xs text-slate-500 mt-1">Vendor list.</p>
               </div>
               <div>
                 <Label htmlFor="p-markup">Markup (%)</Label>
@@ -1221,7 +1221,7 @@ export default function ProductEdit() {
               </h3>
               <p className="text-xs text-slate-500 mb-4">
                 Choose which fabrics customers can order this product in. Turn
-                on a manufacturer pool to automatically include every current
+                on a vendor pool to automatically include every current
                 and future fabric from that brand, and/or hand-pick extra
                 individual fabrics.
               </p>

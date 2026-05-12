@@ -76,9 +76,9 @@ export default function AgentInventory() {
               </SelectContent>
             </Select>
             <Select value={manufacturerId} onValueChange={(v) => { setManufacturerId(v); setPage(1); }}>
-              <SelectTrigger><SelectValue placeholder="All manufacturers" /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder="All vendors" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value={ANY}>All manufacturers</SelectItem>
+                <SelectItem value={ANY}>All vendors</SelectItem>
                 {(mfgList.data ?? []).map((m) => (<SelectItem key={m.id} value={String(m.id)}>{m.name}</SelectItem>))}
               </SelectContent>
             </Select>
@@ -105,7 +105,7 @@ export default function AgentInventory() {
                 <tr>
                   <th className="px-4 py-3 font-semibold">Product</th>
                   <th className="px-4 py-3 font-semibold">SKU</th>
-                  <th className="px-4 py-3 font-semibold">Manufacturer</th>
+                  <th className="px-4 py-3 font-semibold">Vendor</th>
                   <th className="px-4 py-3 font-semibold">Category</th>
                   <th className="px-4 py-3 font-semibold text-right">On hand</th>
                   <th className="px-4 py-3 font-semibold text-right">Reorder at</th>

@@ -453,7 +453,7 @@ export default function SetEdit() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="manufacturerId">Manufacturer</Label>
+              <Label htmlFor="manufacturerId">Vendor</Label>
               <Select
                 value={meta.manufacturerId}
                 onValueChange={(v) =>
@@ -461,7 +461,7 @@ export default function SetEdit() {
                 }
               >
                 <SelectTrigger id="manufacturerId">
-                  <SelectValue placeholder="Select manufacturer" />
+                  <SelectValue placeholder="Select vendor" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={NO_MANUFACTURER}>— None —</SelectItem>
@@ -560,7 +560,7 @@ export default function SetEdit() {
                       setProductSearch(e.target.value);
                       setPickerProductId("");
                     }}
-                    placeholder="By name, SKU, or manufacturer"
+                    placeholder="By name, SKU, or vendor"
                     className="pl-8"
                   />
                 </div>

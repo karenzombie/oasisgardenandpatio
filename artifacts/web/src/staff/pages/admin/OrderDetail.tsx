@@ -177,7 +177,7 @@ export default function OrderDetail() {
               title: `Generated ${created} vendor order${created === 1 ? "" : "s"}`,
               description:
                 skipped > 0
-                  ? `${skipped} item${skipped === 1 ? "" : "s"} skipped (no manufacturer set on the product).`
+                  ? `${skipped} item${skipped === 1 ? "" : "s"} skipped (no vendor set on the product).`
                   : undefined,
             });
           }
@@ -872,7 +872,7 @@ export default function OrderDetail() {
                 <div className="text-sm text-slate-500">
                   No vendor orders yet. Click{" "}
                   <span className="font-medium">Generate vendor orders</span> to
-                  group unassigned items by manufacturer.
+                  group unassigned items by vendor.
                 </div>
               ) : (
                 <ul className="space-y-2 text-sm">
