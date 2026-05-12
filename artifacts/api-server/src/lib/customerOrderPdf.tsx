@@ -402,7 +402,13 @@ function CustomerInfo({ args }: { args: PdfCustomerOrderArgs }) {
   );
 }
 
-function ItemsTable({ items }: { items: PdfCustomerOrderItem[] }) {
+function ItemsTable({
+  items,
+  showVendor,
+}: {
+  items: PdfCustomerOrderItem[];
+  showVendor: boolean;
+}) {
   return (
     <View style={s.itemsTable}>
       <View style={s.thRow} fixed>
@@ -419,7 +425,7 @@ function ItemsTable({ items }: { items: PdfCustomerOrderItem[] }) {
         const subBits: string[] = [];
         if (sku) subBits.push(`SKU ${sku}`);
         if (it.fabricNameSnapshot) subBits.push(`Fabric: ${it.fabricNameSnapshot}`);
-        if (it.vendorName) subBits.push(`Vendor: ${it.vendorName}`);
+        if (showVendor && it.vendorName) subBits.push(`Vendor: ${it.vendorName}`);
         return (
           <View
             style={s.tdRow}
@@ -578,7 +584,7 @@ function CustomerOrderDocument(args: PdfCustomerOrderArgs) {
         </View>
 
         <CustomerInfo args={args} />
-        <ItemsTable items={args.items} />
+        <ItemsTable items={args.items} showVendor={args.copy !== "customer"} />
 
         {/* Bottom row may grow when special instructions are long, so let
             react-pdf split it across pages instead of throwing a layout
