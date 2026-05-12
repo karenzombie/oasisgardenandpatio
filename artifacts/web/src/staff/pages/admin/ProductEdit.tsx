@@ -86,6 +86,7 @@ interface FormState {
   categoryId: string;
   materialId: string;
   price: string;
+  frameOnlyPrice: string;
   cost: string;
   msrp: string;
   markupPercent: string;
@@ -116,6 +117,7 @@ function emptyForm(): FormState {
     categoryId: "none",
     materialId: "none",
     price: "",
+    frameOnlyPrice: "",
     cost: "",
     msrp: "",
     markupPercent: "",
@@ -264,6 +266,7 @@ export default function ProductEdit() {
         categoryId: d.categoryId != null ? String(d.categoryId) : "none",
         materialId: d.materialId != null ? String(d.materialId) : "none",
         price: d.price ?? "",
+        frameOnlyPrice: d.frameOnlyPrice ?? "",
         cost: d.cost ?? "",
         msrp: d.msrp ?? "",
         markupPercent: d.markupPercent ?? "",
@@ -350,6 +353,8 @@ export default function ProductEdit() {
     };
     const price = decimalOrNull(form.price, "Price");
     if (price === "INVALID") return null;
+    const frameOnlyPrice = decimalOrNull(form.frameOnlyPrice, "Frame only price");
+    if (frameOnlyPrice === "INVALID") return null;
     const cost = decimalOrNull(form.cost, "Cost");
     if (cost === "INVALID") return null;
     const msrp = decimalOrNull(form.msrp, "MSRP");
@@ -369,6 +374,7 @@ export default function ProductEdit() {
       categoryId: form.categoryId === "none" ? null : Number(form.categoryId),
       materialId: form.materialId === "none" ? null : Number(form.materialId),
       price,
+      frameOnlyPrice,
       cost,
       msrp,
       markupPercent,
@@ -921,6 +927,22 @@ export default function ProductEdit() {
                   placeholder="0.00"
                   inputMode="decimal"
                 />
+                <p className="text-xs text-slate-500 mt-1">Frame + fabric.</p>
+              </div>
+              <div>
+                <Label htmlFor="p-frame-only-price">Frame only price ($)</Label>
+                <Input
+                  id="p-frame-only-price"
+                  value={form.frameOnlyPrice}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, frameOnlyPrice: e.target.value }))
+                  }
+                  placeholder="0.00"
+                  inputMode="decimal"
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  Enables "Frame Only" option. Leave blank to disable.
+                </p>
               </div>
               <div>
                 <Label htmlFor="p-cost">Cost ($)</Label>

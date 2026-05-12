@@ -13,6 +13,11 @@ import type { CatalogProductVariant } from "./catalogProductVariant";
  */
 export interface AdminProductPickerDetail {
   productId: number;
+  /**
+   * When set, the product can be ordered without a fabric at this price.
+   * @nullable
+   */
+  frameOnlyPrice: string | null;
   variants: CatalogProductVariant[];
   fabricOptions: CatalogFabricOption[];
 }

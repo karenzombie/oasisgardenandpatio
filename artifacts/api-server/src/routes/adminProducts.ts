@@ -65,6 +65,7 @@ function toAdminPayload(r: ProductRow) {
     cost: r.cost,
     msrp: r.msrp,
     markupPercent: r.markupPercent,
+    frameOnlyPrice: r.frameOnlyPrice,
     pricingMode: r.pricingMode,
     weight: r.weight,
     dimensions: r.dimensions,
@@ -132,6 +133,7 @@ function baseSelect() {
       materialName: materialsTable.name,
       price: productsTable.price,
       salePrice: productsTable.salePrice,
+      frameOnlyPrice: productsTable.frameOnlyPrice,
       tags: productsTable.tags,
       cost: productsTable.cost,
       msrp: productsTable.msrp,
@@ -395,6 +397,7 @@ router.post(
           cost: parsed.data.cost ?? null,
           msrp: parsed.data.msrp ?? null,
           markupPercent: parsed.data.markupPercent ?? null,
+          frameOnlyPrice: parsed.data.frameOnlyPrice ?? null,
           pricingMode: parsed.data.pricingMode ?? "fixed",
           weight: parsed.data.weight ?? null,
           dimensions: parsed.data.dimensions ?? null,
@@ -474,6 +477,7 @@ router.put(
           cost: body.data.cost ?? null,
           msrp: body.data.msrp ?? null,
           markupPercent: body.data.markupPercent ?? null,
+          frameOnlyPrice: body.data.frameOnlyPrice ?? null,
           ...(body.data.pricingMode !== undefined
             ? { pricingMode: body.data.pricingMode }
             : {}),
@@ -789,7 +793,7 @@ router.get(
       return;
     }
     const [product] = await db
-      .select({ id: productsTable.id })
+      .select({ id: productsTable.id, frameOnlyPrice: productsTable.frameOnlyPrice })
       .from(productsTable)
       .where(eq(productsTable.id, params.data.id))
       .limit(1);
@@ -850,6 +854,7 @@ router.get(
     ]);
     res.json({
       productId: product.id,
+      frameOnlyPrice: product.frameOnlyPrice ?? null,
       variants: variantRows.map((v) => ({
         ...v,
         priceAdjustment: String(v.priceAdjustment ?? "0"),

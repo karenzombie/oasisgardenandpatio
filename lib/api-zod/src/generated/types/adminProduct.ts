@@ -42,6 +42,11 @@ export interface AdminProduct {
    * @nullable
    */
   markupPercent: string | null;
+  /**
+   * When set, the product may be ordered without a fabric at this price. Null means frame-only is not offered.
+   * @nullable
+   */
+  frameOnlyPrice: string | null;
   pricingMode: AdminProductPricingMode;
   /** @nullable */
   weight: string | null;

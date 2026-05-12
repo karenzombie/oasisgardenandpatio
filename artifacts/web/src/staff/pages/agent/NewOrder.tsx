@@ -1265,6 +1265,7 @@ function ProductPickerDialog({
   const [picked, setPicked] = useState<AdminProduct | null>(null);
   const [variantId, setVariantId] = useState<string>("");
   const [fabricId, setFabricId] = useState<string>("");
+  const [includeFabric, setIncludeFabric] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput.trim()), 250);
@@ -1287,8 +1288,14 @@ function ProductPickerDialog({
     }
   }, [open, initialProduct]);
   useEffect(() => {
+    if (!open) {
+      setIncludeFabric(false);
+    }
+  }, [open]);
+  useEffect(() => {
     setVariantId("");
     setFabricId("");
+    setIncludeFabric(false);
   }, [picked?.id]);
 
   const list = useAdminListProducts({
@@ -1312,7 +1319,10 @@ function ProductPickerDialog({
   const fabricOptions = detail.data?.fabricOptions ?? [];
   const detailReady = !!picked && !detail.isLoading && !!detail.data;
   const needsVariant = variants.length > 0;
-  const needsFabric = fabricOptions.length > 0;
+  const hasFabrics = fabricOptions.length > 0;
+  const supportsFrameOnly = hasFabrics && !!detail.data?.frameOnlyPrice;
+  // Staff default: frame only when supported. Staff explicitly opts into fabric.
+  const needsFabric = hasFabrics && (!supportsFrameOnly || includeFabric);
   // Block "Add to order" until product detail has actually loaded — otherwise
   // empty variants/fabric arrays would falsely report "no required picks".
   const canAdd =
@@ -1339,6 +1349,11 @@ function ProductPickerDialog({
     const f = needsFabric ? fabricOptions.find((x) => String(x.id) === fabricId) ?? null : null;
     onApply(picked, v, f);
   }
+
+  // For frame-only orders the unit price is frameOnlyPrice; otherwise normal.
+  const effectivePrice = supportsFrameOnly && !includeFabric && detail.data?.frameOnlyPrice
+    ? Number(detail.data.frameOnlyPrice)
+    : picked?.price != null ? Number(picked.price) : null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -1381,17 +1396,40 @@ function ProductPickerDialog({
                 <div className="font-medium">{picked.name}</div>
                 <div className="text-xs text-slate-500 font-mono">{picked.sku}</div>
                 <div className="text-sm tabular-nums mt-1">
-                  Base: {picked.price != null ? fmtMoney(Number(picked.price)) : "—"}
+                  {effectivePrice != null ? fmtMoney(effectivePrice) : "—"}
+                  {supportsFrameOnly && !includeFabric && (
+                    <span className="ml-1 text-xs text-slate-500">(frame only)</span>
+                  )}
                 </div>
               </div>
               <Button type="button" size="sm" variant="ghost"
-                onClick={() => { setPicked(null); setVariantId(""); setFabricId(""); }}>
+                onClick={() => { setPicked(null); setVariantId(""); setFabricId(""); setIncludeFabric(false); }}>
                 Change product
               </Button>
             </div>
 
             {detail.isLoading && (
               <div className="flex justify-center py-3"><Spinner /></div>
+            )}
+
+            {supportsFrameOnly && (
+              <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={includeFabric}
+                  onChange={(e) => {
+                    setIncludeFabric(e.target.checked);
+                    if (!e.target.checked) setFabricId("");
+                  }}
+                  className="rounded border-slate-300"
+                />
+                Include fabric
+                {detail.data?.frameOnlyPrice && (
+                  <span className="text-xs text-slate-500">
+                    (+{fmtMoney(Number(picked.price) - Number(detail.data.frameOnlyPrice))} vs. frame only)
+                  </span>
+                )}
+              </label>
             )}
 
             {needsVariant && (
@@ -1415,7 +1453,7 @@ function ProductPickerDialog({
               </div>
             )}
 
-            {needsFabric && (
+            {needsFabric && includeFabric && (
               <div>
                 <Label className="text-xs">Fabric <span className="text-red-600">*</span></Label>
                 <Select value={fabricId} onValueChange={setFabricId}>

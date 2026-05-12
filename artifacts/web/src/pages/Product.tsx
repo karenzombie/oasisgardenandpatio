@@ -59,13 +59,18 @@ export default function Product() {
   const variants = data?.variants ?? [];
   const fabricOptions = data?.fabricOptions ?? [];
   const requiresVariant = variants.length > 0;
-  const requiresFabric = fabricOptions.length > 0;
+  const hasFabrics = fabricOptions.length > 0;
+  // frameOnly toggle — only visible when the product has both fabrics and a
+  // frame-only price configured. Default: frame + fabric (frameOnly = false).
+  const [frameOnly, setFrameOnly] = useState(false);
+  const requiresFabric = hasFabrics && !frameOnly;
 
   // Reset selections when the user navigates between products so a stale
   // variantId/fabricId from a previous PDP can't unlock the gate here.
   useEffect(() => {
     setVariantId(null);
     setFabricId(null);
+    setFrameOnly(false);
     setActiveImageIdx(0);
     setQty(1);
   }, [data?.id]);
@@ -78,6 +83,9 @@ export default function Product() {
     () => fabricOptions.find((f) => f.id === fabricId) ?? null,
     [fabricOptions, fabricId],
   );
+
+  const frameOnlyPrice = data?.frameOnlyPrice ?? null;
+  const offersFrameOnly = hasFabrics && frameOnlyPrice != null;
 
   const missingSelections: string[] = [];
   if (requiresVariant && !selectedVariant) {
@@ -124,11 +132,15 @@ export default function Product() {
   const onSale = data.salePrice && data.price && Number(data.salePrice) < Number(data.price);
   const brandLogo = getBrandLogo(data.manufacturerName);
 
-  const basePrice = Number(
-    (data.salePrice && Number(data.salePrice) > 0
-      ? data.salePrice
-      : data.price) ?? 0,
-  );
+  // When frame-only is selected, effectivePrice uses frameOnlyPrice (no sale
+  // price override — frame-only is already a different SKU concept).
+  const basePrice = frameOnly && frameOnlyPrice
+    ? Number(frameOnlyPrice)
+    : Number(
+        (data.salePrice && Number(data.salePrice) > 0
+          ? data.salePrice
+          : data.price) ?? 0,
+      );
   const variantAdj = Number(selectedVariant?.priceAdjustment ?? 0);
   const effectivePrice = basePrice + variantAdj;
 
@@ -212,7 +224,7 @@ export default function Product() {
 
           {showPriceBlock ? (
             <div className="text-2xl mb-6">
-              {onSale ? (
+              {onSale && !frameOnly ? (
                 <>
                   <span className="text-muted-foreground line-through mr-3">{formatMoney(data.price)}</span>
                   <span className="text-primary font-semibold">{formatMoney(effectivePrice)}</span>
@@ -289,6 +301,45 @@ export default function Product() {
                         {v.name}
                       </button>
                     ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Frame only / Frame + Fabric toggle */}
+              {offersFrameOnly ? (
+                <div className="mb-5">
+                  <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">
+                    Cushion option
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => { setFrameOnly(false); }}
+                      className={`flex-1 px-3 py-2 border text-sm transition-colors ${
+                        !frameOnly
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-input hover:border-foreground"
+                      }`}
+                    >
+                      Frame + Fabric
+                      {data.price ? (
+                        <span className="ml-1 opacity-75">({formatMoney(data.price)})</span>
+                      ) : null}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setFrameOnly(true); setFabricId(null); }}
+                      className={`flex-1 px-3 py-2 border text-sm transition-colors ${
+                        frameOnly
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-input hover:border-foreground"
+                      }`}
+                    >
+                      Frame Only
+                      {frameOnlyPrice ? (
+                        <span className="ml-1 opacity-75">({formatMoney(frameOnlyPrice)})</span>
+                      ) : null}
+                    </button>
                   </div>
                 </div>
               ) : null}

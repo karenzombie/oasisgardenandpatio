@@ -49,6 +49,11 @@ export const productsTable = pgTable(
     // `salePrice` shown as the active price. Checkout uses `salePrice` when
     // present, otherwise `price`.
     salePrice: numeric("sale_price", { precision: 10, scale: 2 }),
+    // When set, the product can be ordered without a fabric selection at this
+    // lower price (frame/structure only, no cushions). The regular `price`
+    // continues to represent the "frame + fabric" price shown by default.
+    // When NULL the product does not offer a frame-only option.
+    frameOnlyPrice: numeric("frame_only_price", { precision: 10, scale: 2 }),
     // Our wholesale cost (what we pay the vendor). Used for cost+markup mode
     // and for margin reporting.
     cost: numeric("cost", { precision: 10, scale: 2 }),

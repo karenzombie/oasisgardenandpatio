@@ -197,6 +197,7 @@ router.post(
         id: productsTable.id,
         price: productsTable.price,
         salePrice: productsTable.salePrice,
+        frameOnlyPrice: productsTable.frameOnlyPrice,
         quoteOnly: productsTable.quoteOnly,
       })
       .from(productsTable)
@@ -263,7 +264,12 @@ router.post(
         .json({ error: "This product does not have variant options." });
       return;
     }
-    if (requiresFabric && !fabricId) {
+    // A product with fabrics can still be added without a fabric when a
+    // frame-only price is configured — the customer explicitly chose to
+    // buy just the frame/structure with no cushion/fabric.
+    const supportsFrameOnly =
+      requiresFabric && product.frameOnlyPrice != null;
+    if (requiresFabric && !fabricId && !supportsFrameOnly) {
       res.status(400).json({
         error: "Please choose a fabric before adding this item to your cart.",
       });
@@ -325,10 +331,19 @@ router.post(
       }
     }
 
-    const basePriceStr =
-      product.salePrice && Number(product.salePrice) > 0
-        ? product.salePrice
-        : product.price;
+    // Frame-only orders use frameOnlyPrice; otherwise fall through to
+    // salePrice → price as usual. Variant price adjustments still apply
+    // on top of either base.
+    const isFrameOnly = supportsFrameOnly && !fabricId;
+    let basePriceStr: string | null;
+    if (isFrameOnly) {
+      basePriceStr = product.frameOnlyPrice;
+    } else {
+      basePriceStr =
+        product.salePrice && Number(product.salePrice) > 0
+          ? product.salePrice
+          : product.price;
+    }
     if (!basePriceStr) {
       res.status(400).json({ error: "Product has no price set" });
       return;

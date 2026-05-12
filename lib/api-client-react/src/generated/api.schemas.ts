@@ -841,6 +841,11 @@ export interface AdminProduct {
    * @nullable
    */
   markupPercent: string | null;
+  /**
+   * When set, the product may be ordered without a fabric at this price. Null means frame-only is not offered.
+   * @nullable
+   */
+  frameOnlyPrice: string | null;
   pricingMode: AdminProductPricingMode;
   /** @nullable */
   weight: string | null;
@@ -928,6 +933,11 @@ export interface CreateProductRequest {
   msrp?: string | null;
   /** @nullable */
   markupPercent?: string | null;
+  /**
+   * Frame-only price. When set the product supports ordering without a fabric.
+   * @nullable
+   */
+  frameOnlyPrice?: string | null;
   pricingMode?: CreateProductRequestPricingMode;
   /** @nullable */
   weight?: string | null;
@@ -980,6 +990,11 @@ export interface UpdateProductRequest {
   msrp?: string | null;
   /** @nullable */
   markupPercent?: string | null;
+  /**
+   * Frame-only price. When set the product supports ordering without a fabric.
+   * @nullable
+   */
+  frameOnlyPrice?: string | null;
   pricingMode?: UpdateProductRequestPricingMode;
   /** @nullable */
   weight?: string | null;
@@ -1174,6 +1189,11 @@ export interface CatalogFabricOption {
  */
 export interface AdminProductPickerDetail {
   productId: number;
+  /**
+   * When set, the product can be ordered without a fabric at this price.
+   * @nullable
+   */
+  frameOnlyPrice: string | null;
   variants: CatalogProductVariant[];
   fabricOptions: CatalogFabricOption[];
 }
@@ -1195,6 +1215,11 @@ export type CatalogProductDetail = CatalogProduct & {
   dimensions: string | null;
   /** @nullable */
   weight: string | null;
+  /**
+   * When set, the customer may choose "Frame Only" at this price instead of selecting a fabric.
+   * @nullable
+   */
+  frameOnlyPrice: string | null;
   /**
    * Free-form spec sheet (key/value pairs).
    * @nullable

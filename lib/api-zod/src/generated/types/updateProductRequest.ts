@@ -35,6 +35,11 @@ export interface UpdateProductRequest {
   msrp?: string | null;
   /** @nullable */
   markupPercent?: string | null;
+  /**
+   * Frame-only price. When set the product supports ordering without a fabric.
+   * @nullable
+   */
+  frameOnlyPrice?: string | null;
   pricingMode?: UpdateProductRequestPricingMode;
   /** @nullable */
   weight?: string | null;

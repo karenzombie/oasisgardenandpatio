@@ -19,6 +19,11 @@ export type CatalogProductDetail = CatalogProduct & {
   /** @nullable */
   weight: string | null;
   /**
+   * When set, the customer may choose "Frame Only" at this price instead of selecting a fabric.
+   * @nullable
+   */
+  frameOnlyPrice: string | null;
+  /**
    * Free-form spec sheet (key/value pairs).
    * @nullable
    */

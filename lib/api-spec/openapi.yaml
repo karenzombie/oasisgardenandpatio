@@ -5145,6 +5145,9 @@ components:
         markupPercent:
           type: ["string", "null"]
           description: Markup % over cost when pricingMode = cost_plus_markup.
+        frameOnlyPrice:
+          type: ["string", "null"]
+          description: When set, the product may be ordered without a fabric at this price. Null means frame-only is not offered.
         pricingMode:
           type: string
           enum: [fixed, cost_plus_markup, msrp_minus_dealer_rate]
@@ -5197,6 +5200,7 @@ components:
         - cost
         - msrp
         - markupPercent
+        - frameOnlyPrice
         - pricingMode
         - weight
         - dimensions
@@ -5314,6 +5318,9 @@ components:
           type: ["string", "null"]
         markupPercent:
           type: ["string", "null"]
+        frameOnlyPrice:
+          type: ["string", "null"]
+          description: Frame-only price. When set the product supports ordering without a fabric.
         pricingMode:
           type: string
           enum: [fixed, cost_plus_markup, msrp_minus_dealer_rate]
@@ -5381,6 +5388,9 @@ components:
           type: ["string", "null"]
         markupPercent:
           type: ["string", "null"]
+        frameOnlyPrice:
+          type: ["string", "null"]
+          description: Frame-only price. When set the product supports ordering without a fabric.
         pricingMode:
           type: string
           enum: [fixed, cost_plus_markup, msrp_minus_dealer_rate]
@@ -5735,6 +5745,9 @@ components:
       properties:
         productId:
           type: integer
+        frameOnlyPrice:
+          type: ["string", "null"]
+          description: When set, the product can be ordered without a fabric at this price.
         variants:
           type: array
           items:
@@ -5745,6 +5758,7 @@ components:
             $ref: "#/components/schemas/CatalogFabricOption"
       required:
         - productId
+        - frameOnlyPrice
         - variants
         - fabricOptions
     CatalogFabricsResponse:
@@ -5767,6 +5781,9 @@ components:
               type: ["string", "null"]
             weight:
               type: ["string", "null"]
+            frameOnlyPrice:
+              type: ["string", "null"]
+              description: When set, the customer may choose "Frame Only" at this price instead of selecting a fabric.
             specs:
               description: Free-form spec sheet (key/value pairs).
               type: ["object", "null"]
@@ -5793,6 +5810,7 @@ components:
             - description
             - dimensions
             - weight
+            - frameOnlyPrice
             - specs
             - tags
             - images

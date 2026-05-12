@@ -238,6 +238,12 @@ export const GetCatalogProductBySlugResponse = zod
       description: zod.string().nullable(),
       dimensions: zod.string().nullable(),
       weight: zod.string().nullable(),
+      frameOnlyPrice: zod
+        .string()
+        .nullable()
+        .describe(
+          'When set, the customer may choose \"Frame Only\" at this price instead of selecting a fabric.',
+        ),
       specs: zod
         .record(zod.string(), zod.unknown())
         .nullable()
@@ -1743,6 +1749,12 @@ export const AdminListProductsResponse = zod.object({
         .string()
         .nullable()
         .describe("Markup % over cost when pricingMode = cost_plus_markup."),
+      frameOnlyPrice: zod
+        .string()
+        .nullable()
+        .describe(
+          "When set, the product may be ordered without a fabric at this price. Null means frame-only is not offered.",
+        ),
       pricingMode: zod.enum([
         "fixed",
         "cost_plus_markup",
@@ -1801,6 +1813,12 @@ export const AdminCreateProductBody = zod.object({
   cost: zod.string().nullish(),
   msrp: zod.string().nullish(),
   markupPercent: zod.string().nullish(),
+  frameOnlyPrice: zod
+    .string()
+    .nullish()
+    .describe(
+      "Frame-only price. When set the product supports ordering without a fabric.",
+    ),
   pricingMode: zod
     .enum(["fixed", "cost_plus_markup", "msrp_minus_dealer_rate"])
     .default(adminCreateProductBodyPricingModeDefault),
@@ -1855,6 +1873,12 @@ export const AdminGetProductResponse = zod
       .string()
       .nullable()
       .describe("Markup % over cost when pricingMode = cost_plus_markup."),
+    frameOnlyPrice: zod
+      .string()
+      .nullable()
+      .describe(
+        "When set, the product may be ordered without a fabric at this price. Null means frame-only is not offered.",
+      ),
     pricingMode: zod.enum([
       "fixed",
       "cost_plus_markup",
@@ -1921,6 +1945,12 @@ export const AdminUpdateProductBody = zod.object({
   cost: zod.string().nullish(),
   msrp: zod.string().nullish(),
   markupPercent: zod.string().nullish(),
+  frameOnlyPrice: zod
+    .string()
+    .nullish()
+    .describe(
+      "Frame-only price. When set the product supports ordering without a fabric.",
+    ),
   pricingMode: zod
     .enum(["fixed", "cost_plus_markup", "msrp_minus_dealer_rate"])
     .optional(),
@@ -1961,6 +1991,12 @@ export const AdminUpdateProductResponse = zod.object({
     .string()
     .nullable()
     .describe("Markup % over cost when pricingMode = cost_plus_markup."),
+  frameOnlyPrice: zod
+    .string()
+    .nullable()
+    .describe(
+      "When set, the product may be ordered without a fabric at this price. Null means frame-only is not offered.",
+    ),
   pricingMode: zod.enum([
     "fixed",
     "cost_plus_markup",
@@ -2019,6 +2055,12 @@ export const AdminSetProductActiveResponse = zod.object({
     .string()
     .nullable()
     .describe("Markup % over cost when pricingMode = cost_plus_markup."),
+  frameOnlyPrice: zod
+    .string()
+    .nullable()
+    .describe(
+      "When set, the product may be ordered without a fabric at this price. Null means frame-only is not offered.",
+    ),
   pricingMode: zod.enum([
     "fixed",
     "cost_plus_markup",
@@ -2100,6 +2142,12 @@ export const AdminGetProductPickerParams = zod.object({
 export const AdminGetProductPickerResponse = zod
   .object({
     productId: zod.number(),
+    frameOnlyPrice: zod
+      .string()
+      .nullable()
+      .describe(
+        "When set, the product can be ordered without a fabric at this price.",
+      ),
     variants: zod.array(
       zod.object({
         id: zod.number(),

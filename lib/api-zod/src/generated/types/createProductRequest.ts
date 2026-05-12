@@ -35,6 +35,11 @@ export interface CreateProductRequest {
   msrp?: string | null;
   /** @nullable */
   markupPercent?: string | null;
+  /**
+   * Frame-only price. When set the product supports ordering without a fabric.
+   * @nullable
+   */
+  frameOnlyPrice?: string | null;
   pricingMode?: CreateProductRequestPricingMode;
   /** @nullable */
   weight?: string | null;
