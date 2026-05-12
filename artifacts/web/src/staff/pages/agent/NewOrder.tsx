@@ -5,6 +5,7 @@ import {
   useAdminListCustomers,
   useAdminGetCustomer,
   useAdminListProducts,
+  useAdminListManufacturers,
   useAdminCreateOrder,
   useAdminCreateCustomer,
   useAdminQuoteOrderPricing,
@@ -43,6 +44,10 @@ interface LineItem {
   variantName: string | null;
   fabricId: number | null;
   fabricName: string | null;
+  // Optional: source the fabric from a different manufacturer than the
+  // product's own vendor. When set, the server splits this line into
+  // its own fabric-only PO grouped by `fabricVendorId`.
+  fabricVendorId: number | null;
   description: string;
   quantity: number;
   unitPrice: number;
@@ -103,6 +108,7 @@ function emptyLine(): LineItem {
     variantName: null,
     fabricId: null,
     fabricName: null,
+    fabricVendorId: null,
     description: "",
     quantity: 1,
     unitPrice: 0,
@@ -118,6 +124,11 @@ export default function AgentNewOrder() {
   const createOrder = useAdminCreateOrder();
   const createCustomer = useAdminCreateCustomer();
   const quotePricing = useAdminQuoteOrderPricing();
+  // Manufacturer list powers the per-line "alternate fabric vendor"
+  // picker. Only the id+name are needed; the list is small enough that
+  // a one-shot fetch is fine.
+  const manufacturersQuery = useAdminListManufacturers();
+  const manufacturers = manufacturersQuery.data ?? [];
 
   const [customerMode, setCustomerMode] = useState<CustomerMode>("existing");
   const [customer, setCustomer] = useState<AdminCustomer | null>(null);
@@ -331,6 +342,9 @@ export default function AgentNewOrder() {
       variantName: variant?.name ?? null,
       fabricId: fabric?.id ?? null,
       fabricName: fabric?.name ?? null,
+      // Reset alt fabric vendor whenever fabric changes; the previous
+      // selection might not even apply to the new fabric.
+      fabricVendorId: null,
       description,
       unitPrice: basePrice + variantAdj,
       unitPriceOverridden: false,
@@ -504,6 +518,7 @@ export default function AgentNewOrder() {
             productId: it.productId,
             variantId: it.variantId,
             fabricId: it.fabricId,
+            fabricVendorId: it.fabricId != null ? it.fabricVendorId : null,
             description: it.description.trim(),
             quantity: it.quantity,
             unitPrice: isRestockOrder ? 0 : it.unitPrice,
@@ -907,6 +922,7 @@ export default function AgentNewOrder() {
                               variantName: null,
                               fabricId: null,
                               fabricName: null,
+                              fabricVendorId: null,
                             });
                             setTypeaheadIdx(idx);
                             setTypeaheadQuery(v);
@@ -985,6 +1001,46 @@ export default function AgentNewOrder() {
                           Product #{it.productId}
                           {it.variantName ? ` · ${it.variantName}` : ""}
                           {it.fabricName ? ` · ${it.fabricName}` : ""}
+                        </div>
+                      )}
+                      {/* Per-line alternate fabric vendor. Only relevant
+                          when the line has a fabric — otherwise there's
+                          nothing to source from a different vendor. */}
+                      {it.fabricId != null && (
+                        <div className="mt-2">
+                          <Label className="text-xs">Alt fabric vendor</Label>
+                          <Select
+                            value={
+                              it.fabricVendorId != null
+                                ? String(it.fabricVendorId)
+                                : "none"
+                            }
+                            onValueChange={(v) =>
+                              updateItem(idx, {
+                                fabricVendorId: v === "none" ? null : Number(v),
+                              })
+                            }
+                          >
+                            <SelectTrigger className="mt-1 h-8 text-xs">
+                              <SelectValue placeholder="Use product's vendor" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">
+                                Use product's vendor (default)
+                              </SelectItem>
+                              {manufacturers.map((m) => (
+                                <SelectItem key={m.id} value={String(m.id)}>
+                                  {m.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {it.fabricVendorId != null && (
+                            <div className="mt-1 text-[11px] text-slate-500">
+                              A separate fabric-only PO will be created
+                              for this vendor.
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>

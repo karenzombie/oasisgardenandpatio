@@ -82,7 +82,13 @@ export interface AdminOrderItem {
   productSkuSnapshot: string | null;
   variantSkuSnapshot: string | null;
   variantNameSnapshot: string | null;
+  fabricId: number | null;
   fabricNameSnapshot: string | null;
+  /** Optional alternate vendor for this line's fabric. Null = fabric ships with the product vendor (the default). */
+  fabricVendorId: number | null;
+  fabricVendorName: string | null;
+  /** When fabricVendorId is set, this is the id of the separate vendor PO that the fabric was assigned to. */
+  fabricVendorOrderId: number | null;
   department: string | null;
   description: string;
   quantity: number;
@@ -151,6 +157,17 @@ export interface AdminVendorOrderPage {
   total: number;
 }
 
+/**
+ * 'product' = the product line on the product vendor's PO. 'fabric' = a fabric-only line that was split out to an alternate fabric vendor's PO.
+ */
+export type AdminVendorOrderItemKind =
+  (typeof AdminVendorOrderItemKind)[keyof typeof AdminVendorOrderItemKind];
+
+export const AdminVendorOrderItemKind = {
+  product: "product",
+  fabric: "fabric",
+} as const;
+
 export interface AdminVendorOrderItem {
   id: number;
   productId: number | null;
@@ -163,6 +180,8 @@ export interface AdminVendorOrderItem {
   unitPrice: number;
   amount: number;
   notes: string | null;
+  /** 'product' = the product line on the product vendor's PO. 'fabric' = a fabric-only line that was split out to an alternate fabric vendor's PO. */
+  kind: AdminVendorOrderItemKind;
 }
 
 export interface AdminVendorOrderSend {
@@ -2659,6 +2678,11 @@ export interface UpdateAddressRequest {
   isDefault?: boolean;
 }
 
+export interface AdminSetOrderItemFabricVendorRequest {
+  /** @nullable */
+  fabricVendorId: number | null;
+}
+
 export interface CreateOrderItemRequest {
   /** @nullable */
   productId?: number | null;
@@ -2666,6 +2690,11 @@ export interface CreateOrderItemRequest {
   variantId?: number | null;
   /** @nullable */
   fabricId?: number | null;
+  /**
+   * Staff-portal only. When set, this line's fabric ships from a separate vendor on its own PO instead of bundled with the product vendor's PO. Requires fabricId.
+   * @nullable
+   */
+  fabricVendorId?: number | null;
   /** @minLength 1 */
   description: string;
   /** @minimum 1 */

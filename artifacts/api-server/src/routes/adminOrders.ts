@@ -32,6 +32,8 @@ import {
   AdminReviewCancellationRequestParams,
   AdminReviewCancellationRequestBody,
   AdminCreateOrderBody,
+  AdminUpdateOrderItemFabricVendorParams,
+  AdminUpdateOrderItemFabricVendorBody,
 } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import { recordAudit } from "../lib/audit";
@@ -89,14 +91,21 @@ function addressToPayload(a: Address | null) {
   };
 }
 
-function itemToPayload(it: OrderItem) {
+function itemToPayload(
+  it: OrderItem,
+  fabricVendorName: string | null = null,
+) {
   return {
     id: it.id,
     productId: it.productId,
     productSkuSnapshot: it.productSkuSnapshot,
     variantSkuSnapshot: it.variantSkuSnapshot,
     variantNameSnapshot: it.variantNameSnapshot,
+    fabricId: it.fabricId,
     fabricNameSnapshot: it.fabricNameSnapshot,
+    fabricVendorId: it.fabricVendorId,
+    fabricVendorName,
+    fabricVendorOrderId: it.fabricVendorOrderId,
     department: it.department,
     description: it.description,
     quantity: it.quantity,
@@ -237,6 +246,29 @@ export async function loadOrderDetail(orderId: number) {
     .where(eq(orderItemsTable.orderId, orderId))
     .orderBy(asc(orderItemsTable.id));
 
+  // Resolve fabric-vendor display names in a single round-trip so the
+  // staff order detail can show "Fabric vendor: Acme" inline. Items
+  // without an alternate fabric vendor map to null.
+  const fabricVendorIds = Array.from(
+    new Set(
+      items
+        .map((it) => it.fabricVendorId)
+        .filter((id): id is number => id !== null),
+    ),
+  );
+  const fabricVendors = fabricVendorIds.length
+    ? await db
+        .select({
+          id: manufacturersTable.id,
+          name: manufacturersTable.name,
+        })
+        .from(manufacturersTable)
+        .where(inArray(manufacturersTable.id, fabricVendorIds))
+    : [];
+  const fabricVendorNameById = new Map(
+    fabricVendors.map((m) => [m.id, m.name]),
+  );
+
   const history = await db
     .select({
       h: orderStatusHistoryTable,
@@ -320,7 +352,14 @@ export async function loadOrderDetail(orderId: number) {
     updatedAt: o.updatedAt.toISOString(),
     shippingAddress: addressToPayload(shippingAddr),
     billingAddress: addressToPayload(billingAddr),
-    items: items.map(itemToPayload),
+    items: items.map((it) =>
+      itemToPayload(
+        it,
+        it.fabricVendorId == null
+          ? null
+          : (fabricVendorNameById.get(it.fabricVendorId) ?? null),
+      ),
+    ),
     statusHistory: history.map((h) => ({
       id: h.h.id,
       fromStatus: h.h.fromStatus,
@@ -1148,6 +1187,7 @@ router.post(
           productId: number | null;
           variantId: number | null;
           fabricId: number | null;
+          fabricVendorId: number | null;
           productSkuSnapshot: string | null;
           variantSkuSnapshot: string | null;
           variantNameSnapshot: string | null;
@@ -1208,6 +1248,26 @@ router.post(
             fabricItem = f.itemNumber;
             fabricName = f.name;
           }
+          // An alternate fabric vendor only makes sense when the line has a
+          // fabric. If supplied, validate the manufacturer exists so we
+          // don't silently store a dangling FK and fail later in PO
+          // generation.
+          if (it.fabricVendorId != null) {
+            if (it.fabricId == null) {
+              throw new Error(
+                "fabricVendorId requires fabricId on the same line",
+              );
+            }
+            const [m] = await tx
+              .select({ id: manufacturersTable.id })
+              .from(manufacturersTable)
+              .where(eq(manufacturersTable.id, it.fabricVendorId))
+              .limit(1);
+            if (!m)
+              throw new Error(
+                `Fabric vendor ${it.fabricVendorId} not found`,
+              );
+          }
 
           const lineAmount = it.quantity * it.unitPrice;
           const discount = it.discountAmount ?? 0;
@@ -1217,6 +1277,7 @@ router.post(
             productId: it.productId ?? null,
             variantId: it.variantId ?? null,
             fabricId: it.fabricId ?? null,
+            fabricVendorId: it.fabricVendorId ?? null,
             productSkuSnapshot: productSku,
             variantSkuSnapshot: variantSku,
             variantNameSnapshot: variantName,
@@ -1386,6 +1447,178 @@ router.post(
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to create order";
       res.status(400).json({ error: msg });
+    }
+  },
+);
+
+// ────────────────────────────────────────────────────────────────────
+// Per-line alternate fabric-vendor assignment.
+//
+// Lets staff designate a different manufacturer to source the fabric
+// from than the product's own vendor. The handler clears any existing
+// product-PO and fabric-PO links on the line, then re-runs
+// `autoGenerateVendorOrders` so the regrouped POs are created in the
+// same `pending` state as a fresh order.
+//
+// Hard precondition: every PO currently referenced from this line
+// (product or fabric) must still be `pending`. Once a PO has been sent,
+// regrouping silently behind it would corrupt the vendor's view of
+// what they're being asked to ship.
+// ────────────────────────────────────────────────────────────────────
+router.patch(
+  "/admin/orders/:orderId/items/:itemId/fabric-vendor",
+  requireAuth,
+  requireRole("admin"),
+  async (req, res) => {
+    const params = AdminUpdateOrderItemFabricVendorParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: "Invalid params" });
+      return;
+    }
+    const body = AdminUpdateOrderItemFabricVendorBody.safeParse(req.body);
+    if (!body.success) {
+      res.status(400).json({ error: "Invalid body" });
+      return;
+    }
+
+    const { orderId, itemId } = params.data;
+    const { fabricVendorId } = body.data;
+
+    type RegroupResult =
+      | { kind: "ok" }
+      | { kind: "not_found" }
+      | { kind: "no_fabric" }
+      | { kind: "vendor_not_found" }
+      | { kind: "po_not_pending" };
+
+    try {
+      const result: RegroupResult = await db.transaction(async (tx) => {
+        // Lock the order_item row first so a concurrent
+        // send-vendor-order or another regroup can't mutate the linked
+        // PO ids between our status check and our update.
+        const [item] = await tx
+          .select()
+          .from(orderItemsTable)
+          .where(
+            and(
+              eq(orderItemsTable.id, itemId),
+              eq(orderItemsTable.orderId, orderId),
+            ),
+          )
+          .for("update")
+          .limit(1);
+        if (!item) return { kind: "not_found" };
+
+        if (fabricVendorId != null) {
+          if (item.fabricId == null) return { kind: "no_fabric" };
+          const [m] = await tx
+            .select({ id: manufacturersTable.id })
+            .from(manufacturersTable)
+            .where(eq(manufacturersTable.id, fabricVendorId))
+            .limit(1);
+          if (!m) return { kind: "vendor_not_found" };
+        }
+
+        // Lock and re-check the status of every PO this line currently
+        // belongs to. Locking guarantees a parallel "send PO" can't
+        // flip status between our check and our regroup.
+        const linkedPoIds = [
+          item.vendorOrderId,
+          item.fabricVendorOrderId,
+        ].filter((id): id is number => id !== null);
+        if (linkedPoIds.length > 0) {
+          const linkedPos = await tx
+            .select({
+              id: vendorOrdersTable.id,
+              status: vendorOrdersTable.status,
+            })
+            .from(vendorOrdersTable)
+            .where(inArray(vendorOrdersTable.id, linkedPoIds))
+            .for("update");
+          for (const po of linkedPos) {
+            if (po.status !== "pending") return { kind: "po_not_pending" };
+          }
+        }
+
+        await tx
+          .update(orderItemsTable)
+          .set({
+            fabricVendorId: fabricVendorId,
+            // Clear PO links so autoGenerateVendorOrders treats this
+            // line as fresh and groups it under the new vendor.
+            vendorOrderId: null,
+            fabricVendorOrderId: null,
+          })
+          .where(eq(orderItemsTable.id, itemId));
+
+        // Garbage-collect any pending PO that is now empty (every
+        // line was either reassigned away or cancelled). Without
+        // this, stale empty pending POs would clutter the vendor list.
+        for (const poId of linkedPoIds) {
+          const remainingProduct = await tx
+            .select({ id: orderItemsTable.id })
+            .from(orderItemsTable)
+            .where(eq(orderItemsTable.vendorOrderId, poId))
+            .limit(1);
+          const remainingFabric = await tx
+            .select({ id: orderItemsTable.id })
+            .from(orderItemsTable)
+            .where(eq(orderItemsTable.fabricVendorOrderId, poId))
+            .limit(1);
+          if (remainingProduct.length === 0 && remainingFabric.length === 0) {
+            await tx
+              .delete(vendorOrdersTable)
+              .where(eq(vendorOrdersTable.id, poId));
+          }
+        }
+
+        await autoGenerateVendorOrders(
+          tx,
+          orderId,
+          req.session?.userId ?? null,
+        );
+        return { kind: "ok" };
+      });
+
+      if (result.kind === "not_found") {
+        res.status(404).json({ error: "Order item not found" });
+        return;
+      }
+      if (result.kind === "no_fabric") {
+        res.status(400).json({
+          error: "Cannot set a fabric vendor on a line without a fabric",
+        });
+        return;
+      }
+      if (result.kind === "vendor_not_found") {
+        res.status(400).json({ error: "Fabric vendor not found" });
+        return;
+      }
+      if (result.kind === "po_not_pending") {
+        res.status(409).json({
+          error:
+            "Cannot reassign fabric vendor: a related vendor order has already been sent. Cancel or void it first.",
+        });
+        return;
+      }
+
+      await recordAudit(req, {
+        action: "order_item.fabric_vendor.updated",
+        entityType: "order_item",
+        entityId: itemId,
+        changes: { orderId, fabricVendorId },
+      });
+
+      const detail = await loadOrderDetail(orderId);
+      if (!detail) {
+        res.status(404).json({ error: "Order not found" });
+        return;
+      }
+      res.json(detail);
+    } catch (err) {
+      const msg =
+        err instanceof Error ? err.message : "Failed to update fabric vendor";
+      res.status(500).json({ error: msg });
     }
   },
 );

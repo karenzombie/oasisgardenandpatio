@@ -13,6 +13,11 @@ export interface CreateOrderItemRequest {
   variantId?: number | null;
   /** @nullable */
   fabricId?: number | null;
+  /**
+   * Staff-portal only. When set, this line's fabric ships from a separate vendor on its own PO instead of bundled with the product vendor's PO. Requires fabricId.
+   * @nullable
+   */
+  fabricVendorId?: number | null;
   /** @minLength 1 */
   description: string;
   /** @minimum 1 */

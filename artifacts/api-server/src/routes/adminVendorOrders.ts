@@ -50,6 +50,7 @@ import {
 } from "../lib/vendorOrderPdf";
 import { uploadBufferToStorage } from "../lib/objectStorage";
 import { toPublicImageUrl } from "../lib/imageUrl";
+import { autoGenerateVendorOrders } from "../lib/autoGenerateVendorOrders";
 
 const router: IRouter = Router();
 const DEFAULT_LIMIT = 50;
@@ -75,7 +76,13 @@ function nameOf(first: string | null, last: string | null): string | null {
   return v.length === 0 ? null : v;
 }
 
-function itemToPayload(it: OrderItem) {
+// `kind` is the discriminator between a regular product line on the
+// product vendor's PO ('product') and a fabric-only line that was split out
+// to an alternate fabric vendor's PO ('fabric'). For fabric lines the unit
+// price/amount are zeroed in the payload (the cost lives on the customer
+// order, not on the fabric PO line) and the fabric snapshot fields are
+// what the vendor renders.
+function itemToPayload(it: OrderItem, kind: "product" | "fabric" = "product") {
   return {
     id: it.id,
     productId: it.productId,
@@ -86,9 +93,10 @@ function itemToPayload(it: OrderItem) {
     fabricNameSnapshot: it.fabricNameSnapshot,
     description: it.description,
     quantity: it.quantity,
-    unitPrice: Number(it.unitPrice),
-    amount: Number(it.amount),
+    unitPrice: kind === "fabric" ? 0 : Number(it.unitPrice),
+    amount: kind === "fabric" ? 0 : Number(it.amount),
     notes: it.notes,
+    kind,
   };
 }
 
@@ -162,6 +170,7 @@ router.get(
           SELECT count(*)::int
           FROM ${orderItemsTable}
           WHERE ${orderItemsTable.vendorOrderId} = ${vendorOrdersTable.id}
+             OR ${orderItemsTable.fabricVendorOrderId} = ${vendorOrdersTable.id}
         )`,
       })
       .from(vendorOrdersTable)
@@ -233,11 +242,24 @@ async function loadVendorOrderDetail(id: number) {
   if (!row) return null;
   const { vo, mfg, order, customer, creator, shipAddr } = row;
 
-  const items = await db
+  // Items on this PO come from two columns: vendor_order_id (regular
+  // product lines) and fabric_vendor_order_id (fabric-only lines split
+  // out to an alternate fabric vendor). Tag each row so the payload
+  // mapping can render them correctly.
+  const productItems = await db
     .select()
     .from(orderItemsTable)
     .where(eq(orderItemsTable.vendorOrderId, id))
     .orderBy(asc(orderItemsTable.id));
+  const fabricItems = await db
+    .select()
+    .from(orderItemsTable)
+    .where(eq(orderItemsTable.fabricVendorOrderId, id))
+    .orderBy(asc(orderItemsTable.id));
+  const items: Array<{ row: OrderItem; kind: "product" | "fabric" }> = [
+    ...productItems.map((row) => ({ row, kind: "product" as const })),
+    ...fabricItems.map((row) => ({ row, kind: "fabric" as const })),
+  ];
 
   const sends = await db
     .select({ s: vendorOrderSendsTable, sender: usersTable })
@@ -321,7 +343,7 @@ async function loadVendorOrderDetail(id: number) {
     shipToState: shipAddr?.state ?? null,
     shipToPostalCode: shipAddr?.zip ?? null,
     shipToPhone: shipAddr?.phone ?? null,
-    items: items.map(itemToPayload),
+    items: items.map((x) => itemToPayload(x.row, x.kind)),
     sends: sends.map((row) => ({
       id: row.s.id,
       sentByUserId: row.s.sentByUserId,
@@ -447,12 +469,19 @@ router.delete(
       if (existing.status !== "pending") {
         return { kind: "not_pending" as const, status: existing.status };
       }
-      // Un-assign items, then delete.
-      const unassigned = await tx
+      // Un-assign items from BOTH columns (vendor_order_id for product
+      // POs, fabric_vendor_order_id for fabric-only POs), then delete.
+      const unassignedProduct = await tx
         .update(orderItemsTable)
         .set({ vendorOrderId: null })
         .where(eq(orderItemsTable.vendorOrderId, existing.id))
         .returning({ id: orderItemsTable.id });
+      const unassignedFabric = await tx
+        .update(orderItemsTable)
+        .set({ fabricVendorOrderId: null })
+        .where(eq(orderItemsTable.fabricVendorOrderId, existing.id))
+        .returning({ id: orderItemsTable.id });
+      const unassigned = [...unassignedProduct, ...unassignedFabric];
       await tx
         .delete(vendorOrdersTable)
         .where(eq(vendorOrdersTable.id, existing.id));
@@ -539,75 +568,58 @@ router.post(
         return { kind: "skipped" as const };
       }
 
-      // Pull all unassigned items joined to product so we can read the
-      // manufacturer. Items without a productId or whose product has no
-      // manufacturer are skipped (counted in skippedItemCount).
-      const candidates = await tx
-        .select({
-          item: orderItemsTable,
-          manufacturerId: productsTable.manufacturerId,
-        })
-        .from(orderItemsTable)
-        .leftJoin(
-          productsTable,
-          eq(productsTable.id, orderItemsTable.productId),
-        )
-        .where(
-          and(
-            eq(orderItemsTable.orderId, orderId),
-            isNull(orderItemsTable.vendorOrderId),
-          ),
-        );
+      // Delegate to the shared helper so this manual-trigger path
+      // creates BOTH product POs and fabric-only POs (alternate fabric
+      // vendor) using identical grouping logic. Without this, a
+      // previously-deleted fabric PO could not be regenerated from
+      // the admin UI.
+      const auto = await autoGenerateVendorOrders(
+        tx,
+        orderId,
+        userId,
+        body.data.notes ?? null,
+      );
 
-      const groups = new Map<number, number[]>();
-      let skipped = 0;
-      for (const c of candidates) {
-        if (c.manufacturerId == null) {
-          skipped += 1;
-          continue;
-        }
-        const arr = groups.get(c.manufacturerId) ?? [];
-        arr.push(c.item.id);
-        groups.set(c.manufacturerId, arr);
-      }
-
+      // Re-derive per-PO item counts (count of order_items whose
+      // vendor_order_id OR fabric_vendor_order_id points at the new PO)
+      // so the response payload still matches the existing
+      // AdminVendorOrderSummary contract.
       const createdSummaries: Array<{
         id: number;
         manufacturerId: number;
         itemCount: number;
       }> = [];
-      let assigned = 0;
-      for (const [manufacturerId, itemIds] of groups) {
-        const number = await nextVendorOrderNumber(tx);
-        const [vo] = await tx
-          .insert(vendorOrdersTable)
-          .values({
-            vendorOrderNumber: number,
-            customerOrderId: orderId,
-            manufacturerId,
-            status: "pending",
-            notes: body.data.notes ?? null,
-            createdByUserId: userId,
+      if (auto.createdVendorOrderIds.length > 0) {
+        const newVos = await tx
+          .select({
+            id: vendorOrdersTable.id,
+            manufacturerId: vendorOrdersTable.manufacturerId,
           })
-          .returning();
-        if (!vo) continue;
-        await tx
-          .update(orderItemsTable)
-          .set({ vendorOrderId: vo.id })
-          .where(inArray(orderItemsTable.id, itemIds));
-        createdSummaries.push({
-          id: vo.id,
-          manufacturerId,
-          itemCount: itemIds.length,
-        });
-        assigned += itemIds.length;
+          .from(vendorOrdersTable)
+          .where(inArray(vendorOrdersTable.id, auto.createdVendorOrderIds));
+        for (const vo of newVos) {
+          if (vo.manufacturerId == null) continue;
+          const productCount = await tx
+            .select({ id: orderItemsTable.id })
+            .from(orderItemsTable)
+            .where(eq(orderItemsTable.vendorOrderId, vo.id));
+          const fabricCount = await tx
+            .select({ id: orderItemsTable.id })
+            .from(orderItemsTable)
+            .where(eq(orderItemsTable.fabricVendorOrderId, vo.id));
+          createdSummaries.push({
+            id: vo.id,
+            manufacturerId: vo.manufacturerId,
+            itemCount: productCount.length + fabricCount.length,
+          });
+        }
       }
 
       return {
         kind: "ok" as const,
         createdSummaries,
-        skipped,
-        assigned,
+        skipped: auto.skippedItemCount,
+        assigned: auto.assignedItemCount,
       };
     });
 
@@ -1169,7 +1181,10 @@ router.post(
   },
 );
 
-function orderItemToPdfItem(it: OrderItem): PdfVendorOrderItem {
+function orderItemToPdfItem(
+  it: OrderItem,
+  kind: "product" | "fabric" = "product",
+): PdfVendorOrderItem {
   return {
     productSkuSnapshot: it.productSkuSnapshot,
     variantSkuSnapshot: it.variantSkuSnapshot,
@@ -1178,9 +1193,10 @@ function orderItemToPdfItem(it: OrderItem): PdfVendorOrderItem {
     fabricNameSnapshot: it.fabricNameSnapshot,
     description: it.description,
     quantity: it.quantity,
-    unitPrice: Number(it.unitPrice),
-    amount: Number(it.amount),
+    unitPrice: kind === "fabric" ? 0 : Number(it.unitPrice),
+    amount: kind === "fabric" ? 0 : Number(it.amount),
     notes: it.notes,
+    kind,
   };
 }
 
@@ -1249,13 +1265,26 @@ router.post(
         return { kind: "received" as const };
       }
 
-      // Pull every line currently assigned to this VO so we can split them
-      // into "to-cancel" and "remaining" buckets.
-      const allItems = await tx
+      // Pull every line currently assigned to this VO. POs link items via
+      // EITHER vendor_order_id (regular product POs) OR fabric_vendor_order_id
+      // (fabric-only POs). We detect the kind from whichever column has rows
+      // and operate on that column consistently.
+      const productLineRows = await tx
         .select()
         .from(orderItemsTable)
         .where(eq(orderItemsTable.vendorOrderId, existing.id))
         .orderBy(asc(orderItemsTable.id));
+      const fabricLineRows = await tx
+        .select()
+        .from(orderItemsTable)
+        .where(eq(orderItemsTable.fabricVendorOrderId, existing.id))
+        .orderBy(asc(orderItemsTable.id));
+      const poKind: "product" | "fabric" =
+        fabricLineRows.length > 0 && productLineRows.length === 0
+          ? "fabric"
+          : "product";
+      const allItems: OrderItem[] =
+        poKind === "fabric" ? fabricLineRows : productLineRows;
 
       let cancelItems: OrderItem[];
       let remainingItems: OrderItem[];
@@ -1282,21 +1311,33 @@ router.post(
       const effectiveScope: "full" | "partial" =
         remainingItems.length === 0 ? "full" : "partial";
 
-      // Un-assign just the cancelled lines. The extra
-      // `vendorOrderId = existing.id` predicate guards against a row
-      // being re-assigned to a different VO between our select and update.
+      // Un-assign just the cancelled lines. The extra `<col> = existing.id`
+      // predicate guards against a row being re-assigned to a different VO
+      // between our select and update.
       const cancelIds = cancelItems.map((it) => it.id);
       if (cancelIds.length > 0) {
-        const updated = await tx
-          .update(orderItemsTable)
-          .set({ vendorOrderId: null })
-          .where(
-            and(
-              inArray(orderItemsTable.id, cancelIds),
-              eq(orderItemsTable.vendorOrderId, existing.id),
-            ),
-          )
-          .returning({ id: orderItemsTable.id });
+        const updated =
+          poKind === "fabric"
+            ? await tx
+                .update(orderItemsTable)
+                .set({ fabricVendorOrderId: null })
+                .where(
+                  and(
+                    inArray(orderItemsTable.id, cancelIds),
+                    eq(orderItemsTable.fabricVendorOrderId, existing.id),
+                  ),
+                )
+                .returning({ id: orderItemsTable.id })
+            : await tx
+                .update(orderItemsTable)
+                .set({ vendorOrderId: null })
+                .where(
+                  and(
+                    inArray(orderItemsTable.id, cancelIds),
+                    eq(orderItemsTable.vendorOrderId, existing.id),
+                  ),
+                )
+                .returning({ id: orderItemsTable.id });
         if (updated.length !== cancelIds.length) {
           // Concurrent modification detected — abort the tx so nothing leaks.
           throw new Error("__STALE_ITEMS__");
@@ -1310,7 +1351,9 @@ router.post(
           .where(eq(vendorOrdersTable.id, existing.id));
       }
 
-      const itemsSnapshot = cancelItems.map(orderItemToPdfItem);
+      const itemsSnapshot = cancelItems.map((it) =>
+        orderItemToPdfItem(it, poKind),
+      );
       const [cancellationRow] = await tx
         .insert(vendorOrderCancellationsTable)
         .values({
@@ -1326,7 +1369,9 @@ router.post(
         kind: "ok" as const,
         effectiveScope,
         cancelItems: itemsSnapshot,
-        remainingItems: remainingItems.map(orderItemToPdfItem),
+        remainingItems: remainingItems.map((it) =>
+          orderItemToPdfItem(it, poKind),
+        ),
         cancellationId: cancellationRow!.id,
         cancelledAt: cancellationRow!.cancelledAt,
       };

@@ -3132,6 +3132,43 @@ paths:
               schema: { $ref: "#/components/schemas/AdminOrderDetail" }
         "400": { description: Bad request, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
         "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+  /admin/orders/{orderId}/items/{itemId}/fabric-vendor:
+    patch:
+      operationId: adminUpdateOrderItemFabricVendor
+      tags: [admin-orders]
+      summary: Set or clear the alternate fabric vendor on a line item
+      description: >-
+        Staff-portal only. When `fabricVendorId` is non-null, this line's
+        fabric is split out of the product vendor's PO and placed on a
+        separate PO for the chosen fabric vendor. Setting it to null returns
+        to the default behavior (fabric ships with the product vendor).
+        Vendor POs are re-grouped after the change. The change is rejected
+        with 409 if any vendor PO that currently includes this line is no
+        longer in 'pending' status (i.e. already sent / fulfilled / received
+        / canceled) — staff must cancel that PO first.
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: itemId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdminSetOrderItemFabricVendorRequest" }
+      responses:
+        "200":
+          description: Updated order detail
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminOrderDetail" }
+        "400": { description: Bad request, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+        "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+        "409": { description: Conflict — line is on a non-pending vendor PO, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
   /admin/orders/{id}/notes:
     post:
       operationId: adminUpdateOrderNotes
@@ -4244,7 +4281,17 @@ components:
         productSkuSnapshot: { type: string, nullable: true }
         variantSkuSnapshot: { type: string, nullable: true }
         variantNameSnapshot: { type: string, nullable: true }
+        fabricId: { type: integer, nullable: true }
         fabricNameSnapshot: { type: string, nullable: true }
+        fabricVendorId:
+          type: integer
+          nullable: true
+          description: "Optional alternate vendor for this line's fabric. Null = fabric ships with the product vendor (the default)."
+        fabricVendorName: { type: string, nullable: true }
+        fabricVendorOrderId:
+          type: integer
+          nullable: true
+          description: "When fabricVendorId is set, this is the id of the separate vendor PO that the fabric was assigned to."
         department: { type: string, nullable: true }
         description: { type: string }
         quantity: { type: integer }
@@ -4255,7 +4302,7 @@ components:
         notes: { type: string, nullable: true }
         vendorOrderId: { type: integer, nullable: true }
       required:
-        [id, productId, productSkuSnapshot, variantSkuSnapshot, variantNameSnapshot, fabricNameSnapshot, department, description, quantity, unitPrice, amount, discountAmount, discountReason, notes, vendorOrderId]
+        [id, productId, productSkuSnapshot, variantSkuSnapshot, variantNameSnapshot, fabricId, fabricNameSnapshot, fabricVendorId, fabricVendorName, fabricVendorOrderId, department, description, quantity, unitPrice, amount, discountAmount, discountReason, notes, vendorOrderId]
     AdminOrderAddress:
       type: object
       properties:
@@ -4335,8 +4382,12 @@ components:
         unitPrice: { type: number }
         amount: { type: number }
         notes: { type: string, nullable: true }
+        kind:
+          type: string
+          enum: [product, fabric]
+          description: "'product' = the product line on the product vendor's PO. 'fabric' = a fabric-only line that was split out to an alternate fabric vendor's PO."
       required:
-        [id, productId, productSkuSnapshot, variantSkuSnapshot, variantNameSnapshot, fabricNameSnapshot, description, quantity, unitPrice, amount, notes]
+        [id, productId, productSkuSnapshot, variantSkuSnapshot, variantNameSnapshot, fabricNameSnapshot, description, quantity, unitPrice, amount, notes, kind]
     AdminVendorOrderSend:
       type: object
       properties:
@@ -7245,12 +7296,20 @@ components:
         country: { type: string }
         phone: { type: ["string", "null"] }
         isDefault: { type: boolean }
+    AdminSetOrderItemFabricVendorRequest:
+      type: object
+      properties:
+        fabricVendorId: { type: ["integer", "null"] }
+      required: [fabricVendorId]
     CreateOrderItemRequest:
       type: object
       properties:
         productId: { type: ["integer", "null"] }
         variantId: { type: ["integer", "null"] }
         fabricId: { type: ["integer", "null"] }
+        fabricVendorId:
+          type: ["integer", "null"]
+          description: "Staff-portal only. When set, this line's fabric ships from a separate vendor on its own PO instead of bundled with the product vendor's PO. Requires fabricId."
         description: { type: string, minLength: 1 }
         quantity: { type: integer, minimum: 1 }
         unitPrice: { type: number, minimum: 0 }

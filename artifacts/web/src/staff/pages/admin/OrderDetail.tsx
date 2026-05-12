@@ -9,12 +9,15 @@ import {
   useAdminUpdateOrderTotals,
   useAdminReviewCancellationRequest,
   useAdminGenerateVendorOrders,
+  useAdminUpdateOrderItemFabricVendor,
+  useAdminListManufacturers,
   getAdminGetOrderQueryKey,
   getAdminListOrdersQueryKey,
   getAdminListCancellationRequestsQueryKey,
   getAdminListVendorOrdersQueryKey,
   type AdminOrderDetail,
   type AdminOrderAddress,
+  type AdminOrderItem,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -146,6 +149,45 @@ export default function OrderDetail() {
   const updateTotals = useAdminUpdateOrderTotals();
   const reviewCancellation = useAdminReviewCancellationRequest();
   const generateVendorOrders = useAdminGenerateVendorOrders();
+  const updateFabricVendor = useAdminUpdateOrderItemFabricVendor();
+  // Manufacturer list for the per-line "alternate fabric vendor"
+  // dialog. The list is small and cached by react-query, so a single
+  // unconditional fetch is fine.
+  const [fabricVendorEditing, setFabricVendorEditing] =
+    useState<AdminOrderItem | null>(null);
+  const [fabricVendorDraft, setFabricVendorDraft] = useState<string>("none");
+  const manufacturersQuery = useAdminListManufacturers();
+  const manufacturers = manufacturersQuery.data ?? [];
+
+  function openFabricVendorDialog(item: AdminOrderItem) {
+    setFabricVendorEditing(item);
+    setFabricVendorDraft(
+      item.fabricVendorId != null ? String(item.fabricVendorId) : "none",
+    );
+  }
+
+  async function handleFabricVendorSave() {
+    if (!fabricVendorEditing || !order) return;
+    try {
+      await updateFabricVendor.mutateAsync({
+        orderId: order.id,
+        itemId: fabricVendorEditing.id,
+        data: {
+          fabricVendorId:
+            fabricVendorDraft === "none" ? null : Number(fabricVendorDraft),
+        },
+      });
+      toast({ title: "Fabric vendor updated" });
+      setFabricVendorEditing(null);
+      invalidate();
+    } catch (err) {
+      toast({
+        title: "Update failed",
+        description: err instanceof Error ? err.message : "Unknown error",
+        variant: "destructive",
+      });
+    }
+  }
 
   function invalidate() {
     queryClient.invalidateQueries({
@@ -550,6 +592,33 @@ export default function OrderDetail() {
                         {it.fabricNameSnapshot && (
                           <div className="text-xs text-slate-500">
                             Fabric: {it.fabricNameSnapshot}
+                          </div>
+                        )}
+                        {/* Show alt fabric vendor inline. The "Change"
+                            link is always available when the line has a
+                            fabric so admins can also clear an existing
+                            override or assign one for the first time. */}
+                        {it.fabricId != null && (
+                          <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-2">
+                            <span>
+                              Fabric vendor:{" "}
+                              {it.fabricVendorName ? (
+                                <span className="text-slate-700 font-medium">
+                                  {it.fabricVendorName}
+                                </span>
+                              ) : (
+                                <span className="text-slate-400">
+                                  product default
+                                </span>
+                              )}
+                            </span>
+                            <button
+                              type="button"
+                              className="text-blue-700 hover:underline"
+                              onClick={() => openFabricVendorDialog(it)}
+                            >
+                              Change
+                            </button>
                           </div>
                         )}
                       </td>
@@ -1012,6 +1081,83 @@ export default function OrderDetail() {
             <HistoryPanel entityType="order" entityId={orderId} />
           </div>
         ) : null}
+
+        {/* Per-line alternate fabric vendor dialog. Saving regroups the
+            line under a separate fabric-only PO; the server enforces
+            that any currently-linked PO must still be `pending`. */}
+        <Dialog
+          open={fabricVendorEditing !== null}
+          onOpenChange={(open) => {
+            if (!open) setFabricVendorEditing(null);
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Set alternate fabric vendor</DialogTitle>
+            </DialogHeader>
+            {fabricVendorEditing && (
+              <div className="space-y-3 text-sm">
+                <div className="text-slate-600">
+                  Line:{" "}
+                  <span className="font-medium text-slate-900">
+                    {fabricVendorEditing.description ??
+                      fabricVendorEditing.variantNameSnapshot ??
+                      "—"}
+                  </span>
+                </div>
+                {fabricVendorEditing.fabricNameSnapshot && (
+                  <div className="text-slate-600">
+                    Fabric:{" "}
+                    <span className="font-medium">
+                      {fabricVendorEditing.fabricNameSnapshot}
+                    </span>
+                  </div>
+                )}
+                <div>
+                  <Label>Fabric vendor</Label>
+                  <Select
+                    value={fabricVendorDraft}
+                    onValueChange={setFabricVendorDraft}
+                  >
+                    <SelectTrigger className="mt-1.5">
+                      <SelectValue placeholder="Use product's vendor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">
+                        Use product's vendor (default)
+                      </SelectItem>
+                      {manufacturers.map((m) => (
+                        <SelectItem key={m.id} value={String(m.id)}>
+                          {m.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className="mt-2 text-xs text-slate-500">
+                    Saving will regroup any related vendor orders. This
+                    is only allowed while every linked PO is still in
+                    "pending" status.
+                  </div>
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setFabricVendorEditing(null)}
+                disabled={updateFabricVendor.isPending}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleFabricVendorSave}
+                disabled={updateFabricVendor.isPending}
+              >
+                {updateFabricVendor.isPending ? "Saving…" : "Save"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </PageBody>
     </>
   );

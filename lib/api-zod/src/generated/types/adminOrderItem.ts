@@ -12,7 +12,13 @@ export interface AdminOrderItem {
   productSkuSnapshot: string | null;
   variantSkuSnapshot: string | null;
   variantNameSnapshot: string | null;
+  fabricId: number | null;
   fabricNameSnapshot: string | null;
+  /** Optional alternate vendor for this line's fabric. Null = fabric ships with the product vendor (the default). */
+  fabricVendorId: number | null;
+  fabricVendorName: string | null;
+  /** When fabricVendorId is set, this is the id of the separate vendor PO that the fabric was assigned to. */
+  fabricVendorOrderId: number | null;
   department: string | null;
   description: string;
   quantity: number;

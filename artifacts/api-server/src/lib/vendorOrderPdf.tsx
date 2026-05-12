@@ -224,6 +224,12 @@ export interface PdfVendorOrderItem {
   unitPrice: number;
   amount: number;
   notes: string | null;
+  // 'product' = the regular product line on the product vendor's PO.
+  // 'fabric'  = a fabric-only line split out to an alternate fabric vendor.
+  // When 'fabric', the renderer hides product/variant SKU fields and only
+  // shows the fabric item-number + name, since the alternate vendor only
+  // ships the fabric.
+  kind?: "product" | "fabric";
 }
 
 export interface VendorOrderPdfArgs {
@@ -492,9 +498,25 @@ function VendorOrderDocument(args: VendorOrderPdfArgs) {
 
           {/* Rows */}
           {items.map((it, idx) => {
-            const sku = it.variantSkuSnapshot ?? it.productSkuSnapshot ?? "";
-            const mainDesc = it.description || "—";
-            const options = itemOptions(it);
+            const isFabric = it.kind === "fabric";
+            // Fabric-only POs ship just the fabric, so the SKU column shows
+            // the fabric item number (not the product/variant SKU) and the
+            // description shows the fabric name. The original product
+            // description appears below as a "for" reference so the vendor
+            // knows which Oasis line this fabric is being cut for.
+            const sku = isFabric
+              ? (it.fabricItemNumberSnapshot ?? "")
+              : (it.variantSkuSnapshot ?? it.productSkuSnapshot ?? "");
+            const mainDesc = isFabric
+              ? (it.fabricNameSnapshot || "Fabric")
+              : (it.description || "—");
+            const options = isFabric
+              ? [
+                  it.description
+                    ? `for ${it.description}${it.variantNameSnapshot ? ` — ${it.variantNameSnapshot}` : ""}`
+                    : null,
+                ].filter((v): v is string => Boolean(v))
+              : itemOptions(it);
             const rowBg = idx % 2 === 0 ? "#fff" : LIGHT_BG;
             return (
               <React.Fragment key={idx}>

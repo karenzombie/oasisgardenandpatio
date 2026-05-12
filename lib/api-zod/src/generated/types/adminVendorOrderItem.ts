@@ -5,6 +5,7 @@
  * Oasis Garden & Patio API
  * OpenAPI spec version: 0.1.0
  */
+import type { AdminVendorOrderItemKind } from "./adminVendorOrderItemKind";
 
 export interface AdminVendorOrderItem {
   id: number;
@@ -18,4 +19,6 @@ export interface AdminVendorOrderItem {
   unitPrice: number;
   amount: number;
   notes: string | null;
+  /** 'product' = the product line on the product vendor's PO. 'fabric' = a fabric-only line that was split out to an alternate fabric vendor's PO. */
+  kind: AdminVendorOrderItemKind;
 }

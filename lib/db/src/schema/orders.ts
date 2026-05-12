@@ -17,6 +17,7 @@ import { z } from "zod/v4";
 import { usersTable } from "./users";
 import { customersTable, addressesTable } from "./customers";
 import { productsTable } from "./products";
+import { manufacturersTable } from "./manufacturers";
 import {
   productVariantsTable,
   fabricsTable,
@@ -135,12 +136,28 @@ export const orderItemsTable = pgTable(
     fabricId: integer("fabric_id").references(() => fabricsTable.id, {
       onDelete: "set null",
     }),
+    // Optional override (staff-portal only): when set, this line's fabric
+    // ships from this alternate vendor on its own PO instead of being
+    // bundled with the product's vendor PO. NULL (the default and the
+    // only value used by customer/online orders) keeps the historical
+    // behavior of "fabric ships with the product vendor".
+    fabricVendorId: integer("fabric_vendor_id").references(
+      () => manufacturersTable.id,
+      { onDelete: "set null" },
+    ),
     productSkuSnapshot: text("product_sku_snapshot"),
     variantSkuSnapshot: text("variant_sku_snapshot"),
     variantNameSnapshot: text("variant_name_snapshot"),
     fabricItemNumberSnapshot: text("fabric_item_number_snapshot"),
     fabricNameSnapshot: text("fabric_name_snapshot"),
     vendorOrderId: integer("vendor_order_id"),
+    // Companion to vendor_order_id: when fabric_vendor_id is set, the
+    // line's fabric goes to a SEPARATE vendor PO (this column), while
+    // vendor_order_id continues to point at the product vendor's PO.
+    // FK is intentionally omitted at the schema level to avoid a
+    // circular import between order_items and vendor_orders; integrity
+    // is maintained by the auto-generate / re-assign code paths.
+    fabricVendorOrderId: integer("fabric_vendor_order_id"),
     department: text("department"),
     description: text("description").notNull(),
     quantity: integer("quantity").notNull(),
@@ -155,6 +172,7 @@ export const orderItemsTable = pgTable(
   (t) => [
     index("order_items_order_id_idx").on(t.orderId),
     index("order_items_vendor_order_id_idx").on(t.vendorOrderId),
+    index("order_items_fabric_vendor_order_id_idx").on(t.fabricVendorOrderId),
     // Composite FKs guarantee that variant_id belongs to product_id and that
     // fabric_id is a configured option for product_id. MATCH SIMPLE skips the
     // check when either column is NULL, so simple flat-product line items
@@ -199,6 +217,19 @@ export const orderItemsTable = pgTable(
     check(
       "order_items_fabric_requires_product",
       sql`${t.fabricId} IS NULL OR ${t.productId} IS NOT NULL`,
+    ),
+    // Alternate fabric vendor only makes sense when there's actually a
+    // fabric chosen on the line.
+    check(
+      "order_items_fabric_vendor_requires_fabric",
+      sql`${t.fabricVendorId} IS NULL OR ${t.fabricId} IS NOT NULL`,
+    ),
+    // The fabric_vendor_order_id is the assignment to the alternate
+    // vendor's PO; it can only exist if we've designated an alternate
+    // vendor at all.
+    check(
+      "order_items_fabric_vo_requires_fabric_vendor",
+      sql`${t.fabricVendorOrderId} IS NULL OR ${t.fabricVendorId} IS NOT NULL`,
     ),
   ],
 );

@@ -83,6 +83,7 @@ import type {
   AdminReportsVisitorFunnelParams,
   AdminResetPasswordResponse,
   AdminSet,
+  AdminSetOrderItemFabricVendorRequest,
   AdminSetSummary,
   AdminUpdateOrderShippingMethodRequest,
   AdminUpdateOrderTotalsRequest,
@@ -10793,6 +10794,129 @@ export const useAdminUpdateOrderTotals = <
   TContext
 > => {
   return useMutation(getAdminUpdateOrderTotalsMutationOptions(options));
+};
+
+/**
+ * Staff-portal only. When `fabricVendorId` is non-null, this line's fabric is split out of the product vendor's PO and placed on a separate PO for the chosen fabric vendor. Setting it to null returns to the default behavior (fabric ships with the product vendor). Vendor POs are re-grouped after the change. The change is rejected with 409 if any vendor PO that currently includes this line is no longer in 'pending' status (i.e. already sent / fulfilled / received / canceled) — staff must cancel that PO first.
+ * @summary Set or clear the alternate fabric vendor on a line item
+ */
+export const getAdminUpdateOrderItemFabricVendorUrl = (
+  orderId: number,
+  itemId: number,
+) => {
+  return `/api/admin/orders/${orderId}/items/${itemId}/fabric-vendor`;
+};
+
+export const adminUpdateOrderItemFabricVendor = async (
+  orderId: number,
+  itemId: number,
+  adminSetOrderItemFabricVendorRequest: AdminSetOrderItemFabricVendorRequest,
+  options?: RequestInit,
+): Promise<AdminOrderDetail> => {
+  return customFetch<AdminOrderDetail>(
+    getAdminUpdateOrderItemFabricVendorUrl(orderId, itemId),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(adminSetOrderItemFabricVendorRequest),
+    },
+  );
+};
+
+export const getAdminUpdateOrderItemFabricVendorMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateOrderItemFabricVendor>>,
+    TError,
+    {
+      orderId: number;
+      itemId: number;
+      data: BodyType<AdminSetOrderItemFabricVendorRequest>;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUpdateOrderItemFabricVendor>>,
+  TError,
+  {
+    orderId: number;
+    itemId: number;
+    data: BodyType<AdminSetOrderItemFabricVendorRequest>;
+  },
+  TContext
+> => {
+  const mutationKey = ["adminUpdateOrderItemFabricVendor"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUpdateOrderItemFabricVendor>>,
+    {
+      orderId: number;
+      itemId: number;
+      data: BodyType<AdminSetOrderItemFabricVendorRequest>;
+    }
+  > = (props) => {
+    const { orderId, itemId, data } = props ?? {};
+
+    return adminUpdateOrderItemFabricVendor(
+      orderId,
+      itemId,
+      data,
+      requestOptions,
+    );
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminUpdateOrderItemFabricVendorMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUpdateOrderItemFabricVendor>>
+>;
+export type AdminUpdateOrderItemFabricVendorMutationBody =
+  BodyType<AdminSetOrderItemFabricVendorRequest>;
+export type AdminUpdateOrderItemFabricVendorMutationError = ErrorType<Error>;
+
+/**
+ * @summary Set or clear the alternate fabric vendor on a line item
+ */
+export const useAdminUpdateOrderItemFabricVendor = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateOrderItemFabricVendor>>,
+    TError,
+    {
+      orderId: number;
+      itemId: number;
+      data: BodyType<AdminSetOrderItemFabricVendorRequest>;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUpdateOrderItemFabricVendor>>,
+  TError,
+  {
+    orderId: number;
+    itemId: number;
+    data: BodyType<AdminSetOrderItemFabricVendorRequest>;
+  },
+  TContext
+> => {
+  return useMutation(
+    getAdminUpdateOrderItemFabricVendorMutationOptions(options),
+  );
 };
 
 /**
