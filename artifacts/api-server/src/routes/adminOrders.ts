@@ -39,6 +39,7 @@ import { recordHistory } from "../lib/history";
 import { loadOrderShipments } from "./adminOrderShipments";
 import { loadOrderPayments } from "./adminOrderPayments";
 import { autoGenerateVendorOrders } from "../lib/autoGenerateVendorOrders";
+import { sendOrderStatusEmail } from "../lib/orderStatusEmail";
 
 const router: IRouter = Router();
 const DEFAULT_LIMIT = 50;
@@ -477,6 +478,12 @@ router.post(
           notes: `status → ${body.data.toStatus}${body.data.note ? `: ${body.data.note}` : ""}`,
         });
       }
+      // Fire customer status-change email. Intentionally NOT awaited so
+      // a slow Resend round-trip doesn't add latency to the API
+      // response or tie up an Express worker. Errors are swallowed
+      // inside the helper, but we attach a final `.catch` as belt-and-
+      // suspenders against any unhandled rejection.
+      void sendOrderStatusEmail(orderId, body.data.toStatus).catch(() => {});
     }
     const detail = await loadOrderDetail(orderId);
     if (!detail) {
