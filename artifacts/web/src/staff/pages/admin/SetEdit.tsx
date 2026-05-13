@@ -5,7 +5,6 @@ import {
   ArrowLeft,
   ArrowDown,
   ArrowUp,
-  Plus,
   Save,
   Search,
   Trash2,
@@ -37,6 +36,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { useToast } from "@/hooks/use-toast";
 import { PageBody, PageHeader } from "../../StaffShell";
 import HistoryPanel from "../../components/HistoryPanel";
@@ -122,7 +134,7 @@ export default function SetEdit() {
   const [metaError, setMetaError] = useState<string | null>(null);
   const [itemsError, setItemsError] = useState<string | null>(null);
   const [productSearch, setProductSearch] = useState("");
-  const [pickerProductId, setPickerProductId] = useState<string>("");
+  const [comboOpen, setComboOpen] = useState(false);
 
   // Hydrate once we have detail + manufacturers + products
   useEffect(() => {
@@ -145,7 +157,7 @@ export default function SetEdit() {
     setItems([]);
     setMetaError(null);
     setItemsError(null);
-    setPickerProductId("");
+    setComboOpen(false);
     setProductSearch("");
   }, [setId]);
 
@@ -304,7 +316,7 @@ export default function SetEdit() {
         quantity: 1,
       },
     ]);
-    setPickerProductId("");
+    setComboOpen(false);
     setProductSearch("");
     setItemsError(null);
   }
@@ -546,64 +558,62 @@ export default function SetEdit() {
               </span>
             </div>
 
-            <div className="flex flex-wrap items-end gap-2 p-3 bg-slate-50 rounded border border-slate-200">
-              <div className="flex-1 min-w-[200px] space-y-1.5">
-                <Label htmlFor="productSearch" className="text-xs">
-                  Search products
-                </Label>
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-2.5 size-4 text-slate-400" />
-                  <Input
-                    id="productSearch"
-                    value={productSearch}
-                    onChange={(e) => {
-                      setProductSearch(e.target.value);
-                      setPickerProductId("");
-                    }}
-                    placeholder="By name, SKU, or vendor"
-                    className="pl-8"
-                  />
-                </div>
-              </div>
-              <div className="flex-[2] min-w-[240px] space-y-1.5">
-                <Label htmlFor="picker" className="text-xs">
-                  Pick a product
-                </Label>
-                <Select
-                  value={pickerProductId}
-                  onValueChange={(v) => setPickerProductId(v)}
+            <div className="p-3 bg-slate-50 rounded border border-slate-200">
+              <Label className="text-xs mb-1.5 block">Add product</Label>
+              <Popover open={comboOpen} onOpenChange={setComboOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 rounded-md border border-input bg-white px-3 py-2 text-sm text-slate-500 shadow-sm hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
+                  >
+                    <Search className="size-4 shrink-0 text-slate-400" />
+                    <span className="flex-1 text-left truncate">
+                      {productSearch || "Type a name, SKU, or vendor to search…"}
+                    </span>
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="p-0"
+                  style={{ width: "var(--radix-popover-trigger-width)", minWidth: 320 }}
+                  align="start"
                 >
-                  <SelectTrigger id="picker">
-                    <SelectValue
-                      placeholder={
-                        productList.isLoading
-                          ? "Loading…"
-                          : filteredProducts.length === 0
-                            ? "No matching products"
-                            : "Select a product to add"
-                      }
+                  <Command shouldFilter={false}>
+                    <CommandInput
+                      placeholder="Name, SKU, or vendor…"
+                      value={productSearch}
+                      onValueChange={setProductSearch}
                     />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {filteredProducts.map((p) => (
-                      <SelectItem key={p.id} value={String(p.id)}>
-                        <span className="font-mono text-xs text-slate-500 mr-2">
-                          {p.sku}
-                        </span>
-                        {p.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button
-                type="button"
-                disabled={!pickerProductId}
-                onClick={() => addProductToItems(pickerProductId)}
-              >
-                <Plus className="size-4 mr-1.5" />
-                Add
-              </Button>
+                    <CommandList>
+                      {productList.isLoading ? (
+                        <CommandEmpty>Loading products…</CommandEmpty>
+                      ) : filteredProducts.length === 0 ? (
+                        <CommandEmpty>No matching products</CommandEmpty>
+                      ) : (
+                        <CommandGroup>
+                          {filteredProducts.map((p) => (
+                            <CommandItem
+                              key={p.id}
+                              value={String(p.id)}
+                              onSelect={() => addProductToItems(String(p.id))}
+                              className="flex items-center gap-2 cursor-pointer"
+                            >
+                              <span className="font-mono text-xs text-slate-400 shrink-0 w-[72px] truncate">
+                                {p.sku}
+                              </span>
+                              <span className="flex-1 truncate">{p.name}</span>
+                              {p.price && (
+                                <span className="ml-auto text-xs text-slate-500 tabular-nums shrink-0">
+                                  {formatMoney(p.price)}
+                                </span>
+                              )}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      )}
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             {items.length === 0 ? (
