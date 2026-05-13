@@ -3267,6 +3267,30 @@ export interface AdminFabric {
   displayOrder: number;
 }
 
+export interface AdminCreateFabricRequest {
+  manufacturerId: number;
+  /** @minLength 1 */
+  itemNumber: string;
+  /** @minLength 1 */
+  name: string;
+  /** @nullable */
+  swatchImageUrl?: string | null;
+  isActive?: boolean;
+  displayOrder?: number;
+}
+
+export interface AdminUpdateFabricRequest {
+  manufacturerId?: number;
+  /** @minLength 1 */
+  itemNumber?: string;
+  /** @minLength 1 */
+  name?: string;
+  /** @nullable */
+  swatchImageUrl?: string | null;
+  isActive?: boolean;
+  displayOrder?: number;
+}
+
 export interface AdminProductFabricPool {
   manufacturerId: number;
   manufacturerName: string;

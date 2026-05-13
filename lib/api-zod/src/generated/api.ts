@@ -2264,6 +2264,53 @@ export const AdminListFabricsResponseItem = zod.object({
 export const AdminListFabricsResponse = zod.array(AdminListFabricsResponseItem);
 
 /**
+ * @summary Create a new fabric
+ */
+
+export const AdminCreateFabricBody = zod.object({
+  manufacturerId: zod.number(),
+  itemNumber: zod.string().min(1),
+  name: zod.string().min(1),
+  swatchImageUrl: zod.string().nullish(),
+  isActive: zod.boolean().optional(),
+  displayOrder: zod.number().optional(),
+});
+
+/**
+ * @summary Update a fabric
+ */
+export const AdminUpdateFabricParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminUpdateFabricBody = zod.object({
+  manufacturerId: zod.number().optional(),
+  itemNumber: zod.string().min(1).optional(),
+  name: zod.string().min(1).optional(),
+  swatchImageUrl: zod.string().nullish(),
+  isActive: zod.boolean().optional(),
+  displayOrder: zod.number().optional(),
+});
+
+export const AdminUpdateFabricResponse = zod.object({
+  id: zod.number(),
+  manufacturerId: zod.number(),
+  manufacturerName: zod.string(),
+  itemNumber: zod.string(),
+  name: zod.string(),
+  swatchImageUrl: zod.string().nullable(),
+  isActive: zod.boolean(),
+  displayOrder: zod.number(),
+});
+
+/**
+ * @summary Delete a fabric (only if not referenced by any product options)
+ */
+export const AdminDeleteFabricParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
  * @summary Get a product's fabric pools and individual fabric picks
  */
 export const AdminGetProductFabricsParams = zod.object({

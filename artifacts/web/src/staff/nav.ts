@@ -17,6 +17,7 @@ import {
   History,
   ShieldAlert,
   ShoppingCart,
+  Palette,
   type LucideIcon,
 } from "lucide-react";
 
@@ -56,6 +57,7 @@ export const ADMIN_NAV: NavGroup[] = [
       { label: "Products", path: "/admin/products", icon: Package },
       { label: "Categories", path: "/admin/categories", icon: Tags },
       { label: "Sets", path: "/admin/sets", icon: Layers },
+      { label: "Fabrics", path: "/admin/fabrics", icon: Palette },
       { label: "Inventory", path: "/admin/inventory", icon: Boxes },
       { label: "Vendors", path: "/admin/manufacturers", icon: Building2 },
       { label: "Carriers", path: "/admin/carriers", icon: Truck },

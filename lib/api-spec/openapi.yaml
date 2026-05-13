@@ -1900,6 +1900,101 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
+    post:
+      operationId: adminCreateFabric
+      tags: [admin-products]
+      summary: Create a new fabric
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminCreateFabricRequest"
+      responses:
+        "201":
+          description: Created fabric
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminFabric" }
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "403":
+          description: Not admin
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "409":
+          description: Item number already exists for this manufacturer
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+  /admin/fabrics/{id}:
+    put:
+      operationId: adminUpdateFabric
+      tags: [admin-products]
+      summary: Update a fabric
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUpdateFabricRequest"
+      responses:
+        "200":
+          description: Updated fabric
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminFabric" }
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "404":
+          description: Fabric not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "409":
+          description: Item number already exists for this manufacturer
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+    delete:
+      operationId: adminDeleteFabric
+      tags: [admin-products]
+      summary: Delete a fabric (only if not referenced by any product options)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Fabric not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "409":
+          description: Fabric is in use and cannot be deleted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
   /admin/products/{id}/fabrics:
     get:
       operationId: adminGetProductFabrics
@@ -7635,6 +7730,28 @@ components:
         - swatchImageUrl
         - isActive
         - displayOrder
+    AdminCreateFabricRequest:
+      type: object
+      properties:
+        manufacturerId: { type: integer }
+        itemNumber: { type: string, minLength: 1 }
+        name: { type: string, minLength: 1 }
+        swatchImageUrl: { type: ["string", "null"] }
+        isActive: { type: boolean }
+        displayOrder: { type: integer }
+      required:
+        - manufacturerId
+        - itemNumber
+        - name
+    AdminUpdateFabricRequest:
+      type: object
+      properties:
+        manufacturerId: { type: integer }
+        itemNumber: { type: string, minLength: 1 }
+        name: { type: string, minLength: 1 }
+        swatchImageUrl: { type: ["string", "null"] }
+        isActive: { type: boolean }
+        displayOrder: { type: integer }
     AdminProductFabricPool:
       type: object
       properties:

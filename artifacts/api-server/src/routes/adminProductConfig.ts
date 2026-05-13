@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { asc, eq, inArray, sql } from "drizzle-orm";
+import { asc, eq, inArray, sql, count } from "drizzle-orm";
 import {
   db,
   fabricsTable,
@@ -10,6 +10,9 @@ import {
   productAttributesTable,
 } from "@workspace/db";
 import {
+  AdminCreateFabricBody,
+  AdminUpdateFabricParams,
+  AdminUpdateFabricBody,
   AdminGetProductFabricsParams,
   AdminUpdateProductFabricsParams,
   AdminUpdateProductFabricsBody,
@@ -59,6 +62,209 @@ router.get(
         swatchImageUrl: toPublicImageUrl(r.swatchImageUrl),
       })),
     );
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Admin: create fabric
+// ---------------------------------------------------------------------------
+router.post(
+  "/admin/fabrics",
+  requireAuth,
+  requireRole("admin"),
+  async (req: Request, res: Response): Promise<void> => {
+    const body = AdminCreateFabricBody.safeParse(req.body);
+    if (!body.success) {
+      res.status(400).json({ error: body.error.issues[0]?.message ?? "Invalid input" });
+      return;
+    }
+    const { manufacturerId, itemNumber, name, swatchImageUrl, isActive, displayOrder } = body.data;
+
+    const mfg = await db
+      .select({ id: manufacturersTable.id })
+      .from(manufacturersTable)
+      .where(eq(manufacturersTable.id, manufacturerId))
+      .limit(1);
+    if (mfg.length === 0) {
+      res.status(400).json({ error: "Manufacturer not found" });
+      return;
+    }
+
+    try {
+      const [row] = await db
+        .insert(fabricsTable)
+        .values({
+          manufacturerId,
+          itemNumber: itemNumber.trim(),
+          name: name.trim(),
+          swatchImageUrl: swatchImageUrl ?? null,
+          isActive: isActive ?? true,
+          displayOrder: displayOrder ?? 0,
+        })
+        .returning();
+
+      const [full] = await db
+        .select({
+          id: fabricsTable.id,
+          manufacturerId: fabricsTable.manufacturerId,
+          manufacturerName: manufacturersTable.name,
+          itemNumber: fabricsTable.itemNumber,
+          name: fabricsTable.name,
+          swatchImageUrl: fabricsTable.swatchImageUrl,
+          isActive: fabricsTable.isActive,
+          displayOrder: fabricsTable.displayOrder,
+        })
+        .from(fabricsTable)
+        .innerJoin(manufacturersTable, eq(manufacturersTable.id, fabricsTable.manufacturerId))
+        .where(eq(fabricsTable.id, row.id));
+
+      res.status(201).json({
+        ...full,
+        swatchImageUrl: toPublicImageUrl(full.swatchImageUrl),
+      });
+    } catch (err: unknown) {
+      const pgErr = err as { code?: string };
+      if (pgErr.code === "23505") {
+        res.status(409).json({ error: "Item number already exists for this manufacturer" });
+        return;
+      }
+      req.log.error({ err }, "Failed to create fabric");
+      res.status(500).json({ error: "Failed to create fabric" });
+    }
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Admin: update fabric
+// ---------------------------------------------------------------------------
+router.put(
+  "/admin/fabrics/:id",
+  requireAuth,
+  requireRole("admin"),
+  async (req: Request, res: Response): Promise<void> => {
+    const params = AdminUpdateFabricParams.safeParse(req.params);
+    const body = AdminUpdateFabricBody.safeParse(req.body);
+    if (!params.success || !body.success) {
+      res.status(400).json({ error: "Invalid input" });
+      return;
+    }
+    const { id } = params.data;
+    const { manufacturerId, itemNumber, name, swatchImageUrl, isActive, displayOrder } = body.data;
+
+    const existing = await db
+      .select({ id: fabricsTable.id })
+      .from(fabricsTable)
+      .where(eq(fabricsTable.id, id))
+      .limit(1);
+    if (existing.length === 0) {
+      res.status(404).json({ error: "Fabric not found" });
+      return;
+    }
+
+    if (manufacturerId !== undefined) {
+      const mfg = await db
+        .select({ id: manufacturersTable.id })
+        .from(manufacturersTable)
+        .where(eq(manufacturersTable.id, manufacturerId))
+        .limit(1);
+      if (mfg.length === 0) {
+        res.status(400).json({ error: "Manufacturer not found" });
+        return;
+      }
+    }
+
+    const updates: Partial<typeof fabricsTable.$inferInsert> = {};
+    if (manufacturerId !== undefined) updates.manufacturerId = manufacturerId;
+    if (itemNumber !== undefined) updates.itemNumber = itemNumber.trim();
+    if (name !== undefined) updates.name = name.trim();
+    if ("swatchImageUrl" in body.data) updates.swatchImageUrl = swatchImageUrl ?? null;
+    if (isActive !== undefined) updates.isActive = isActive;
+    if (displayOrder !== undefined) updates.displayOrder = displayOrder;
+
+    try {
+      await db.update(fabricsTable).set(updates).where(eq(fabricsTable.id, id));
+    } catch (err: unknown) {
+      const pgErr = err as { code?: string };
+      if (pgErr.code === "23505") {
+        res.status(409).json({ error: "Item number already exists for this manufacturer" });
+        return;
+      }
+      req.log.error({ err }, "Failed to update fabric");
+      res.status(500).json({ error: "Failed to update fabric" });
+      return;
+    }
+
+    const [full] = await db
+      .select({
+        id: fabricsTable.id,
+        manufacturerId: fabricsTable.manufacturerId,
+        manufacturerName: manufacturersTable.name,
+        itemNumber: fabricsTable.itemNumber,
+        name: fabricsTable.name,
+        swatchImageUrl: fabricsTable.swatchImageUrl,
+        isActive: fabricsTable.isActive,
+        displayOrder: fabricsTable.displayOrder,
+      })
+      .from(fabricsTable)
+      .innerJoin(manufacturersTable, eq(manufacturersTable.id, fabricsTable.manufacturerId))
+      .where(eq(fabricsTable.id, id));
+
+    res.json({
+      ...full,
+      swatchImageUrl: toPublicImageUrl(full.swatchImageUrl),
+    });
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Admin: delete fabric
+// ---------------------------------------------------------------------------
+router.delete(
+  "/admin/fabrics/:id",
+  requireAuth,
+  requireRole("admin"),
+  async (req: Request, res: Response): Promise<void> => {
+    const params = AdminUpdateFabricParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: "Invalid fabric id" });
+      return;
+    }
+    const { id } = params.data;
+
+    const existing = await db
+      .select({ id: fabricsTable.id })
+      .from(fabricsTable)
+      .where(eq(fabricsTable.id, id))
+      .limit(1);
+    if (existing.length === 0) {
+      res.status(404).json({ error: "Fabric not found" });
+      return;
+    }
+
+    // Check if any product has this fabric as an individual pick
+    const [usage] = await db
+      .select({ n: count() })
+      .from(productFabricOptionsTable)
+      .where(eq(productFabricOptionsTable.fabricId, id));
+    if ((usage?.n ?? 0) > 0) {
+      res.status(409).json({
+        error: `This fabric is assigned to ${usage.n} product(s) and cannot be deleted. Remove it from those products first.`,
+      });
+      return;
+    }
+
+    try {
+      await db.delete(fabricsTable).where(eq(fabricsTable.id, id));
+      res.status(204).send();
+    } catch (err: unknown) {
+      const pgErr = err as { code?: string };
+      if (pgErr.code === "23503") {
+        res.status(409).json({ error: "This fabric is in use and cannot be deleted." });
+        return;
+      }
+      req.log.error({ err }, "Failed to delete fabric");
+      res.status(500).json({ error: "Failed to delete fabric" });
+    }
   },
 );
 

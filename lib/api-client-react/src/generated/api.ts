@@ -36,6 +36,7 @@ import type {
   AdminCouponCode,
   AdminCouponCodeUse,
   AdminCreateCustomerResponse,
+  AdminCreateFabricRequest,
   AdminCreatePaymentRequest,
   AdminCreateShipmentRequest,
   AdminCustomer,
@@ -86,6 +87,7 @@ import type {
   AdminSet,
   AdminSetOrderItemFabricVendorRequest,
   AdminSetSummary,
+  AdminUpdateFabricRequest,
   AdminUpdateOrderShippingMethodRequest,
   AdminUpdateOrderTotalsRequest,
   AdminUpdatePaymentRequest,
@@ -6257,6 +6259,263 @@ export function useAdminListFabrics<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Create a new fabric
+ */
+export const getAdminCreateFabricUrl = () => {
+  return `/api/admin/fabrics`;
+};
+
+export const adminCreateFabric = async (
+  adminCreateFabricRequest: AdminCreateFabricRequest,
+  options?: RequestInit,
+): Promise<AdminFabric> => {
+  return customFetch<AdminFabric>(getAdminCreateFabricUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(adminCreateFabricRequest),
+  });
+};
+
+export const getAdminCreateFabricMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCreateFabric>>,
+    TError,
+    { data: BodyType<AdminCreateFabricRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminCreateFabric>>,
+  TError,
+  { data: BodyType<AdminCreateFabricRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminCreateFabric"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminCreateFabric>>,
+    { data: BodyType<AdminCreateFabricRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return adminCreateFabric(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminCreateFabricMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminCreateFabric>>
+>;
+export type AdminCreateFabricMutationBody = BodyType<AdminCreateFabricRequest>;
+export type AdminCreateFabricMutationError = ErrorType<Error>;
+
+/**
+ * @summary Create a new fabric
+ */
+export const useAdminCreateFabric = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCreateFabric>>,
+    TError,
+    { data: BodyType<AdminCreateFabricRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminCreateFabric>>,
+  TError,
+  { data: BodyType<AdminCreateFabricRequest> },
+  TContext
+> => {
+  return useMutation(getAdminCreateFabricMutationOptions(options));
+};
+
+/**
+ * @summary Update a fabric
+ */
+export const getAdminUpdateFabricUrl = (id: number) => {
+  return `/api/admin/fabrics/${id}`;
+};
+
+export const adminUpdateFabric = async (
+  id: number,
+  adminUpdateFabricRequest: AdminUpdateFabricRequest,
+  options?: RequestInit,
+): Promise<AdminFabric> => {
+  return customFetch<AdminFabric>(getAdminUpdateFabricUrl(id), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(adminUpdateFabricRequest),
+  });
+};
+
+export const getAdminUpdateFabricMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateFabric>>,
+    TError,
+    { id: number; data: BodyType<AdminUpdateFabricRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUpdateFabric>>,
+  TError,
+  { id: number; data: BodyType<AdminUpdateFabricRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminUpdateFabric"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUpdateFabric>>,
+    { id: number; data: BodyType<AdminUpdateFabricRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminUpdateFabric(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminUpdateFabricMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUpdateFabric>>
+>;
+export type AdminUpdateFabricMutationBody = BodyType<AdminUpdateFabricRequest>;
+export type AdminUpdateFabricMutationError = ErrorType<Error>;
+
+/**
+ * @summary Update a fabric
+ */
+export const useAdminUpdateFabric = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateFabric>>,
+    TError,
+    { id: number; data: BodyType<AdminUpdateFabricRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUpdateFabric>>,
+  TError,
+  { id: number; data: BodyType<AdminUpdateFabricRequest> },
+  TContext
+> => {
+  return useMutation(getAdminUpdateFabricMutationOptions(options));
+};
+
+/**
+ * @summary Delete a fabric (only if not referenced by any product options)
+ */
+export const getAdminDeleteFabricUrl = (id: number) => {
+  return `/api/admin/fabrics/${id}`;
+};
+
+export const adminDeleteFabric = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getAdminDeleteFabricUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getAdminDeleteFabricMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeleteFabric>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminDeleteFabric>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["adminDeleteFabric"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminDeleteFabric>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return adminDeleteFabric(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminDeleteFabricMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminDeleteFabric>>
+>;
+
+export type AdminDeleteFabricMutationError = ErrorType<Error>;
+
+/**
+ * @summary Delete a fabric (only if not referenced by any product options)
+ */
+export const useAdminDeleteFabric = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeleteFabric>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminDeleteFabric>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getAdminDeleteFabricMutationOptions(options));
+};
 
 /**
  * @summary Get a product's fabric pools and individual fabric picks
