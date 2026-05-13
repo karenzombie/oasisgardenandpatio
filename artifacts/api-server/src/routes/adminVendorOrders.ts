@@ -388,6 +388,61 @@ router.get(
   },
 );
 
+router.get(
+  "/admin/vendor-orders/:id/pdf",
+  requireAuth,
+  requireRole("admin"),
+  async (req: Request, res: Response): Promise<void> => {
+    const params = AdminGetVendorOrderParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: "Invalid id" });
+      return;
+    }
+    const detail = await loadVendorOrderDetail(params.data.id);
+    if (!detail) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+    let pdfBuffer: Buffer;
+    try {
+      pdfBuffer = await generateVendorOrderPdf({
+        vendorOrderNumber: detail.vendorOrderNumber,
+        dateOrdered: detail.createdAt,
+        customerOrderNumber: detail.customerOrderNumber,
+        customerName: detail.customerName,
+        notes: detail.notes,
+        items: detail.items,
+        manufacturerName: detail.manufacturerName,
+        manufacturerAddressLine1: detail.manufacturerAddressLine1,
+        manufacturerAddressLine2: detail.manufacturerAddressLine2,
+        manufacturerCity: detail.manufacturerCity,
+        manufacturerState: detail.manufacturerState,
+        manufacturerPostalCode: detail.manufacturerPostalCode,
+        manufacturerPhone: detail.manufacturerPhone,
+        manufacturerFax: detail.manufacturerFax,
+        manufacturerEmail: detail.manufacturerOrderEmail,
+        shipToStore: detail.shipToStore,
+        shipToName: detail.shipToName,
+        shipToLine1: detail.shipToLine1,
+        shipToLine2: detail.shipToLine2,
+        shipToCity: detail.shipToCity,
+        shipToState: detail.shipToState,
+        shipToPostalCode: detail.shipToPostalCode,
+        shipToPhone: detail.shipToPhone,
+      });
+    } catch (err) {
+      req.log.error({ err, vendorOrderId: params.data.id }, "PDF generation failed");
+      res.status(500).json({ error: "PDF generation failed" });
+      return;
+    }
+    const filename = `${detail.vendorOrderNumber}.pdf`;
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
+    res.setHeader("Content-Length", pdfBuffer.length);
+    res.send(pdfBuffer);
+  },
+);
+
 router.patch(
   "/admin/vendor-orders/:id",
   requireAuth,

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Printer } from "lucide-react";
 import {
   useAdminGetVendorOrder,
   useAdminUpdateVendorOrder,
@@ -614,6 +614,17 @@ export default function VendorOrderDetail() {
               <div className="text-xs font-medium text-slate-500 uppercase">
                 Actions
               </div>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() =>
+                  window.open(`/api/admin/vendor-orders/${id}/pdf`, "_blank")
+                }
+              >
+                <Printer className="size-4 mr-2" />
+                Print PO
+              </Button>
               {(!isTerminal || vo.sentAt) && (
                 <Button
                   type="button"
