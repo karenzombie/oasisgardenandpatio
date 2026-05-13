@@ -124,7 +124,7 @@ export default function SetEdit() {
     },
   });
   const mfgList = useAdminListManufacturers();
-  const productList = useAdminListProducts();
+  const productList = useAdminListProducts({ pageSize: 200 });
   const updateMut = useAdminUpdateSet();
   const replaceItemsMut = useAdminReplaceSetItems();
 
