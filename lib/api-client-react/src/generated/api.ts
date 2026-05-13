@@ -26,6 +26,7 @@ import type {
   AddWishlistItemRequest,
   AdjustInventoryResponse,
   AdminAddress,
+  AdminAgentDashboardStats,
   AdminAgentPrivileges,
   AdminBanner,
   AdminBulkUpdateProductsRequest,
@@ -42,6 +43,7 @@ import type {
   AdminCustomer,
   AdminCustomerDetail,
   AdminCustomerPage,
+  AdminDashboardStats,
   AdminDiscountEvent,
   AdminFabric,
   AdminInventoryAdjustmentsPage,
@@ -12457,6 +12459,162 @@ export const useAdminCancelVendorOrder = <
 > => {
   return useMutation(getAdminCancelVendorOrderMutationOptions(options));
 };
+
+/**
+ * @summary Get admin dashboard stat counters
+ */
+export const getAdminGetDashboardStatsUrl = () => {
+  return `/api/admin/dashboard/stats`;
+};
+
+export const adminGetDashboardStats = async (
+  options?: RequestInit,
+): Promise<AdminDashboardStats> => {
+  return customFetch<AdminDashboardStats>(getAdminGetDashboardStatsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAdminGetDashboardStatsQueryKey = () => {
+  return [`/api/admin/dashboard/stats`] as const;
+};
+
+export const getAdminGetDashboardStatsQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminGetDashboardStats>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetDashboardStats>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getAdminGetDashboardStatsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminGetDashboardStats>>
+  > = ({ signal }) => adminGetDashboardStats({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetDashboardStats>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminGetDashboardStatsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminGetDashboardStats>>
+>;
+export type AdminGetDashboardStatsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get admin dashboard stat counters
+ */
+
+export function useAdminGetDashboardStats<
+  TData = Awaited<ReturnType<typeof adminGetDashboardStats>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetDashboardStats>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminGetDashboardStatsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get current agent's dashboard stat counters
+ */
+export const getAdminGetAgentDashboardStatsUrl = () => {
+  return `/api/admin/agent/dashboard/stats`;
+};
+
+export const adminGetAgentDashboardStats = async (
+  options?: RequestInit,
+): Promise<AdminAgentDashboardStats> => {
+  return customFetch<AdminAgentDashboardStats>(
+    getAdminGetAgentDashboardStatsUrl(),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getAdminGetAgentDashboardStatsQueryKey = () => {
+  return [`/api/admin/agent/dashboard/stats`] as const;
+};
+
+export const getAdminGetAgentDashboardStatsQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminGetAgentDashboardStats>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetAgentDashboardStats>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getAdminGetAgentDashboardStatsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminGetAgentDashboardStats>>
+  > = ({ signal }) =>
+    adminGetAgentDashboardStats({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetAgentDashboardStats>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminGetAgentDashboardStatsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminGetAgentDashboardStats>>
+>;
+export type AdminGetAgentDashboardStatsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get current agent's dashboard stat counters
+ */
+
+export function useAdminGetAgentDashboardStats<
+  TData = Awaited<ReturnType<typeof adminGetAgentDashboardStats>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetAgentDashboardStats>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminGetAgentDashboardStatsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Aggregate sales totals across a date range

@@ -3582,6 +3582,28 @@ paths:
               schema: { $ref: "#/components/schemas/AdminVendorOrderDetail" }
         "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
         "409": { description: Already received or canceled, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+  /admin/dashboard/stats:
+    get:
+      operationId: adminGetDashboardStats
+      tags: [admin-reports]
+      summary: Get admin dashboard stat counters
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminDashboardStats" }
+  /admin/agent/dashboard/stats:
+    get:
+      operationId: adminGetAgentDashboardStats
+      tags: [admin-reports]
+      summary: Get current agent's dashboard stat counters
+      responses:
+        "200":
+          description: Agent dashboard stats
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminAgentDashboardStats" }
   /admin/reports/sales-summary:
     get:
       operationId: adminReportsSalesSummary
@@ -4647,6 +4669,21 @@ components:
         dateTo: { type: string, format: date-time }
         includeCanceled: { type: boolean }
       required: [dateFrom, dateTo, includeCanceled]
+    AdminDashboardStats:
+      type: object
+      properties:
+        openOrders: { type: integer, description: "Orders not yet completed, canceled, or refunded" }
+        activeProducts: { type: integer, description: "Products with isActive = true" }
+        totalCustomers: { type: integer, description: "Total customer records" }
+        pendingVendorOrders: { type: integer, description: "Vendor orders awaiting dispatch" }
+      required: [openOrders, activeProducts, totalCustomers, pendingVendorOrders]
+    AdminAgentDashboardStats:
+      type: object
+      properties:
+        myOpenOrders: { type: integer, description: "Agent's orders not yet completed/canceled/refunded" }
+        myOrdersThisWeek: { type: integer, description: "Orders created by this agent since Sunday" }
+        customersHelped: { type: integer, description: "Distinct customers across all agent orders" }
+      required: [myOpenOrders, myOrdersThisWeek, customersHelped]
     AdminReportsSalesSummary:
       type: object
       properties:

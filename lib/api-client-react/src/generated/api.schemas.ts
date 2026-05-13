@@ -324,6 +324,26 @@ export interface AdminReportsRange {
   includeCanceled: boolean;
 }
 
+export interface AdminDashboardStats {
+  /** Orders not yet completed, canceled, or refunded */
+  openOrders: number;
+  /** Products with isActive = true */
+  activeProducts: number;
+  /** Total customer records */
+  totalCustomers: number;
+  /** Vendor orders awaiting dispatch */
+  pendingVendorOrders: number;
+}
+
+export interface AdminAgentDashboardStats {
+  /** Agent's orders not yet completed/canceled/refunded */
+  myOpenOrders: number;
+  /** Orders created by this agent since Sunday */
+  myOrdersThisWeek: number;
+  /** Distinct customers across all agent orders */
+  customersHelped: number;
+}
+
 export interface AdminReportsSalesSummary {
   range: AdminReportsRange;
   orderCount: number;

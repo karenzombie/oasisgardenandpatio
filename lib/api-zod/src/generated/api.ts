@@ -6279,6 +6279,33 @@ export const AdminCancelVendorOrderResponse = zod.object({
 });
 
 /**
+ * @summary Get admin dashboard stat counters
+ */
+export const AdminGetDashboardStatsResponse = zod.object({
+  openOrders: zod
+    .number()
+    .describe("Orders not yet completed, canceled, or refunded"),
+  activeProducts: zod.number().describe("Products with isActive = true"),
+  totalCustomers: zod.number().describe("Total customer records"),
+  pendingVendorOrders: zod.number().describe("Vendor orders awaiting dispatch"),
+});
+
+/**
+ * @summary Get current agent's dashboard stat counters
+ */
+export const AdminGetAgentDashboardStatsResponse = zod.object({
+  myOpenOrders: zod
+    .number()
+    .describe("Agent's orders not yet completed\/canceled\/refunded"),
+  myOrdersThisWeek: zod
+    .number()
+    .describe("Orders created by this agent since Sunday"),
+  customersHelped: zod
+    .number()
+    .describe("Distinct customers across all agent orders"),
+});
+
+/**
  * @summary Aggregate sales totals across a date range
  */
 export const AdminReportsSalesSummaryQueryParams = zod.object({
