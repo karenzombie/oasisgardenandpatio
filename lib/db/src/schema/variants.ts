@@ -34,6 +34,7 @@ export const fabricsTable = pgTable(
     itemNumber: text("item_number").notNull(),
     name: text("name").notNull(),
     swatchImageUrl: text("swatch_image_url"),
+    grade: text("grade"),
     isActive: boolean("is_active").notNull().default(true),
     displayOrder: integer("display_order").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true })

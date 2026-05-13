@@ -2258,6 +2258,7 @@ export const AdminListFabricsResponseItem = zod.object({
   itemNumber: zod.string(),
   name: zod.string(),
   swatchImageUrl: zod.string().nullable(),
+  grade: zod.string().nullable(),
   isActive: zod.boolean(),
   displayOrder: zod.number(),
 });
@@ -2272,6 +2273,7 @@ export const AdminCreateFabricBody = zod.object({
   itemNumber: zod.string().min(1),
   name: zod.string().min(1),
   swatchImageUrl: zod.string().nullish(),
+  grade: zod.string().nullish(),
   isActive: zod.boolean().optional(),
   displayOrder: zod.number().optional(),
 });
@@ -2288,6 +2290,7 @@ export const AdminUpdateFabricBody = zod.object({
   itemNumber: zod.string().min(1).optional(),
   name: zod.string().min(1).optional(),
   swatchImageUrl: zod.string().nullish(),
+  grade: zod.string().nullish(),
   isActive: zod.boolean().optional(),
   displayOrder: zod.number().optional(),
 });
@@ -2299,6 +2302,7 @@ export const AdminUpdateFabricResponse = zod.object({
   itemNumber: zod.string(),
   name: zod.string(),
   swatchImageUrl: zod.string().nullable(),
+  grade: zod.string().nullable(),
   isActive: zod.boolean(),
   displayOrder: zod.number(),
 });

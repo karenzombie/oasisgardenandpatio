@@ -51,16 +51,20 @@ interface FabricFormState {
   manufacturerId: string;
   itemNumber: string;
   name: string;
+  grade: string;
   swatchImageUrl: string;
   isActive: boolean;
   displayOrder: string;
 }
+
+const GRADE_OPTIONS = ["A", "B", "C"] as const;
 
 function emptyForm(mfgId?: string): FabricFormState {
   return {
     manufacturerId: mfgId ?? "",
     itemNumber: "",
     name: "",
+    grade: "",
     swatchImageUrl: "",
     isActive: true,
     displayOrder: "0",
@@ -72,6 +76,7 @@ function formFromFabric(f: AdminFabric): FabricFormState {
     manufacturerId: String(f.manufacturerId),
     itemNumber: f.itemNumber,
     name: f.name,
+    grade: f.grade ?? "",
     swatchImageUrl: f.swatchImageUrl ?? "",
     isActive: f.isActive,
     displayOrder: String(f.displayOrder),
@@ -174,6 +179,7 @@ export default function Fabrics() {
       manufacturerId,
       itemNumber,
       name,
+      grade: form.grade || null,
       swatchImageUrl: form.swatchImageUrl.trim() || null,
       isActive: form.isActive,
       displayOrder,
@@ -272,6 +278,7 @@ export default function Fabrics() {
                   <th className="px-4 py-3 font-semibold">Item #</th>
                   <th className="px-4 py-3 font-semibold">Name</th>
                   <th className="px-4 py-3 font-semibold">Vendor</th>
+                  <th className="px-4 py-3 font-semibold text-center">Grade</th>
                   <th className="px-4 py-3 font-semibold text-center">Order</th>
                   <th className="px-4 py-3 font-semibold text-center">Active</th>
                   <th className="px-4 py-3 font-semibold text-right">Actions</th>
@@ -298,6 +305,15 @@ export default function Fabrics() {
                     <td className="px-4 py-2.5 font-mono text-xs text-slate-600">{f.itemNumber}</td>
                     <td className="px-4 py-2.5 font-medium text-slate-900">{f.name}</td>
                     <td className="px-4 py-2.5 text-slate-600">{f.manufacturerName}</td>
+                    <td className="px-4 py-2.5 text-center">
+                      {f.grade ? (
+                        <span className="inline-flex items-center justify-center size-6 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold border border-slate-200">
+                          {f.grade}
+                        </span>
+                      ) : (
+                        <span className="text-slate-300 text-xs">—</span>
+                      )}
+                    </td>
                     <td className="px-4 py-2.5 text-center tabular-nums text-slate-500">{f.displayOrder}</td>
                     <td className="px-4 py-2.5 text-center">
                       {f.isActive ? (
@@ -395,14 +411,33 @@ export default function Fabrics() {
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="fab-name">Name *</Label>
-              <Input
-                id="fab-name"
-                value={form.name}
-                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                placeholder="e.g. Spectrum Graphite"
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5 col-span-1">
+                <Label htmlFor="fab-name">Name *</Label>
+                <Input
+                  id="fab-name"
+                  value={form.name}
+                  onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                  placeholder="e.g. Spectrum Graphite"
+                />
+              </div>
+              <div className="space-y-1.5 col-span-1">
+                <Label htmlFor="fab-grade">Grade</Label>
+                <Select
+                  value={form.grade}
+                  onValueChange={(v) => setForm((f) => ({ ...f, grade: v === "__none__" ? "" : v }))}
+                >
+                  <SelectTrigger id="fab-grade">
+                    <SelectValue placeholder="— Unset" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">— Unset</SelectItem>
+                    {GRADE_OPTIONS.map((g) => (
+                      <SelectItem key={g} value={g}>Grade {g}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div className="space-y-1.5">

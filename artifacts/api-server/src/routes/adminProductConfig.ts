@@ -43,6 +43,7 @@ router.get(
         itemNumber: fabricsTable.itemNumber,
         name: fabricsTable.name,
         swatchImageUrl: fabricsTable.swatchImageUrl,
+        grade: fabricsTable.grade,
         isActive: fabricsTable.isActive,
         displayOrder: fabricsTable.displayOrder,
       })
@@ -78,7 +79,7 @@ router.post(
       res.status(400).json({ error: body.error.issues[0]?.message ?? "Invalid input" });
       return;
     }
-    const { manufacturerId, itemNumber, name, swatchImageUrl, isActive, displayOrder } = body.data;
+    const { manufacturerId, itemNumber, name, swatchImageUrl, grade, isActive, displayOrder } = body.data;
 
     const mfg = await db
       .select({ id: manufacturersTable.id })
@@ -98,6 +99,7 @@ router.post(
           itemNumber: itemNumber.trim(),
           name: name.trim(),
           swatchImageUrl: swatchImageUrl ?? null,
+          grade: grade ?? null,
           isActive: isActive ?? true,
           displayOrder: displayOrder ?? 0,
         })
@@ -111,6 +113,7 @@ router.post(
           itemNumber: fabricsTable.itemNumber,
           name: fabricsTable.name,
           swatchImageUrl: fabricsTable.swatchImageUrl,
+          grade: fabricsTable.grade,
           isActive: fabricsTable.isActive,
           displayOrder: fabricsTable.displayOrder,
         })
@@ -149,7 +152,7 @@ router.put(
       return;
     }
     const { id } = params.data;
-    const { manufacturerId, itemNumber, name, swatchImageUrl, isActive, displayOrder } = body.data;
+    const { manufacturerId, itemNumber, name, swatchImageUrl, grade, isActive, displayOrder } = body.data;
 
     const existing = await db
       .select({ id: fabricsTable.id })
@@ -178,6 +181,7 @@ router.put(
     if (itemNumber !== undefined) updates.itemNumber = itemNumber.trim();
     if (name !== undefined) updates.name = name.trim();
     if ("swatchImageUrl" in body.data) updates.swatchImageUrl = swatchImageUrl ?? null;
+    if ("grade" in body.data) updates.grade = grade ?? null;
     if (isActive !== undefined) updates.isActive = isActive;
     if (displayOrder !== undefined) updates.displayOrder = displayOrder;
 
@@ -202,6 +206,7 @@ router.put(
         itemNumber: fabricsTable.itemNumber,
         name: fabricsTable.name,
         swatchImageUrl: fabricsTable.swatchImageUrl,
+        grade: fabricsTable.grade,
         isActive: fabricsTable.isActive,
         displayOrder: fabricsTable.displayOrder,
       })

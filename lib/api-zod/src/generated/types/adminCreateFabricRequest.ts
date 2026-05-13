@@ -14,6 +14,8 @@ export interface AdminCreateFabricRequest {
   name: string;
   /** @nullable */
   swatchImageUrl?: string | null;
+  /** @nullable */
+  grade?: string | null;
   isActive?: boolean;
   displayOrder?: number;
 }

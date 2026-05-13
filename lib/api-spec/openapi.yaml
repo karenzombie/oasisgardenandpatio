@@ -7719,6 +7719,7 @@ components:
         itemNumber: { type: string }
         name: { type: string }
         swatchImageUrl: { type: ["string", "null"] }
+        grade: { type: ["string", "null"] }
         isActive: { type: boolean }
         displayOrder: { type: integer }
       required:
@@ -7728,6 +7729,7 @@ components:
         - itemNumber
         - name
         - swatchImageUrl
+        - grade
         - isActive
         - displayOrder
     AdminCreateFabricRequest:
@@ -7737,6 +7739,7 @@ components:
         itemNumber: { type: string, minLength: 1 }
         name: { type: string, minLength: 1 }
         swatchImageUrl: { type: ["string", "null"] }
+        grade: { type: ["string", "null"] }
         isActive: { type: boolean }
         displayOrder: { type: integer }
       required:
@@ -7750,6 +7753,7 @@ components:
         itemNumber: { type: string, minLength: 1 }
         name: { type: string, minLength: 1 }
         swatchImageUrl: { type: ["string", "null"] }
+        grade: { type: ["string", "null"] }
         isActive: { type: boolean }
         displayOrder: { type: integer }
     AdminProductFabricPool:

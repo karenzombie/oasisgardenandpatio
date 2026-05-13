@@ -3263,6 +3263,8 @@ export interface AdminFabric {
   name: string;
   /** @nullable */
   swatchImageUrl: string | null;
+  /** @nullable */
+  grade: string | null;
   isActive: boolean;
   displayOrder: number;
 }
@@ -3275,6 +3277,8 @@ export interface AdminCreateFabricRequest {
   name: string;
   /** @nullable */
   swatchImageUrl?: string | null;
+  /** @nullable */
+  grade?: string | null;
   isActive?: boolean;
   displayOrder?: number;
 }
@@ -3287,6 +3291,8 @@ export interface AdminUpdateFabricRequest {
   name?: string;
   /** @nullable */
   swatchImageUrl?: string | null;
+  /** @nullable */
+  grade?: string | null;
   isActive?: boolean;
   displayOrder?: number;
 }
