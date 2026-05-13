@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useLocation } from "wouter";
-import { Plus, Trash2, Search, Sparkles } from "lucide-react";
+import { Plus, Trash2, Search, Sparkles, Layers } from "lucide-react";
 import {
   useAdminListCustomers,
   useAdminGetCustomer,
@@ -10,13 +10,17 @@ import {
   useAdminCreateCustomer,
   useAdminQuoteOrderPricing,
   useAdminGetProductPicker,
+  useAdminListSets,
+  useAdminGetSet,
   getAdminGetCustomerQueryKey,
   getAdminListProductsQueryKey,
   getAdminGetProductPickerQueryKey,
+  getAdminGetSetQueryKey,
   type AdminProduct,
   type AdminCustomer,
   type CatalogProductVariant,
   type CatalogFabricOption,
+  type AdminSetSummary,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -175,6 +179,7 @@ export default function AgentNewOrder() {
     idx: number;
     preselect: AdminProduct | null;
   } | null>(null);
+  const [addSetOpen, setAddSetOpen] = useState(false);
 
   // Inline product typeahead on the description field. We track which
   // line is "active" (focused) plus the live + debounced query so a
@@ -321,6 +326,14 @@ export default function AgentNewOrder() {
   }
   function addItem() {
     setItems((curr) => [...curr, emptyLine()]);
+  }
+  function handleAddSet(newItems: LineItem[]) {
+    setItems((prev) => {
+      const nonEmpty = prev.filter(
+        (i) => i.productId !== null || i.description.trim() !== "",
+      );
+      return nonEmpty.length > 0 ? [...nonEmpty, ...newItems] : newItems;
+    });
   }
 
   function applyPickedProduct(
@@ -900,9 +913,14 @@ export default function AgentNewOrder() {
             <div className="rounded-md border bg-white">
               <div className="px-4 py-3 border-b font-medium flex justify-between items-center">
                 <span>Items</span>
-                <Button type="button" size="sm" variant="outline" onClick={addItem}>
-                  <Plus className="size-4 mr-1" /> Add line
-                </Button>
+                <div className="flex gap-2">
+                  <Button type="button" size="sm" variant="outline" onClick={() => setAddSetOpen(true)}>
+                    <Layers className="size-4 mr-1" /> Add set
+                  </Button>
+                  <Button type="button" size="sm" variant="outline" onClick={addItem}>
+                    <Plus className="size-4 mr-1" /> Add line
+                  </Button>
+                </div>
               </div>
               <div className="p-4 space-y-3">
                 {items.map((it, idx) => (
@@ -1203,6 +1221,11 @@ export default function AgentNewOrder() {
             applyPickedProduct(pickProductFor.idx, p, variant, fabric)
           }
         />
+        <SetPickerDialog
+          open={addSetOpen}
+          onOpenChange={setAddSetOpen}
+          onApply={handleAddSet}
+        />
       </PageBody>
     </>
   );
@@ -1486,6 +1509,164 @@ function ProductPickerDialog({
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
             <Button type="button" disabled={!canAdd} onClick={handleAdd}>Add to order</Button>
+          </DialogFooter>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Set picker dialog — expands all set items as individual order lines
+// ---------------------------------------------------------------------------
+function SetPickerDialog({
+  open,
+  onOpenChange,
+  onApply,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  onApply: (items: LineItem[]) => void;
+}) {
+  const [picked, setPicked] = useState<AdminSetSummary | null>(null);
+
+  const setList = useAdminListSets();
+  const setDetail = useAdminGetSet(picked?.id ?? 0, {
+    query: {
+      queryKey: getAdminGetSetQueryKey(picked?.id ?? 0),
+      enabled: !!picked,
+    },
+  });
+
+  useEffect(() => {
+    if (!open) setPicked(null);
+  }, [open]);
+
+  function handleAdd() {
+    const detail = setDetail.data;
+    if (!detail || !detail.items.length) return;
+    const newItems: LineItem[] = [...detail.items]
+      .sort((a, b) => a.displayOrder - b.displayOrder)
+      .map((item) => ({
+        productId: item.productId,
+        productSlug: null,
+        variantId: null,
+        variantName: null,
+        fabricId: null,
+        fabricName: null,
+        fabricVendorId: null,
+        description: item.productName,
+        quantity: item.quantity,
+        unitPrice: item.productPrice != null ? Number(item.productPrice) : 0,
+        unitPriceOverridden: false,
+      }));
+    onApply(newItems);
+    onOpenChange(false);
+  }
+
+  const sets = (setList.data ?? []).filter((s) => s.isActive);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-xl">
+        <DialogHeader>
+          <DialogTitle>Add a set to order</DialogTitle>
+        </DialogHeader>
+
+        {!picked ? (
+          <div className="border rounded max-h-96 overflow-y-auto">
+            {setList.isLoading ? (
+              <div className="p-6 flex justify-center"><Spinner /></div>
+            ) : sets.length === 0 ? (
+              <div className="p-6 text-sm text-slate-500 text-center">No active sets found.</div>
+            ) : (
+              sets.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  className="w-full text-left px-3 py-2.5 hover:bg-slate-50 border-t first:border-t-0"
+                  onClick={() => setPicked(s)}
+                >
+                  <div className="flex justify-between items-center gap-3">
+                    <div>
+                      <div className="font-medium text-sm">{s.name}</div>
+                      <div className="text-xs text-slate-500">
+                        {s.itemCount} item{s.itemCount !== 1 ? "s" : ""}
+                        {s.manufacturerName ? ` · ${s.manufacturerName}` : ""}
+                        {s.sku ? ` · ${s.sku}` : ""}
+                      </div>
+                    </div>
+                    <div className="text-sm tabular-nums shrink-0 text-slate-700">
+                      {s.setPrice != null ? fmtMoney(Number(s.setPrice)) : "—"}
+                    </div>
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div className="rounded border bg-slate-50 p-3 flex justify-between items-start">
+              <div>
+                <div className="font-medium">{picked.name}</div>
+                <div className="text-xs text-slate-500">
+                  {picked.itemCount} item{picked.itemCount !== 1 ? "s" : ""}
+                  {picked.manufacturerName ? ` · ${picked.manufacturerName}` : ""}
+                </div>
+                {picked.setPrice != null && (
+                  <div className="text-sm tabular-nums mt-0.5 text-slate-700">
+                    Set price: {fmtMoney(Number(picked.setPrice))}
+                  </div>
+                )}
+              </div>
+              <Button type="button" size="sm" variant="ghost" onClick={() => setPicked(null)}>
+                Change set
+              </Button>
+            </div>
+
+            {setDetail.isLoading ? (
+              <div className="flex justify-center py-3"><Spinner /></div>
+            ) : (
+              <div className="border rounded divide-y max-h-64 overflow-y-auto text-sm">
+                {[...(setDetail.data?.items ?? [])]
+                  .sort((a, b) => a.displayOrder - b.displayOrder)
+                  .map((item) => (
+                    <div key={item.id} className="px-3 py-2 flex justify-between items-center gap-3">
+                      <div className="min-w-0">
+                        <div className="font-medium truncate">{item.productName}</div>
+                        <div className="text-xs text-slate-500 font-mono">
+                          {item.productSku}
+                          {item.quantity > 1 ? ` · qty ${item.quantity}` : ""}
+                        </div>
+                      </div>
+                      <div className="tabular-nums shrink-0 text-slate-700">
+                        {item.productPrice != null
+                          ? fmtMoney(Number(item.productPrice) * item.quantity)
+                          : "—"}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
+
+            <p className="text-xs text-slate-500">
+              Each item will be added as a separate line. You can adjust variants, fabrics, qty, and price per line after adding.
+            </p>
+          </div>
+        )}
+
+        {picked && !setDetail.isLoading && !!setDetail.data && (
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              disabled={!setDetail.data.items.length}
+              onClick={handleAdd}
+            >
+              Add {setDetail.data.items.length} item{setDetail.data.items.length !== 1 ? "s" : ""} to order
+            </Button>
           </DialogFooter>
         )}
       </DialogContent>

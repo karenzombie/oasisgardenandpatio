@@ -129,7 +129,7 @@ async function loadFullSet(setId: number) {
 router.get(
   "/admin/sets",
   requireAuth,
-  requireRole("admin"),
+  requireRole("admin", "agent"),
   async (_req: Request, res: Response): Promise<void> => {
     const rows = await db
       .select({
@@ -158,7 +158,7 @@ router.get(
 router.get(
   "/admin/sets/:id",
   requireAuth,
-  requireRole("admin"),
+  requireRole("admin", "agent"),
   async (req: Request, res: Response): Promise<void> => {
     const params = AdminGetSetParams.safeParse(req.params);
     if (!params.success) {
