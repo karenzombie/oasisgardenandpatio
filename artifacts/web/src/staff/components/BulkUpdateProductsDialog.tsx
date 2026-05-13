@@ -20,6 +20,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -31,7 +32,16 @@ import { useToast } from "@/hooks/use-toast";
 
 type FabricMode = "none" | "replace" | "add" | "remove" | "clear";
 type TriBool = "none" | "true" | "false";
-type FkChoice = "none" | "clear" | string; // "none" | "clear" | "<id>"
+type FkChoice = "none" | "clear" | string;
+type PriceMode = "flat" | "percent";
+
+const PRICE_FIELD_OPTIONS: { value: string; label: string }[] = [
+  { value: "price", label: "Sell price" },
+  { value: "salePrice", label: "Sale price" },
+  { value: "cost", label: "Cost" },
+  { value: "msrp", label: "MSRP" },
+  { value: "frameOnlyPrice", label: "Frame only price" },
+];
 
 interface Props {
   open: boolean;
@@ -80,6 +90,11 @@ export function BulkUpdateProductsDialog({
     new Set(),
   );
 
+  // Pricing adjustment
+  const [priceFields, setPriceFields] = useState<Set<string>>(new Set());
+  const [priceMode, setPriceMode] = useState<PriceMode>("flat");
+  const [priceAmount, setPriceAmount] = useState("");
+
   function reset() {
     setIsActive("none");
     setFeatured("none");
@@ -92,6 +107,9 @@ export function BulkUpdateProductsDialog({
     setPickMode("none");
     setPickFabricIds(new Set());
     setExpandedFabricMfgs(new Set());
+    setPriceFields(new Set());
+    setPriceMode("flat");
+    setPriceAmount("");
   }
 
   const fabricsByMfg = useMemo(() => {
@@ -170,7 +188,29 @@ export function BulkUpdateProductsDialog({
       };
     }
 
-    if (!payload.fields && !payload.fabricPools && !payload.fabricPicks) {
+    if (priceFields.size > 0) {
+      const amount = Number(priceAmount);
+      if (priceAmount === "" || isNaN(amount) || amount === 0) {
+        return {
+          error:
+            "Enter a non-zero amount for the pricing adjustment.",
+        };
+      }
+      payload.priceAdjustments = {
+        fields: Array.from(priceFields) as NonNullable<
+          AdminBulkUpdateProductsRequest["priceAdjustments"]
+        >["fields"],
+        mode: priceMode,
+        amount,
+      };
+    }
+
+    if (
+      !payload.fields &&
+      !payload.fabricPools &&
+      !payload.fabricPicks &&
+      !payload.priceAdjustments
+    ) {
       return { error: "Choose at least one change to apply." };
     }
     return payload;
@@ -190,12 +230,14 @@ export function BulkUpdateProductsDialog({
       const res = await mut.mutateAsync({ data: result });
       const parts: string[] = [];
       if (res.productsUpdated > 0)
-        parts.push(`${res.productsUpdated} product field update(s)`);
+        parts.push(`${res.productsUpdated} field update(s)`);
+      if (res.pricesUpdated > 0)
+        parts.push(`${res.pricesUpdated} price adjustment(s)`);
       if (res.fabricsUpdated > 0)
         parts.push(`${res.fabricsUpdated} fabric change(s)`);
       const desc =
         parts.length > 0
-          ? parts.join(" and ")
+          ? parts.join(", ")
           : "No products needed updating.";
       toast.toast({
         title: "Bulk update complete",
@@ -215,6 +257,21 @@ export function BulkUpdateProductsDialog({
       });
     }
   }
+
+  const pricePreview = useMemo(() => {
+    if (priceFields.size === 0) return null;
+    const amount = Number(priceAmount);
+    if (!priceAmount || isNaN(amount) || amount === 0) return null;
+    const sign = amount > 0 ? "+" : "";
+    const change =
+      priceMode === "flat"
+        ? `${sign}$${Math.abs(amount).toFixed(2)}`
+        : `${sign}${amount}%`;
+    const fieldLabels = Array.from(priceFields)
+      .map((f) => PRICE_FIELD_OPTIONS.find((o) => o.value === f)?.label ?? f)
+      .join(", ");
+    return `${change} applied to: ${fieldLabels}`;
+  }, [priceFields, priceMode, priceAmount]);
 
   return (
     <Dialog
@@ -305,6 +362,97 @@ export function BulkUpdateProductsDialog({
                 ]}
               />
             </div>
+          </section>
+
+          {/* Pricing adjustment */}
+          <section className="space-y-3 border-t border-slate-200 pt-5">
+            <h3 className="text-sm font-semibold text-slate-800">
+              Pricing adjustment
+            </h3>
+            <p className="text-xs text-slate-500">
+              Apply a flat dollar amount or percentage change to selected price
+              fields. Fields that are blank on a product are skipped.
+            </p>
+
+            {/* Field checkboxes */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
+              {PRICE_FIELD_OPTIONS.map((f) => (
+                <label
+                  key={f.value}
+                  className="flex items-center gap-2 text-sm text-slate-700 hover:bg-slate-50 px-2 py-1.5 rounded cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={priceFields.has(f.value)}
+                    onChange={() =>
+                      setPriceFields((s) => toggleSet(s, f.value))
+                    }
+                  />
+                  <span>{f.label}</span>
+                </label>
+              ))}
+            </div>
+
+            {priceFields.size > 0 && (
+              <div className="flex flex-wrap items-center gap-3 pt-1">
+                {/* Mode toggle */}
+                <div className="flex rounded border border-slate-200 overflow-hidden text-sm">
+                  <button
+                    type="button"
+                    onClick={() => setPriceMode("flat")}
+                    className={`px-3 py-1.5 ${
+                      priceMode === "flat"
+                        ? "bg-[#1A3C5E] text-white"
+                        : "bg-white text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    $ Flat
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPriceMode("percent")}
+                    className={`px-3 py-1.5 border-l border-slate-200 ${
+                      priceMode === "percent"
+                        ? "bg-[#1A3C5E] text-white"
+                        : "bg-white text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    % Percent
+                  </button>
+                </div>
+
+                {/* Amount */}
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={priceAmount}
+                    onChange={(e) => setPriceAmount(e.target.value)}
+                    placeholder={
+                      priceMode === "flat" ? "e.g. 50 or −25" : "e.g. 5 or −3"
+                    }
+                    className="h-8 w-36 text-sm"
+                  />
+                  <span className="text-sm text-slate-500">
+                    {priceMode === "flat" ? "dollars" : "%"}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Live preview */}
+            {pricePreview && (
+              <p className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-3 py-2">
+                Preview: {pricePreview}
+              </p>
+            )}
+
+            {priceFields.size > 0 && (
+              <p className="text-xs text-slate-500">
+                Positive values increase prices; negative values decrease them.
+                Results are rounded to 2 decimal places and never go below $0.
+              </p>
+            )}
           </section>
 
           {/* Fabric pools */}

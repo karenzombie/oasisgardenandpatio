@@ -7,6 +7,7 @@ import {
   ArrowUp,
   ChevronDown,
   ChevronRight,
+  History as HistoryIcon,
   Image as ImageIcon,
   Plus,
   Star,
@@ -30,6 +31,7 @@ import {
   useAdminUpdateProductFabrics,
   useAdminGetProductAttributes,
   useAdminUpdateProductAttributes,
+  useAdminListHistory,
   getAdminGetProductQueryKey,
   getAdminListProductsQueryKey,
   getAdminGetProductFabricsQueryKey,
@@ -1003,6 +1005,9 @@ export default function ProductEdit() {
             </div>
           </section>
 
+          {/* Price history */}
+          {productId && <PriceHistoryPanel productId={productId} />}
+
           {/* Flags */}
           <section className="bg-white border border-slate-200 rounded-md p-6">
             <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-4">
@@ -1567,3 +1572,158 @@ function FlagRow({
 // Suppress unused import warning - Plus is reserved for future "Add another" buttons
 void Plus;
 void X;
+
+const PRICE_FIELD_LABELS: Record<string, string> = {
+  price: "Sell price",
+  salePrice: "Sale price",
+  cost: "Cost",
+  msrp: "MSRP",
+  frameOnlyPrice: "Frame only price",
+};
+
+function fmtPrice(v: string | null | undefined): string {
+  if (v == null) return "—";
+  const n = Number(v);
+  return Number.isFinite(n) ? `$${n.toFixed(2)}` : v;
+}
+
+function fmtDate(iso: string): string {
+  try {
+    return new Date(iso).toLocaleString();
+  } catch {
+    return iso;
+  }
+}
+
+function PriceHistoryPanel({ productId }: { productId: number }) {
+  const [open, setOpen] = useState(false);
+
+  const historyParams = useMemo(
+    () => ({ entityType: "product", entityId: productId, notes: "price adjustment", pageSize: 50 }),
+    [productId],
+  );
+  const history = useAdminListHistory(historyParams, {
+    query: {
+      enabled: open,
+      staleTime: 30_000,
+      queryKey: ["/api/admin/history", "price-adjustment", productId] as const,
+    },
+  });
+
+  const rows = history.data?.rows ?? [];
+
+  return (
+    <section className="bg-white border border-slate-200 rounded-md p-6">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-2 text-sm font-semibold text-slate-700 uppercase tracking-wide w-full text-left"
+      >
+        {open ? (
+          <ChevronDown className="size-4 text-slate-400" />
+        ) : (
+          <ChevronRight className="size-4 text-slate-400" />
+        )}
+        <HistoryIcon className="size-4 text-slate-400" />
+        Price history
+        {rows.length > 0 && (
+          <span className="ml-auto text-xs font-normal text-slate-500 normal-case tracking-normal">
+            {rows.length} adjustment{rows.length !== 1 ? "s" : ""}
+          </span>
+        )}
+      </button>
+
+      {open && (
+        <div className="mt-4">
+          {history.isLoading ? (
+            <p className="text-sm text-slate-500">Loading…</p>
+          ) : rows.length === 0 ? (
+            <p className="text-sm text-slate-500">
+              No bulk price adjustments recorded yet.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr className="text-left text-xs text-slate-500 border-b border-slate-200">
+                    <th className="py-2 pr-4 font-medium">Date</th>
+                    <th className="py-2 pr-4 font-medium">Changed by</th>
+                    <th className="py-2 pr-4 font-medium">Field</th>
+                    <th className="py-2 pr-4 font-medium text-right">Before</th>
+                    <th className="py-2 pr-4 font-medium text-right">After</th>
+                    <th className="py-2 font-medium">Adjustment</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {rows.map((row) => {
+                    const snap = row.snapshot as {
+                      prices?: Record<string, string | null>;
+                    } | null;
+                    const prev = row.previousSnapshot as {
+                      prices?: Record<string, string | null>;
+                    } | null;
+                    const after = snap?.prices ?? {};
+                    const before = prev?.prices ?? {};
+                    const fields = Object.keys(after);
+                    if (fields.length === 0) return null;
+                    return fields.map((field, fi) => (
+                      <tr key={`${row.id}-${field}`} className="hover:bg-slate-50">
+                        {fi === 0 && (
+                          <td
+                            className="py-2 pr-4 text-slate-600 align-top"
+                            rowSpan={fields.length}
+                          >
+                            {fmtDate(row.createdAt)}
+                          </td>
+                        )}
+                        {fi === 0 && (
+                          <td
+                            className="py-2 pr-4 text-slate-600 align-top"
+                            rowSpan={fields.length}
+                          >
+                            {row.changedByEmail ?? (
+                              <span className="text-slate-400">System</span>
+                            )}
+                          </td>
+                        )}
+                        <td className="py-2 pr-4 text-slate-700">
+                          {PRICE_FIELD_LABELS[field] ?? field}
+                        </td>
+                        <td className="py-2 pr-4 text-right tabular-nums text-slate-500 line-through">
+                          {fmtPrice(before[field])}
+                        </td>
+                        <td className="py-2 pr-4 text-right tabular-nums font-medium text-slate-900">
+                          {fmtPrice(after[field])}
+                        </td>
+                        {fi === 0 && (
+                          <td
+                            className="py-2 text-slate-500 text-xs align-top"
+                            rowSpan={fields.length}
+                          >
+                            {(() => {
+                              const allBefore = Object.values(before);
+                              const allAfter = Object.values(after);
+                              if (allBefore[0] && allAfter[0]) {
+                                const b = Number(allBefore[0]);
+                                const a = Number(allAfter[0]);
+                                if (b > 0) {
+                                  const pct = ((a - b) / b) * 100;
+                                  return `${pct >= 0 ? "+" : ""}${pct.toFixed(1)}% on first field`;
+                                }
+                              }
+                              return null;
+                            })()}
+                          </td>
+                        )}
+                      </tr>
+                    ));
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}

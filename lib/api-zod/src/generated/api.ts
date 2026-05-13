@@ -2216,6 +2216,10 @@ export const AdminListHistoryQueryParams = zod.object({
   entityType: zod.coerce.string().optional(),
   entityId: zod.coerce.number().optional(),
   userId: zod.coerce.number().optional(),
+  notes: zod.coerce
+    .string()
+    .optional()
+    .describe("Filter to rows whose notes exactly match this string"),
   page: zod.coerce.number().min(1).default(adminListHistoryQueryPageDefault),
   pageSize: zod.coerce
     .number()
@@ -2419,6 +2423,35 @@ export const AdminBulkUpdateProductsBody = zod.object({
     })
     .optional()
     .describe("How to mutate each product's individual fabric picks."),
+  priceAdjustments: zod
+    .object({
+      fields: zod
+        .array(
+          zod.enum(["price", "salePrice", "cost", "msrp", "frameOnlyPrice"]),
+        )
+        .min(1)
+        .describe(
+          "Which price columns to adjust. Columns that are NULL on a given product are skipped.",
+        ),
+      mode: zod
+        .enum(["flat", "percent"])
+        .describe(
+          "flat = add\/subtract a fixed dollar amount; percent = multiply the current value by (1 + amount\/100).",
+        ),
+      amount: zod
+        .number()
+        .describe(
+          "Positive = increase, negative = decrease. For percent mode 5 means +5%, -3 means -3%.",
+        ),
+      roundTo: zod
+        .number()
+        .optional()
+        .describe("Decimal places to round adjusted values to (default 2)."),
+    })
+    .optional()
+    .describe(
+      "Apply a flat dollar or percentage change to selected price columns across all chosen products.",
+    ),
 });
 
 export const AdminBulkUpdateProductsResponse = zod.object({
@@ -2428,6 +2461,9 @@ export const AdminBulkUpdateProductsResponse = zod.object({
   fabricsUpdated: zod
     .number()
     .describe("How many products had their fabric pools or picks changed."),
+  pricesUpdated: zod
+    .number()
+    .describe("How many products had at least one price field adjusted."),
   notFound: zod
     .array(zod.number())
     .describe("Product IDs that did not exist and were skipped."),

@@ -7,6 +7,7 @@
  */
 import type { AdminBulkFabricPicksChange } from "./adminBulkFabricPicksChange";
 import type { AdminBulkFabricPoolsChange } from "./adminBulkFabricPoolsChange";
+import type { AdminBulkPriceAdjustment } from "./adminBulkPriceAdjustment";
 import type { AdminBulkUpdateProductsFields } from "./adminBulkUpdateProductsFields";
 
 export interface AdminBulkUpdateProductsRequest {
@@ -18,4 +19,5 @@ export interface AdminBulkUpdateProductsRequest {
   fields?: AdminBulkUpdateProductsFields;
   fabricPools?: AdminBulkFabricPoolsChange;
   fabricPicks?: AdminBulkFabricPicksChange;
+  priceAdjustments?: AdminBulkPriceAdjustment;
 }

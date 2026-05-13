@@ -3348,6 +3348,45 @@ export interface AdminBulkUpdateProductsFields {
   materialId?: number | null;
 }
 
+export type AdminBulkPriceAdjustmentFieldsItem =
+  (typeof AdminBulkPriceAdjustmentFieldsItem)[keyof typeof AdminBulkPriceAdjustmentFieldsItem];
+
+export const AdminBulkPriceAdjustmentFieldsItem = {
+  price: "price",
+  salePrice: "salePrice",
+  cost: "cost",
+  msrp: "msrp",
+  frameOnlyPrice: "frameOnlyPrice",
+} as const;
+
+/**
+ * flat = add/subtract a fixed dollar amount; percent = multiply the current value by (1 + amount/100).
+ */
+export type AdminBulkPriceAdjustmentMode =
+  (typeof AdminBulkPriceAdjustmentMode)[keyof typeof AdminBulkPriceAdjustmentMode];
+
+export const AdminBulkPriceAdjustmentMode = {
+  flat: "flat",
+  percent: "percent",
+} as const;
+
+/**
+ * Apply a flat dollar or percentage change to selected price columns across all chosen products.
+ */
+export interface AdminBulkPriceAdjustment {
+  /**
+   * Which price columns to adjust. Columns that are NULL on a given product are skipped.
+   * @minItems 1
+   */
+  fields: AdminBulkPriceAdjustmentFieldsItem[];
+  /** flat = add/subtract a fixed dollar amount; percent = multiply the current value by (1 + amount/100). */
+  mode: AdminBulkPriceAdjustmentMode;
+  /** Positive = increase, negative = decrease. For percent mode 5 means +5%, -3 means -3%. */
+  amount: number;
+  /** Decimal places to round adjusted values to (default 2). */
+  roundTo?: number;
+}
+
 export type AdminBulkFabricPoolsChangeMode =
   (typeof AdminBulkFabricPoolsChangeMode)[keyof typeof AdminBulkFabricPoolsChangeMode];
 
@@ -3395,6 +3434,7 @@ export interface AdminBulkUpdateProductsRequest {
   fields?: AdminBulkUpdateProductsFields;
   fabricPools?: AdminBulkFabricPoolsChange;
   fabricPicks?: AdminBulkFabricPicksChange;
+  priceAdjustments?: AdminBulkPriceAdjustment;
 }
 
 export interface AdminBulkUpdateProductsResult {
@@ -3402,6 +3442,8 @@ export interface AdminBulkUpdateProductsResult {
   productsUpdated: number;
   /** How many products had their fabric pools or picks changed. */
   fabricsUpdated: number;
+  /** How many products had at least one price field adjusted. */
+  pricesUpdated: number;
   /** Product IDs that did not exist and were skipped. */
   notFound: number[];
 }
@@ -3521,6 +3563,10 @@ export type AdminListHistoryParams = {
   entityType?: string;
   entityId?: number;
   userId?: number;
+  /**
+   * Filter to rows whose notes exactly match this string
+   */
+  notes?: string;
   /**
    * @minimum 1
    */

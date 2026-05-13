@@ -11,6 +11,8 @@ export interface AdminBulkUpdateProductsResult {
   productsUpdated: number;
   /** How many products had their fabric pools or picks changed. */
   fabricsUpdated: number;
+  /** How many products had at least one price field adjusted. */
+  pricesUpdated: number;
   /** Product IDs that did not exist and were skipped. */
   notFound: number[];
 }

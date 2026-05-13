@@ -22,6 +22,10 @@ router.get(
       typeof userIdRaw === "string" && userIdRaw !== ""
         ? Number.parseInt(userIdRaw, 10)
         : null;
+    const notes =
+      typeof req.query.notes === "string" && req.query.notes !== ""
+        ? req.query.notes
+        : null;
     const page = Math.max(
       1,
       Number.parseInt(String(req.query.page ?? "1"), 10) || 1,
@@ -37,6 +41,7 @@ router.get(
       conds.push(eq(entityHistoryTable.entityId, entityId));
     if (userId !== null && Number.isFinite(userId))
       conds.push(eq(entityHistoryTable.changedByUserId, userId));
+    if (notes) conds.push(eq(entityHistoryTable.notes, notes));
     const where = conds.length > 0 ? and(...conds) : undefined;
 
     const offset = (page - 1) * pageSize;

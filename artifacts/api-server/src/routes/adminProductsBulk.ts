@@ -14,6 +14,26 @@ import { AdminBulkUpdateProductsBody } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import { recordHistory } from "../lib/history";
 
+/** Apply a flat-dollar or percentage adjustment to a price string, returning
+ *  the new value as a string with `roundTo` decimal places, or null when the
+ *  input value is null/undefined (those fields are skipped for that product). */
+function applyPriceAdj(
+  current: string | null | undefined,
+  mode: "flat" | "percent",
+  amount: number,
+  roundTo = 2,
+): string | null {
+  if (current == null) return null;
+  const cur = Number(current);
+  if (!Number.isFinite(cur)) return null;
+  const next = Math.max(
+    0,
+    mode === "flat" ? cur + amount : cur * (1 + amount / 100),
+  );
+  const factor = Math.pow(10, roundTo);
+  return (Math.round(next * factor) / factor).toFixed(roundTo);
+}
+
 const router: IRouter = Router();
 
 type FabricsConfig = {
@@ -84,10 +104,11 @@ router.post(
         .json({ error: parsed.error.issues[0]?.message ?? "Invalid input" });
       return;
     }
-    const { productIds, fields, fabricPools, fabricPicks } = parsed.data;
+    const { productIds, fields, fabricPools, fabricPicks, priceAdjustments } =
+      parsed.data;
 
     const hasFields = fields !== undefined && Object.keys(fields).length > 0;
-    if (!hasFields && !fabricPools && !fabricPicks) {
+    if (!hasFields && !fabricPools && !fabricPicks && !priceAdjustments) {
       res.status(400).json({ error: "Nothing to update" });
       return;
     }
@@ -175,11 +196,12 @@ router.post(
 
     let productsUpdated = 0;
     let fabricsUpdated = 0;
+    let pricesUpdated = 0;
 
     // Process per-product so each gets its own history row. The whole per-product
-    // mutation (scalar + fabric pools + fabric picks) runs in ONE transaction so a
-    // single product is updated atomically; failures roll back THAT product only
-    // and the loop continues with the rest (partial-success batch semantics).
+    // mutation (scalar + fabric pools + fabric picks + price adjustments) runs in
+    // ONE transaction so a single product is updated atomically; failures roll back
+    // THAT product only and the loop continues (partial-success batch semantics).
     for (const productId of targetIds) {
       // Pre-load previous snapshots outside the tx (matches the pattern used by
       // the per-row PUT endpoints; readers in HistoryPanel see consistent shape).
@@ -189,6 +211,14 @@ router.post(
       let scalarNext: Record<string, unknown> | null = null;
       let scalarChanged = false;
       let fabricsChanged = false;
+      let priceSnapshot: {
+        mode: string;
+        amount: number;
+        fields: string[];
+        before: Record<string, string | null>;
+        after: Record<string, string | null>;
+      } | null = null;
+      let priceChanged = false;
 
       try {
         await db.transaction(async (tx) => {
@@ -206,6 +236,47 @@ router.post(
             scalarPrev = prev;
             scalarNext = next ?? null;
             scalarChanged = true;
+          }
+
+          if (priceAdjustments) {
+            const { fields, mode, amount, roundTo = 2 } = priceAdjustments;
+            const [cur] = await tx
+              .select({
+                price: productsTable.price,
+                salePrice: productsTable.salePrice,
+                cost: productsTable.cost,
+                msrp: productsTable.msrp,
+                frameOnlyPrice: productsTable.frameOnlyPrice,
+              })
+              .from(productsTable)
+              .where(eq(productsTable.id, productId));
+            if (!cur) return;
+
+            const before: Record<string, string | null> = {};
+            const after: Record<string, string | null> = {};
+            const updateSet: Record<string, string | null> = {};
+
+            for (const field of fields) {
+              const key = field as keyof typeof cur;
+              const raw = cur[key];
+              const prev = raw ?? null;
+              const adj = applyPriceAdj(raw, mode, amount, roundTo);
+              before[field] = prev;
+              after[field] = adj;
+              // Only write when the value actually changes AND is non-null
+              if (adj !== null && adj !== prev) {
+                updateSet[key] = adj;
+              }
+            }
+
+            if (Object.keys(updateSet).length > 0) {
+              await tx
+                .update(productsTable)
+                .set(updateSet)
+                .where(eq(productsTable.id, productId));
+              priceSnapshot = { mode, amount, fields: [...fields], before, after };
+              priceChanged = true;
+            }
           }
 
           if (prevFabrics) {
@@ -280,6 +351,25 @@ router.post(
         });
         productsUpdated += 1;
       }
+      if (priceChanged && priceSnapshot !== null) {
+        // TypeScript can't track mutations inside async callbacks, so we assert here.
+        const ps = priceSnapshot as {
+          mode: string;
+          amount: number;
+          fields: string[];
+          before: Record<string, string | null>;
+          after: Record<string, string | null>;
+        };
+        await recordHistory(req, {
+          entityType: "product",
+          entityId: productId,
+          changeType: "update",
+          snapshot: { prices: ps.after },
+          previousSnapshot: { prices: ps.before },
+          notes: "price adjustment",
+        });
+        pricesUpdated += 1;
+      }
       if (fabricsChanged && prevFabrics) {
         const newFabrics = await loadFabricsConfig(productId);
         await recordHistory(req, {
@@ -294,7 +384,7 @@ router.post(
       }
     }
 
-    res.json({ productsUpdated, fabricsUpdated, notFound });
+    res.json({ productsUpdated, fabricsUpdated, pricesUpdated, notFound });
   },
 );
 

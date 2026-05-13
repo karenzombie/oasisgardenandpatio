@@ -11,6 +11,10 @@ export type AdminListHistoryParams = {
   entityId?: number;
   userId?: number;
   /**
+   * Filter to rows whose notes exactly match this string
+   */
+  notes?: string;
+  /**
    * @minimum 1
    */
   page?: number;

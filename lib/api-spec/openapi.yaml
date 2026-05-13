@@ -1848,6 +1848,7 @@ paths:
         - { name: entityType, in: query, schema: { type: string } }
         - { name: entityId, in: query, schema: { type: integer } }
         - { name: userId, in: query, schema: { type: integer } }
+        - { name: notes, in: query, schema: { type: string }, description: Filter to rows whose notes exactly match this string }
         - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
         - { name: pageSize, in: query, schema: { type: integer, minimum: 1, maximum: 200, default: 50 } }
       responses:
@@ -7730,6 +7731,28 @@ components:
         categoryId: { type: ["integer", "null"] }
         manufacturerId: { type: ["integer", "null"] }
         materialId: { type: ["integer", "null"] }
+    AdminBulkPriceAdjustment:
+      type: object
+      description: Apply a flat dollar or percentage change to selected price columns across all chosen products.
+      properties:
+        fields:
+          type: array
+          items:
+            type: string
+            enum: [price, salePrice, cost, msrp, frameOnlyPrice]
+          minItems: 1
+          description: Which price columns to adjust. Columns that are NULL on a given product are skipped.
+        mode:
+          type: string
+          enum: [flat, percent]
+          description: flat = add/subtract a fixed dollar amount; percent = multiply the current value by (1 + amount/100).
+        amount:
+          type: number
+          description: Positive = increase, negative = decrease. For percent mode 5 means +5%, -3 means -3%.
+        roundTo:
+          type: integer
+          description: Decimal places to round adjusted values to (default 2).
+      required: [fields, mode, amount]
     AdminBulkFabricPoolsChange:
       type: object
       description: How to mutate each product's fabric-pool manufacturer list.
@@ -7768,6 +7791,8 @@ components:
           $ref: "#/components/schemas/AdminBulkFabricPoolsChange"
         fabricPicks:
           $ref: "#/components/schemas/AdminBulkFabricPicksChange"
+        priceAdjustments:
+          $ref: "#/components/schemas/AdminBulkPriceAdjustment"
       required: [productIds]
     AdminBulkUpdateProductsResult:
       type: object
@@ -7778,11 +7803,14 @@ components:
         fabricsUpdated:
           type: integer
           description: How many products had their fabric pools or picks changed.
+        pricesUpdated:
+          type: integer
+          description: How many products had at least one price field adjusted.
         notFound:
           type: array
           items: { type: integer }
           description: Product IDs that did not exist and were skipped.
-      required: [productsUpdated, fabricsUpdated, notFound]
+      required: [productsUpdated, fabricsUpdated, pricesUpdated, notFound]
     EntityHistoryEntry:
       type: object
       properties:
