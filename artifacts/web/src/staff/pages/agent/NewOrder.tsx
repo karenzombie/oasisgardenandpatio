@@ -1476,7 +1476,7 @@ function ProductPickerDialog({
               </div>
             )}
 
-            {needsFabric && includeFabric && (
+            {needsFabric && (
               <div>
                 <Label className="text-xs">Fabric <span className="text-red-600">*</span></Label>
                 <Select value={fabricId} onValueChange={setFabricId}>
