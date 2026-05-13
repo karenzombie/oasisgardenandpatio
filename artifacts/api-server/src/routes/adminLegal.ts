@@ -12,7 +12,7 @@ import { recordHistory } from "../lib/history";
 
 const router: IRouter = Router();
 
-type LegalType = "privacy_policy" | "terms_and_conditions";
+type LegalType = "privacy_policy" | "terms_and_conditions" | "shipping_returns" | "warranty";
 
 function toPayload(row: LegalDocument) {
   return {

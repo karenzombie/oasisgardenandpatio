@@ -615,6 +615,8 @@ export type LegalDocumentType =
 export const LegalDocumentType = {
   privacy_policy: "privacy_policy",
   terms_and_conditions: "terms_and_conditions",
+  shipping_returns: "shipping_returns",
+  warranty: "warranty",
 } as const;
 
 export interface LegalDocument {
@@ -2163,6 +2165,8 @@ export type AdminLegalDocumentType =
 export const AdminLegalDocumentType = {
   privacy_policy: "privacy_policy",
   terms_and_conditions: "terms_and_conditions",
+  shipping_returns: "shipping_returns",
+  warranty: "warranty",
 } as const;
 
 export interface AdminLegalDocument {

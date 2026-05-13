@@ -35,7 +35,7 @@ export const legalDocumentsTable = pgTable(
     index("legal_documents_active_idx").on(t.isActive),
     check(
       "legal_documents_type_check",
-      sql`${t.type} in ('privacy_policy', 'terms_and_conditions')`,
+      sql`${t.type} in ('privacy_policy', 'terms_and_conditions', 'shipping_returns', 'warranty')`,
     ),
   ],
 );

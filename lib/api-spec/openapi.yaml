@@ -59,7 +59,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [privacy_policy, terms_and_conditions]
+            enum: [privacy_policy, terms_and_conditions, shipping_returns, warranty]
       responses:
         "200":
           description: The active legal document
@@ -4003,7 +4003,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [privacy_policy, terms_and_conditions]
+            enum: [privacy_policy, terms_and_conditions, shipping_returns, warranty]
       responses:
         "200":
           description: All versions, newest effective date first
@@ -4022,7 +4022,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [privacy_policy, terms_and_conditions]
+            enum: [privacy_policy, terms_and_conditions, shipping_returns, warranty]
       requestBody:
         required: true
         content:
@@ -4046,7 +4046,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [privacy_policy, terms_and_conditions]
+            enum: [privacy_policy, terms_and_conditions, shipping_returns, warranty]
         - name: id
           in: path
           required: true
@@ -4991,7 +4991,7 @@ components:
           type: integer
         type:
           type: string
-          enum: [privacy_policy, terms_and_conditions]
+          enum: [privacy_policy, terms_and_conditions, shipping_returns, warranty]
         version:
           type: string
         content:
@@ -7138,7 +7138,7 @@ components:
       type: object
       properties:
         id: { type: integer }
-        type: { type: string, enum: [privacy_policy, terms_and_conditions] }
+        type: { type: string, enum: [privacy_policy, terms_and_conditions, shipping_returns, warranty] }
         version: { type: string }
         content: { type: string }
         effectiveDate: { type: string, format: date }

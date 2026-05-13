@@ -19,12 +19,22 @@ export const HealthCheckResponse = zod.object({
  * @summary Get the currently active legal document for a given type
  */
 export const GetLegalDocumentParams = zod.object({
-  type: zod.enum(["privacy_policy", "terms_and_conditions"]),
+  type: zod.enum([
+    "privacy_policy",
+    "terms_and_conditions",
+    "shipping_returns",
+    "warranty",
+  ]),
 });
 
 export const GetLegalDocumentResponse = zod.object({
   id: zod.number(),
-  type: zod.enum(["privacy_policy", "terms_and_conditions"]),
+  type: zod.enum([
+    "privacy_policy",
+    "terms_and_conditions",
+    "shipping_returns",
+    "warranty",
+  ]),
   version: zod.string(),
   content: zod.string(),
   effectiveDate: zod.coerce.date(),
@@ -6949,12 +6959,22 @@ export const AdminUpdateSettingsResponse = zod.object({
  * @summary List all versions of a legal document type
  */
 export const AdminListLegalVersionsParams = zod.object({
-  type: zod.enum(["privacy_policy", "terms_and_conditions"]),
+  type: zod.enum([
+    "privacy_policy",
+    "terms_and_conditions",
+    "shipping_returns",
+    "warranty",
+  ]),
 });
 
 export const AdminListLegalVersionsResponseItem = zod.object({
   id: zod.number(),
-  type: zod.enum(["privacy_policy", "terms_and_conditions"]),
+  type: zod.enum([
+    "privacy_policy",
+    "terms_and_conditions",
+    "shipping_returns",
+    "warranty",
+  ]),
   version: zod.string(),
   content: zod.string(),
   effectiveDate: zod.coerce.date(),
@@ -6970,7 +6990,12 @@ export const AdminListLegalVersionsResponse = zod.array(
  * @summary Publish a new version of a legal document
  */
 export const AdminCreateLegalVersionParams = zod.object({
-  type: zod.enum(["privacy_policy", "terms_and_conditions"]),
+  type: zod.enum([
+    "privacy_policy",
+    "terms_and_conditions",
+    "shipping_returns",
+    "warranty",
+  ]),
 });
 
 export const AdminCreateLegalVersionBody = zod.object({
@@ -6990,13 +7015,23 @@ export const AdminCreateLegalVersionBody = zod.object({
  * @summary Restore a prior version as the active one
  */
 export const AdminRestoreLegalVersionParams = zod.object({
-  type: zod.enum(["privacy_policy", "terms_and_conditions"]),
+  type: zod.enum([
+    "privacy_policy",
+    "terms_and_conditions",
+    "shipping_returns",
+    "warranty",
+  ]),
   id: zod.coerce.number(),
 });
 
 export const AdminRestoreLegalVersionResponse = zod.object({
   id: zod.number(),
-  type: zod.enum(["privacy_policy", "terms_and_conditions"]),
+  type: zod.enum([
+    "privacy_policy",
+    "terms_and_conditions",
+    "shipping_returns",
+    "warranty",
+  ]),
   version: zod.string(),
   content: zod.string(),
   effectiveDate: zod.coerce.date(),

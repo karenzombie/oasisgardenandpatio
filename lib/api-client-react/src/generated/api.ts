@@ -295,13 +295,21 @@ export function useHealthCheck<
  * @summary Get the currently active legal document for a given type
  */
 export const getGetLegalDocumentUrl = (
-  type: "privacy_policy" | "terms_and_conditions",
+  type:
+    | "privacy_policy"
+    | "terms_and_conditions"
+    | "shipping_returns"
+    | "warranty",
 ) => {
   return `/api/legal/${type}`;
 };
 
 export const getLegalDocument = async (
-  type: "privacy_policy" | "terms_and_conditions",
+  type:
+    | "privacy_policy"
+    | "terms_and_conditions"
+    | "shipping_returns"
+    | "warranty",
   options?: RequestInit,
 ): Promise<LegalDocument> => {
   return customFetch<LegalDocument>(getGetLegalDocumentUrl(type), {
@@ -311,7 +319,11 @@ export const getLegalDocument = async (
 };
 
 export const getGetLegalDocumentQueryKey = (
-  type: "privacy_policy" | "terms_and_conditions",
+  type:
+    | "privacy_policy"
+    | "terms_and_conditions"
+    | "shipping_returns"
+    | "warranty",
 ) => {
   return [`/api/legal/${type}`] as const;
 };
@@ -320,7 +332,11 @@ export const getGetLegalDocumentQueryOptions = <
   TData = Awaited<ReturnType<typeof getLegalDocument>>,
   TError = ErrorType<Error>,
 >(
-  type: "privacy_policy" | "terms_and_conditions",
+  type:
+    | "privacy_policy"
+    | "terms_and_conditions"
+    | "shipping_returns"
+    | "warranty",
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof getLegalDocument>>,
@@ -363,7 +379,11 @@ export function useGetLegalDocument<
   TData = Awaited<ReturnType<typeof getLegalDocument>>,
   TError = ErrorType<Error>,
 >(
-  type: "privacy_policy" | "terms_and_conditions",
+  type:
+    | "privacy_policy"
+    | "terms_and_conditions"
+    | "shipping_returns"
+    | "warranty",
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof getLegalDocument>>,
@@ -14517,13 +14537,21 @@ export const useAdminUpdateSettings = <
  * @summary List all versions of a legal document type
  */
 export const getAdminListLegalVersionsUrl = (
-  type: "privacy_policy" | "terms_and_conditions",
+  type:
+    | "privacy_policy"
+    | "terms_and_conditions"
+    | "shipping_returns"
+    | "warranty",
 ) => {
   return `/api/admin/legal/${type}`;
 };
 
 export const adminListLegalVersions = async (
-  type: "privacy_policy" | "terms_and_conditions",
+  type:
+    | "privacy_policy"
+    | "terms_and_conditions"
+    | "shipping_returns"
+    | "warranty",
   options?: RequestInit,
 ): Promise<AdminLegalDocument[]> => {
   return customFetch<AdminLegalDocument[]>(getAdminListLegalVersionsUrl(type), {
@@ -14533,7 +14561,11 @@ export const adminListLegalVersions = async (
 };
 
 export const getAdminListLegalVersionsQueryKey = (
-  type: "privacy_policy" | "terms_and_conditions",
+  type:
+    | "privacy_policy"
+    | "terms_and_conditions"
+    | "shipping_returns"
+    | "warranty",
 ) => {
   return [`/api/admin/legal/${type}`] as const;
 };
@@ -14542,7 +14574,11 @@ export const getAdminListLegalVersionsQueryOptions = <
   TData = Awaited<ReturnType<typeof adminListLegalVersions>>,
   TError = ErrorType<unknown>,
 >(
-  type: "privacy_policy" | "terms_and_conditions",
+  type:
+    | "privacy_policy"
+    | "terms_and_conditions"
+    | "shipping_returns"
+    | "warranty",
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof adminListLegalVersions>>,
@@ -14587,7 +14623,11 @@ export function useAdminListLegalVersions<
   TData = Awaited<ReturnType<typeof adminListLegalVersions>>,
   TError = ErrorType<unknown>,
 >(
-  type: "privacy_policy" | "terms_and_conditions",
+  type:
+    | "privacy_policy"
+    | "terms_and_conditions"
+    | "shipping_returns"
+    | "warranty",
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof adminListLegalVersions>>,
@@ -14610,13 +14650,21 @@ export function useAdminListLegalVersions<
  * @summary Publish a new version of a legal document
  */
 export const getAdminCreateLegalVersionUrl = (
-  type: "privacy_policy" | "terms_and_conditions",
+  type:
+    | "privacy_policy"
+    | "terms_and_conditions"
+    | "shipping_returns"
+    | "warranty",
 ) => {
   return `/api/admin/legal/${type}`;
 };
 
 export const adminCreateLegalVersion = async (
-  type: "privacy_policy" | "terms_and_conditions",
+  type:
+    | "privacy_policy"
+    | "terms_and_conditions"
+    | "shipping_returns"
+    | "warranty",
   createLegalVersionRequest: CreateLegalVersionRequest,
   options?: RequestInit,
 ): Promise<AdminLegalDocument> => {
@@ -14636,7 +14684,11 @@ export const getAdminCreateLegalVersionMutationOptions = <
     Awaited<ReturnType<typeof adminCreateLegalVersion>>,
     TError,
     {
-      type: "privacy_policy" | "terms_and_conditions";
+      type:
+        | "privacy_policy"
+        | "terms_and_conditions"
+        | "shipping_returns"
+        | "warranty";
       data: BodyType<CreateLegalVersionRequest>;
     },
     TContext
@@ -14646,7 +14698,11 @@ export const getAdminCreateLegalVersionMutationOptions = <
   Awaited<ReturnType<typeof adminCreateLegalVersion>>,
   TError,
   {
-    type: "privacy_policy" | "terms_and_conditions";
+    type:
+      | "privacy_policy"
+      | "terms_and_conditions"
+      | "shipping_returns"
+      | "warranty";
     data: BodyType<CreateLegalVersionRequest>;
   },
   TContext
@@ -14663,7 +14719,11 @@ export const getAdminCreateLegalVersionMutationOptions = <
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof adminCreateLegalVersion>>,
     {
-      type: "privacy_policy" | "terms_and_conditions";
+      type:
+        | "privacy_policy"
+        | "terms_and_conditions"
+        | "shipping_returns"
+        | "warranty";
       data: BodyType<CreateLegalVersionRequest>;
     }
   > = (props) => {
@@ -14693,7 +14753,11 @@ export const useAdminCreateLegalVersion = <
     Awaited<ReturnType<typeof adminCreateLegalVersion>>,
     TError,
     {
-      type: "privacy_policy" | "terms_and_conditions";
+      type:
+        | "privacy_policy"
+        | "terms_and_conditions"
+        | "shipping_returns"
+        | "warranty";
       data: BodyType<CreateLegalVersionRequest>;
     },
     TContext
@@ -14703,7 +14767,11 @@ export const useAdminCreateLegalVersion = <
   Awaited<ReturnType<typeof adminCreateLegalVersion>>,
   TError,
   {
-    type: "privacy_policy" | "terms_and_conditions";
+    type:
+      | "privacy_policy"
+      | "terms_and_conditions"
+      | "shipping_returns"
+      | "warranty";
     data: BodyType<CreateLegalVersionRequest>;
   },
   TContext
@@ -14715,14 +14783,22 @@ export const useAdminCreateLegalVersion = <
  * @summary Restore a prior version as the active one
  */
 export const getAdminRestoreLegalVersionUrl = (
-  type: "privacy_policy" | "terms_and_conditions",
+  type:
+    | "privacy_policy"
+    | "terms_and_conditions"
+    | "shipping_returns"
+    | "warranty",
   id: number,
 ) => {
   return `/api/admin/legal/${type}/${id}/restore`;
 };
 
 export const adminRestoreLegalVersion = async (
-  type: "privacy_policy" | "terms_and_conditions",
+  type:
+    | "privacy_policy"
+    | "terms_and_conditions"
+    | "shipping_returns"
+    | "warranty",
   id: number,
   options?: RequestInit,
 ): Promise<AdminLegalDocument> => {
@@ -14742,14 +14818,28 @@ export const getAdminRestoreLegalVersionMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof adminRestoreLegalVersion>>,
     TError,
-    { type: "privacy_policy" | "terms_and_conditions"; id: number },
+    {
+      type:
+        | "privacy_policy"
+        | "terms_and_conditions"
+        | "shipping_returns"
+        | "warranty";
+      id: number;
+    },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof adminRestoreLegalVersion>>,
   TError,
-  { type: "privacy_policy" | "terms_and_conditions"; id: number },
+  {
+    type:
+      | "privacy_policy"
+      | "terms_and_conditions"
+      | "shipping_returns"
+      | "warranty";
+    id: number;
+  },
   TContext
 > => {
   const mutationKey = ["adminRestoreLegalVersion"];
@@ -14763,7 +14853,14 @@ export const getAdminRestoreLegalVersionMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof adminRestoreLegalVersion>>,
-    { type: "privacy_policy" | "terms_and_conditions"; id: number }
+    {
+      type:
+        | "privacy_policy"
+        | "terms_and_conditions"
+        | "shipping_returns"
+        | "warranty";
+      id: number;
+    }
   > = (props) => {
     const { type, id } = props ?? {};
 
@@ -14789,14 +14886,28 @@ export const useAdminRestoreLegalVersion = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof adminRestoreLegalVersion>>,
     TError,
-    { type: "privacy_policy" | "terms_and_conditions"; id: number },
+    {
+      type:
+        | "privacy_policy"
+        | "terms_and_conditions"
+        | "shipping_returns"
+        | "warranty";
+      id: number;
+    },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof adminRestoreLegalVersion>>,
   TError,
-  { type: "privacy_policy" | "terms_and_conditions"; id: number },
+  {
+    type:
+      | "privacy_policy"
+      | "terms_and_conditions"
+      | "shipping_returns"
+      | "warranty";
+    id: number;
+  },
   TContext
 > => {
   return useMutation(getAdminRestoreLegalVersionMutationOptions(options));

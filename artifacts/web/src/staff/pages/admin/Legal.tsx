@@ -36,11 +36,13 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { PageBody, PageHeader } from "../../StaffShell";
 
-type LegalType = "privacy_policy" | "terms_and_conditions";
+type LegalType = "privacy_policy" | "terms_and_conditions" | "shipping_returns" | "warranty";
 
 const LEGAL_TYPES: Array<{ value: LegalType; label: string }> = [
   { value: "privacy_policy", label: "Privacy Policy" },
   { value: "terms_and_conditions", label: "Terms & Conditions" },
+  { value: "shipping_returns", label: "Shipping & Returns" },
+  { value: "warranty", label: "Warranty" },
 ];
 
 export default function Legal() {

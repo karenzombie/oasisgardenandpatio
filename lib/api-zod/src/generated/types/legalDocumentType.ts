@@ -12,4 +12,6 @@ export type LegalDocumentType =
 export const LegalDocumentType = {
   privacy_policy: "privacy_policy",
   terms_and_conditions: "terms_and_conditions",
+  shipping_returns: "shipping_returns",
+  warranty: "warranty",
 } as const;
