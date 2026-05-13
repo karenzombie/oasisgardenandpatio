@@ -8,6 +8,13 @@ import {
 import { sendEmail } from "./email";
 import { logger } from "./logger";
 
+function fmtMoney(n: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(n);
+}
+
 /**
  * Per-status customer-facing copy for order status change emails.
  *
@@ -179,6 +186,98 @@ async function resolveRecipient(order: Order): Promise<{
     };
   }
   return null;
+}
+
+/**
+ * Send a refund notification email with optional restocking fee details.
+ *
+ * Called from the POST /admin/orders/:id/refund endpoint so the email can
+ * include the exact amounts and a restocking-policy note when applicable.
+ */
+export async function sendOrderRefundEmail(
+  orderId: number,
+  opts: {
+    grossRefundAmount: number;
+    restockingFee: number | null;
+    restockingFeeType: string | null;
+    netRefundAmount: number;
+  },
+): Promise<void> {
+  try {
+    const [order] = await db
+      .select()
+      .from(ordersTable)
+      .where(eq(ordersTable.id, orderId))
+      .limit(1);
+    if (!order) {
+      logger.warn({ orderId }, "Order not found for refund email");
+      return;
+    }
+    if (order.isInternalRestock) return;
+
+    const recipient = await resolveRecipient(order);
+    if (!recipient) {
+      logger.info({ orderId }, "Skipping refund email: no email on file");
+      return;
+    }
+
+    const greeting = `<p>Hi ${escapeHtml(recipient.name)},</p>`;
+
+    let restockingNote = "";
+    if (opts.restockingFee != null && opts.restockingFee > 0) {
+      restockingNote = `
+        <p style="background:#fff8e1;border:1px solid #ffe082;border-radius:4px;padding:12px 16px;font-size:14px;margin:16px 0;">
+          <strong>Note:</strong> Your refund has been reduced by
+          <strong>${fmtMoney(opts.restockingFee)}</strong> per our refund &amp;
+          restocking policy. The net refund of
+          <strong>${fmtMoney(opts.netRefundAmount)}</strong> will be returned to
+          your original payment method.
+        </p>
+      `;
+    }
+
+    const bodyHtml = `
+      ${greeting}
+      <p>Your refund for order <strong>${escapeHtml(order.orderNumber)}</strong> has been processed.</p>
+      <table style="width:100%;border-collapse:collapse;font-size:14px;margin:16px 0;">
+        <tr>
+          <td style="padding:6px 0;color:#555;">Gross refund amount</td>
+          <td style="padding:6px 0;text-align:right;">${fmtMoney(opts.grossRefundAmount)}</td>
+        </tr>
+        ${
+          opts.restockingFee != null && opts.restockingFee > 0
+            ? `<tr>
+          <td style="padding:6px 0;color:#555;">Restocking fee</td>
+          <td style="padding:6px 0;text-align:right;">− ${fmtMoney(opts.restockingFee)}</td>
+        </tr>
+        <tr style="font-weight:bold;border-top:1px solid #e0e0e0;">
+          <td style="padding:8px 0;">Net refund</td>
+          <td style="padding:8px 0;text-align:right;">${fmtMoney(opts.netRefundAmount)}</td>
+        </tr>`
+            : ""
+        }
+      </table>
+      ${restockingNote}
+      <p>Please allow 5 to 7 business days for the funds to appear in your account.</p>
+      <p>If you have any questions, please don't hesitate to contact us.</p>
+      <p>Thank you for your understanding, and we hope to serve you again.</p>
+      ${SIGNOFF}
+      <p style="font-size:13px;color:#666;margin-top:24px;">Order reference: <strong>${escapeHtml(order.orderNumber)}</strong></p>
+    `;
+
+    await sendEmail({
+      to: recipient.email,
+      subject: `Your refund has been processed (${order.orderNumber})`,
+      title: "Refund processed",
+      bodyHtml,
+    });
+    logger.info(
+      { orderId, orderNumber: order.orderNumber, to: recipient.email },
+      "Sent order refund email",
+    );
+  } catch (err) {
+    logger.error({ err, orderId }, "Failed to send order refund email");
+  }
 }
 
 /**

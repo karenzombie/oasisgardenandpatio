@@ -4977,6 +4977,193 @@ export const AdminUpdateOrderStatusResponse = zod.object({
 });
 
 /**
+ * Marks the order as refunded. For online orders that have a card transaction on file, attempts a refund through Authorize.net for the net amount. Supports an optional restocking fee (flat $ or percentage) deducted before the gateway call. Sends a refund notification email; if a restocking fee applies the email includes a note about the reduction.
+ * @summary Process a refund and transition an order to "refunded" status
+ */
+export const AdminRefundOrderParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminRefundOrderBody = zod.object({
+  grossRefundAmount: zod
+    .number()
+    .describe("Full refund amount before any restocking fee"),
+  restockingFeeType: zod.enum(["flat", "percent"]).nullish(),
+  restockingFeeValue: zod
+    .number()
+    .nullish()
+    .describe("Flat dollar amount, or percentage 0-100"),
+  note: zod.string().nullish(),
+});
+
+export const AdminRefundOrderResponse = zod.object({
+  id: zod.number(),
+  orderNumber: zod.string(),
+  status: zod.string(),
+  orderType: zod.string(),
+  subtotal: zod.number(),
+  taxAmount: zod.number(),
+  deliveryAmount: zod.number(),
+  total: zod.number(),
+  depositAmount: zod.number(),
+  balanceDue: zod.number(),
+  customerId: zod.number().nullable(),
+  customerName: zod.string().nullable(),
+  customerEmail: zod.string().nullable(),
+  agentId: zod.number().nullable(),
+  agentName: zod.string().nullable(),
+  salespersonName: zod.string().nullable(),
+  shippingMethod: zod.string().nullable(),
+  specialInstructions: zod.string().nullable(),
+  notes: zod.string().nullable(),
+  merchandiseReceived: zod.boolean(),
+  placedAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+  shippingAddress: zod.union([
+    zod.object({
+      id: zod.number(),
+      recipientName: zod.string().nullish(),
+      street1: zod.string(),
+      street2: zod.string().nullish(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullish(),
+    }),
+    zod.null(),
+  ]),
+  billingAddress: zod.union([
+    zod.object({
+      id: zod.number(),
+      recipientName: zod.string().nullish(),
+      street1: zod.string(),
+      street2: zod.string().nullish(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullish(),
+    }),
+    zod.null(),
+  ]),
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      productId: zod.number().nullable(),
+      productSkuSnapshot: zod.string().nullable(),
+      variantSkuSnapshot: zod.string().nullable(),
+      variantNameSnapshot: zod.string().nullable(),
+      fabricId: zod.number().nullable(),
+      fabricNameSnapshot: zod.string().nullable(),
+      fabricVendorId: zod
+        .number()
+        .nullable()
+        .describe(
+          "Optional alternate vendor for this line's fabric. Null = fabric ships with the product vendor (the default).",
+        ),
+      fabricVendorName: zod.string().nullable(),
+      fabricVendorOrderId: zod
+        .number()
+        .nullable()
+        .describe(
+          "When fabricVendorId is set, this is the id of the separate vendor PO that the fabric was assigned to.",
+        ),
+      department: zod.string().nullable(),
+      description: zod.string(),
+      quantity: zod.number(),
+      unitPrice: zod.number(),
+      amount: zod.number(),
+      discountAmount: zod.number(),
+      discountReason: zod.string().nullable(),
+      notes: zod.string().nullable(),
+      vendorOrderId: zod.number().nullable(),
+    }),
+  ),
+  statusHistory: zod.array(
+    zod.object({
+      id: zod.number(),
+      fromStatus: zod.string().nullable(),
+      toStatus: zod.string(),
+      changedByUserId: zod.number().nullable(),
+      changedByEmail: zod.string().nullable(),
+      note: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  vendorOrders: zod.array(
+    zod.object({
+      id: zod.number(),
+      vendorOrderNumber: zod.string(),
+      status: zod.string(),
+      manufacturerId: zod.number().nullable(),
+      manufacturerName: zod.string().nullable(),
+      sentAt: zod.coerce.date().nullable(),
+      receivedAt: zod.coerce.date().nullable(),
+      itemsReceived: zod.boolean(),
+    }),
+  ),
+  cancellationRequests: zod.array(
+    zod.object({
+      id: zod.number(),
+      orderId: zod.number(),
+      orderNumber: zod.string().nullable(),
+      requestedByUserId: zod.number().nullable(),
+      requestedByEmail: zod.string().nullable(),
+      reason: zod.string().nullable(),
+      status: zod.string(),
+      reviewedByUserId: zod.number().nullable(),
+      reviewedByEmail: zod.string().nullable(),
+      reviewedAt: zod.coerce.date().nullable(),
+      reviewNote: zod.string().nullable(),
+      refundAmount: zod.number().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  isQuickOrder: zod.boolean(),
+  skipVendorOrder: zod.boolean(),
+  walkInName: zod.string().nullable(),
+  walkInEmail: zod.string().nullable(),
+  walkInPhone: zod.string().nullable(),
+  isInternalRestock: zod.boolean(),
+  shipToStore: zod.boolean(),
+  shipments: zod.array(
+    zod.object({
+      id: zod.number(),
+      orderId: zod.number(),
+      carrierId: zod.number().nullable(),
+      carrierName: zod.string().nullable(),
+      carrierCode: zod.string().nullable(),
+      trackingNumber: zod.string().nullable(),
+      trackingUrl: zod.string().nullable(),
+      shippedAt: zod.coerce.date().nullable(),
+      deliveredAt: zod.coerce.date().nullable(),
+      notes: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  payments: zod.array(
+    zod.object({
+      id: zod.number(),
+      orderId: zod.number(),
+      amount: zod.number(),
+      paymentMethod: zod.string(),
+      status: zod.string(),
+      transactionId: zod.string().nullable(),
+      cardLast4: zod.string().nullable(),
+      cardType: zod.string().nullable(),
+      notes: zod.string().nullable(),
+      receivedAt: zod.coerce.date().nullable(),
+      recordedByUserId: zod.number().nullable(),
+      recordedByEmail: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  amountPaid: zod.number(),
+  paidInFull: zod.boolean(),
+});
+
+/**
  * Manually set the delivery (shipping) amount and/or the tax amount for an order. The order's total and balance due are recomputed from subtotal + the new values; deposit is preserved. A status-history note is written so the override is auditable.
  * @summary Override the shipping and/or tax amounts on an order
  */

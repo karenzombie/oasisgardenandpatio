@@ -11,6 +11,7 @@ import {
   useAdminGenerateVendorOrders,
   useAdminUpdateOrderItemFabricVendor,
   useAdminListManufacturers,
+  useAdminRefundOrder,
   getAdminGetOrderQueryKey,
   getAdminListOrdersQueryKey,
   getAdminListCancellationRequestsQueryKey,
@@ -133,6 +134,11 @@ export default function OrderDetail() {
   const [taxDraft, setTaxDraft] = useState("");
   const [totalsNote, setTotalsNote] = useState("");
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [refundOpen, setRefundOpen] = useState(false);
+  const [grossRefundAmt, setGrossRefundAmt] = useState("");
+  const [restockingFeeType, setRestockingFeeType] = useState<"none" | "flat" | "percent">("none");
+  const [restockingFeeValue, setRestockingFeeValue] = useState("");
+  const [refundNote, setRefundNote] = useState("");
 
   useEffect(() => {
     if (order) {
@@ -149,6 +155,7 @@ export default function OrderDetail() {
   const updateTotals = useAdminUpdateOrderTotals();
   const reviewCancellation = useAdminReviewCancellationRequest();
   const generateVendorOrders = useAdminGenerateVendorOrders();
+  const refundOrder = useAdminRefundOrder();
   const updateFabricVendor = useAdminUpdateOrderItemFabricVendor();
   // Manufacturer list for the per-line "alternate fabric vendor"
   // dialog. The list is small and cached by react-query, so a single
@@ -263,14 +270,83 @@ export default function OrderDetail() {
 
   function handleStatusUpdate() {
     if (!order || pendingStatus === order.status) return;
-    // Cancellation is a destructive, money-affecting transition: require an
-    // explicit confirmation that reminds the operator a manual refund may
-    // still be needed (we don't auto-refund through the gateway).
     if (pendingStatus === "canceled") {
       setConfirmCancel(true);
       return;
     }
+    if (pendingStatus === "refunded") {
+      setGrossRefundAmt(String(order.total));
+      setRestockingFeeType("none");
+      setRestockingFeeValue("");
+      setRefundNote(statusNote);
+      setRefundOpen(true);
+      return;
+    }
     performStatusUpdate();
+  }
+
+  function handleRefundSubmit() {
+    if (!order) return;
+    const gross = Number(grossRefundAmt);
+    if (!Number.isFinite(gross) || gross < 0) {
+      toast({ title: "Invalid refund amount", variant: "destructive" });
+      return;
+    }
+    if (restockingFeeType !== "none") {
+      const feeVal = Number(restockingFeeValue);
+      if (!Number.isFinite(feeVal) || feeVal < 0) {
+        toast({ title: "Invalid restocking fee value", variant: "destructive" });
+        return;
+      }
+      if (restockingFeeType === "percent" && feeVal > 100) {
+        toast({
+          title: "Percentage must be between 0 and 100",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+    refundOrder.mutate(
+      {
+        id: orderId,
+        data: {
+          grossRefundAmount: gross,
+          restockingFeeType:
+            restockingFeeType === "none" ? null : restockingFeeType,
+          restockingFeeValue:
+            restockingFeeType !== "none"
+              ? Number(restockingFeeValue) || 0
+              : null,
+          note: refundNote || null,
+        },
+      },
+      {
+        onSuccess: (res) => {
+          const warning = (res as unknown as { _authnetWarning?: string | null })
+            ._authnetWarning;
+          toast({
+            title: "Order marked as refunded",
+            description: warning ?? undefined,
+            variant: warning ? "destructive" : "default",
+          });
+          setRefundOpen(false);
+          setGrossRefundAmt("");
+          setRestockingFeeType("none");
+          setRestockingFeeValue("");
+          setRefundNote("");
+          setPendingStatus("refunded");
+          setStatusNote("");
+          invalidate();
+        },
+        onError: (e: unknown) => {
+          toast({
+            title: "Refund failed",
+            description: e instanceof Error ? e.message : "Unknown error",
+            variant: "destructive",
+          });
+        },
+      },
+    );
   }
 
   function handleTotalsSave() {
@@ -1031,6 +1107,175 @@ export default function OrderDetail() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Process Refund dialog */}
+        {order && (
+          <Dialog
+            open={refundOpen}
+            onOpenChange={(open) => {
+              if (!open) {
+                setRefundOpen(false);
+                setGrossRefundAmt("");
+                setRestockingFeeType("none");
+                setRestockingFeeValue("");
+                setRefundNote("");
+              }
+            }}
+          >
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Process Refund</DialogTitle>
+              </DialogHeader>
+              {(() => {
+                const grossNum = Number(grossRefundAmt) || 0;
+                const feeNum = Number(restockingFeeValue) || 0;
+                const computedFee =
+                  restockingFeeType === "flat"
+                    ? Math.min(feeNum, grossNum)
+                    : restockingFeeType === "percent"
+                      ? (grossNum * Math.min(feeNum, 100)) / 100
+                      : 0;
+                const netRefund = Math.max(0, grossNum - computedFee);
+                const hasRestockingFee =
+                  restockingFeeType !== "none" && computedFee > 0;
+                return (
+                  <div className="space-y-4">
+                    {order.orderType === "online" && (
+                      <div className="rounded border border-blue-200 bg-blue-50 px-3 py-2 text-blue-900 text-sm">
+                        <strong>Online order:</strong> If a card transaction is
+                        on file, the net refund will be submitted to
+                        Authorize.net automatically.
+                      </div>
+                    )}
+                    {order.orderType !== "online" && (
+                      <div className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900 text-sm">
+                        <strong>In-store / staff order:</strong> No payment
+                        gateway is called — process any refund manually through
+                        your payment terminal or check.
+                      </div>
+                    )}
+
+                    <div>
+                      <Label htmlFor="gross-refund">Refund amount (USD)</Label>
+                      <Input
+                        id="gross-refund"
+                        inputMode="decimal"
+                        value={grossRefundAmt}
+                        onChange={(e) => setGrossRefundAmt(e.target.value)}
+                        className="mt-1"
+                      />
+                      <p className="text-xs text-slate-500 mt-1">
+                        Order total: {fmtMoney(order.total)}
+                      </p>
+                    </div>
+
+                    <div>
+                      <Label>Restocking fee</Label>
+                      <Select
+                        value={restockingFeeType}
+                        onValueChange={(v) =>
+                          setRestockingFeeType(
+                            v as "none" | "flat" | "percent",
+                          )
+                        }
+                      >
+                        <SelectTrigger className="mt-1">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">No restocking fee</SelectItem>
+                          <SelectItem value="flat">Flat amount ($)</SelectItem>
+                          <SelectItem value="percent">Percentage (%)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {restockingFeeType !== "none" && (
+                      <div>
+                        <Label htmlFor="fee-value">
+                          {restockingFeeType === "flat"
+                            ? "Restocking fee ($)"
+                            : "Restocking fee (%)"}
+                        </Label>
+                        <Input
+                          id="fee-value"
+                          inputMode="decimal"
+                          value={restockingFeeValue}
+                          onChange={(e) => setRestockingFeeValue(e.target.value)}
+                          className="mt-1"
+                          placeholder={
+                            restockingFeeType === "flat" ? "e.g. 25.00" : "e.g. 15"
+                          }
+                        />
+                      </div>
+                    )}
+
+                    {hasRestockingFee && (
+                      <div className="rounded border border-slate-200 bg-slate-50 px-3 py-2 text-sm space-y-1">
+                        <div className="flex justify-between">
+                          <span className="text-slate-600">Gross refund</span>
+                          <span>{fmtMoney(grossNum)}</span>
+                        </div>
+                        <div className="flex justify-between text-red-700">
+                          <span>
+                            Restocking fee
+                            {restockingFeeType === "percent"
+                              ? ` (${feeNum}%)`
+                              : ""}
+                          </span>
+                          <span>− {fmtMoney(computedFee)}</span>
+                        </div>
+                        <div className="flex justify-between font-semibold border-t border-slate-200 pt-1 mt-1">
+                          <span>Net refund to customer</span>
+                          <span>{fmtMoney(netRefund)}</span>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-1">
+                          The customer email will note the reduction per the
+                          refund &amp; restocking policy.
+                        </p>
+                      </div>
+                    )}
+
+                    {!hasRestockingFee && grossNum > 0 && (
+                      <div className="text-sm text-slate-600">
+                        Net refund to customer:{" "}
+                        <span className="font-semibold">{fmtMoney(grossNum)}</span>
+                      </div>
+                    )}
+
+                    <div>
+                      <Label htmlFor="refund-note">Note (optional)</Label>
+                      <Input
+                        id="refund-note"
+                        value={refundNote}
+                        onChange={(e) => setRefundNote(e.target.value)}
+                        placeholder="e.g. customer requested, damage on delivery"
+                        className="mt-1"
+                      />
+                    </div>
+                  </div>
+                );
+              })()}
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setRefundOpen(false)}
+                  disabled={refundOrder.isPending}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleRefundSubmit}
+                  disabled={
+                    refundOrder.isPending || Number(grossRefundAmt) <= 0
+                  }
+                >
+                  {refundOrder.isPending ? "Processing…" : "Process Refund"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
 
         {/* Cancel customer order confirmation */}
         <Dialog open={confirmCancel} onOpenChange={setConfirmCancel}>

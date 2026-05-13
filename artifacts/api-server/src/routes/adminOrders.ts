@@ -34,6 +34,8 @@ import {
   AdminCreateOrderBody,
   AdminUpdateOrderItemFabricVendorParams,
   AdminUpdateOrderItemFabricVendorBody,
+  AdminRefundOrderParams,
+  AdminRefundOrderBody,
 } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import { recordAudit } from "../lib/audit";
@@ -41,7 +43,8 @@ import { recordHistory } from "../lib/history";
 import { loadOrderShipments } from "./adminOrderShipments";
 import { loadOrderPayments } from "./adminOrderPayments";
 import { autoGenerateVendorOrders } from "../lib/autoGenerateVendorOrders";
-import { sendOrderStatusEmail } from "../lib/orderStatusEmail";
+import { sendOrderStatusEmail, sendOrderRefundEmail } from "../lib/orderStatusEmail";
+import { processAuthnetRefund } from "../lib/authorizeNet";
 import {
   generateCustomerOrderPdf,
   type PdfCustomerOrderItem,
@@ -536,6 +539,161 @@ router.post(
       return;
     }
     res.json(detail);
+  },
+);
+
+router.post(
+  "/admin/orders/:id/refund",
+  requireAuth,
+  requireRole("admin", "agent"),
+  async (req: Request, res: Response): Promise<void> => {
+    const params = AdminRefundOrderParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: "Invalid id" });
+      return;
+    }
+    const body = AdminRefundOrderBody.safeParse(req.body);
+    if (!body.success) {
+      res
+        .status(400)
+        .json({ error: body.error.issues[0]?.message ?? "Invalid body" });
+      return;
+    }
+
+    const { grossRefundAmount, restockingFeeType, restockingFeeValue, note } =
+      body.data;
+
+    // Compute restocking fee and net refund.
+    let restockingFee = 0;
+    if (restockingFeeType === "flat" && restockingFeeValue != null) {
+      restockingFee = Math.min(restockingFeeValue, grossRefundAmount);
+    } else if (restockingFeeType === "percent" && restockingFeeValue != null) {
+      restockingFee = (grossRefundAmount * restockingFeeValue) / 100;
+    }
+    const netRefundAmount = Math.max(0, grossRefundAmount - restockingFee);
+
+    const orderId = params.data.id;
+    const userId = req.session?.userId ?? null;
+
+    const result = await db.transaction(async (tx) => {
+      const [existing] = await tx
+        .select()
+        .from(ordersTable)
+        .where(eq(ordersTable.id, orderId))
+        .for("update")
+        .limit(1);
+      if (!existing) return { kind: "not_found" as const };
+      if (
+        req.user?.role === "agent" &&
+        existing.createdByAgentId !== req.user.id
+      ) {
+        return { kind: "not_found" as const };
+      }
+      if (existing.status === "refunded") {
+        return { kind: "noop" as const };
+      }
+      // Only block if already completed — canceled orders can be refunded.
+      if (existing.status === "completed") {
+        return { kind: "terminal" as const, fromStatus: existing.status };
+      }
+      const [row] = await tx
+        .update(ordersTable)
+        .set({ status: "refunded" })
+        .where(eq(ordersTable.id, orderId))
+        .returning();
+      await tx.insert(orderStatusHistoryTable).values({
+        orderId,
+        fromStatus: existing.status,
+        toStatus: "refunded",
+        changedByUserId: userId,
+        note: note ?? null,
+      });
+      return {
+        kind: "updated" as const,
+        row: row ?? null,
+        fromStatus: existing.status,
+        orderType: existing.orderType,
+      };
+    });
+
+    if (result.kind === "not_found") {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+    if (result.kind === "terminal") {
+      res.status(409).json({
+        error: `Cannot refund an order already in '${result.fromStatus}' status`,
+      });
+      return;
+    }
+
+    // For online orders with a card transaction on file, attempt the gateway
+    // refund. Failure is logged but does NOT roll back the status change —
+    // the staff member will see the warning and can handle it manually.
+    let authnetWarning: string | null = null;
+    if (
+      result.kind === "updated" &&
+      result.orderType === "online" &&
+      netRefundAmount > 0
+    ) {
+      const payments = await loadOrderPayments(orderId);
+      const cardPayment = payments.find(
+        (p) =>
+          p.transactionId &&
+          (p.paymentMethod === "credit_card" ||
+            p.paymentMethod === "debit_card"),
+      );
+      if (cardPayment?.transactionId && cardPayment.cardLast4) {
+        const authnetResult = await processAuthnetRefund({
+          originalTransactionId: cardPayment.transactionId,
+          cardLast4: cardPayment.cardLast4,
+          amount: netRefundAmount,
+        });
+        if (!authnetResult.success) {
+          authnetWarning = authnetResult.notConfigured
+            ? "Authorize.net not configured — process refund manually in the gateway."
+            : `Gateway refund failed: ${authnetResult.errorMessage ?? "Unknown error"}. Process refund manually.`;
+        }
+      }
+    }
+
+    await recordAudit(req, {
+      action: "order.refund",
+      entityType: "order",
+      entityId: orderId,
+      changes: {
+        grossRefundAmount,
+        restockingFeeType: restockingFeeType ?? null,
+        restockingFeeValue: restockingFeeValue ?? null,
+        netRefundAmount,
+        note: note ?? null,
+      },
+    });
+    if (result.kind === "updated" && result.row) {
+      await recordHistory(req, {
+        entityType: "order",
+        entityId: orderId,
+        changeType: "update",
+        snapshot: result.row,
+        notes: `status → refunded (gross: $${grossRefundAmount.toFixed(2)}, fee: $${restockingFee.toFixed(2)}, net: $${netRefundAmount.toFixed(2)})`,
+      });
+    }
+
+    // Fire customer refund email — intentionally not awaited.
+    void sendOrderRefundEmail(orderId, {
+      grossRefundAmount,
+      restockingFee: restockingFee > 0 ? restockingFee : null,
+      restockingFeeType: restockingFeeType ?? null,
+      netRefundAmount,
+    }).catch(() => {});
+
+    const detail = await loadOrderDetail(orderId);
+    if (!detail) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+    // Attach gateway warning to the response so the UI can surface it.
+    res.json({ ...detail, _authnetWarning: authnetWarning });
   },
 );
 

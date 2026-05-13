@@ -31,6 +31,24 @@ export interface AuditLogPage {
   total: number;
 }
 
+export type AdminRefundOrderRequestRestockingFeeType =
+  | (typeof AdminRefundOrderRequestRestockingFeeType)[keyof typeof AdminRefundOrderRequestRestockingFeeType]
+  | null;
+
+export const AdminRefundOrderRequestRestockingFeeType = {
+  flat: "flat",
+  percent: "percent",
+} as const;
+
+export interface AdminRefundOrderRequest {
+  /** Full refund amount before any restocking fee */
+  grossRefundAmount: number;
+  restockingFeeType?: AdminRefundOrderRequestRestockingFeeType;
+  /** Flat dollar amount, or percentage 0-100 */
+  restockingFeeValue?: number | null;
+  note?: string | null;
+}
+
 export interface UpdateOrderStatusRequest {
   toStatus: string;
   note?: string | null;

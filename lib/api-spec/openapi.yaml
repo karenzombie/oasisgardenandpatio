@@ -3224,6 +3224,36 @@ paths:
               schema: { $ref: "#/components/schemas/AdminOrderDetail" }
         "400": { description: Bad request, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
         "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+  /admin/orders/{id}/refund:
+    post:
+      operationId: adminRefundOrder
+      tags: [admin-orders]
+      summary: Process a refund and transition an order to "refunded" status
+      description: >-
+        Marks the order as refunded. For online orders that have a card
+        transaction on file, attempts a refund through Authorize.net for the
+        net amount. Supports an optional restocking fee (flat $ or percentage)
+        deducted before the gateway call. Sends a refund notification email; if
+        a restocking fee applies the email includes a note about the reduction.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdminRefundOrderRequest" }
+      responses:
+        "200":
+          description: Refunded order detail
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminOrderDetail" }
+        "400": { description: Bad request, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+        "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+        "409": { description: Order already in a non-refundable terminal state, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
   /admin/orders/{id}/totals:
     post:
       operationId: adminUpdateOrderTotals
@@ -4370,6 +4400,14 @@ components:
           items: { $ref: "#/components/schemas/AuditLogEntry" }
         total: { type: integer }
       required: [rows, total]
+    AdminRefundOrderRequest:
+      type: object
+      properties:
+        grossRefundAmount: { type: number, description: "Full refund amount before any restocking fee" }
+        restockingFeeType: { type: string, enum: [flat, percent], nullable: true }
+        restockingFeeValue: { type: number, nullable: true, description: "Flat dollar amount, or percentage 0-100" }
+        note: { type: string, nullable: true }
+      required: [grossRefundAmount]
     UpdateOrderStatusRequest:
       type: object
       properties:
