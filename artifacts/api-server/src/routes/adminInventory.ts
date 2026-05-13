@@ -12,6 +12,9 @@ import {
   productVariantsTable,
   fabricsTable,
   usersTable,
+  ordersTable,
+  vendorOrdersTable,
+  orderItemsTable,
   type InventoryLocation,
 } from "@workspace/db";
 import {
@@ -74,16 +77,19 @@ const ON_HAND_SQL = sql<number>`COALESCE(${inventoryTable.onHand}, 0)`;
 const ON_HOLD_SQL = sql<number>`COALESCE(${inventoryTable.onHold}, 0)`;
 
 // Units currently on active vendor orders for this exact SKU (product + variant + fabric)
-// where the line was flagged as sourced from store inventory and the PO has not yet
-// been received or cancelled.  GREATEST(..., 0) guards against stale negative deltas.
+// that will arrive at the store (ship_to_store = true or internal restock).
+// We use GREATEST(qty - inventory_qty_used, 0) so that lines where part of the
+// quantity was filled from existing stock only count the vendor-supplied balance.
+// GREATEST(..., 0) also guards against stale negative deltas.
 const ON_ORDER_SQL = sql<number>`COALESCE((
   SELECT SUM(GREATEST(oi.quantity - oi.inventory_qty_used, 0))
   FROM order_items oi
   INNER JOIN vendor_orders vo ON vo.id = oi.vendor_order_id
+  INNER JOIN orders o ON o.id = vo.customer_order_id
   WHERE oi.product_id = ${productsTable.id}
   AND (${inventoryTable.variantId} IS NULL OR oi.variant_id = ${inventoryTable.variantId})
   AND (${inventoryTable.fabricId} IS NULL OR oi.fabric_id = ${inventoryTable.fabricId})
-  AND oi.use_inventory = true
+  AND (o.ship_to_store = true OR o.is_internal_restock = true)
   AND vo.status NOT IN ('received', 'cancelled')
 ), 0)`;
 

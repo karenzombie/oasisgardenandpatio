@@ -1066,21 +1066,25 @@ router.post(
         };
       }
 
-      // Decide whether to bump on-hand inventory. Only restock vendor orders
-      // (where the linked customer order is flagged is_internal_restock) put
-      // physical stock into our warehouse. Customer orders are direct-ship —
-      // the goods never touch our shelves, so receiving the vendor's
-      // confirmation MUST NOT inflate on-hand counts.
+      // Decide whether to bump on-hand inventory. Restock orders and any
+      // ship-to-store staff orders both bring physical goods to our shelves,
+      // so both should increment on-hand on receipt.  Direct-ship online
+      // orders bypass the store entirely and must NOT inflate counts.
       let isRestock = false;
+      let shouldBumpInventory = false;
       let restockLocationId: number | null = null;
       if (existing.customerOrderId != null) {
         const [parent] = await tx
-          .select({ isInternalRestock: ordersTable.isInternalRestock })
+          .select({
+            isInternalRestock: ordersTable.isInternalRestock,
+            shipToStore: ordersTable.shipToStore,
+          })
           .from(ordersTable)
           .where(eq(ordersTable.id, existing.customerOrderId));
         isRestock = parent?.isInternalRestock === true;
+        shouldBumpInventory = isRestock || parent?.shipToStore === true;
       }
-      if (isRestock) {
+      if (shouldBumpInventory) {
         const [defaultLoc] = await tx
           .select({ id: inventoryLocationsTable.id })
           .from(inventoryLocationsTable)
@@ -1109,7 +1113,7 @@ router.post(
         notes: body.data.notes ?? null,
       });
 
-      if (isRestock) {
+      if (shouldBumpInventory) {
         // Walk the line items linked to this vendor order and bump on-hand
         // per (productId, variantId, fabricId). Each line gets its own audit
         // row tagged 'vendor_receipt' for traceability.
@@ -1119,12 +1123,16 @@ router.post(
             variantId: orderItemsTable.variantId,
             fabricId: orderItemsTable.fabricId,
             quantity: orderItemsTable.quantity,
+            inventoryQtyUsed: orderItemsTable.inventoryQtyUsed,
           })
           .from(orderItemsTable)
           .where(eq(orderItemsTable.vendorOrderId, existing.id));
 
         for (const line of lines) {
-          if (line.productId == null || line.quantity <= 0) continue;
+          // bumpQty = vendor-supplied balance only; pre-existing stock (inventoryQtyUsed)
+          // was already on the shelf and must not be double-counted.
+          const bumpQty = Math.max(line.quantity - line.inventoryQtyUsed, 0);
+          if (line.productId == null || bumpQty <= 0) continue;
           const pid = line.productId;
           const vid = line.variantId;
           const fid = line.fabricId;
@@ -1169,7 +1177,7 @@ router.post(
             inv = locked!;
           }
 
-          const newOnHand = inv.onHand + line.quantity;
+          const newOnHand = inv.onHand + bumpQty;
           await tx
             .update(inventoryTable)
             .set({ onHand: newOnHand })
@@ -1182,7 +1190,7 @@ router.post(
             inventoryId: inv.id,
             locationId: restockLocationId,
             adjustmentType: "vendor_receipt",
-            quantityChange: line.quantity,
+            quantityChange: bumpQty,
             quantityAfter: newOnHand,
             vendorOrderId: existing.id,
             orderId: existing.customerOrderId,

@@ -451,19 +451,44 @@ async function deductInventoryForDelivery(
   orderId: number,
   userId: number | null,
 ): Promise<void> {
+  // Fetch all line items together with their vendor order status so we can
+  // decide how much to deduct per line:
+  //   • Vendor order already received → goods passed through the store on
+  //     receipt, so deduct the full line quantity.
+  //   • use_inventory flag set but vendor order not yet received (or no VO) →
+  //     only the pre-reserved portion (inventoryQtyUsed) was taken from stock.
+  //   • Neither → no inventory was involved; skip entirely.
   const items = await db
-    .select()
+    .select({
+      id: orderItemsTable.id,
+      productId: orderItemsTable.productId,
+      variantId: orderItemsTable.variantId,
+      fabricId: orderItemsTable.fabricId,
+      quantity: orderItemsTable.quantity,
+      useInventory: orderItemsTable.useInventory,
+      inventoryQtyUsed: orderItemsTable.inventoryQtyUsed,
+      vendorOrderStatus: vendorOrdersTable.status,
+    })
     .from(orderItemsTable)
-    .where(
-      and(
-        eq(orderItemsTable.orderId, orderId),
-        eq(orderItemsTable.useInventory, true),
-        sql`${orderItemsTable.inventoryQtyUsed} > 0`,
-      ),
-    );
+    .leftJoin(
+      vendorOrdersTable,
+      eq(vendorOrdersTable.id, orderItemsTable.vendorOrderId),
+    )
+    .where(eq(orderItemsTable.orderId, orderId));
 
   for (const item of items) {
     if (!item.productId) continue;
+
+    const vendorReceived = item.vendorOrderStatus === "received";
+    // Full qty if goods came through the store on receive; only the
+    // pre-reserved portion otherwise.
+    const deductAmt = vendorReceived
+      ? item.quantity
+      : item.useInventory
+        ? item.inventoryQtyUsed
+        : 0;
+    if (deductAmt <= 0) continue;
+
     await db.transaction(async (tx) => {
       const variantCond =
         item.variantId != null
@@ -486,7 +511,7 @@ async function deductInventoryForDelivery(
         .for("update")
         .limit(1);
       if (!inv) return;
-      const deduct = Math.min(item.inventoryQtyUsed, inv.onHand);
+      const deduct = Math.min(deductAmt, inv.onHand);
       if (deduct <= 0) return;
       const newOnHand = inv.onHand - deduct;
       await tx
