@@ -166,7 +166,10 @@ export default function AgentNewOrder() {
   const [autoTaxJurisdiction, setAutoTaxJurisdiction] = useState<string>("");
 
   const [depositAmount, setDepositAmount] = useState("0");
-  const [salespersonName, setSalespersonName] = useState("");
+  const [salespersonName, setSalespersonName] = useState(() => {
+    const parts = [user?.firstName, user?.lastName].filter(Boolean);
+    return parts.join(" ");
+  });
   const [specialInstructions, setSpecialInstructions] = useState("");
 
   // Quick-order specifics:
