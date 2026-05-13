@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { PageBody, PageHeader } from "../../StaffShell";
 import { getStaffObjectUrl } from "../../lib/upload";
+import { InventoryHistorySheet } from "../../components/InventoryHistorySheet";
 
 const PAGE_SIZE = 25;
 const ANY = "any";
@@ -34,6 +35,7 @@ export default function AgentInventory() {
   const [manufacturerId, setManufacturerId] = useState<string>(ANY);
   const [categoryId, setCategoryId] = useState<string>(ANY);
   const [page, setPage] = useState(1);
+  const [historyTarget, setHistoryTarget] = useState<AdminInventoryItem | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => { setSearch(searchInput.trim()); setPage(1); }, 300);
@@ -116,7 +118,11 @@ export default function AgentInventory() {
                 {(list.data?.items ?? []).map((row) => {
                   const thumbUrl = getStaffObjectUrl(row.primaryImageUrl);
                   return (
-                    <tr key={row.productId} className="hover:bg-slate-50">
+                    <tr
+                      key={row.productId}
+                      className="hover:bg-slate-50 cursor-pointer"
+                      onClick={() => setHistoryTarget(row)}
+                    >
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <div className="size-10 rounded bg-slate-100 overflow-hidden flex items-center justify-center shrink-0">
@@ -155,6 +161,10 @@ export default function AgentInventory() {
           )}
         </div>
       </PageBody>
+      <InventoryHistorySheet
+        item={historyTarget}
+        onClose={() => setHistoryTarget(null)}
+      />
     </>
   );
 }

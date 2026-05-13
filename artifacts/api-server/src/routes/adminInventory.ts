@@ -754,7 +754,7 @@ router.post(
 router.get(
   "/admin/inventory/adjustments",
   requireAuth,
-  requireRole("admin"),
+  requireRole("admin", "agent"),
   async (req: Request, res: Response): Promise<void> => {
     const parsed = AdminListInventoryAdjustmentsQueryParams.safeParse(
       req.query,
@@ -767,6 +767,8 @@ router.get(
     }
     const {
       productId,
+      variantId,
+      fabricId,
       locationId,
       type,
       page = 1,
@@ -776,6 +778,16 @@ router.get(
     const conditions = [];
     if (productId != null) {
       conditions.push(eq(inventoryAdjustmentsTable.productId, productId));
+    }
+    if (variantId != null) {
+      conditions.push(eq(inventoryAdjustmentsTable.variantId, variantId));
+    } else if (productId != null && variantId === null) {
+      conditions.push(isNull(inventoryAdjustmentsTable.variantId));
+    }
+    if (fabricId != null) {
+      conditions.push(eq(inventoryAdjustmentsTable.fabricId, fabricId));
+    } else if (productId != null && fabricId === null) {
+      conditions.push(isNull(inventoryAdjustmentsTable.fabricId));
     }
     if (locationId != null) {
       conditions.push(eq(inventoryAdjustmentsTable.locationId, locationId));
@@ -803,6 +815,10 @@ router.get(
         quantityChange: inventoryAdjustmentsTable.quantityChange,
         quantityAfter: inventoryAdjustmentsTable.quantityAfter,
         reason: inventoryAdjustmentsTable.reason,
+        orderId: inventoryAdjustmentsTable.orderId,
+        orderNumber: ordersTable.orderNumber,
+        vendorOrderId: inventoryAdjustmentsTable.vendorOrderId,
+        vendorOrderNumber: vendorOrdersTable.orderNumber,
         performedByUserId: inventoryAdjustmentsTable.performedByUserId,
         performedByEmail: usersTable.email,
         performedByFirstName: usersTable.firstName,
@@ -828,6 +844,14 @@ router.get(
           inventoryLocationsTable.id,
           inventoryAdjustmentsTable.locationId,
         ),
+      )
+      .leftJoin(
+        ordersTable,
+        eq(ordersTable.id, inventoryAdjustmentsTable.orderId),
+      )
+      .leftJoin(
+        vendorOrdersTable,
+        eq(vendorOrdersTable.id, inventoryAdjustmentsTable.vendorOrderId),
       )
       .leftJoin(
         usersTable,
@@ -873,6 +897,10 @@ router.get(
         quantityChange: r.quantityChange,
         quantityAfter: r.quantityAfter,
         reason: r.reason,
+        orderId: r.orderId,
+        orderNumber: r.orderNumber ?? null,
+        vendorOrderId: r.vendorOrderId,
+        vendorOrderNumber: r.vendorOrderNumber ?? null,
         performedByUserId: r.performedByUserId,
         performedByName: formatName(
           r.performedByFirstName,

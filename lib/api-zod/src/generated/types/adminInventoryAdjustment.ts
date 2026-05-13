@@ -30,6 +30,14 @@ export interface AdminInventoryAdjustment {
   /** @nullable */
   reason: string | null;
   /** @nullable */
+  orderId: number | null;
+  /** @nullable */
+  orderNumber: string | null;
+  /** @nullable */
+  vendorOrderId: number | null;
+  /** @nullable */
+  vendorOrderNumber: string | null;
+  /** @nullable */
   performedByUserId: number | null;
   /** @nullable */
   performedByName: string | null;

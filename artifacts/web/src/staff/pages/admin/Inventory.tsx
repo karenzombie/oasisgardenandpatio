@@ -64,6 +64,7 @@ import { useToast } from "@/hooks/use-toast";
 import { PageBody, PageHeader } from "../../StaffShell";
 import { getStaffObjectUrl } from "../../lib/upload";
 import { SortableHeader, toggleSort, type SortState } from "../../lib/sortable";
+import { InventoryHistorySheet } from "../../components/InventoryHistorySheet";
 
 type InventorySortKey = "name" | "sku" | "manufacturer" | "category" | "onHand" | "onOrder";
 
@@ -172,6 +173,7 @@ function LevelsTab() {
   const [adjustTarget, setAdjustTarget] = useState<AdminInventoryItem | null>(
     null,
   );
+  const [historyTarget, setHistoryTarget] = useState<AdminInventoryItem | null>(null);
 
   const handleSort = (key: InventorySortKey) => {
     setSort((prev) => toggleSort(prev, key));
@@ -391,13 +393,22 @@ function LevelsTab() {
                       <StatusPill status={row.status} />
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setAdjustTarget(row)}
-                      >
-                        Adjust
-                      </Button>
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setHistoryTarget(row)}
+                        >
+                          History
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setAdjustTarget(row)}
+                        >
+                          Adjust
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -441,6 +452,10 @@ function LevelsTab() {
       <AdjustDialog
         target={adjustTarget}
         onClose={() => setAdjustTarget(null)}
+      />
+      <InventoryHistorySheet
+        item={historyTarget}
+        onClose={() => setHistoryTarget(null)}
       />
     </>
   );

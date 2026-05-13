@@ -8,6 +8,8 @@
 
 export type AdminListInventoryAdjustmentsParams = {
   productId?: number;
+  variantId?: number;
+  fabricId?: number;
   locationId?: number;
   type?: string;
   /**

@@ -3061,6 +3061,8 @@ export const adminListInventoryAdjustmentsQueryPageSizeMax = 200;
 
 export const AdminListInventoryAdjustmentsQueryParams = zod.object({
   productId: zod.coerce.number().optional(),
+  variantId: zod.coerce.number().optional(),
+  fabricId: zod.coerce.number().optional(),
   locationId: zod.coerce.number().optional(),
   type: zod.coerce.string().optional(),
   page: zod.coerce
@@ -3091,6 +3093,10 @@ export const AdminListInventoryAdjustmentsResponse = zod.object({
       quantityChange: zod.number(),
       quantityAfter: zod.number().nullable(),
       reason: zod.string().nullable(),
+      orderId: zod.number().nullable(),
+      orderNumber: zod.string().nullable(),
+      vendorOrderId: zod.number().nullable(),
+      vendorOrderNumber: zod.string().nullable(),
       performedByUserId: zod.number().nullable(),
       performedByName: zod.string().nullable(),
       createdAt: zod.coerce.date(),

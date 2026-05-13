@@ -2426,6 +2426,14 @@ paths:
           in: query
           required: false
           schema: { type: integer }
+        - name: variantId
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: fabricId
+          in: query
+          required: false
+          schema: { type: integer }
         - name: locationId
           in: query
           required: false
@@ -7051,6 +7059,10 @@ components:
         quantityChange: { type: integer }
         quantityAfter: { type: ["integer", "null"] }
         reason: { type: ["string", "null"] }
+        orderId: { type: ["integer", "null"] }
+        orderNumber: { type: ["string", "null"] }
+        vendorOrderId: { type: ["integer", "null"] }
+        vendorOrderNumber: { type: ["string", "null"] }
         performedByUserId: { type: ["integer", "null"] }
         performedByName: { type: ["string", "null"] }
         createdAt: { type: string, format: date-time }
@@ -7069,6 +7081,10 @@ components:
         - quantityChange
         - quantityAfter
         - reason
+        - orderId
+        - orderNumber
+        - vendorOrderId
+        - vendorOrderNumber
         - performedByUserId
         - performedByName
         - createdAt
