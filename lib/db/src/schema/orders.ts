@@ -168,6 +168,8 @@ export const orderItemsTable = pgTable(
       .default("0"),
     discountReason: text("discount_reason"),
     notes: text("notes"),
+    useInventory: boolean("use_inventory").notNull().default(false),
+    inventoryQtyUsed: integer("inventory_qty_used").notNull().default(0),
   },
   (t) => [
     index("order_items_order_id_idx").on(t.orderId),

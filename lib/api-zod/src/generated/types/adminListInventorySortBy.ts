@@ -15,5 +15,5 @@ export const AdminListInventorySortBy = {
   manufacturer: "manufacturer",
   category: "category",
   onHand: "onHand",
-  reorderThreshold: "reorderThreshold",
+  onOrder: "onOrder",
 } as const;

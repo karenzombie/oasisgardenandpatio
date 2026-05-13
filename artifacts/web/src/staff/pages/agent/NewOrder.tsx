@@ -56,6 +56,7 @@ interface LineItem {
   quantity: number;
   unitPrice: number;
   unitPriceOverridden: boolean;
+  useInventory: boolean;
 }
 
 interface NewCustomerForm {
@@ -117,6 +118,7 @@ function emptyLine(): LineItem {
     quantity: 1,
     unitPrice: 0,
     unitPriceOverridden: false,
+    useInventory: false,
   };
 }
 
@@ -544,6 +546,7 @@ export default function AgentNewOrder() {
             discountAmount: 0,
             discountReason: null,
             notes: null,
+            useInventory: !isRestockOrder && it.useInventory,
           })),
         },
       });
@@ -947,6 +950,7 @@ export default function AgentNewOrder() {
                               fabricId: null,
                               fabricName: null,
                               fabricVendorId: null,
+                              useInventory: false,
                             });
                             setTypeaheadIdx(idx);
                             setTypeaheadQuery(v);
@@ -1030,6 +1034,18 @@ export default function AgentNewOrder() {
                       {/* Per-line alternate fabric vendor. Only relevant
                           when the line has a fabric — otherwise there's
                           nothing to source from a different vendor. */}
+                      {!isRestockOrder && it.productId != null && (
+                        <label className="mt-2 inline-flex items-center gap-2 text-xs cursor-pointer select-none">
+                          <Checkbox
+                            checked={it.useInventory}
+                            onCheckedChange={(v) => updateItem(idx, { useInventory: !!v })}
+                          />
+                          <span className="text-slate-700">
+                            Use store inventory
+                            <span className="text-slate-400"> (deduct on delivery)</span>
+                          </span>
+                        </label>
+                      )}
                       {it.fabricId != null && (
                         <div className="mt-2">
                           <Label className="text-xs">Alt fabric vendor</Label>
@@ -1562,6 +1578,7 @@ function SetPickerDialog({
         quantity: item.quantity,
         unitPrice: item.productPrice != null ? Number(item.productPrice) : 0,
         unitPriceOverridden: false,
+        useInventory: false,
       }));
     onApply(newItems);
     onOpenChange(false);

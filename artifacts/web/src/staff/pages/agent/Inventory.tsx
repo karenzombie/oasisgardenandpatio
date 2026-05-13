@@ -108,14 +108,13 @@ export default function AgentInventory() {
                   <th className="px-4 py-3 font-semibold">Vendor</th>
                   <th className="px-4 py-3 font-semibold">Category</th>
                   <th className="px-4 py-3 font-semibold text-right">On hand</th>
-                  <th className="px-4 py-3 font-semibold text-right">Reorder at</th>
+                  <th className="px-4 py-3 font-semibold text-right">On order</th>
                   <th className="px-4 py-3 font-semibold">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
                 {(list.data?.items ?? []).map((row) => {
                   const thumbUrl = getStaffObjectUrl(row.primaryImageUrl);
-                  const reorderAt = Math.max(row.lowStockThreshold, row.reorderThreshold);
                   return (
                     <tr key={row.productId} className="hover:bg-slate-50">
                       <td className="px-4 py-3">
@@ -133,7 +132,7 @@ export default function AgentInventory() {
                       <td className="px-4 py-3 text-slate-700">{row.manufacturerName ?? "—"}</td>
                       <td className="px-4 py-3 text-slate-700">{row.categoryName ?? "—"}</td>
                       <td className="px-4 py-3 text-right tabular-nums font-medium">{row.onHand}</td>
-                      <td className="px-4 py-3 text-right tabular-nums text-slate-500">{reorderAt > 0 ? reorderAt : "—"}</td>
+                      <td className="px-4 py-3 text-right tabular-nums text-slate-500">{row.onOrder > 0 ? row.onOrder : "—"}</td>
                       <td className="px-4 py-3"><StatusPill status={row.status} /></td>
                     </tr>
                   );

@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import {
   db,
   orderItemsTable,
@@ -56,6 +56,8 @@ export async function autoGenerateVendorOrders(
       and(
         eq(orderItemsTable.orderId, orderId),
         isNull(orderItemsTable.vendorOrderId),
+        // Skip lines fully fulfilled from store inventory — nothing to order
+        sql`NOT (${orderItemsTable.useInventory} = true AND ${orderItemsTable.inventoryQtyUsed} >= ${orderItemsTable.quantity})`,
       ),
     )
     .for("update", { of: orderItemsTable });

@@ -1247,7 +1247,7 @@ function orderItemToPdfItem(
     fabricItemNumberSnapshot: it.fabricItemNumberSnapshot,
     fabricNameSnapshot: it.fabricNameSnapshot,
     description: it.description,
-    quantity: it.quantity,
+    quantity: Math.max(it.quantity - it.inventoryQtyUsed, 0),
     unitPrice: kind === "fabric" ? 0 : Number(it.unitPrice),
     amount: kind === "fabric" ? 0 : Number(it.amount),
     notes: it.notes,

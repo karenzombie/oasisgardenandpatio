@@ -30,4 +30,6 @@ export interface CreateOrderItemRequest {
   discountReason?: string | null;
   /** @nullable */
   notes?: string | null;
+  /** When true, units are sourced from store inventory at order creation. Vendor order only covers the balance beyond what is on hand. */
+  useInventory?: boolean;
 }

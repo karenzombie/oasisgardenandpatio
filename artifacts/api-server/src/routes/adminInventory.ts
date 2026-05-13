@@ -72,7 +72,20 @@ const EFFECTIVE_THRESHOLD_SQL = sql<number>`GREATEST(
 
 const ON_HAND_SQL = sql<number>`COALESCE(${inventoryTable.onHand}, 0)`;
 const ON_HOLD_SQL = sql<number>`COALESCE(${inventoryTable.onHold}, 0)`;
-const REORDER_THRESHOLD_SQL = sql<number>`COALESCE(${inventoryTable.reorderThreshold}, 0)`;
+
+// Units currently on active vendor orders for this exact SKU (product + variant + fabric)
+// where the line was flagged as sourced from store inventory and the PO has not yet
+// been received or cancelled.  GREATEST(..., 0) guards against stale negative deltas.
+const ON_ORDER_SQL = sql<number>`COALESCE((
+  SELECT SUM(GREATEST(oi.quantity - oi.inventory_qty_used, 0))
+  FROM order_items oi
+  INNER JOIN vendor_orders vo ON vo.id = oi.vendor_order_id
+  WHERE oi.product_id = ${productsTable.id}
+  AND (${inventoryTable.variantId} IS NULL OR oi.variant_id = ${inventoryTable.variantId})
+  AND (${inventoryTable.fabricId} IS NULL OR oi.fabric_id = ${inventoryTable.fabricId})
+  AND oi.use_inventory = true
+  AND vo.status NOT IN ('received', 'cancelled')
+), 0)`;
 
 const STATUS_SQL = sql<"in_stock" | "low_stock" | "out_of_stock">`CASE
   WHEN COALESCE(${inventoryTable.onHand}, 0) <= 0 THEN 'out_of_stock'
@@ -387,8 +400,8 @@ router.get(
         primaryImageUrl: PRIMARY_IMAGE_SQL,
         onHand: ON_HAND_SQL,
         onHold: ON_HOLD_SQL,
+        onOrder: ON_ORDER_SQL,
         lowStockThreshold: productsTable.lowStockThreshold,
-        reorderThreshold: REORDER_THRESHOLD_SQL,
         status: STATUS_SQL,
         isActive: productsTable.isActive,
         updatedAt: inventoryTable.updatedAt,
@@ -432,8 +445,8 @@ router.get(
             return [dir(categoriesTable.name), asc(productsTable.name), ...tb];
           case "onHand":
             return [dir(ON_HAND_SQL), asc(productsTable.name), ...tb];
-          case "reorderThreshold":
-            return [dir(REORDER_THRESHOLD_SQL), asc(productsTable.name), ...tb];
+          case "onOrder":
+            return [dir(ON_ORDER_SQL), asc(productsTable.name), ...tb];
           default:
             return [asc(productsTable.name), ...tb];
         }
@@ -482,8 +495,8 @@ router.get(
         primaryImageUrl: r.primaryImageUrl,
         onHand: r.onHand,
         onHold: r.onHold,
+        onOrder: r.onOrder,
         lowStockThreshold: r.lowStockThreshold,
-        reorderThreshold: r.reorderThreshold,
         status: r.status,
         isActive: r.isActive,
         updatedAt: r.updatedAt ? r.updatedAt.toISOString() : null,

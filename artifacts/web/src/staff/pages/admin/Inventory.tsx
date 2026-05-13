@@ -65,7 +65,7 @@ import { PageBody, PageHeader } from "../../StaffShell";
 import { getStaffObjectUrl } from "../../lib/upload";
 import { SortableHeader, toggleSort, type SortState } from "../../lib/sortable";
 
-type InventorySortKey = "name" | "sku" | "manufacturer" | "category" | "onHand" | "reorderThreshold";
+type InventorySortKey = "name" | "sku" | "manufacturer" | "category" | "onHand" | "onOrder";
 
 const PAGE_SIZE = 25;
 const ANY = "any";
@@ -305,7 +305,7 @@ function LevelsTab() {
                 <SortableHeader sortKey="manufacturer" state={sort} onSort={handleSort} className="px-4 py-3 font-semibold">Vendor</SortableHeader>
                 <SortableHeader sortKey="category" state={sort} onSort={handleSort} className="px-4 py-3 font-semibold">Category</SortableHeader>
                 <SortableHeader sortKey="onHand" state={sort} onSort={handleSort} align="right" className="px-4 py-3 font-semibold">On hand</SortableHeader>
-                <SortableHeader sortKey="reorderThreshold" state={sort} onSort={handleSort} align="right" className="px-4 py-3 font-semibold">Reorder at</SortableHeader>
+                <SortableHeader sortKey="onOrder" state={sort} onSort={handleSort} align="right" className="px-4 py-3 font-semibold">On order</SortableHeader>
                 <th className="px-4 py-3 font-semibold">Status</th>
                 <th className="px-4 py-3 font-semibold text-right">Actions</th>
               </tr>
@@ -313,10 +313,6 @@ function LevelsTab() {
             <tbody className="divide-y">
               {(list.data?.items ?? []).map((row) => {
                 const thumbUrl = getStaffObjectUrl(row.primaryImageUrl);
-                const reorderAt = Math.max(
-                  row.lowStockThreshold,
-                  row.reorderThreshold,
-                );
                 // Each (product, variant, fabric) tuple is a unique SKU row;
                 // include all three in the React key so multiple inventory
                 // rows for the same product don't collide.
@@ -389,7 +385,7 @@ function LevelsTab() {
                       {row.onHand}
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums text-slate-500">
-                      {reorderAt > 0 ? reorderAt : "—"}
+                      {row.onOrder > 0 ? row.onOrder : "—"}
                     </td>
                     <td className="px-4 py-3">
                       <StatusPill status={row.status} />

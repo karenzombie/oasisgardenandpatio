@@ -2378,7 +2378,7 @@ paths:
           required: false
           schema:
             type: string
-            enum: [name, sku, manufacturer, category, onHand, reorderThreshold]
+            enum: [name, sku, manufacturer, category, onHand, onOrder]
         - name: sortOrder
           in: query
           required: false
@@ -4481,8 +4481,10 @@ components:
         discountReason: { type: string, nullable: true }
         notes: { type: string, nullable: true }
         vendorOrderId: { type: integer, nullable: true }
+        useInventory: { type: boolean, description: "When true this line is sourced from store inventory (staff orders only)." }
+        inventoryQtyUsed: { type: integer, description: "Units drawn from store inventory at order creation time. 0 when useInventory is false." }
       required:
-        [id, productId, productSkuSnapshot, variantSkuSnapshot, variantNameSnapshot, fabricId, fabricNameSnapshot, fabricVendorId, fabricVendorName, fabricVendorOrderId, department, description, quantity, unitPrice, amount, discountAmount, discountReason, notes, vendorOrderId]
+        [id, productId, productSkuSnapshot, variantSkuSnapshot, variantNameSnapshot, fabricId, fabricNameSnapshot, fabricVendorId, fabricVendorName, fabricVendorOrderId, department, description, quantity, unitPrice, amount, discountAmount, discountReason, notes, vendorOrderId, useInventory, inventoryQtyUsed]
     AdminOrderAddress:
       type: object
       properties:
@@ -6946,8 +6948,8 @@ components:
         primaryImageUrl: { type: ["string", "null"] }
         onHand: { type: integer }
         onHold: { type: integer }
+        onOrder: { type: integer, description: "Units on active vendor orders (use_inventory lines not yet received)" }
         lowStockThreshold: { type: integer }
-        reorderThreshold: { type: integer }
         status:
           type: string
           enum: [in_stock, low_stock, out_of_stock]
@@ -6970,8 +6972,8 @@ components:
         - primaryImageUrl
         - onHand
         - onHold
+        - onOrder
         - lowStockThreshold
-        - reorderThreshold
         - status
         - isActive
         - updatedAt
@@ -7547,6 +7549,7 @@ components:
         discountAmount: { type: number, minimum: 0, default: 0 }
         discountReason: { type: ["string", "null"] }
         notes: { type: ["string", "null"] }
+        useInventory: { type: boolean, default: false, description: "When true, units are sourced from store inventory at order creation. Vendor order only covers the balance beyond what is on hand." }
       required: [description, quantity, unitPrice]
     CreateOrderRequest:
       type: object

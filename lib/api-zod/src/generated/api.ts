@@ -2948,14 +2948,7 @@ export const AdminListInventoryQueryParams = zod.object({
     .max(adminListInventoryQueryPageSizeMax)
     .default(adminListInventoryQueryPageSizeDefault),
   sortBy: zod
-    .enum([
-      "name",
-      "sku",
-      "manufacturer",
-      "category",
-      "onHand",
-      "reorderThreshold",
-    ])
+    .enum(["name", "sku", "manufacturer", "category", "onHand", "onOrder"])
     .optional(),
   sortOrder: zod
     .enum(["asc", "desc"])
@@ -2985,8 +2978,12 @@ export const AdminListInventoryResponse = zod.object({
         primaryImageUrl: zod.string().nullable(),
         onHand: zod.number(),
         onHold: zod.number(),
+        onOrder: zod
+          .number()
+          .describe(
+            "Units on active vendor orders (use_inventory lines not yet received)",
+          ),
         lowStockThreshold: zod.number(),
-        reorderThreshold: zod.number(),
         status: zod.enum(["in_stock", "low_stock", "out_of_stock"]),
         isActive: zod.boolean(),
         updatedAt: zod.coerce.date().nullable(),
@@ -3390,6 +3387,16 @@ export const AdminUpdateOrderShippingMethodResponse = zod.object({
       discountReason: zod.string().nullable(),
       notes: zod.string().nullable(),
       vendorOrderId: zod.number().nullable(),
+      useInventory: zod
+        .boolean()
+        .describe(
+          "When true this line is sourced from store inventory (staff orders only).",
+        ),
+      inventoryQtyUsed: zod
+        .number()
+        .describe(
+          "Units drawn from store inventory at order creation time. 0 when useInventory is false.",
+        ),
     }),
   ),
   statusHistory: zod.array(
@@ -3694,6 +3701,16 @@ export const AdminMarkOrderPaidInFullResponse = zod.object({
       discountReason: zod.string().nullable(),
       notes: zod.string().nullable(),
       vendorOrderId: zod.number().nullable(),
+      useInventory: zod
+        .boolean()
+        .describe(
+          "When true this line is sourced from store inventory (staff orders only).",
+        ),
+      inventoryQtyUsed: zod
+        .number()
+        .describe(
+          "Units drawn from store inventory at order creation time. 0 when useInventory is false.",
+        ),
     }),
   ),
   statusHistory: zod.array(
@@ -3880,6 +3897,16 @@ export const AdminUpdateOrderPaymentResponse = zod.object({
       discountReason: zod.string().nullable(),
       notes: zod.string().nullable(),
       vendorOrderId: zod.number().nullable(),
+      useInventory: zod
+        .boolean()
+        .describe(
+          "When true this line is sourced from store inventory (staff orders only).",
+        ),
+      inventoryQtyUsed: zod
+        .number()
+        .describe(
+          "Units drawn from store inventory at order creation time. 0 when useInventory is false.",
+        ),
     }),
   ),
   statusHistory: zod.array(
@@ -4055,6 +4082,16 @@ export const AdminDeleteOrderPaymentResponse = zod.object({
       discountReason: zod.string().nullable(),
       notes: zod.string().nullable(),
       vendorOrderId: zod.number().nullable(),
+      useInventory: zod
+        .boolean()
+        .describe(
+          "When true this line is sourced from store inventory (staff orders only).",
+        ),
+      inventoryQtyUsed: zod
+        .number()
+        .describe(
+          "Units drawn from store inventory at order creation time. 0 when useInventory is false.",
+        ),
     }),
   ),
   statusHistory: zod.array(
@@ -4446,6 +4483,8 @@ export const adminCreateOrderBodyItemsItemUnitPriceMin = 0;
 export const adminCreateOrderBodyItemsItemDiscountAmountDefault = 0;
 export const adminCreateOrderBodyItemsItemDiscountAmountMin = 0;
 
+export const adminCreateOrderBodyItemsItemUseInventoryDefault = false;
+
 export const adminCreateOrderBodyCustomShippingAddressStateMin = 2;
 export const adminCreateOrderBodyCustomShippingAddressStateMax = 2;
 
@@ -4493,6 +4532,12 @@ export const AdminCreateOrderBody = zod.object({
           .default(adminCreateOrderBodyItemsItemDiscountAmountDefault),
         discountReason: zod.string().nullish(),
         notes: zod.string().nullish(),
+        useInventory: zod
+          .boolean()
+          .default(adminCreateOrderBodyItemsItemUseInventoryDefault)
+          .describe(
+            "When true, units are sourced from store inventory at order creation. Vendor order only covers the balance beyond what is on hand.",
+          ),
       }),
     )
     .min(1),
@@ -4712,6 +4757,16 @@ export const AdminGetOrderResponse = zod.object({
       discountReason: zod.string().nullable(),
       notes: zod.string().nullable(),
       vendorOrderId: zod.number().nullable(),
+      useInventory: zod
+        .boolean()
+        .describe(
+          "When true this line is sourced from store inventory (staff orders only).",
+        ),
+      inventoryQtyUsed: zod
+        .number()
+        .describe(
+          "Units drawn from store inventory at order creation time. 0 when useInventory is false.",
+        ),
     }),
   ),
   statusHistory: zod.array(
@@ -4891,6 +4946,16 @@ export const AdminUpdateOrderStatusResponse = zod.object({
       discountReason: zod.string().nullable(),
       notes: zod.string().nullable(),
       vendorOrderId: zod.number().nullable(),
+      useInventory: zod
+        .boolean()
+        .describe(
+          "When true this line is sourced from store inventory (staff orders only).",
+        ),
+      inventoryQtyUsed: zod
+        .number()
+        .describe(
+          "Units drawn from store inventory at order creation time. 0 when useInventory is false.",
+        ),
     }),
   ),
   statusHistory: zod.array(
@@ -5078,6 +5143,16 @@ export const AdminRefundOrderResponse = zod.object({
       discountReason: zod.string().nullable(),
       notes: zod.string().nullable(),
       vendorOrderId: zod.number().nullable(),
+      useInventory: zod
+        .boolean()
+        .describe(
+          "When true this line is sourced from store inventory (staff orders only).",
+        ),
+      inventoryQtyUsed: zod
+        .number()
+        .describe(
+          "Units drawn from store inventory at order creation time. 0 when useInventory is false.",
+        ),
     }),
   ),
   statusHistory: zod.array(
@@ -5274,6 +5349,16 @@ export const AdminUpdateOrderTotalsResponse = zod.object({
       discountReason: zod.string().nullable(),
       notes: zod.string().nullable(),
       vendorOrderId: zod.number().nullable(),
+      useInventory: zod
+        .boolean()
+        .describe(
+          "When true this line is sourced from store inventory (staff orders only).",
+        ),
+      inventoryQtyUsed: zod
+        .number()
+        .describe(
+          "Units drawn from store inventory at order creation time. 0 when useInventory is false.",
+        ),
     }),
   ),
   statusHistory: zod.array(
@@ -5454,6 +5539,16 @@ export const AdminUpdateOrderItemFabricVendorResponse = zod.object({
       discountReason: zod.string().nullable(),
       notes: zod.string().nullable(),
       vendorOrderId: zod.number().nullable(),
+      useInventory: zod
+        .boolean()
+        .describe(
+          "When true this line is sourced from store inventory (staff orders only).",
+        ),
+      inventoryQtyUsed: zod
+        .number()
+        .describe(
+          "Units drawn from store inventory at order creation time. 0 when useInventory is false.",
+        ),
     }),
   ),
   statusHistory: zod.array(
@@ -5632,6 +5727,16 @@ export const AdminUpdateOrderNotesResponse = zod.object({
       discountReason: zod.string().nullable(),
       notes: zod.string().nullable(),
       vendorOrderId: zod.number().nullable(),
+      useInventory: zod
+        .boolean()
+        .describe(
+          "When true this line is sourced from store inventory (staff orders only).",
+        ),
+      inventoryQtyUsed: zod
+        .number()
+        .describe(
+          "Units drawn from store inventory at order creation time. 0 when useInventory is false.",
+        ),
     }),
   ),
   statusHistory: zod.array(

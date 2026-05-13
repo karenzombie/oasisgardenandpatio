@@ -116,6 +116,10 @@ export interface AdminOrderItem {
   discountReason: string | null;
   notes: string | null;
   vendorOrderId: number | null;
+  /** When true this line is sourced from store inventory (staff orders only). */
+  useInventory: boolean;
+  /** Units drawn from store inventory at order creation time. 0 when useInventory is false. */
+  inventoryQtyUsed: number;
 }
 
 export interface AdminOrderAddress {
@@ -1944,8 +1948,9 @@ export interface AdminInventoryItem {
   primaryImageUrl: string | null;
   onHand: number;
   onHold: number;
+  /** Units on active vendor orders (use_inventory lines not yet received) */
+  onOrder: number;
   lowStockThreshold: number;
-  reorderThreshold: number;
   status: AdminInventoryItemStatus;
   isActive: boolean;
   /** @nullable */
@@ -2783,6 +2788,8 @@ export interface CreateOrderItemRequest {
   discountReason?: string | null;
   /** @nullable */
   notes?: string | null;
+  /** When true, units are sourced from store inventory at order creation. Vendor order only covers the balance beyond what is on hand. */
+  useInventory?: boolean;
 }
 
 /**
@@ -3694,7 +3701,7 @@ export const AdminListInventorySortBy = {
   manufacturer: "manufacturer",
   category: "category",
   onHand: "onHand",
-  reorderThreshold: "reorderThreshold",
+  onOrder: "onOrder",
 } as const;
 
 export type AdminListInventorySortOrder =

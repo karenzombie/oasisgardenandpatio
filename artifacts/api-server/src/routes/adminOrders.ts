@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { z } from "zod";
-import { and, asc, desc, eq, ilike, or, sql, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, isNull, or, sql, inArray } from "drizzle-orm";
 import {
   db,
   ordersTable,
@@ -15,6 +15,8 @@ import {
   productsTable,
   productVariantsTable,
   fabricsTable,
+  inventoryTable,
+  inventoryAdjustmentsTable,
   type Order,
   type OrderItem,
   type Address,
@@ -118,6 +120,8 @@ function itemToPayload(
     discountReason: it.discountReason,
     notes: it.notes,
     vendorOrderId: it.vendorOrderId,
+    useInventory: it.useInventory,
+    inventoryQtyUsed: it.inventoryQtyUsed,
   };
 }
 
@@ -439,6 +443,72 @@ router.get(
   },
 );
 
+// ──────────────────────────────────────────────────────────────────────────
+// Inventory deduction on delivery
+// ──────────────────────────────────────────────────────────────────────────
+
+async function deductInventoryForDelivery(
+  orderId: number,
+  userId: number | null,
+): Promise<void> {
+  const items = await db
+    .select()
+    .from(orderItemsTable)
+    .where(
+      and(
+        eq(orderItemsTable.orderId, orderId),
+        eq(orderItemsTable.useInventory, true),
+        sql`${orderItemsTable.inventoryQtyUsed} > 0`,
+      ),
+    );
+
+  for (const item of items) {
+    if (!item.productId) continue;
+    await db.transaction(async (tx) => {
+      const variantCond =
+        item.variantId != null
+          ? eq(inventoryTable.variantId, item.variantId)
+          : isNull(inventoryTable.variantId);
+      const fabricCond =
+        item.fabricId != null
+          ? eq(inventoryTable.fabricId, item.fabricId)
+          : isNull(inventoryTable.fabricId);
+      const [inv] = await tx
+        .select()
+        .from(inventoryTable)
+        .where(
+          and(
+            eq(inventoryTable.productId, item.productId!),
+            variantCond,
+            fabricCond,
+          ),
+        )
+        .for("update")
+        .limit(1);
+      if (!inv) return;
+      const deduct = Math.min(item.inventoryQtyUsed, inv.onHand);
+      if (deduct <= 0) return;
+      const newOnHand = inv.onHand - deduct;
+      await tx
+        .update(inventoryTable)
+        .set({ onHand: newOnHand })
+        .where(eq(inventoryTable.id, inv.id));
+      await tx.insert(inventoryAdjustmentsTable).values({
+        productId: item.productId!,
+        variantId: item.variantId,
+        fabricId: item.fabricId,
+        inventoryId: inv.id,
+        adjustmentType: "sold",
+        quantityChange: -deduct,
+        quantityAfter: newOnHand,
+        orderId,
+        performedByUserId: userId,
+        reason: `Delivered from store inventory (order item ${item.id})`,
+      });
+    });
+  }
+}
+
 router.post(
   "/admin/orders/:id/status",
   requireAuth,
@@ -532,6 +602,13 @@ router.post(
       // inside the helper, but we attach a final `.catch` as belt-and-
       // suspenders against any unhandled rejection.
       void sendOrderStatusEmail(orderId, body.data.toStatus).catch(() => {});
+      if (body.data.toStatus === "delivered") {
+        try {
+          await deductInventoryForDelivery(orderId, req.session?.userId ?? null);
+        } catch (err) {
+          logger.error({ err, orderId }, "inventory deduction on delivery failed");
+        }
+      }
     }
     const detail = await loadOrderDetail(orderId);
     if (!detail) {
@@ -1358,6 +1435,8 @@ router.post(
           discountAmount: string;
           discountReason: string | null;
           notes: string | null;
+          useInventory: boolean;
+          inventoryQtyUsed: number;
         }> = [];
 
         for (const it of data.items) {
@@ -1431,6 +1510,35 @@ router.post(
           const discount = it.discountAmount ?? 0;
           subtotal += lineAmount - discount;
 
+          // For lines marked "use inventory", look up current on-hand and
+          // reserve as many units as possible from the store's stock.
+          // The actual inventory deduction happens on delivery; here we
+          // only record how many units were promised from store stock so
+          // the vendor order (created after this loop) knows the balance.
+          let inventoryQtyUsed = 0;
+          const wantsInventory =
+            (it.useInventory ?? false) && !isInternalRestock;
+          if (wantsInventory && it.productId != null) {
+            const ivCond = and(
+              eq(inventoryTable.productId, it.productId),
+              it.variantId != null
+                ? eq(inventoryTable.variantId, it.variantId)
+                : isNull(inventoryTable.variantId),
+              it.fabricId != null
+                ? eq(inventoryTable.fabricId, it.fabricId)
+                : isNull(inventoryTable.fabricId),
+            );
+            const [inv] = await tx
+              .select({ onHand: inventoryTable.onHand })
+              .from(inventoryTable)
+              .where(ivCond)
+              .for("update")
+              .limit(1);
+            if (inv && inv.onHand > 0) {
+              inventoryQtyUsed = Math.min(it.quantity, inv.onHand);
+            }
+          }
+
           prepared.push({
             productId: it.productId ?? null,
             variantId: it.variantId ?? null,
@@ -1448,6 +1556,8 @@ router.post(
             discountAmount: money(discount),
             discountReason: it.discountReason ?? null,
             notes: it.notes ?? null,
+            useInventory: wantsInventory,
+            inventoryQtyUsed,
           });
         }
 

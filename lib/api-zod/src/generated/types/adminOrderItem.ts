@@ -28,4 +28,8 @@ export interface AdminOrderItem {
   discountReason: string | null;
   notes: string | null;
   vendorOrderId: number | null;
+  /** When true this line is sourced from store inventory (staff orders only). */
+  useInventory: boolean;
+  /** Units drawn from store inventory at order creation time. 0 when useInventory is false. */
+  inventoryQtyUsed: number;
 }

@@ -40,8 +40,9 @@ export interface AdminInventoryItem {
   primaryImageUrl: string | null;
   onHand: number;
   onHold: number;
+  /** Units on active vendor orders (use_inventory lines not yet received) */
+  onOrder: number;
   lowStockThreshold: number;
-  reorderThreshold: number;
   status: AdminInventoryItemStatus;
   isActive: boolean;
   /** @nullable */
