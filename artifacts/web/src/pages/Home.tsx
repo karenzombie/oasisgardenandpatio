@@ -1,6 +1,5 @@
-import { Link, useLocation } from "wouter";
-import { ArrowRight, Search } from "lucide-react";
-import { useRef, type FormEvent } from "react";
+import { Link } from "wouter";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   useListCategories,
@@ -39,17 +38,8 @@ const CATEGORY_IMAGES: Record<string, string> = {
 };
 
 export default function Home() {
-  const [, setLocation] = useLocation();
-  const searchRef = useRef<HTMLInputElement>(null);
   const { data: categories } = useListCategories();
   const { data: popularData } = useGetPopularProduct();
-
-  function handleSearch(e: FormEvent) {
-    e.preventDefault();
-    const val = searchRef.current?.value.trim() ?? "";
-    if (val) setLocation(`/search?q=${encodeURIComponent(val)}`);
-    else setLocation("/search");
-  }
   const popularProduct = popularData?.product ?? null;
 
   const topLevelCategories = (categories?.filter(c => c.parentId === null) || [])
@@ -76,30 +66,6 @@ export default function Home() {
           <p className="text-xl md:text-2xl font-bold text-white mb-10 max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-150 [text-shadow:0_2px_4px_rgba(0,0,0,0.85),0_4px_16px_rgba(0,0,0,0.7)]">
             Discover curated outdoor furniture collections designed for the way you live outside. Craftsmanship that endures.
           </p>
-          {/* Hero search bar */}
-          <form
-            onSubmit={handleSearch}
-            className="w-full max-w-xl mx-auto mb-8 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200"
-          >
-            <div className="flex">
-              <div className="relative flex-1">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-white/60 pointer-events-none" />
-                <input
-                  ref={searchRef}
-                  type="search"
-                  placeholder="Search furniture, brands, materials…"
-                  className="w-full h-12 bg-white/15 backdrop-blur-sm border border-white/40 text-white placeholder:text-white/60 pl-11 pr-3 text-sm focus:outline-none focus:bg-white/20 focus:border-white/70 transition-colors"
-                />
-              </div>
-              <button
-                type="submit"
-                className="h-12 px-6 bg-white text-black text-sm font-medium hover:bg-white/90 transition-colors shrink-0 font-serif tracking-wide"
-              >
-                Search
-              </button>
-            </div>
-          </form>
-
           <div className="flex items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
             <Button size="lg" className="bg-white text-black hover:bg-white/90 rounded-none px-8 font-serif tracking-wide" asChild>
               <Link href="/shop">Shop Collection</Link>
