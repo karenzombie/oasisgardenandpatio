@@ -17,6 +17,7 @@ import Home from "@/pages/Home";
 import Contact from "@/pages/Contact";
 import ComingSoon from "@/pages/ComingSoon";
 import Shop from "@/pages/Shop";
+import SearchPage from "@/pages/Search";
 import Product from "@/pages/Product";
 import ShippingReturns from "@/pages/ShippingReturns";
 import Fabrics from "@/pages/Fabrics";
@@ -55,6 +56,7 @@ function CustomerRouter() {
         {/* Placeholder Routes */}
         <Route path="/manufacturers" component={Manufacturers} />
         <Route path="/materials" component={Materials} />
+        <Route path="/search" component={SearchPage} />
         <Route path="/shop" component={Shop} />
         <Route path="/shop/category/:slug" component={Shop} />
         <Route path="/shop/:slug" component={Product} />
