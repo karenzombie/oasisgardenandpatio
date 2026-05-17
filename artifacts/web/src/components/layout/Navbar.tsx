@@ -8,7 +8,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Menu, X, ChevronDown, User, ShoppingBag, Search } from "lucide-react";
-import { useState, useEffect, useRef, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { useClerk } from "@clerk/react";
 import { useAuth } from "@/lib/auth";
 import { WishlistIconLink } from "@/components/layout/WishlistIconLink";
@@ -72,8 +72,6 @@ export function Navbar() {
     ? (new URLSearchParams(rawSearch).get("q") ?? "")
     : "";
   const [searchValue, setSearchValue] = useState(currentQ);
-  const mobileSearchRef = useRef<HTMLInputElement>(null);
-
   useEffect(() => {
     if (location === "/search") {
       setSearchValue(new URLSearchParams(rawSearch).get("q") ?? "");
@@ -87,12 +85,6 @@ export function Navbar() {
     setIsMobileMenuOpen(false);
   }
 
-  function handleMobileSearch(e: FormEvent) {
-    e.preventDefault();
-    const val = mobileSearchRef.current?.value.trim() ?? "";
-    navigate(val ? `/search?q=${encodeURIComponent(val)}` : "/search");
-    setIsMobileMenuOpen(false);
-  }
 
   const { data: banners } = useListActiveBanners();
   const activeBanners = Array.isArray(banners) ? banners.filter(b => b.type === "banner") : [];
@@ -255,9 +247,9 @@ export function Navbar() {
       </header>
 
       {/* Search strip — always visible below the main header row */}
-      <div className="hidden md:block bg-muted/40 border-b border-border">
+      <div className="bg-muted/40 border-b border-border">
         <div className="container mx-auto px-4 md:px-6 py-2">
-          <form onSubmit={handleSearch} className="flex max-w-lg">
+          <form onSubmit={handleSearch} className="flex w-full max-w-lg">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
               <input
@@ -281,25 +273,6 @@ export function Navbar() {
       {/* Mobile Menu Drawer */}
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-40 bg-background/95 backdrop-blur-lg pt-24 px-6 md:hidden animate-in fade-in slide-in-from-top-4 duration-200 overflow-y-auto">
-          {/* Mobile search */}
-          <form onSubmit={handleMobileSearch} className="flex mb-8">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
-              <input
-                ref={mobileSearchRef}
-                type="search"
-                defaultValue={searchValue}
-                placeholder="Search products…"
-                className="w-full border border-input bg-background pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-            </div>
-            <button
-              type="submit"
-              className="px-4 bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
-            >
-              Search
-            </button>
-          </form>
           <nav className="flex flex-col space-y-6 text-center">
             {NAV_LINKS.map((link) => (
               <Link
