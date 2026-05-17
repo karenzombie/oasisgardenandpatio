@@ -329,7 +329,7 @@ export default function Shop() {
                     </div>
                   ) : p.quoteOnly ? (
                     <div className="absolute top-3 right-3 bg-foreground text-background px-3 py-1 text-xs uppercase tracking-widest font-semibold">
-                      Showroom
+                      Call for Pricing
                     </div>
                   ) : null}
                   <div className="absolute bottom-3 right-3 z-10">
