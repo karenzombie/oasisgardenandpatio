@@ -31,7 +31,7 @@ tags:
   - name: admin-categories
     description: Admin CRUD for product categories
   - name: cushions
-    description: Custom cushion order form (public submit, staff review)
+    description: Custom cushion orders created by staff on behalf of customers
   - name: analytics
     description: Visitor / funnel analytics ingestion (public) and reporting (admin)
 paths:
@@ -4258,7 +4258,7 @@ paths:
     post:
       operationId: submitCushionOrder
       tags: [cushions]
-      summary: Submit a custom or stock cushion order (public)
+      summary: Create a custom or stock cushion order on behalf of a customer (staff)
       requestBody:
         required: true
         content:

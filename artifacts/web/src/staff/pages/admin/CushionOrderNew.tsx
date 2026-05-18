@@ -1,27 +1,30 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link, useLocation } from "wouter";
-import { useAuth } from "@/lib/auth";
-import { trackEvent } from "@/lib/analytics";
 import {
   useListCatalogFabrics,
   useListCatalogProducts,
   useSubmitCushionOrder,
+  useAdminListCustomers,
   type CatalogFabricOption,
   type CatalogProduct,
+  type AdminCustomer,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
+import { PageHeader, PageBody } from "../../StaffShell";
+import { useStaffSession } from "../../lib/staffSession";
 import {
   CUSHION_TYPE_META,
   type CushionTypeKey,
   type MeasurementField,
 } from "@/components/cushions/cushionTypes";
-import { CheckCircle2, Plus, Trash2, X } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Plus, Search, Trash2, X } from "lucide-react";
 
 type Mode = "custom" | "stock";
+type CustomerSource = "existing" | "walkin";
 
 type CustomItem = {
   cushionType: CushionTypeKey;
@@ -77,30 +80,25 @@ function emptyStockItem(): StockItem {
   };
 }
 
-export default function Cushions() {
-  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+export default function CushionOrderNew() {
+  const { user } = useStaffSession();
   const [, navigate] = useLocation();
-  void navigate; // kept for potential future use
+  const basePrefix =
+    user?.role === "admin" ? "/admin/cushion-orders" : "/agent/cushion-orders";
 
   const [mode, setMode] = useState<Mode>("custom");
   const [customItems, setCustomItems] = useState<Record<string, CustomItem>>({});
   const [stockItems, setStockItems] = useState<StockItem[]>([emptyStockItem()]);
 
-  // Customer info
-  const [customerName, setCustomerName] = useState("");
-  const [customerPhone, setCustomerPhone] = useState("");
+  // Customer selection
+  const [customerSource, setCustomerSource] =
+    useState<CustomerSource>("existing");
+  const [selectedCustomer, setSelectedCustomer] =
+    useState<AdminCustomer | null>(null);
+  const [walkInName, setWalkInName] = useState("");
+  const [walkInEmail, setWalkInEmail] = useState("");
+  const [walkInPhone, setWalkInPhone] = useState("");
   const [customerNotes, setCustomerNotes] = useState("");
-
-  const [showAuthGate, setShowAuthGate] = useState(false);
-
-  // Pre-populate name once user loads
-  useEffect(() => {
-    setCustomerName((prev) =>
-      prev
-        ? prev
-        : [user?.firstName, user?.lastName].filter(Boolean).join(" ") || ""
-    );
-  }, [user]);
 
   // Custom-mode fabric & options
   const [fabricSelection, setFabricSelection] = useState<{
@@ -118,9 +116,39 @@ export default function Cushions() {
   const [templateAvailable, setTemplateAvailable] = useState<string>("");
 
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<{ orderNumber: string } | null>(null);
+  const [success, setSuccess] = useState<{ id: number; orderNumber: string } | null>(
+    null,
+  );
 
   const submit = useSubmitCushionOrder();
+
+  // Resolve effective customer name/email/phone from the chosen source
+  function resolvedCustomer(): {
+    name: string;
+    email: string | null;
+    phone: string | null;
+  } | null {
+    if (customerSource === "existing") {
+      if (!selectedCustomer) return null;
+      const name =
+        [selectedCustomer.firstName, selectedCustomer.lastName]
+          .filter(Boolean)
+          .join(" ")
+          .trim() || selectedCustomer.email || "";
+      return {
+        name,
+        email: selectedCustomer.email ?? null,
+        phone: selectedCustomer.phone ?? null,
+      };
+    }
+    const name = walkInName.trim();
+    if (!name) return null;
+    return {
+      name,
+      email: walkInEmail.trim() || null,
+      phone: walkInPhone.trim() || null,
+    };
+  }
 
   function toggleCustomType(key: CushionTypeKey) {
     setCustomItems((prev) => {
@@ -155,7 +183,12 @@ export default function Cushions() {
   }
 
   function validate(): string | null {
-    if (!customerName.trim()) return "Please enter your name.";
+    const cust = resolvedCustomer();
+    if (!cust) {
+      return customerSource === "existing"
+        ? "Please select a customer."
+        : "Please enter the customer's name.";
+    }
     if (mode === "custom") {
       const items = Object.values(customItems);
       if (items.length === 0) {
@@ -188,14 +221,6 @@ export default function Cushions() {
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!isAuthenticated) {
-      trackEvent("auth_prompt", { reason: "cushions_submit" });
-      setShowAuthGate(true);
-      setTimeout(() => {
-        document.getElementById("cushion-auth-gate")?.scrollIntoView({ behavior: "smooth", block: "center" });
-      }, 50);
-      return;
-    }
     const v = validate();
     if (v) {
       setError(v);
@@ -203,10 +228,11 @@ export default function Cushions() {
     }
     setError(null);
 
+    const cust = resolvedCustomer()!;
     const baseFields = {
-      customerName: customerName.trim(),
-      customerEmail: user?.email ?? null,
-      customerPhone: customerPhone.trim() || null,
+      customerName: cust.name,
+      customerEmail: cust.email,
+      customerPhone: cust.phone,
       customerNotes: customerNotes.trim() || null,
     };
 
@@ -240,7 +266,7 @@ export default function Cushions() {
             items,
           } as never,
         });
-        setSuccess({ orderNumber: res.orderNumber });
+        setSuccess({ id: res.id, orderNumber: res.orderNumber });
       } else {
         const items = stockItems.map((it) => ({
           quantity: it.quantity,
@@ -256,196 +282,289 @@ export default function Cushions() {
             items,
           } as never,
         });
-        setSuccess({ orderNumber: res.orderNumber });
+        setSuccess({ id: res.id, orderNumber: res.orderNumber });
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to submit.");
     }
   }
 
-  if (authLoading) {
-    return (
-      <div className="flex justify-center py-24">
-        <Spinner className="h-8 w-8" />
-      </div>
-    );
-  }
-
   if (success) {
     return (
-      <div className="container mx-auto px-4 py-16 max-w-2xl text-center">
-        <div className="flex justify-center mb-6">
-          <CheckCircle2 className="w-16 h-16 text-[hsl(var(--brand-green,142_30%_30%))]" />
-        </div>
-        <h1 className="text-3xl font-serif text-foreground mb-3">
-          Order received
-        </h1>
-        <p className="text-muted-foreground mb-2">
-          Thank you, {customerName}. We have your cushion order.
-        </p>
-        <p className="text-lg font-mono text-foreground mb-8">
-          Order #{success.orderNumber}
-        </p>
-        <p className="text-sm text-muted-foreground mb-8">
-          {user?.email
-            ? "A confirmation email is on its way. We'll be in touch soon to confirm details and pricing."
-            : "We'll be in touch soon to confirm details and pricing."}
-        </p>
-        <Link href="/">
-          <Button variant="outline">Return to home</Button>
-        </Link>
-      </div>
+      <>
+        <PageHeader title="Cushion order created" />
+        <PageBody>
+          <div className="max-w-2xl mx-auto text-center py-10">
+            <div className="flex justify-center mb-6">
+              <CheckCircle2 className="w-16 h-16 text-emerald-600" />
+            </div>
+            <h2 className="text-2xl font-semibold text-slate-900 mb-2">
+              Order #{success.orderNumber}
+            </h2>
+            <p className="text-slate-600 mb-8">
+              The cushion order has been recorded. A confirmation has been
+              emailed to the customer (if an email was provided).
+            </p>
+            <div className="flex justify-center gap-3">
+              <Button asChild>
+                <Link href={`${basePrefix}/${success.id}`}>
+                  View order details
+                </Link>
+              </Button>
+              <Button variant="outline" asChild>
+                <Link href={basePrefix}>Back to cushion orders</Link>
+              </Button>
+            </div>
+          </div>
+        </PageBody>
+      </>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-12 max-w-5xl">
-      <nav className="text-xs uppercase tracking-widest text-muted-foreground mb-6">
-        <Link href="/" className="hover:text-foreground">Home</Link>
-        <span className="mx-2">/</span>
-        <span>Custom Cushions</span>
-      </nav>
-
-      <h1 className="text-4xl font-serif text-foreground mb-3">
-        Custom Cushion Order
-      </h1>
-      <p className="text-muted-foreground max-w-2xl mb-8">
-        Order replacement cushions for your existing patio furniture, or design
-        a custom set with your own measurements. We'll follow up to confirm
-        your requirements, pricing and lead time.
-      </p>
-
-      {/* Mode toggle */}
-      <div className="inline-flex border border-border rounded-md overflow-hidden mb-10">
-        <button
-          type="button"
-          className={`px-5 py-2 text-sm font-medium transition-colors ${
-            mode === "custom"
-              ? "bg-foreground text-background"
-              : "bg-background text-foreground hover:bg-muted"
-          }`}
-          onClick={() => setMode("custom")}
-        >
-          Custom (with measurements)
-        </button>
-        <button
-          type="button"
-          className={`px-5 py-2 text-sm font-medium transition-colors border-l border-border ${
-            mode === "stock"
-              ? "bg-foreground text-background"
-              : "bg-background text-foreground hover:bg-muted"
-          }`}
-          onClick={() => setMode("stock")}
-        >
-          For an existing product
-        </button>
-      </div>
-
-      <form onSubmit={onSubmit} className="space-y-10">
-        {mode === "custom" ? (
-          <CustomSection
-            customItems={customItems}
-            toggle={toggleCustomType}
-            update={updateCustomItem}
-            fabricSelection={fabricSelection}
-            setFabricSelection={setFabricSelection}
-            contrastingFabric={contrastingFabric}
-            setContrastingFabric={setContrastingFabric}
-            ties={ties} setTies={setTies}
-            seatWelt={seatWelt} setSeatWelt={setSeatWelt}
-            backWelt={backWelt} setBackWelt={setBackWelt}
-            buttons={buttons} setButtons={setButtons}
-            tuft={tuft} setTuft={setTuft}
-            templateAvailable={templateAvailable} setTemplateAvailable={setTemplateAvailable}
-          />
-        ) : (
-          <StockSection
-            items={stockItems}
-            update={updateStockItem}
-            add={addStockItem}
-            remove={removeStockItem}
-          />
-        )}
-
-        {/* Customer info */}
-        <section>
-          <h2 className="text-2xl font-serif text-foreground mb-1">
-            Your Information
-          </h2>
-          {isAuthenticated && user?.email && (
-            <p className="text-sm text-muted-foreground mb-4">
-              Signed in as <span className="text-foreground">{user.email}</span>
+    <>
+      <PageHeader
+        title="New Cushion Order"
+        subtitle="Create a custom or replacement cushion order on behalf of a customer."
+        action={
+          <Button variant="outline" size="sm" onClick={() => navigate(basePrefix)}>
+            <ArrowLeft className="w-4 h-4 mr-1" /> Back
+          </Button>
+        }
+      />
+      <PageBody>
+        <form onSubmit={onSubmit} className="space-y-10 max-w-5xl">
+          {/* Customer */}
+          <section className="bg-white border border-slate-200 rounded-md p-5">
+            <h2 className="text-lg font-semibold text-slate-900 mb-1">
+              Customer
+            </h2>
+            <p className="text-sm text-slate-500 mb-4">
+              Pick an existing customer or record a walk-in.
             </p>
-          )}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="cname">Name <span className="text-destructive">*</span></Label>
-              <Input
-                id="cname"
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-                required
-              />
+
+            <div className="inline-flex border border-slate-200 rounded overflow-hidden mb-4">
+              <button
+                type="button"
+                className={`px-4 py-1.5 text-sm font-medium transition-colors ${
+                  customerSource === "existing"
+                    ? "bg-slate-900 text-white"
+                    : "bg-white text-slate-700 hover:bg-slate-50"
+                }`}
+                onClick={() => setCustomerSource("existing")}
+              >
+                Existing customer
+              </button>
+              <button
+                type="button"
+                className={`px-4 py-1.5 text-sm font-medium transition-colors border-l border-slate-200 ${
+                  customerSource === "walkin"
+                    ? "bg-slate-900 text-white"
+                    : "bg-white text-slate-700 hover:bg-slate-50"
+                }`}
+                onClick={() => setCustomerSource("walkin")}
+              >
+                Walk-in / new
+              </button>
             </div>
-            <div>
-              <Label htmlFor="cphone">Phone</Label>
-              <Input
-                id="cphone"
-                type="tel"
-                value={customerPhone}
-                onChange={(e) => setCustomerPhone(e.target.value)}
-              />
-            </div>
-            <div className="md:col-span-2">
+
+            {customerSource === "existing" ? (
+              selectedCustomer ? (
+                <div className="flex items-center justify-between border border-slate-200 rounded p-3">
+                  <div>
+                    <div className="font-medium text-slate-900">
+                      {[selectedCustomer.firstName, selectedCustomer.lastName]
+                        .filter(Boolean)
+                        .join(" ")}
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      {selectedCustomer.email}
+                      {selectedCustomer.phone ? ` · ${selectedCustomer.phone}` : ""}
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedCustomer(null)}
+                  >
+                    Change
+                  </Button>
+                </div>
+              ) : (
+                <CustomerSearch onPick={setSelectedCustomer} />
+              )
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="wname">
+                    Name <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="wname"
+                    value={walkInName}
+                    onChange={(e) => setWalkInName(e.target.value)}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="wemail">Email</Label>
+                  <Input
+                    id="wemail"
+                    type="email"
+                    value={walkInEmail}
+                    onChange={(e) => setWalkInEmail(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="wphone">Phone</Label>
+                  <Input
+                    id="wphone"
+                    type="tel"
+                    value={walkInPhone}
+                    onChange={(e) => setWalkInPhone(e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="mt-4">
               <Label htmlFor="cnotes">Notes for our team (optional)</Label>
               <Textarea
                 id="cnotes"
                 value={customerNotes}
                 onChange={(e) => setCustomerNotes(e.target.value)}
-                rows={3}
+                rows={2}
               />
             </div>
-          </div>
-        </section>
+          </section>
 
-        {error && (
-          <div className="p-4 bg-destructive/10 border border-destructive/30 rounded text-destructive text-sm">
-            {error}
+          {/* Mode toggle */}
+          <div className="inline-flex border border-slate-200 rounded-md overflow-hidden">
+            <button
+              type="button"
+              className={`px-5 py-2 text-sm font-medium transition-colors ${
+                mode === "custom"
+                  ? "bg-slate-900 text-white"
+                  : "bg-white text-slate-700 hover:bg-slate-50"
+              }`}
+              onClick={() => setMode("custom")}
+            >
+              Custom (with measurements)
+            </button>
+            <button
+              type="button"
+              className={`px-5 py-2 text-sm font-medium transition-colors border-l border-slate-200 ${
+                mode === "stock"
+                  ? "bg-slate-900 text-white"
+                  : "bg-white text-slate-700 hover:bg-slate-50"
+              }`}
+              onClick={() => setMode("stock")}
+            >
+              For an existing product
+            </button>
           </div>
-        )}
 
-        {showAuthGate && !isAuthenticated && (
-          <div
-            id="cushion-auth-gate"
-            className="rounded-md border border-primary/30 bg-primary/5 p-6 space-y-3"
-          >
-            <p className="font-serif text-lg text-foreground">
-              Create a free account to submit your order
-            </p>
-            <p className="text-sm text-muted-foreground">
-              An account lets you track your cushion orders and saves your contact
-              info for future requests. It only takes a minute.
-            </p>
-            <div className="flex flex-wrap gap-3 pt-1">
-              <Link href={`/signup?next=${encodeURIComponent("/cushions")}`}>
-                <Button size="sm">Create account</Button>
-              </Link>
-              <Link href={`/login?next=${encodeURIComponent("/cushions")}`}>
-                <Button size="sm" variant="outline">Sign in</Button>
-              </Link>
+          {mode === "custom" ? (
+            <CustomSection
+              customItems={customItems}
+              toggle={toggleCustomType}
+              update={updateCustomItem}
+              fabricSelection={fabricSelection}
+              setFabricSelection={setFabricSelection}
+              contrastingFabric={contrastingFabric}
+              setContrastingFabric={setContrastingFabric}
+              ties={ties} setTies={setTies}
+              seatWelt={seatWelt} setSeatWelt={setSeatWelt}
+              backWelt={backWelt} setBackWelt={setBackWelt}
+              buttons={buttons} setButtons={setButtons}
+              tuft={tuft} setTuft={setTuft}
+              templateAvailable={templateAvailable} setTemplateAvailable={setTemplateAvailable}
+            />
+          ) : (
+            <StockSection
+              items={stockItems}
+              update={updateStockItem}
+              add={addStockItem}
+              remove={removeStockItem}
+            />
+          )}
+
+          {error && (
+            <div className="p-4 bg-destructive/10 border border-destructive/30 rounded text-destructive text-sm">
+              {error}
             </div>
-          </div>
-        )}
+          )}
 
-        <div className="flex items-center gap-4">
-          <Button type="submit" size="lg" disabled={submit.isPending}>
-            {submit.isPending ? "Submitting…" : "Submit order"}
-          </Button>
-          <p className="text-xs text-muted-foreground">
-            We'll review and contact you to confirm details and pricing.
-          </p>
+          <div className="flex items-center gap-4">
+            <Button type="submit" size="lg" disabled={submit.isPending}>
+              {submit.isPending ? "Submitting…" : "Create order"}
+            </Button>
+            <p className="text-xs text-slate-500">
+              The customer will receive a confirmation email if one is on file.
+            </p>
+          </div>
+        </form>
+      </PageBody>
+    </>
+  );
+}
+
+// ---------- Customer search ----------
+function CustomerSearch({ onPick }: { onPick: (c: AdminCustomer) => void }) {
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    const t = setTimeout(() => setSearch(searchInput.trim()), 250);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  const list = useAdminListCustomers({
+    ...(search ? { q: search } : {}),
+    limit: 10,
+    offset: 0,
+  });
+
+  return (
+    <div>
+      <div className="relative">
+        <Search className="size-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+        <Input
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          placeholder="Search customers by name or email…"
+          className="pl-8"
+        />
+      </div>
+      {search && (
+        <div className="mt-2 border border-slate-200 rounded max-h-60 overflow-y-auto">
+          {list.isLoading ? (
+            <div className="p-3 text-sm text-slate-500">
+              <Spinner />
+            </div>
+          ) : (list.data?.rows ?? []).length === 0 ? (
+            <div className="p-3 text-sm text-slate-500">No matches.</div>
+          ) : (
+            (list.data?.rows ?? []).map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                className="w-full text-left px-3 py-2 hover:bg-slate-50 border-t first:border-t-0 text-sm"
+                onClick={() => onPick(c)}
+              >
+                <div className="font-medium">
+                  {c.firstName} {c.lastName}
+                </div>
+                <div className="text-xs text-slate-500">
+                  {c.email}
+                  {c.phone ? ` · ${c.phone}` : ""}
+                </div>
+              </button>
+            ))
+          )}
         </div>
-      </form>
+      )}
     </div>
   );
 }
@@ -479,10 +598,10 @@ function CustomSection(props: {
   return (
     <>
       <section>
-        <h2 className="text-2xl font-serif text-foreground mb-1">
+        <h2 className="text-xl font-semibold text-slate-900 mb-1">
           Choose cushion types
         </h2>
-        <p className="text-sm text-muted-foreground mb-6">
+        <p className="text-sm text-slate-500 mb-6">
           Click a card to include that cushion type, then enter the measurements
           shown on the diagram.
         </p>
@@ -497,10 +616,10 @@ function CustomSection(props: {
                 type="button"
                 aria-pressed={selected}
                 onClick={() => props.toggle(meta.key)}
-                className={`text-left border rounded-md p-4 transition-all ${
+                className={`text-left border rounded-md p-4 transition-all bg-white ${
                   selected
-                    ? "border-foreground ring-2 ring-foreground/20 bg-background"
-                    : "border-border bg-background hover:border-muted-foreground"
+                    ? "border-slate-900 ring-2 ring-slate-900/20"
+                    : "border-slate-200 hover:border-slate-400"
                 }`}
               >
                 <div className="flex items-center justify-center mb-3 h-40">
@@ -508,11 +627,9 @@ function CustomSection(props: {
                     <meta.Diagram className="block w-full h-full" />
                   </div>
                 </div>
-                <p className="font-medium text-foreground">{meta.label}</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {meta.description}
-                </p>
-                <p className="text-xs mt-2 text-foreground/70">
+                <p className="font-medium text-slate-900">{meta.label}</p>
+                <p className="text-xs text-slate-500 mt-1">{meta.description}</p>
+                <p className="text-xs mt-2 text-slate-600">
                   {selected ? "✓ Included — click to remove" : "Click to include"}
                 </p>
               </button>
@@ -523,7 +640,7 @@ function CustomSection(props: {
 
       {Object.values(props.customItems).length > 0 && (
         <section>
-          <h2 className="text-2xl font-serif text-foreground mb-4">
+          <h2 className="text-xl font-semibold text-slate-900 mb-4">
             Measurements
           </h2>
           <div className="space-y-4">
@@ -533,7 +650,7 @@ function CustomSection(props: {
                 return (
                   <div
                     key={meta.key}
-                    className="border border-border rounded-md p-4 bg-card"
+                    className="border border-slate-200 rounded-md p-4 bg-white"
                   >
                     <div className="flex items-start gap-4 flex-col md:flex-row">
                       <div className="md:w-48 shrink-0 flex items-center justify-center">
@@ -589,6 +706,16 @@ function CustomSection(props: {
                             />
                           </div>
                         </div>
+                        <div className="mt-3">
+                          <Label className="text-xs uppercase">Notes</Label>
+                          <Input
+                            value={item.notes}
+                            onChange={(e) =>
+                              props.update(meta.key, { notes: e.target.value })
+                            }
+                            placeholder="Anything our vendor should know"
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -600,12 +727,14 @@ function CustomSection(props: {
       )}
 
       <section>
-        <h2 className="text-2xl font-serif text-foreground mb-4">
+        <h2 className="text-xl font-semibold text-slate-900 mb-4">
           Fabric &amp; Options
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="md:col-span-2">
-            <Label>Fabric Name / # <span className="text-destructive">*</span></Label>
+            <Label>
+              Fabric Name / # <span className="text-destructive">*</span>
+            </Label>
             <FabricPicker
               value={props.fabricSelection}
               onChange={props.setFabricSelection}
@@ -650,8 +779,8 @@ function RadioGroup({
             onClick={() => onChange(value === opt.value ? "" : opt.value)}
             className={`px-3 py-1.5 text-sm border rounded transition-colors ${
               value === opt.value
-                ? "bg-foreground text-background border-foreground"
-                : "bg-background text-foreground border-border hover:border-muted-foreground"
+                ? "bg-slate-900 text-white border-slate-900"
+                : "bg-white text-slate-700 border-slate-200 hover:border-slate-400"
             }`}
           >
             {opt.label}
@@ -674,16 +803,16 @@ function StockSection({
 }) {
   return (
     <section>
-      <h2 className="text-2xl font-serif text-foreground mb-1">
+      <h2 className="text-xl font-semibold text-slate-900 mb-1">
         Replacement cushions
       </h2>
-      <p className="text-sm text-muted-foreground mb-6">
+      <p className="text-sm text-slate-500 mb-6">
         Pick the product the cushions belong to. The vendor already has the
         measurements on file for in-line products.
       </p>
       <div className="space-y-4">
         {items.map((it, idx) => (
-          <div key={idx} className="border border-border rounded-md p-4 bg-card">
+          <div key={idx} className="border border-slate-200 rounded-md p-4 bg-white">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
               <div className="md:col-span-5">
                 <Label>Product</Label>
@@ -793,13 +922,13 @@ function FabricPicker({
   if (value.label && !open) {
     return (
       <div className="flex items-center gap-2">
-        <div className="flex-1 px-3 py-2 border border-border rounded bg-background text-sm">
+        <div className="flex-1 px-3 py-2 border border-slate-200 rounded bg-white text-sm">
           {value.label}
           {value.itemNumber && (
-            <span className="text-muted-foreground ml-2">#{value.itemNumber}</span>
+            <span className="text-slate-500 ml-2">#{value.itemNumber}</span>
           )}
           {value.custom && (
-            <span className="text-xs text-muted-foreground ml-2">(custom)</span>
+            <span className="text-xs text-slate-500 ml-2">(custom)</span>
           )}
         </div>
         <Button
@@ -827,16 +956,16 @@ function FabricPicker({
         onFocus={() => setOpen(true)}
       />
       {open && (
-        <div className="absolute z-20 mt-1 w-full max-h-72 overflow-auto bg-popover border border-border rounded shadow-md">
-          {isLoading && <div className="p-3 text-sm text-muted-foreground">Loading…</div>}
+        <div className="absolute z-20 mt-1 w-full max-h-72 overflow-auto bg-white border border-slate-200 rounded shadow-md">
+          {isLoading && <div className="p-3 text-sm text-slate-500">Loading…</div>}
           {!isLoading && filtered.length === 0 && (
-            <div className="p-3 text-sm text-muted-foreground">No matches.</div>
+            <div className="p-3 text-sm text-slate-500">No matches.</div>
           )}
           {filtered.map((f) => (
             <button
               key={f.id}
               type="button"
-              className="w-full text-left px-3 py-2 hover:bg-muted text-sm flex justify-between items-center"
+              className="w-full text-left px-3 py-2 hover:bg-slate-50 text-sm flex justify-between items-center"
               onClick={() => {
                 onChange({
                   fabricId: f.id,
@@ -849,13 +978,13 @@ function FabricPicker({
               }}
             >
               <span>{f.name}</span>
-              <span className="text-xs text-muted-foreground">#{f.itemNumber}</span>
+              <span className="text-xs text-slate-500">#{f.itemNumber}</span>
             </button>
           ))}
           {query.trim() && (
             <button
               type="button"
-              className="w-full text-left px-3 py-2 hover:bg-muted text-sm border-t border-border"
+              className="w-full text-left px-3 py-2 hover:bg-slate-50 text-sm border-t border-slate-200"
               onClick={() => {
                 onChange({
                   fabricId: null,
@@ -894,7 +1023,7 @@ function ProductPicker({
   if (value.productId && value.label && !open) {
     return (
       <div className="flex items-center gap-2">
-        <div className="flex-1 px-3 py-2 border border-border rounded bg-background text-sm">
+        <div className="flex-1 px-3 py-2 border border-slate-200 rounded bg-white text-sm">
           {value.label}
         </div>
         <Button
@@ -922,20 +1051,20 @@ function ProductPicker({
         onFocus={() => setOpen(true)}
       />
       {open && (
-        <div className="absolute z-20 mt-1 w-full max-h-72 overflow-auto bg-popover border border-border rounded shadow-md">
+        <div className="absolute z-20 mt-1 w-full max-h-72 overflow-auto bg-white border border-slate-200 rounded shadow-md">
           {isLoading && (
-            <div className="p-3 text-sm text-muted-foreground flex items-center gap-2">
+            <div className="p-3 text-sm text-slate-500 flex items-center gap-2">
               <Spinner className="w-4 h-4" /> Loading…
             </div>
           )}
           {!isLoading && products.length === 0 && (
-            <div className="p-3 text-sm text-muted-foreground">No products found.</div>
+            <div className="p-3 text-sm text-slate-500">No products found.</div>
           )}
           {products.map((p) => (
             <button
               key={p.id}
               type="button"
-              className="w-full text-left px-3 py-2 hover:bg-muted text-sm"
+              className="w-full text-left px-3 py-2 hover:bg-slate-50 text-sm"
               onClick={() => {
                 onChange({
                   productId: p.id,
@@ -946,7 +1075,7 @@ function ProductPicker({
               }}
             >
               <div className="font-medium">{p.name}</div>
-              <div className="text-xs text-muted-foreground">
+              <div className="text-xs text-slate-500">
                 {p.manufacturerName ?? "—"} · SKU {p.sku}
               </div>
             </button>

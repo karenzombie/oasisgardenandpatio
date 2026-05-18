@@ -13,7 +13,6 @@ import {
   UpdateCushionOrderBody,
 } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
-import { cushionSubmitRateLimiter } from "../middlewares/rateLimit";
 import {
   sendCustomerConfirmationEmail,
   sendAdminAlertEmail,
@@ -48,10 +47,11 @@ function summarizeRows(
   return summarizeItems(rows);
 }
 
-// ---------- Public submit ----------
+// ---------- Staff submit (on behalf of customer) ----------
 router.post(
   "/cushions/orders",
-  cushionSubmitRateLimiter,
+  requireAuth,
+  requireRole("admin", "agent"),
   async (req: Request, res: Response): Promise<void> => {
     const parsed = SubmitCushionOrderBody.safeParse(req.body);
     if (!parsed.success) {

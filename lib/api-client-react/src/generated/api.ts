@@ -15629,7 +15629,7 @@ export const useAdminUpdateCustomerAddress = <
 };
 
 /**
- * @summary Submit a custom or stock cushion order (public)
+ * @summary Create a custom or stock cushion order on behalf of a customer (staff)
  */
 export const getSubmitCushionOrderUrl = () => {
   return `/api/cushions/orders`;
@@ -15693,7 +15693,7 @@ export type SubmitCushionOrderMutationBody =
 export type SubmitCushionOrderMutationError = ErrorType<Error>;
 
 /**
- * @summary Submit a custom or stock cushion order (public)
+ * @summary Create a custom or stock cushion order on behalf of a customer (staff)
  */
 export const useSubmitCushionOrder = <
   TError = ErrorType<Error>,

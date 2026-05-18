@@ -96,6 +96,7 @@ export const AGENT_NAV: NavGroup[] = [
     items: [
       { label: "New Order", path: "/agent/new-order", icon: ShoppingCart },
       { label: "Orders", path: "/agent/orders", icon: ClipboardList },
+      { label: "Cushion Orders", path: "/agent/cushion-orders", icon: Layers },
       { label: "Customers", path: "/agent/customers", icon: Users },
     ],
   },

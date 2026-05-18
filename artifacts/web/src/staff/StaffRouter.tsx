@@ -38,6 +38,7 @@ import VendorOrders from "./pages/admin/VendorOrders";
 import VendorOrderDetail from "./pages/admin/VendorOrderDetail";
 import CushionOrders from "./pages/admin/CushionOrders";
 import CushionOrderDetail from "./pages/admin/CushionOrderDetail";
+import CushionOrderNew from "./pages/admin/CushionOrderNew";
 import RecoveryRequests from "./pages/admin/RecoveryRequests";
 import Reports from "./pages/admin/Reports";
 import Notifications from "./pages/admin/Notifications";
@@ -94,6 +95,7 @@ export default function StaffRouter() {
                 <Route path="/admin/vendor-orders" component={VendorOrders} />
                 <Route path="/admin/vendor-orders/:id" component={VendorOrderDetail} />
                 <Route path="/admin/cushion-orders" component={CushionOrders} />
+                <Route path="/admin/cushion-orders/new" component={CushionOrderNew} />
                 <Route path="/admin/cushion-orders/:id" component={CushionOrderDetail} />
                 <Route path="/admin/reports" component={Reports} />
                 <Route path="/admin/notifications" component={Notifications} />
@@ -128,6 +130,9 @@ export default function StaffRouter() {
                 <Route path="/agent/new-order" component={AgentNewOrder} />
                 <Route path="/agent/orders" component={AgentOrders} />
                 <Route path="/agent/orders/:id" component={AgentOrderDetail} />
+                <Route path="/agent/cushion-orders" component={CushionOrders} />
+                <Route path="/agent/cushion-orders/new" component={CushionOrderNew} />
+                <Route path="/agent/cushion-orders/:id" component={CushionOrderDetail} />
                 <Route path="/agent/customers" component={AgentCustomers} />
                 <Route path="/agent/products" component={AgentProducts} />
                 <Route path="/agent/inventory" component={AgentInventory} />

@@ -57,7 +57,6 @@ const NAV_LINKS = [
   { href: "/materials", label: "Materials" },
   { href: "/shop", label: "Products" },
   { href: "/commercial", label: "Commercial" },
-  { href: "/cushions", label: "Cushions" },
   { href: "/contact", label: "Contact Us" },
 ];
 

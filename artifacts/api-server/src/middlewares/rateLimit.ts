@@ -72,14 +72,6 @@ export const adminRecoveryCompleteRateLimiter = rateLimit({
   handler: jsonErrorHandler,
 });
 
-export const cushionSubmitRateLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000,
-  limit: 10,
-  standardHeaders: "draft-7",
-  legacyHeaders: false,
-  handler: jsonErrorHandler,
-});
-
 export const resendVerificationRateLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   limit: 5,

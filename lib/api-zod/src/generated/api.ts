@@ -7570,7 +7570,7 @@ export const AdminUpdateCustomerAddressResponse = zod.object({
 });
 
 /**
- * @summary Submit a custom or stock cushion order (public)
+ * @summary Create a custom or stock cushion order on behalf of a customer (staff)
  */
 
 export const submitCushionOrderBodyItemsItemQuantityDefault = 1;

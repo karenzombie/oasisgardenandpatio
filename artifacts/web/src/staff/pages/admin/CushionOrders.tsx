@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { Link } from "wouter";
+import { Plus } from "lucide-react";
 import {
   useListCushionOrders,
   type CushionOrderListRowStatus,
 } from "@workspace/api-client-react";
 import { PageHeader, PageBody } from "../../StaffShell";
+import { useStaffSession } from "../../lib/staffSession";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import {
   Select,
@@ -34,6 +37,9 @@ const STATUS_VARIANT: Record<
 };
 
 export default function CushionOrders() {
+  const { user } = useStaffSession();
+  const basePrefix =
+    user?.role === "admin" ? "/admin/cushion-orders" : "/agent/cushion-orders";
   const [status, setStatus] = useState<CushionOrderListRowStatus | "all">("all");
   const [q, setQ] = useState("");
 
@@ -60,7 +66,14 @@ export default function CushionOrders() {
     <>
       <PageHeader
         title="Cushion Orders"
-        subtitle="Custom and replacement cushion submissions from the public site."
+        subtitle="Custom and replacement cushion orders created on behalf of customers."
+        action={
+          <Button asChild size="sm">
+            <Link href={`${basePrefix}/new`}>
+              <Plus className="w-4 h-4 mr-1" /> New cushion order
+            </Link>
+          </Button>
+        }
       />
       <PageBody>
         <div className="flex flex-wrap items-center gap-3 mb-4">
@@ -113,7 +126,7 @@ export default function CushionOrders() {
                   <tr key={r.id} className="border-t border-border hover:bg-muted/20">
                     <td className="px-3 py-2 font-mono">
                       <Link
-                        href={`/admin/cushion-orders/${r.id}`}
+                        href={`${basePrefix}/${r.id}`}
                         className="text-foreground hover:underline"
                       >
                         {r.orderNumber}

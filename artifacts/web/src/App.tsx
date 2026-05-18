@@ -24,7 +24,6 @@ import Fabrics from "@/pages/Fabrics";
 import Materials from "@/pages/Materials";
 import Manufacturers from "@/pages/Manufacturers";
 import Commercial from "@/pages/Commercial";
-import Cushions from "@/pages/Cushions";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import TermsAndConditions from "@/pages/TermsAndConditions";
 import ForgotPassword from "@/pages/ForgotPassword";
@@ -64,9 +63,11 @@ function CustomerRouter() {
         <Route path="/warranty">{() => <ComingSoon />}</Route>
         <Route path="/fabrics" component={Fabrics} />
         <Route path="/commercial" component={Commercial} />
-        <Route path="/cushions" component={Cushions} />
         {/* Legacy /login and /signup routes redirect to the Clerk-backed
             sign-in / sign-up flow. */}
+        <Route path="/cushions">
+          <Redirect to="/contact" />
+        </Route>
         <Route path="/login">
           <Redirect to="/sign-in" />
         </Route>

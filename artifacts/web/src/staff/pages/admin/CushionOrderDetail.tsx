@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "wouter";
+import { useStaffSession } from "../../lib/staffSession";
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Download, Mail } from "lucide-react";
 import {
@@ -45,6 +46,9 @@ export default function CushionOrderDetail() {
   const params = useParams();
   const id = Number(params.id);
   const queryClient = useQueryClient();
+  const { user } = useStaffSession();
+  const basePrefix =
+    user?.role === "admin" ? "/admin/cushion-orders" : "/agent/cushion-orders";
 
   const { data, isLoading } = useGetCushionOrder(id);
   const update = useUpdateCushionOrder();
@@ -101,7 +105,7 @@ export default function CushionOrderDetail() {
           data.submittedAt,
         ).toLocaleString()}`}
         action={
-          <Link href="/admin/cushion-orders" className="text-sm flex items-center gap-1 text-muted-foreground hover:text-foreground">
+          <Link href={basePrefix} className="text-sm flex items-center gap-1 text-muted-foreground hover:text-foreground">
             <ArrowLeft className="w-4 h-4" /> All cushion orders
           </Link>
         }
