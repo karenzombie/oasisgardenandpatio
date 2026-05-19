@@ -201,6 +201,8 @@ export * from "./createProductRequestPricingMode";
 export * from "./createSetRequest";
 export * from "./createStaffUserRequest";
 export * from "./createStaffUserRequestRole";
+export * from "./createStandaloneVendorOrderItem";
+export * from "./createStandaloneVendorOrderRequest";
 export * from "./currentUser";
 export * from "./currentUserRole";
 export * from "./cushionOrderDetail";

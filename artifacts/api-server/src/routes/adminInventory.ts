@@ -818,7 +818,7 @@ router.get(
         orderId: inventoryAdjustmentsTable.orderId,
         orderNumber: ordersTable.orderNumber,
         vendorOrderId: inventoryAdjustmentsTable.vendorOrderId,
-        vendorOrderNumber: vendorOrdersTable.orderNumber,
+        vendorOrderNumber: vendorOrdersTable.vendorOrderNumber,
         performedByUserId: inventoryAdjustmentsTable.performedByUserId,
         performedByEmail: usersTable.email,
         performedByFirstName: usersTable.firstName,

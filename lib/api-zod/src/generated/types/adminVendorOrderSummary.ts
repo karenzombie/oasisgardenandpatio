@@ -12,7 +12,7 @@ export interface AdminVendorOrderSummary {
   status: string;
   manufacturerId: number | null;
   manufacturerName: string | null;
-  customerOrderId: number;
+  customerOrderId: number | null;
   customerOrderNumber: string | null;
   notes: string | null;
   vendorEstimatedDeliveryDate: Date | null;

@@ -120,9 +120,14 @@ export const orderItemsTable = pgTable(
   "order_items",
   {
     id: serial("id").primaryKey(),
-    orderId: integer("order_id")
-      .notNull()
-      .references(() => ordersTable.id, { onDelete: "cascade" }),
+    // Nullable to support line items belonging to a standalone vendor
+    // order (no parent customer order). When NULL, vendorOrderId or
+    // fabricVendorOrderId MUST be set; this is enforced at the app layer
+    // by the only writer of NULL-orderId rows (the standalone vendor
+    // order creation route).
+    orderId: integer("order_id").references(() => ordersTable.id, {
+      onDelete: "cascade",
+    }),
     productId: integer("product_id").references(() => productsTable.id, {
       onDelete: "set null",
     }),

@@ -20,15 +20,31 @@ export const vendorOrdersTable = pgTable(
   {
     id: serial("id").primaryKey(),
     vendorOrderNumber: text("vendor_order_number").notNull().unique(),
-    customerOrderId: integer("customer_order_id")
-      .notNull()
-      .references(() => ordersTable.id, { onDelete: "cascade" }),
+    // Nullable to support standalone vendor orders created by staff
+    // without a parent customer order.
+    customerOrderId: integer("customer_order_id").references(
+      () => ordersTable.id,
+      { onDelete: "cascade" },
+    ),
     manufacturerId: integer("manufacturer_id").references(
       () => manufacturersTable.id,
       { onDelete: "set null" },
     ),
     status: text("status").notNull().default("pending"),
     notes: text("notes"),
+    // Ship-to override for standalone POs (and as an explicit override even
+    // when a customer order is present). When customerOrderId IS NOT NULL,
+    // null values here mean "inherit from the customer order". When it IS
+    // NULL, these fields drive the PO ship-to block and the receive
+    // inventory-bump decision.
+    shipToStoreOverride: boolean("ship_to_store_override"),
+    shipToName: text("ship_to_name"),
+    shipToLine1: text("ship_to_line1"),
+    shipToLine2: text("ship_to_line2"),
+    shipToCity: text("ship_to_city"),
+    shipToState: text("ship_to_state"),
+    shipToPostalCode: text("ship_to_postal_code"),
+    shipToPhone: text("ship_to_phone"),
     vendorEstimatedDeliveryDate: timestamp("vendor_estimated_delivery_date", {
       withTimezone: true,
     }),

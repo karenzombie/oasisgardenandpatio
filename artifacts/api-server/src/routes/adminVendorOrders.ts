@@ -35,7 +35,9 @@ import {
   AdminReceiveVendorOrderBody,
   AdminCancelVendorOrderParams,
   AdminCancelVendorOrderBody,
+  AdminCreateStandaloneVendorOrderBody,
 } from "@workspace/api-zod";
+import { productVariantsTable } from "@workspace/db";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import { recordAudit } from "../lib/audit";
 import { recordHistory } from "../lib/history";
@@ -125,6 +127,173 @@ export async function nextVendorOrderNumber(
   }
   return `${prefix}${String(next).padStart(5, "0")}`;
 }
+
+// ---------------------------------------------------------------------------
+// POST /admin/vendor-orders — create a standalone vendor order (no parent
+// customer order). Line items are inserted directly with orderId=NULL and
+// vendorOrderId pointing at the new VO. Snapshots are captured from the
+// product/variant rows so later renames don't rewrite history.
+// ---------------------------------------------------------------------------
+router.post(
+  "/admin/vendor-orders",
+  requireAuth,
+  requireRole("admin"),
+  async (req: Request, res: Response): Promise<void> => {
+    const parsed = AdminCreateStandaloneVendorOrderBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "Invalid body", details: parsed.error.flatten() });
+      return;
+    }
+    const body = parsed.data;
+
+    // Validate manufacturer exists.
+    const [mfg] = await db
+      .select()
+      .from(manufacturersTable)
+      .where(eq(manufacturersTable.id, body.manufacturerId));
+    if (!mfg) {
+      res.status(404).json({ error: "Manufacturer not found" });
+      return;
+    }
+
+    // Validate drop-ship address: when shipToStore=false, at least
+    // line1/city/state/postalCode must be present so the vendor knows
+    // where to deliver.
+    if (!body.shipToStore) {
+      if (!body.shipToLine1 || !body.shipToCity || !body.shipToState || !body.shipToPostalCode) {
+        res.status(400).json({
+          error: "Drop-ship address requires line1, city, state and postal code",
+        });
+        return;
+      }
+    }
+
+    // Pre-fetch products + variants in bulk so we have snapshots and can
+    // verify every referenced row exists before opening the txn.
+    const productIds = Array.from(new Set(body.items.map((i) => i.productId)));
+    const variantIds = Array.from(
+      new Set(body.items.map((i) => i.variantId).filter((x): x is number => x != null)),
+    );
+    const products = await db
+      .select()
+      .from(productsTable)
+      .where(inArray(productsTable.id, productIds));
+    const productById = new Map(products.map((p) => [p.id, p]));
+    for (const pid of productIds) {
+      const p = productById.get(pid);
+      if (!p) {
+        res.status(404).json({ error: `Product ${pid} not found` });
+        return;
+      }
+      // Enforce single-vendor PO semantics: every product on the PO must
+      // be made by the selected manufacturer. Otherwise the PO would
+      // email the wrong vendor and corrupt downstream accountability.
+      if (p.manufacturerId !== body.manufacturerId) {
+        res.status(400).json({
+          error: `Product ${p.sku} is made by a different manufacturer than the selected vendor`,
+        });
+        return;
+      }
+    }
+    const variants = variantIds.length
+      ? await db
+          .select()
+          .from(productVariantsTable)
+          .where(inArray(productVariantsTable.id, variantIds))
+      : [];
+    const variantById = new Map(variants.map((v) => [v.id, v]));
+    for (const item of body.items) {
+      if (item.variantId != null) {
+        const v = variantById.get(item.variantId);
+        if (!v) {
+          res.status(404).json({ error: `Variant ${item.variantId} not found` });
+          return;
+        }
+        if (v.productId !== item.productId) {
+          res.status(400).json({
+            error: `Variant ${item.variantId} does not belong to product ${item.productId}`,
+          });
+          return;
+        }
+      }
+    }
+
+    const userId = (req as Request & { user?: { id: number } }).user?.id ?? null;
+
+    const created = await db.transaction(async (tx) => {
+      const number = await nextVendorOrderNumber(tx);
+      const [vo] = await tx
+        .insert(vendorOrdersTable)
+        .values({
+          vendorOrderNumber: number,
+          customerOrderId: null,
+          manufacturerId: body.manufacturerId,
+          status: "pending",
+          notes: body.notes ?? null,
+          vendorEstimatedDeliveryDate: body.vendorEstimatedDeliveryDate
+            ? new Date(body.vendorEstimatedDeliveryDate)
+            : null,
+          shipToStoreOverride: body.shipToStore,
+          shipToName: body.shipToStore ? null : (body.shipToName ?? null),
+          shipToLine1: body.shipToStore ? null : (body.shipToLine1 ?? null),
+          shipToLine2: body.shipToStore ? null : (body.shipToLine2 ?? null),
+          shipToCity: body.shipToStore ? null : (body.shipToCity ?? null),
+          shipToState: body.shipToStore ? null : (body.shipToState ?? null),
+          shipToPostalCode: body.shipToStore ? null : (body.shipToPostalCode ?? null),
+          shipToPhone: body.shipToStore ? null : (body.shipToPhone ?? null),
+          createdByUserId: userId,
+        })
+        .returning();
+      if (!vo) throw new Error("Failed to insert vendor order");
+
+      // Insert line items. orderId is NULL (standalone PO);
+      // vendorOrderId points at the new VO. We capture description as
+      // "Product Name" or "Product Name — Variant Name" and snapshot
+      // SKUs so the PDF and detail page survive future product edits.
+      for (const item of body.items) {
+        const p = productById.get(item.productId)!;
+        const v = item.variantId != null ? variantById.get(item.variantId) ?? null : null;
+        const description = v ? `${p.name} — ${v.variantName}` : p.name;
+        const unitPrice = item.unitPrice.toFixed(2);
+        const amount = (item.unitPrice * item.quantity).toFixed(2);
+        await tx.insert(orderItemsTable).values({
+          orderId: null,
+          vendorOrderId: vo.id,
+          productId: p.id,
+          variantId: v?.id ?? null,
+          productSkuSnapshot: p.sku,
+          variantSkuSnapshot: v?.variantSku ?? null,
+          variantNameSnapshot: v?.variantName ?? null,
+          description,
+          quantity: item.quantity,
+          unitPrice,
+          amount,
+          notes: item.notes ?? null,
+        });
+      }
+
+      return vo;
+    });
+
+    await recordAudit(req, {
+      action: "vendor_order.create_standalone",
+      entityType: "vendor_order",
+      entityId: created.id,
+      changes: {
+        vendorOrderNumber: created.vendorOrderNumber,
+        manufacturerId: body.manufacturerId,
+        itemCount: body.items.length,
+      },
+    });
+
+    const detail = await loadVendorOrderDetail(created.id);
+    if (!detail) {
+      res.status(500).json({ error: "Failed to load created vendor order" });
+      return;
+    }
+    res.status(201).json(detail);
+  },
+);
 
 router.get(
   "/admin/vendor-orders",
@@ -326,23 +495,54 @@ async function loadVendorOrderDetail(id: number) {
     customerName: customer
       ? nameOf(customer.firstName, customer.lastName)
       : (order?.walkInName ?? null),
-    // Drop-ship support: when the customer order is flagged ship-to-store=false,
-    // the PO Ship-To block uses the customer's shipping address instead of
-    // Oasis's. We forward the resolved address so the PDF helper has
-    // everything it needs without a second DB round-trip.
-    shipToStore: order?.shipToStore ?? true,
-    shipToName: shipAddr
-      ? (shipAddr.recipientName ||
-        (customer ? nameOf(customer.firstName, customer.lastName) : null) ||
-        order?.walkInName ||
-        null)
-      : null,
-    shipToLine1: shipAddr?.street1 ?? null,
-    shipToLine2: shipAddr?.street2 ?? null,
-    shipToCity: shipAddr?.city ?? null,
-    shipToState: shipAddr?.state ?? null,
-    shipToPostalCode: shipAddr?.zip ?? null,
-    shipToPhone: shipAddr?.phone ?? null,
+    // Ship-to resolution order: (1) VO's own override fields when set
+    // (used for standalone POs, and as an explicit override on
+    // customer-order POs); (2) the customer order's resolved shipping
+    // address when shipToStore is false; (3) default ship-to-store.
+    ...(() => {
+      // Consider ALL override fields so a partially-populated row still
+      // counts as an explicit override and we don't silently fall back
+      // to the parent customer order's address.
+      const hasOverride =
+        vo.shipToStoreOverride !== null ||
+        vo.shipToName != null ||
+        vo.shipToLine1 != null ||
+        vo.shipToLine2 != null ||
+        vo.shipToCity != null ||
+        vo.shipToState != null ||
+        vo.shipToPostalCode != null ||
+        vo.shipToPhone != null;
+      const shipToStore = hasOverride
+        ? vo.shipToStoreOverride !== false
+        : (order?.shipToStore ?? true);
+      if (hasOverride) {
+        return {
+          shipToStore,
+          shipToName: vo.shipToName,
+          shipToLine1: vo.shipToLine1,
+          shipToLine2: vo.shipToLine2,
+          shipToCity: vo.shipToCity,
+          shipToState: vo.shipToState,
+          shipToPostalCode: vo.shipToPostalCode,
+          shipToPhone: vo.shipToPhone,
+        };
+      }
+      return {
+        shipToStore,
+        shipToName: shipAddr
+          ? (shipAddr.recipientName ||
+            (customer ? nameOf(customer.firstName, customer.lastName) : null) ||
+            order?.walkInName ||
+            null)
+          : null,
+        shipToLine1: shipAddr?.street1 ?? null,
+        shipToLine2: shipAddr?.street2 ?? null,
+        shipToCity: shipAddr?.city ?? null,
+        shipToState: shipAddr?.state ?? null,
+        shipToPostalCode: shipAddr?.zip ?? null,
+        shipToPhone: shipAddr?.phone ?? null,
+      };
+    })(),
     items: items.map((x) => itemToPayload(x.row, x.kind)),
     sends: sends.map((row) => ({
       id: row.s.id,
@@ -524,19 +724,34 @@ router.delete(
       if (existing.status !== "pending") {
         return { kind: "not_pending" as const, status: existing.status };
       }
-      // Un-assign items from BOTH columns (vendor_order_id for product
-      // POs, fabric_vendor_order_id for fabric-only POs), then delete.
-      const unassignedProduct = await tx
-        .update(orderItemsTable)
-        .set({ vendorOrderId: null })
-        .where(eq(orderItemsTable.vendorOrderId, existing.id))
-        .returning({ id: orderItemsTable.id });
-      const unassignedFabric = await tx
-        .update(orderItemsTable)
-        .set({ fabricVendorOrderId: null })
-        .where(eq(orderItemsTable.fabricVendorOrderId, existing.id))
-        .returning({ id: orderItemsTable.id });
-      const unassigned = [...unassignedProduct, ...unassignedFabric];
+      // Standalone POs (no customer order) own their line items outright,
+      // so we DELETE them — un-assigning would leave orphan rows with both
+      // orderId and vendorOrderId NULL. Customer-order POs un-assign as
+      // before so the lines stay live on the customer order.
+      let unassigned: Array<{ id: number }> = [];
+      if (existing.customerOrderId == null) {
+        const deletedProduct = await tx
+          .delete(orderItemsTable)
+          .where(eq(orderItemsTable.vendorOrderId, existing.id))
+          .returning({ id: orderItemsTable.id });
+        const deletedFabric = await tx
+          .delete(orderItemsTable)
+          .where(eq(orderItemsTable.fabricVendorOrderId, existing.id))
+          .returning({ id: orderItemsTable.id });
+        unassigned = [...deletedProduct, ...deletedFabric];
+      } else {
+        const unassignedProduct = await tx
+          .update(orderItemsTable)
+          .set({ vendorOrderId: null })
+          .where(eq(orderItemsTable.vendorOrderId, existing.id))
+          .returning({ id: orderItemsTable.id });
+        const unassignedFabric = await tx
+          .update(orderItemsTable)
+          .set({ fabricVendorOrderId: null })
+          .where(eq(orderItemsTable.fabricVendorOrderId, existing.id))
+          .returning({ id: orderItemsTable.id });
+        unassigned = [...unassignedProduct, ...unassignedFabric];
+      }
       await tx
         .delete(vendorOrdersTable)
         .where(eq(vendorOrdersTable.id, existing.id));
@@ -1070,6 +1285,8 @@ router.post(
       // ship-to-store staff orders both bring physical goods to our shelves,
       // so both should increment on-hand on receipt.  Direct-ship online
       // orders bypass the store entirely and must NOT inflate counts.
+      // Standalone POs (no customer order) use the VO's own
+      // shipToStoreOverride flag captured at creation time.
       let isRestock = false;
       let shouldBumpInventory = false;
       let restockLocationId: number | null = null;
@@ -1083,6 +1300,12 @@ router.post(
           .where(eq(ordersTable.id, existing.customerOrderId));
         isRestock = parent?.isInternalRestock === true;
         shouldBumpInventory = isRestock || parent?.shipToStore === true;
+        // Allow an explicit per-VO override even on customer-order POs.
+        if (existing.shipToStoreOverride === false) shouldBumpInventory = false;
+        if (existing.shipToStoreOverride === true) shouldBumpInventory = true;
+      } else {
+        // Standalone PO: default to ship-to-store when no explicit flag.
+        shouldBumpInventory = existing.shipToStoreOverride !== false;
       }
       if (shouldBumpInventory) {
         const [defaultLoc] = await tx
@@ -1374,13 +1597,28 @@ router.post(
       const effectiveScope: "full" | "partial" =
         remainingItems.length === 0 ? "full" : "partial";
 
-      // Un-assign just the cancelled lines. The extra `<col> = existing.id`
-      // predicate guards against a row being re-assigned to a different VO
-      // between our select and update.
+      // For customer-order POs we un-assign the cancelled lines so they
+      // can be regenerated onto a new vendor order. For standalone POs
+      // the cancelled lines have no parent customer order and would
+      // become orphans with both orderId and vendorOrderId NULL, so we
+      // delete them outright. The extra `<col> = existing.id` predicate
+      // guards against concurrent re-assignment to a different VO.
       const cancelIds = cancelItems.map((it) => it.id);
       if (cancelIds.length > 0) {
-        const updated =
-          poKind === "fabric"
+        const isStandalone = existing.customerOrderId == null;
+        const updated = isStandalone
+          ? await tx
+              .delete(orderItemsTable)
+              .where(
+                and(
+                  inArray(orderItemsTable.id, cancelIds),
+                  poKind === "fabric"
+                    ? eq(orderItemsTable.fabricVendorOrderId, existing.id)
+                    : eq(orderItemsTable.vendorOrderId, existing.id),
+                ),
+              )
+              .returning({ id: orderItemsTable.id })
+          : poKind === "fabric"
             ? await tx
                 .update(orderItemsTable)
                 .set({ fabricVendorOrderId: null })

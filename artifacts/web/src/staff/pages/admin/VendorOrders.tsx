@@ -1,6 +1,6 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { Link } from "wouter";
-import { Search, PackageSearch } from "lucide-react";
+import { Search, PackageSearch, Plus } from "lucide-react";
 import {
   useAdminListVendorOrders,
   type AdminVendorOrderSummary,
@@ -63,6 +63,14 @@ export default function VendorOrders() {
       <PageHeader
         title="Vendor Orders"
         subtitle="Generate and track purchase orders sent to vendors."
+        action={
+          <Button asChild>
+            <Link href="/admin/vendor-orders/new">
+              <Plus className="size-4 mr-1" />
+              New vendor order
+            </Link>
+          </Button>
+        }
       />
       <PageBody>
         <Tabs
@@ -115,8 +123,14 @@ export default function VendorOrders() {
             </div>
             <div className="text-xs">
               Open a customer order and click{" "}
-              <span className="font-medium">Generate vendor orders</span> to
-              create one.
+              <span className="font-medium">Generate vendor orders</span>, or{" "}
+              <Link
+                href="/admin/vendor-orders/new"
+                className="text-blue-700 hover:underline"
+              >
+                create one directly
+              </Link>
+              .
             </div>
           </div>
         ) : (

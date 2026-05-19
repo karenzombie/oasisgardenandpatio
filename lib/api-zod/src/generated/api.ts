@@ -5884,6 +5884,45 @@ export const AdminReviewCancellationRequestResponse = zod.object({
 });
 
 /**
+ * @summary Create a vendor order directly (no parent customer order)
+ */
+
+export const adminCreateStandaloneVendorOrderBodyItemsItemUnitPriceMin = 0;
+
+export const AdminCreateStandaloneVendorOrderBody = zod
+  .object({
+    manufacturerId: zod.number(),
+    notes: zod.string().nullish(),
+    vendorEstimatedDeliveryDate: zod.coerce.date().nullish(),
+    shipToStore: zod
+      .boolean()
+      .describe(
+        "true = deliver to Oasis warehouse (receive will bump inventory). false = drop-ship to the supplied address.",
+      ),
+    shipToName: zod.string().nullish(),
+    shipToLine1: zod.string().nullish(),
+    shipToLine2: zod.string().nullish(),
+    shipToCity: zod.string().nullish(),
+    shipToState: zod.string().nullish(),
+    shipToPostalCode: zod.string().nullish(),
+    shipToPhone: zod.string().nullish(),
+    items: zod
+      .array(
+        zod.object({
+          productId: zod.number(),
+          variantId: zod.number().nullish(),
+          quantity: zod.number().min(1),
+          unitPrice: zod
+            .number()
+            .min(adminCreateStandaloneVendorOrderBodyItemsItemUnitPriceMin),
+          notes: zod.string().nullish(),
+        }),
+      )
+      .min(1),
+  })
+  .describe("Create a vendor order that is not tied to a customer order.");
+
+/**
  * @summary List vendor orders (filterable by bucket/status/manufacturer/customer order/search)
  */
 export const adminListVendorOrdersQueryLimitMax = 200;
@@ -5921,7 +5960,7 @@ export const AdminListVendorOrdersResponse = zod.object({
       status: zod.string(),
       manufacturerId: zod.number().nullable(),
       manufacturerName: zod.string().nullable(),
-      customerOrderId: zod.number(),
+      customerOrderId: zod.number().nullable(),
       customerOrderNumber: zod.string().nullable(),
       notes: zod.string().nullable(),
       vendorEstimatedDeliveryDate: zod.coerce.date().nullable(),
@@ -5971,10 +6010,18 @@ export const AdminGetVendorOrderResponse = zod.object({
   manufacturerPostalCode: zod.string().nullable(),
   manufacturerPhone: zod.string().nullable(),
   manufacturerFax: zod.string().nullable(),
-  customerOrderId: zod.number(),
+  customerOrderId: zod.number().nullable(),
   customerOrderNumber: zod.string().nullable(),
   customerOrderStatus: zod.string().nullable(),
   customerName: zod.string().nullable(),
+  shipToStore: zod.boolean(),
+  shipToName: zod.string().nullable(),
+  shipToLine1: zod.string().nullable(),
+  shipToLine2: zod.string().nullable(),
+  shipToCity: zod.string().nullable(),
+  shipToState: zod.string().nullable(),
+  shipToPostalCode: zod.string().nullable(),
+  shipToPhone: zod.string().nullable(),
   items: zod.array(
     zod.object({
       id: zod.number(),
@@ -6062,10 +6109,18 @@ export const AdminUpdateVendorOrderResponse = zod.object({
   manufacturerPostalCode: zod.string().nullable(),
   manufacturerPhone: zod.string().nullable(),
   manufacturerFax: zod.string().nullable(),
-  customerOrderId: zod.number(),
+  customerOrderId: zod.number().nullable(),
   customerOrderNumber: zod.string().nullable(),
   customerOrderStatus: zod.string().nullable(),
   customerName: zod.string().nullable(),
+  shipToStore: zod.boolean(),
+  shipToName: zod.string().nullable(),
+  shipToLine1: zod.string().nullable(),
+  shipToLine2: zod.string().nullable(),
+  shipToCity: zod.string().nullable(),
+  shipToState: zod.string().nullable(),
+  shipToPostalCode: zod.string().nullable(),
+  shipToPhone: zod.string().nullable(),
   items: zod.array(
     zod.object({
       id: zod.number(),
@@ -6181,7 +6236,7 @@ export const AdminGenerateVendorOrdersResponse = zod.object({
       status: zod.string(),
       manufacturerId: zod.number().nullable(),
       manufacturerName: zod.string().nullable(),
-      customerOrderId: zod.number(),
+      customerOrderId: zod.number().nullable(),
       customerOrderNumber: zod.string().nullable(),
       notes: zod.string().nullable(),
       vendorEstimatedDeliveryDate: zod.coerce.date().nullable(),
@@ -6240,10 +6295,18 @@ export const AdminSendVendorOrderResponse = zod.object({
   manufacturerPostalCode: zod.string().nullable(),
   manufacturerPhone: zod.string().nullable(),
   manufacturerFax: zod.string().nullable(),
-  customerOrderId: zod.number(),
+  customerOrderId: zod.number().nullable(),
   customerOrderNumber: zod.string().nullable(),
   customerOrderStatus: zod.string().nullable(),
   customerName: zod.string().nullable(),
+  shipToStore: zod.boolean(),
+  shipToName: zod.string().nullable(),
+  shipToLine1: zod.string().nullable(),
+  shipToLine2: zod.string().nullable(),
+  shipToCity: zod.string().nullable(),
+  shipToState: zod.string().nullable(),
+  shipToPostalCode: zod.string().nullable(),
+  shipToPhone: zod.string().nullable(),
   items: zod.array(
     zod.object({
       id: zod.number(),
@@ -6331,10 +6394,18 @@ export const AdminUpdateVendorOrderStatusResponse = zod.object({
   manufacturerPostalCode: zod.string().nullable(),
   manufacturerPhone: zod.string().nullable(),
   manufacturerFax: zod.string().nullable(),
-  customerOrderId: zod.number(),
+  customerOrderId: zod.number().nullable(),
   customerOrderNumber: zod.string().nullable(),
   customerOrderStatus: zod.string().nullable(),
   customerName: zod.string().nullable(),
+  shipToStore: zod.boolean(),
+  shipToName: zod.string().nullable(),
+  shipToLine1: zod.string().nullable(),
+  shipToLine2: zod.string().nullable(),
+  shipToCity: zod.string().nullable(),
+  shipToState: zod.string().nullable(),
+  shipToPostalCode: zod.string().nullable(),
+  shipToPhone: zod.string().nullable(),
   items: zod.array(
     zod.object({
       id: zod.number(),
@@ -6421,10 +6492,18 @@ export const AdminReceiveVendorOrderResponse = zod.object({
   manufacturerPostalCode: zod.string().nullable(),
   manufacturerPhone: zod.string().nullable(),
   manufacturerFax: zod.string().nullable(),
-  customerOrderId: zod.number(),
+  customerOrderId: zod.number().nullable(),
   customerOrderNumber: zod.string().nullable(),
   customerOrderStatus: zod.string().nullable(),
   customerName: zod.string().nullable(),
+  shipToStore: zod.boolean(),
+  shipToName: zod.string().nullable(),
+  shipToLine1: zod.string().nullable(),
+  shipToLine2: zod.string().nullable(),
+  shipToCity: zod.string().nullable(),
+  shipToState: zod.string().nullable(),
+  shipToPostalCode: zod.string().nullable(),
+  shipToPhone: zod.string().nullable(),
   items: zod.array(
     zod.object({
       id: zod.number(),
@@ -6534,10 +6613,18 @@ export const AdminCancelVendorOrderResponse = zod.object({
   manufacturerPostalCode: zod.string().nullable(),
   manufacturerPhone: zod.string().nullable(),
   manufacturerFax: zod.string().nullable(),
-  customerOrderId: zod.number(),
+  customerOrderId: zod.number().nullable(),
   customerOrderNumber: zod.string().nullable(),
   customerOrderStatus: zod.string().nullable(),
   customerName: zod.string().nullable(),
+  shipToStore: zod.boolean(),
+  shipToName: zod.string().nullable(),
+  shipToLine1: zod.string().nullable(),
+  shipToLine2: zod.string().nullable(),
+  shipToCity: zod.string().nullable(),
+  shipToState: zod.string().nullable(),
+  shipToPostalCode: zod.string().nullable(),
+  shipToPhone: zod.string().nullable(),
   items: zod.array(
     zod.object({
       id: zod.number(),

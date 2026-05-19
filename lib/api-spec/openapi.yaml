@@ -3391,6 +3391,23 @@ paths:
         "400": { description: Bad request, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
         "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
   /admin/vendor-orders:
+    post:
+      operationId: adminCreateStandaloneVendorOrder
+      tags: [admin-vendor-orders]
+      summary: Create a vendor order directly (no parent customer order)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateStandaloneVendorOrderRequest" }
+      responses:
+        "201":
+          description: Created vendor order
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminVendorOrderDetail" }
+        "400": { description: Bad request, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+        "404": { description: Manufacturer / product not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
     get:
       operationId: adminListVendorOrders
       tags: [admin-vendor-orders]
@@ -4537,7 +4554,7 @@ components:
         status: { type: string }
         manufacturerId: { type: integer, nullable: true }
         manufacturerName: { type: string, nullable: true }
-        customerOrderId: { type: integer }
+        customerOrderId: { type: integer, nullable: true }
         customerOrderNumber: { type: string, nullable: true }
         notes: { type: string, nullable: true }
         vendorEstimatedDeliveryDate: { type: string, format: date-time, nullable: true }
@@ -4619,10 +4636,18 @@ components:
         manufacturerPostalCode: { type: string, nullable: true }
         manufacturerPhone: { type: string, nullable: true }
         manufacturerFax: { type: string, nullable: true }
-        customerOrderId: { type: integer }
+        customerOrderId: { type: integer, nullable: true }
         customerOrderNumber: { type: string, nullable: true }
         customerOrderStatus: { type: string, nullable: true }
         customerName: { type: string, nullable: true }
+        shipToStore: { type: boolean }
+        shipToName: { type: string, nullable: true }
+        shipToLine1: { type: string, nullable: true }
+        shipToLine2: { type: string, nullable: true }
+        shipToCity: { type: string, nullable: true }
+        shipToState: { type: string, nullable: true }
+        shipToPostalCode: { type: string, nullable: true }
+        shipToPhone: { type: string, nullable: true }
         items:
           type: array
           items: { $ref: "#/components/schemas/AdminVendorOrderItem" }
@@ -4633,7 +4658,38 @@ components:
           type: array
           items: { $ref: "#/components/schemas/AdminVendorOrderCancellation" }
       required:
-        [id, vendorOrderNumber, status, notes, vendorEstimatedDeliveryDate, sentAt, acknowledgedAt, fulfilledAt, receivedAt, receivedByUserId, receivedByEmail, itemsReceived, createdByUserId, createdByEmail, createdAt, updatedAt, manufacturerId, manufacturerName, manufacturerOrderEmail, manufacturerAddressLine1, manufacturerAddressLine2, manufacturerCity, manufacturerState, manufacturerPostalCode, manufacturerPhone, manufacturerFax, customerOrderId, customerOrderNumber, customerOrderStatus, customerName, items, sends, cancellations]
+        [id, vendorOrderNumber, status, notes, vendorEstimatedDeliveryDate, sentAt, acknowledgedAt, fulfilledAt, receivedAt, receivedByUserId, receivedByEmail, itemsReceived, createdByUserId, createdByEmail, createdAt, updatedAt, manufacturerId, manufacturerName, manufacturerOrderEmail, manufacturerAddressLine1, manufacturerAddressLine2, manufacturerCity, manufacturerState, manufacturerPostalCode, manufacturerPhone, manufacturerFax, customerOrderId, customerOrderNumber, customerOrderStatus, customerName, shipToStore, shipToName, shipToLine1, shipToLine2, shipToCity, shipToState, shipToPostalCode, shipToPhone, items, sends, cancellations]
+    CreateStandaloneVendorOrderItem:
+      type: object
+      properties:
+        productId: { type: integer }
+        variantId: { type: integer, nullable: true }
+        quantity: { type: integer, minimum: 1 }
+        unitPrice: { type: number, minimum: 0 }
+        notes: { type: string, nullable: true }
+      required: [productId, quantity, unitPrice]
+    CreateStandaloneVendorOrderRequest:
+      type: object
+      description: Create a vendor order that is not tied to a customer order.
+      properties:
+        manufacturerId: { type: integer }
+        notes: { type: string, nullable: true }
+        vendorEstimatedDeliveryDate: { type: string, format: date-time, nullable: true }
+        shipToStore:
+          type: boolean
+          description: "true = deliver to Oasis warehouse (receive will bump inventory). false = drop-ship to the supplied address."
+        shipToName: { type: string, nullable: true }
+        shipToLine1: { type: string, nullable: true }
+        shipToLine2: { type: string, nullable: true }
+        shipToCity: { type: string, nullable: true }
+        shipToState: { type: string, nullable: true }
+        shipToPostalCode: { type: string, nullable: true }
+        shipToPhone: { type: string, nullable: true }
+        items:
+          type: array
+          minItems: 1
+          items: { $ref: "#/components/schemas/CreateStandaloneVendorOrderItem" }
+      required: [manufacturerId, shipToStore, items]
     GenerateVendorOrdersRequest:
       type: object
       properties:

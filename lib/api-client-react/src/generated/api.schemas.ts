@@ -161,7 +161,7 @@ export interface AdminVendorOrderSummary {
   status: string;
   manufacturerId: number | null;
   manufacturerName: string | null;
-  customerOrderId: number;
+  customerOrderId: number | null;
   customerOrderNumber: string | null;
   notes: string | null;
   vendorEstimatedDeliveryDate: string | null;
@@ -265,13 +265,51 @@ export interface AdminVendorOrderDetail {
   manufacturerPostalCode: string | null;
   manufacturerPhone: string | null;
   manufacturerFax: string | null;
-  customerOrderId: number;
+  customerOrderId: number | null;
   customerOrderNumber: string | null;
   customerOrderStatus: string | null;
   customerName: string | null;
+  shipToStore: boolean;
+  shipToName: string | null;
+  shipToLine1: string | null;
+  shipToLine2: string | null;
+  shipToCity: string | null;
+  shipToState: string | null;
+  shipToPostalCode: string | null;
+  shipToPhone: string | null;
   items: AdminVendorOrderItem[];
   sends: AdminVendorOrderSend[];
   cancellations: AdminVendorOrderCancellation[];
+}
+
+export interface CreateStandaloneVendorOrderItem {
+  productId: number;
+  variantId?: number | null;
+  /** @minimum 1 */
+  quantity: number;
+  /** @minimum 0 */
+  unitPrice: number;
+  notes?: string | null;
+}
+
+/**
+ * Create a vendor order that is not tied to a customer order.
+ */
+export interface CreateStandaloneVendorOrderRequest {
+  manufacturerId: number;
+  notes?: string | null;
+  vendorEstimatedDeliveryDate?: string | null;
+  /** true = deliver to Oasis warehouse (receive will bump inventory). false = drop-ship to the supplied address. */
+  shipToStore: boolean;
+  shipToName?: string | null;
+  shipToLine1?: string | null;
+  shipToLine2?: string | null;
+  shipToCity?: string | null;
+  shipToState?: string | null;
+  shipToPostalCode?: string | null;
+  shipToPhone?: string | null;
+  /** @minItems 1 */
+  items: CreateStandaloneVendorOrderItem[];
 }
 
 export interface GenerateVendorOrdersRequest {

@@ -130,6 +130,7 @@ import type {
   CreateProductRequest,
   CreateSetRequest,
   CreateStaffUserRequest,
+  CreateStandaloneVendorOrderRequest,
   CurrentUser,
   CushionOrderDetail,
   CushionOrderPage,
@@ -11667,6 +11668,98 @@ export const useAdminReviewCancellationRequest = <
   TContext
 > => {
   return useMutation(getAdminReviewCancellationRequestMutationOptions(options));
+};
+
+/**
+ * @summary Create a vendor order directly (no parent customer order)
+ */
+export const getAdminCreateStandaloneVendorOrderUrl = () => {
+  return `/api/admin/vendor-orders`;
+};
+
+export const adminCreateStandaloneVendorOrder = async (
+  createStandaloneVendorOrderRequest: CreateStandaloneVendorOrderRequest,
+  options?: RequestInit,
+): Promise<AdminVendorOrderDetail> => {
+  return customFetch<AdminVendorOrderDetail>(
+    getAdminCreateStandaloneVendorOrderUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(createStandaloneVendorOrderRequest),
+    },
+  );
+};
+
+export const getAdminCreateStandaloneVendorOrderMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCreateStandaloneVendorOrder>>,
+    TError,
+    { data: BodyType<CreateStandaloneVendorOrderRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminCreateStandaloneVendorOrder>>,
+  TError,
+  { data: BodyType<CreateStandaloneVendorOrderRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminCreateStandaloneVendorOrder"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminCreateStandaloneVendorOrder>>,
+    { data: BodyType<CreateStandaloneVendorOrderRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return adminCreateStandaloneVendorOrder(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminCreateStandaloneVendorOrderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminCreateStandaloneVendorOrder>>
+>;
+export type AdminCreateStandaloneVendorOrderMutationBody =
+  BodyType<CreateStandaloneVendorOrderRequest>;
+export type AdminCreateStandaloneVendorOrderMutationError = ErrorType<Error>;
+
+/**
+ * @summary Create a vendor order directly (no parent customer order)
+ */
+export const useAdminCreateStandaloneVendorOrder = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCreateStandaloneVendorOrder>>,
+    TError,
+    { data: BodyType<CreateStandaloneVendorOrderRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminCreateStandaloneVendorOrder>>,
+  TError,
+  { data: BodyType<CreateStandaloneVendorOrderRequest> },
+  TContext
+> => {
+  return useMutation(
+    getAdminCreateStandaloneVendorOrderMutationOptions(options),
+  );
 };
 
 /**
