@@ -251,6 +251,13 @@ paths:
       operationId: listCatalogFabrics
       tags: [products]
       summary: Public list of all active fabrics offered as product options
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter fabrics by name or item number (case-insensitive substring match)
       responses:
         "200":
           description: Active fabrics

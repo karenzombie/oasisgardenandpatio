@@ -3,6 +3,8 @@ import { Link, useLocation, useSearch } from "wouter";
 import { SlidersHorizontal, X, Search as SearchIcon, ChevronDown, ChevronUp } from "lucide-react";
 import {
   useListCatalogProducts,
+  useListCatalogFabrics,
+  getListCatalogFabricsQueryKey,
   useListCategories,
   useListCatalogFinishes,
   useListManufacturers,
@@ -153,6 +155,15 @@ export default function SearchPage() {
   }, [activeQ, activeCategory, activeManufacturer, activeMaterial, activeFinish, activeSort, activePage]);
 
   const { data, isLoading } = useListCatalogProducts(queryParams);
+  const fabricParams = activeQ ? { q: activeQ } : undefined;
+  const { data: fabricData } = useListCatalogFabrics(fabricParams, {
+    query: {
+      queryKey: getListCatalogFabricsQueryKey(fabricParams),
+      enabled: !!activeQ,
+    },
+  });
+  const matchingFabrics = fabricData?.fabrics ?? [];
+
   const { data: categories } = useListCategories();
   const { data: manufacturers } = useListManufacturers();
   const { data: materials } = useListMaterials();
@@ -276,7 +287,9 @@ export default function SearchPage() {
             {isLoading
               ? "Searching…"
               : total === 0
-                ? "No results"
+                ? matchingFabrics.length > 0
+                  ? "No matching products"
+                  : "No results"
                 : `${startIdx}–${endIdx} of ${total} product${total !== 1 ? "s" : ""}`}
           </span>
         </div>
@@ -352,6 +365,40 @@ export default function SearchPage() {
 
         {/* Results */}
         <div className="flex-1 min-w-0">
+          {/* Fabric swatch results */}
+          {matchingFabrics.length > 0 && (
+            <div className="mb-10">
+              <h2 className="text-xs uppercase tracking-widest font-semibold text-foreground mb-4">
+                Matching Fabrics
+                <span className="ml-2 font-normal text-muted-foreground">({matchingFabrics.length})</span>
+              </h2>
+              <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
+                {matchingFabrics.map((fabric) => (
+                  <Link key={fabric.id} href="/fabrics" className="group block">
+                    <div className="aspect-square bg-muted border border-border overflow-hidden">
+                      {fabric.swatchImageUrl ? (
+                        <img
+                          src={fabric.swatchImageUrl}
+                          alt={fabric.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-[10px] uppercase tracking-widest text-muted-foreground/70 text-center px-1">
+                          No swatch
+                        </div>
+                      )}
+                    </div>
+                    <p className="mt-1.5 text-xs text-foreground line-clamp-1" title={fabric.name}>
+                      {fabric.name}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">{fabric.itemNumber}</p>
+                  </Link>
+                ))}
+              </div>
+              <div className="border-t border-border mt-8 mb-8" />
+            </div>
+          )}
+
           {isLoading ? (
             <div className="py-24 text-center text-muted-foreground">Searching…</div>
           ) : !data || data.products.length === 0 ? (

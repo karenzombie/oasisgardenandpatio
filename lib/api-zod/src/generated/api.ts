@@ -204,6 +204,15 @@ export const ListCatalogFinishesResponse = zod.array(
 /**
  * @summary Public list of all active fabrics offered as product options
  */
+export const ListCatalogFabricsQueryParams = zod.object({
+  q: zod.coerce
+    .string()
+    .optional()
+    .describe(
+      "Filter fabrics by name or item number (case-insensitive substring match)",
+    ),
+});
+
 export const ListCatalogFabricsResponse = zod.object({
   fabrics: zod.array(
     zod.object({

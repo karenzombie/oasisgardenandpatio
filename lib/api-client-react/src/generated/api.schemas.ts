@@ -3637,6 +3637,13 @@ export const ListCatalogProductsSort = {
   name_asc: "name_asc",
 } as const;
 
+export type ListCatalogFabricsParams = {
+  /**
+   * Filter fabrics by name or item number (case-insensitive substring match)
+   */
+  q?: string;
+};
+
 export type StaffDisableTotp200 = {
   ok: boolean;
 };

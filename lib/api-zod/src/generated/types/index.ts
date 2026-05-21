@@ -236,6 +236,7 @@ export * from "./inventoryAdjustmentType";
 export * from "./inventoryLocation";
 export * from "./legalDocument";
 export * from "./legalDocumentType";
+export * from "./listCatalogFabricsParams";
 export * from "./listCatalogProductsParams";
 export * from "./listCatalogProductsSort";
 export * from "./listCushionOrdersParams";

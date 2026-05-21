@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq, ilike, or } from "drizzle-orm";
 import {
   db,
   fabricsTable,
@@ -15,7 +15,18 @@ const router: IRouter = Router();
 // doubles as a brand/marketing reference for what's available in the showroom.
 router.get(
   "/catalog/fabrics",
-  async (_req: Request, res: Response): Promise<void> => {
+  async (req: Request, res: Response): Promise<void> => {
+    const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
+    const whereClause = q
+      ? and(
+          eq(fabricsTable.isActive, true),
+          or(
+            ilike(fabricsTable.name, `%${q}%`),
+            ilike(fabricsTable.itemNumber, `%${q}%`),
+          ),
+        )
+      : eq(fabricsTable.isActive, true);
+
     const rows = await db
       .select({
         id: fabricsTable.id,
@@ -30,7 +41,7 @@ router.get(
         manufacturersTable,
         eq(manufacturersTable.id, fabricsTable.manufacturerId),
       )
-      .where(eq(fabricsTable.isActive, true))
+      .where(whereClause)
       .orderBy(
         asc(manufacturersTable.name),
         asc(fabricsTable.displayOrder),
