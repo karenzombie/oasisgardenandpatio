@@ -245,8 +245,8 @@ export function Navbar() {
         </div>
       </header>
 
-      {/* Search strip — always visible below the main header row */}
-      <div className="bg-muted/40 border-b border-border">
+      {/* Search strip — hidden on the /search page which has its own bar */}
+      {location !== "/search" && <div className="bg-muted/40 border-b border-border">
         <div className="container mx-auto px-4 md:px-6 py-2">
           <form onSubmit={handleSearch} className="flex w-full max-w-lg">
             <div className="relative flex-1">
@@ -267,7 +267,7 @@ export function Navbar() {
             </button>
           </form>
         </div>
-      </div>
+      </div>}
 
       {/* Mobile Menu Drawer */}
       {isMobileMenuOpen && (
