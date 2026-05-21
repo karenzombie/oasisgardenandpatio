@@ -150,18 +150,18 @@ export function Navbar() {
         }`}
       >
         <div className="container mx-auto px-4 md:px-6">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-4">
             {/* Logo */}
-            <Link href="/" className="flex items-center z-50">
+            <Link href="/" className="flex items-center z-50 shrink-0">
               <img
                 src={logoImg}
                 alt="Oasis Garden & Patio"
-                className="h-12 sm:h-14 md:h-20 lg:h-24 xl:h-28 object-contain"
+                className="h-12 sm:h-14 md:h-14 lg:h-24 xl:h-28 object-contain"
               />
             </Link>
 
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center space-x-8">
+            <nav className="hidden md:flex items-center space-x-4 lg:space-x-6 xl:space-x-8">
               {NAV_LINKS.map((link) => (
                 <Link
                   key={link.href}
