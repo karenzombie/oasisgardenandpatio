@@ -9,6 +9,7 @@ import {
   materialsTable,
   productVariantsTable,
   productFabricOptionsTable,
+  productFabricPoolsTable,
   fabricsTable,
 } from "@workspace/db";
 import {
@@ -100,11 +101,51 @@ router.get(
     if (q && q.trim()) {
       const needle = `%${q.trim()}%`;
       conditions.push(
-        // narrow `or(...)` result; drizzle types accept SQL chunks here.
         or(
           ilike(productsTable.name, needle),
           ilike(productsTable.sku, needle),
           ilike(productsTable.shortDescription, needle),
+          // Match products that have an individually-assigned fabric whose
+          // name or item number contains the search term.
+          exists(
+            db
+              .select({ one: sql`1` })
+              .from(productFabricOptionsTable)
+              .innerJoin(
+                fabricsTable,
+                eq(fabricsTable.id, productFabricOptionsTable.fabricId),
+              )
+              .where(
+                and(
+                  eq(productFabricOptionsTable.productId, productsTable.id),
+                  or(
+                    ilike(fabricsTable.name, needle),
+                    ilike(fabricsTable.itemNumber, needle),
+                  ),
+                ),
+              ),
+          ),
+          // Match products that inherit a full manufacturer fabric pool that
+          // contains a matching fabric.
+          exists(
+            db
+              .select({ one: sql`1` })
+              .from(productFabricPoolsTable)
+              .innerJoin(
+                fabricsTable,
+                eq(fabricsTable.manufacturerId, productFabricPoolsTable.manufacturerId),
+              )
+              .where(
+                and(
+                  eq(productFabricPoolsTable.productId, productsTable.id),
+                  eq(fabricsTable.isActive, true),
+                  or(
+                    ilike(fabricsTable.name, needle),
+                    ilike(fabricsTable.itemNumber, needle),
+                  ),
+                ),
+              ),
+          ),
         )!,
       );
     }
