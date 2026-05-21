@@ -70,7 +70,7 @@ export default function Fabrics() {
       </p>
 
       <div className="bg-muted/40 border border-border rounded-lg p-6 mb-12 max-w-2xl">
-        <h2 className="font-serif text-xl mb-3">Care &amp; Cleaning</h2>
+        <h2 className="font-serif text-xl mb-3">Care &amp; Cleaning - Sunbrella</h2>
         <p className="text-sm text-muted-foreground mb-4">
           Keep your fabrics looking their best by addressing messes and spills
           soon after they occur. Brush off dirt and debris before it becomes
