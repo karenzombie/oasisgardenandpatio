@@ -69,6 +69,46 @@ export default function Fabrics() {
         to see and feel the full range of patterns and weights.
       </p>
 
+      <div className="bg-muted/40 border border-border rounded-lg p-6 mb-12 max-w-2xl">
+        <h2 className="font-serif text-xl mb-3">Care &amp; Cleaning</h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          Keep your fabrics looking their best by addressing messes and spills
+          soon after they occur. Brush off dirt and debris before it becomes
+          embedded in the fabric. The quicker you clean spills, the easier they
+          can be to remove.
+        </p>
+        <ul className="space-y-2 text-sm text-muted-foreground">
+          <li className="flex gap-2">
+            <span className="text-foreground/40 select-none">—</span>
+            Blot (don't rub) liquid spills with a clean, dry cloth.
+          </li>
+          <li className="flex gap-2">
+            <span className="text-foreground/40 select-none">—</span>
+            For oil-based spills, apply an absorbent such as cornstarch, then
+            remove with a straight edge.
+          </li>
+          <li className="flex gap-2">
+            <span className="text-foreground/40 select-none">—</span>
+            Spray on a mild cleaning solution of soap and water or use
+            Sunbrella Clean™ Multi-Purpose Fabric Cleaner.
+          </li>
+          <li className="flex gap-2">
+            <span className="text-foreground/40 select-none">—</span>
+            Rinse the fabric thoroughly to remove all soap residue.
+          </li>
+          <li className="flex gap-2">
+            <span className="text-foreground/40 select-none">—</span>
+            Always allow Sunbrella fabrics to air dry.
+          </li>
+          <li className="flex gap-2">
+            <span className="text-foreground/40 select-none">—</span>
+            If a stubborn oil-based stain persists after cleaning, use
+            Sunbrella Extract™ Oil Based Stain Remover or treat with a strong
+            degreaser and rinse thoroughly.
+          </li>
+        </ul>
+      </div>
+
       {isLoading ? (
         <div className="py-16 text-center">
           <Spinner className="size-8 text-primary mx-auto" />
@@ -100,20 +140,6 @@ export default function Fabrics() {
       )}
 
       <div className="mt-20 prose max-w-none text-foreground/80">
-        <h2 className="font-serif">Care</h2>
-        <ul>
-          <li>Brush off loose dirt regularly.</li>
-          <li>Spot clean with mild soap and water.</li>
-          <li>
-            For deeper cleaning, remove covers and machine wash on cold, then
-            air dry.
-          </li>
-          <li>
-            Store cushions indoors during prolonged wet, smoky, or freezing
-            weather to extend their life.
-          </li>
-        </ul>
-
         <h2 className="font-serif">Warranty</h2>
         <p>
           Performance fabrics typically carry a 5-year limited warranty against
