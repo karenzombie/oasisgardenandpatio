@@ -8,6 +8,7 @@
     "seed": "tsx ./src/seed.ts",
     "load-vendor-data": "tsx ./src/loadVendorData.ts",
     "load-ow-lee": "tsx ./src/loadOwLee.ts",
+    "upload-swatches": "tsx ./src/uploadSwatches.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
