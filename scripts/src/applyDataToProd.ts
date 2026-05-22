@@ -13,8 +13,31 @@ if (!url) {
   process.exit(1);
 }
 
-const sql = readFileSync("./dev-data-for-prod.sql", "utf8");
-console.log(`Loaded SQL: ${sql.length.toLocaleString()} bytes`);
+const rawSql = readFileSync("./dev-data-for-prod.sql", "utf8");
+
+// Prepend a TRUNCATE CASCADE so dev IDs can be inserted cleanly.
+// User confirmed prod has no real customer/inventory data to preserve.
+// CASCADE will wipe: inventory, cart_items, order_items, orders,
+// wishlist_items, vendor_orders, product_attributes,
+// product_fabric_options, product_fabric_pools, product_variants,
+// product_images, products, fabrics, categories, manufacturers.
+const truncate = `
+TRUNCATE
+  manufacturers,
+  categories,
+  fabrics,
+  products,
+  product_variants,
+  product_images,
+  product_attributes,
+  product_fabric_pools,
+  product_fabric_options
+RESTART IDENTITY CASCADE;
+`;
+
+// Insert the TRUNCATE right after the BEGIN; line of the dump.
+const sql = rawSql.replace("BEGIN;", `BEGIN;\n${truncate}`);
+console.log(`Loaded SQL: ${sql.length.toLocaleString()} bytes (TRUNCATE CASCADE prepended)`);
 
 const client = new pg.Client({ connectionString: url });
 await client.connect();
