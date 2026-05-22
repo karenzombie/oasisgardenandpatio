@@ -41,3 +41,9 @@ id = "bOv_T0ZV2aKrf-fOyQZWI"
 uri = "file://.local/outputs/Oasis-Staff-Portal-Reference-Guide.pptx"
 type = "slides"
 title = "Oasis Staff Portal Reference Guide (PPTX)"
+
+[[outputs]]
+id = "xT7AJzlHJgmcx2d6KxttR"
+uri = "file://scripts/dev-data-for-prod.sql.tar.gz"
+type = "unspecified"
+title = "dev-data-for-prod.sql (zipped)"

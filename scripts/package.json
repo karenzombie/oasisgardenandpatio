@@ -14,9 +14,11 @@
   "dependencies": {
     "@google-cloud/storage": "^7.19.0",
     "@types/papaparse": "^5.5.2",
+    "@types/pg": "^8.18.0",
     "@workspace/db": "workspace:*",
     "drizzle-orm": "catalog:",
     "papaparse": "^5.5.3",
+    "pg": "^8.20.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
