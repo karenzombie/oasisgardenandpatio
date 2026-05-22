@@ -428,7 +428,7 @@ router.get(
         name: f.name,
         itemNumber: f.itemNumber,
         manufacturerName: f.manufacturerName,
-        swatchImageUrl: f.swatchImageUrl,
+        swatchImageUrl: toPublicImageUrl(f.swatchImageUrl),
         displayOrder: f.displayOrder,
       })),
     };

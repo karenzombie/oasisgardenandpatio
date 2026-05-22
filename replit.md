@@ -69,7 +69,7 @@ A full-stack e-commerce platform for a luxury outdoor furniture retailer, suppor
 
 ## Gotchas
 
-- When adding a new API endpoint that returns an image URL from Object Storage, **always** wrap it with `toPublicImageUrl()` from `artifacts/api-server/src/lib/imageUrl.ts` to ensure images render correctly in production.
+- **Image URLs in API responses MUST be wrapped.** Any DB column holding an Object Storage path (`swatchImageUrl`, `primaryImageUrl`, `imageUrl`, `logoUrl`, `url` in image arrays, `pdfStorageUrl`) must be passed through `toPublicImageUrl()` from `artifacts/api-server/src/lib/imageUrl.ts` before being sent in a JSON response. Raw `/objects/...` paths only resolve inside the API container — browsers will 404. Run `pnpm --filter @workspace/scripts exec tsx src/checkImageUrls.ts` (registered as the `check-image-urls` validation) to audit all key endpoints before publishing.
 - Client-side image references to raw filenames in `artifacts/web/src/assets/` will break in production; always `import` them or use aliases.
 - Email images must be absolute HTTPS URLs; relative paths will not resolve in email clients.
 - The `Resend` integration is currently in test mode; emails only deliver to the Resend account owner's address until a sender domain is verified and `RESEND_FROM_EMAIL` is configured.

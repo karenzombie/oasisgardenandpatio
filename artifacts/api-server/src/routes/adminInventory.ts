@@ -1,5 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { and, asc, desc, eq, ilike, isNull, or, sql } from "drizzle-orm";
+import { toPublicImageUrl } from "../lib/imageUrl";
 import {
   db,
   productsTable,
@@ -498,7 +499,7 @@ router.get(
         slug: r.slug,
         manufacturerName: r.manufacturerName,
         categoryName: r.categoryName,
-        primaryImageUrl: r.primaryImageUrl,
+        primaryImageUrl: toPublicImageUrl(r.primaryImageUrl),
         onHand: r.onHand,
         onHold: r.onHold,
         onOrder: r.onOrder,
