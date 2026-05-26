@@ -37,12 +37,12 @@ function FinishSwatch({
       className="group text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm"
       data-testid={`finish-swatch-${finish.id}`}
     >
-      <div className="aspect-square bg-muted border border-border overflow-hidden relative transition-transform group-hover:scale-[1.02]">
+      <div className="aspect-square bg-stone-100 border border-border overflow-hidden relative transition-transform group-hover:scale-[1.02]">
         {finish.imageUrl ? (
           <img
             src={finish.imageUrl}
             alt={finish.name}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain"
           />
         ) : (
           <div
@@ -97,7 +97,7 @@ function FinishProductsDialog({
               <img
                 src={finish.imageUrl}
                 alt={finish.name}
-                className="w-20 h-20 object-cover border border-border rounded-sm shrink-0"
+                className="w-20 h-20 object-contain bg-stone-100 border border-border rounded-sm shrink-0"
               />
             )}
             <div className="min-w-0">
