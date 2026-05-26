@@ -48,6 +48,7 @@ import type {
   AdminDiscountEvent,
   AdminFabric,
   AdminFinish,
+  AdminFinishProductsResponse,
   AdminInventoryAdjustmentsPage,
   AdminInventoryPage,
   AdminLegalDocument,
@@ -94,6 +95,7 @@ import type {
   AdminSetOrderItemFabricVendorRequest,
   AdminSetSummary,
   AdminUpdateFabricRequest,
+  AdminUpdateFinishProductsRequest,
   AdminUpdateFinishRequest,
   AdminUpdateOrderShippingMethodRequest,
   AdminUpdateOrderTotalsRequest,
@@ -7469,6 +7471,189 @@ export const useAdminUpdateProductFinishes = <
   TContext
 > => {
   return useMutation(getAdminUpdateProductFinishesMutationOptions(options));
+};
+
+/**
+ * @summary List products directly linked to a finish (admin view, all statuses)
+ */
+export const getAdminListFinishProductsUrl = (id: number) => {
+  return `/api/admin/finishes/${id}/products`;
+};
+
+export const adminListFinishProducts = async (
+  id: number,
+  options?: RequestInit,
+): Promise<AdminFinishProductsResponse> => {
+  return customFetch<AdminFinishProductsResponse>(
+    getAdminListFinishProductsUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getAdminListFinishProductsQueryKey = (id: number) => {
+  return [`/api/admin/finishes/${id}/products`] as const;
+};
+
+export const getAdminListFinishProductsQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminListFinishProducts>>,
+  TError = ErrorType<Error>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminListFinishProducts>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getAdminListFinishProductsQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminListFinishProducts>>
+  > = ({ signal }) =>
+    adminListFinishProducts(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminListFinishProducts>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminListFinishProductsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminListFinishProducts>>
+>;
+export type AdminListFinishProductsQueryError = ErrorType<Error>;
+
+/**
+ * @summary List products directly linked to a finish (admin view, all statuses)
+ */
+
+export function useAdminListFinishProducts<
+  TData = Awaited<ReturnType<typeof adminListFinishProducts>>,
+  TError = ErrorType<Error>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminListFinishProducts>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminListFinishProductsQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Replace the set of products directly linked to a finish
+ */
+export const getAdminUpdateFinishProductsUrl = (id: number) => {
+  return `/api/admin/finishes/${id}/products`;
+};
+
+export const adminUpdateFinishProducts = async (
+  id: number,
+  adminUpdateFinishProductsRequest: AdminUpdateFinishProductsRequest,
+  options?: RequestInit,
+): Promise<AdminFinishProductsResponse> => {
+  return customFetch<AdminFinishProductsResponse>(
+    getAdminUpdateFinishProductsUrl(id),
+    {
+      ...options,
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(adminUpdateFinishProductsRequest),
+    },
+  );
+};
+
+export const getAdminUpdateFinishProductsMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateFinishProducts>>,
+    TError,
+    { id: number; data: BodyType<AdminUpdateFinishProductsRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUpdateFinishProducts>>,
+  TError,
+  { id: number; data: BodyType<AdminUpdateFinishProductsRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminUpdateFinishProducts"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUpdateFinishProducts>>,
+    { id: number; data: BodyType<AdminUpdateFinishProductsRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminUpdateFinishProducts(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminUpdateFinishProductsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUpdateFinishProducts>>
+>;
+export type AdminUpdateFinishProductsMutationBody =
+  BodyType<AdminUpdateFinishProductsRequest>;
+export type AdminUpdateFinishProductsMutationError = ErrorType<Error>;
+
+/**
+ * @summary Replace the set of products directly linked to a finish
+ */
+export const useAdminUpdateFinishProducts = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateFinishProducts>>,
+    TError,
+    { id: number; data: BodyType<AdminUpdateFinishProductsRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUpdateFinishProducts>>,
+  TError,
+  { id: number; data: BodyType<AdminUpdateFinishProductsRequest> },
+  TContext
+> => {
+  return useMutation(getAdminUpdateFinishProductsMutationOptions(options));
 };
 
 /**

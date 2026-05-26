@@ -2272,6 +2272,60 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
+  /admin/finishes/{id}/products:
+    get:
+      operationId: adminListFinishProducts
+      tags: [admin-products]
+      summary: List products directly linked to a finish (admin view, all statuses)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Products linked to this finish
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminFinishProductsResponse"
+        "404":
+          description: Finish not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+    put:
+      operationId: adminUpdateFinishProducts
+      tags: [admin-products]
+      summary: Replace the set of products directly linked to a finish
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUpdateFinishProductsRequest"
+      responses:
+        "200":
+          description: Updated product list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminFinishProductsResponse"
+        "404":
+          description: Finish not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
   /admin/products/{id}/attributes:
     get:
       operationId: adminGetProductAttributes
@@ -8222,6 +8276,43 @@ components:
       required:
         - finish
         - products
+    AdminFinishProduct:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        slug: { type: string }
+        sku: { type: string }
+        manufacturerName: { type: ["string", "null"] }
+        isActive: { type: boolean }
+        availableOnline: { type: boolean }
+        primaryImageUrl: { type: ["string", "null"] }
+      required:
+        - id
+        - name
+        - slug
+        - sku
+        - manufacturerName
+        - isActive
+        - availableOnline
+        - primaryImageUrl
+    AdminFinishProductsResponse:
+      type: object
+      properties:
+        products:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminFinishProduct"
+      required:
+        - products
+    AdminUpdateFinishProductsRequest:
+      type: object
+      properties:
+        productIds:
+          type: array
+          items: { type: integer }
+      required:
+        - productIds
     AdminFinish:
       type: object
       properties:

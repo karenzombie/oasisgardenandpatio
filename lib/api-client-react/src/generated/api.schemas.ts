@@ -3443,6 +3443,27 @@ export interface CatalogFinishProductsResponse {
   products: CatalogFinishProduct[];
 }
 
+export interface AdminFinishProduct {
+  id: number;
+  name: string;
+  slug: string;
+  sku: string;
+  /** @nullable */
+  manufacturerName: string | null;
+  isActive: boolean;
+  availableOnline: boolean;
+  /** @nullable */
+  primaryImageUrl: string | null;
+}
+
+export interface AdminFinishProductsResponse {
+  products: AdminFinishProduct[];
+}
+
+export interface AdminUpdateFinishProductsRequest {
+  productIds: number[];
+}
+
 export interface AdminFinish {
   id: number;
   manufacturerId: number;

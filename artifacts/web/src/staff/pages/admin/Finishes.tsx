@@ -1,14 +1,19 @@
-import { useMemo, useState, useRef, type FormEvent } from "react";
+import { useEffect, useMemo, useState, useRef, type FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import { Boxes, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import {
   useAdminListFinishes,
   useAdminCreateFinish,
   useAdminUpdateFinish,
   useAdminDeleteFinish,
   useAdminListManufacturers,
+  useAdminListFinishProducts,
+  useAdminUpdateFinishProducts,
+  useAdminListProducts,
   getAdminListFinishesQueryKey,
+  getAdminListFinishProductsQueryKey,
   type AdminFinish,
+  type AdminFinishProduct,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -96,6 +101,7 @@ export default function Finishes() {
   const [vendorFilter, setVendorFilter] = useState(ALL_VENDORS);
 
   const [editing, setEditing] = useState<AdminFinish | "new" | null>(null);
+  const [managingProducts, setManagingProducts] = useState<AdminFinish | null>(null);
   const [form, setForm] = useState<FinishFormState>(emptyForm());
   const [formError, setFormError] = useState<string | null>(null);
   const [imageUploading, setImageUploading] = useState(false);
@@ -299,6 +305,16 @@ export default function Finishes() {
                     </td>
                     <td className="px-4 py-2.5 text-right">
                       <div className="flex items-center justify-end gap-1">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="size-7"
+                          onClick={() => setManagingProducts(f)}
+                          title="Manage products"
+                          data-testid={`finish-manage-products-${f.id}`}
+                        >
+                          <Boxes className="size-3.5" />
+                        </Button>
                         <Button size="icon" variant="ghost" className="size-7" onClick={() => openEdit(f)} title="Edit">
                           <Pencil className="size-3.5" />
                         </Button>
@@ -514,6 +530,285 @@ export default function Finishes() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <FinishProductsDialog
+        finish={managingProducts}
+        onClose={() => setManagingProducts(null)}
+      />
     </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Manage-products dialog — lets staff add/remove direct product links for a
+// given finish. Manufacturer-wide finish "pools" remain managed per-product
+// in ProductEdit.
+// ---------------------------------------------------------------------------
+function FinishProductsDialog({
+  finish,
+  onClose,
+}: {
+  finish: AdminFinish | null;
+  onClose: () => void;
+}) {
+  const qc = useQueryClient();
+  const toast = useToast();
+  const open = finish !== null;
+  const finishId = finish?.id ?? 0;
+
+  const linked = useAdminListFinishProducts(finishId, {
+    query: {
+      enabled: open,
+      queryKey: getAdminListFinishProductsQueryKey(finishId),
+    },
+  });
+  const saveMut = useAdminUpdateFinishProducts();
+
+  // Local working set of product IDs — starts from the server list, then
+  // gets mutated by adds/removes before being saved.
+  const [working, setWorking] = useState<AdminFinishProduct[]>([]);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerQ, setPickerQ] = useState("");
+
+  // Clear the working set immediately when the dialog closes or the target
+  // finish changes — prevents the previous finish's list from being saved to
+  // a different finish if the next load is still pending or errors.
+  useEffect(() => {
+    setWorking([]);
+    setPickerOpen(false);
+    setPickerQ("");
+  }, [finishId]);
+
+  // Populate the working set once server data arrives for the current finish.
+  useEffect(() => {
+    if (open && linked.data) setWorking(linked.data.products);
+  }, [open, linked.data]);
+
+  const canSave = open && !linked.isLoading && !linked.isError && !!linked.data;
+
+  const workingIds = useMemo(() => new Set(working.map((p) => p.id)), [working]);
+
+  const searchParams = { q: pickerQ, pageSize: 25 };
+  const search = useAdminListProducts(searchParams, {
+    query: {
+      enabled: open && pickerOpen,
+      queryKey: ["adminListProducts", searchParams] as const,
+    },
+  });
+
+  function remove(id: number) {
+    setWorking((w) => w.filter((p) => p.id !== id));
+  }
+
+  function add(p: { id: number; name: string; sku: string; manufacturerName: string | null; primaryImageUrl: string | null; isActive: boolean; availableOnline: boolean; slug: string }) {
+    setWorking((w) => (w.some((x) => x.id === p.id) ? w : [...w, p as AdminFinishProduct]));
+  }
+
+  async function handleSave() {
+    if (!finish || !canSave) return;
+    try {
+      await saveMut.mutateAsync({
+        id: finishId,
+        data: { productIds: working.map((p) => p.id) },
+      });
+      await qc.invalidateQueries({
+        queryKey: getAdminListFinishProductsQueryKey(finishId),
+      });
+      toast.toast({ title: "Products updated" });
+      onClose();
+    } catch (err) {
+      toast.toast({
+        title: "Could not save",
+        description: err instanceof Error ? err.message : "Please try again.",
+        variant: "destructive",
+      });
+    }
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) {
+          onClose();
+          setPickerOpen(false);
+          setPickerQ("");
+        }
+      }}
+    >
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Products using {finish?.name}</DialogTitle>
+          <DialogDescription>
+            Add or remove products that offer this finish. Changes save when
+            you click <span className="font-medium">Save</span>.
+          </DialogDescription>
+        </DialogHeader>
+
+        {linked.isLoading ? (
+          <div className="py-10 flex justify-center">
+            <Spinner />
+          </div>
+        ) : linked.isError ? (
+          <p className="text-sm text-rose-600">Failed to load products.</p>
+        ) : (
+          <>
+            <div className="space-y-2">
+              {working.length === 0 ? (
+                <p className="text-sm text-slate-500 py-4 text-center border border-dashed rounded-md">
+                  No products linked yet. Click "Add product" to start.
+                </p>
+              ) : (
+                <ul className="divide-y border rounded-md">
+                  {working.map((p) => (
+                    <li key={p.id} className="flex items-center gap-3 p-2.5">
+                      <div className="size-10 shrink-0 bg-slate-100 rounded overflow-hidden">
+                        {p.primaryImageUrl ? (
+                          <img
+                            src={p.primaryImageUrl}
+                            alt=""
+                            className="size-full object-cover"
+                          />
+                        ) : null}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-slate-900 truncate">
+                          {p.name}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {p.sku}
+                          {p.manufacturerName ? ` · ${p.manufacturerName}` : ""}
+                          {!p.isActive ? " · Inactive" : ""}
+                        </p>
+                      </div>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="size-7 text-rose-500 hover:text-rose-700 hover:bg-rose-50"
+                        onClick={() => remove(p.id)}
+                        title="Remove"
+                        data-testid={`finish-product-remove-${p.id}`}
+                      >
+                        <X className="size-3.5" />
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div className="mt-4 border-t pt-4">
+              {!pickerOpen ? (
+                <Button
+                  variant="outline"
+                  onClick={() => setPickerOpen(true)}
+                  data-testid="finish-products-add-toggle"
+                >
+                  <Plus className="size-3.5 mr-1.5" /> Add product
+                </Button>
+              ) : (
+                <div className="space-y-2">
+                  <div className="relative">
+                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-3.5 text-slate-400" />
+                    <Input
+                      autoFocus
+                      placeholder="Search products by name or SKU…"
+                      value={pickerQ}
+                      onChange={(e) => setPickerQ(e.target.value)}
+                      className="pl-8"
+                      data-testid="finish-products-search"
+                    />
+                  </div>
+                  <div className="max-h-64 overflow-y-auto border rounded-md divide-y">
+                    {search.isLoading ? (
+                      <div className="p-4 text-center">
+                        <Spinner className="size-4 inline-block" />
+                      </div>
+                    ) : (search.data?.products ?? []).length === 0 ? (
+                      <p className="p-4 text-center text-sm text-slate-500">
+                        {pickerQ
+                          ? "No products match."
+                          : "Type to search products."}
+                      </p>
+                    ) : (
+                      search.data?.products.map((p) => {
+                        const already = workingIds.has(p.id);
+                        return (
+                          <button
+                            key={p.id}
+                            type="button"
+                            disabled={already}
+                            onClick={() =>
+                              add({
+                                id: p.id,
+                                name: p.name,
+                                slug: p.slug,
+                                sku: p.sku,
+                                manufacturerName: p.manufacturerName,
+                                primaryImageUrl: p.primaryImageUrl,
+                                isActive: p.isActive,
+                                availableOnline: p.availableOnline,
+                              })
+                            }
+                            className="w-full text-left flex items-center gap-3 p-2 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                            data-testid={`finish-products-pick-${p.id}`}
+                          >
+                            <div className="size-8 shrink-0 bg-slate-100 rounded overflow-hidden">
+                              {p.primaryImageUrl ? (
+                                <img
+                                  src={p.primaryImageUrl}
+                                  alt=""
+                                  className="size-full object-cover"
+                                />
+                              ) : null}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm text-slate-900 truncate">
+                                {p.name}
+                              </p>
+                              <p className="text-xs text-slate-500">{p.sku}</p>
+                            </div>
+                            {already && (
+                              <Badge variant="secondary" className="text-[10px]">
+                                Added
+                              </Badge>
+                            )}
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                  <div className="flex justify-end">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setPickerOpen(false);
+                        setPickerQ("");
+                      }}
+                    >
+                      Done adding
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        <DialogFooter className="mt-4">
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSave}
+            disabled={saveMut.isPending || !canSave}
+            data-testid="finish-products-save"
+          >
+            {saveMut.isPending ? "Saving…" : "Save"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

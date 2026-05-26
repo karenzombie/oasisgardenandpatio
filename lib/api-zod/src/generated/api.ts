@@ -2570,6 +2570,54 @@ export const AdminUpdateProductFinishesResponse = zod.object({
 });
 
 /**
+ * @summary List products directly linked to a finish (admin view, all statuses)
+ */
+export const AdminListFinishProductsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminListFinishProductsResponse = zod.object({
+  products: zod.array(
+    zod.object({
+      id: zod.number(),
+      name: zod.string(),
+      slug: zod.string(),
+      sku: zod.string(),
+      manufacturerName: zod.string().nullable(),
+      isActive: zod.boolean(),
+      availableOnline: zod.boolean(),
+      primaryImageUrl: zod.string().nullable(),
+    }),
+  ),
+});
+
+/**
+ * @summary Replace the set of products directly linked to a finish
+ */
+export const AdminUpdateFinishProductsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminUpdateFinishProductsBody = zod.object({
+  productIds: zod.array(zod.number()),
+});
+
+export const AdminUpdateFinishProductsResponse = zod.object({
+  products: zod.array(
+    zod.object({
+      id: zod.number(),
+      name: zod.string(),
+      slug: zod.string(),
+      sku: zod.string(),
+      manufacturerName: zod.string().nullable(),
+      isActive: zod.boolean(),
+      availableOnline: zod.boolean(),
+      primaryImageUrl: zod.string().nullable(),
+    }),
+  ),
+});
+
+/**
  * @summary List all attributes (features, options, replacement parts) for a product
  */
 export const AdminGetProductAttributesParams = zod.object({
