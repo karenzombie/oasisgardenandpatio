@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import { useListMaterials } from "@workspace/api-client-react";
 import { Spinner } from "@/components/ui/spinner";
 import fabricsImg from "@/assets/category-fabrics.webp";
+import finishesImg from "@assets/finishes_header_image_1779836471750.avif";
 
 export default function Materials() {
   const { data, isLoading, isError } = useListMaterials();
@@ -70,10 +71,13 @@ export default function Materials() {
               href="/finishes"
               className="group bg-card border border-border rounded-md overflow-hidden flex flex-col hover:border-primary/40 transition-colors"
             >
-              <div className="aspect-[4/3] bg-muted overflow-hidden flex items-center justify-center">
-                <span className="text-xs uppercase tracking-widest text-muted-foreground/70">
-                  Finishes
-                </span>
+              <div className="aspect-[4/3] bg-muted overflow-hidden">
+                <img
+                  src={finishesImg}
+                  alt="Finishes"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  loading="lazy"
+                />
               </div>
               <div className="p-5 flex-1 flex flex-col">
                 <h2 className="font-serif text-2xl text-foreground mb-1">Finishes</h2>
