@@ -13,6 +13,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 type FinishItem = {
   id: number;
@@ -234,10 +240,8 @@ export default function Finishes() {
       ) : grouped.length === 0 ? (
         <p className="text-muted-foreground">No finishes available yet.</p>
       ) : (
-        <div className="space-y-16">
+        <Accordion type="multiple" className="divide-y divide-border border-t border-border">
           {grouped.map(([brand, list]) => {
-            // Detect whether finishes in this section have typed descriptions
-            // (e.g. "Frame Finish" / "Table Top Tile"). If so, sub-group them.
             const typeKeys = Array.from(
               new Set(list.map((f) => f.description).filter(Boolean)),
             ) as string[];
@@ -259,10 +263,10 @@ export default function Finishes() {
                         label: FINISH_TYPE_LABELS[key],
                         items: list.filter((f) => f.description === key),
                       })),
-                    // Fallback bucket: finishes with null or unrecognized description
                     (() => {
                       const fallback = list.filter(
-                        (f) => !f.description || !FINISH_TYPE_LABELS[f.description],
+                        (f) =>
+                          !f.description || !FINISH_TYPE_LABELS[f.description],
                       );
                       return fallback.length > 0
                         ? [{ label: "", items: fallback }]
@@ -272,36 +276,42 @@ export default function Finishes() {
                 : [{ label: "", items: list }];
 
             return (
-              <section key={brand}>
-                <div className="flex items-baseline justify-between mb-6 border-b border-border pb-2">
-                  <h2 className="font-serif text-2xl">{brand}</h2>
-                  <span className="text-xs uppercase tracking-widest text-muted-foreground">
-                    {list.length}{" "}
-                    {list.length === 1 ? "finish" : "finishes"}
-                  </span>
-                </div>
-                {subGroups.map(({ label, items }) => (
-                  <div key={label || "all"} className="mb-10">
-                    {label && (
-                      <h3 className="text-sm font-medium uppercase tracking-widest text-muted-foreground mb-4">
-                        {label}
-                      </h3>
-                    )}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5">
-                      {items.map((f) => (
-                        <FinishSwatch
-                          key={f.id}
-                          finish={f}
-                          onClick={() => setSelected(f)}
-                        />
-                      ))}
-                    </div>
+              <AccordionItem key={brand} value={brand} className="border-b-0">
+                <AccordionTrigger className="hover:no-underline py-5 group">
+                  <div className="flex items-baseline gap-4">
+                    <span className="font-serif text-2xl text-foreground">
+                      {brand}
+                    </span>
+                    <span className="text-xs uppercase tracking-widest text-muted-foreground">
+                      {list.length}{" "}
+                      {list.length === 1 ? "finish" : "finishes"}
+                    </span>
                   </div>
-                ))}
-              </section>
+                </AccordionTrigger>
+                <AccordionContent className="pb-8">
+                  {subGroups.map(({ label, items }) => (
+                    <div key={label || "all"} className="mb-10 last:mb-0">
+                      {label && (
+                        <h3 className="text-sm font-medium uppercase tracking-widest text-muted-foreground mb-4">
+                          {label}
+                        </h3>
+                      )}
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5">
+                        {items.map((f) => (
+                          <FinishSwatch
+                            key={f.id}
+                            finish={f}
+                            onClick={() => setSelected(f)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </AccordionContent>
+              </AccordionItem>
             );
           })}
-        </div>
+        </Accordion>
       )}
 
       <FinishProductsDialog

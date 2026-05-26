@@ -2,6 +2,12 @@ import { Link } from "wouter";
 import { useMemo } from "react";
 import { useListCatalogFabrics } from "@workspace/api-client-react";
 import { Spinner } from "@/components/ui/spinner";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 type FabricItem = {
   id: number;
@@ -69,8 +75,45 @@ export default function Fabrics() {
         to see and feel the full range of patterns and weights.
       </p>
 
-      <div className="bg-muted/40 border border-border rounded-lg p-6 mb-12 max-w-2xl">
-        <h2 className="font-serif text-xl mb-3">Care &amp; Cleaning - Sunbrella</h2>
+      {isLoading ? (
+        <div className="py-16 text-center">
+          <Spinner className="size-8 text-primary mx-auto" />
+        </div>
+      ) : error ? (
+        <p className="text-destructive">
+          Could not load fabrics. Please try again.
+        </p>
+      ) : grouped.length === 0 ? (
+        <p className="text-muted-foreground">No fabrics available yet.</p>
+      ) : (
+        <Accordion type="multiple" className="divide-y divide-border border-t border-border">
+          {grouped.map(([brand, list]) => (
+            <AccordionItem key={brand} value={brand} className="border-b-0">
+              <AccordionTrigger className="hover:no-underline py-5">
+                <div className="flex items-baseline gap-4">
+                  <span className="font-serif text-2xl text-foreground">
+                    {brand}
+                  </span>
+                  <span className="text-xs uppercase tracking-widest text-muted-foreground">
+                    {list.length}{" "}
+                    {list.length === 1 ? "fabric" : "fabrics"}
+                  </span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="pb-8">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5">
+                  {list.map((f) => (
+                    <FabricSwatch key={f.id} fabric={f} />
+                  ))}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+      )}
+
+      <div className="mt-20 bg-muted/40 border border-border rounded-lg p-6 max-w-2xl">
+        <h2 className="font-serif text-xl mb-3">Care &amp; Cleaning — Sunbrella</h2>
         <p className="text-sm text-muted-foreground mb-4">
           Keep your fabrics looking their best by addressing messes and spills
           soon after they occur. Brush off dirt and debris before it becomes
@@ -109,37 +152,7 @@ export default function Fabrics() {
         </ul>
       </div>
 
-      {isLoading ? (
-        <div className="py-16 text-center">
-          <Spinner className="size-8 text-primary mx-auto" />
-        </div>
-      ) : error ? (
-        <p className="text-destructive">
-          Could not load fabrics. Please try again.
-        </p>
-      ) : grouped.length === 0 ? (
-        <p className="text-muted-foreground">No fabrics available yet.</p>
-      ) : (
-        <div className="space-y-16">
-          {grouped.map(([brand, list]) => (
-            <section key={brand}>
-              <div className="flex items-baseline justify-between mb-6 border-b border-border pb-2">
-                <h2 className="font-serif text-2xl">{brand}</h2>
-                <span className="text-xs uppercase tracking-widest text-muted-foreground">
-                  {list.length} {list.length === 1 ? "fabric" : "fabrics"}
-                </span>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5">
-                {list.map((f) => (
-                  <FabricSwatch key={f.id} fabric={f} />
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
-      )}
-
-      <div className="mt-20 prose max-w-none text-foreground/80">
+      <div className="mt-10 prose max-w-none text-foreground/80">
         <h2 className="font-serif">Warranty</h2>
         <p>
           Performance fabrics typically carry a 5-year limited warranty against
