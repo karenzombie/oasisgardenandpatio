@@ -24,6 +24,11 @@ type FinishItem = {
   description: string | null;
 };
 
+const FINISH_TYPE_LABELS: Record<string, string> = {
+  "Frame Finish": "Frame Finishes",
+  "Table Top Tile": "Table Top Tiles",
+};
+
 function FinishSwatch({
   finish,
   onClick,
@@ -74,7 +79,7 @@ function FinishSwatch({
       {finish.itemNumber && (
         <p className="text-xs text-muted-foreground">{finish.itemNumber}</p>
       )}
-      {finish.description && (
+      {finish.description && !FINISH_TYPE_LABELS[finish.description] && (
         <p className="text-xs text-muted-foreground/80 line-clamp-2 mt-0.5">
           {finish.description}
         </p>
@@ -230,25 +235,72 @@ export default function Finishes() {
         <p className="text-muted-foreground">No finishes available yet.</p>
       ) : (
         <div className="space-y-16">
-          {grouped.map(([brand, list]) => (
-            <section key={brand}>
-              <div className="flex items-baseline justify-between mb-6 border-b border-border pb-2">
-                <h2 className="font-serif text-2xl">{brand}</h2>
-                <span className="text-xs uppercase tracking-widest text-muted-foreground">
-                  {list.length} {list.length === 1 ? "finish" : "finishes"}
-                </span>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5">
-                {list.map((f) => (
-                  <FinishSwatch
-                    key={f.id}
-                    finish={f}
-                    onClick={() => setSelected(f)}
-                  />
+          {grouped.map(([brand, list]) => {
+            // Detect whether finishes in this section have typed descriptions
+            // (e.g. "Frame Finish" / "Table Top Tile"). If so, sub-group them.
+            const typeKeys = Array.from(
+              new Set(list.map((f) => f.description).filter(Boolean)),
+            ) as string[];
+            const hasSubGroups =
+              typeKeys.length > 1 ||
+              (typeKeys.length === 1 && FINISH_TYPE_LABELS[typeKeys[0]]);
+
+            const subGroups: { label: string; items: FinishItem[] }[] =
+              hasSubGroups
+                ? [
+                    ...typeKeys
+                      .filter((k) => FINISH_TYPE_LABELS[k])
+                      .sort((a, b) =>
+                        (FINISH_TYPE_LABELS[a] ?? a).localeCompare(
+                          FINISH_TYPE_LABELS[b] ?? b,
+                        ),
+                      )
+                      .map((key) => ({
+                        label: FINISH_TYPE_LABELS[key],
+                        items: list.filter((f) => f.description === key),
+                      })),
+                    // Fallback bucket: finishes with null or unrecognized description
+                    (() => {
+                      const fallback = list.filter(
+                        (f) => !f.description || !FINISH_TYPE_LABELS[f.description],
+                      );
+                      return fallback.length > 0
+                        ? [{ label: "", items: fallback }]
+                        : [];
+                    })(),
+                  ].flat()
+                : [{ label: "", items: list }];
+
+            return (
+              <section key={brand}>
+                <div className="flex items-baseline justify-between mb-6 border-b border-border pb-2">
+                  <h2 className="font-serif text-2xl">{brand}</h2>
+                  <span className="text-xs uppercase tracking-widest text-muted-foreground">
+                    {list.length}{" "}
+                    {list.length === 1 ? "finish" : "finishes"}
+                  </span>
+                </div>
+                {subGroups.map(({ label, items }) => (
+                  <div key={label || "all"} className="mb-10">
+                    {label && (
+                      <h3 className="text-sm font-medium uppercase tracking-widest text-muted-foreground mb-4">
+                        {label}
+                      </h3>
+                    )}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5">
+                      {items.map((f) => (
+                        <FinishSwatch
+                          key={f.id}
+                          finish={f}
+                          onClick={() => setSelected(f)}
+                        />
+                      ))}
+                    </div>
+                  </div>
                 ))}
-              </div>
-            </section>
-          ))}
+              </section>
+            );
+          })}
         </div>
       )}
 
