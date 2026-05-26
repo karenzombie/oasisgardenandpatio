@@ -88,6 +88,7 @@ router.get(
         name: finishesTable.name,
         itemNumber: finishesTable.itemNumber,
         manufacturerName: manufacturersTable.name,
+        manufacturerLogoUrl: manufacturersTable.logoUrl,
         imageUrl: finishesTable.imageUrl,
         description: finishesTable.description,
         displayOrder: finishesTable.displayOrder,
@@ -172,6 +173,7 @@ router.get(
         finish: {
           ...finishOut,
           imageUrl: toPublicImageUrl(finish.imageUrl),
+          manufacturerLogoUrl: toPublicImageUrl(finish.manufacturerLogoUrl),
         },
         products: productRows.map((p) => ({
           ...p,

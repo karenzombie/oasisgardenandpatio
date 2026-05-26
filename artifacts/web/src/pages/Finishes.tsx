@@ -43,7 +43,7 @@ function FinishSwatch({
           <img
             src={finish.imageUrl}
             alt={finish.name}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover object-left"
           />
         ) : (
           <div
@@ -109,7 +109,7 @@ function FinishProductsDialog({
               <img
                 src={finish.imageUrl}
                 alt={finish.name}
-                className="w-20 h-20 object-contain bg-stone-100 border border-border rounded-sm shrink-0"
+                className="w-20 h-20 object-cover object-left bg-muted border border-border rounded-sm shrink-0"
               />
             )}
             <div className="min-w-0">
