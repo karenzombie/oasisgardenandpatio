@@ -33,6 +33,7 @@ router.get(
         name: fabricsTable.name,
         itemNumber: fabricsTable.itemNumber,
         manufacturerName: manufacturersTable.name,
+        manufacturerLogoUrl: manufacturersTable.logoUrl,
         swatchImageUrl: fabricsTable.swatchImageUrl,
         displayOrder: fabricsTable.displayOrder,
       })
@@ -52,6 +53,7 @@ router.get(
       ListCatalogFabricsResponse.parse({
         fabrics: rows.map((r) => ({
           ...r,
+          manufacturerLogoUrl: toPublicImageUrl(r.manufacturerLogoUrl),
           swatchImageUrl: toPublicImageUrl(r.swatchImageUrl),
         })),
       }),

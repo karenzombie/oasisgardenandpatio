@@ -6242,6 +6242,8 @@ components:
           type: string
         manufacturerName:
           type: string
+        manufacturerLogoUrl:
+          type: ["string", "null"]
         swatchImageUrl:
           type: ["string", "null"]
         displayOrder:
@@ -6251,6 +6253,7 @@ components:
         - name
         - itemNumber
         - manufacturerName
+        - manufacturerLogoUrl
         - swatchImageUrl
         - displayOrder
     AdminProductPickerDetail:

@@ -14,6 +14,7 @@ type FabricItem = {
   name: string;
   itemNumber: string;
   manufacturerName: string;
+  manufacturerLogoUrl: string | null;
   swatchImageUrl: string | null;
 };
 
@@ -90,7 +91,14 @@ export default function Fabrics() {
           {grouped.map(([brand, list]) => (
             <AccordionItem key={brand} value={brand} className="border-b-0">
               <AccordionTrigger className="hover:no-underline py-5">
-                <div className="flex items-baseline gap-4">
+                <div className="flex items-center gap-4">
+                  {list[0]?.manufacturerLogoUrl && (
+                    <img
+                      src={list[0].manufacturerLogoUrl}
+                      alt={brand}
+                      className="h-7 w-auto object-contain shrink-0"
+                    />
+                  )}
                   <span className="font-serif text-2xl text-foreground">
                     {brand}
                   </span>

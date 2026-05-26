@@ -12,6 +12,8 @@ export interface CatalogFabricOption {
   itemNumber: string;
   manufacturerName: string;
   /** @nullable */
+  manufacturerLogoUrl: string | null;
+  /** @nullable */
   swatchImageUrl: string | null;
   displayOrder: number;
 }
