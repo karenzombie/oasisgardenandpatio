@@ -284,6 +284,30 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CatalogFinishesResponse"
+  /catalog/manufacturer-finishes/{id}/products:
+    get:
+      operationId: listCatalogFinishProducts
+      tags: [products]
+      summary: Public list of products that offer the given finish as an option
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Products using this finish
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CatalogFinishProductsResponse"
+        "404":
+          description: Finish not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /products/by-slug/{slug}:
     get:
       operationId: getCatalogProductBySlug
@@ -8172,6 +8196,32 @@ components:
             $ref: "#/components/schemas/CatalogFinish"
       required:
         - finishes
+    CatalogFinishProduct:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        slug: { type: string }
+        sku: { type: string }
+        primaryImageUrl: { type: ["string", "null"] }
+      required:
+        - id
+        - name
+        - slug
+        - sku
+        - primaryImageUrl
+    CatalogFinishProductsResponse:
+      type: object
+      properties:
+        finish:
+          $ref: "#/components/schemas/CatalogFinish"
+        products:
+          type: array
+          items:
+            $ref: "#/components/schemas/CatalogFinishProduct"
+      required:
+        - finish
+        - products
     AdminFinish:
       type: object
       properties:

@@ -253,6 +253,34 @@ export const ListCatalogManufacturerFinishesResponse = zod.object({
 });
 
 /**
+ * @summary Public list of products that offer the given finish as an option
+ */
+export const ListCatalogFinishProductsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ListCatalogFinishProductsResponse = zod.object({
+  finish: zod.object({
+    id: zod.number(),
+    name: zod.string(),
+    itemNumber: zod.string().nullable(),
+    manufacturerName: zod.string(),
+    imageUrl: zod.string().nullable(),
+    description: zod.string().nullable(),
+    displayOrder: zod.number(),
+  }),
+  products: zod.array(
+    zod.object({
+      id: zod.number(),
+      name: zod.string(),
+      slug: zod.string(),
+      sku: zod.string(),
+      primaryImageUrl: zod.string().nullable(),
+    }),
+  ),
+});
+
+/**
  * @summary Public product detail page payload
  */
 export const GetCatalogProductBySlugParams = zod.object({

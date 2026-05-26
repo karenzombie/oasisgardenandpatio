@@ -3429,6 +3429,20 @@ export interface CatalogFinishesResponse {
   finishes: CatalogFinish[];
 }
 
+export interface CatalogFinishProduct {
+  id: number;
+  name: string;
+  slug: string;
+  sku: string;
+  /** @nullable */
+  primaryImageUrl: string | null;
+}
+
+export interface CatalogFinishProductsResponse {
+  finish: CatalogFinish;
+  products: CatalogFinishProduct[];
+}
+
 export interface AdminFinish {
   id: number;
   manufacturerId: number;

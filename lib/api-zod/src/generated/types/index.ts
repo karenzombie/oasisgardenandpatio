@@ -167,6 +167,8 @@ export * from "./catalogFabricOption";
 export * from "./catalogFabricsResponse";
 export * from "./catalogFinish";
 export * from "./catalogFinishesResponse";
+export * from "./catalogFinishProduct";
+export * from "./catalogFinishProductsResponse";
 export * from "./catalogProduct";
 export * from "./catalogProductDetail";
 export * from "./catalogProductDetailSpecs";

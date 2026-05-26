@@ -1,7 +1,18 @@
 import { Link } from "wouter";
-import { useMemo } from "react";
-import { useListCatalogManufacturerFinishes } from "@workspace/api-client-react";
+import { useMemo, useState } from "react";
+import {
+  useListCatalogManufacturerFinishes,
+  useListCatalogFinishProducts,
+  getListCatalogFinishProductsQueryKey,
+} from "@workspace/api-client-react";
 import { Spinner } from "@/components/ui/spinner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type FinishItem = {
   id: number;
@@ -12,10 +23,21 @@ type FinishItem = {
   description: string | null;
 };
 
-function FinishSwatch({ finish }: { finish: FinishItem }) {
+function FinishSwatch({
+  finish,
+  onClick,
+}: {
+  finish: FinishItem;
+  onClick: () => void;
+}) {
   return (
-    <div className="group">
-      <div className="aspect-square bg-muted border border-border overflow-hidden relative">
+    <button
+      type="button"
+      onClick={onClick}
+      className="group text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm"
+      data-testid={`finish-swatch-${finish.id}`}
+    >
+      <div className="aspect-square bg-muted border border-border overflow-hidden relative transition-transform group-hover:scale-[1.02]">
         {finish.imageUrl ? (
           <img
             src={finish.imageUrl}
@@ -31,7 +53,10 @@ function FinishSwatch({ finish }: { finish: FinishItem }) {
           </div>
         )}
       </div>
-      <p className="mt-2 text-sm text-foreground line-clamp-1" title={finish.name}>
+      <p
+        className="mt-2 text-sm text-foreground line-clamp-1 group-hover:text-primary transition-colors"
+        title={finish.name}
+      >
         {finish.name}
       </p>
       {finish.itemNumber && (
@@ -42,12 +67,112 @@ function FinishSwatch({ finish }: { finish: FinishItem }) {
           {finish.description}
         </p>
       )}
-    </div>
+    </button>
+  );
+}
+
+function FinishProductsDialog({
+  finish,
+  onClose,
+}: {
+  finish: FinishItem | null;
+  onClose: () => void;
+}) {
+  const open = finish !== null;
+  const finishId = finish?.id ?? 0;
+  const { data, isLoading, error } = useListCatalogFinishProducts(finishId, {
+    query: {
+      enabled: open,
+      queryKey: getListCatalogFinishProductsQueryKey(finishId),
+    },
+  });
+  const products = data?.products ?? [];
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <div className="flex items-start gap-4">
+            {finish?.imageUrl && (
+              <img
+                src={finish.imageUrl}
+                alt={finish.name}
+                className="w-20 h-20 object-cover border border-border rounded-sm shrink-0"
+              />
+            )}
+            <div className="min-w-0">
+              <DialogTitle className="font-serif text-2xl">
+                {finish?.name}
+              </DialogTitle>
+              <DialogDescription>
+                {finish?.manufacturerName}
+                {finish?.itemNumber ? ` · ${finish.itemNumber}` : ""}
+              </DialogDescription>
+            </div>
+          </div>
+        </DialogHeader>
+
+        <div className="mt-2">
+          {isLoading ? (
+            <div className="py-10 text-center">
+              <Spinner className="size-6 text-primary mx-auto" />
+            </div>
+          ) : error ? (
+            <p className="text-destructive text-sm">
+              Could not load products. Please try again.
+            </p>
+          ) : products.length === 0 ? (
+            <p className="text-muted-foreground text-sm py-6 text-center">
+              No products currently list this finish.
+            </p>
+          ) : (
+            <>
+              <p className="text-xs uppercase tracking-widest text-muted-foreground mb-4">
+                {products.length}{" "}
+                {products.length === 1 ? "product uses" : "products use"} this
+                finish
+              </p>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {products.map((p) => (
+                  <li key={p.id}>
+                    <Link
+                      href={`/shop/${p.slug}`}
+                      onClick={onClose}
+                      className="flex items-center gap-3 p-2 border border-border rounded-sm hover:border-primary hover:bg-accent/40 transition-colors"
+                      data-testid={`finish-product-${p.id}`}
+                    >
+                      <div className="w-14 h-14 bg-muted shrink-0 overflow-hidden rounded-sm">
+                        {p.primaryImageUrl ? (
+                          <img
+                            src={p.primaryImageUrl}
+                            alt={p.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : null}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm text-foreground line-clamp-2">
+                          {p.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {p.sku}
+                        </p>
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
 export default function Finishes() {
   const { data, isLoading, error } = useListCatalogManufacturerFinishes();
+  const [selected, setSelected] = useState<FinishItem | null>(null);
 
   const grouped = useMemo(() => {
     const m = new Map<string, FinishItem[]>();
@@ -77,8 +202,8 @@ export default function Finishes() {
       <h1 className="font-serif text-4xl md:text-5xl mb-4">Finishes</h1>
       <p className="text-muted-foreground mb-12 max-w-2xl">
         Frame finishes — powder coats, wood stains, and metal patinas — applied
-        by our manufacturers. Choose the finish that best suits your space, or
-        stop by the showroom to see and feel each sample in person.
+        by our manufacturers. Click any swatch to see the products it's offered
+        on, or stop by the showroom to see and feel each sample in person.
       </p>
 
       {isLoading ? (
@@ -103,13 +228,22 @@ export default function Finishes() {
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5">
                 {list.map((f) => (
-                  <FinishSwatch key={f.id} finish={f} />
+                  <FinishSwatch
+                    key={f.id}
+                    finish={f}
+                    onClick={() => setSelected(f)}
+                  />
                 ))}
               </div>
             </section>
           ))}
         </div>
       )}
+
+      <FinishProductsDialog
+        finish={selected}
+        onClose={() => setSelected(null)}
+      />
 
       <div className="mt-20 prose max-w-none text-foreground/80">
         <h2 className="font-serif">Care</h2>

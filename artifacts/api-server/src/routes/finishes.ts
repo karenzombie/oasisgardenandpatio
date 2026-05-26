@@ -1,11 +1,18 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { and, asc, eq, ilike, or } from "drizzle-orm";
+import { and, asc, eq, ilike, or, sql } from "drizzle-orm";
 import {
   db,
   finishesTable,
   manufacturersTable,
+  productsTable,
+  productFinishOptionsTable,
+  productFinishPoolsTable,
+  productImagesTable,
 } from "@workspace/db";
-import { ListCatalogManufacturerFinishesResponse } from "@workspace/api-zod";
+import {
+  ListCatalogManufacturerFinishesResponse,
+  ListCatalogFinishProductsResponse,
+} from "@workspace/api-zod";
 import { toPublicImageUrl } from "../lib/imageUrl";
 
 const router: IRouter = Router();
@@ -54,6 +61,119 @@ router.get(
         finishes: rows.map((r) => ({
           ...r,
           imageUrl: toPublicImageUrl(r.imageUrl),
+        })),
+      }),
+    );
+  },
+);
+
+// Public list of products that offer the given finish as an option. Used
+// by the customer-facing /finishes page to power the "products that use
+// this finish" modal when a swatch is clicked.
+router.get(
+  "/catalog/manufacturer-finishes/:id/products",
+  async (req: Request, res: Response): Promise<void> => {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id) || id <= 0) {
+      res.status(404).json({ error: "Finish not found" });
+      return;
+    }
+
+    const finishRows = await db
+      .select({
+        id: finishesTable.id,
+        manufacturerId: finishesTable.manufacturerId,
+        name: finishesTable.name,
+        itemNumber: finishesTable.itemNumber,
+        manufacturerName: manufacturersTable.name,
+        imageUrl: finishesTable.imageUrl,
+        description: finishesTable.description,
+        displayOrder: finishesTable.displayOrder,
+      })
+      .from(finishesTable)
+      .innerJoin(
+        manufacturersTable,
+        eq(manufacturersTable.id, finishesTable.manufacturerId),
+      )
+      .where(
+        and(eq(finishesTable.id, id), eq(finishesTable.isActive, true)),
+      )
+      .limit(1);
+
+    const finish = finishRows[0];
+    if (!finish) {
+      res.status(404).json({ error: "Finish not found" });
+      return;
+    }
+
+    // A product offers this finish if EITHER it has a direct
+    // product_finish_options row, OR it has a product_finish_pools row for
+    // the finish's manufacturer (pool = "every active finish from this
+    // manufacturer"). Mirrors the union rule documented in the schema.
+    const productSelect = {
+      id: productsTable.id,
+      name: productsTable.name,
+      slug: productsTable.slug,
+      sku: productsTable.sku,
+      primaryImageUrl: sql<string | null>`(
+        select ${productImagesTable.url}
+        from ${productImagesTable}
+        where ${productImagesTable.productId} = ${productsTable.id}
+          and ${productImagesTable.imageKind} = 'gallery'
+        order by ${productImagesTable.isPrimary} desc, ${productImagesTable.displayOrder} asc, ${productImagesTable.id} asc
+        limit 1
+      )`,
+    };
+    const visibility = and(
+      eq(productsTable.isActive, true),
+      eq(productsTable.availableOnline, true),
+    );
+
+    const [directRows, poolRows] = await Promise.all([
+      db
+        .select(productSelect)
+        .from(productFinishOptionsTable)
+        .innerJoin(
+          productsTable,
+          eq(productsTable.id, productFinishOptionsTable.productId),
+        )
+        .where(and(eq(productFinishOptionsTable.finishId, id), visibility)),
+      db
+        .select(productSelect)
+        .from(productFinishPoolsTable)
+        .innerJoin(
+          productsTable,
+          eq(productsTable.id, productFinishPoolsTable.productId),
+        )
+        .where(
+          and(
+            eq(
+              productFinishPoolsTable.manufacturerId,
+              finish.manufacturerId,
+            ),
+            visibility,
+          ),
+        ),
+    ]);
+
+    // Dedupe by product id and sort by name. (Direct + pool can overlap.)
+    const byId = new Map<number, (typeof directRows)[number]>();
+    for (const r of [...directRows, ...poolRows]) byId.set(r.id, r);
+    const productRows = Array.from(byId.values()).sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
+
+    const { manufacturerId: _omit, ...finishOut } = finish;
+    void _omit;
+    res.json(
+      ListCatalogFinishProductsResponse.parse({
+        finish: {
+          ...finishOut,
+          imageUrl: toPublicImageUrl(finish.imageUrl),
+        },
+        products: productRows.map((p) => ({
+          ...p,
+          primaryImageUrl: toPublicImageUrl(p.primaryImageUrl),
         })),
       }),
     );
