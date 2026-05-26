@@ -19,6 +19,7 @@ type FinishItem = {
   name: string;
   itemNumber: string | null;
   manufacturerName: string;
+  manufacturerLogoUrl: string | null;
   imageUrl: string | null;
   description: string | null;
 };
@@ -37,12 +38,12 @@ function FinishSwatch({
       className="group text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm"
       data-testid={`finish-swatch-${finish.id}`}
     >
-      <div className="aspect-square bg-stone-100 border border-border overflow-hidden relative transition-transform group-hover:scale-[1.02]">
+      <div className="aspect-square bg-muted border border-border overflow-hidden relative transition-transform group-hover:scale-[1.02]">
         {finish.imageUrl ? (
           <img
             src={finish.imageUrl}
             alt={finish.name}
-            className="w-full h-full object-contain"
+            className="w-full h-full object-cover"
           />
         ) : (
           <div
@@ -53,8 +54,19 @@ function FinishSwatch({
           </div>
         )}
       </div>
+
+      {finish.manufacturerLogoUrl && (
+        <div className="mt-1.5 h-5 flex items-center">
+          <img
+            src={finish.manufacturerLogoUrl}
+            alt={finish.manufacturerName}
+            className="h-full w-auto object-contain opacity-70"
+          />
+        </div>
+      )}
+
       <p
-        className="mt-2 text-sm text-foreground line-clamp-1 group-hover:text-primary transition-colors"
+        className="mt-1 text-sm text-foreground line-clamp-1 group-hover:text-primary transition-colors"
         title={finish.name}
       >
         {finish.name}

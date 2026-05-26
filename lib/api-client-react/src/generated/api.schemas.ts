@@ -3419,6 +3419,8 @@ export interface CatalogFinish {
   itemNumber: string | null;
   manufacturerName: string;
   /** @nullable */
+  manufacturerLogoUrl: string | null;
+  /** @nullable */
   imageUrl: string | null;
   /** @nullable */
   description: string | null;

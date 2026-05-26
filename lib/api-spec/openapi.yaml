@@ -8230,6 +8230,7 @@ components:
         name: { type: string }
         itemNumber: { type: ["string", "null"] }
         manufacturerName: { type: string }
+        manufacturerLogoUrl: { type: ["string", "null"] }
         imageUrl: { type: ["string", "null"] }
         description: { type: ["string", "null"] }
         displayOrder: { type: integer }
@@ -8238,6 +8239,7 @@ components:
         - name
         - itemNumber
         - manufacturerName
+        - manufacturerLogoUrl
         - imageUrl
         - description
         - displayOrder
