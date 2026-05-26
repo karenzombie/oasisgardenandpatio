@@ -7,6 +7,7 @@ export * from "./categories";
 export * from "./products";
 export * from "./productAttributes";
 export * from "./variants";
+export * from "./finishes";
 export * from "./sets";
 export * from "./inventoryAdjustments";
 export * from "./cart";

@@ -38,6 +38,7 @@ import type {
   AdminCouponCodeUse,
   AdminCreateCustomerResponse,
   AdminCreateFabricRequest,
+  AdminCreateFinishRequest,
   AdminCreatePaymentRequest,
   AdminCreateShipmentRequest,
   AdminCustomer,
@@ -46,6 +47,7 @@ import type {
   AdminDashboardStats,
   AdminDiscountEvent,
   AdminFabric,
+  AdminFinish,
   AdminInventoryAdjustmentsPage,
   AdminInventoryPage,
   AdminLegalDocument,
@@ -70,6 +72,7 @@ import type {
   AdminProductAttribute,
   AdminProductDetail,
   AdminProductFabricsConfig,
+  AdminProductFinishesConfig,
   AdminProductImage,
   AdminProductInventory,
   AdminProductPickerDetail,
@@ -91,11 +94,13 @@ import type {
   AdminSetOrderItemFabricVendorRequest,
   AdminSetSummary,
   AdminUpdateFabricRequest,
+  AdminUpdateFinishRequest,
   AdminUpdateOrderShippingMethodRequest,
   AdminUpdateOrderTotalsRequest,
   AdminUpdatePaymentRequest,
   AdminUpdateProductAttributesRequest,
   AdminUpdateProductFabricsRequest,
+  AdminUpdateProductFinishesRequest,
   AdminUpdateShipmentRequest,
   AdminUserDetail,
   AdminUserSummary,
@@ -107,6 +112,7 @@ import type {
   Carrier,
   CartResponse,
   CatalogFabricsResponse,
+  CatalogFinishesResponse,
   CatalogProductDetail,
   CatalogProductsPage,
   Category,
@@ -147,6 +153,7 @@ import type {
   InventoryLocation,
   LegalDocument,
   ListCatalogFabricsParams,
+  ListCatalogManufacturerFinishesParams,
   ListCatalogProductsParams,
   ListCushionOrdersParams,
   LoginRequest,
@@ -1121,6 +1128,116 @@ export function useListCatalogFabrics<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getListCatalogFabricsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Public list of all active manufacturer finishes offered as product options
+ */
+export const getListCatalogManufacturerFinishesUrl = (
+  params?: ListCatalogManufacturerFinishesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/catalog/manufacturer-finishes?${stringifiedParams}`
+    : `/api/catalog/manufacturer-finishes`;
+};
+
+export const listCatalogManufacturerFinishes = async (
+  params?: ListCatalogManufacturerFinishesParams,
+  options?: RequestInit,
+): Promise<CatalogFinishesResponse> => {
+  return customFetch<CatalogFinishesResponse>(
+    getListCatalogManufacturerFinishesUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListCatalogManufacturerFinishesQueryKey = (
+  params?: ListCatalogManufacturerFinishesParams,
+) => {
+  return [
+    `/api/catalog/manufacturer-finishes`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListCatalogManufacturerFinishesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listCatalogManufacturerFinishes>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListCatalogManufacturerFinishesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listCatalogManufacturerFinishes>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getListCatalogManufacturerFinishesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listCatalogManufacturerFinishes>>
+  > = ({ signal }) =>
+    listCatalogManufacturerFinishes(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listCatalogManufacturerFinishes>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListCatalogManufacturerFinishesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listCatalogManufacturerFinishes>>
+>;
+export type ListCatalogManufacturerFinishesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Public list of all active manufacturer finishes offered as product options
+ */
+
+export function useListCatalogManufacturerFinishes<
+  TData = Awaited<ReturnType<typeof listCatalogManufacturerFinishes>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListCatalogManufacturerFinishesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listCatalogManufacturerFinishes>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListCatalogManufacturerFinishesQueryOptions(
+    params,
+    options,
+  );
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
@@ -6744,6 +6861,521 @@ export const useAdminUpdateProductFabrics = <
   TContext
 > => {
   return useMutation(getAdminUpdateProductFabricsMutationOptions(options));
+};
+
+/**
+ * @summary List all finishes across manufacturers (admin)
+ */
+export const getAdminListFinishesUrl = () => {
+  return `/api/admin/finishes`;
+};
+
+export const adminListFinishes = async (
+  options?: RequestInit,
+): Promise<AdminFinish[]> => {
+  return customFetch<AdminFinish[]>(getAdminListFinishesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAdminListFinishesQueryKey = () => {
+  return [`/api/admin/finishes`] as const;
+};
+
+export const getAdminListFinishesQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminListFinishes>>,
+  TError = ErrorType<Error>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminListFinishes>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getAdminListFinishesQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminListFinishes>>
+  > = ({ signal }) => adminListFinishes({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminListFinishes>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminListFinishesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminListFinishes>>
+>;
+export type AdminListFinishesQueryError = ErrorType<Error>;
+
+/**
+ * @summary List all finishes across manufacturers (admin)
+ */
+
+export function useAdminListFinishes<
+  TData = Awaited<ReturnType<typeof adminListFinishes>>,
+  TError = ErrorType<Error>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminListFinishes>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminListFinishesQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a new finish
+ */
+export const getAdminCreateFinishUrl = () => {
+  return `/api/admin/finishes`;
+};
+
+export const adminCreateFinish = async (
+  adminCreateFinishRequest: AdminCreateFinishRequest,
+  options?: RequestInit,
+): Promise<AdminFinish> => {
+  return customFetch<AdminFinish>(getAdminCreateFinishUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(adminCreateFinishRequest),
+  });
+};
+
+export const getAdminCreateFinishMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCreateFinish>>,
+    TError,
+    { data: BodyType<AdminCreateFinishRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminCreateFinish>>,
+  TError,
+  { data: BodyType<AdminCreateFinishRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminCreateFinish"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminCreateFinish>>,
+    { data: BodyType<AdminCreateFinishRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return adminCreateFinish(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminCreateFinishMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminCreateFinish>>
+>;
+export type AdminCreateFinishMutationBody = BodyType<AdminCreateFinishRequest>;
+export type AdminCreateFinishMutationError = ErrorType<Error>;
+
+/**
+ * @summary Create a new finish
+ */
+export const useAdminCreateFinish = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCreateFinish>>,
+    TError,
+    { data: BodyType<AdminCreateFinishRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminCreateFinish>>,
+  TError,
+  { data: BodyType<AdminCreateFinishRequest> },
+  TContext
+> => {
+  return useMutation(getAdminCreateFinishMutationOptions(options));
+};
+
+/**
+ * @summary Update a finish
+ */
+export const getAdminUpdateFinishUrl = (id: number) => {
+  return `/api/admin/finishes/${id}`;
+};
+
+export const adminUpdateFinish = async (
+  id: number,
+  adminUpdateFinishRequest: AdminUpdateFinishRequest,
+  options?: RequestInit,
+): Promise<AdminFinish> => {
+  return customFetch<AdminFinish>(getAdminUpdateFinishUrl(id), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(adminUpdateFinishRequest),
+  });
+};
+
+export const getAdminUpdateFinishMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateFinish>>,
+    TError,
+    { id: number; data: BodyType<AdminUpdateFinishRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUpdateFinish>>,
+  TError,
+  { id: number; data: BodyType<AdminUpdateFinishRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminUpdateFinish"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUpdateFinish>>,
+    { id: number; data: BodyType<AdminUpdateFinishRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminUpdateFinish(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminUpdateFinishMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUpdateFinish>>
+>;
+export type AdminUpdateFinishMutationBody = BodyType<AdminUpdateFinishRequest>;
+export type AdminUpdateFinishMutationError = ErrorType<Error>;
+
+/**
+ * @summary Update a finish
+ */
+export const useAdminUpdateFinish = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateFinish>>,
+    TError,
+    { id: number; data: BodyType<AdminUpdateFinishRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUpdateFinish>>,
+  TError,
+  { id: number; data: BodyType<AdminUpdateFinishRequest> },
+  TContext
+> => {
+  return useMutation(getAdminUpdateFinishMutationOptions(options));
+};
+
+/**
+ * @summary Delete a finish (only if not referenced by any product options)
+ */
+export const getAdminDeleteFinishUrl = (id: number) => {
+  return `/api/admin/finishes/${id}`;
+};
+
+export const adminDeleteFinish = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getAdminDeleteFinishUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getAdminDeleteFinishMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeleteFinish>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminDeleteFinish>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["adminDeleteFinish"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminDeleteFinish>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return adminDeleteFinish(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminDeleteFinishMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminDeleteFinish>>
+>;
+
+export type AdminDeleteFinishMutationError = ErrorType<Error>;
+
+/**
+ * @summary Delete a finish (only if not referenced by any product options)
+ */
+export const useAdminDeleteFinish = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeleteFinish>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminDeleteFinish>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getAdminDeleteFinishMutationOptions(options));
+};
+
+/**
+ * @summary Get a product's finish pools and individual finish picks
+ */
+export const getAdminGetProductFinishesUrl = (id: number) => {
+  return `/api/admin/products/${id}/finishes`;
+};
+
+export const adminGetProductFinishes = async (
+  id: number,
+  options?: RequestInit,
+): Promise<AdminProductFinishesConfig> => {
+  return customFetch<AdminProductFinishesConfig>(
+    getAdminGetProductFinishesUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getAdminGetProductFinishesQueryKey = (id: number) => {
+  return [`/api/admin/products/${id}/finishes`] as const;
+};
+
+export const getAdminGetProductFinishesQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminGetProductFinishes>>,
+  TError = ErrorType<Error>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminGetProductFinishes>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getAdminGetProductFinishesQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminGetProductFinishes>>
+  > = ({ signal }) =>
+    adminGetProductFinishes(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetProductFinishes>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminGetProductFinishesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminGetProductFinishes>>
+>;
+export type AdminGetProductFinishesQueryError = ErrorType<Error>;
+
+/**
+ * @summary Get a product's finish pools and individual finish picks
+ */
+
+export function useAdminGetProductFinishes<
+  TData = Awaited<ReturnType<typeof adminGetProductFinishes>>,
+  TError = ErrorType<Error>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminGetProductFinishes>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminGetProductFinishesQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Replace a product's finish pools and individual finish picks
+ */
+export const getAdminUpdateProductFinishesUrl = (id: number) => {
+  return `/api/admin/products/${id}/finishes`;
+};
+
+export const adminUpdateProductFinishes = async (
+  id: number,
+  adminUpdateProductFinishesRequest: AdminUpdateProductFinishesRequest,
+  options?: RequestInit,
+): Promise<AdminProductFinishesConfig> => {
+  return customFetch<AdminProductFinishesConfig>(
+    getAdminUpdateProductFinishesUrl(id),
+    {
+      ...options,
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(adminUpdateProductFinishesRequest),
+    },
+  );
+};
+
+export const getAdminUpdateProductFinishesMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateProductFinishes>>,
+    TError,
+    { id: number; data: BodyType<AdminUpdateProductFinishesRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUpdateProductFinishes>>,
+  TError,
+  { id: number; data: BodyType<AdminUpdateProductFinishesRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminUpdateProductFinishes"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUpdateProductFinishes>>,
+    { id: number; data: BodyType<AdminUpdateProductFinishesRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminUpdateProductFinishes(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminUpdateProductFinishesMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUpdateProductFinishes>>
+>;
+export type AdminUpdateProductFinishesMutationBody =
+  BodyType<AdminUpdateProductFinishesRequest>;
+export type AdminUpdateProductFinishesMutationError = ErrorType<Error>;
+
+/**
+ * @summary Replace a product's finish pools and individual finish picks
+ */
+export const useAdminUpdateProductFinishes = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateProductFinishes>>,
+    TError,
+    { id: number; data: BodyType<AdminUpdateProductFinishesRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUpdateProductFinishes>>,
+  TError,
+  { id: number; data: BodyType<AdminUpdateProductFinishesRequest> },
+  TContext
+> => {
+  return useMutation(getAdminUpdateProductFinishesMutationOptions(options));
 };
 
 /**

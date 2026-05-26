@@ -3412,6 +3412,86 @@ export interface AdminUpdateProductFabricsRequest {
   fabricIds: number[];
 }
 
+export interface CatalogFinish {
+  id: number;
+  name: string;
+  /** @nullable */
+  itemNumber: string | null;
+  manufacturerName: string;
+  /** @nullable */
+  imageUrl: string | null;
+  /** @nullable */
+  description: string | null;
+  displayOrder: number;
+}
+
+export interface CatalogFinishesResponse {
+  finishes: CatalogFinish[];
+}
+
+export interface AdminFinish {
+  id: number;
+  manufacturerId: number;
+  manufacturerName: string;
+  /** @nullable */
+  itemNumber: string | null;
+  name: string;
+  /** @nullable */
+  imageUrl: string | null;
+  /** @nullable */
+  description: string | null;
+  isActive: boolean;
+  displayOrder: number;
+}
+
+export interface AdminCreateFinishRequest {
+  manufacturerId: number;
+  /** @nullable */
+  itemNumber?: string | null;
+  /** @minLength 1 */
+  name: string;
+  /** @nullable */
+  imageUrl?: string | null;
+  /** @nullable */
+  description?: string | null;
+  isActive?: boolean;
+  displayOrder?: number;
+}
+
+export interface AdminUpdateFinishRequest {
+  manufacturerId?: number;
+  /** @nullable */
+  itemNumber?: string | null;
+  /** @minLength 1 */
+  name?: string;
+  /** @nullable */
+  imageUrl?: string | null;
+  /** @nullable */
+  description?: string | null;
+  isActive?: boolean;
+  displayOrder?: number;
+}
+
+export interface AdminProductFinishPool {
+  manufacturerId: number;
+  manufacturerName: string;
+  /** Number of currently active finishes in this pool. */
+  finishCount: number;
+}
+
+export interface AdminProductFinishesConfig {
+  pools: AdminProductFinishPool[];
+  /** Individually-picked finish IDs (extra finishes on top of any pools). */
+  finishIds: number[];
+}
+
+export interface AdminUpdateProductFinishesRequest {
+  /** Replace pools with these manufacturer IDs. */
+  manufacturerIds: number[];
+  /** Replace individual finish picks with these finish IDs. */
+  finishIds: number[];
+}
+
 export type AdminProductAttributeAttributeType =
   (typeof AdminProductAttributeAttributeType)[keyof typeof AdminProductAttributeAttributeType];
 
@@ -3640,6 +3720,13 @@ export const ListCatalogProductsSort = {
 export type ListCatalogFabricsParams = {
   /**
    * Filter fabrics by name or item number (case-insensitive substring match)
+   */
+  q?: string;
+};
+
+export type ListCatalogManufacturerFinishesParams = {
+  /**
+   * Filter finishes by name or item number (case-insensitive substring match)
    */
   q?: string;
 };

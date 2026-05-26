@@ -29,15 +29,20 @@ import {
   useAdminListFabrics,
   useAdminGetProductFabrics,
   useAdminUpdateProductFabrics,
+  useAdminListFinishes,
+  useAdminGetProductFinishes,
+  useAdminUpdateProductFinishes,
   useAdminGetProductAttributes,
   useAdminUpdateProductAttributes,
   useAdminListHistory,
   getAdminGetProductQueryKey,
   getAdminListProductsQueryKey,
   getAdminGetProductFabricsQueryKey,
+  getAdminGetProductFinishesQueryKey,
   getAdminGetProductAttributesQueryKey,
   type AdminProductImage,
   type AdminFabric,
+  type AdminFinish,
   type AdminProductAttribute,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
@@ -166,6 +171,15 @@ export default function ProductEdit() {
       queryKey: getAdminGetProductFabricsQueryKey(productId ?? 0),
     },
   });
+  const finishesList = useAdminListFinishes({
+    query: { enabled: !isNew, queryKey: ["/api/admin/finishes"] as const },
+  });
+  const finishesConfigQuery = useAdminGetProductFinishes(productId ?? 0, {
+    query: {
+      enabled: !isNew && Number.isFinite(productId) && (productId ?? 0) > 0,
+      queryKey: getAdminGetProductFinishesQueryKey(productId ?? 0),
+    },
+  });
   const attributesQuery = useAdminGetProductAttributes(productId ?? 0, {
     query: {
       enabled: !isNew && Number.isFinite(productId) && (productId ?? 0) > 0,
@@ -179,6 +193,7 @@ export default function ProductEdit() {
   const deleteImageMut = useAdminDeleteProductImage();
   const inventoryMut = useAdminUpdateProductInventory();
   const fabricsMut = useAdminUpdateProductFabrics();
+  const finishesMut = useAdminUpdateProductFinishes();
   const attributesMut = useAdminUpdateProductAttributes();
 
   const [form, setForm] = useState<FormState>(emptyForm);
@@ -192,6 +207,13 @@ export default function ProductEdit() {
   const [poolManufacturerIds, setPoolManufacturerIds] = useState<number[]>([]);
   const [pickedFabricIds, setPickedFabricIds] = useState<number[]>([]);
   const [expandedFabricMfgs, setExpandedFabricMfgs] = useState<Set<number>>(
+    () => new Set(),
+  );
+
+  // Finish pool (manufacturer-wide) selections + individual finish picks.
+  const [finishPoolMfgIds, setFinishPoolMfgIds] = useState<number[]>([]);
+  const [pickedFinishIds, setPickedFinishIds] = useState<number[]>([]);
+  const [expandedFinishMfgs, setExpandedFinishMfgs] = useState<Set<number>>(
     () => new Set(),
   );
 
@@ -216,6 +238,8 @@ export default function ProductEdit() {
     // Save before the new queries hydrate.
     setPoolManufacturerIds([]);
     setPickedFabricIds([]);
+    setFinishPoolMfgIds([]);
+    setPickedFinishIds([]);
     setAttrs([]);
   }, [productId]);
 
@@ -224,6 +248,7 @@ export default function ProductEdit() {
     if (
       !isNew &&
       fabricsConfigQuery.data &&
+      finishesConfigQuery.data &&
       attributesQuery.data &&
       !fabAttrHydrated
     ) {
@@ -231,6 +256,10 @@ export default function ProductEdit() {
         fabricsConfigQuery.data.pools.map((p) => p.manufacturerId),
       );
       setPickedFabricIds(fabricsConfigQuery.data.fabricIds);
+      setFinishPoolMfgIds(
+        finishesConfigQuery.data.pools.map((p) => p.manufacturerId),
+      );
+      setPickedFinishIds(finishesConfigQuery.data.finishIds);
       setAttrs(
         attributesQuery.data.map((a: AdminProductAttribute, i: number) => ({
           key: `${a.id}-${i}`,
@@ -241,7 +270,7 @@ export default function ProductEdit() {
       );
       setFabAttrHydrated(true);
     }
-  }, [fabricsConfigQuery.data, attributesQuery.data, isNew, fabAttrHydrated]);
+  }, [fabricsConfigQuery.data, finishesConfigQuery.data, attributesQuery.data, isNew, fabAttrHydrated]);
 
   useEffect(() => {
     // Wait for all three queries to land before hydrating so the
@@ -293,6 +322,29 @@ export default function ProductEdit() {
     () => detailQuery.data?.images ?? [],
     [detailQuery.data],
   );
+
+  // Group all finishes by manufacturer for the picker UI.
+  const finishesByMfg = useMemo(() => {
+    const map = new Map<
+      number,
+      { manufacturerId: number; manufacturerName: string; finishes: AdminFinish[] }
+    >();
+    for (const f of finishesList.data ?? []) {
+      const cur = map.get(f.manufacturerId);
+      if (cur) {
+        cur.finishes.push(f);
+      } else {
+        map.set(f.manufacturerId, {
+          manufacturerId: f.manufacturerId,
+          manufacturerName: f.manufacturerName,
+          finishes: [f],
+        });
+      }
+    }
+    return Array.from(map.values()).sort((a, b) =>
+      a.manufacturerName.localeCompare(b.manufacturerName),
+    );
+  }, [finishesList.data]);
 
   // Group all fabrics by manufacturer for the picker UI.
   const fabricsByMfg = useMemo(() => {
@@ -477,6 +529,20 @@ export default function ProductEdit() {
         }
 
         try {
+          await finishesMut.mutateAsync({
+            id: productId,
+            data: {
+              manufacturerIds: finishPoolMfgIds,
+              finishIds: pickedFinishIds,
+            },
+          });
+        } catch (fErr) {
+          followUpFailures.push(
+            `Finishes: ${fErr instanceof Error ? fErr.message : "failed"}`,
+          );
+        }
+
+        try {
           // Renumber displayOrder per group so it always reflects current UI order.
           const counters: Record<string, number> = {};
           await attributesMut.mutateAsync({
@@ -517,6 +583,9 @@ export default function ProductEdit() {
         await qc.invalidateQueries({ queryKey: getAdminListProductsQueryKey() });
         await qc.invalidateQueries({
           queryKey: getAdminGetProductFabricsQueryKey(productId),
+        });
+        await qc.invalidateQueries({
+          queryKey: getAdminGetProductFinishesQueryKey(productId),
         });
         await qc.invalidateQueries({
           queryKey: getAdminGetProductAttributesQueryKey(productId),
@@ -674,6 +743,7 @@ export default function ProductEdit() {
     updateMut.isPending ||
     inventoryMut.isPending ||
     fabricsMut.isPending ||
+    finishesMut.isPending ||
     attributesMut.isPending;
 
   function togglePool(manufacturerId: number) {
@@ -694,6 +764,31 @@ export default function ProductEdit() {
 
   function toggleMfgExpanded(manufacturerId: number) {
     setExpandedFabricMfgs((cur) => {
+      const next = new Set(cur);
+      if (next.has(manufacturerId)) next.delete(manufacturerId);
+      else next.add(manufacturerId);
+      return next;
+    });
+  }
+
+  function toggleFinishPool(manufacturerId: number) {
+    setFinishPoolMfgIds((cur) =>
+      cur.includes(manufacturerId)
+        ? cur.filter((id) => id !== manufacturerId)
+        : [...cur, manufacturerId],
+    );
+  }
+
+  function togglePickedFinish(finishId: number) {
+    setPickedFinishIds((cur) =>
+      cur.includes(finishId)
+        ? cur.filter((id) => id !== finishId)
+        : [...cur, finishId],
+    );
+  }
+
+  function toggleFinishMfgExpanded(manufacturerId: number) {
+    setExpandedFinishMfgs((cur) => {
       const next = new Set(cur);
       if (next.has(manufacturerId)) next.delete(manufacturerId);
       else next.add(manufacturerId);
@@ -1347,6 +1442,135 @@ export default function ProductEdit() {
                                     <span className="font-mono text-xs text-slate-500">
                                       {f.itemNumber}
                                     </span>
+                                    <span className="truncate">{f.name}</span>
+                                    {!f.isActive && (
+                                      <span className="ml-auto text-xs text-amber-700">
+                                        inactive
+                                      </span>
+                                    )}
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* Finish options */}
+          {!isNew && (
+            <section className="bg-white border border-slate-200 rounded-md p-6">
+              <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-2">
+                Finish options
+              </h3>
+              <p className="text-xs text-slate-500 mb-4">
+                Choose which frame finishes customers can order this product in.
+                Turn on a vendor pool to automatically include every current
+                and future finish from that brand, and/or hand-pick extra
+                individual finishes.
+              </p>
+              {finishesList.isLoading || finishesConfigQuery.isLoading ? (
+                <p className="text-sm text-slate-500">Loading finishes…</p>
+              ) : finishesByMfg.length === 0 ? (
+                <p className="text-sm text-slate-500">
+                  No finishes in the catalog yet.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {finishesByMfg.map((group) => {
+                    const poolOn = finishPoolMfgIds.includes(
+                      group.manufacturerId,
+                    );
+                    const expanded = expandedFinishMfgs.has(
+                      group.manufacturerId,
+                    );
+                    const pickedInGroup = group.finishes.filter((f) =>
+                      pickedFinishIds.includes(f.id),
+                    ).length;
+                    return (
+                      <div
+                        key={group.manufacturerId}
+                        className="border border-slate-200 rounded-md"
+                      >
+                        <div className="flex items-center gap-3 px-4 py-3">
+                          <label className="flex items-center gap-2 text-sm font-medium text-slate-800">
+                            <input
+                              type="checkbox"
+                              checked={poolOn}
+                              onChange={() =>
+                                toggleFinishPool(group.manufacturerId)
+                              }
+                            />
+                            Use all {group.manufacturerName} finishes
+                          </label>
+                          <span className="text-xs text-slate-500 ml-auto">
+                            {poolOn
+                              ? `${group.finishes.filter((f) => f.isActive).length} active in pool`
+                              : pickedInGroup > 0
+                                ? `${pickedInGroup} picked`
+                                : `${group.finishes.length} available`}
+                          </span>
+                          <button
+                            type="button"
+                            className="text-slate-500 hover:text-slate-800"
+                            onClick={() =>
+                              toggleFinishMfgExpanded(group.manufacturerId)
+                            }
+                            aria-label={expanded ? "Collapse" : "Expand"}
+                          >
+                            {expanded ? (
+                              <ChevronDown className="size-4" />
+                            ) : (
+                              <ChevronRight className="size-4" />
+                            )}
+                          </button>
+                        </div>
+                        {expanded && (
+                          <div className="px-4 pb-4 border-t border-slate-200 pt-3">
+                            {poolOn && (
+                              <p className="text-xs text-slate-500 mb-2">
+                                Pool is on — every active finish below is
+                                already included automatically. You don't need
+                                to pick them individually.
+                              </p>
+                            )}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-72 overflow-auto">
+                              {group.finishes.map((f) => {
+                                const checked = pickedFinishIds.includes(f.id);
+                                return (
+                                  <label
+                                    key={f.id}
+                                    className={`flex items-center gap-2 text-sm px-2 py-1.5 rounded ${
+                                      poolOn
+                                        ? "text-slate-400"
+                                        : "text-slate-700 hover:bg-slate-50"
+                                    }`}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={poolOn || checked}
+                                      disabled={poolOn}
+                                      onChange={() =>
+                                        togglePickedFinish(f.id)
+                                      }
+                                    />
+                                    {f.imageUrl && (
+                                      <img
+                                        src={f.imageUrl}
+                                        alt=""
+                                        className="size-6 rounded object-cover border border-slate-200"
+                                      />
+                                    )}
+                                    {f.itemNumber && (
+                                      <span className="font-mono text-xs text-slate-500">
+                                        {f.itemNumber}
+                                      </span>
+                                    )}
                                     <span className="truncate">{f.name}</span>
                                     {!f.isActive && (
                                       <span className="ml-auto text-xs text-amber-700">

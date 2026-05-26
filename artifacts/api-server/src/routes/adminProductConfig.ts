@@ -3,10 +3,13 @@ import { asc, eq, inArray, sql, count } from "drizzle-orm";
 import {
   db,
   fabricsTable,
+  finishesTable,
   manufacturersTable,
   productsTable,
   productFabricOptionsTable,
   productFabricPoolsTable,
+  productFinishOptionsTable,
+  productFinishPoolsTable,
   productAttributesTable,
 } from "@workspace/db";
 import {
@@ -16,6 +19,13 @@ import {
   AdminGetProductFabricsParams,
   AdminUpdateProductFabricsParams,
   AdminUpdateProductFabricsBody,
+  AdminCreateFinishBody,
+  AdminUpdateFinishParams,
+  AdminUpdateFinishBody,
+  AdminDeleteFinishParams,
+  AdminGetProductFinishesParams,
+  AdminUpdateProductFinishesParams,
+  AdminUpdateProductFinishesBody,
   AdminGetProductAttributesParams,
   AdminUpdateProductAttributesParams,
   AdminUpdateProductAttributesBody,
@@ -415,6 +425,401 @@ router.put(
     const newConfig = await loadFabricsConfig(productId);
     await recordHistory(req, {
       entityType: "product_fabrics",
+      entityId: productId,
+      changeType: "replace",
+      snapshot: newConfig,
+      previousSnapshot: previousConfig,
+    });
+    res.json(newConfig);
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Admin: list every finish (across manufacturers)
+// ---------------------------------------------------------------------------
+router.get(
+  "/admin/finishes",
+  requireAuth,
+  requireRole("admin"),
+  async (_req: Request, res: Response): Promise<void> => {
+    const rows = await db
+      .select({
+        id: finishesTable.id,
+        manufacturerId: finishesTable.manufacturerId,
+        manufacturerName: manufacturersTable.name,
+        itemNumber: finishesTable.itemNumber,
+        name: finishesTable.name,
+        imageUrl: finishesTable.imageUrl,
+        description: finishesTable.description,
+        isActive: finishesTable.isActive,
+        displayOrder: finishesTable.displayOrder,
+      })
+      .from(finishesTable)
+      .innerJoin(
+        manufacturersTable,
+        eq(manufacturersTable.id, finishesTable.manufacturerId),
+      )
+      .orderBy(
+        asc(manufacturersTable.name),
+        asc(finishesTable.displayOrder),
+        asc(finishesTable.name),
+      );
+    res.json(
+      rows.map((r) => ({
+        ...r,
+        imageUrl: toPublicImageUrl(r.imageUrl),
+      })),
+    );
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Admin: create finish
+// ---------------------------------------------------------------------------
+router.post(
+  "/admin/finishes",
+  requireAuth,
+  requireRole("admin"),
+  async (req: Request, res: Response): Promise<void> => {
+    const body = AdminCreateFinishBody.safeParse(req.body);
+    if (!body.success) {
+      res.status(400).json({ error: body.error.issues[0]?.message ?? "Invalid input" });
+      return;
+    }
+    const { manufacturerId, itemNumber, name, imageUrl, description, isActive, displayOrder } = body.data;
+
+    const mfg = await db
+      .select({ id: manufacturersTable.id })
+      .from(manufacturersTable)
+      .where(eq(manufacturersTable.id, manufacturerId))
+      .limit(1);
+    if (mfg.length === 0) {
+      res.status(400).json({ error: "Manufacturer not found" });
+      return;
+    }
+
+    try {
+      const [row] = await db
+        .insert(finishesTable)
+        .values({
+          manufacturerId,
+          itemNumber: itemNumber?.trim() || null,
+          name: name.trim(),
+          imageUrl: imageUrl ?? null,
+          description: description?.trim() || null,
+          isActive: isActive ?? true,
+          displayOrder: displayOrder ?? 0,
+        })
+        .returning();
+
+      const [full] = await db
+        .select({
+          id: finishesTable.id,
+          manufacturerId: finishesTable.manufacturerId,
+          manufacturerName: manufacturersTable.name,
+          itemNumber: finishesTable.itemNumber,
+          name: finishesTable.name,
+          imageUrl: finishesTable.imageUrl,
+          description: finishesTable.description,
+          isActive: finishesTable.isActive,
+          displayOrder: finishesTable.displayOrder,
+        })
+        .from(finishesTable)
+        .innerJoin(manufacturersTable, eq(manufacturersTable.id, finishesTable.manufacturerId))
+        .where(eq(finishesTable.id, row.id));
+
+      res.status(201).json({
+        ...full,
+        imageUrl: toPublicImageUrl(full.imageUrl),
+      });
+    } catch (err: unknown) {
+      const pgErr = err as { code?: string };
+      if (pgErr.code === "23505") {
+        res.status(409).json({ error: "Name already exists for this manufacturer" });
+        return;
+      }
+      req.log.error({ err }, "Failed to create finish");
+      res.status(500).json({ error: "Failed to create finish" });
+    }
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Admin: update finish
+// ---------------------------------------------------------------------------
+router.put(
+  "/admin/finishes/:id",
+  requireAuth,
+  requireRole("admin"),
+  async (req: Request, res: Response): Promise<void> => {
+    const params = AdminUpdateFinishParams.safeParse(req.params);
+    const body = AdminUpdateFinishBody.safeParse(req.body);
+    if (!params.success || !body.success) {
+      res.status(400).json({ error: "Invalid input" });
+      return;
+    }
+    const { id } = params.data;
+    const { manufacturerId, itemNumber, name, imageUrl, description, isActive, displayOrder } = body.data;
+
+    const existing = await db
+      .select({ id: finishesTable.id })
+      .from(finishesTable)
+      .where(eq(finishesTable.id, id))
+      .limit(1);
+    if (existing.length === 0) {
+      res.status(404).json({ error: "Finish not found" });
+      return;
+    }
+
+    if (manufacturerId !== undefined) {
+      const mfg = await db
+        .select({ id: manufacturersTable.id })
+        .from(manufacturersTable)
+        .where(eq(manufacturersTable.id, manufacturerId))
+        .limit(1);
+      if (mfg.length === 0) {
+        res.status(400).json({ error: "Manufacturer not found" });
+        return;
+      }
+    }
+
+    const updates: Partial<typeof finishesTable.$inferInsert> = {};
+    if (manufacturerId !== undefined) updates.manufacturerId = manufacturerId;
+    if ("itemNumber" in body.data) updates.itemNumber = itemNumber?.trim() || null;
+    if (name !== undefined) updates.name = name.trim();
+    if ("imageUrl" in body.data) updates.imageUrl = imageUrl ?? null;
+    if ("description" in body.data) updates.description = description?.trim() || null;
+    if (isActive !== undefined) updates.isActive = isActive;
+    if (displayOrder !== undefined) updates.displayOrder = displayOrder;
+
+    try {
+      await db.update(finishesTable).set(updates).where(eq(finishesTable.id, id));
+    } catch (err: unknown) {
+      const pgErr = err as { code?: string };
+      if (pgErr.code === "23505") {
+        res.status(409).json({ error: "Name already exists for this manufacturer" });
+        return;
+      }
+      req.log.error({ err }, "Failed to update finish");
+      res.status(500).json({ error: "Failed to update finish" });
+      return;
+    }
+
+    const [full] = await db
+      .select({
+        id: finishesTable.id,
+        manufacturerId: finishesTable.manufacturerId,
+        manufacturerName: manufacturersTable.name,
+        itemNumber: finishesTable.itemNumber,
+        name: finishesTable.name,
+        imageUrl: finishesTable.imageUrl,
+        description: finishesTable.description,
+        isActive: finishesTable.isActive,
+        displayOrder: finishesTable.displayOrder,
+      })
+      .from(finishesTable)
+      .innerJoin(manufacturersTable, eq(manufacturersTable.id, finishesTable.manufacturerId))
+      .where(eq(finishesTable.id, id));
+
+    res.json({
+      ...full,
+      imageUrl: toPublicImageUrl(full.imageUrl),
+    });
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Admin: delete finish
+// ---------------------------------------------------------------------------
+router.delete(
+  "/admin/finishes/:id",
+  requireAuth,
+  requireRole("admin"),
+  async (req: Request, res: Response): Promise<void> => {
+    const params = AdminDeleteFinishParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: "Invalid finish id" });
+      return;
+    }
+    const { id } = params.data;
+
+    const existing = await db
+      .select({ id: finishesTable.id })
+      .from(finishesTable)
+      .where(eq(finishesTable.id, id))
+      .limit(1);
+    if (existing.length === 0) {
+      res.status(404).json({ error: "Finish not found" });
+      return;
+    }
+
+    const [usage] = await db
+      .select({ n: count() })
+      .from(productFinishOptionsTable)
+      .where(eq(productFinishOptionsTable.finishId, id));
+    if ((usage?.n ?? 0) > 0) {
+      res.status(409).json({
+        error: `This finish is assigned to ${usage.n} product(s) and cannot be deleted. Remove it from those products first.`,
+      });
+      return;
+    }
+
+    try {
+      await db.delete(finishesTable).where(eq(finishesTable.id, id));
+      res.status(204).send();
+    } catch (err: unknown) {
+      const pgErr = err as { code?: string };
+      if (pgErr.code === "23503") {
+        res.status(409).json({ error: "This finish is in use and cannot be deleted." });
+        return;
+      }
+      req.log.error({ err }, "Failed to delete finish");
+      res.status(500).json({ error: "Failed to delete finish" });
+    }
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Admin: per-product finish configuration (pools + individual picks)
+// ---------------------------------------------------------------------------
+async function loadFinishesConfig(productId: number) {
+  const pools = await db
+    .select({
+      manufacturerId: productFinishPoolsTable.manufacturerId,
+      manufacturerName: manufacturersTable.name,
+      finishCount: sql<number>`(
+        SELECT COUNT(*)::int FROM finishes f
+        WHERE f.manufacturer_id = ${productFinishPoolsTable.manufacturerId}
+          AND f.is_active = true
+      )`,
+    })
+    .from(productFinishPoolsTable)
+    .innerJoin(
+      manufacturersTable,
+      eq(manufacturersTable.id, productFinishPoolsTable.manufacturerId),
+    )
+    .where(eq(productFinishPoolsTable.productId, productId))
+    .orderBy(asc(manufacturersTable.name));
+
+  const opts = await db
+    .select({ finishId: productFinishOptionsTable.finishId })
+    .from(productFinishOptionsTable)
+    .where(eq(productFinishOptionsTable.productId, productId))
+    .orderBy(asc(productFinishOptionsTable.displayOrder));
+
+  return {
+    pools,
+    finishIds: opts.map((o) => o.finishId),
+  };
+}
+
+router.get(
+  "/admin/products/:id/finishes",
+  requireAuth,
+  requireRole("admin"),
+  async (req: Request, res: Response): Promise<void> => {
+    const params = AdminGetProductFinishesParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: "Invalid product id" });
+      return;
+    }
+    const product = await db
+      .select({ id: productsTable.id })
+      .from(productsTable)
+      .where(eq(productsTable.id, params.data.id))
+      .limit(1);
+    if (product.length === 0) {
+      res.status(404).json({ error: "Product not found" });
+      return;
+    }
+    res.json(await loadFinishesConfig(params.data.id));
+  },
+);
+
+router.put(
+  "/admin/products/:id/finishes",
+  requireAuth,
+  requireRole("admin"),
+  async (req: Request, res: Response): Promise<void> => {
+    const params = AdminUpdateProductFinishesParams.safeParse(req.params);
+    const body = AdminUpdateProductFinishesBody.safeParse(req.body);
+    if (!params.success || !body.success) {
+      res.status(400).json({ error: "Invalid input" });
+      return;
+    }
+    const productId = params.data.id;
+    const { manufacturerIds, finishIds } = body.data;
+
+    const product = await db
+      .select({ id: productsTable.id })
+      .from(productsTable)
+      .where(eq(productsTable.id, productId))
+      .limit(1);
+    if (product.length === 0) {
+      res.status(404).json({ error: "Product not found" });
+      return;
+    }
+
+    if (manufacturerIds.length > 0) {
+      const found = await db
+        .select({ id: manufacturersTable.id })
+        .from(manufacturersTable)
+        .where(inArray(manufacturersTable.id, manufacturerIds));
+      if (found.length !== new Set(manufacturerIds).size) {
+        res.status(400).json({ error: "Unknown manufacturer in pool list" });
+        return;
+      }
+    }
+    if (finishIds.length > 0) {
+      const found = await db
+        .select({ id: finishesTable.id })
+        .from(finishesTable)
+        .where(inArray(finishesTable.id, finishIds));
+      if (found.length !== new Set(finishIds).size) {
+        res.status(400).json({ error: "Unknown finish id in picks" });
+        return;
+      }
+    }
+
+    const previousConfig = await loadFinishesConfig(productId);
+    try {
+      await db.transaction(async (tx) => {
+        await tx
+          .delete(productFinishPoolsTable)
+          .where(eq(productFinishPoolsTable.productId, productId));
+        if (manufacturerIds.length > 0) {
+          const dedup = Array.from(new Set(manufacturerIds));
+          await tx.insert(productFinishPoolsTable).values(
+            dedup.map((mid) => ({
+              productId,
+              manufacturerId: mid,
+            })),
+          );
+        }
+
+        await tx
+          .delete(productFinishOptionsTable)
+          .where(eq(productFinishOptionsTable.productId, productId));
+        if (finishIds.length > 0) {
+          const dedup = Array.from(new Set(finishIds));
+          await tx.insert(productFinishOptionsTable).values(
+            dedup.map((fid, i) => ({
+              productId,
+              finishId: fid,
+              displayOrder: i,
+            })),
+          );
+        }
+      });
+    } catch (err) {
+      req.log.error({ err }, "Failed to save product finishes");
+      res.status(500).json({ error: "Failed to save product finishes" });
+      return;
+    }
+
+    const newConfig = await loadFinishesConfig(productId);
+    await recordHistory(req, {
+      entityType: "product_finishes",
       entityId: productId,
       changeType: "replace",
       snapshot: newConfig,

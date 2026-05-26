@@ -265,6 +265,25 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CatalogFabricsResponse"
+  /catalog/manufacturer-finishes:
+    get:
+      operationId: listCatalogManufacturerFinishes
+      tags: [products]
+      summary: Public list of all active manufacturer finishes offered as product options
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter finishes by name or item number (case-insensitive substring match)
+      responses:
+        "200":
+          description: Active finishes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CatalogFinishesResponse"
   /products/by-slug/{slug}:
     get:
       operationId: getCatalogProductBySlug
@@ -2046,6 +2065,179 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AdminProductFabricsConfig"
+        "404":
+          description: Product not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+  /admin/finishes:
+    get:
+      operationId: adminListFinishes
+      tags: [admin-products]
+      summary: List all finishes across manufacturers (admin)
+      responses:
+        "200":
+          description: All finishes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminFinish"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "403":
+          description: Not admin
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+    post:
+      operationId: adminCreateFinish
+      tags: [admin-products]
+      summary: Create a new finish
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminCreateFinishRequest"
+      responses:
+        "201":
+          description: Created finish
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminFinish" }
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "403":
+          description: Not admin
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "409":
+          description: Name already exists for this manufacturer
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+  /admin/finishes/{id}:
+    put:
+      operationId: adminUpdateFinish
+      tags: [admin-products]
+      summary: Update a finish
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUpdateFinishRequest"
+      responses:
+        "200":
+          description: Updated finish
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminFinish" }
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "404":
+          description: Finish not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "409":
+          description: Name already exists for this manufacturer
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+    delete:
+      operationId: adminDeleteFinish
+      tags: [admin-products]
+      summary: Delete a finish (only if not referenced by any product options)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Finish not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "409":
+          description: Finish is in use and cannot be deleted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+  /admin/products/{id}/finishes:
+    get:
+      operationId: adminGetProductFinishes
+      tags: [admin-products]
+      summary: Get a product's finish pools and individual finish picks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Finish configuration for the product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminProductFinishesConfig"
+        "404":
+          description: Product not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+    put:
+      operationId: adminUpdateProductFinishes
+      tags: [admin-products]
+      summary: Replace a product's finish pools and individual finish picks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUpdateProductFinishesRequest"
+      responses:
+        "200":
+          description: Updated configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminProductFinishesConfig"
         "404":
           description: Product not found
           content:
@@ -7953,6 +8145,118 @@ components:
       required:
         - manufacturerIds
         - fabricIds
+    CatalogFinish:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        itemNumber: { type: ["string", "null"] }
+        manufacturerName: { type: string }
+        imageUrl: { type: ["string", "null"] }
+        description: { type: ["string", "null"] }
+        displayOrder: { type: integer }
+      required:
+        - id
+        - name
+        - itemNumber
+        - manufacturerName
+        - imageUrl
+        - description
+        - displayOrder
+    CatalogFinishesResponse:
+      type: object
+      properties:
+        finishes:
+          type: array
+          items:
+            $ref: "#/components/schemas/CatalogFinish"
+      required:
+        - finishes
+    AdminFinish:
+      type: object
+      properties:
+        id: { type: integer }
+        manufacturerId: { type: integer }
+        manufacturerName: { type: string }
+        itemNumber: { type: ["string", "null"] }
+        name: { type: string }
+        imageUrl: { type: ["string", "null"] }
+        description: { type: ["string", "null"] }
+        isActive: { type: boolean }
+        displayOrder: { type: integer }
+      required:
+        - id
+        - manufacturerId
+        - manufacturerName
+        - itemNumber
+        - name
+        - imageUrl
+        - description
+        - isActive
+        - displayOrder
+    AdminCreateFinishRequest:
+      type: object
+      properties:
+        manufacturerId: { type: integer }
+        itemNumber: { type: ["string", "null"] }
+        name: { type: string, minLength: 1 }
+        imageUrl: { type: ["string", "null"] }
+        description: { type: ["string", "null"] }
+        isActive: { type: boolean }
+        displayOrder: { type: integer }
+      required:
+        - manufacturerId
+        - name
+    AdminUpdateFinishRequest:
+      type: object
+      properties:
+        manufacturerId: { type: integer }
+        itemNumber: { type: ["string", "null"] }
+        name: { type: string, minLength: 1 }
+        imageUrl: { type: ["string", "null"] }
+        description: { type: ["string", "null"] }
+        isActive: { type: boolean }
+        displayOrder: { type: integer }
+    AdminProductFinishPool:
+      type: object
+      properties:
+        manufacturerId: { type: integer }
+        manufacturerName: { type: string }
+        finishCount:
+          type: integer
+          description: Number of currently active finishes in this pool.
+      required:
+        - manufacturerId
+        - manufacturerName
+        - finishCount
+    AdminProductFinishesConfig:
+      type: object
+      properties:
+        pools:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminProductFinishPool"
+        finishIds:
+          type: array
+          items: { type: integer }
+          description: Individually-picked finish IDs (extra finishes on top of any pools).
+      required:
+        - pools
+        - finishIds
+    AdminUpdateProductFinishesRequest:
+      type: object
+      properties:
+        manufacturerIds:
+          type: array
+          items: { type: integer }
+          description: Replace pools with these manufacturer IDs.
+        finishIds:
+          type: array
+          items: { type: integer }
+          description: Replace individual finish picks with these finish IDs.
+      required:
+        - manufacturerIds
+        - finishIds
     AdminProductAttribute:
       type: object
       properties:

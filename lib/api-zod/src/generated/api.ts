@@ -227,6 +227,32 @@ export const ListCatalogFabricsResponse = zod.object({
 });
 
 /**
+ * @summary Public list of all active manufacturer finishes offered as product options
+ */
+export const ListCatalogManufacturerFinishesQueryParams = zod.object({
+  q: zod.coerce
+    .string()
+    .optional()
+    .describe(
+      "Filter finishes by name or item number (case-insensitive substring match)",
+    ),
+});
+
+export const ListCatalogManufacturerFinishesResponse = zod.object({
+  finishes: zod.array(
+    zod.object({
+      id: zod.number(),
+      name: zod.string(),
+      itemNumber: zod.string().nullable(),
+      manufacturerName: zod.string(),
+      imageUrl: zod.string().nullable(),
+      description: zod.string().nullable(),
+      displayOrder: zod.number(),
+    }),
+  ),
+});
+
+/**
  * @summary Public product detail page payload
  */
 export const GetCatalogProductBySlugParams = zod.object({
@@ -2387,6 +2413,131 @@ export const AdminUpdateProductFabricsResponse = zod.object({
     .array(zod.number())
     .describe(
       "Individually-picked fabric IDs (extra fabrics on top of any pools).",
+    ),
+});
+
+/**
+ * @summary List all finishes across manufacturers (admin)
+ */
+export const AdminListFinishesResponseItem = zod.object({
+  id: zod.number(),
+  manufacturerId: zod.number(),
+  manufacturerName: zod.string(),
+  itemNumber: zod.string().nullable(),
+  name: zod.string(),
+  imageUrl: zod.string().nullable(),
+  description: zod.string().nullable(),
+  isActive: zod.boolean(),
+  displayOrder: zod.number(),
+});
+export const AdminListFinishesResponse = zod.array(
+  AdminListFinishesResponseItem,
+);
+
+/**
+ * @summary Create a new finish
+ */
+
+export const AdminCreateFinishBody = zod.object({
+  manufacturerId: zod.number(),
+  itemNumber: zod.string().nullish(),
+  name: zod.string().min(1),
+  imageUrl: zod.string().nullish(),
+  description: zod.string().nullish(),
+  isActive: zod.boolean().optional(),
+  displayOrder: zod.number().optional(),
+});
+
+/**
+ * @summary Update a finish
+ */
+export const AdminUpdateFinishParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminUpdateFinishBody = zod.object({
+  manufacturerId: zod.number().optional(),
+  itemNumber: zod.string().nullish(),
+  name: zod.string().min(1).optional(),
+  imageUrl: zod.string().nullish(),
+  description: zod.string().nullish(),
+  isActive: zod.boolean().optional(),
+  displayOrder: zod.number().optional(),
+});
+
+export const AdminUpdateFinishResponse = zod.object({
+  id: zod.number(),
+  manufacturerId: zod.number(),
+  manufacturerName: zod.string(),
+  itemNumber: zod.string().nullable(),
+  name: zod.string(),
+  imageUrl: zod.string().nullable(),
+  description: zod.string().nullable(),
+  isActive: zod.boolean(),
+  displayOrder: zod.number(),
+});
+
+/**
+ * @summary Delete a finish (only if not referenced by any product options)
+ */
+export const AdminDeleteFinishParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
+ * @summary Get a product's finish pools and individual finish picks
+ */
+export const AdminGetProductFinishesParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminGetProductFinishesResponse = zod.object({
+  pools: zod.array(
+    zod.object({
+      manufacturerId: zod.number(),
+      manufacturerName: zod.string(),
+      finishCount: zod
+        .number()
+        .describe("Number of currently active finishes in this pool."),
+    }),
+  ),
+  finishIds: zod
+    .array(zod.number())
+    .describe(
+      "Individually-picked finish IDs (extra finishes on top of any pools).",
+    ),
+});
+
+/**
+ * @summary Replace a product's finish pools and individual finish picks
+ */
+export const AdminUpdateProductFinishesParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminUpdateProductFinishesBody = zod.object({
+  manufacturerIds: zod
+    .array(zod.number())
+    .describe("Replace pools with these manufacturer IDs."),
+  finishIds: zod
+    .array(zod.number())
+    .describe("Replace individual finish picks with these finish IDs."),
+});
+
+export const AdminUpdateProductFinishesResponse = zod.object({
+  pools: zod.array(
+    zod.object({
+      manufacturerId: zod.number(),
+      manufacturerName: zod.string(),
+      finishCount: zod
+        .number()
+        .describe("Number of currently active finishes in this pool."),
+    }),
+  ),
+  finishIds: zod
+    .array(zod.number())
+    .describe(
+      "Individually-picked finish IDs (extra finishes on top of any pools).",
     ),
 });
 

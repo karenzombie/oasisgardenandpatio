@@ -65,6 +65,27 @@ export default function Materials() {
               </div>
             </Link>
 
+            {/* Finishes — static card */}
+            <Link
+              href="/finishes"
+              className="group bg-card border border-border rounded-md overflow-hidden flex flex-col hover:border-primary/40 transition-colors"
+            >
+              <div className="aspect-[4/3] bg-muted overflow-hidden flex items-center justify-center">
+                <span className="text-xs uppercase tracking-widest text-muted-foreground/70">
+                  Frame finishes
+                </span>
+              </div>
+              <div className="p-5 flex-1 flex flex-col">
+                <h2 className="font-serif text-2xl text-foreground mb-1">Finishes</h2>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Browse manufacturer powder coats, wood stains, and metal patinas applied to outdoor frames.
+                </p>
+                <span className="mt-4 text-xs uppercase tracking-wide text-primary/70 group-hover:text-primary transition-colors">
+                  Browse finishes →
+                </span>
+              </div>
+            </Link>
+
             {materials.map((m) => {
               const imgSrc = m.imageUrl
                 ? m.imageUrl.startsWith("http")

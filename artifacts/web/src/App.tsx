@@ -21,6 +21,7 @@ import SearchPage from "@/pages/Search";
 import Product from "@/pages/Product";
 import ShippingReturns from "@/pages/ShippingReturns";
 import Fabrics from "@/pages/Fabrics";
+import Finishes from "@/pages/Finishes";
 import Materials from "@/pages/Materials";
 import Manufacturers from "@/pages/Manufacturers";
 import Commercial from "@/pages/Commercial";
@@ -62,6 +63,7 @@ function CustomerRouter() {
         <Route path="/shipping-returns" component={ShippingReturns} />
         <Route path="/warranty">{() => <ComingSoon />}</Route>
         <Route path="/fabrics" component={Fabrics} />
+        <Route path="/finishes" component={Finishes} />
         <Route path="/commercial" component={Commercial} />
         {/* Legacy /login and /signup routes redirect to the Clerk-backed
             sign-in / sign-up flow. */}
