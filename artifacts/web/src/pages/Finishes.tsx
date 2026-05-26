@@ -218,9 +218,9 @@ export default function Finishes() {
 
       <h1 className="font-serif text-4xl md:text-5xl mb-4">Finishes</h1>
       <p className="text-muted-foreground mb-12 max-w-2xl">
-        Frame finishes — powder coats, wood stains, and metal patinas — applied
-        by our manufacturers. Click any swatch to see the products it's offered
-        on, or stop by the showroom to see and feel each sample in person.
+        Browse the available finish options offered by our manufacturers. Click
+        any swatch to see the products it's offered on, or stop by the showroom
+        to see and feel each sample in person.
       </p>
 
       {isLoading ? (
