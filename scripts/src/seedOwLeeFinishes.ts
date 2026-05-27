@@ -125,7 +125,11 @@ async function main() {
           displayOrder,
         })
         .onConflictDoUpdate({
-          target: [finishesTable.manufacturerId, finishesTable.name],
+          target: [
+            finishesTable.manufacturerId,
+            finishesTable.name,
+            finishesTable.description,
+          ],
           set: {
             itemNumber: f.code,
             imageUrl: f.imageUrl,

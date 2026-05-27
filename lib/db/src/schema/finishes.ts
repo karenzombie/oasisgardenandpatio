@@ -58,6 +58,13 @@ export const finishesTable = pgTable(
     // name can exist in multiple finish categories for the same manufacturer
     // (e.g. Tropitone "Roca" exists as both a Frame Finish and a TropiKane
     // Weave). item_number is not enforced because it's nullable.
+    // Uniqueness on (manufacturer, name, description) with NULLS NOT DISTINCT
+    // so the same color name can exist in multiple finish categories for the
+    // same manufacturer (e.g. Tropitone "Roca" as Frame Finish and as
+    // TropiKane Weave), while Treasure Garden's null-description rows are
+    // still treated as duplicates of each other.
+    // NOTE: the DB constraint is NULLS NOT DISTINCT — applied via direct
+    // ALTER TABLE since Drizzle 0.45 doesn't expose that modifier.
     unique("finishes_manufacturer_name_description_unique").on(
       t.manufacturerId,
       t.name,
