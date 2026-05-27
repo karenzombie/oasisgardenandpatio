@@ -59,7 +59,6 @@ function ScrollToTop() {
 function CustomerRouter() {
   return (
     <Layout>
-      <ScrollToTop />
       <Switch>
         <Route path="/" component={Home} />
         <Route path="/contact" component={Contact} />
@@ -140,6 +139,8 @@ function CustomerWithClerk() {
 
 function Router() {
   const [loc] = useLocation();
+  // Mounted here (above both CustomerRouter and StaffRouter) so every
+  // client-side navigation — customer or staff — resets scroll to the top.
 
   const isStaff =
     loc === "/staff" ||
@@ -152,7 +153,12 @@ function Router() {
   // Staff portal keeps its own email/password + 2FA flow and is intentionally
   // NOT wrapped in ClerkProvider. Customer routes mount Clerk + the
   // session bridge.
-  return isStaff ? <StaffRouter /> : <CustomerWithClerk />;
+  return (
+    <>
+      <ScrollToTop />
+      {isStaff ? <StaffRouter /> : <CustomerWithClerk />}
+    </>
+  );
 }
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
