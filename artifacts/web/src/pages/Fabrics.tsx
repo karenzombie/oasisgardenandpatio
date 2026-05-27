@@ -20,8 +20,6 @@ type FabricItem = {
   colorFamily: string | null;
 };
 
-const ALL_COLORS = "All";
-
 function FabricSwatch({ fabric }: { fabric: FabricItem }) {
   return (
     <div className="group">
@@ -55,9 +53,19 @@ function FabricSwatch({ fabric }: { fabric: FabricItem }) {
 }
 
 export default function Fabrics() {
-  const [colorFilter, setColorFilter] = useState<string>(ALL_COLORS);
+  const [selectedColors, setSelectedColors] = useState<Set<string>>(new Set());
 
   const { data, isLoading, error } = useListCatalogFabrics();
+
+  const toggleColor = (c: string) => {
+    setSelectedColors((prev) => {
+      const next = new Set(prev);
+      if (next.has(c)) next.delete(c);
+      else next.add(c);
+      return next;
+    });
+  };
+  const clearColors = () => setSelectedColors(new Set());
 
   // Derive the set of color families actually present across all active
   // fabrics so the filter bar mirrors what's available rather than a hardcoded
@@ -72,10 +80,13 @@ export default function Fabrics() {
 
   const grouped = useMemo(() => {
     const m = new Map<string, FabricItem[]>();
+    const activeColors = new Set(
+      Array.from(selectedColors).map((c) => c.toLowerCase()),
+    );
     for (const f of data?.fabrics ?? []) {
       if (
-        colorFilter !== ALL_COLORS &&
-        (f.colorFamily ?? "").toLowerCase() !== colorFilter.toLowerCase()
+        activeColors.size > 0 &&
+        !activeColors.has((f.colorFamily ?? "").toLowerCase())
       ) {
         continue;
       }
@@ -85,7 +96,7 @@ export default function Fabrics() {
       m.set(key, list);
     }
     return Array.from(m.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-  }, [data, colorFilter]);
+  }, [data, selectedColors]);
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-6xl">
@@ -104,38 +115,42 @@ export default function Fabrics() {
         to see and feel the full range of patterns and weights.
       </p>
 
-      {/* Color family filter */}
+      {/* Color family filter — multi-select */}
       {colorFamilies.length > 0 && (
         <div className="mb-8">
-          <p className="text-xs uppercase tracking-widest text-muted-foreground mb-3">
-            Filter by color
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => setColorFilter(ALL_COLORS)}
-              className={`px-3 py-1.5 text-xs uppercase tracking-wider border transition-colors ${
-                colorFilter === ALL_COLORS
-                  ? "bg-foreground text-background border-foreground"
-                  : "bg-background text-foreground border-border hover:border-foreground/40"
-              }`}
-            >
-              All
-            </button>
-            {colorFamilies.map((c) => (
+          <div className="flex items-center justify-between mb-3 gap-3">
+            <p className="text-xs uppercase tracking-widest text-muted-foreground">
+              Filter by color {selectedColors.size > 0 && `(${selectedColors.size})`}
+            </p>
+            {selectedColors.size > 0 && (
               <button
-                key={c}
                 type="button"
-                onClick={() => setColorFilter(c)}
-                className={`px-3 py-1.5 text-xs uppercase tracking-wider border transition-colors ${
-                  colorFilter === c
-                    ? "bg-foreground text-background border-foreground"
-                    : "bg-background text-foreground border-border hover:border-foreground/40"
-                }`}
+                onClick={clearColors}
+                className="text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
               >
-                {c}
+                Clear
               </button>
-            ))}
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {colorFamilies.map((c) => {
+              const active = selectedColors.has(c);
+              return (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => toggleColor(c)}
+                  aria-pressed={active}
+                  className={`px-3 py-1.5 text-xs uppercase tracking-wider border transition-colors ${
+                    active
+                      ? "bg-foreground text-background border-foreground"
+                      : "bg-background text-foreground border-border hover:border-foreground/40"
+                  }`}
+                >
+                  {c}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -150,9 +165,9 @@ export default function Fabrics() {
         </p>
       ) : grouped.length === 0 ? (
         <p className="text-muted-foreground">
-          {colorFilter === ALL_COLORS
+          {selectedColors.size === 0
             ? "No fabrics available yet."
-            : `No ${colorFilter.toLowerCase()} fabrics available.`}
+            : `No fabrics match the selected color${selectedColors.size > 1 ? "s" : ""}.`}
         </p>
       ) : (
         <Accordion type="multiple" className="divide-y divide-border border-t border-border">
