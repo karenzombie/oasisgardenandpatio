@@ -44,9 +44,22 @@ import StaffRouter from "@/staff/StaffRouter";
 
 const queryClient = new QueryClient();
 
+// Wouter doesn't restore scroll position on client-side route changes the way
+// a browser does on a real navigation, so each new page would inherit the
+// previous page's scroll offset (e.g. landing mid-page after clicking from
+// Materials into Fabrics). Reset to the top whenever the path changes.
+function ScrollToTop() {
+  const [pathname] = useLocation();
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [pathname]);
+  return null;
+}
+
 function CustomerRouter() {
   return (
     <Layout>
+      <ScrollToTop />
       <Switch>
         <Route path="/" component={Home} />
         <Route path="/contact" component={Contact} />
