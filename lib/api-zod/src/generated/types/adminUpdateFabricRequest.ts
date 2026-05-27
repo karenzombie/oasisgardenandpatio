@@ -16,6 +16,9 @@ export interface AdminUpdateFabricRequest {
   swatchImageUrl?: string | null;
   /** @nullable */
   grade?: string | null;
+  /** @nullable */
+  colorFamily?: string | null;
+  isStripe?: boolean;
   isActive?: boolean;
   displayOrder?: number;
 }

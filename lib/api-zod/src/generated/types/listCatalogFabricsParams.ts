@@ -11,4 +11,8 @@ export type ListCatalogFabricsParams = {
    * Filter fabrics by name or item number (case-insensitive substring match)
    */
   q?: string;
+  /**
+   * Filter to fabrics with this color family (case-insensitive exact match)
+   */
+  colorFamily?: string;
 };

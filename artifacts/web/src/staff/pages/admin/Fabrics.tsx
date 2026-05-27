@@ -52,12 +52,31 @@ interface FabricFormState {
   itemNumber: string;
   name: string;
   grade: string;
+  colorFamily: string;
+  isStripe: boolean;
   swatchImageUrl: string;
   isActive: boolean;
   displayOrder: string;
 }
 
 const GRADE_OPTIONS = ["A", "B", "C"] as const;
+const COLOR_FAMILY_OPTIONS = [
+  "Beige",
+  "Black",
+  "Blue",
+  "Brown",
+  "Gray",
+  "Green",
+  "Multicolor",
+  "Navy",
+  "Orange",
+  "Pink",
+  "Red",
+  "Teal",
+  "White",
+  "Yellow",
+] as const;
+const ALL_COLOR_FAMILIES = "__all_colors__";
 
 function emptyForm(mfgId?: string): FabricFormState {
   return {
@@ -65,6 +84,8 @@ function emptyForm(mfgId?: string): FabricFormState {
     itemNumber: "",
     name: "",
     grade: "",
+    colorFamily: "",
+    isStripe: false,
     swatchImageUrl: "",
     isActive: true,
     displayOrder: "0",
@@ -77,6 +98,8 @@ function formFromFabric(f: AdminFabric): FabricFormState {
     itemNumber: f.itemNumber,
     name: f.name,
     grade: f.grade ?? "",
+    colorFamily: f.colorFamily ?? "",
+    isStripe: f.isStripe,
     swatchImageUrl: f.swatchImageUrl ?? "",
     isActive: f.isActive,
     displayOrder: String(f.displayOrder),
@@ -95,6 +118,8 @@ export default function Fabrics() {
 
   const [search, setSearch] = useState("");
   const [vendorFilter, setVendorFilter] = useState(ALL_VENDORS);
+  const [colorFilter, setColorFilter] = useState(ALL_COLOR_FAMILIES);
+  const [stripeFilter, setStripeFilter] = useState<"all" | "stripe" | "solid">("all");
 
   const [editing, setEditing] = useState<AdminFabric | "new" | null>(null);
   const [form, setForm] = useState<FabricFormState>(emptyForm());
@@ -111,6 +136,9 @@ export default function Fabrics() {
     const q = search.trim().toLowerCase();
     return fabrics.filter((f) => {
       if (vendorFilter !== ALL_VENDORS && String(f.manufacturerId) !== vendorFilter) return false;
+      if (colorFilter !== ALL_COLOR_FAMILIES && (f.colorFamily ?? "").toLowerCase() !== colorFilter.toLowerCase()) return false;
+      if (stripeFilter === "stripe" && !f.isStripe) return false;
+      if (stripeFilter === "solid" && f.isStripe) return false;
       if (!q) return true;
       return (
         f.name.toLowerCase().includes(q) ||
@@ -118,7 +146,7 @@ export default function Fabrics() {
         f.manufacturerName.toLowerCase().includes(q)
       );
     });
-  }, [fabrics, search, vendorFilter]);
+  }, [fabrics, search, vendorFilter, colorFilter, stripeFilter]);
 
   function openNew() {
     setForm(emptyForm(vendorFilter !== ALL_VENDORS ? vendorFilter : undefined));
@@ -180,6 +208,8 @@ export default function Fabrics() {
       itemNumber,
       name,
       grade: form.grade || null,
+      colorFamily: form.colorFamily || null,
+      isStripe: form.isStripe,
       swatchImageUrl: form.swatchImageUrl.trim() || null,
       isActive: form.isActive,
       displayOrder,
@@ -239,7 +269,7 @@ export default function Fabrics() {
             />
           </div>
           <Select value={vendorFilter} onValueChange={setVendorFilter}>
-            <SelectTrigger className="w-[220px]">
+            <SelectTrigger className="w-[200px]">
               <SelectValue placeholder="All vendors" />
             </SelectTrigger>
             <SelectContent>
@@ -249,6 +279,27 @@ export default function Fabrics() {
                   {m.name}
                 </SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+          <Select value={colorFilter} onValueChange={setColorFilter}>
+            <SelectTrigger className="w-[170px]">
+              <SelectValue placeholder="All colors" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL_COLOR_FAMILIES}>All colors</SelectItem>
+              {COLOR_FAMILY_OPTIONS.map((c) => (
+                <SelectItem key={c} value={c}>{c}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={stripeFilter} onValueChange={(v) => setStripeFilter(v as "all" | "stripe" | "solid")}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="Pattern" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Stripe & solid</SelectItem>
+              <SelectItem value="stripe">Stripe only</SelectItem>
+              <SelectItem value="solid">Solid only</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -279,6 +330,8 @@ export default function Fabrics() {
                   <th className="px-4 py-3 font-semibold">Name</th>
                   <th className="px-4 py-3 font-semibold">Vendor</th>
                   <th className="px-4 py-3 font-semibold text-center">Grade</th>
+                  <th className="px-4 py-3 font-semibold">Color</th>
+                  <th className="px-4 py-3 font-semibold text-center">Stripe</th>
                   <th className="px-4 py-3 font-semibold text-center">Order</th>
                   <th className="px-4 py-3 font-semibold text-center">Active</th>
                   <th className="px-4 py-3 font-semibold text-right">Actions</th>
@@ -310,6 +363,20 @@ export default function Fabrics() {
                         <span className="inline-flex items-center justify-center size-6 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold border border-slate-200">
                           {f.grade}
                         </span>
+                      ) : (
+                        <span className="text-slate-300 text-xs">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-2.5 text-slate-600">
+                      {f.colorFamily ? (
+                        <span className="text-xs">{f.colorFamily}</span>
+                      ) : (
+                        <span className="text-slate-300 text-xs">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-2.5 text-center">
+                      {f.isStripe ? (
+                        <Badge variant="secondary" className="text-xs">Stripe</Badge>
                       ) : (
                         <span className="text-slate-300 text-xs">—</span>
                       )}
@@ -437,6 +504,42 @@ export default function Fabrics() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="fab-color">Color family</Label>
+                <Select
+                  value={form.colorFamily}
+                  onValueChange={(v) => setForm((f) => ({ ...f, colorFamily: v === "__none__" ? "" : v }))}
+                >
+                  <SelectTrigger id="fab-color">
+                    <SelectValue placeholder="— Unset" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">— Unset</SelectItem>
+                    {COLOR_FAMILY_OPTIONS.map((c) => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="fab-stripe" className="block">Pattern</Label>
+                <div className="flex items-center gap-2 h-10">
+                  <Switch
+                    id="fab-stripe"
+                    checked={form.isStripe}
+                    onCheckedChange={(v) => setForm((f) => ({ ...f, isStripe: v }))}
+                  />
+                  <Label htmlFor="fab-stripe" className="cursor-pointer text-sm font-normal">
+                    Stripe fabric
+                  </Label>
+                </div>
+                <p className="text-xs text-slate-400">
+                  Stripe fabrics will eventually require paired-umbrella orders.
+                </p>
               </div>
             </div>
 

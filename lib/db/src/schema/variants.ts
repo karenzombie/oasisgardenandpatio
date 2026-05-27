@@ -35,6 +35,13 @@ export const fabricsTable = pgTable(
     name: text("name").notNull(),
     swatchImageUrl: text("swatch_image_url"),
     grade: text("grade"),
+    // Color family (e.g. "Blue", "Beige", "Multicolor") used for storefront
+    // search/filter. Plain text — values normalized at import time.
+    colorFamily: text("color_family"),
+    // Stripe fabrics will eventually trigger a paired-umbrella ordering rule
+    // (any umbrella ordered with a stripe fabric must ship in pairs). Surfaced
+    // in staff/admin only — not exposed on the public catalog response.
+    isStripe: boolean("is_stripe").notNull().default(false),
     isActive: boolean("is_active").notNull().default(true),
     displayOrder: integer("display_order").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true })

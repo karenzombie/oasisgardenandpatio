@@ -211,6 +211,12 @@ export const ListCatalogFabricsQueryParams = zod.object({
     .describe(
       "Filter fabrics by name or item number (case-insensitive substring match)",
     ),
+  colorFamily: zod.coerce
+    .string()
+    .optional()
+    .describe(
+      "Filter to fabrics with this color family (case-insensitive exact match)",
+    ),
 });
 
 export const ListCatalogFabricsResponse = zod.object({
@@ -222,6 +228,18 @@ export const ListCatalogFabricsResponse = zod.object({
       manufacturerName: zod.string(),
       manufacturerLogoUrl: zod.string().nullable(),
       swatchImageUrl: zod.string().nullable(),
+      grade: zod
+        .string()
+        .nullable()
+        .describe(
+          'Fabric grade (e.g. \"A\", \"B\", \"C\"). Affects price tiers.',
+        ),
+      colorFamily: zod
+        .string()
+        .nullable()
+        .describe(
+          'Normalized color family (e.g. \"Blue\", \"Beige\") used for filtering.',
+        ),
       displayOrder: zod.number(),
     }),
   ),
@@ -366,6 +384,18 @@ export const GetCatalogProductBySlugResponse = zod
             manufacturerName: zod.string(),
             manufacturerLogoUrl: zod.string().nullable(),
             swatchImageUrl: zod.string().nullable(),
+            grade: zod
+              .string()
+              .nullable()
+              .describe(
+                'Fabric grade (e.g. \"A\", \"B\", \"C\"). Affects price tiers.',
+              ),
+            colorFamily: zod
+              .string()
+              .nullable()
+              .describe(
+                'Normalized color family (e.g. \"Blue\", \"Beige\") used for filtering.',
+              ),
             displayOrder: zod.number(),
           }),
         )
@@ -2251,6 +2281,18 @@ export const AdminGetProductPickerResponse = zod
         manufacturerName: zod.string(),
         manufacturerLogoUrl: zod.string().nullable(),
         swatchImageUrl: zod.string().nullable(),
+        grade: zod
+          .string()
+          .nullable()
+          .describe(
+            'Fabric grade (e.g. \"A\", \"B\", \"C\"). Affects price tiers.',
+          ),
+        colorFamily: zod
+          .string()
+          .nullable()
+          .describe(
+            'Normalized color family (e.g. \"Blue\", \"Beige\") used for filtering.',
+          ),
         displayOrder: zod.number(),
       }),
     ),
@@ -2337,6 +2379,8 @@ export const AdminListFabricsResponseItem = zod.object({
   name: zod.string(),
   swatchImageUrl: zod.string().nullable(),
   grade: zod.string().nullable(),
+  colorFamily: zod.string().nullable(),
+  isStripe: zod.boolean(),
   isActive: zod.boolean(),
   displayOrder: zod.number(),
 });
@@ -2352,6 +2396,8 @@ export const AdminCreateFabricBody = zod.object({
   name: zod.string().min(1),
   swatchImageUrl: zod.string().nullish(),
   grade: zod.string().nullish(),
+  colorFamily: zod.string().nullish(),
+  isStripe: zod.boolean().optional(),
   isActive: zod.boolean().optional(),
   displayOrder: zod.number().optional(),
 });
@@ -2369,6 +2415,8 @@ export const AdminUpdateFabricBody = zod.object({
   name: zod.string().min(1).optional(),
   swatchImageUrl: zod.string().nullish(),
   grade: zod.string().nullish(),
+  colorFamily: zod.string().nullish(),
+  isStripe: zod.boolean().optional(),
   isActive: zod.boolean().optional(),
   displayOrder: zod.number().optional(),
 });
@@ -2381,6 +2429,8 @@ export const AdminUpdateFabricResponse = zod.object({
   name: zod.string(),
   swatchImageUrl: zod.string().nullable(),
   grade: zod.string().nullable(),
+  colorFamily: zod.string().nullable(),
+  isStripe: zod.boolean(),
   isActive: zod.boolean(),
   displayOrder: zod.number(),
 });

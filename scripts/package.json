@@ -11,6 +11,7 @@
     "upload-swatches": "tsx ./src/uploadSwatches.ts",
     "seed-ow-lee-finishes": "tsx ./src/seedOwLeeFinishes.ts",
     "seed-tropitone-finishes": "tsx ./src/seedTropitoneFinishes.ts",
+    "seed-sunbrella-fabric-meta": "tsx ./src/seedSunbrellaFabricMeta.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
@@ -21,7 +22,7 @@
     "drizzle-orm": "catalog:",
     "papaparse": "^5.5.3",
     "pg": "^8.20.0",
-    "xlsx": "^0.18.5"
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
     "@types/node": "catalog:",

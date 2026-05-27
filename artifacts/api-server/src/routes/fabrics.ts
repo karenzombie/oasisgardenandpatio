@@ -17,15 +17,23 @@ router.get(
   "/catalog/fabrics",
   async (req: Request, res: Response): Promise<void> => {
     const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
-    const whereClause = q
-      ? and(
-          eq(fabricsTable.isActive, true),
-          or(
-            ilike(fabricsTable.name, `%${q}%`),
-            ilike(fabricsTable.itemNumber, `%${q}%`),
-          ),
-        )
-      : eq(fabricsTable.isActive, true);
+    const colorFamily =
+      typeof req.query.colorFamily === "string"
+        ? req.query.colorFamily.trim()
+        : "";
+
+    const conds = [eq(fabricsTable.isActive, true)];
+    if (q) {
+      const orClause = or(
+        ilike(fabricsTable.name, `%${q}%`),
+        ilike(fabricsTable.itemNumber, `%${q}%`),
+      );
+      if (orClause) conds.push(orClause);
+    }
+    if (colorFamily) {
+      conds.push(ilike(fabricsTable.colorFamily, colorFamily));
+    }
+    const whereClause = conds.length === 1 ? conds[0] : and(...conds);
 
     const rows = await db
       .select({
@@ -35,6 +43,8 @@ router.get(
         manufacturerName: manufacturersTable.name,
         manufacturerLogoUrl: manufacturersTable.logoUrl,
         swatchImageUrl: fabricsTable.swatchImageUrl,
+        grade: fabricsTable.grade,
+        colorFamily: fabricsTable.colorFamily,
         displayOrder: fabricsTable.displayOrder,
       })
       .from(fabricsTable)

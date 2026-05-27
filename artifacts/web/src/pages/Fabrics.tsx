@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useListCatalogFabrics } from "@workspace/api-client-react";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -16,7 +16,11 @@ type FabricItem = {
   manufacturerName: string;
   manufacturerLogoUrl: string | null;
   swatchImageUrl: string | null;
+  grade: string | null;
+  colorFamily: string | null;
 };
+
+const ALL_COLORS = "All";
 
 function FabricSwatch({ fabric }: { fabric: FabricItem }) {
   return (
@@ -41,23 +45,47 @@ function FabricSwatch({ fabric }: { fabric: FabricItem }) {
         {fabric.name}
       </p>
       <p className="text-xs text-muted-foreground">{fabric.itemNumber}</p>
+      {fabric.grade && (
+        <p className="text-[11px] uppercase tracking-wider text-muted-foreground/80 mt-0.5">
+          Grade {fabric.grade}
+        </p>
+      )}
     </div>
   );
 }
 
 export default function Fabrics() {
+  const [colorFilter, setColorFilter] = useState<string>(ALL_COLORS);
+
   const { data, isLoading, error } = useListCatalogFabrics();
+
+  // Derive the set of color families actually present across all active
+  // fabrics so the filter bar mirrors what's available rather than a hardcoded
+  // list that could drift.
+  const colorFamilies = useMemo(() => {
+    const set = new Set<string>();
+    for (const f of data?.fabrics ?? []) {
+      if (f.colorFamily) set.add(f.colorFamily);
+    }
+    return Array.from(set).sort();
+  }, [data]);
 
   const grouped = useMemo(() => {
     const m = new Map<string, FabricItem[]>();
     for (const f of data?.fabrics ?? []) {
+      if (
+        colorFilter !== ALL_COLORS &&
+        (f.colorFamily ?? "").toLowerCase() !== colorFilter.toLowerCase()
+      ) {
+        continue;
+      }
       const key = f.manufacturerName || "Other";
       const list = m.get(key) ?? [];
       list.push(f);
       m.set(key, list);
     }
     return Array.from(m.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-  }, [data]);
+  }, [data, colorFilter]);
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-6xl">
@@ -70,11 +98,47 @@ export default function Fabrics() {
       </nav>
 
       <h1 className="font-serif text-4xl md:text-5xl mb-4">Fabrics</h1>
-      <p className="text-muted-foreground mb-12 max-w-2xl">
+      <p className="text-muted-foreground mb-8 max-w-2xl">
         We work exclusively with solution-dyed performance fabrics from the
         leading outdoor mills. Browse the library below or stop by our showroom
         to see and feel the full range of patterns and weights.
       </p>
+
+      {/* Color family filter */}
+      {colorFamilies.length > 0 && (
+        <div className="mb-8">
+          <p className="text-xs uppercase tracking-widest text-muted-foreground mb-3">
+            Filter by color
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setColorFilter(ALL_COLORS)}
+              className={`px-3 py-1.5 text-xs uppercase tracking-wider border transition-colors ${
+                colorFilter === ALL_COLORS
+                  ? "bg-foreground text-background border-foreground"
+                  : "bg-background text-foreground border-border hover:border-foreground/40"
+              }`}
+            >
+              All
+            </button>
+            {colorFamilies.map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setColorFilter(c)}
+                className={`px-3 py-1.5 text-xs uppercase tracking-wider border transition-colors ${
+                  colorFilter === c
+                    ? "bg-foreground text-background border-foreground"
+                    : "bg-background text-foreground border-border hover:border-foreground/40"
+                }`}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {isLoading ? (
         <div className="py-16 text-center">
@@ -85,7 +149,11 @@ export default function Fabrics() {
           Could not load fabrics. Please try again.
         </p>
       ) : grouped.length === 0 ? (
-        <p className="text-muted-foreground">No fabrics available yet.</p>
+        <p className="text-muted-foreground">
+          {colorFilter === ALL_COLORS
+            ? "No fabrics available yet."
+            : `No ${colorFilter.toLowerCase()} fabrics available.`}
+        </p>
       ) : (
         <Accordion type="multiple" className="divide-y divide-border border-t border-border">
           {grouped.map(([brand, list]) => (

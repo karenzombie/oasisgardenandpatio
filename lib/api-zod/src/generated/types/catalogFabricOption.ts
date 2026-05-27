@@ -15,5 +15,15 @@ export interface CatalogFabricOption {
   manufacturerLogoUrl: string | null;
   /** @nullable */
   swatchImageUrl: string | null;
+  /**
+   * Fabric grade (e.g. "A", "B", "C"). Affects price tiers.
+   * @nullable
+   */
+  grade: string | null;
+  /**
+   * Normalized color family (e.g. "Blue", "Beige") used for filtering.
+   * @nullable
+   */
+  colorFamily: string | null;
   displayOrder: number;
 }

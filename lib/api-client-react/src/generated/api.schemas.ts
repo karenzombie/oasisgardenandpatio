@@ -1265,6 +1265,16 @@ export interface CatalogFabricOption {
   manufacturerLogoUrl: string | null;
   /** @nullable */
   swatchImageUrl: string | null;
+  /**
+   * Fabric grade (e.g. "A", "B", "C"). Affects price tiers.
+   * @nullable
+   */
+  grade: string | null;
+  /**
+   * Normalized color family (e.g. "Blue", "Beige") used for filtering.
+   * @nullable
+   */
+  colorFamily: string | null;
   displayOrder: number;
 }
 
@@ -3362,6 +3372,9 @@ export interface AdminFabric {
   swatchImageUrl: string | null;
   /** @nullable */
   grade: string | null;
+  /** @nullable */
+  colorFamily: string | null;
+  isStripe: boolean;
   isActive: boolean;
   displayOrder: number;
 }
@@ -3376,6 +3389,9 @@ export interface AdminCreateFabricRequest {
   swatchImageUrl?: string | null;
   /** @nullable */
   grade?: string | null;
+  /** @nullable */
+  colorFamily?: string | null;
+  isStripe?: boolean;
   isActive?: boolean;
   displayOrder?: number;
 }
@@ -3390,6 +3406,9 @@ export interface AdminUpdateFabricRequest {
   swatchImageUrl?: string | null;
   /** @nullable */
   grade?: string | null;
+  /** @nullable */
+  colorFamily?: string | null;
+  isStripe?: boolean;
   isActive?: boolean;
   displayOrder?: number;
 }
@@ -3761,6 +3780,10 @@ export type ListCatalogFabricsParams = {
    * Filter fabrics by name or item number (case-insensitive substring match)
    */
   q?: string;
+  /**
+   * Filter to fabrics with this color family (case-insensitive exact match)
+   */
+  colorFamily?: string;
 };
 
 export type ListCatalogManufacturerFinishesParams = {

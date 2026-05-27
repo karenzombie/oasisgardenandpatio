@@ -258,6 +258,12 @@ paths:
           schema:
             type: string
           description: Filter fabrics by name or item number (case-insensitive substring match)
+        - name: colorFamily
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter to fabrics with this color family (case-insensitive exact match)
       responses:
         "200":
           description: Active fabrics
@@ -6246,6 +6252,12 @@ components:
           type: ["string", "null"]
         swatchImageUrl:
           type: ["string", "null"]
+        grade:
+          type: ["string", "null"]
+          description: Fabric grade (e.g. "A", "B", "C"). Affects price tiers.
+        colorFamily:
+          type: ["string", "null"]
+          description: Normalized color family (e.g. "Blue", "Beige") used for filtering.
         displayOrder:
           type: integer
       required:
@@ -6255,6 +6267,8 @@ components:
         - manufacturerName
         - manufacturerLogoUrl
         - swatchImageUrl
+        - grade
+        - colorFamily
         - displayOrder
     AdminProductPickerDetail:
       type: object
@@ -8150,6 +8164,8 @@ components:
         name: { type: string }
         swatchImageUrl: { type: ["string", "null"] }
         grade: { type: ["string", "null"] }
+        colorFamily: { type: ["string", "null"] }
+        isStripe: { type: boolean }
         isActive: { type: boolean }
         displayOrder: { type: integer }
       required:
@@ -8160,6 +8176,8 @@ components:
         - name
         - swatchImageUrl
         - grade
+        - colorFamily
+        - isStripe
         - isActive
         - displayOrder
     AdminCreateFabricRequest:
@@ -8170,6 +8188,8 @@ components:
         name: { type: string, minLength: 1 }
         swatchImageUrl: { type: ["string", "null"] }
         grade: { type: ["string", "null"] }
+        colorFamily: { type: ["string", "null"] }
+        isStripe: { type: boolean }
         isActive: { type: boolean }
         displayOrder: { type: integer }
       required:
@@ -8184,6 +8204,8 @@ components:
         name: { type: string, minLength: 1 }
         swatchImageUrl: { type: ["string", "null"] }
         grade: { type: ["string", "null"] }
+        colorFamily: { type: ["string", "null"] }
+        isStripe: { type: boolean }
         isActive: { type: boolean }
         displayOrder: { type: integer }
     AdminProductFabricPool:
