@@ -54,10 +54,15 @@ export const finishesTable = pgTable(
       .$onUpdate(() => new Date()),
   },
   (t) => [
-    // Each manufacturer can have only one finish with a given name. We
-    // intentionally don't enforce uniqueness on item_number because it's
-    // nullable and not every vendor uses codes.
-    unique("finishes_manufacturer_name_unique").on(t.manufacturerId, t.name),
+    // Uniqueness is on (manufacturer, name, description) so the same color
+    // name can exist in multiple finish categories for the same manufacturer
+    // (e.g. Tropitone "Roca" exists as both a Frame Finish and a TropiKane
+    // Weave). item_number is not enforced because it's nullable.
+    unique("finishes_manufacturer_name_description_unique").on(
+      t.manufacturerId,
+      t.name,
+      t.description,
+    ),
     index("finishes_manufacturer_id_idx").on(t.manufacturerId),
     index("finishes_active_idx").on(t.isActive),
   ],

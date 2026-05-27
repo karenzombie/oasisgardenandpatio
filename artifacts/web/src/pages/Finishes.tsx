@@ -30,6 +30,8 @@ type FinishItem = {
   description: string | null;
 };
 
+// Maps stored description values to a display label.
+// If a description isn't listed here its value is used as-is as the heading.
 const FINISH_TYPE_LABELS: Record<string, string> = {
   "Frame Finish": "Frame Finishes",
   "Table Top Tile": "Table Top Tiles",
@@ -245,34 +247,23 @@ export default function Finishes() {
             const typeKeys = Array.from(
               new Set(list.map((f) => f.description).filter(Boolean)),
             ) as string[];
-            const hasSubGroups =
-              typeKeys.length > 1 ||
-              (typeKeys.length === 1 && FINISH_TYPE_LABELS[typeKeys[0]]);
+            const hasSubGroups = typeKeys.length > 1;
 
+            // Build sub-groups: every distinct description becomes a heading.
+            // FINISH_TYPE_LABELS overrides the display name (e.g. "Frame Finish"
+            // → "Frame Finishes"); unknown descriptions are shown as-is.
             const subGroups: { label: string; items: FinishItem[] }[] =
               hasSubGroups
-                ? [
-                    ...typeKeys
-                      .filter((k) => FINISH_TYPE_LABELS[k])
-                      .sort((a, b) =>
-                        (FINISH_TYPE_LABELS[a] ?? a).localeCompare(
-                          FINISH_TYPE_LABELS[b] ?? b,
-                        ),
-                      )
-                      .map((key) => ({
-                        label: FINISH_TYPE_LABELS[key],
-                        items: list.filter((f) => f.description === key),
-                      })),
-                    (() => {
-                      const fallback = list.filter(
-                        (f) =>
-                          !f.description || !FINISH_TYPE_LABELS[f.description],
-                      );
-                      return fallback.length > 0
-                        ? [{ label: "", items: fallback }]
-                        : [];
-                    })(),
-                  ].flat()
+                ? typeKeys
+                    .sort((a, b) =>
+                      (FINISH_TYPE_LABELS[a] ?? a).localeCompare(
+                        FINISH_TYPE_LABELS[b] ?? b,
+                      ),
+                    )
+                    .map((key) => ({
+                      label: FINISH_TYPE_LABELS[key] ?? key,
+                      items: list.filter((f) => f.description === key),
+                    }))
                 : [{ label: "", items: list }];
 
             return (
