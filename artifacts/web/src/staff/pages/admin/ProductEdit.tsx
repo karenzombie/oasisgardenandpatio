@@ -104,6 +104,7 @@ interface FormState {
   availableOnline: boolean;
   inStoreOnly: boolean;
   featured: boolean;
+  quoteOnly: boolean;
   displayOrder: string;
   lowStockThreshold: string;
   isActive: boolean;
@@ -131,10 +132,11 @@ function emptyForm(): FormState {
     pricingMode: "fixed",
     weight: "",
     dimensions: "",
-    showPriceOnline: true,
+    showPriceOnline: false,
     availableOnline: true,
     inStoreOnly: false,
     featured: false,
+    quoteOnly: true,
     displayOrder: "0",
     lowStockThreshold: "0",
     isActive: true,
@@ -308,6 +310,7 @@ export default function ProductEdit() {
         availableOnline: d.availableOnline,
         inStoreOnly: d.inStoreOnly,
         featured: d.featured,
+        quoteOnly: d.quoteOnly,
         displayOrder: String(d.displayOrder),
         lowStockThreshold: String(d.lowStockThreshold),
         isActive: d.isActive,
@@ -322,6 +325,25 @@ export default function ProductEdit() {
     () => detailQuery.data?.images ?? [],
     [detailQuery.data],
   );
+
+  // Umbrella category IDs — these products are available for online sale.
+  // All others default to quote/call-for-price.
+  const UMBRELLA_CATEGORY_IDS = [38, 39]; // Umbrellas, Umbrella Bases
+
+  // When creating a new product, auto-set quoteOnly + showPriceOnline based
+  // on the selected category. Existing products load these from the server.
+  useEffect(() => {
+    if (!isNew) return;
+    const catId = form.categoryId !== "none" ? Number(form.categoryId) : null;
+    if (catId === null) return;
+    const isUmbrella = UMBRELLA_CATEGORY_IDS.includes(catId);
+    setForm((f) => ({
+      ...f,
+      quoteOnly: !isUmbrella,
+      showPriceOnline: isUmbrella,
+    }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.categoryId, isNew]);
 
   // Group all finishes by manufacturer for the picker UI.
   const finishesByMfg = useMemo(() => {
@@ -368,6 +390,21 @@ export default function ProductEdit() {
       a.manufacturerName.localeCompare(b.manufacturerName),
     );
   }, [fabricsList.data]);
+
+  // Restrict the picker to the product's own manufacturer when one is set.
+  const filteredFabricsByMfg = useMemo(() => {
+    const mfgId =
+      form.manufacturerId !== "none" ? Number(form.manufacturerId) : null;
+    if (!mfgId) return fabricsByMfg;
+    return fabricsByMfg.filter((g) => g.manufacturerId === mfgId);
+  }, [fabricsByMfg, form.manufacturerId]);
+
+  const filteredFinishesByMfg = useMemo(() => {
+    const mfgId =
+      form.manufacturerId !== "none" ? Number(form.manufacturerId) : null;
+    if (!mfgId) return finishesByMfg;
+    return finishesByMfg.filter((g) => g.manufacturerId === mfgId);
+  }, [finishesByMfg, form.manufacturerId]);
 
   function buildPayload(): Record<string, unknown> | null {
     const name = form.name.trim();
@@ -439,6 +476,7 @@ export default function ProductEdit() {
       availableOnline: form.availableOnline,
       inStoreOnly: form.inStoreOnly,
       featured: form.featured,
+      quoteOnly: form.quoteOnly,
       displayOrder,
       lowStockThreshold,
       isActive: form.isActive,
@@ -1139,6 +1177,18 @@ export default function ProductEdit() {
                 checked={form.featured}
                 onChange={(v) => setForm((f) => ({ ...f, featured: v }))}
               />
+              <FlagRow
+                label="Quote / Call for price"
+                description='Hides price and checkout — customers must call or request a quote. Auto-set by category.'
+                checked={form.quoteOnly}
+                onChange={(v) =>
+                  setForm((f) => ({
+                    ...f,
+                    quoteOnly: v,
+                    showPriceOnline: v ? false : f.showPriceOnline,
+                  }))
+                }
+              />
               <div>
                 <Label htmlFor="p-order">Display order</Label>
                 <Input
@@ -1349,13 +1399,15 @@ export default function ProductEdit() {
               </p>
               {fabricsList.isLoading || fabricsConfigQuery.isLoading ? (
                 <p className="text-sm text-slate-500">Loading fabrics…</p>
-              ) : fabricsByMfg.length === 0 ? (
+              ) : filteredFabricsByMfg.length === 0 ? (
                 <p className="text-sm text-slate-500">
-                  No fabrics in the catalog yet.
+                  {form.manufacturerId !== "none"
+                    ? "No fabrics found for this manufacturer."
+                    : "No fabrics in the catalog yet."}
                 </p>
               ) : (
                 <div className="space-y-3">
-                  {fabricsByMfg.map((group) => {
+                  {filteredFabricsByMfg.map((group) => {
                     const poolOn = poolManufacturerIds.includes(
                       group.manufacturerId,
                     );
@@ -1476,13 +1528,15 @@ export default function ProductEdit() {
               </p>
               {finishesList.isLoading || finishesConfigQuery.isLoading ? (
                 <p className="text-sm text-slate-500">Loading finishes…</p>
-              ) : finishesByMfg.length === 0 ? (
+              ) : filteredFinishesByMfg.length === 0 ? (
                 <p className="text-sm text-slate-500">
-                  No finishes in the catalog yet.
+                  {form.manufacturerId !== "none"
+                    ? "No finishes found for this manufacturer."
+                    : "No finishes in the catalog yet."}
                 </p>
               ) : (
                 <div className="space-y-3">
-                  {finishesByMfg.map((group) => {
+                  {filteredFinishesByMfg.map((group) => {
                     const poolOn = finishPoolMfgIds.includes(
                       group.manufacturerId,
                     );
