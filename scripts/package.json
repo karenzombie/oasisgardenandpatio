@@ -12,6 +12,7 @@
     "seed-ow-lee-finishes": "tsx ./src/seedOwLeeFinishes.ts",
     "seed-tropitone-finishes": "tsx ./src/seedTropitoneFinishes.ts",
     "seed-sunbrella-fabric-meta": "tsx ./src/seedSunbrellaFabricMeta.ts",
+    "seed-tropitone-fabrics": "tsx ./src/seedTropitoneFabrics.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
