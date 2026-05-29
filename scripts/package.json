@@ -13,6 +13,8 @@
     "seed-tropitone-finishes": "tsx ./src/seedTropitoneFinishes.ts",
     "seed-sunbrella-fabric-meta": "tsx ./src/seedSunbrellaFabricMeta.ts",
     "seed-tropitone-fabrics": "tsx ./src/seedTropitoneFabrics.ts",
+    "seed-frankford-fabrics": "tsx ./src/seedFrankfordFabrics.ts",
+    "seed-frankford-products": "tsx ./src/seedFrankfordProducts.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
