@@ -7,11 +7,14 @@ import { eq, isNull, and } from "drizzle-orm";
 
 const SIDECAR = "http://127.0.0.1:1106";
 const STORAGE_SUBDIR = "fabrics/swatches";
-const IMG_DIR = join(
-  import.meta.dirname,
-  "../../frankford_images/frankford_fabric_swatches_updated",
-);
+const BASE = join(import.meta.dirname, "../../frankford_images");
 const DRY_RUN = process.env.DRY_RUN === "1";
+
+// Directories to search, in priority order (last writer wins for duplicates)
+const SEARCH_DIRS = [
+  join(BASE, "frankford_fabric_swatches_updated"),
+  join(BASE, "frankford_fabric_swatches_recacril"),
+];
 
 const storage = new Storage({
   credentials: {
@@ -28,6 +31,7 @@ const storage = new Storage({
 });
 
 async function uploadSwatch(
+  dir: string,
   localFilename: string,
   storageKey: string,
 ): Promise<string> {
@@ -39,58 +43,86 @@ async function uploadSwatch(
   const objectName = parts.slice(1).join("/");
   const bucket = storage.bucket(bucketName);
   const file = bucket.file(objectName);
-  const buffer = await readFile(join(IMG_DIR, localFilename));
-  const ct = localFilename.endsWith(".png") ? "image/png" : "image/jpeg";
+  const buffer = await readFile(join(dir, localFilename));
+  const ext = localFilename.split(".").pop()?.toLowerCase() ?? "jpg";
+  const ct = ext === "png" ? "image/png" : "image/jpeg";
   await file.save(buffer, { contentType: ct, resumable: false });
   return `/objects/${STORAGE_SUBDIR}/${storageKey}`;
 }
 
-function extractItemNumberFromFilename(filename: string): string | null {
+function fileExt(filename: string): string {
+  return filename.split(".").pop()?.toLowerCase() ?? "jpg";
+}
+
+function extractItemNumber(filename: string): string | null {
   const stem = filename.replace(/\.[^.]+$/, "");
 
-  // Outdura pattern: outdura_{collection}_{name}_{ITEM_NUMBER}
-  // e.g. outdura_sparkle_sparkle-pesto_1702  → 1702
-  // e.g. outdura_jinga_jinga-nautical_213J   → 213J
+  // Outdura: outdura_{collection}_{name}_{ITEM}
+  // e.g. outdura_sparkle_sparkle-pesto_1702 → 1702
+  // e.g. outdura_jinga_jinga-nautical_213J  → 213J
   const outduraMatch = stem.match(/^outdura_.+_(.+)$/);
   if (outduraMatch) return outduraMatch[1].toUpperCase();
 
-  // Tempotest pattern: tempotest_{collection}_{name}_{ITEM_DASHED}
+  // Tempotest: tempotest_{collection}_{name}_{ITEM_DASHED}
   // e.g. tempotest_foundations_ottomano-sand_1276-501 → 1276/501
-  // e.g. tempotest_foundations_ciao-white_15-615      → 15/615
   const tempoMatch = stem.match(/^tempotest_.+_([0-9].+)$/);
   if (tempoMatch) {
     const raw = tempoMatch[1];
-    // Replace the LAST dash-number group that looks like a slash replacement
-    // Pattern: {base}-{suffix} where both parts are numbers → {base}/{suffix}
     return raw.replace(/^(\d+(?:\/\d+)*)-(\d+)$/, "$1/$2");
+  }
+
+  // Recacril: R{digits} in various messy formats
+  // R005.jpg, R-237.jpg, R_051_0.jpg, r_239_0 - Dec 29 2022.jpeg,
+  // R_196.jpg, R-796_Baltic_Tweed.jpg, R-182.png, R-292_Teal.jpg
+  // Normalise: find R (case-insensitive) followed by optional dash/underscore then digits
+  const recacrilMatch = stem.match(/^[rR][-_]?(\d+)/);
+  if (recacrilMatch) {
+    return `R${recacrilMatch[1]}`;
   }
 
   return null;
 }
 
-async function main() {
-  const files = await readdir(IMG_DIR);
-  const ext = (f: string) => f.split(".").pop()?.toLowerCase() ?? "";
-  const imageFiles = files.filter((f) => ["jpg", "jpeg", "png"].includes(ext(f)));
+async function buildFileMap(): Promise<Map<string, { dir: string; filename: string }>> {
+  const fileMap = new Map<string, { dir: string; filename: string }>();
+  let indexed = 0;
+  let unrecognized = 0;
 
-  // Build lookup: normalizedItemNumber → filename
-  const fileMap = new Map<string, string>();
-  let noMatch = 0;
-  for (const f of imageFiles) {
-    const itemNum = extractItemNumberFromFilename(f);
-    if (itemNum) {
-      fileMap.set(itemNum.toUpperCase(), f);
-    } else {
-      noMatch++;
+  for (const dir of SEARCH_DIRS) {
+    let files: string[];
+    try {
+      files = await readdir(dir);
+    } catch {
+      console.warn(`  Skipping missing directory: ${dir}`);
+      continue;
+    }
+    const imageFiles = files.filter((f) =>
+      ["jpg", "jpeg", "png"].includes(fileExt(f)),
+    );
+    for (const f of imageFiles) {
+      const itemNum = extractItemNumber(f);
+      if (itemNum) {
+        fileMap.set(itemNum.toUpperCase(), { dir, filename: f });
+        indexed++;
+      } else {
+        unrecognized++;
+      }
     }
   }
-  console.log(
-    `Indexed ${fileMap.size} files from folder (${noMatch} unrecognized pattern).`,
-  );
 
-  // Query missing fabrics
+  console.log(`Indexed ${indexed} files across ${SEARCH_DIRS.length} folders (${unrecognized} unrecognized).`);
+  return fileMap;
+}
+
+async function main() {
+  const fileMap = await buildFileMap();
+
   const missing = await db
-    .select({ id: fabricsTable.id, itemNumber: fabricsTable.itemNumber, name: fabricsTable.name })
+    .select({
+      id: fabricsTable.id,
+      itemNumber: fabricsTable.itemNumber,
+      name: fabricsTable.name,
+    })
     .from(fabricsTable)
     .where(
       and(
@@ -108,21 +140,22 @@ async function main() {
 
   for (const fabric of missing) {
     const key = fabric.itemNumber.toUpperCase();
-    const localFile = fileMap.get(key);
-    if (!localFile) {
+    const entry = fileMap.get(key);
+    if (!entry) {
       unmatched.push(fabric.itemNumber);
       continue;
     }
     matched++;
 
     if (DRY_RUN) {
-      console.log(`  [dry-run] ${fabric.itemNumber} → ${localFile}`);
+      console.log(`  [dry-run] ${fabric.itemNumber} → ${entry.filename}`);
       continue;
     }
 
     try {
-      const storageKey = `frankford-${fabric.itemNumber.replace(/[/\\]/g, "-")}.${ext(localFile)}`;
-      const url = await uploadSwatch(localFile, storageKey);
+      const ext = fileExt(entry.filename);
+      const storageKey = `frankford-${fabric.itemNumber.replace(/[/\\]/g, "-")}.${ext}`;
+      const url = await uploadSwatch(entry.dir, entry.filename, storageKey);
       uploaded++;
 
       await db
@@ -150,10 +183,10 @@ Summary:
   Still unmatched:  ${unmatched.length}
 `);
 
-  if (unmatched.length > 0 && unmatched.length <= 30) {
+  if (unmatched.length > 0 && unmatched.length <= 50) {
     console.log("Unmatched item numbers:", unmatched.join(", "));
-  } else if (unmatched.length > 30) {
-    console.log("First 30 unmatched:", unmatched.slice(0, 30).join(", "));
+  } else if (unmatched.length > 50) {
+    console.log("First 50 unmatched:", unmatched.slice(0, 50).join(", "));
   }
 }
 
