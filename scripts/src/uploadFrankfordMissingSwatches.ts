@@ -14,6 +14,7 @@ const DRY_RUN = process.env.DRY_RUN === "1";
 const SEARCH_DIRS = [
   join(BASE, "frankford_fabric_swatches_updated"),
   join(BASE, "frankford_fabric_swatches_recacril"),
+  join(BASE, "frankford_fabric_swatches_update_2"),
 ];
 
 const storage = new Storage({
@@ -78,6 +79,28 @@ function extractItemNumber(filename: string): string | null {
   const recacrilMatch = stem.match(/^[rR][-_]?(\d+)/);
   if (recacrilMatch) {
     return `R${recacrilMatch[1]}`;
+  }
+
+  // SENS: sens_{name}_D-{digits}
+  // e.g. sens_white_D-099.jpg → D099
+  const sensMatch = stem.match(/^sens_[^_]+_D-(\d+)/i);
+  if (sensMatch) {
+    return `D${sensMatch[1]}`;
+  }
+
+  // T-prefix Tempotest: T{base}-{suffix} or T{base}
+  // e.g. T407-79.jpg → T407/79,  T52.jpg → T52,  T5396-930.jpg → T5396/930
+  const tMatch = stem.match(/^T(\d+)(?:-(\d+))?/i);
+  if (tMatch) {
+    return tMatch[2] ? `T${tMatch[1]}/${tMatch[2]}` : `T${tMatch[1]}`;
+  }
+
+  // Numeric Recasens (5xxx / 6xxx / 9xxx): extract first 4+ digit run from stem
+  // e.g. 5405black → 5405,  Pottery_5437 → 5437,  Royal_Navy_5442 → 5442
+  // e.g. outdura-canvas-steel-blue-5439 → 5439
+  const numericMatch = stem.match(/(\d{4,})/);
+  if (numericMatch) {
+    return numericMatch[1];
   }
 
   return null;
