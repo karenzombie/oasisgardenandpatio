@@ -47,11 +47,10 @@ export default function Manufacturers() {
                   : `${baseUrl.replace(/\/$/, "")}${m.logoUrl}`
                 : null;
               return (
-                <div
+                <Link
                   key={m.id}
-                  className="group bg-card border border-border rounded-md p-5 flex flex-col items-center text-center"
-                  aria-disabled="true"
-                  title="Coming soon — products will be browseable by manufacturer"
+                  href={`/manufacturers/${m.slug}`}
+                  className="group bg-card border border-border rounded-md p-5 flex flex-col items-center text-center hover:border-primary/50 hover:shadow-md transition-all duration-200"
                 >
                   <div className="w-full aspect-[3/2] flex items-center justify-center bg-white rounded-sm overflow-hidden mb-4">
                     {logoSrc ? (
@@ -70,10 +69,10 @@ export default function Manufacturers() {
                   <h2 className="font-serif text-base sm:text-lg text-foreground leading-tight">
                     {m.name}
                   </h2>
-                  <span className="mt-2 text-[10px] sm:text-xs uppercase tracking-wide text-muted-foreground/70">
-                    Browsing coming soon
+                  <span className="mt-2 text-[10px] sm:text-xs uppercase tracking-wide text-primary/70 group-hover:text-primary transition-colors">
+                    Browse products →
                   </span>
-                </div>
+                </Link>
               );
             })}
           </div>

@@ -24,6 +24,7 @@ import Fabrics from "@/pages/Fabrics";
 import Finishes from "@/pages/Finishes";
 import Materials from "@/pages/Materials";
 import Manufacturers from "@/pages/Manufacturers";
+import ManufacturerProducts from "@/pages/ManufacturerProducts";
 import Commercial from "@/pages/Commercial";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import TermsAndConditions from "@/pages/TermsAndConditions";
@@ -67,6 +68,7 @@ function CustomerRouter() {
 
         {/* Placeholder Routes */}
         <Route path="/manufacturers" component={Manufacturers} />
+        <Route path="/manufacturers/:slug" component={ManufacturerProducts} />
         <Route path="/materials" component={Materials} />
         <Route path="/search" component={SearchPage} />
         <Route path="/shop" component={Shop} />
