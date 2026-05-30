@@ -16,6 +16,7 @@
     "seed-frankford-fabrics": "tsx ./src/seedFrankfordFabrics.ts",
     "seed-frankford-products": "tsx ./src/seedFrankfordProducts.ts",
     "upload-frankford-missing-swatches": "tsx ./src/uploadFrankfordMissingSwatches.ts",
+    "seed-frankford-finishes": "tsx ./src/seedFrankfordFinishes.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
