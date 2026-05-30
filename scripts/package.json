@@ -18,6 +18,7 @@
     "upload-frankford-missing-swatches": "tsx ./src/uploadFrankfordMissingSwatches.ts",
     "seed-frankford-finishes": "tsx ./src/seedFrankfordFinishes.ts",
     "seed-couture-jardin-products": "tsx ./src/seedCoutureJardinProducts.ts",
+    "seed-couture-jardin-finishes": "tsx ./src/seedCoutureJardinFinishes.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
