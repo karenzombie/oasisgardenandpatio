@@ -21,6 +21,7 @@
     "seed-couture-jardin-finishes": "tsx ./src/seedCoutureJardinFinishes.ts",
     "seed-summerset-products": "tsx ./src/seedSummersetProducts.ts",
     "seed-hanamint-products": "tsx ./src/seedHanamintProducts.ts",
+    "seed-northcape-products": "tsx ./src/seedNorthcapeProducts.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
