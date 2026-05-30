@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, ne, sql } from "drizzle-orm";
 import { db, manufacturersTable, type Manufacturer } from "@workspace/db";
 import {
   ListManufacturersResponse,
@@ -27,7 +27,12 @@ router.get("/manufacturers", async (_req, res): Promise<void> => {
       logoUrl: manufacturersTable.logoUrl,
     })
     .from(manufacturersTable)
-    .where(eq(manufacturersTable.isActive, true))
+    .where(
+      and(
+        eq(manufacturersTable.isActive, true),
+        ne(manufacturersTable.slug, "andrew-sewing"),
+      ),
+    )
     .orderBy(
       sql`${manufacturersTable.displayOrder} asc`,
       sql`${manufacturersTable.name} asc`,
