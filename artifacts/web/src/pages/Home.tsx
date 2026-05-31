@@ -20,6 +20,7 @@ import categoryReplacementPartsImg from "@/assets/category-replacement-parts.jpg
 import categoryBarImg from "@/assets/category-bar.png";
 import categoryCoffeeSideTablesImg from "@/assets/category-coffee-side-tables.png";
 import categoryDaybedsImg from "@/assets/category-daybeds.png";
+import categoryAccentPiecesImg from "@/assets/category-accessories.png";
 
 const CATEGORY_IMAGES: Record<string, string> = {
   "cat-umbrellas": categoryShadeImg,
@@ -34,6 +35,7 @@ const CATEGORY_IMAGES: Record<string, string> = {
   "cat-bar": categoryBarImg,
   "cat-coffee-side-tables": categoryCoffeeSideTablesImg,
   "cat-daybeds": categoryDaybedsImg,
+  "cat-accent-pieces": categoryAccentPiecesImg,
   shade: categoryShadeImg,
   lounge: categoryLoungeImg,
   dining: categoryDiningImg,
