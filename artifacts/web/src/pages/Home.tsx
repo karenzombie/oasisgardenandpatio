@@ -75,7 +75,7 @@ export default function Home() {
             Discover curated outdoor furniture collections designed for the way you live outside. Craftsmanship that endures.
           </p>
           <div className="flex flex-col items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
-            <Button className="bg-white text-black hover:bg-white/90 rounded-none px-12 py-5 text-lg font-serif tracking-wide btn-hero-pulse w-56 h-auto" asChild>
+            <Button className="bg-white text-black hover:bg-white/90 rounded-none px-12 py-5 text-lg font-serif font-bold tracking-wide btn-hero-pulse w-56 h-auto" asChild>
               <Link href="/shop?online=true">Shop Online</Link>
             </Button>
             <Button variant="outline" className="text-white border-white hover:bg-white/10 rounded-none px-12 py-5 text-lg font-serif tracking-wide bg-transparent w-56 h-auto" asChild>
