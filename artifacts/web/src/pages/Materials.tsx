@@ -97,18 +97,17 @@ export default function Materials() {
                   : `${baseUrl.replace(/\/$/, "")}${m.imageUrl}`
                 : null;
               return (
-                <div
+                <Link
                   key={m.id}
-                  className="group bg-card border border-border rounded-md overflow-hidden flex flex-col"
-                  aria-disabled="true"
-                  title="Coming soon — products will be browseable by material"
+                  href={`/shop?material=${m.slug}`}
+                  className="group bg-card border border-border rounded-md overflow-hidden flex flex-col hover:border-primary/40 transition-colors"
                 >
                   <div className="aspect-[4/3] bg-muted overflow-hidden">
                     {imgSrc ? (
                       <img
                         src={imgSrc}
                         alt={m.name}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                         loading="lazy"
                       />
                     ) : (
@@ -126,11 +125,11 @@ export default function Materials() {
                         {m.description}
                       </p>
                     )}
-                    <span className="mt-4 text-xs uppercase tracking-wide text-muted-foreground/70">
-                      Browsing coming soon
+                    <span className="mt-4 text-xs uppercase tracking-wide text-primary/70 group-hover:text-primary transition-colors">
+                      Browse {m.name} →
                     </span>
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>
