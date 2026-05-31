@@ -163,6 +163,22 @@
   }
 }
 
+@keyframes hero-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.55);
+  }
+  70% {
+    box-shadow: 0 0 0 14px rgba(255, 255, 255, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+  }
+}
+
+.btn-hero-pulse {
+  animation: hero-pulse 900ms ease-out 1000ms 3 none;
+}
+
 @keyframes infinite-scroll {
   from { transform: translate3d(0, 0, 0); }
   to { transform: translate3d(-100%, 0, 0); }
