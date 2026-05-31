@@ -66,11 +66,11 @@ export default function Home() {
           <p className="text-xl md:text-2xl font-bold text-white mb-10 max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-150 [text-shadow:0_2px_4px_rgba(0,0,0,0.85),0_4px_16px_rgba(0,0,0,0.7)]">
             Discover curated outdoor furniture collections designed for the way you live outside. Craftsmanship that endures.
           </p>
-          <div className="flex items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
-            <Button size="lg" className="bg-white text-black hover:bg-white/90 rounded-none px-8 font-serif tracking-wide btn-hero-pulse" asChild>
+          <div className="flex flex-col items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
+            <Button className="bg-white text-black hover:bg-white/90 rounded-none px-12 py-5 text-lg font-serif tracking-wide btn-hero-pulse w-56 h-auto" asChild>
               <Link href="/shop?online=true">Shop Online</Link>
             </Button>
-            <Button size="lg" variant="outline" className="text-white border-white hover:bg-white/10 rounded-none px-8 font-serif tracking-wide bg-transparent" asChild>
+            <Button variant="outline" className="text-white border-white hover:bg-white/10 rounded-none px-12 py-5 text-lg font-serif tracking-wide bg-transparent w-56 h-auto" asChild>
               <Link href="/contact">Visit Showroom</Link>
             </Button>
           </div>
