@@ -5,6 +5,7 @@ import {
   useListCatalogProducts,
   useListCategories,
   useListCatalogFinishes,
+  useListManufacturers,
 } from "@workspace/api-client-react";
 import type { ListCatalogProductsParams } from "@workspace/api-client-react";
 import { getBrandLogo } from "@/lib/brandLogos";
@@ -34,6 +35,8 @@ export default function Shop() {
 
   const q = useMemo(() => new URLSearchParams(search), [search]);
 
+  const isOnlineOnly = q.get("online") === "true";
+
   const queryParams = useMemo(() => {
     const out: ListCatalogProductsParams = {
       page: Number(q.get("page") ?? "1") || 1,
@@ -51,12 +54,14 @@ export default function Shop() {
     const categoryParam = q.get("category");
     if (params?.slug) out.categorySlug = params.slug;
     else if (categoryParam) out.categorySlug = categoryParam;
+    if (isOnlineOnly) out.onlineOnly = true;
     return out;
-  }, [search, params?.slug]);
+  }, [search, params?.slug, isOnlineOnly]);
 
   const { data, isLoading } = useListCatalogProducts(queryParams);
   const { data: categories } = useListCategories();
   const { data: finishes } = useListCatalogFinishes();
+  const { data: manufacturers } = useListManufacturers();
 
   const total = data?.total ?? 0;
   const pageSize = queryParams.pageSize ?? 12;
@@ -77,20 +82,25 @@ export default function Shop() {
   }
 
   const activeCategory = params?.slug ?? q.get("category") ?? "";
+  const activeManufacturer = q.get("manufacturer") ?? "";
   const activeFinish = q.get("finish") ?? "";
   const activeName = q.get("q") ?? "";
   const activeFilterCount =
     (activeCategory ? 1 : 0) +
+    (activeManufacturer ? 1 : 0) +
     (activeFinish ? 1 : 0) +
     (activeName ? 1 : 0);
 
   function clearAll() {
-    setLocation("/shop");
+    const base = params?.slug ? `/shop/category/${params.slug}` : "/shop";
+    setLocation(isOnlineOnly ? `${base}?online=true` : base);
   }
 
-  const heading = params?.slug
-    ? (data?.products[0]?.categoryName ?? params.slug.replace(/-/g, " "))
-    : "Shop";
+  const heading = isOnlineOnly && !params?.slug
+    ? "Shop Online"
+    : params?.slug
+      ? (data?.products[0]?.categoryName ?? params.slug.replace(/-/g, " "))
+      : "Shop";
 
   const selectClass =
     "w-full border border-input bg-background rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary";
@@ -108,12 +118,19 @@ export default function Shop() {
             <span className="text-foreground capitalize">{heading}</span>
           </>
         ) : (
-          <span className="text-foreground">Shop</span>
+          <span className="text-foreground">{heading}</span>
         )}
       </nav>
 
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
-        <h1 className="font-serif text-4xl md:text-5xl capitalize">{heading}</h1>
+        <div>
+          <h1 className="font-serif text-4xl md:text-5xl capitalize">{heading}</h1>
+          {isOnlineOnly && (
+            <p className="text-sm text-muted-foreground mt-2">
+              Browse products available for online purchase — no showroom visit required.
+            </p>
+          )}
+        </div>
         <div className="flex items-center gap-4 text-sm flex-wrap">
           <Button
             variant="outline"
@@ -163,11 +180,11 @@ export default function Shop() {
               </button>
             )}
           </div>
-          <div className="grid gap-5 sm:grid-cols-3">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {/* Name search */}
             <div className="space-y-1.5">
               <label className="text-xs uppercase tracking-widest text-muted-foreground block">
-                Name
+                Name / SKU
               </label>
               <div className="relative">
                 <input
@@ -188,6 +205,27 @@ export default function Shop() {
                   </button>
                 )}
               </div>
+            </div>
+
+            {/* Manufacturer */}
+            <div className="space-y-1.5">
+              <label className="text-xs uppercase tracking-widest text-muted-foreground block">
+                Brand
+              </label>
+              <select
+                value={activeManufacturer}
+                onChange={(e) =>
+                  updateSearch({ manufacturer: e.target.value || null, page: "1" })
+                }
+                className={selectClass}
+              >
+                <option value="">All brands</option>
+                {manufacturers?.map((m) => (
+                  <option key={m.id} value={m.slug}>
+                    {m.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* Category */}
@@ -244,6 +282,18 @@ export default function Shop() {
                 <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
                   Name: "{activeName}"
                   <button onClick={() => updateSearch({ q: null, page: "1" })}>
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              )}
+              {activeManufacturer && (
+                <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
+                  Brand:{" "}
+                  {manufacturers?.find((m) => m.slug === activeManufacturer)?.name ??
+                    activeManufacturer}
+                  <button
+                    onClick={() => updateSearch({ manufacturer: null, page: "1" })}
+                  >
                     <X className="h-3 w-3" />
                   </button>
                 </span>

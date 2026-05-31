@@ -16,6 +16,10 @@ export type ListCatalogProductsParams = {
    * Filter by frame finish (case-insensitive variant name, e.g. "Black")
    */
   finish?: string;
+  /**
+   * When true, exclude quote-only products (show only items purchasable online)
+   */
+  onlineOnly?: boolean;
   sort?: ListCatalogProductsSort;
   /**
    * @minimum 1

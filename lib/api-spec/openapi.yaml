@@ -203,6 +203,12 @@ paths:
           description: Filter by frame finish (case-insensitive variant name, e.g. "Black")
           schema:
             type: string
+        - name: onlineOnly
+          in: query
+          required: false
+          description: When true, exclude quote-only products (show only items purchasable online)
+          schema:
+            type: boolean
         - name: sort
           in: query
           required: false

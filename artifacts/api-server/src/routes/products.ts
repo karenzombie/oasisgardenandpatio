@@ -88,6 +88,7 @@ router.get(
       manufacturerSlug,
       materialSlug,
       finish,
+      onlineOnly,
       sort,
       page,
       pageSize,
@@ -97,6 +98,9 @@ router.get(
       eq(productsTable.isActive, true),
       eq(productsTable.availableOnline, true),
     ];
+    if (onlineOnly) {
+      conditions.push(eq(productsTable.quoteOnly, false));
+    }
     if (q && q.trim()) {
       const needle = `%${q.trim()}%`;
       conditions.push(

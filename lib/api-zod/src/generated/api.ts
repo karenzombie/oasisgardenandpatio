@@ -156,6 +156,12 @@ export const ListCatalogProductsQueryParams = zod.object({
     .describe(
       'Filter by frame finish (case-insensitive variant name, e.g. \"Black\")',
     ),
+  onlineOnly: zod.coerce
+    .boolean()
+    .optional()
+    .describe(
+      "When true, exclude quote-only products (show only items purchasable online)",
+    ),
   sort: zod
     .enum(["featured", "newest", "price_asc", "price_desc", "name_asc"])
     .default(listCatalogProductsQuerySortDefault),
