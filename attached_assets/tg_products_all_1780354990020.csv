@@ -1,0 +1,46 @@
+category,product_name,item_no,is_new,quick_ship,size,shape,ribs,pole_diameter,bottom_pole,vent,lift,tilt,weight,cube,min_base_weight,available_finishes,fabric_restriction_note,shipping,frame_part,canopy_part
+Cantilever,13’ STARLUX AKZ PLUS,AKZP13LX,False,False,13’,Octagon,8,3.64” x 2.56”,,DWV,Crank,Front to Back,DWV 108 lbs.,12,400 lbs.,AKZP13LX-00D: Bronze | AKZP13LX-09D: Black,,Truck Only,AKZP13LX-0_,C813RD
+Cantilever,10’x13’ STARLUX AKZ PLUS,AKZPRTLX,False,False,10’x13’,Rectangle,8,3.64” x 2.56”,,SWV,Crank,Front to Back,108 lbs.,10.91,400 lbs.,AKZPRTLX-00: Bronze | AKZPRLX-09: Black,Includes protective cover STRIPED FABRICS NOT AVAILABLE ON THIS STYLE.,Truck Only,AKZPRTLX-0_,CAKZRT
+Cantilever,13’ AKZ PLUS,AKZP13,False,False,13’,Octagon,8,3.64” x 2.56”,,DWV,Crank,Front to Back,DWV 104 lbs.,11.52,400 lbs.,"AKZP13-SSD: Silver Shadow, | AKZP13-WOD: Weathered Oak | AKZP13-00D: Bronze | AKZP13-02D: Anthracite | AKZP13-09D: Black",,Truck Only,AKZP13-0_,C813RD
+Cantilever,10’x13’ AKZ PLUS,AKZPRT,False,False,10’x13’,Rectangle,8,3.64” x 2.56”,,SWV,Crank,Front to Back,104 lbs.,10.91,400 lbs.,"AKZPRT-SS: Silver Shadow, | AKZPRT-WO: Weathered Oak | AKZPRT-00: Bronze | AKZPRT-02: Anthracite | AKZPRT-09: Black",CAKZRT Protective cover PFC920 STRIPED FABRICS NOT AVAILABLE ON THIS STYLE.,Truck Only,AKZPRT-0_,CAKZRT
+Cantilever,11.5’ AKZ PLUS,AKZPSQ11,False,False,11.5’,Square,8,3.64” x 2.56”,,SWV,Crank,Front to Back,SWV 89 lbs.,12,400 lbs.,AKZPSQ11-00: Bronze | AKZPSQ11-09: Black,,Truck Only,AKZPSQ11-0_,C812SQ
+Cantilever,11’ AKZ PLUS,AKZP,False,False,11’,Octagon,8,3.64” x 2.56”,,DWV,Crank,Front to Back,DWV 99 lbs.,10.91,200 lbs.,AKZP-00D: Bronze | AKZP-02D: Anthracite | AKZP-09D: Black,,Truck Only,AKZP-0_,C811RD
+Cantilever,11.5’ AG25T,AG25TR,False,False,11.5’,Octagon,8,3.54” x 2.56”,,DWV,Crank,Front to Back,DWV 72 lbs.,6.8,200 lbs.,AG25TR-00D: Bronze | AG25TR-09D: Black,,Truck Only,AG25TR-0_,CAG25RD
+Cantilever,10’ AG25TSQ,AG25TSQR,False,False,10’,Square,8,3.54” x 2.56”,,SWV,Crank,Front to Back,SWV 72 lbs.,6.8,200 lbs.,AG25TSQR-00: Bronze | AG25TSQR-09: Black,,Truck Only,AG25TSQR-0_,CAG25SQR
+Cantilever,10’ AG25T,AG25TR10,True,False,10’,Octagon,8,3.54” x 2.56”,,DWV,Crank,Front to Back,DWV 59 lbs.,7.03,200 lbs.,AG25TR10-00D: Bronze | AG25TR10-09D: Black,,Truck Only,AG25TR10-0_,CAG25-10RD
+Specialty,10’x13’ EASY TRACK®,ET3RT,True,False,10’x13’,Rectangle,8,1.5”,,,,,38 lbs.,3.47,100 lbs.,ET3RT-00: Bronze | ET3RT-09: Black,STRIPED FABRICS NOT AVAILABLE ON THIS STYLE.,Truck Only,,CET3RT
+Specialty,10' EASY TRACK®,ET310,True,False,10’,Octagon,8,1.5”,,,,,28 lbs.,2.28,100 lbs.,ET3-00: Bronze | ET3-09: Black,,Truck Only,,CET310
+Specialty,10’ SHANGHAI COLLAR TILT,USA45-09,False,False,10’,Round,24,1.5”,32”,,Crank,Collar,25 lbs.,2,80 lbs.,USA45-09: Black,8009 7947 & STRIPED FABRICS NOT AVAILABLE ON THIS STYLE.,Standard Parcel/Courier Services,,
+Market,11’ TWIST,UM851,False,False,11’,Octagon,8,1.58”/40mm,37”,SWV,Crank,Collar,19 lbs.,4.41,80 lbs.,UM851-02: Anthracite | UM851-03: White,,Standard Parcel/Courier Services,UM851-0_,C8511
+Market,9’ TWIST,UM850,False,False,9’,Octagon,8,1.58”/40mm,37”,SWV,Crank,Collar,16 lbs.,3.75,50 lbs.,UM850-02: Anthracite | UM850-03: White,,Standard Parcel/Courier Services,UM850-0_,C8509
+Market,9’ STARLUX COLLAR TILT,UM800LX,False,False,9’,Octagon,8,1.5”,32”,SWV,Crank,Collar,SWV 24 lbs.,2.7,50 lbs.,UM800LX-00: Bronze | UM800LX-09: Black,,Standard Parcel/Courier Services,UM800LX-0_,C809
+Market,11’ COLLAR TILT,UM801,False,False,11’,Octagon,8,1.5”,36”,SWV,Crank,Collar,SWV 22 lbs.,1.74,80 lbs.,UM801-00: Bronze | UM801-09: Black,,Standard Parcel/Courier Services,UM801-0_,C811
+Market,9’ COLLAR TILT,UM800,False,False,9’,Octagon,8,1.5”,32”,SWV,Crank,Collar,SWV 19 lbs.,1.74,50 lbs.,UM800-00: Bronze | UM800-02: Anthracite | UM800-09: Black,,Standard Parcel/Courier Services,UM800-0_,C809
+Market,11’ FLEX,UM841,False,False,11’,Octagon,8,1.58”/40mm,32”,SWV,Crank,Crank,SWV 20 lbs.,1.72,80 lbs.,"UM841-SS: Silver Shadow, | UM841-00: Bronze | UM841-09: Black",,Standard Parcel/Courier Services,,C8411
+Market,9’ FLEX,UM840,False,False,9’,Octagon,8,1.58”/40mm,32”,SWV,Crank,Crank,SWV 18 lbs.,1.72,50 lbs.,"UM840-SS: Silver Shadow, | UM840-00: Bronze | UM840-09: Black",,Standard Parcel/Courier Services 45” Bottom pole BP45-840_,,C8409
+Market,7.5’ FLEX,UM847SQ,False,False,7.5’,Square,4,1.58”/40mm,32”,SWV,Crank,Crank,SWV 12 lbs.,1.72,50 lbs.,"UM847SQ-SS: Silver Shadow, | UM847SQ-00: Bronze | UM847SQ-09: Black",,Standard Parcel/Courier Services,,C847SQ
+Market,11’ AUTO TILT,UM812,False,False,11’,Octagon,8,1.5”,36”,SWV,Crank,Crank,SWV 22 lbs.,1.74,80 lbs.,UM812-00: Bronze | UM812-02: Anthracite | UM812-03: White | UM812-09: Black,,Standard Parcel/Courier Services,UM812-0_,C811
+Market,9’ AUTO TILT,UM810,False,False,9’,Octagon,8,1.5”,32”,SWV,Crank,Crank,SWV 19 lbs.,1.74,50 lbs.,"UM810-SS: Silver Shadow, | UM810-WO: Weathered Oak | UM810-00: Bronze | UM810-02: Anthracite | UM810-03: White | UM810-09: Black",,Standard Parcel/Courier Services,,C809
+Market,8’x10’ AUTO TILT,UM8810RT,False,False,8’x10’,Rectangle,8,1.5”,32”,SWV,Crank,Crank,22 lbs.,1.95,100 lbs.,UM8810RT-00: Bronze | UM8810RT-02: Anthracite | UM8810RT-03: White | UM8810RT-09: Black,STRIPED FABRICS NOT AVAILABLE ON THIS STYLE.,Standard Parcel/Courier Services,UM8810RT-0_,C8810
+Market,9’ GLIDE TILT,UM970,False,False,9’,Octagon,8,1.5”,36”,SWV,Crank,Glide,SWV 18 lbs.,1.58,50 lbs.,UM970-00: Bronze | UM970-09: Black,,Standard Parcel/Courier Services,UM970-0_,C809
+Market,7.5’ GLIDE TILT,UM977,False,False,7.5’,Octagon,8,1.5”,36”,SWV,Crank,Glide,15 lbs.,1.44,50 lbs.,UM977-00: Bronze | UM977-09: Black,,Standard Parcel/Courier Services,UM977-0_,C807
+Market,9’ PUSH BUTTON TILT,UM920,False,False,9’,Octagon,8,1.38” Top Pole,32”,SWV,Crank,Push Button,SWV 17 lbs.,1.74,50 lbs.,UM920-00: Bronze | UM920-02: Anthracite | UM920-03: White | UM920-09: Black,,Standard Parcel/Courier Services,UM920-0_,C809
+Market,7.5’ PUSH BUTTON TILT,UM907,False,False,7.5’,Octagon,8,1.38” Top Pole,36”,SWV,Crank,Push Button,14 lbs.,1.45,50 lbs.,UM907-00: Bronze | UM907-03: White | UM907-09: Black,,Standard Parcel/Courier Services,UM907-0_,C807
+Market,9’ QUAD PULLEY LIFT,UM809-1H,False,False,9’,Octagon,8,1.5”,36”,SWV,Quad Pulley,n/a,SWV 23 lbs.,1.72,50 lbs.,UM809-1H: Hardwood,,Standard Parcel/Courier Services,,C809
+Base,Commercial,BA150,,,"22""",,,,,,,,150 lbs.,2.85,,BA1500: Bronze | BA1509: Black,,Truck Only,,
+Base,Steel (with casters),BSK120,,,"20.28""",,,,,,,,120 lbs.,1.72,,BSK1200: Bronze | BSK1209: Black,,Truck Only,,
+Base,Athens,BTT100,,,"20.47""",,,,,,,,108 lbs.,3.5,,BTT100-SG: Shadow Graphite | BTT100-AW: Arctic White,,Truck Only,,
+Base,Aurora,BRW100,,,"24""",,,,,,,,100 lbs.,3.53,,BRW100-SG: Shadow Graphite | BRW100-AB: Architectural Bronze | BRW100-AW: Arctic White | BRW100-SD: Sand,,Truck Only,,
+Base,Monaco Round,BKM100,,,"22""",,,,,,,,100 lbs.,2.3,,BKM1000: Bronze | BKM1003: White | BKM1009: Black,,Truck Only,,
+Base,Monaco Square,BKMSQ100,,,"19.68""",,,,,,,,100 lbs.,1.8,,BKMSQ1000: Bronze | BKMSQ1003: White | BKMSQ1009: Black,,Truck Only,,
+Base,Garden,BG50,,,"19.5""",,,,,,,,50 lbs.,1.58,,BG500: Bronze | BG502: Anthracite | BG503: White | BG509: Black | BG50SD: Sand,,Standard Parcel/Courier Services,,
+Base,Art Deco,BA50,,,"20.9""",,,,,,,,50 lbs.,1.49,,BA500: Bronze | BA509: Black,,Standard Parcel/Courier Services,,
+Base,Classic,BW50,,,"19.3""",,,,,,,,50 lbs.,1.33,,BW500: Bronze | BW502: Anthracite | BW503: White | BW509: Black,,Standard Parcel/Courier Services,,
+Base,Steel,BS359,,,"18""",,,,,,,,35 lbs.,1.03,,BS3590: Bronze | BS3592: Anthracite | BS3593: White | BS3599: Black,,Standard Parcel/Courier Services,,
+Base,Add-On Weight,BW30,,,"12""",,,,,,,,30 lbs.,0.51,,,,,,
+Base,Steel,BS709-2.0,,,"35.4""",,,,,,,,70 lbs.,,,BS709-2.0-00: Bronze | BS709-2.0-09: Black,,Standard Parcel/Courier Services,,
+Base,Add-On Wheels,ZBWH-SM,,,,,,,,,,,1.2 lbs.,.04,,,,,,
+Cantilever Base,AKZ13 Rolling Base,BASE-13R-_,,,,,,,,,,,190 lbs.,12.56,,BASE-13R-00: Bronze | BASE-13R-02: Anthracite | BASE-13R-09: Black,,Truck Only,,
+Base,Z-Plate,ZB115,,,"26""",,,,,,,,115 lbs.,1.29,,ZB115-SG: Shadow Graphite | ZB115-AB: Architectural Bronze | ZB115-AW: Arctic White | ZB115-SD: Sand,,Truck Only,,
+Cantilever Base,AKZ13 Base,BASE-13-_,,,,,,,,,,,74 lbs.,7,,BASE-13-00: Bronze | BASE-13-02: Anthracite | BASE-13-09: Black,,Truck Only,,
+Cantilever Base,AKZ Base,BASE-AKZ-_,,,,,,,,,,,38 lbs.,5.5,,BASE-AKZ-00: Bronze | BASE-AKZ-02: Anthracite | BASE-AKZ-09: Black,,Standard Parcel/Courier Services,,

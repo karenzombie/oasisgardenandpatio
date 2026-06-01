@@ -1,0 +1,1 @@
+- [Running seed scripts against prod](seed-scripts-prod.md) — override DATABASE_URL with $PROD_DATABASE_URL; bulk-insert junction tables (onConflictDoNothing) or per-row inserts time out on prod.
