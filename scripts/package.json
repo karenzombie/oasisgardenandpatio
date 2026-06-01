@@ -31,6 +31,7 @@
     "seed-homecrest-products": "tsx ./src/seedHomecrestProducts.ts",
     "seed-sunset-west-products": "tsx ./src/seedSunsetWestProducts.ts",
     "seed-sunset-west-finishes": "tsx ./src/seedSunsetWestFinishes.ts",
+    "seed-shoreline-products": "tsx ./src/seedShorelineProducts.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
