@@ -361,18 +361,6 @@ export default function Shop() {
                       Oasis
                     </div>
                   )}
-                  {brandLogo ? (
-                    <div
-                      className="absolute top-3 left-3 bg-white/95 px-2 py-1 rounded-sm shadow-sm"
-                      aria-hidden="true"
-                    >
-                      <img
-                        src={brandLogo}
-                        alt=""
-                        className="h-5 w-auto object-contain"
-                      />
-                    </div>
-                  ) : null}
                   {onSale ? (
                     <div className="absolute top-3 right-3 bg-primary text-primary-foreground px-3 py-1 text-xs uppercase tracking-widest font-semibold">
                       Sale
@@ -392,7 +380,15 @@ export default function Shop() {
                   </div>
                 </div>
                 <div className="space-y-1 text-center">
-                  {!brandLogo && p.manufacturerName ? (
+                  {brandLogo ? (
+                    <div className="flex justify-center mb-1">
+                      <img
+                        src={brandLogo}
+                        alt={p.manufacturerName ?? ""}
+                        className="h-6 w-auto object-contain"
+                      />
+                    </div>
+                  ) : p.manufacturerName ? (
                     <p className="text-xs uppercase tracking-widest text-muted-foreground">
                       {p.manufacturerName}
                     </p>

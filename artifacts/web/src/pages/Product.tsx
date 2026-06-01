@@ -222,6 +222,10 @@ export default function Product() {
 
           <h1 className="font-serif text-3xl md:text-4xl mb-4">{data.name}</h1>
 
+          {!showPriceBlock && !data.quoteOnly && (
+            <p className="text-sm text-muted-foreground mb-6">Pricing coming soon — add to your wishlist and we'll be in touch.</p>
+          )}
+
           {showPriceBlock ? (
             <div className="text-2xl mb-6">
               {onSale && !frameOnly ? (
@@ -239,9 +243,7 @@ export default function Product() {
                 </span>
               ) : null}
             </div>
-          ) : (
-            <p className="text-sm text-muted-foreground mb-6">Contact us for pricing.</p>
-          )}
+          ) : null}
 
           {data.shortDescription ? (
             <div
@@ -250,17 +252,13 @@ export default function Product() {
             />
           ) : null}
 
-          {showQuoteFallback ? (
+          {data.quoteOnly ? (
             <div className="border border-border bg-muted/40 p-5 mb-2">
               <p className="text-sm font-semibold uppercase tracking-widest text-foreground mb-1">
-                {data.quoteOnly
-                  ? "Available through a sales agent"
-                  : "Contact us for pricing"}
+                Available through a sales agent
               </p>
               <p className="text-sm text-muted-foreground">
-                {data.quoteOnly
-                  ? `${data.manufacturerName ?? "This brand"} is sold exclusively in our showroom. `
-                  : "This piece isn't currently available for online checkout. "}
+                {`${data.manufacturerName ?? "This brand"} is sold exclusively in our showroom. `}
                 Save it to your wishlist and a member of our team will follow
                 up with pricing, finishes, and lead times — or{" "}
                 <Link href="/contact" className="text-primary underline">
@@ -271,6 +269,10 @@ export default function Product() {
               <div className="mt-4">
                 <WishlistButton productId={data.id} variant="button" />
               </div>
+            </div>
+          ) : !canBuyOnline ? (
+            <div className="mb-4">
+              <WishlistButton productId={data.id} variant="button" />
             </div>
           ) : (
             <>
