@@ -24,6 +24,7 @@
     "seed-northcape-products": "tsx ./src/seedNorthcapeProducts.ts",
     "seed-galtech-finishes": "tsx ./src/seedGaltechFinishes.ts",
     "seed-galtech-products": "tsx ./src/seedGaltechProducts.ts",
+    "patch-galtech-specs": "tsx ./src/patchGaltechSpecs.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
