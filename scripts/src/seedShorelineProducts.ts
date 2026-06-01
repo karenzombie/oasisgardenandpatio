@@ -41,7 +41,8 @@ const LOGO_PATH = resolve(
   WORKSPACE_ROOT,
   "attached_assets/shoreline-logo_1777762880085.webp",
 );
-const MANUFACTURER_NAME = "Shoreline Craftworks";
+const MANUFACTURER_NAME = "Shoreline";
+const MANUFACTURER_SLUG = "shoreline";
 const SIDECAR = "http://127.0.0.1:1106";
 const STORAGE_SUBDIR = "products/shoreline";
 const LOCAL_IMAGE_BASE = join(WORKSPACE_ROOT, "shoreline_images");
@@ -242,10 +243,11 @@ async function uploadProductImage(
 // ---------------------------------------------------------------------------
 
 async function ensureManufacturer(): Promise<number> {
+  // Look up by slug first to match the existing "Shoreline" record (slug=shoreline)
   const [existing] = await db
     .select({ id: manufacturersTable.id })
     .from(manufacturersTable)
-    .where(eq(manufacturersTable.name, MANUFACTURER_NAME))
+    .where(eq(manufacturersTable.slug, MANUFACTURER_SLUG))
     .limit(1);
 
   if (existing) {
@@ -277,7 +279,7 @@ async function ensureManufacturer(): Promise<number> {
     .insert(manufacturersTable)
     .values({
       name: MANUFACTURER_NAME,
-      slug: "shoreline-craftworks",
+      slug: MANUFACTURER_SLUG,
       description:
         "Shoreline Craftworks — premium outdoor furniture crafted from durable recycled HDPE poly lumber in a wide range of designer colors and finishes.",
       logoUrl,
