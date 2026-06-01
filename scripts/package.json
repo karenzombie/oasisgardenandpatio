@@ -25,6 +25,8 @@
     "seed-galtech-finishes": "tsx ./src/seedGaltechFinishes.ts",
     "seed-galtech-products": "tsx ./src/seedGaltechProducts.ts",
     "patch-galtech-specs": "tsx ./src/patchGaltechSpecs.ts",
+    "seed-telescope-finishes": "tsx ./src/seedTelescopeFinishes.ts",
+    "seed-telescope-products": "tsx ./src/seedTelescopeProducts.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
