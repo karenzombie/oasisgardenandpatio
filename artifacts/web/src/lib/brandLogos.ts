@@ -11,6 +11,7 @@ import homecrest from "@assets/homecrest-logo_1777762880085.png";
 import treasureGarden from "@assets/treasure-garden-logo_1777762880085.jpg";
 import telescopeCasual from "@assets/TelescopeCasual-logo_1777762880085.png";
 import frankford from "@assets/frankford-logo_1780107775769.jpg";
+import galtech from "@assets/galtech_logo_image_1780285724532.png";
 
 export interface BrandLogo {
   name: string;
@@ -24,6 +25,7 @@ export const BRAND_LOGOS: BrandLogo[] = [
   { name: "Hanamint", src: hanamint },
   { name: "Treasure Garden", src: treasureGarden },
   { name: "Frankford Umbrellas", src: frankford },
+  { name: "Galtech International", src: galtech },
   { name: "Sunbrella", src: sunbrella },
   { name: "Sunset West", src: sunsetWest },
   { name: "Telescope Casual", src: telescopeCasual },
@@ -66,6 +68,8 @@ const ALIAS_TO_NAME: Record<string, string> = {
   summersetcasual: "summerset",
   frankford: "frankfordumbrellas",
   frankfordumbrella: "frankfordumbrellas",
+  galtech: "galtechinternational",
+  galtechcorp: "galtechinternational",
 };
 
 /**
