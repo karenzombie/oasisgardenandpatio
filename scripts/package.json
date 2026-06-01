@@ -29,6 +29,8 @@
     "seed-telescope-products": "tsx ./src/seedTelescopeProducts.ts",
     "seed-homecrest-finishes": "tsx ./src/seedHomecrestFinishes.ts",
     "seed-homecrest-products": "tsx ./src/seedHomecrestProducts.ts",
+    "seed-sunset-west-products": "tsx ./src/seedSunsetWestProducts.ts",
+    "seed-sunset-west-finishes": "tsx ./src/seedSunsetWestFinishes.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
