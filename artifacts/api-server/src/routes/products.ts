@@ -100,6 +100,7 @@ router.get(
     ];
     if (onlineOnly) {
       conditions.push(eq(productsTable.quoteOnly, false));
+      conditions.push(eq(productsTable.inStoreOnly, false));
     }
     if (q && q.trim()) {
       const needle = `%${q.trim()}%`;
