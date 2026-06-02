@@ -135,7 +135,7 @@ export default function Home() {
           </div>
           <div className="text-center mt-12">
             <Button variant="link" className="font-serif text-lg text-primary hover:text-primary/80" asChild>
-              <Link href="/shop">View all categories <ArrowRight className="ml-2 w-4 h-4" /></Link>
+              <Link href="/shop">View all <ArrowRight className="ml-2 w-4 h-4" /></Link>
             </Button>
           </div>
         </div>
