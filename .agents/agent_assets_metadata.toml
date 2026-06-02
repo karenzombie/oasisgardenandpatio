@@ -47,3 +47,9 @@ id = "xT7AJzlHJgmcx2d6KxttR"
 uri = "file://scripts/dev-data-for-prod.sql.tar.gz"
 type = "unspecified"
 title = "dev-data-for-prod.sql (zipped)"
+
+[[outputs]]
+id = "WtR0ViAbihaT-gf16w-yY"
+uri = "file://attached_assets/missing_product_images.csv"
+type = "table"
+title = "Missing Product Images by Manufacturer"
