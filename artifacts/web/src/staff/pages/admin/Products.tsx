@@ -288,6 +288,7 @@ export default function Products() {
                     <SortableHeader sortKey="manufacturer" state={sort} onSort={handleSort} className="px-4 py-2.5 font-medium">Brand</SortableHeader>
                     <SortableHeader sortKey="category" state={sort} onSort={handleSort} className="px-4 py-2.5 font-medium">Category</SortableHeader>
                     <SortableHeader sortKey="price" state={sort} onSort={handleSort} align="right" className="px-4 py-2.5 font-medium w-24">Price</SortableHeader>
+                    <th className="px-4 py-2.5 font-medium w-24 text-right">Sale</th>
                     <SortableHeader sortKey="onHand" state={sort} onSort={handleSort} align="right" className="px-4 py-2.5 font-medium w-20">On hand</SortableHeader>
                     <th className="px-4 py-2.5 font-medium w-32">Flags</th>
                     <th className="px-4 py-2.5 font-medium w-28 text-right">Actions</th>
@@ -344,6 +345,13 @@ export default function Products() {
                         </td>
                         <td className="px-4 py-2.5 text-right text-slate-700 tabular-nums">
                           {row.price ? `$${Number(row.price).toFixed(2)}` : <span className="text-slate-400">—</span>}
+                        </td>
+                        <td className="px-4 py-2.5 text-right tabular-nums">
+                          {row.salePrice ? (
+                            <span className="text-emerald-700 font-medium">${Number(row.salePrice).toFixed(2)}</span>
+                          ) : (
+                            <span className="text-slate-400">—</span>
+                          )}
                         </td>
                         <td className={`px-4 py-2.5 text-right tabular-nums ${lowStock ? "text-amber-700 font-medium" : "text-slate-700"}`}>
                           {row.onHand}

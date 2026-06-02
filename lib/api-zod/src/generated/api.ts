@@ -1861,6 +1861,12 @@ export const AdminListProductsResponse = zod.object({
       materialId: zod.number().nullable(),
       materialName: zod.string().nullable(),
       price: zod.string().nullable(),
+      salePrice: zod
+        .string()
+        .nullable()
+        .describe(
+          "Optional sale price. When set and less than price, the storefront shows price struck through and salePrice as the active price.",
+        ),
       cost: zod.string().nullable(),
       msrp: zod
         .string()
@@ -1933,6 +1939,12 @@ export const AdminCreateProductBody = zod.object({
   categoryId: zod.number().nullish(),
   materialId: zod.number().nullish(),
   price: zod.string().nullish(),
+  salePrice: zod
+    .string()
+    .nullish()
+    .describe(
+      "Optional sale price. When set and less than price, the storefront shows price struck through and salePrice as the active price.",
+    ),
   cost: zod.string().nullish(),
   msrp: zod.string().nullish(),
   markupPercent: zod.string().nullish(),
@@ -1985,6 +1997,12 @@ export const AdminGetProductResponse = zod
     materialId: zod.number().nullable(),
     materialName: zod.string().nullable(),
     price: zod.string().nullable(),
+    salePrice: zod
+      .string()
+      .nullable()
+      .describe(
+        "Optional sale price. When set and less than price, the storefront shows price struck through and salePrice as the active price.",
+      ),
     cost: zod.string().nullable(),
     msrp: zod
       .string()
@@ -2065,6 +2083,12 @@ export const AdminUpdateProductBody = zod.object({
   categoryId: zod.number().nullish(),
   materialId: zod.number().nullish(),
   price: zod.string().nullish(),
+  salePrice: zod
+    .string()
+    .nullish()
+    .describe(
+      "Optional sale price. When set and less than price, the storefront shows price struck through and salePrice as the active price.",
+    ),
   cost: zod.string().nullish(),
   msrp: zod.string().nullish(),
   markupPercent: zod.string().nullish(),
@@ -2103,6 +2127,12 @@ export const AdminUpdateProductResponse = zod.object({
   materialId: zod.number().nullable(),
   materialName: zod.string().nullable(),
   price: zod.string().nullable(),
+  salePrice: zod
+    .string()
+    .nullable()
+    .describe(
+      "Optional sale price. When set and less than price, the storefront shows price struck through and salePrice as the active price.",
+    ),
   cost: zod.string().nullable(),
   msrp: zod
     .string()
@@ -2167,6 +2197,12 @@ export const AdminSetProductActiveResponse = zod.object({
   materialId: zod.number().nullable(),
   materialName: zod.string().nullable(),
   price: zod.string().nullable(),
+  salePrice: zod
+    .string()
+    .nullable()
+    .describe(
+      "Optional sale price. When set and less than price, the storefront shows price struck through and salePrice as the active price.",
+    ),
   cost: zod.string().nullable(),
   msrp: zod
     .string()

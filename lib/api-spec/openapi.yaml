@@ -5663,6 +5663,9 @@ components:
           type: ["string", "null"]
         price:
           type: ["string", "null"]
+        salePrice:
+          type: ["string", "null"]
+          description: Optional sale price. When set and less than price, the storefront shows price struck through and salePrice as the active price.
         cost:
           type: ["string", "null"]
         msrp:
@@ -5723,6 +5726,7 @@ components:
         - materialId
         - materialName
         - price
+        - salePrice
         - cost
         - msrp
         - markupPercent
@@ -5838,6 +5842,9 @@ components:
           type: ["integer", "null"]
         price:
           type: ["string", "null"]
+        salePrice:
+          type: ["string", "null"]
+          description: Optional sale price. When set and less than price, the storefront shows price struck through and salePrice as the active price.
         cost:
           type: ["string", "null"]
         msrp:
@@ -5908,6 +5915,9 @@ components:
           type: ["integer", "null"]
         price:
           type: ["string", "null"]
+        salePrice:
+          type: ["string", "null"]
+          description: Optional sale price. When set and less than price, the storefront shows price struck through and salePrice as the active price.
         cost:
           type: ["string", "null"]
         msrp:

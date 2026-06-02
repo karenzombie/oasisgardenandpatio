@@ -35,6 +35,7 @@
     "seed-shoreline-products": "tsx ./src/seedShorelineProducts.ts",
     "seed-ow-lee-additional": "tsx ./src/seedOwLeeAdditional.ts",
     "seed-ow-lee-fabrics": "tsx ./src/seedOwLeeFabrics.ts",
+    "import-treasure-garden-prices": "tsx ./src/importTreasureGardenPrices.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {

@@ -29,6 +29,11 @@ export interface CreateProductRequest {
   materialId?: number | null;
   /** @nullable */
   price?: string | null;
+  /**
+   * Optional sale price. When set and less than price, the storefront shows price struck through and salePrice as the active price.
+   * @nullable
+   */
+  salePrice?: string | null;
   /** @nullable */
   cost?: string | null;
   /** @nullable */
