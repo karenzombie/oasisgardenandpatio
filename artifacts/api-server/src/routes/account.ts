@@ -7,6 +7,7 @@ import {
   ordersTable,
   orderItemsTable,
   productsTable,
+  fabricsTable,
 } from "@workspace/db";
 import {
   CreateAccountAddressBody,
@@ -15,6 +16,7 @@ import {
   GetAccountOrderResponse,
 } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/requireAuth";
+import { toPublicImageUrl } from "../lib/imageUrl";
 
 const router: IRouter = Router();
 
@@ -352,12 +354,17 @@ router.get(
         unitPrice: orderItemsTable.unitPrice,
         quantity: orderItemsTable.quantity,
         amount: orderItemsTable.amount,
+        finishName: orderItemsTable.variantNameSnapshot,
+        fabricName: orderItemsTable.fabricNameSnapshot,
+        fabricItemNumber: orderItemsTable.fabricItemNumberSnapshot,
+        swatchImageUrl: fabricsTable.swatchImageUrl,
       })
       .from(orderItemsTable)
       .leftJoin(
         productsTable,
         eq(productsTable.id, orderItemsTable.productId),
       )
+      .leftJoin(fabricsTable, eq(fabricsTable.id, orderItemsTable.fabricId))
       .where(eq(orderItemsTable.orderId, order.id))
       .orderBy(orderItemsTable.id);
 
@@ -405,6 +412,10 @@ router.get(
           unitPrice: String(i.unitPrice),
           quantity: i.quantity,
           amount: String(i.amount),
+          finishName: i.finishName,
+          fabricName: i.fabricName,
+          fabricItemNumber: i.fabricItemNumber,
+          swatchImageUrl: toPublicImageUrl(i.swatchImageUrl),
         })),
       }),
     );

@@ -11,6 +11,7 @@ import {
   addressesTable,
   productsTable,
   fabricsTable,
+  productVariantsTable,
   type Customer,
 } from "@workspace/db";
 import {
@@ -274,6 +275,12 @@ router.post(
             isActive: productsTable.isActive,
             quoteOnly: productsTable.quoteOnly,
             fabricIsStripe: fabricsTable.isStripe,
+            variantId: cartItemsTable.variantId,
+            fabricId: cartItemsTable.fabricId,
+            variantSku: productVariantsTable.variantSku,
+            variantName: productVariantsTable.variantName,
+            fabricItemNumber: fabricsTable.itemNumber,
+            fabricName: fabricsTable.name,
           })
           .from(cartItemsTable)
           .innerJoin(
@@ -281,6 +288,10 @@ router.post(
             eq(productsTable.id, cartItemsTable.productId),
           )
           .leftJoin(fabricsTable, eq(fabricsTable.id, cartItemsTable.fabricId))
+          .leftJoin(
+            productVariantsTable,
+            eq(productVariantsTable.id, cartItemsTable.variantId),
+          )
           .where(eq(cartItemsTable.cartId, cart.id));
 
         if (lines.length === 0)
@@ -359,6 +370,14 @@ router.post(
             quantity: l.quantity,
             unitPrice: String(l.unitPrice),
             amount: moneyFromCents(lineCents[i]),
+            // Snapshot the chosen finish (variant) + fabric so order history
+            // can render the swatch + finish even if the catalog changes.
+            variantId: l.variantId,
+            fabricId: l.fabricId,
+            variantSkuSnapshot: l.variantSku,
+            variantNameSnapshot: l.variantName,
+            fabricItemNumberSnapshot: l.fabricItemNumber,
+            fabricNameSnapshot: l.fabricName,
           });
         }
 

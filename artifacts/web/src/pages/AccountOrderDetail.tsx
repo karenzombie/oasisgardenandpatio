@@ -99,21 +99,41 @@ export default function AccountOrderDetail() {
           <ul className="divide-y divide-border">
             {data.items.map((item) => (
               <li key={item.id} className="py-4 flex justify-between gap-4 text-sm">
-                <div className="min-w-0">
-                  {item.slug ? (
-                    <Link
-                      href={`/shop/${item.slug}`}
-                      className="hover:text-primary transition-colors"
-                    >
-                      {item.description}
-                    </Link>
-                  ) : (
-                    <p>{item.description}</p>
-                  )}
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {item.productSku ? `SKU ${item.productSku} · ` : ""}
-                    {formatMoney(item.unitPrice)} × {item.quantity}
-                  </p>
+                <div className="min-w-0 flex gap-3">
+                  {item.swatchImageUrl ? (
+                    <img
+                      src={item.swatchImageUrl}
+                      alt={item.fabricName ?? "Fabric swatch"}
+                      className="h-12 w-12 shrink-0 object-cover border border-border"
+                    />
+                  ) : null}
+                  <div className="min-w-0">
+                    {item.slug ? (
+                      <Link
+                        href={`/shop/${item.slug}`}
+                        className="hover:text-primary transition-colors"
+                      >
+                        {item.description}
+                      </Link>
+                    ) : (
+                      <p>{item.description}</p>
+                    )}
+                    {item.finishName ? (
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Finish: {item.finishName}
+                      </p>
+                    ) : null}
+                    {item.fabricName ? (
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Fabric: {item.fabricName}
+                        {item.fabricItemNumber ? ` (${item.fabricItemNumber})` : ""}
+                      </p>
+                    ) : null}
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {item.productSku ? `SKU ${item.productSku} · ` : ""}
+                      {formatMoney(item.unitPrice)} × {item.quantity}
+                    </p>
+                  </div>
                 </div>
                 <span className="shrink-0 font-serif">
                   {formatMoney(item.amount)}

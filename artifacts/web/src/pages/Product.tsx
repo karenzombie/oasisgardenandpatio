@@ -7,6 +7,7 @@ import {
   getGetCartQueryKey,
 } from "@workspace/api-client-react";
 import { getBrandLogo } from "@/lib/brandLogos";
+import { fabricGradeUpcharge } from "@/lib/fabricUpcharge";
 import { sanitizeHtml } from "@/lib/sanitize";
 import { WishlistButton } from "@/components/WishlistButton";
 import { useToast } from "@/hooks/use-toast";
@@ -160,7 +161,17 @@ export default function Product() {
           : data.price) ?? 0,
       );
   const variantAdj = Number(selectedVariant?.priceAdjustment ?? 0);
-  const effectivePrice = basePrice + variantAdj;
+  // Treasure Garden + Sunbrella grade upcharge (B +$100, C +$190 per item).
+  // Only applies once a fabric is chosen and not when buying frame-only.
+  const fabricUpcharge =
+    selectedFabric && !frameOnly
+      ? fabricGradeUpcharge(
+          data.manufacturerName,
+          selectedFabric.manufacturerName,
+          selectedFabric.grade,
+        )
+      : 0;
+  const effectivePrice = basePrice + variantAdj + fabricUpcharge;
 
   const variantOptionLabel = variants[0]?.optionLabel ?? "Variant";
 
@@ -250,7 +261,7 @@ export default function Product() {
                 <div className="flex items-baseline gap-3 flex-wrap">
                   <span className="text-muted-foreground">
                     <span className="text-xs uppercase tracking-widest mr-1.5">MSRP</span>
-                    <span className="line-through text-lg">{formatMoney(data.price)}</span>
+                    <span className="line-through text-lg">{formatMoney(Number(data.price) + fabricUpcharge)}</span>
                   </span>
                   <span className="text-primary font-bold text-3xl md:text-4xl">{formatMoney(effectivePrice)}</span>
                 </div>
@@ -391,11 +402,19 @@ export default function Product() {
                     className="w-full border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   >
                     <option value="">— Select a fabric —</option>
-                    {fabricOptions.map((f) => (
-                      <option key={f.id} value={f.id}>
-                        {f.manufacturerName} · {f.name} ({f.itemNumber})
-                      </option>
-                    ))}
+                    {fabricOptions.map((f) => {
+                      const up = fabricGradeUpcharge(
+                        data.manufacturerName,
+                        f.manufacturerName,
+                        f.grade,
+                      );
+                      return (
+                        <option key={f.id} value={f.id}>
+                          {f.manufacturerName} · {f.name} ({f.itemNumber})
+                          {up > 0 ? ` (+${formatMoney(up)})` : ""}
+                        </option>
+                      );
+                    })}
                   </select>
                   <p className="text-xs text-muted-foreground mt-1">
                     Browse the full fabric library on our{" "}
@@ -413,6 +432,37 @@ export default function Product() {
                   <span className="font-semibold">Striped fabrics are sold in pairs.</span>{" "}
                   This canopy must be ordered in even quantities (2, 4, 6…), so
                   the quantity is set in multiples of two.
+                </div>
+              ) : null}
+
+              {/* Selection summary: fabric swatch image + finish as plain text */}
+              {(selectedFabric && !frameOnly) || selectedVariant ? (
+                <div className="mb-5 flex items-center gap-4 border border-border bg-muted/30 px-4 py-3">
+                  {selectedFabric && !frameOnly && selectedFabric.swatchImageUrl ? (
+                    <img
+                      src={selectedFabric.swatchImageUrl}
+                      alt={selectedFabric.name}
+                      className="h-14 w-14 shrink-0 object-cover border border-border"
+                    />
+                  ) : null}
+                  <div className="text-sm">
+                    {selectedVariant ? (
+                      <p>
+                        <span className="text-muted-foreground">
+                          {variantOptionLabel}:{" "}
+                        </span>
+                        <span className="font-medium">{selectedVariant.name}</span>
+                      </p>
+                    ) : null}
+                    {selectedFabric && !frameOnly ? (
+                      <p>
+                        <span className="text-muted-foreground">Fabric: </span>
+                        <span className="font-medium">
+                          {selectedFabric.manufacturerName} · {selectedFabric.name} ({selectedFabric.itemNumber})
+                        </span>
+                      </p>
+                    ) : null}
+                  </div>
                 </div>
               ) : null}
 

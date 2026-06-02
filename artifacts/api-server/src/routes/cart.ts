@@ -17,6 +17,7 @@ import {
   UpdateCartItemBody,
 } from "@workspace/api-zod";
 import { toPublicImageUrl } from "../lib/imageUrl";
+import { fabricGradeUpcharge } from "../lib/fabricUpcharge";
 
 const router: IRouter = Router();
 
@@ -199,8 +200,13 @@ router.post(
         salePrice: productsTable.salePrice,
         frameOnlyPrice: productsTable.frameOnlyPrice,
         quoteOnly: productsTable.quoteOnly,
+        manufacturerName: manufacturersTable.name,
       })
       .from(productsTable)
+      .leftJoin(
+        manufacturersTable,
+        eq(manufacturersTable.id, productsTable.manufacturerId),
+      )
       .where(
         and(
           eq(productsTable.id, productId),
@@ -307,16 +313,23 @@ router.post(
       variantPriceAdj = Number(variant.priceAdjustment ?? 0);
     }
 
+    let fabricUpcharge = 0;
     if (fabricId) {
       const [option] = await db
         .select({
           id: productFabricOptionsTable.id,
           isStripe: fabricsTable.isStripe,
+          grade: fabricsTable.grade,
+          fabricManufacturerName: manufacturersTable.name,
         })
         .from(productFabricOptionsTable)
         .innerJoin(
           fabricsTable,
           eq(fabricsTable.id, productFabricOptionsTable.fabricId),
+        )
+        .leftJoin(
+          manufacturersTable,
+          eq(manufacturersTable.id, fabricsTable.manufacturerId),
         )
         .where(
           and(
@@ -342,6 +355,12 @@ router.post(
         });
         return;
       }
+      // Treasure Garden + Sunbrella grade upcharge (B +$100, C +$190 per item).
+      fabricUpcharge = fabricGradeUpcharge(
+        product.manufacturerName,
+        option.fabricManufacturerName,
+        option.grade,
+      );
     }
 
     // Frame-only orders use frameOnlyPrice; otherwise fall through to
@@ -361,7 +380,11 @@ router.post(
       res.status(400).json({ error: "Product has no price set" });
       return;
     }
-    const snapshotPrice = (Number(basePriceStr) + variantPriceAdj).toFixed(2);
+    const snapshotPrice = (
+      Number(basePriceStr) +
+      variantPriceAdj +
+      fabricUpcharge
+    ).toFixed(2);
 
     await ensureSessionPersisted(req);
     const owner = ownerFor(req);

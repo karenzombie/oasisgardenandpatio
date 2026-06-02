@@ -6667,6 +6667,18 @@ components:
           type: integer
         amount:
           type: string
+        finishName:
+          type: ["string", "null"]
+          description: Snapshot of the chosen frame finish (variant) name, if any.
+        fabricName:
+          type: ["string", "null"]
+          description: Snapshot of the chosen fabric name, if any.
+        fabricItemNumber:
+          type: ["string", "null"]
+          description: Snapshot of the chosen fabric item number, if any.
+        swatchImageUrl:
+          type: ["string", "null"]
+          description: Public URL of the chosen fabric's swatch image, if any.
       required:
         - id
         - productId
@@ -6676,6 +6688,10 @@ components:
         - unitPrice
         - quantity
         - amount
+        - finishName
+        - fabricName
+        - fabricItemNumber
+        - swatchImageUrl
     AccountOrderDetail:
       type: object
       properties:

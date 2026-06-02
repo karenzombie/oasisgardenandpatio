@@ -1506,6 +1506,26 @@ export interface AccountOrderLine {
   unitPrice: string;
   quantity: number;
   amount: string;
+  /**
+   * Snapshot of the chosen frame finish (variant) name, if any.
+   * @nullable
+   */
+  finishName: string | null;
+  /**
+   * Snapshot of the chosen fabric name, if any.
+   * @nullable
+   */
+  fabricName: string | null;
+  /**
+   * Snapshot of the chosen fabric item number, if any.
+   * @nullable
+   */
+  fabricItemNumber: string | null;
+  /**
+   * Public URL of the chosen fabric's swatch image, if any.
+   * @nullable
+   */
+  swatchImageUrl: string | null;
 }
 
 export interface AccountOrderDetail {

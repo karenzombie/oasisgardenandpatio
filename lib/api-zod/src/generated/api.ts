@@ -643,6 +643,24 @@ export const GetAccountOrderResponse = zod.object({
       unitPrice: zod.string(),
       quantity: zod.number(),
       amount: zod.string(),
+      finishName: zod
+        .string()
+        .nullable()
+        .describe(
+          "Snapshot of the chosen frame finish (variant) name, if any.",
+        ),
+      fabricName: zod
+        .string()
+        .nullable()
+        .describe("Snapshot of the chosen fabric name, if any."),
+      fabricItemNumber: zod
+        .string()
+        .nullable()
+        .describe("Snapshot of the chosen fabric item number, if any."),
+      swatchImageUrl: zod
+        .string()
+        .nullable()
+        .describe("Public URL of the chosen fabric's swatch image, if any."),
     }),
   ),
 });
