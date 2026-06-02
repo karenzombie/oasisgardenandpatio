@@ -1269,6 +1269,11 @@ export interface CatalogProductVariant {
   /** Decimal added to the base price when this variant is selected. */
   priceAdjustment: string;
   displayOrder: number;
+  /**
+   * Public URL of the matching finish swatch image, if one exists for this finish name.
+   * @nullable
+   */
+  swatchImageUrl: string | null;
 }
 
 export interface CatalogFabricOption {
@@ -1526,6 +1531,11 @@ export interface AccountOrderLine {
    * @nullable
    */
   swatchImageUrl: string | null;
+  /**
+   * Public URL of the chosen finish's swatch image, if any.
+   * @nullable
+   */
+  finishSwatchImageUrl: string | null;
 }
 
 export interface AccountOrderDetail {

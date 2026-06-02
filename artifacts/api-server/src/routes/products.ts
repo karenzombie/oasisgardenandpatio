@@ -10,6 +10,7 @@ import {
   productVariantsTable,
   productFabricOptionsTable,
   fabricsTable,
+  finishesTable,
 } from "@workspace/db";
 import {
   ListFeaturedProductsResponse,
@@ -284,6 +285,7 @@ router.get(
         sku: productsTable.sku,
         description: productsTable.description,
         shortDescription: productsTable.shortDescription,
+        manufacturerId: productsTable.manufacturerId,
         manufacturerName: manufacturersTable.name,
         manufacturerSlug: manufacturersTable.slug,
         categoryName: categoriesTable.name,
@@ -364,6 +366,34 @@ router.get(
         asc(productVariantsTable.variantName),
       );
 
+    // Finishes (frame finish swatches) are a separate catalog entity with their
+    // own swatch images. Product variants store the finish only as a plain text
+    // name (e.g. "Bronze"), so we match by manufacturer + name to recover the
+    // swatch image. Build a case-insensitive name -> imageUrl lookup.
+    const finishRows = row.manufacturerId
+      ? await db
+          .select({
+            name: finishesTable.name,
+            imageUrl: finishesTable.imageUrl,
+          })
+          .from(finishesTable)
+          .where(
+            and(
+              eq(finishesTable.manufacturerId, row.manufacturerId),
+              eq(finishesTable.isActive, true),
+            ),
+          )
+          .orderBy(asc(finishesTable.displayOrder), asc(finishesTable.id))
+      : [];
+
+    const finishSwatchByName = new Map<string, string>();
+    for (const f of finishRows) {
+      if (!f.imageUrl) continue;
+      const key = f.name.trim().toLowerCase();
+      // Keep the first (lowest display order) swatch for a given name.
+      if (!finishSwatchByName.has(key)) finishSwatchByName.set(key, f.imageUrl);
+    }
+
     const fabricRows = await db
       .select({
         id: fabricsTable.id,
@@ -431,6 +461,9 @@ router.get(
       variants: variantRows.map((v) => ({
         ...v,
         priceAdjustment: String(v.priceAdjustment ?? "0"),
+        swatchImageUrl: toPublicImageUrl(
+          finishSwatchByName.get(v.name.trim().toLowerCase()) ?? null,
+        ),
       })),
       fabricOptions: fabricRows.map((f) => ({
         id: f.id,

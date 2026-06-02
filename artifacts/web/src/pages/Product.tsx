@@ -435,34 +435,41 @@ export default function Product() {
                 </div>
               ) : null}
 
-              {/* Selection summary: fabric swatch image + finish as plain text */}
+              {/* Selection summary: finish + fabric swatch images with plain text */}
               {(selectedFabric && !frameOnly) || selectedVariant ? (
-                <div className="mb-5 flex items-center gap-4 border border-border bg-muted/30 px-4 py-3">
-                  {selectedFabric && !frameOnly && selectedFabric.swatchImageUrl ? (
-                    <img
-                      src={selectedFabric.swatchImageUrl}
-                      alt={selectedFabric.name}
-                      className="h-14 w-14 shrink-0 object-cover border border-border"
-                    />
+                <div className="mb-5 flex flex-wrap items-center gap-6 border border-border bg-muted/30 px-4 py-3">
+                  {selectedVariant ? (
+                    <div className="flex items-center gap-3">
+                      {selectedVariant.swatchImageUrl ? (
+                        <img
+                          src={selectedVariant.swatchImageUrl}
+                          alt={selectedVariant.name}
+                          className="h-14 w-14 shrink-0 object-cover border border-border"
+                        />
+                      ) : null}
+                      <div className="text-sm">
+                        <p className="text-muted-foreground">{variantOptionLabel}</p>
+                        <p className="font-medium">{selectedVariant.name}</p>
+                      </div>
+                    </div>
                   ) : null}
-                  <div className="text-sm">
-                    {selectedVariant ? (
-                      <p>
-                        <span className="text-muted-foreground">
-                          {variantOptionLabel}:{" "}
-                        </span>
-                        <span className="font-medium">{selectedVariant.name}</span>
-                      </p>
-                    ) : null}
-                    {selectedFabric && !frameOnly ? (
-                      <p>
-                        <span className="text-muted-foreground">Fabric: </span>
-                        <span className="font-medium">
+                  {selectedFabric && !frameOnly ? (
+                    <div className="flex items-center gap-3">
+                      {selectedFabric.swatchImageUrl ? (
+                        <img
+                          src={selectedFabric.swatchImageUrl}
+                          alt={selectedFabric.name}
+                          className="h-14 w-14 shrink-0 object-cover border border-border"
+                        />
+                      ) : null}
+                      <div className="text-sm">
+                        <p className="text-muted-foreground">Fabric</p>
+                        <p className="font-medium">
                           {selectedFabric.manufacturerName} · {selectedFabric.name} ({selectedFabric.itemNumber})
-                        </span>
-                      </p>
-                    ) : null}
-                  </div>
+                        </p>
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
 

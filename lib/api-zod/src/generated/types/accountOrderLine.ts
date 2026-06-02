@@ -38,4 +38,9 @@ export interface AccountOrderLine {
    * @nullable
    */
   swatchImageUrl: string | null;
+  /**
+   * Public URL of the chosen finish's swatch image, if any.
+   * @nullable
+   */
+  finishSwatchImageUrl: string | null;
 }

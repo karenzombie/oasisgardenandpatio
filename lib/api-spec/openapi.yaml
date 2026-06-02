@@ -6246,6 +6246,9 @@ components:
           description: Decimal added to the base price when this variant is selected.
         displayOrder:
           type: integer
+        swatchImageUrl:
+          type: ["string", "null"]
+          description: Public URL of the matching finish swatch image, if one exists for this finish name.
       required:
         - id
         - sku
@@ -6253,6 +6256,7 @@ components:
         - optionLabel
         - priceAdjustment
         - displayOrder
+        - swatchImageUrl
     CatalogFabricOption:
       type: object
       properties:
@@ -6679,6 +6683,9 @@ components:
         swatchImageUrl:
           type: ["string", "null"]
           description: Public URL of the chosen fabric's swatch image, if any.
+        finishSwatchImageUrl:
+          type: ["string", "null"]
+          description: Public URL of the chosen finish's swatch image, if any.
       required:
         - id
         - productId
@@ -6692,6 +6699,7 @@ components:
         - fabricName
         - fabricItemNumber
         - swatchImageUrl
+        - finishSwatchImageUrl
     AccountOrderDetail:
       type: object
       properties:

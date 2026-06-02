@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { and, desc, eq, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, or, sql } from "drizzle-orm";
 import {
   db,
   customersTable,
@@ -8,6 +8,7 @@ import {
   orderItemsTable,
   productsTable,
   fabricsTable,
+  finishesTable,
 } from "@workspace/db";
 import {
   CreateAccountAddressBody,
@@ -358,6 +359,7 @@ router.get(
         fabricName: orderItemsTable.fabricNameSnapshot,
         fabricItemNumber: orderItemsTable.fabricItemNumberSnapshot,
         swatchImageUrl: fabricsTable.swatchImageUrl,
+        manufacturerId: productsTable.manufacturerId,
       })
       .from(orderItemsTable)
       .leftJoin(
@@ -367,6 +369,43 @@ router.get(
       .leftJoin(fabricsTable, eq(fabricsTable.id, orderItemsTable.fabricId))
       .where(eq(orderItemsTable.orderId, order.id))
       .orderBy(orderItemsTable.id);
+
+    // Resolve finish swatch images. Finishes are a separate catalog entity; the
+    // order item only snapshots the finish name, so match by manufacturer + name
+    // (case-insensitive). Build one lookup keyed by "manufacturerId::lowername".
+    const finishKeys = items
+      .filter((i) => i.manufacturerId != null && i.finishName)
+      .map((i) => ({ mfr: i.manufacturerId as number, name: i.finishName as string }));
+    const finishSwatchByKey = new Map<string, string>();
+    if (finishKeys.length > 0) {
+      const mfrIds = Array.from(new Set(finishKeys.map((k) => k.mfr)));
+      const finishRows = await db
+        .select({
+          manufacturerId: finishesTable.manufacturerId,
+          name: finishesTable.name,
+          imageUrl: finishesTable.imageUrl,
+        })
+        .from(finishesTable)
+        .where(
+          and(
+            inArray(finishesTable.manufacturerId, mfrIds),
+            eq(finishesTable.isActive, true),
+          ),
+        )
+        .orderBy(asc(finishesTable.displayOrder), asc(finishesTable.id));
+      for (const f of finishRows) {
+        if (!f.imageUrl) continue;
+        const key = `${f.manufacturerId}::${f.name.trim().toLowerCase()}`;
+        if (!finishSwatchByKey.has(key)) finishSwatchByKey.set(key, f.imageUrl);
+      }
+    }
+    const finishSwatchFor = (
+      mfr: number | null,
+      name: string | null,
+    ): string | null =>
+      mfr != null && name
+        ? finishSwatchByKey.get(`${mfr}::${name.trim().toLowerCase()}`) ?? null
+        : null;
 
     let shippingAddress = null;
     if (order.shippingAddressId) {
@@ -416,6 +455,9 @@ router.get(
           fabricName: i.fabricName,
           fabricItemNumber: i.fabricItemNumber,
           swatchImageUrl: toPublicImageUrl(i.swatchImageUrl),
+          finishSwatchImageUrl: toPublicImageUrl(
+            finishSwatchFor(i.manufacturerId, i.finishName),
+          ),
         })),
       }),
     );

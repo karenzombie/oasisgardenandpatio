@@ -100,6 +100,13 @@ export default function AccountOrderDetail() {
             {data.items.map((item) => (
               <li key={item.id} className="py-4 flex justify-between gap-4 text-sm">
                 <div className="min-w-0 flex gap-3">
+                  {item.finishSwatchImageUrl ? (
+                    <img
+                      src={item.finishSwatchImageUrl}
+                      alt={item.finishName ?? "Finish swatch"}
+                      className="h-12 w-12 shrink-0 object-cover border border-border"
+                    />
+                  ) : null}
                   {item.swatchImageUrl ? (
                     <img
                       src={item.swatchImageUrl}

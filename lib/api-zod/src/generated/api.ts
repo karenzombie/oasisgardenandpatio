@@ -381,6 +381,12 @@ export const GetCatalogProductBySlugResponse = zod
                 "Decimal added to the base price when this variant is selected.",
               ),
             displayOrder: zod.number(),
+            swatchImageUrl: zod
+              .string()
+              .nullable()
+              .describe(
+                "Public URL of the matching finish swatch image, if one exists for this finish name.",
+              ),
           }),
         )
         .describe(
@@ -661,6 +667,10 @@ export const GetAccountOrderResponse = zod.object({
         .string()
         .nullable()
         .describe("Public URL of the chosen fabric's swatch image, if any."),
+      finishSwatchImageUrl: zod
+        .string()
+        .nullable()
+        .describe("Public URL of the chosen finish's swatch image, if any."),
     }),
   ),
 });
@@ -2341,6 +2351,12 @@ export const AdminGetProductPickerResponse = zod
             "Decimal added to the base price when this variant is selected.",
           ),
         displayOrder: zod.number(),
+        swatchImageUrl: zod
+          .string()
+          .nullable()
+          .describe(
+            "Public URL of the matching finish swatch image, if one exists for this finish name.",
+          ),
       }),
     ),
     fabricOptions: zod.array(
