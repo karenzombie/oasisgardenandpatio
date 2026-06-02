@@ -239,6 +239,9 @@ export default function Product() {
               ))}
             </div>
           ) : null}
+          <p className="mt-3 text-xs font-bold italic text-destructive">
+            NOTE: Image does not update with your fabric/finish selections.
+          </p>
         </div>
 
         {/* Info */}
