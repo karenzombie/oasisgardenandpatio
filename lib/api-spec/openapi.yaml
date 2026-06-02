@@ -6264,6 +6264,9 @@ components:
         colorFamily:
           type: ["string", "null"]
           description: Normalized color family (e.g. "Blue", "Beige") used for filtering.
+        isStripe:
+          type: boolean
+          description: When true, this fabric is a stripe pattern. Umbrellas ordered with a stripe fabric must be purchased in even pairs (quantity 2, 4, 6...).
         displayOrder:
           type: integer
       required:
@@ -6275,6 +6278,7 @@ components:
         - swatchImageUrl
         - grade
         - colorFamily
+        - isStripe
         - displayOrder
     AdminProductPickerDetail:
       type: object

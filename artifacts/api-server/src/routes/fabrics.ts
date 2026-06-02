@@ -45,6 +45,7 @@ router.get(
         swatchImageUrl: fabricsTable.swatchImageUrl,
         grade: fabricsTable.grade,
         colorFamily: fabricsTable.colorFamily,
+        isStripe: fabricsTable.isStripe,
         displayOrder: fabricsTable.displayOrder,
       })
       .from(fabricsTable)

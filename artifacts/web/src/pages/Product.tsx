@@ -83,6 +83,15 @@ export default function Product() {
     () => fabricOptions.find((f) => f.id === fabricId) ?? null,
     [fabricOptions, fabricId],
   );
+  // Stripe fabrics must be ordered in even pairs (2, 4, 6...). When such a
+  // fabric is selected we lock the quantity stepper to even values >= 2.
+  const isStripeSelected = selectedFabric?.isStripe === true;
+
+  useEffect(() => {
+    if (isStripeSelected) {
+      setQty((q) => (q < 2 ? 2 : q % 2 !== 0 ? q + 1 : q));
+    }
+  }, [isStripeSelected]);
 
   const frameOnlyPrice = data?.frameOnlyPrice ?? null;
   const offersFrameOnly = hasFabrics && frameOnlyPrice != null;
@@ -96,11 +105,20 @@ export default function Product() {
     missingSelections.length > 0
       ? `Please choose ${missingSelections.join(" and ")} first.`
       : "";
+  const stripeQtyInvalid = isStripeSelected && (qty < 2 || qty % 2 !== 0);
 
   function handleAddToCart() {
     if (!data) return;
     if (optionsMissingMsg) {
       toast({ title: "Selection required", description: optionsMissingMsg });
+      return;
+    }
+    if (stripeQtyInvalid) {
+      toast({
+        title: "Pairs required",
+        description:
+          "Striped fabrics must be ordered in pairs. Please choose an even quantity of 2 or more.",
+      });
       return;
     }
     addToCartM.mutate({
@@ -227,17 +245,20 @@ export default function Product() {
           )}
 
           {showPriceBlock ? (
-            <div className="text-2xl mb-6">
+            <div className="mb-6">
               {onSale && !frameOnly ? (
-                <>
-                  <span className="text-muted-foreground line-through mr-3">{formatMoney(data.price)}</span>
-                  <span className="text-primary font-semibold">{formatMoney(effectivePrice)}</span>
-                </>
+                <div className="flex items-baseline gap-3 flex-wrap">
+                  <span className="text-muted-foreground">
+                    <span className="text-xs uppercase tracking-widest mr-1.5">MSRP</span>
+                    <span className="line-through text-lg">{formatMoney(data.price)}</span>
+                  </span>
+                  <span className="text-primary font-bold text-3xl md:text-4xl">{formatMoney(effectivePrice)}</span>
+                </div>
               ) : (
-                <span>{formatMoney(effectivePrice)}</span>
+                <span className="text-2xl font-semibold">{formatMoney(effectivePrice)}</span>
               )}
               {variantAdj !== 0 ? (
-                <span className="text-sm text-muted-foreground ml-2">
+                <span className="text-sm text-muted-foreground mt-1 block">
                   ({variantAdj > 0 ? "+" : ""}
                   {formatMoney(variantAdj)} for {selectedVariant?.name})
                 </span>
@@ -386,13 +407,29 @@ export default function Product() {
                 </div>
               ) : null}
 
+              {/* Stripe fabrics must be ordered in even pairs */}
+              {isStripeSelected ? (
+                <div className="mb-5 border border-primary/30 bg-primary/5 px-4 py-3 text-sm text-foreground">
+                  <span className="font-semibold">Striped fabrics are sold in pairs.</span>{" "}
+                  This canopy must be ordered in even quantities (2, 4, 6…), so
+                  the quantity is set in multiples of two.
+                </div>
+              ) : null}
+
               <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
                 <div className="inline-flex items-center border border-input self-start">
                   <button
                     type="button"
                     className="px-3 py-2.5 hover:bg-muted disabled:opacity-40"
-                    onClick={() => setQty((q) => Math.max(1, q - 1))}
-                    disabled={qty <= 1}
+                    onClick={() =>
+                      setQty((q) =>
+                        Math.max(
+                          isStripeSelected ? 2 : 1,
+                          q - (isStripeSelected ? 2 : 1),
+                        ),
+                      )
+                    }
+                    disabled={qty <= (isStripeSelected ? 2 : 1)}
                     aria-label="Decrease quantity"
                   >
                     −
@@ -401,7 +438,7 @@ export default function Product() {
                   <button
                     type="button"
                     className="px-3 py-2.5 hover:bg-muted"
-                    onClick={() => setQty((q) => q + 1)}
+                    onClick={() => setQty((q) => q + (isStripeSelected ? 2 : 1))}
                     aria-label="Increase quantity"
                   >
                     +
@@ -413,7 +450,8 @@ export default function Product() {
                   disabled={
                     addToCartM.isPending ||
                     !data.availableOnline ||
-                    Boolean(optionsMissingMsg)
+                    Boolean(optionsMissingMsg) ||
+                    stripeQtyInvalid
                   }
                   title={optionsMissingMsg || undefined}
                   className="flex-1 sm:flex-none bg-primary text-primary-foreground px-8 py-3 text-sm uppercase tracking-widest font-medium hover:bg-primary/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"

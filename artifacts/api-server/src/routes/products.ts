@@ -370,7 +370,11 @@ router.get(
         name: fabricsTable.name,
         itemNumber: fabricsTable.itemNumber,
         manufacturerName: manufacturersTable.name,
+        manufacturerLogoUrl: manufacturersTable.logoUrl,
         swatchImageUrl: fabricsTable.swatchImageUrl,
+        grade: fabricsTable.grade,
+        colorFamily: fabricsTable.colorFamily,
+        isStripe: fabricsTable.isStripe,
         displayOrder: productFabricOptionsTable.displayOrder,
       })
       .from(productFabricOptionsTable)
@@ -433,7 +437,11 @@ router.get(
         name: f.name,
         itemNumber: f.itemNumber,
         manufacturerName: f.manufacturerName,
+        manufacturerLogoUrl: toPublicImageUrl(f.manufacturerLogoUrl),
         swatchImageUrl: toPublicImageUrl(f.swatchImageUrl),
+        grade: f.grade,
+        colorFamily: f.colorFamily,
+        isStripe: f.isStripe,
         displayOrder: f.displayOrder,
       })),
     };

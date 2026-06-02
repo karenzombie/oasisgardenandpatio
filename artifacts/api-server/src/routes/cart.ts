@@ -309,7 +309,10 @@ router.post(
 
     if (fabricId) {
       const [option] = await db
-        .select({ id: productFabricOptionsTable.id })
+        .select({
+          id: productFabricOptionsTable.id,
+          isStripe: fabricsTable.isStripe,
+        })
         .from(productFabricOptionsTable)
         .innerJoin(
           fabricsTable,
@@ -327,6 +330,16 @@ router.post(
         res
           .status(400)
           .json({ error: "Selected fabric is not offered for this product." });
+        return;
+      }
+      // Stripe fabrics must be ordered in even pairs. The incoming quantity must
+      // be >= 2 and even; because the upsert below sums quantities, even + even
+      // stays even, so a single-umbrella add is rejected up front.
+      if (option.isStripe && (quantity < 2 || quantity % 2 !== 0)) {
+        res.status(400).json({
+          error:
+            "Striped fabrics must be ordered in pairs. Please choose an even quantity of 2 or more.",
+        });
         return;
       }
     }
@@ -395,6 +408,32 @@ router.patch(
     await ensureSessionPersisted(req);
     const owner = ownerFor(req);
     const cart = await getOrCreateCart(owner);
+
+    // Look up the item's fabric (if any) so we can enforce the stripe pair rule
+    // on quantity changes, not just on add-to-cart.
+    const [existing] = await db
+      .select({ isStripe: fabricsTable.isStripe })
+      .from(cartItemsTable)
+      .leftJoin(fabricsTable, eq(fabricsTable.id, cartItemsTable.fabricId))
+      .where(
+        and(eq(cartItemsTable.id, itemId), eq(cartItemsTable.cartId, cart.id)),
+      )
+      .limit(1);
+    if (!existing) {
+      res.status(404).json({ error: "Cart item not found" });
+      return;
+    }
+    if (
+      existing.isStripe &&
+      (parsed.data.quantity < 2 || parsed.data.quantity % 2 !== 0)
+    ) {
+      res.status(400).json({
+        error:
+          "Striped fabrics must be ordered in pairs. Please choose an even quantity of 2 or more.",
+      });
+      return;
+    }
+
     const result = await db
       .update(cartItemsTable)
       .set({ quantity: parsed.data.quantity })

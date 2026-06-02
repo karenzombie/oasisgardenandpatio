@@ -10,6 +10,7 @@ import {
   orderStatusHistoryTable,
   addressesTable,
   productsTable,
+  fabricsTable,
   type Customer,
 } from "@workspace/db";
 import {
@@ -272,12 +273,14 @@ router.post(
             availableOnline: productsTable.availableOnline,
             isActive: productsTable.isActive,
             quoteOnly: productsTable.quoteOnly,
+            fabricIsStripe: fabricsTable.isStripe,
           })
           .from(cartItemsTable)
           .innerJoin(
             productsTable,
             eq(productsTable.id, cartItemsTable.productId),
           )
+          .leftJoin(fabricsTable, eq(fabricsTable.id, cartItemsTable.fabricId))
           .where(eq(cartItemsTable.cartId, cart.id));
 
         if (lines.length === 0)
@@ -286,6 +289,18 @@ router.post(
           return {
             error:
               "One or more items in your cart are no longer available. Please update your cart and try again.",
+            status: 400,
+          };
+        }
+        // Stripe-fabric umbrellas must be ordered in even pairs (qty 2, 4, 6...).
+        if (
+          lines.some(
+            (l) => l.fabricIsStripe && (l.quantity < 2 || l.quantity % 2 !== 0),
+          )
+        ) {
+          return {
+            error:
+              "Striped-fabric umbrellas must be ordered in pairs (quantity 2, 4, 6...). Please update the quantity in your cart and try again.",
             status: 400,
           };
         }

@@ -246,6 +246,11 @@ export const ListCatalogFabricsResponse = zod.object({
         .describe(
           'Normalized color family (e.g. \"Blue\", \"Beige\") used for filtering.',
         ),
+      isStripe: zod
+        .boolean()
+        .describe(
+          "When true, this fabric is a stripe pattern. Umbrellas ordered with a stripe fabric must be purchased in even pairs (quantity 2, 4, 6...).",
+        ),
       displayOrder: zod.number(),
     }),
   ),
@@ -401,6 +406,11 @@ export const GetCatalogProductBySlugResponse = zod
               .nullable()
               .describe(
                 'Normalized color family (e.g. \"Blue\", \"Beige\") used for filtering.',
+              ),
+            isStripe: zod
+              .boolean()
+              .describe(
+                "When true, this fabric is a stripe pattern. Umbrellas ordered with a stripe fabric must be purchased in even pairs (quantity 2, 4, 6...).",
               ),
             displayOrder: zod.number(),
           }),
@@ -2298,6 +2308,11 @@ export const AdminGetProductPickerResponse = zod
           .nullable()
           .describe(
             'Normalized color family (e.g. \"Blue\", \"Beige\") used for filtering.',
+          ),
+        isStripe: zod
+          .boolean()
+          .describe(
+            "When true, this fabric is a stripe pattern. Umbrellas ordered with a stripe fabric must be purchased in even pairs (quantity 2, 4, 6...).",
           ),
         displayOrder: zod.number(),
       }),
