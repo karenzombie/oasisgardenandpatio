@@ -53,3 +53,9 @@ id = "WtR0ViAbihaT-gf16w-yY"
 uri = "file://attached_assets/missing_product_images.csv"
 type = "table"
 title = "Missing Product Images by Manufacturer"
+
+[[outputs]]
+id = "mQDIuGyMLT5UsYQTXvC9B"
+uri = "file://missing_finish_images.csv"
+type = "table"
+title = "Missing Finish Images (54 finishes)"
