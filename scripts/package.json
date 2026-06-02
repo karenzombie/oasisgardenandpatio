@@ -34,6 +34,7 @@
     "seed-sunset-west-finishes": "tsx ./src/seedSunsetWestFinishes.ts",
     "seed-shoreline-products": "tsx ./src/seedShorelineProducts.ts",
     "seed-ow-lee-additional": "tsx ./src/seedOwLeeAdditional.ts",
+    "seed-ow-lee-fabrics": "tsx ./src/seedOwLeeFabrics.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
