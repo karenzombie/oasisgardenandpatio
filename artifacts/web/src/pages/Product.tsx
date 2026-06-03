@@ -11,6 +11,16 @@ import { fabricGradeUpcharge } from "@/lib/fabricUpcharge";
 import { sanitizeHtml } from "@/lib/sanitize";
 import { WishlistButton } from "@/components/WishlistButton";
 import { useToast } from "@/hooks/use-toast";
+import { ChevronsUpDown, Check } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 
 function formatMoney(v: string | number | null | undefined): string {
   if (v == null || v === "") return "";
@@ -36,6 +46,7 @@ export default function Product() {
   const [qty, setQty] = useState(1);
   const [variantId, setVariantId] = useState<number | null>(null);
   const [fabricId, setFabricId] = useState<number | null>(null);
+  const [fabricOpen, setFabricOpen] = useState(false);
 
   const { toast } = useToast();
   const qc = useQueryClient();
@@ -83,6 +94,11 @@ export default function Product() {
   const selectedFabric = useMemo(
     () => fabricOptions.find((f) => f.id === fabricId) ?? null,
     [fabricOptions, fabricId],
+  );
+
+  const sortedFabricOptions = useMemo(
+    () => [...fabricOptions].sort((a, b) => a.name.localeCompare(b.name)),
+    [fabricOptions],
   );
   // Stripe fabrics must be ordered in even pairs (2, 4, 6...). When such a
   // fabric is selected we lock the quantity stepper to even values >= 2.
@@ -384,10 +400,7 @@ export default function Product() {
               {/* Fabric selector */}
               {requiresFabric ? (
                 <div className="mb-5">
-                  <label
-                    htmlFor="fabric-select"
-                    className="block text-sm uppercase tracking-widest text-muted-foreground mb-2"
-                  >
+                  <p className="block text-sm uppercase tracking-widest text-muted-foreground mb-2">
                     Fabric
                     <span className="text-destructive ml-1">*</span>
                     {selectedFabric ? (
@@ -395,30 +408,59 @@ export default function Product() {
                         {selectedFabric.name} ({selectedFabric.itemNumber})
                       </span>
                     ) : null}
-                  </label>
-                  <select
-                    id="fabric-select"
-                    value={fabricId ?? ""}
-                    onChange={(e) =>
-                      setFabricId(e.target.value ? Number(e.target.value) : null)
-                    }
-                    className="w-full border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                  >
-                    <option value="">— Select a fabric —</option>
-                    {fabricOptions.map((f) => {
-                      const up = fabricGradeUpcharge(
-                        data.manufacturerName,
-                        f.manufacturerName,
-                        f.grade,
-                      );
-                      return (
-                        <option key={f.id} value={f.id}>
-                          {f.manufacturerName} · {f.name} ({f.itemNumber})
-                          {up > 0 ? ` (+${formatMoney(up)})` : ""}
-                        </option>
-                      );
-                    })}
-                  </select>
+                  </p>
+                  <Popover open={fabricOpen} onOpenChange={setFabricOpen}>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className="w-full flex items-center justify-between border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary text-left"
+                      >
+                        <span className={selectedFabric ? "text-foreground" : "text-muted-foreground"}>
+                          {selectedFabric
+                            ? `${selectedFabric.manufacturerName} · ${selectedFabric.name} (${selectedFabric.itemNumber})`
+                            : "— Select a fabric —"}
+                        </span>
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      className="p-0 w-[--radix-popover-trigger-width]"
+                      align="start"
+                      style={{ width: "var(--radix-popover-trigger-width)" }}
+                    >
+                      <Command>
+                        <CommandInput placeholder="Search by name or item number…" />
+                        <CommandList>
+                          <CommandEmpty>No fabrics found.</CommandEmpty>
+                          <CommandGroup>
+                            {sortedFabricOptions.map((f) => {
+                              const up = fabricGradeUpcharge(
+                                data.manufacturerName,
+                                f.manufacturerName,
+                                f.grade,
+                              );
+                              const label = `${f.manufacturerName} · ${f.name} (${f.itemNumber})${up > 0 ? ` (+${formatMoney(up)})` : ""}`;
+                              return (
+                                <CommandItem
+                                  key={f.id}
+                                  value={`${f.name} ${f.itemNumber}`}
+                                  onSelect={() => {
+                                    setFabricId(f.id);
+                                    setFabricOpen(false);
+                                  }}
+                                >
+                                  <Check
+                                    className={fabricId === f.id ? "opacity-100" : "opacity-0"}
+                                  />
+                                  {label}
+                                </CommandItem>
+                              );
+                            })}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                   <p className="text-xs text-muted-foreground mt-1">
                     Browse the full fabric library on our{" "}
                     <Link href="/fabrics" className="text-primary underline">
