@@ -348,8 +348,8 @@ export default function Shop() {
               p.salePrice && p.price && Number(p.salePrice) < Number(p.price);
             const brandLogo = getBrandLogo(p.manufacturerName);
             return (
-              <Link key={p.id} href={`/shop/${p.slug}`} className="group block">
-                <div className="relative aspect-square bg-card overflow-hidden mb-4 border border-border">
+              <Link key={p.id} href={`/shop/${p.slug}`} className="group block border border-border bg-card hover:shadow-md transition-shadow duration-150">
+                <div className="relative aspect-square bg-card overflow-hidden">
                   {p.primaryImageUrl ? (
                     <img
                       src={p.primaryImageUrl}
@@ -379,9 +379,9 @@ export default function Shop() {
                     </h3>
                   </div>
                 </div>
-                <div className="space-y-2 text-center">
+                <div className="border-t border-border px-4 py-4 space-y-2 text-center">
                   {brandLogo ? (
-                    <div className="flex justify-center mb-1">
+                    <div className="flex justify-center">
                       <img
                         src={brandLogo}
                         alt={p.manufacturerName ?? ""}
