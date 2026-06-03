@@ -379,7 +379,7 @@ export default function Shop() {
                     </h3>
                   </div>
                 </div>
-                <div className="space-y-1 text-center">
+                <div className="space-y-2 text-center">
                   {brandLogo ? (
                     <div className="flex justify-center mb-1">
                       <img
@@ -395,18 +395,23 @@ export default function Shop() {
                   ) : null}
                   {p.showPriceOnline && p.price ? (
                     onSale ? (
-                      <p className="text-sm">
+                      <p className="text-sm font-bold">
                         <span className="text-muted-foreground line-through mr-2">
-                          {formatMoney(p.price)}
+                          MSRP {formatMoney(p.price)}
                         </span>
-                        <span className="text-primary font-semibold">
-                          {formatMoney(p.salePrice)}
+                        <span className="text-primary">
+                          Sale {formatMoney(p.salePrice)}
                         </span>
                       </p>
                     ) : (
-                      <p className="text-sm">{formatMoney(p.price)}</p>
+                      <p className="text-sm font-bold">MSRP {formatMoney(p.price)}</p>
                     )
                   ) : null}
+                  <div className="pt-1">
+                    <span className="inline-block w-full border border-primary text-primary text-xs uppercase tracking-widest px-4 py-2.5 font-semibold group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-150">
+                      Select Options
+                    </span>
+                  </div>
                 </div>
               </Link>
             );
