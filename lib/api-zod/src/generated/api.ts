@@ -296,6 +296,7 @@ export const ListCatalogManufacturerFinishesResponse = zod.object({
           panelImageUrl: zod.string().nullable(),
           displayOrder: zod.number().nullable(),
           manufacturerId: zod.number(),
+          manufacturerName: zod.string(),
         })
         .describe(
           'A named collection of finishes for a manufacturer (e.g. Couture Jardin \"Billie\"). Includes a panel image showing all finishes in the collection together.',
@@ -466,6 +467,7 @@ export const GetCatalogProductBySlugResponse = zod
               panelImageUrl: zod.string().nullable(),
               displayOrder: zod.number().nullable(),
               manufacturerId: zod.number(),
+              manufacturerName: zod.string(),
             })
             .describe(
               'A named collection of finishes for a manufacturer (e.g. Couture Jardin \"Billie\"). Includes a panel image showing all finishes in the collection together.',

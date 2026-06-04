@@ -1,3 +1,4 @@
 - [Running seed scripts against prod](seed-scripts-prod.md) — override DATABASE_URL with $PROD_DATABASE_URL; bulk-insert junction tables (onConflictDoNothing) or per-row inserts time out on prod.
 - [TG Sunbrella grade upcharge](tg-sunbrella-grade-upcharge.md) — TG+Sunbrella per-item upcharge (B+$100,C+$190) folded into MSRP+Sale+snapshots, not a line item; dual helper kept in sync.
 - [Finish swatch ↔ variant linkage](finish-variant-swatch-link.md) — no FK; recover finish swatch by manufacturerId+name via JS map (never leftJoin — dup names multiply rows); fabrics have a real FK.
+- [Image upload location](image-upload-location.md) — user always uploads image folders to workspace root (e.g. ./coture_jardin_finish_images/), NOT Object Storage. Check root first.

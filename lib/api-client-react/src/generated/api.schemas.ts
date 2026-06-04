@@ -1340,6 +1340,7 @@ export interface CatalogFinishCollection {
   /** @nullable */
   displayOrder: number | null;
   manufacturerId: number;
+  manufacturerName: string;
 }
 
 export type CatalogProductDetail = CatalogProduct & {

@@ -63,11 +63,16 @@ router.get(
       .select({
         id: finishCollectionsTable.id,
         manufacturerId: finishCollectionsTable.manufacturerId,
+        manufacturerName: manufacturersTable.name,
         collectionName: finishCollectionsTable.collectionName,
         panelImageUrl: finishCollectionsTable.panelImageUrl,
         displayOrder: finishCollectionsTable.displayOrder,
       })
       .from(finishCollectionsTable)
+      .innerJoin(
+        manufacturersTable,
+        eq(manufacturersTable.id, finishCollectionsTable.manufacturerId),
+      )
       .where(eq(finishCollectionsTable.isActive, true))
       .orderBy(asc(finishCollectionsTable.displayOrder));
 

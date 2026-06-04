@@ -247,54 +247,30 @@ export default function Finishes() {
       ) : (
         <Accordion type="multiple" className="divide-y divide-border border-t border-border">
           {grouped.map(([brand, list]) => {
-            // Check if any finishes for this brand use collection grouping
-            const collectionNames = Array.from(
-              new Set(
-                list
-                  .map((f) => f.collection)
-                  .filter((c): c is string => c != null && c !== ""),
-              ),
-            );
-            const hasCollections = collectionNames.length > 0;
+            // Collections for this specific manufacturer (sorted by displayOrder)
+            const brandCollections = finishCollections
+              .filter((fc) => fc.manufacturerName === brand)
+              .slice()
+              .sort((a, b) => (a.displayOrder ?? 999) - (b.displayOrder ?? 999));
 
-            // Collection groups sorted by display order from metadata
-            const sortedCollections = hasCollections
-              ? collectionNames.slice().sort((a, b) => {
-                  const aOrder =
-                    finishCollections.find((fc) => fc.collectionName === a)
-                      ?.displayOrder ?? 999;
-                  const bOrder =
-                    finishCollections.find((fc) => fc.collectionName === b)
-                      ?.displayOrder ?? 999;
-                  return aOrder - bOrder || a.localeCompare(b);
-                })
-              : [];
-
-            // Finishes that don't belong to any collection
-            const uncollected = list.filter(
-              (f) => f.collection == null || f.collection === "",
-            );
-
-            // Original description-based sub-groups (for non-collection manufacturers)
+            // Description-based sub-groups for manufacturers without collections
             const typeKeys = Array.from(
               new Set(list.map((f) => f.description).filter(Boolean)),
             ) as string[];
-            const hasSubGroups = !hasCollections && typeKeys.length > 1;
+            const hasSubGroups = typeKeys.length > 1;
             const subGroups: { label: string; items: FinishItem[] }[] =
-              !hasCollections
-                ? hasSubGroups
-                  ? typeKeys
-                      .sort((a, b) =>
-                        (FINISH_TYPE_LABELS[a] ?? a).localeCompare(
-                          FINISH_TYPE_LABELS[b] ?? b,
-                        ),
-                      )
-                      .map((key) => ({
-                        label: FINISH_TYPE_LABELS[key] ?? key,
-                        items: list.filter((f) => f.description === key),
-                      }))
-                  : [{ label: "", items: list }]
-                : [];
+              hasSubGroups
+                ? typeKeys
+                    .sort((a, b) =>
+                      (FINISH_TYPE_LABELS[a] ?? a).localeCompare(
+                        FINISH_TYPE_LABELS[b] ?? b,
+                      ),
+                    )
+                    .map((key) => ({
+                      label: FINISH_TYPE_LABELS[key] ?? key,
+                      items: list.filter((f) => f.description === key),
+                    }))
+                : [{ label: "", items: list }];
 
             return (
               <AccordionItem key={brand} value={brand} className="border-b-0">
@@ -317,58 +293,29 @@ export default function Finishes() {
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="pb-8">
-                  {hasCollections ? (
-                    <>
-                      {sortedCollections.map((colName) => {
-                        const meta = finishCollections.find(
-                          (fc) => fc.collectionName === colName,
-                        );
-                        const items = list.filter(
-                          (f) => f.collection === colName,
-                        );
-                        return (
-                          <div key={colName} className="mb-10 last:mb-0">
-                            {meta?.panelImageUrl && (
-                              <div className="mb-5">
-                                <img
-                                  src={meta.panelImageUrl}
-                                  alt={colName}
-                                  className="w-full max-h-52 object-cover rounded-sm"
-                                />
-                              </div>
-                            )}
-                            <h3 className="text-sm font-medium uppercase tracking-widest text-muted-foreground mb-4">
-                              {colName}
-                            </h3>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5">
-                              {items.map((f) => (
-                                <FinishSwatch
-                                  key={f.id}
-                                  finish={f}
-                                  onClick={() => setSelected(f)}
-                                />
-                              ))}
+                  {brandCollections.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {brandCollections.map((fc) => (
+                        <div key={fc.id} className="group">
+                          {fc.panelImageUrl ? (
+                            <img
+                              src={fc.panelImageUrl}
+                              alt={fc.collectionName}
+                              className="w-full rounded-sm object-cover"
+                            />
+                          ) : (
+                            <div className="w-full aspect-video bg-muted rounded-sm flex items-center justify-center">
+                              <span className="text-xs text-muted-foreground uppercase tracking-widest">
+                                {fc.collectionName}
+                              </span>
                             </div>
-                          </div>
-                        );
-                      })}
-                      {uncollected.length > 0 && (
-                        <div className="mb-10 last:mb-0">
-                          <h3 className="text-sm font-medium uppercase tracking-widest text-muted-foreground mb-4">
-                            Other
-                          </h3>
-                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5">
-                            {uncollected.map((f) => (
-                              <FinishSwatch
-                                key={f.id}
-                                finish={f}
-                                onClick={() => setSelected(f)}
-                              />
-                            ))}
-                          </div>
+                          )}
+                          <p className="mt-2 text-sm font-medium text-foreground">
+                            {fc.collectionName}
+                          </p>
                         </div>
-                      )}
-                    </>
+                      ))}
+                    </div>
                   ) : (
                     subGroups.map(({ label, items }) => (
                       <div key={label || "all"} className="mb-10 last:mb-0">

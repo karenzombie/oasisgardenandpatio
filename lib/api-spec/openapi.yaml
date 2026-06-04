@@ -8413,12 +8413,14 @@ components:
         panelImageUrl: { type: ["string", "null"] }
         displayOrder: { type: ["integer", "null"] }
         manufacturerId: { type: integer }
+        manufacturerName: { type: string }
       required:
         - id
         - collectionName
         - panelImageUrl
         - displayOrder
         - manufacturerId
+        - manufacturerName
     CatalogFinish:
       type: object
       properties:
