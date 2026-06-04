@@ -294,14 +294,14 @@ export default function Finishes() {
                 </AccordionTrigger>
                 <AccordionContent className="pb-8">
                   {brandCollections.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="flex flex-col gap-6">
                       {brandCollections.map((fc) => (
-                        <div key={fc.id} className="group">
+                        <div key={fc.id}>
                           {fc.panelImageUrl ? (
                             <img
                               src={fc.panelImageUrl}
                               alt={fc.collectionName}
-                              className="w-full rounded-sm object-cover"
+                              className="w-full rounded-sm"
                             />
                           ) : (
                             <div className="w-full aspect-video bg-muted rounded-sm flex items-center justify-center">
