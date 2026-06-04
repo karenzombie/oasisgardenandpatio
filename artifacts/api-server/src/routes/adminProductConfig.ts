@@ -3,6 +3,7 @@ import { asc, eq, inArray, sql, count } from "drizzle-orm";
 import {
   db,
   fabricsTable,
+  finishCollectionsTable,
   finishesTable,
   manufacturersTable,
   productsTable,
@@ -23,6 +24,9 @@ import {
   AdminUpdateFinishParams,
   AdminUpdateFinishBody,
   AdminDeleteFinishParams,
+  AdminCreateFinishCollectionBody,
+  AdminUpdateFinishCollectionParams,
+  AdminUpdateFinishCollectionBody,
   AdminGetProductFinishesParams,
   AdminUpdateProductFinishesParams,
   AdminUpdateProductFinishesBody,
@@ -464,6 +468,7 @@ router.get(
         name: finishesTable.name,
         imageUrl: finishesTable.imageUrl,
         description: finishesTable.description,
+        collection: finishesTable.collection,
         isActive: finishesTable.isActive,
         displayOrder: finishesTable.displayOrder,
       })
@@ -499,7 +504,7 @@ router.post(
       res.status(400).json({ error: body.error.issues[0]?.message ?? "Invalid input" });
       return;
     }
-    const { manufacturerId, itemNumber, name, imageUrl, description, isActive, displayOrder } = body.data;
+    const { manufacturerId, itemNumber, name, imageUrl, description, collection, isActive, displayOrder } = body.data;
 
     const mfg = await db
       .select({ id: manufacturersTable.id })
@@ -520,6 +525,7 @@ router.post(
           name: name.trim(),
           imageUrl: imageUrl ?? null,
           description: description?.trim() || null,
+          collection: collection?.trim() || null,
           isActive: isActive ?? true,
           displayOrder: displayOrder ?? 0,
         })
@@ -534,6 +540,7 @@ router.post(
           name: finishesTable.name,
           imageUrl: finishesTable.imageUrl,
           description: finishesTable.description,
+          collection: finishesTable.collection,
           isActive: finishesTable.isActive,
           displayOrder: finishesTable.displayOrder,
         })
@@ -572,7 +579,7 @@ router.put(
       return;
     }
     const { id } = params.data;
-    const { manufacturerId, itemNumber, name, imageUrl, description, isActive, displayOrder } = body.data;
+    const { manufacturerId, itemNumber, name, imageUrl, description, collection, isActive, displayOrder } = body.data;
 
     const existing = await db
       .select({ id: finishesTable.id })
@@ -602,6 +609,7 @@ router.put(
     if (name !== undefined) updates.name = name.trim();
     if ("imageUrl" in body.data) updates.imageUrl = imageUrl ?? null;
     if ("description" in body.data) updates.description = description?.trim() || null;
+    if ("collection" in body.data) updates.collection = collection?.trim() || null;
     if (isActive !== undefined) updates.isActive = isActive;
     if (displayOrder !== undefined) updates.displayOrder = displayOrder;
 
@@ -627,6 +635,7 @@ router.put(
         name: finishesTable.name,
         imageUrl: finishesTable.imageUrl,
         description: finishesTable.description,
+        collection: finishesTable.collection,
         isActive: finishesTable.isActive,
         displayOrder: finishesTable.displayOrder,
       })
@@ -1137,6 +1146,161 @@ router.put(
       previousSnapshot: { attributes: previousAttrs },
     });
     res.json(rows);
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Admin: list finish collections
+// ---------------------------------------------------------------------------
+router.get(
+  "/admin/finish-collections",
+  requireAuth,
+  requireRole("admin"),
+  async (req: Request, res: Response): Promise<void> => {
+    const mfgId = req.query.manufacturerId ? Number(req.query.manufacturerId) : null;
+    const rows = await db
+      .select({
+        id: finishCollectionsTable.id,
+        manufacturerId: finishCollectionsTable.manufacturerId,
+        manufacturerName: manufacturersTable.name,
+        collectionName: finishCollectionsTable.collectionName,
+        panelImageUrl: finishCollectionsTable.panelImageUrl,
+        displayOrder: finishCollectionsTable.displayOrder,
+        isActive: finishCollectionsTable.isActive,
+      })
+      .from(finishCollectionsTable)
+      .innerJoin(manufacturersTable, eq(manufacturersTable.id, finishCollectionsTable.manufacturerId))
+      .where(mfgId ? eq(finishCollectionsTable.manufacturerId, mfgId) : undefined)
+      .orderBy(asc(manufacturersTable.name), asc(finishCollectionsTable.displayOrder), asc(finishCollectionsTable.collectionName));
+    res.json(rows.map((r) => ({ ...r, panelImageUrl: toPublicImageUrl(r.panelImageUrl) })));
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Admin: create finish collection
+// ---------------------------------------------------------------------------
+router.post(
+  "/admin/finish-collections",
+  requireAuth,
+  requireRole("admin"),
+  async (req: Request, res: Response): Promise<void> => {
+    const body = AdminCreateFinishCollectionBody.safeParse(req.body);
+    if (!body.success) {
+      res.status(400).json({ error: body.error.issues[0]?.message ?? "Invalid input" });
+      return;
+    }
+    const { manufacturerId, collectionName, panelImageUrl, displayOrder, isActive } = body.data;
+
+    const mfg = await db
+      .select({ id: manufacturersTable.id })
+      .from(manufacturersTable)
+      .where(eq(manufacturersTable.id, manufacturerId))
+      .limit(1);
+    if (mfg.length === 0) {
+      res.status(400).json({ error: "Manufacturer not found" });
+      return;
+    }
+
+    try {
+      const [row] = await db
+        .insert(finishCollectionsTable)
+        .values({
+          manufacturerId,
+          collectionName: collectionName.trim(),
+          panelImageUrl: panelImageUrl ?? null,
+          displayOrder: displayOrder ?? 0,
+          isActive: isActive ?? true,
+        })
+        .returning();
+
+      const [full] = await db
+        .select({
+          id: finishCollectionsTable.id,
+          manufacturerId: finishCollectionsTable.manufacturerId,
+          manufacturerName: manufacturersTable.name,
+          collectionName: finishCollectionsTable.collectionName,
+          panelImageUrl: finishCollectionsTable.panelImageUrl,
+          displayOrder: finishCollectionsTable.displayOrder,
+          isActive: finishCollectionsTable.isActive,
+        })
+        .from(finishCollectionsTable)
+        .innerJoin(manufacturersTable, eq(manufacturersTable.id, finishCollectionsTable.manufacturerId))
+        .where(eq(finishCollectionsTable.id, row.id));
+
+      res.status(201).json({ ...full, panelImageUrl: toPublicImageUrl(full.panelImageUrl) });
+    } catch (err: unknown) {
+      const pgErr = err as { code?: string };
+      if (pgErr.code === "23505") {
+        res.status(409).json({ error: "A collection with that name already exists for this manufacturer" });
+        return;
+      }
+      req.log.error({ err }, "Failed to create finish collection");
+      res.status(500).json({ error: "Failed to create finish collection" });
+    }
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Admin: update finish collection
+// ---------------------------------------------------------------------------
+router.put(
+  "/admin/finish-collections/:id",
+  requireAuth,
+  requireRole("admin"),
+  async (req: Request, res: Response): Promise<void> => {
+    const params = AdminUpdateFinishCollectionParams.safeParse(req.params);
+    const body = AdminUpdateFinishCollectionBody.safeParse(req.body);
+    if (!params.success || !body.success) {
+      res.status(400).json({ error: "Invalid input" });
+      return;
+    }
+    const { id } = params.data;
+    const { collectionName, panelImageUrl, displayOrder, isActive } = body.data;
+
+    const existing = await db
+      .select({ id: finishCollectionsTable.id })
+      .from(finishCollectionsTable)
+      .where(eq(finishCollectionsTable.id, id))
+      .limit(1);
+    if (existing.length === 0) {
+      res.status(404).json({ error: "Finish collection not found" });
+      return;
+    }
+
+    const updates: Partial<typeof finishCollectionsTable.$inferInsert> = {};
+    if (collectionName !== undefined) updates.collectionName = collectionName.trim();
+    if ("panelImageUrl" in body.data) updates.panelImageUrl = panelImageUrl ?? null;
+    if (displayOrder !== undefined) updates.displayOrder = displayOrder;
+    if (isActive !== undefined) updates.isActive = isActive;
+
+    try {
+      await db.update(finishCollectionsTable).set(updates).where(eq(finishCollectionsTable.id, id));
+    } catch (err: unknown) {
+      const pgErr = err as { code?: string };
+      if (pgErr.code === "23505") {
+        res.status(409).json({ error: "A collection with that name already exists for this manufacturer" });
+        return;
+      }
+      req.log.error({ err }, "Failed to update finish collection");
+      res.status(500).json({ error: "Failed to update finish collection" });
+      return;
+    }
+
+    const [full] = await db
+      .select({
+        id: finishCollectionsTable.id,
+        manufacturerId: finishCollectionsTable.manufacturerId,
+        manufacturerName: manufacturersTable.name,
+        collectionName: finishCollectionsTable.collectionName,
+        panelImageUrl: finishCollectionsTable.panelImageUrl,
+        displayOrder: finishCollectionsTable.displayOrder,
+        isActive: finishCollectionsTable.isActive,
+      })
+      .from(finishCollectionsTable)
+      .innerJoin(manufacturersTable, eq(manufacturersTable.id, finishCollectionsTable.manufacturerId))
+      .where(eq(finishCollectionsTable.id, id));
+
+    res.json({ ...full, panelImageUrl: toPublicImageUrl(full.panelImageUrl) });
   },
 );
 

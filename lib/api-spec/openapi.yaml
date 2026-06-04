@@ -2338,6 +2338,108 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
+  /admin/finish-collections:
+    get:
+      operationId: adminListFinishCollections
+      tags: [admin-products]
+      summary: List all finish collections (optionally filtered by manufacturerId)
+      parameters:
+        - name: manufacturerId
+          in: query
+          required: false
+          schema: { type: integer }
+      responses:
+        "200":
+          description: All finish collections
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminFinishCollectionsResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "403":
+          description: Not admin
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+    post:
+      operationId: adminCreateFinishCollection
+      tags: [admin-products]
+      summary: Create a new finish collection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminCreateFinishCollectionRequest"
+      responses:
+        "201":
+          description: Created finish collection
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminFinishCollection"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "403":
+          description: Not admin
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "409":
+          description: Collection name already exists for this manufacturer
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+  /admin/finish-collections/{id}:
+    put:
+      operationId: adminUpdateFinishCollection
+      tags: [admin-products]
+      summary: Update a finish collection
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUpdateFinishCollectionRequest"
+      responses:
+        "200":
+          description: Updated finish collection
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminFinishCollection"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "409":
+          description: Collection name already exists for this manufacturer
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
   /admin/products/{id}/attributes:
     get:
       operationId: adminGetProductAttributes
@@ -6249,6 +6351,9 @@ components:
         swatchImageUrl:
           type: ["string", "null"]
           description: Public URL of the matching finish swatch image, if one exists for this finish name.
+        collection:
+          type: ["string", "null"]
+          description: Collection name from the finish row, if set (Couture Jardin only). Used to group variants by collection on the product page.
       required:
         - id
         - sku
@@ -6257,6 +6362,7 @@ components:
         - priceAdjustment
         - displayOrder
         - swatchImageUrl
+        - collection
     CatalogFabricOption:
       type: object
       properties:
@@ -6361,6 +6467,11 @@ components:
               description: Fabrics this product accepts.
               items:
                 $ref: "#/components/schemas/CatalogFabricOption"
+            finishCollections:
+              type: array
+              description: Finish collections relevant to this product (non-empty only when some variants have a collection value). Used to show panel images grouped by collection on the product page.
+              items:
+                $ref: "#/components/schemas/CatalogFinishCollection"
           required:
             - description
             - dimensions
@@ -6371,6 +6482,7 @@ components:
             - images
             - variants
             - fabricOptions
+            - finishCollections
     WishlistItem:
       type: object
       properties:
@@ -8292,6 +8404,21 @@ components:
       required:
         - manufacturerIds
         - fabricIds
+    CatalogFinishCollection:
+      type: object
+      description: A named collection of finishes for a manufacturer (e.g. Couture Jardin "Billie"). Includes a panel image showing all finishes in the collection together.
+      properties:
+        id: { type: integer }
+        collectionName: { type: string }
+        panelImageUrl: { type: ["string", "null"] }
+        displayOrder: { type: ["integer", "null"] }
+        manufacturerId: { type: integer }
+      required:
+        - id
+        - collectionName
+        - panelImageUrl
+        - displayOrder
+        - manufacturerId
     CatalogFinish:
       type: object
       properties:
@@ -8302,6 +8429,7 @@ components:
         manufacturerLogoUrl: { type: ["string", "null"] }
         imageUrl: { type: ["string", "null"] }
         description: { type: ["string", "null"] }
+        collection: { type: ["string", "null"], description: "Collection name for grouped display (e.g. Couture Jardin). Null for all other manufacturers." }
         displayOrder: { type: integer }
       required:
         - id
@@ -8311,6 +8439,7 @@ components:
         - manufacturerLogoUrl
         - imageUrl
         - description
+        - collection
         - displayOrder
     CatalogFinishesResponse:
       type: object
@@ -8319,8 +8448,14 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/CatalogFinish"
+        finishCollections:
+          type: array
+          description: All active finish collections across all manufacturers. Used to look up panel images by manufacturerId + collectionName.
+          items:
+            $ref: "#/components/schemas/CatalogFinishCollection"
       required:
         - finishes
+        - finishCollections
     CatalogFinishProduct:
       type: object
       properties:
@@ -8394,6 +8529,7 @@ components:
         name: { type: string }
         imageUrl: { type: ["string", "null"] }
         description: { type: ["string", "null"] }
+        collection: { type: ["string", "null"] }
         isActive: { type: boolean }
         displayOrder: { type: integer }
       required:
@@ -8404,6 +8540,7 @@ components:
         - name
         - imageUrl
         - description
+        - collection
         - isActive
         - displayOrder
     AdminCreateFinishRequest:
@@ -8414,6 +8551,7 @@ components:
         name: { type: string, minLength: 1 }
         imageUrl: { type: ["string", "null"] }
         description: { type: ["string", "null"] }
+        collection: { type: ["string", "null"] }
         isActive: { type: boolean }
         displayOrder: { type: integer }
       required:
@@ -8427,8 +8565,55 @@ components:
         name: { type: string, minLength: 1 }
         imageUrl: { type: ["string", "null"] }
         description: { type: ["string", "null"] }
+        collection: { type: ["string", "null"] }
         isActive: { type: boolean }
         displayOrder: { type: integer }
+    AdminFinishCollection:
+      type: object
+      properties:
+        id: { type: integer }
+        manufacturerId: { type: integer }
+        manufacturerName: { type: string }
+        collectionName: { type: string }
+        panelImageUrl: { type: ["string", "null"] }
+        displayOrder: { type: ["integer", "null"] }
+        isActive: { type: boolean }
+      required:
+        - id
+        - manufacturerId
+        - manufacturerName
+        - collectionName
+        - panelImageUrl
+        - displayOrder
+        - isActive
+    AdminFinishCollectionsResponse:
+      type: object
+      properties:
+        collections:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminFinishCollection"
+      required:
+        - collections
+    AdminCreateFinishCollectionRequest:
+      type: object
+      properties:
+        manufacturerId: { type: integer }
+        collectionName: { type: string, minLength: 1 }
+        panelImageUrl: { type: ["string", "null"] }
+        displayOrder: { type: ["integer", "null"] }
+        isActive: { type: boolean }
+      required:
+        - manufacturerId
+        - collectionName
+    AdminUpdateFinishCollectionRequest:
+      type: object
+      properties:
+        manufacturerId: { type: integer }
+        collectionName: { type: string, minLength: 1 }
+        panelImageUrl: { type: ["string", "null"] }
+        displayOrder: { type: ["integer", "null"] }
+        isActive: { type: boolean }
     AdminProductFinishPool:
       type: object
       properties:

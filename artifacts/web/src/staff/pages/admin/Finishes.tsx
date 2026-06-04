@@ -53,11 +53,14 @@ import { uploadFile, getStaffObjectUrl } from "../../lib/upload";
 
 const ALL_VENDORS = "__all__";
 
+const COUTURE_JARDIN_ID = "14";
+
 interface FinishFormState {
   manufacturerId: string;
   itemNumber: string;
   name: string;
   description: string;
+  collection: string;
   imageUrl: string;
   isActive: boolean;
   displayOrder: string;
@@ -69,6 +72,7 @@ function emptyForm(mfgId?: string): FinishFormState {
     itemNumber: "",
     name: "",
     description: "",
+    collection: "",
     imageUrl: "",
     isActive: true,
     displayOrder: "0",
@@ -81,6 +85,7 @@ function formFromFinish(f: AdminFinish): FinishFormState {
     itemNumber: f.itemNumber ?? "",
     name: f.name,
     description: f.description ?? "",
+    collection: f.collection ?? "",
     imageUrl: f.imageUrl ?? "",
     isActive: f.isActive,
     displayOrder: String(f.displayOrder),
@@ -175,11 +180,17 @@ export default function Finishes() {
       return;
     }
 
+    if (form.manufacturerId === COUTURE_JARDIN_ID && !form.collection.trim()) {
+      setFormError("Collection is required for Couture Jardin finishes.");
+      return;
+    }
+
     const payload = {
       manufacturerId,
       itemNumber: form.itemNumber.trim() || null,
       name,
       description: form.description.trim() || null,
+      collection: form.collection.trim() || null,
       imageUrl: form.imageUrl.trim() || null,
       isActive: form.isActive,
       displayOrder,
@@ -414,6 +425,30 @@ export default function Finishes() {
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                 placeholder="Optional — e.g. Textured powder coat"
               />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="fin-collection">
+                Collection
+                {form.manufacturerId === COUTURE_JARDIN_ID && (
+                  <span className="text-destructive ml-1">*</span>
+                )}
+              </Label>
+              <Input
+                id="fin-collection"
+                value={form.collection}
+                onChange={(e) => setForm((f) => ({ ...f, collection: e.target.value }))}
+                placeholder={
+                  form.manufacturerId === COUTURE_JARDIN_ID
+                    ? "e.g. Signature Collection"
+                    : "Optional collection name"
+                }
+              />
+              {form.manufacturerId === COUTURE_JARDIN_ID && (
+                <p className="text-xs text-muted-foreground">
+                  Required for Couture Jardin — groups finishes on the customer-facing finishes page.
+                </p>
+              )}
             </div>
 
             <div className="space-y-1.5">

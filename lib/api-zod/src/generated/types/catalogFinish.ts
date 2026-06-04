@@ -18,5 +18,10 @@ export interface CatalogFinish {
   imageUrl: string | null;
   /** @nullable */
   description: string | null;
+  /**
+   * Collection name for grouped display (e.g. Couture Jardin). Null for all other manufacturers.
+   * @nullable
+   */
+  collection: string | null;
   displayOrder: number;
 }

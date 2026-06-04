@@ -339,22 +339,103 @@ export default function Product() {
                       </span>
                     ) : null}
                   </p>
-                  <div className="flex flex-wrap gap-2">
-                    {variants.map((v) => (
-                      <button
-                        key={v.id}
-                        type="button"
-                        onClick={() => setVariantId(v.id)}
-                        className={`px-3 py-2 border text-sm transition-colors ${
-                          variantId === v.id
-                            ? "border-primary bg-primary text-primary-foreground"
-                            : "border-input hover:border-foreground"
-                        }`}
-                      >
-                        {v.name}
-                      </button>
-                    ))}
-                  </div>
+                  {(() => {
+                    const finishCollections = data?.finishCollections ?? [];
+                    const hasCollections = variants.some((v) => v.collection != null);
+                    if (!hasCollections) {
+                      return (
+                        <div className="flex flex-wrap gap-2">
+                          {variants.map((v) => (
+                            <button
+                              key={v.id}
+                              type="button"
+                              onClick={() => setVariantId(v.id)}
+                              className={`px-3 py-2 border text-sm transition-colors ${
+                                variantId === v.id
+                                  ? "border-primary bg-primary text-primary-foreground"
+                                  : "border-input hover:border-foreground"
+                              }`}
+                            >
+                              {v.name}
+                            </button>
+                          ))}
+                        </div>
+                      );
+                    }
+                    // Collect unique collection names in displayOrder order
+                    const seen = new Set<string>();
+                    const collectionNames: string[] = [];
+                    for (const v of variants) {
+                      if (v.collection != null && !seen.has(v.collection)) {
+                        seen.add(v.collection);
+                        collectionNames.push(v.collection);
+                      }
+                    }
+                    collectionNames.sort((a, b) => {
+                      const aOrder = finishCollections.find((fc) => fc.collectionName === a)?.displayOrder ?? 999;
+                      const bOrder = finishCollections.find((fc) => fc.collectionName === b)?.displayOrder ?? 999;
+                      return aOrder - bOrder || a.localeCompare(b);
+                    });
+                    const uncollected = variants.filter((v) => v.collection == null);
+                    return (
+                      <div className="space-y-4">
+                        {collectionNames.map((colName) => {
+                          const meta = finishCollections.find((fc) => fc.collectionName === colName);
+                          const items = variants.filter((v) => v.collection === colName);
+                          return (
+                            <div key={colName}>
+                              {meta?.panelImageUrl && (
+                                <div className="mb-2">
+                                  <img
+                                    src={meta.panelImageUrl}
+                                    alt={colName}
+                                    className="w-full max-h-32 object-cover rounded-sm"
+                                  />
+                                </div>
+                              )}
+                              <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1.5">
+                                {colName}
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                {items.map((v) => (
+                                  <button
+                                    key={v.id}
+                                    type="button"
+                                    onClick={() => setVariantId(v.id)}
+                                    className={`px-3 py-2 border text-sm transition-colors ${
+                                      variantId === v.id
+                                        ? "border-primary bg-primary text-primary-foreground"
+                                        : "border-input hover:border-foreground"
+                                    }`}
+                                  >
+                                    {v.name}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })}
+                        {uncollected.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {uncollected.map((v) => (
+                              <button
+                                key={v.id}
+                                type="button"
+                                onClick={() => setVariantId(v.id)}
+                                className={`px-3 py-2 border text-sm transition-colors ${
+                                  variantId === v.id
+                                    ? "border-primary bg-primary text-primary-foreground"
+                                    : "border-input hover:border-foreground"
+                                }`}
+                              >
+                                {v.name}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               ) : null}
 

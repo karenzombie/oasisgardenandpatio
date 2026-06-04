@@ -60,6 +60,7 @@ export const ADMIN_NAV: NavGroup[] = [
       { label: "Sets", path: "/admin/sets", icon: Layers },
       { label: "Fabrics", path: "/admin/fabrics", icon: Palette },
       { label: "Finishes", path: "/admin/finishes", icon: Paintbrush },
+      { label: "Finish Collections", path: "/admin/finish-collections", icon: Paintbrush },
       { label: "Inventory", path: "/admin/inventory", icon: Boxes },
       { label: "Vendors", path: "/admin/manufacturers", icon: Building2 },
       { label: "Carriers", path: "/admin/carriers", icon: Truck },

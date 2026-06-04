@@ -6,19 +6,14 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface AdminFinish {
+export interface AdminFinishCollection {
   id: number;
   manufacturerId: number;
   manufacturerName: string;
+  collectionName: string;
   /** @nullable */
-  itemNumber: string | null;
-  name: string;
+  panelImageUrl: string | null;
   /** @nullable */
-  imageUrl: string | null;
-  /** @nullable */
-  description: string | null;
-  /** @nullable */
-  collection: string | null;
+  displayOrder: number | null;
   isActive: boolean;
-  displayOrder: number;
 }

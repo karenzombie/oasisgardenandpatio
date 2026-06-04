@@ -10,6 +10,7 @@ import {
   productVariantsTable,
   productFabricOptionsTable,
   fabricsTable,
+  finishCollectionsTable,
   finishesTable,
 } from "@workspace/db";
 import {
@@ -375,6 +376,7 @@ router.get(
           .select({
             name: finishesTable.name,
             imageUrl: finishesTable.imageUrl,
+            collection: finishesTable.collection,
           })
           .from(finishesTable)
           .where(
@@ -386,13 +388,33 @@ router.get(
           .orderBy(asc(finishesTable.displayOrder), asc(finishesTable.id))
       : [];
 
-    const finishSwatchByName = new Map<string, string>();
+    const finishDataByName = new Map<string, { imageUrl: string | null; collection: string | null }>();
     for (const f of finishRows) {
-      if (!f.imageUrl) continue;
       const key = f.name.trim().toLowerCase();
-      // Keep the first (lowest display order) swatch for a given name.
-      if (!finishSwatchByName.has(key)) finishSwatchByName.set(key, f.imageUrl);
+      // Keep the first (lowest display order) entry for a given name.
+      if (!finishDataByName.has(key)) {
+        finishDataByName.set(key, { imageUrl: f.imageUrl, collection: f.collection });
+      }
     }
+
+    const finishCollectionRows = row.manufacturerId
+      ? await db
+          .select({
+            id: finishCollectionsTable.id,
+            manufacturerId: finishCollectionsTable.manufacturerId,
+            collectionName: finishCollectionsTable.collectionName,
+            panelImageUrl: finishCollectionsTable.panelImageUrl,
+            displayOrder: finishCollectionsTable.displayOrder,
+          })
+          .from(finishCollectionsTable)
+          .where(
+            and(
+              eq(finishCollectionsTable.manufacturerId, row.manufacturerId),
+              eq(finishCollectionsTable.isActive, true),
+            ),
+          )
+          .orderBy(asc(finishCollectionsTable.displayOrder))
+      : [];
 
     const fabricRows = await db
       .select({
@@ -458,12 +480,18 @@ router.get(
       featured: row.featured,
       primaryImageUrl: toPublicImageUrl(primaryGallery?.url ?? null),
       images: images.map((i) => ({ ...i, url: toPublicImageUrl(i.url) })),
-      variants: variantRows.map((v) => ({
-        ...v,
-        priceAdjustment: String(v.priceAdjustment ?? "0"),
-        swatchImageUrl: toPublicImageUrl(
-          finishSwatchByName.get(v.name.trim().toLowerCase()) ?? null,
-        ),
+      variants: variantRows.map((v) => {
+        const finishData = finishDataByName.get(v.name.trim().toLowerCase());
+        return {
+          ...v,
+          priceAdjustment: String(v.priceAdjustment ?? "0"),
+          swatchImageUrl: toPublicImageUrl(finishData?.imageUrl ?? null),
+          collection: finishData?.collection ?? null,
+        };
+      }),
+      finishCollections: finishCollectionRows.map((fc) => ({
+        ...fc,
+        panelImageUrl: toPublicImageUrl(fc.panelImageUrl),
       })),
       fabricOptions: fabricRows.map((f) => ({
         id: f.id,

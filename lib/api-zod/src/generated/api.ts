@@ -278,9 +278,32 @@ export const ListCatalogManufacturerFinishesResponse = zod.object({
       manufacturerLogoUrl: zod.string().nullable(),
       imageUrl: zod.string().nullable(),
       description: zod.string().nullable(),
+      collection: zod
+        .string()
+        .nullable()
+        .describe(
+          "Collection name for grouped display (e.g. Couture Jardin). Null for all other manufacturers.",
+        ),
       displayOrder: zod.number(),
     }),
   ),
+  finishCollections: zod
+    .array(
+      zod
+        .object({
+          id: zod.number(),
+          collectionName: zod.string(),
+          panelImageUrl: zod.string().nullable(),
+          displayOrder: zod.number().nullable(),
+          manufacturerId: zod.number(),
+        })
+        .describe(
+          'A named collection of finishes for a manufacturer (e.g. Couture Jardin \"Billie\"). Includes a panel image showing all finishes in the collection together.',
+        ),
+    )
+    .describe(
+      "All active finish collections across all manufacturers. Used to look up panel images by manufacturerId + collectionName.",
+    ),
 });
 
 /**
@@ -299,6 +322,12 @@ export const ListCatalogFinishProductsResponse = zod.object({
     manufacturerLogoUrl: zod.string().nullable(),
     imageUrl: zod.string().nullable(),
     description: zod.string().nullable(),
+    collection: zod
+      .string()
+      .nullable()
+      .describe(
+        "Collection name for grouped display (e.g. Couture Jardin). Null for all other manufacturers.",
+      ),
     displayOrder: zod.number(),
   }),
   products: zod.array(
@@ -387,6 +416,12 @@ export const GetCatalogProductBySlugResponse = zod
               .describe(
                 "Public URL of the matching finish swatch image, if one exists for this finish name.",
               ),
+            collection: zod
+              .string()
+              .nullable()
+              .describe(
+                "Collection name from the finish row, if set (Couture Jardin only). Used to group variants by collection on the product page.",
+              ),
           }),
         )
         .describe(
@@ -422,6 +457,23 @@ export const GetCatalogProductBySlugResponse = zod
           }),
         )
         .describe("Fabrics this product accepts."),
+      finishCollections: zod
+        .array(
+          zod
+            .object({
+              id: zod.number(),
+              collectionName: zod.string(),
+              panelImageUrl: zod.string().nullable(),
+              displayOrder: zod.number().nullable(),
+              manufacturerId: zod.number(),
+            })
+            .describe(
+              'A named collection of finishes for a manufacturer (e.g. Couture Jardin \"Billie\"). Includes a panel image showing all finishes in the collection together.',
+            ),
+        )
+        .describe(
+          "Finish collections relevant to this product (non-empty only when some variants have a collection value). Used to show panel images grouped by collection on the product page.",
+        ),
     }),
   );
 
@@ -2357,6 +2409,12 @@ export const AdminGetProductPickerResponse = zod
           .describe(
             "Public URL of the matching finish swatch image, if one exists for this finish name.",
           ),
+        collection: zod
+          .string()
+          .nullable()
+          .describe(
+            "Collection name from the finish row, if set (Couture Jardin only). Used to group variants by collection on the product page.",
+          ),
       }),
     ),
     fabricOptions: zod.array(
@@ -2601,6 +2659,7 @@ export const AdminListFinishesResponseItem = zod.object({
   name: zod.string(),
   imageUrl: zod.string().nullable(),
   description: zod.string().nullable(),
+  collection: zod.string().nullable(),
   isActive: zod.boolean(),
   displayOrder: zod.number(),
 });
@@ -2618,6 +2677,7 @@ export const AdminCreateFinishBody = zod.object({
   name: zod.string().min(1),
   imageUrl: zod.string().nullish(),
   description: zod.string().nullish(),
+  collection: zod.string().nullish(),
   isActive: zod.boolean().optional(),
   displayOrder: zod.number().optional(),
 });
@@ -2635,6 +2695,7 @@ export const AdminUpdateFinishBody = zod.object({
   name: zod.string().min(1).optional(),
   imageUrl: zod.string().nullish(),
   description: zod.string().nullish(),
+  collection: zod.string().nullish(),
   isActive: zod.boolean().optional(),
   displayOrder: zod.number().optional(),
 });
@@ -2647,6 +2708,7 @@ export const AdminUpdateFinishResponse = zod.object({
   name: zod.string(),
   imageUrl: zod.string().nullable(),
   description: zod.string().nullable(),
+  collection: zod.string().nullable(),
   isActive: zod.boolean(),
   displayOrder: zod.number(),
 });
@@ -2761,6 +2823,64 @@ export const AdminUpdateFinishProductsResponse = zod.object({
       primaryImageUrl: zod.string().nullable(),
     }),
   ),
+});
+
+/**
+ * @summary List all finish collections (optionally filtered by manufacturerId)
+ */
+export const AdminListFinishCollectionsQueryParams = zod.object({
+  manufacturerId: zod.coerce.number().optional(),
+});
+
+export const AdminListFinishCollectionsResponse = zod.object({
+  collections: zod.array(
+    zod.object({
+      id: zod.number(),
+      manufacturerId: zod.number(),
+      manufacturerName: zod.string(),
+      collectionName: zod.string(),
+      panelImageUrl: zod.string().nullable(),
+      displayOrder: zod.number().nullable(),
+      isActive: zod.boolean(),
+    }),
+  ),
+});
+
+/**
+ * @summary Create a new finish collection
+ */
+
+export const AdminCreateFinishCollectionBody = zod.object({
+  manufacturerId: zod.number(),
+  collectionName: zod.string().min(1),
+  panelImageUrl: zod.string().nullish(),
+  displayOrder: zod.number().nullish(),
+  isActive: zod.boolean().optional(),
+});
+
+/**
+ * @summary Update a finish collection
+ */
+export const AdminUpdateFinishCollectionParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminUpdateFinishCollectionBody = zod.object({
+  manufacturerId: zod.number().optional(),
+  collectionName: zod.string().min(1).optional(),
+  panelImageUrl: zod.string().nullish(),
+  displayOrder: zod.number().nullish(),
+  isActive: zod.boolean().optional(),
+});
+
+export const AdminUpdateFinishCollectionResponse = zod.object({
+  id: zod.number(),
+  manufacturerId: zod.number(),
+  manufacturerName: zod.string(),
+  collectionName: zod.string(),
+  panelImageUrl: zod.string().nullable(),
+  displayOrder: zod.number().nullable(),
+  isActive: zod.boolean(),
 });
 
 /**

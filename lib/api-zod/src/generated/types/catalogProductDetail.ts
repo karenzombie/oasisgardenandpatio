@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { CatalogFabricOption } from "./catalogFabricOption";
+import type { CatalogFinishCollection } from "./catalogFinishCollection";
 import type { CatalogProduct } from "./catalogProduct";
 import type { CatalogProductDetailSpecs } from "./catalogProductDetailSpecs";
 import type { CatalogProductImage } from "./catalogProductImage";
@@ -34,4 +35,6 @@ export type CatalogProductDetail = CatalogProduct & {
   variants: CatalogProductVariant[];
   /** Fabrics this product accepts. */
   fabricOptions: CatalogFabricOption[];
+  /** Finish collections relevant to this product (non-empty only when some variants have a collection value). Used to show panel images grouped by collection on the product page. */
+  finishCollections: CatalogFinishCollection[];
 };

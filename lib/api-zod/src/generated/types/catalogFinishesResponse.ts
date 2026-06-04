@@ -6,7 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { CatalogFinish } from "./catalogFinish";
+import type { CatalogFinishCollection } from "./catalogFinishCollection";
 
 export interface CatalogFinishesResponse {
   finishes: CatalogFinish[];
+  /** All active finish collections across all manufacturers. Used to look up panel images by manufacturerId + collectionName. */
+  finishCollections: CatalogFinishCollection[];
 }

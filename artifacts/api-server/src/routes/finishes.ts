@@ -2,6 +2,7 @@ import { Router, type IRouter, type Request, type Response } from "express";
 import { and, asc, eq, ilike, or, sql } from "drizzle-orm";
 import {
   db,
+  finishCollectionsTable,
   finishesTable,
   manufacturersTable,
   productsTable,
@@ -43,6 +44,7 @@ router.get(
         manufacturerLogoUrl: manufacturersTable.logoUrl,
         imageUrl: finishesTable.imageUrl,
         description: finishesTable.description,
+        collection: finishesTable.collection,
         displayOrder: finishesTable.displayOrder,
       })
       .from(finishesTable)
@@ -57,12 +59,28 @@ router.get(
         asc(finishesTable.name),
       );
 
+    const collectionRows = await db
+      .select({
+        id: finishCollectionsTable.id,
+        manufacturerId: finishCollectionsTable.manufacturerId,
+        collectionName: finishCollectionsTable.collectionName,
+        panelImageUrl: finishCollectionsTable.panelImageUrl,
+        displayOrder: finishCollectionsTable.displayOrder,
+      })
+      .from(finishCollectionsTable)
+      .where(eq(finishCollectionsTable.isActive, true))
+      .orderBy(asc(finishCollectionsTable.displayOrder));
+
     res.json(
       ListCatalogManufacturerFinishesResponse.parse({
         finishes: rows.map((r) => ({
           ...r,
           imageUrl: toPublicImageUrl(r.imageUrl),
           manufacturerLogoUrl: toPublicImageUrl(r.manufacturerLogoUrl),
+        })),
+        finishCollections: collectionRows.map((c) => ({
+          ...c,
+          panelImageUrl: toPublicImageUrl(c.panelImageUrl),
         })),
       }),
     );

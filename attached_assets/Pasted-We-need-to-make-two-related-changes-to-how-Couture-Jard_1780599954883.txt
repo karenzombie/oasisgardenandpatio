@@ -1,0 +1,43 @@
+We need to make two related changes to how Couture Jardin finishes are stored and displayed. Couture Jardin is a manufacturer already in the database. Do not make any changes that affect how other manufacturers' finishes are stored or displayed -- all changes should be additive and backward compatible.
+Part 1: Database changes
+Add a nullable varchar column called collection to the finishes table. This column will only be used for Couture Jardin finishes. For all other manufacturers it will remain null. No FK constraint -- just a plain text field.
+Create a new table called finish_collections with the following columns:
+
+id -- primary key
+manufacturer_id -- FK to manufacturers (required)
+collection_name -- varchar, required. This is the collection name as it appears in the collection column on the finishes table, e.g. "Billie", "Hug", "Sky"
+panel_image_url -- varchar, nullable. This will store the Object Storage path for the collection's finish panel image, same format as image_url on the finishes table
+display_order -- integer, nullable, for controlling sort order on the page
+is_active -- boolean, default true
+
+Add a unique constraint on (manufacturer_id, collection_name).
+No data migration is needed yet -- we will populate the collection field on existing Couture Jardin finish rows and add finish_collections rows manually through the admin UI.
+Part 2: Admin UI changes
+On the finish edit form in the admin UI, add a text input field for collection. It should only be required if the manufacturer is Couture Jardin -- for all other manufacturers it should be optional and can be left blank. Display it between the description field and the image_url field.
+Create a new admin UI section for managing finish collections. It should support:
+
+Listing all finish collections for a given manufacturer
+Creating a new finish collection row (manufacturer, collection name, panel image upload, display order)
+Editing an existing finish collection row
+Soft-deleting via the is_active flag, consistent with how finishes themselves are soft-deleted
+
+The panel image upload should write to Object Storage using the same mechanism already used for finish swatch images, and store the resulting path in panel_image_url.
+Part 3: Manufacturer finishes display page
+This is the page that currently shows the flat grid of finish swatch cards for a manufacturer -- for example the Couture Jardin page currently shows "45 FINISHES" in a flat grid.
+Change the rendering logic for this page as follows:
+If the manufacturer has any rows in the finish_collections table, switch to a grouped display mode instead of the flat grid. All other manufacturers with no rows in finish_collections continue to use the existing flat grid display unchanged.
+In the grouped display mode:
+
+Group the manufacturer's active finish rows by their collection value
+For each collection group, render a section that shows the collection name as a heading, the panel image from finish_collections (the panel_image_url) as the primary visual for that group, and below the panel image, a list of the individual finish names that belong to that collection (from the finish rows themselves)
+Sort the collection groups by display_order from the finish_collections table
+Any finish rows where collection is null should be grouped into a fallback section at the end labeled "Other Finishes" and rendered as individual swatch cards, consistent with the existing flat grid display, so that nothing is lost if some rows have not yet been stamped with a collection value
+
+The panel image should render at a reasonable display size -- large enough to clearly show the swatches in the panel (the images show grouped swatches by component type like Frame, Cushions, Weaving, etc.) but not full-bleed. A max width of around 600px per panel with the finish name list below it is a good starting point.
+Part 4: Product page finish selector
+On the product detail page, when the finish selector is rendered for a product, apply the following logic:
+First, resolve the full list of applicable finishes for that product using the existing logic -- the union of finishes from product_finish_options and product_finish_pools, filtered to active finishes only.
+Then, check whether any of those finishes have a non-null collection value.
+If they do, group the finish selector options by collection, showing the collection name as a subheading within the selector. For each collection group, show the panel image from finish_collections above the individual selectable finish options for that group. The individual finish options should still be individually selectable as they are today -- the panel image is informational, showing the customer what the finishes in that collection look like together.
+If none of the applicable finishes have a collection value, render the finish selector exactly as it works today, with no changes.
+This means a product linked to HUG collection finishes will show only the HUG panel image and HUG finish options. A product linked to finishes from multiple Couture Jardin collections would show each collection as a separate grouped section. Products from all other manufacturers are completely unaffected.

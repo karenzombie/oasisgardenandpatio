@@ -38,6 +38,7 @@ import type {
   AdminCouponCodeUse,
   AdminCreateCustomerResponse,
   AdminCreateFabricRequest,
+  AdminCreateFinishCollectionRequest,
   AdminCreateFinishRequest,
   AdminCreatePaymentRequest,
   AdminCreateShipmentRequest,
@@ -48,6 +49,8 @@ import type {
   AdminDiscountEvent,
   AdminFabric,
   AdminFinish,
+  AdminFinishCollection,
+  AdminFinishCollectionsResponse,
   AdminFinishProductsResponse,
   AdminInventoryAdjustmentsPage,
   AdminInventoryPage,
@@ -55,6 +58,7 @@ import type {
   AdminListAuditLogParams,
   AdminListCancellationRequestsParams,
   AdminListCustomersParams,
+  AdminListFinishCollectionsParams,
   AdminListHistory200,
   AdminListHistoryParams,
   AdminListInventoryAdjustmentsParams,
@@ -95,6 +99,7 @@ import type {
   AdminSetOrderItemFabricVendorRequest,
   AdminSetSummary,
   AdminUpdateFabricRequest,
+  AdminUpdateFinishCollectionRequest,
   AdminUpdateFinishProductsRequest,
   AdminUpdateFinishRequest,
   AdminUpdateOrderShippingMethodRequest,
@@ -7654,6 +7659,296 @@ export const useAdminUpdateFinishProducts = <
   TContext
 > => {
   return useMutation(getAdminUpdateFinishProductsMutationOptions(options));
+};
+
+/**
+ * @summary List all finish collections (optionally filtered by manufacturerId)
+ */
+export const getAdminListFinishCollectionsUrl = (
+  params?: AdminListFinishCollectionsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/admin/finish-collections?${stringifiedParams}`
+    : `/api/admin/finish-collections`;
+};
+
+export const adminListFinishCollections = async (
+  params?: AdminListFinishCollectionsParams,
+  options?: RequestInit,
+): Promise<AdminFinishCollectionsResponse> => {
+  return customFetch<AdminFinishCollectionsResponse>(
+    getAdminListFinishCollectionsUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getAdminListFinishCollectionsQueryKey = (
+  params?: AdminListFinishCollectionsParams,
+) => {
+  return [
+    `/api/admin/finish-collections`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getAdminListFinishCollectionsQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminListFinishCollections>>,
+  TError = ErrorType<Error>,
+>(
+  params?: AdminListFinishCollectionsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminListFinishCollections>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getAdminListFinishCollectionsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminListFinishCollections>>
+  > = ({ signal }) =>
+    adminListFinishCollections(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminListFinishCollections>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminListFinishCollectionsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminListFinishCollections>>
+>;
+export type AdminListFinishCollectionsQueryError = ErrorType<Error>;
+
+/**
+ * @summary List all finish collections (optionally filtered by manufacturerId)
+ */
+
+export function useAdminListFinishCollections<
+  TData = Awaited<ReturnType<typeof adminListFinishCollections>>,
+  TError = ErrorType<Error>,
+>(
+  params?: AdminListFinishCollectionsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminListFinishCollections>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminListFinishCollectionsQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a new finish collection
+ */
+export const getAdminCreateFinishCollectionUrl = () => {
+  return `/api/admin/finish-collections`;
+};
+
+export const adminCreateFinishCollection = async (
+  adminCreateFinishCollectionRequest: AdminCreateFinishCollectionRequest,
+  options?: RequestInit,
+): Promise<AdminFinishCollection> => {
+  return customFetch<AdminFinishCollection>(
+    getAdminCreateFinishCollectionUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(adminCreateFinishCollectionRequest),
+    },
+  );
+};
+
+export const getAdminCreateFinishCollectionMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCreateFinishCollection>>,
+    TError,
+    { data: BodyType<AdminCreateFinishCollectionRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminCreateFinishCollection>>,
+  TError,
+  { data: BodyType<AdminCreateFinishCollectionRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminCreateFinishCollection"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminCreateFinishCollection>>,
+    { data: BodyType<AdminCreateFinishCollectionRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return adminCreateFinishCollection(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminCreateFinishCollectionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminCreateFinishCollection>>
+>;
+export type AdminCreateFinishCollectionMutationBody =
+  BodyType<AdminCreateFinishCollectionRequest>;
+export type AdminCreateFinishCollectionMutationError = ErrorType<Error>;
+
+/**
+ * @summary Create a new finish collection
+ */
+export const useAdminCreateFinishCollection = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCreateFinishCollection>>,
+    TError,
+    { data: BodyType<AdminCreateFinishCollectionRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminCreateFinishCollection>>,
+  TError,
+  { data: BodyType<AdminCreateFinishCollectionRequest> },
+  TContext
+> => {
+  return useMutation(getAdminCreateFinishCollectionMutationOptions(options));
+};
+
+/**
+ * @summary Update a finish collection
+ */
+export const getAdminUpdateFinishCollectionUrl = (id: number) => {
+  return `/api/admin/finish-collections/${id}`;
+};
+
+export const adminUpdateFinishCollection = async (
+  id: number,
+  adminUpdateFinishCollectionRequest: AdminUpdateFinishCollectionRequest,
+  options?: RequestInit,
+): Promise<AdminFinishCollection> => {
+  return customFetch<AdminFinishCollection>(
+    getAdminUpdateFinishCollectionUrl(id),
+    {
+      ...options,
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(adminUpdateFinishCollectionRequest),
+    },
+  );
+};
+
+export const getAdminUpdateFinishCollectionMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateFinishCollection>>,
+    TError,
+    { id: number; data: BodyType<AdminUpdateFinishCollectionRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUpdateFinishCollection>>,
+  TError,
+  { id: number; data: BodyType<AdminUpdateFinishCollectionRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminUpdateFinishCollection"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUpdateFinishCollection>>,
+    { id: number; data: BodyType<AdminUpdateFinishCollectionRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminUpdateFinishCollection(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminUpdateFinishCollectionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUpdateFinishCollection>>
+>;
+export type AdminUpdateFinishCollectionMutationBody =
+  BodyType<AdminUpdateFinishCollectionRequest>;
+export type AdminUpdateFinishCollectionMutationError = ErrorType<Error>;
+
+/**
+ * @summary Update a finish collection
+ */
+export const useAdminUpdateFinishCollection = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateFinishCollection>>,
+    TError,
+    { id: number; data: BodyType<AdminUpdateFinishCollectionRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUpdateFinishCollection>>,
+  TError,
+  { id: number; data: BodyType<AdminUpdateFinishCollectionRequest> },
+  TContext
+> => {
+  return useMutation(getAdminUpdateFinishCollectionMutationOptions(options));
 };
 
 /**

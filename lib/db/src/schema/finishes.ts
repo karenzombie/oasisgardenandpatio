@@ -43,6 +43,11 @@ export const finishesTable = pgTable(
     // Optional short description ("textured powder coat", "smooth matte",
     // etc.) shown beneath the swatch on the finishes page.
     description: text("description"),
+    // Optional collection name — currently only used for Couture Jardin.
+    // When set, the customer-facing finishes page groups finishes by
+    // collection and shows the collection's panel image from
+    // finish_collections. Null for all other manufacturers.
+    collection: text("collection"),
     isActive: boolean("is_active").notNull().default(true),
     displayOrder: integer("display_order").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -82,6 +87,54 @@ export const insertFinishSchema = createInsertSchema(finishesTable).omit({
 });
 export type InsertFinish = z.infer<typeof insertFinishSchema>;
 export type Finish = typeof finishesTable.$inferSelect;
+
+// ---------------------------------------------------------------------------
+// Finish collections
+// ---------------------------------------------------------------------------
+// Groups of finishes for manufacturers that organise their palette into named
+// collections (currently Couture Jardin). Each collection row stores a panel
+// image that shows all the finishes in that collection together, displayed on
+// the public finishes page and product detail page.
+//
+// Finishes belong to a collection via the `collection` TEXT column on
+// finishesTable (matched by name). No FK — collection membership is purely
+// a string match so rows can be pre-created before finishes are stamped.
+
+export const finishCollectionsTable = pgTable(
+  "finish_collections",
+  {
+    id: serial("id").primaryKey(),
+    manufacturerId: integer("manufacturer_id")
+      .notNull()
+      .references(() => manufacturersTable.id, { onDelete: "cascade" }),
+    collectionName: text("collection_name").notNull(),
+    // Path to the panel image in Object Storage (same format as
+    // finishes.image_url). Shows grouped swatches by component type.
+    panelImageUrl: text("panel_image_url"),
+    displayOrder: integer("display_order"),
+    isActive: boolean("is_active").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [
+    unique("finish_collections_manufacturer_name_unique").on(
+      t.manufacturerId,
+      t.collectionName,
+    ),
+    index("finish_collections_manufacturer_id_idx").on(t.manufacturerId),
+  ],
+);
+
+export const insertFinishCollectionSchema = createInsertSchema(
+  finishCollectionsTable,
+).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertFinishCollection = z.infer<typeof insertFinishCollectionSchema>;
+export type FinishCollection = typeof finishCollectionsTable.$inferSelect;
 
 // ---------------------------------------------------------------------------
 // Product finish options (M:N: which finishes each product accepts)

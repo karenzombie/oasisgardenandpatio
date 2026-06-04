@@ -1274,6 +1274,11 @@ export interface CatalogProductVariant {
    * @nullable
    */
   swatchImageUrl: string | null;
+  /**
+   * Collection name from the finish row, if set (Couture Jardin only). Used to group variants by collection on the product page.
+   * @nullable
+   */
+  collection: string | null;
 }
 
 export interface CatalogFabricOption {
@@ -1324,6 +1329,19 @@ export interface CatalogFabricsResponse {
  */
 export type CatalogProductDetailSpecs = { [key: string]: unknown } | null;
 
+/**
+ * A named collection of finishes for a manufacturer (e.g. Couture Jardin "Billie"). Includes a panel image showing all finishes in the collection together.
+ */
+export interface CatalogFinishCollection {
+  id: number;
+  collectionName: string;
+  /** @nullable */
+  panelImageUrl: string | null;
+  /** @nullable */
+  displayOrder: number | null;
+  manufacturerId: number;
+}
+
 export type CatalogProductDetail = CatalogProduct & {
   /** @nullable */
   description: string | null;
@@ -1347,6 +1365,8 @@ export type CatalogProductDetail = CatalogProduct & {
   variants: CatalogProductVariant[];
   /** Fabrics this product accepts. */
   fabricOptions: CatalogFabricOption[];
+  /** Finish collections relevant to this product (non-empty only when some variants have a collection value). Used to show panel images grouped by collection on the product page. */
+  finishCollections: CatalogFinishCollection[];
 };
 
 export interface WishlistItem {
@@ -3492,11 +3512,18 @@ export interface CatalogFinish {
   imageUrl: string | null;
   /** @nullable */
   description: string | null;
+  /**
+   * Collection name for grouped display (e.g. Couture Jardin). Null for all other manufacturers.
+   * @nullable
+   */
+  collection: string | null;
   displayOrder: number;
 }
 
 export interface CatalogFinishesResponse {
   finishes: CatalogFinish[];
+  /** All active finish collections across all manufacturers. Used to look up panel images by manufacturerId + collectionName. */
+  finishCollections: CatalogFinishCollection[];
 }
 
 export interface CatalogFinishProduct {
@@ -3545,6 +3572,8 @@ export interface AdminFinish {
   imageUrl: string | null;
   /** @nullable */
   description: string | null;
+  /** @nullable */
+  collection: string | null;
   isActive: boolean;
   displayOrder: number;
 }
@@ -3559,6 +3588,8 @@ export interface AdminCreateFinishRequest {
   imageUrl?: string | null;
   /** @nullable */
   description?: string | null;
+  /** @nullable */
+  collection?: string | null;
   isActive?: boolean;
   displayOrder?: number;
 }
@@ -3573,8 +3604,48 @@ export interface AdminUpdateFinishRequest {
   imageUrl?: string | null;
   /** @nullable */
   description?: string | null;
+  /** @nullable */
+  collection?: string | null;
   isActive?: boolean;
   displayOrder?: number;
+}
+
+export interface AdminFinishCollection {
+  id: number;
+  manufacturerId: number;
+  manufacturerName: string;
+  collectionName: string;
+  /** @nullable */
+  panelImageUrl: string | null;
+  /** @nullable */
+  displayOrder: number | null;
+  isActive: boolean;
+}
+
+export interface AdminFinishCollectionsResponse {
+  collections: AdminFinishCollection[];
+}
+
+export interface AdminCreateFinishCollectionRequest {
+  manufacturerId: number;
+  /** @minLength 1 */
+  collectionName: string;
+  /** @nullable */
+  panelImageUrl?: string | null;
+  /** @nullable */
+  displayOrder?: number | null;
+  isActive?: boolean;
+}
+
+export interface AdminUpdateFinishCollectionRequest {
+  manufacturerId?: number;
+  /** @minLength 1 */
+  collectionName?: string;
+  /** @nullable */
+  panelImageUrl?: string | null;
+  /** @nullable */
+  displayOrder?: number | null;
+  isActive?: boolean;
 }
 
 export interface AdminProductFinishPool {
@@ -3915,6 +3986,10 @@ export type AdminListHistory200 = {
   total: number;
   page: number;
   pageSize: number;
+};
+
+export type AdminListFinishCollectionsParams = {
+  manufacturerId?: number;
 };
 
 export type AdminListInventoryParams = {

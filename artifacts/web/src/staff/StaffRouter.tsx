@@ -25,6 +25,7 @@ import Sets from "./pages/admin/Sets";
 import SetEdit from "./pages/admin/SetEdit";
 import Fabrics from "./pages/admin/Fabrics";
 import Finishes from "./pages/admin/Finishes";
+import FinishCollections from "./pages/admin/FinishCollections";
 import Inventory from "./pages/admin/Inventory";
 import Carriers from "./pages/admin/Carriers";
 import Banners from "./pages/admin/Banners";
@@ -82,6 +83,7 @@ export default function StaffRouter() {
                 <Route path="/admin/sets/:id" component={SetEdit} />
                 <Route path="/admin/fabrics" component={Fabrics} />
                 <Route path="/admin/finishes" component={Finishes} />
+                <Route path="/admin/finish-collections" component={FinishCollections} />
                 <Route path="/admin/inventory" component={Inventory} />
                 <Route path="/admin/carriers" component={Carriers} />
                 <Route path="/admin/banners" component={Banners} />

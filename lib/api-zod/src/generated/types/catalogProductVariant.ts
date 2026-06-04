@@ -20,4 +20,9 @@ export interface CatalogProductVariant {
    * @nullable
    */
   swatchImageUrl: string | null;
+  /**
+   * Collection name from the finish row, if set (Couture Jardin only). Used to group variants by collection on the product page.
+   * @nullable
+   */
+  collection: string | null;
 }
