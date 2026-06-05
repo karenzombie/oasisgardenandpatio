@@ -95,7 +95,7 @@ export default function FinishCollections() {
   const imageRef = useRef<HTMLInputElement>(null);
 
   const manufacturers = mfgList.data ?? [];
-  const rows = (list.data ?? []) as AdminFinishCollectionRow[];
+  const rows = (list.data?.collections ?? []) as AdminFinishCollectionRow[];
 
   const filtered = rows.filter((r) => {
     if (!search.trim()) return true;

@@ -310,7 +310,16 @@ export default function Finishes() {
                               </span>
                             </div>
                           )}
-                          <p className="mt-2 text-sm font-medium text-foreground">
+                          {list[0]?.manufacturerLogoUrl && (
+                            <div className="mt-1.5 h-5 flex items-center">
+                              <img
+                                src={list[0].manufacturerLogoUrl}
+                                alt={brand}
+                                className="h-full w-auto object-contain opacity-70"
+                              />
+                            </div>
+                          )}
+                          <p className="mt-1 text-sm font-medium text-foreground">
                             {fc.collectionName}
                           </p>
                         </div>
