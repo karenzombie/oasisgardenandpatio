@@ -8,6 +8,13 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type FabricItem = {
   id: number;
@@ -53,19 +60,9 @@ function FabricSwatch({ fabric }: { fabric: FabricItem }) {
 }
 
 export default function Fabrics() {
-  const [selectedColors, setSelectedColors] = useState<Set<string>>(new Set());
+  const [selectedColor, setSelectedColor] = useState<string>("");
 
   const { data, isLoading, error } = useListCatalogFabrics();
-
-  const toggleColor = (c: string) => {
-    setSelectedColors((prev) => {
-      const next = new Set(prev);
-      if (next.has(c)) next.delete(c);
-      else next.add(c);
-      return next;
-    });
-  };
-  const clearColors = () => setSelectedColors(new Set());
 
   // Derive the set of color families actually present across all active
   // fabrics so the filter bar mirrors what's available rather than a hardcoded
@@ -80,13 +77,10 @@ export default function Fabrics() {
 
   const grouped = useMemo(() => {
     const m = new Map<string, FabricItem[]>();
-    const activeColors = new Set(
-      Array.from(selectedColors).map((c) => c.toLowerCase()),
-    );
     for (const f of data?.fabrics ?? []) {
       if (
-        activeColors.size > 0 &&
-        !activeColors.has((f.colorFamily ?? "").toLowerCase())
+        selectedColor &&
+        (f.colorFamily ?? "").toLowerCase() !== selectedColor.toLowerCase()
       ) {
         continue;
       }
@@ -96,7 +90,7 @@ export default function Fabrics() {
       m.set(key, list);
     }
     return Array.from(m.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-  }, [data, selectedColors]);
+  }, [data, selectedColor]);
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-6xl">
@@ -115,43 +109,37 @@ export default function Fabrics() {
         to see and feel the full range of patterns and weights.
       </p>
 
-      {/* Color family filter — multi-select */}
+      {/* Color family filter — dropdown */}
       {colorFamilies.length > 0 && (
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-3 gap-3">
-            <p className="text-xs uppercase tracking-widest text-muted-foreground">
-              Filter by color {selectedColors.size > 0 && `(${selectedColors.size})`}
-            </p>
-            {selectedColors.size > 0 && (
-              <button
-                type="button"
-                onClick={clearColors}
-                className="text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
-              >
-                Clear
-              </button>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {colorFamilies.map((c) => {
-              const active = selectedColors.has(c);
-              return (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => toggleColor(c)}
-                  aria-pressed={active}
-                  className={`px-3 py-1.5 text-xs uppercase tracking-wider border transition-colors ${
-                    active
-                      ? "bg-foreground text-background border-foreground"
-                      : "bg-background text-foreground border-border hover:border-foreground/40"
-                  }`}
-                >
+        <div className="mb-8 flex items-center gap-3">
+          <p className="text-xs uppercase tracking-widest text-muted-foreground shrink-0">
+            Filter by color
+          </p>
+          <Select
+            value={selectedColor || "__all__"}
+            onValueChange={(v) => setSelectedColor(v === "__all__" ? "" : v)}
+          >
+            <SelectTrigger className="w-48 text-sm">
+              <SelectValue placeholder="All Colors" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">All Colors</SelectItem>
+              {colorFamilies.map((c) => (
+                <SelectItem key={c} value={c}>
                   {c}
-                </button>
-              );
-            })}
-          </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {selectedColor && (
+            <button
+              type="button"
+              onClick={() => setSelectedColor("")}
+              className="text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
+            >
+              Clear
+            </button>
+          )}
         </div>
       )}
 
