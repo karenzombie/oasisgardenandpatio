@@ -9,12 +9,19 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { ChevronDown, X, Check } from "lucide-react";
 
 type FabricItem = {
   id: number;
@@ -60,13 +67,28 @@ function FabricSwatch({ fabric }: { fabric: FabricItem }) {
 }
 
 export default function Fabrics() {
-  const [selectedColor, setSelectedColor] = useState<string>("");
+  const [selectedColors, setSelectedColors] = useState<Set<string>>(new Set());
+  const [open, setOpen] = useState(false);
 
   const { data, isLoading, error } = useListCatalogFabrics();
 
-  // Derive the set of color families actually present across all active
-  // fabrics so the filter bar mirrors what's available rather than a hardcoded
-  // list that could drift.
+  const toggleColor = (c: string) => {
+    setSelectedColors((prev) => {
+      const next = new Set(prev);
+      if (next.has(c)) next.delete(c);
+      else next.add(c);
+      return next;
+    });
+  };
+
+  const removeColor = (c: string) => {
+    setSelectedColors((prev) => {
+      const next = new Set(prev);
+      next.delete(c);
+      return next;
+    });
+  };
+
   const colorFamilies = useMemo(() => {
     const set = new Set<string>();
     for (const f of data?.fabrics ?? []) {
@@ -77,10 +99,13 @@ export default function Fabrics() {
 
   const grouped = useMemo(() => {
     const m = new Map<string, FabricItem[]>();
+    const activeColors = new Set(
+      Array.from(selectedColors).map((c) => c.toLowerCase()),
+    );
     for (const f of data?.fabrics ?? []) {
       if (
-        selectedColor &&
-        (f.colorFamily ?? "").toLowerCase() !== selectedColor.toLowerCase()
+        activeColors.size > 0 &&
+        !activeColors.has((f.colorFamily ?? "").toLowerCase())
       ) {
         continue;
       }
@@ -90,7 +115,9 @@ export default function Fabrics() {
       m.set(key, list);
     }
     return Array.from(m.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-  }, [data, selectedColor]);
+  }, [data, selectedColors]);
+
+  const selected = Array.from(selectedColors);
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-6xl">
@@ -109,37 +136,82 @@ export default function Fabrics() {
         to see and feel the full range of patterns and weights.
       </p>
 
-      {/* Color family filter — dropdown */}
+      {/* Color family filter — multi-select popover */}
       {colorFamilies.length > 0 && (
-        <div className="mb-8 flex items-center gap-3">
-          <p className="text-xs uppercase tracking-widest text-muted-foreground shrink-0">
-            Filter by color
-          </p>
-          <Select
-            value={selectedColor || "__all__"}
-            onValueChange={(v) => setSelectedColor(v === "__all__" ? "" : v)}
-          >
-            <SelectTrigger className="w-48 text-sm">
-              <SelectValue placeholder="All Colors" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">All Colors</SelectItem>
-              {colorFamilies.map((c) => (
-                <SelectItem key={c} value={c}>
-                  {c}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {selectedColor && (
-            <button
-              type="button"
-              onClick={() => setSelectedColor("")}
-              className="text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
-            >
-              Clear
-            </button>
-          )}
+        <div className="mb-8">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-xs uppercase tracking-widest text-muted-foreground shrink-0 mr-1">
+              Filter by color
+            </p>
+
+            <Popover open={open} onOpenChange={setOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className="flex items-center gap-1.5 h-8 px-3 text-xs border border-border hover:border-foreground/40 transition-colors bg-background text-foreground"
+                >
+                  {selected.length === 0
+                    ? "Select colors"
+                    : `${selected.length} selected`}
+                  <ChevronDown className="size-3 text-muted-foreground" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-56 p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Search colors..." className="h-8 text-xs" />
+                  <CommandList>
+                    <CommandEmpty>No colors found.</CommandEmpty>
+                    <CommandGroup>
+                      {colorFamilies.map((c) => {
+                        const active = selectedColors.has(c);
+                        return (
+                          <CommandItem
+                            key={c}
+                            value={c}
+                            onSelect={() => toggleColor(c)}
+                            className="text-xs cursor-pointer"
+                          >
+                            <Check
+                              className={`size-3 mr-2 shrink-0 ${active ? "opacity-100" : "opacity-0"}`}
+                            />
+                            {c}
+                          </CommandItem>
+                        );
+                      })}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+
+            {/* Active color tags */}
+            {selected.map((c) => (
+              <span
+                key={c}
+                className="inline-flex items-center gap-1 h-8 px-2.5 text-xs bg-foreground text-background"
+              >
+                {c}
+                <button
+                  type="button"
+                  onClick={() => removeColor(c)}
+                  className="ml-0.5 hover:opacity-70 transition-opacity"
+                  aria-label={`Remove ${c} filter`}
+                >
+                  <X className="size-3" />
+                </button>
+              </span>
+            ))}
+
+            {selected.length > 1 && (
+              <button
+                type="button"
+                onClick={() => setSelectedColors(new Set())}
+                className="text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground underline-offset-4 hover:underline ml-1"
+              >
+                Clear all
+              </button>
+            )}
+          </div>
         </div>
       )}
 
