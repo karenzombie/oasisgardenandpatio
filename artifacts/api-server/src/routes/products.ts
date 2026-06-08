@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { and, asc, desc, eq, exists, ilike, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, exists, ilike, inArray, or, sql } from "drizzle-orm";
 import {
   db,
   productsTable,
@@ -12,6 +12,9 @@ import {
   fabricsTable,
   finishCollectionsTable,
   finishesTable,
+  variantGradePricesTable,
+  productFinishPoolsTable,
+  productFinishOptionsTable,
 } from "@workspace/db";
 import {
   ListFeaturedProductsResponse,
@@ -354,6 +357,9 @@ router.get(
         optionLabel: productVariantsTable.optionLabel,
         priceAdjustment: productVariantsTable.priceAdjustment,
         displayOrder: productVariantsTable.displayOrder,
+        notes: productVariantsTable.notes,
+        minOrderQty: productVariantsTable.minOrderQty,
+        excludeStripeFabrics: productVariantsTable.excludeStripeFabrics,
       })
       .from(productVariantsTable)
       .where(
@@ -366,6 +372,36 @@ router.get(
         asc(productVariantsTable.displayOrder),
         asc(productVariantsTable.variantName),
       );
+
+    // Per-grade pricing for grade-priced products (e.g. Frankford). Empty for
+    // legacy products; presence of any rows puts the PDP in 3-step grade mode.
+    const variantIds = variantRows.map((v) => v.id);
+    const gradePriceRows = variantIds.length
+      ? await db
+          .select({
+            variantId: variantGradePricesTable.variantId,
+            grade: variantGradePricesTable.grade,
+            msrp: variantGradePricesTable.msrp,
+            salePrice: variantGradePricesTable.salePrice,
+          })
+          .from(variantGradePricesTable)
+          .where(inArray(variantGradePricesTable.variantId, variantIds))
+          .orderBy(asc(variantGradePricesTable.grade))
+      : [];
+
+    const gradePricesByVariant = new Map<
+      number,
+      { grade: string; msrp: string; salePrice: string }[]
+    >();
+    for (const gp of gradePriceRows) {
+      const list = gradePricesByVariant.get(gp.variantId) ?? [];
+      list.push({
+        grade: gp.grade,
+        msrp: String(gp.msrp),
+        salePrice: String(gp.salePrice),
+      });
+      gradePricesByVariant.set(gp.variantId, list);
+    }
 
     // Finishes (frame finish swatches) are a separate catalog entity with their
     // own swatch images. Product variants store the finish only as a plain text
@@ -415,6 +451,65 @@ router.get(
           )
           .orderBy(asc(finishCollectionsTable.displayOrder))
       : [];
+
+    // Discrete frame-finish choices for grade-priced products. The effective
+    // set is the UNION of pool-expanded manufacturer finishes (every active
+    // finish from a pooled manufacturer) and individually-picked finish
+    // options. Legacy products carry neither, so this resolves to [].
+    const poolMfrRows = await db
+      .select({ manufacturerId: productFinishPoolsTable.manufacturerId })
+      .from(productFinishPoolsTable)
+      .where(eq(productFinishPoolsTable.productId, row.id));
+    const poolMfrIds = poolMfrRows.map((p) => p.manufacturerId);
+
+    const pooledFinishRows = poolMfrIds.length
+      ? await db
+          .select({
+            id: finishesTable.id,
+            code: finishesTable.itemNumber,
+            name: finishesTable.name,
+            imageUrl: finishesTable.imageUrl,
+            displayOrder: finishesTable.displayOrder,
+          })
+          .from(finishesTable)
+          .where(
+            and(
+              inArray(finishesTable.manufacturerId, poolMfrIds),
+              eq(finishesTable.isActive, true),
+            ),
+          )
+      : [];
+
+    const optionFinishRows = await db
+      .select({
+        id: finishesTable.id,
+        code: finishesTable.itemNumber,
+        name: finishesTable.name,
+        imageUrl: finishesTable.imageUrl,
+        displayOrder: productFinishOptionsTable.displayOrder,
+      })
+      .from(productFinishOptionsTable)
+      .innerJoin(
+        finishesTable,
+        eq(finishesTable.id, productFinishOptionsTable.finishId),
+      )
+      .where(
+        and(
+          eq(productFinishOptionsTable.productId, row.id),
+          eq(finishesTable.isActive, true),
+        ),
+      );
+
+    const finishByIdMap = new Map<
+      number,
+      { id: number; code: string | null; name: string; imageUrl: string | null; displayOrder: number }
+    >();
+    for (const f of [...pooledFinishRows, ...optionFinishRows]) {
+      if (!finishByIdMap.has(f.id)) finishByIdMap.set(f.id, f);
+    }
+    const discreteFinishes = [...finishByIdMap.values()].sort(
+      (a, b) => a.displayOrder - b.displayOrder || a.name.localeCompare(b.name),
+    );
 
     const fabricRows = await db
       .select({
@@ -487,8 +582,19 @@ router.get(
           priceAdjustment: String(v.priceAdjustment ?? "0"),
           swatchImageUrl: toPublicImageUrl(finishData?.imageUrl ?? null),
           collection: finishData?.collection ?? null,
+          gradePrices: gradePricesByVariant.get(v.id) ?? [],
+          notes: v.notes ?? null,
+          minOrderQty: v.minOrderQty ?? null,
+          excludeStripeFabrics: v.excludeStripeFabrics ?? false,
         };
       }),
+      finishes: discreteFinishes.map((f) => ({
+        id: f.id,
+        code: f.code ?? "",
+        name: f.name,
+        swatchImageUrl: toPublicImageUrl(f.imageUrl),
+        displayOrder: f.displayOrder,
+      })),
       finishCollections: finishCollectionRows.map((fc) => ({
         ...fc,
         panelImageUrl: toPublicImageUrl(fc.panelImageUrl),

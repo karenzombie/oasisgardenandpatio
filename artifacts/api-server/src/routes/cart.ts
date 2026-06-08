@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import {
   db,
   cartsTable,
@@ -10,6 +10,10 @@ import {
   productVariantsTable,
   productFabricOptionsTable,
   fabricsTable,
+  finishesTable,
+  variantGradePricesTable,
+  productFinishPoolsTable,
+  productFinishOptionsTable,
 } from "@workspace/db";
 import {
   GetCartResponse,
@@ -101,6 +105,8 @@ async function loadCart(owner: CartOwner) {
       quantity: cartItemsTable.quantity,
       variantId: cartItemsTable.variantId,
       variantName: productVariantsTable.variantName,
+      finishId: cartItemsTable.finishId,
+      finishName: finishesTable.name,
       fabricId: cartItemsTable.fabricId,
       fabricName: fabricsTable.name,
       fabricItemNumber: fabricsTable.itemNumber,
@@ -127,6 +133,7 @@ async function loadCart(owner: CartOwner) {
       eq(productVariantsTable.id, cartItemsTable.variantId),
     )
     .leftJoin(fabricsTable, eq(fabricsTable.id, cartItemsTable.fabricId))
+    .leftJoin(finishesTable, eq(finishesTable.id, cartItemsTable.finishId))
     .where(eq(cartItemsTable.cartId, cart.id))
     .orderBy(cartItemsTable.id);
 
@@ -184,6 +191,7 @@ router.post(
     const quantity = parsed.data.quantity ?? 1;
     const variantId = parsed.data.variantId ?? null;
     const fabricId = parsed.data.fabricId ?? null;
+    const finishId = parsed.data.finishId ?? null;
     if (!Number.isInteger(productId) || productId <= 0) {
       res.status(400).json({ error: "Invalid productId" });
       return;
@@ -289,11 +297,22 @@ router.post(
     }
 
     let variantPriceAdj = 0;
+    // Grade-mode state. Populated only for grade-priced products (Frankford):
+    // when a variant carries per-grade prices, the line price is driven by the
+    // selected fabric's grade rather than base price + adjustment.
+    let variantNotes: {
+      minOrderQty: number | null;
+      excludeStripeFabrics: boolean;
+    } | null = null;
+    let gradePriceMap: Map<string, { msrp: string; salePrice: string }> | null =
+      null;
     if (variantId) {
       const [variant] = await db
         .select({
           id: productVariantsTable.id,
           priceAdjustment: productVariantsTable.priceAdjustment,
+          minOrderQty: productVariantsTable.minOrderQty,
+          excludeStripeFabrics: productVariantsTable.excludeStripeFabrics,
         })
         .from(productVariantsTable)
         .where(
@@ -311,9 +330,93 @@ router.post(
         return;
       }
       variantPriceAdj = Number(variant.priceAdjustment ?? 0);
+      variantNotes = {
+        minOrderQty: variant.minOrderQty ?? null,
+        excludeStripeFabrics: variant.excludeStripeFabrics ?? false,
+      };
+
+      const gradeRows = await db
+        .select({
+          grade: variantGradePricesTable.grade,
+          msrp: variantGradePricesTable.msrp,
+          salePrice: variantGradePricesTable.salePrice,
+        })
+        .from(variantGradePricesTable)
+        .where(eq(variantGradePricesTable.variantId, variantId));
+      if (gradeRows.length > 0) {
+        gradePriceMap = new Map(
+          gradeRows.map((g) => [
+            g.grade,
+            { msrp: String(g.msrp), salePrice: String(g.salePrice) },
+          ]),
+        );
+      }
+    }
+
+    const isGradeMode = gradePriceMap !== null;
+
+    // Grade-priced products always require a fabric (it drives the line price),
+    // so the frame-only shortcut allowed above never applies in grade mode.
+    if (isGradeMode && !fabricId) {
+      res.status(400).json({
+        error: "Please choose a fabric before adding this item to your cart.",
+      });
+      return;
+    }
+
+    // Frame finish: required and validated only in grade mode; rejected for
+    // legacy products that have no discrete finish set.
+    if (isGradeMode) {
+      if (!finishId) {
+        res
+          .status(400)
+          .json({ error: "Please choose a frame finish before adding this item." });
+        return;
+      }
+      // Resolve the product's allowed finish set = pool-expanded mfr finishes
+      // UNION individually-picked finish options.
+      const poolMfrRows = await db
+        .select({ manufacturerId: productFinishPoolsTable.manufacturerId })
+        .from(productFinishPoolsTable)
+        .where(eq(productFinishPoolsTable.productId, productId));
+      const poolMfrIds = poolMfrRows.map((p) => p.manufacturerId);
+      const pooledIds = poolMfrIds.length
+        ? (
+            await db
+              .select({ id: finishesTable.id })
+              .from(finishesTable)
+              .where(
+                and(
+                  inArray(finishesTable.manufacturerId, poolMfrIds),
+                  eq(finishesTable.isActive, true),
+                ),
+              )
+          ).map((f) => f.id)
+        : [];
+      const optionIds = (
+        await db
+          .select({ finishId: productFinishOptionsTable.finishId })
+          .from(productFinishOptionsTable)
+          .where(eq(productFinishOptionsTable.productId, productId))
+      ).map((o) => o.finishId);
+      const allowedFinishIds = new Set([...pooledIds, ...optionIds]);
+      if (!allowedFinishIds.has(finishId)) {
+        res
+          .status(400)
+          .json({ error: "Selected frame finish is not offered for this product." });
+        return;
+      }
+    } else if (finishId) {
+      res
+        .status(400)
+        .json({ error: "This product does not have frame finish options." });
+      return;
     }
 
     let fabricUpcharge = 0;
+    // Grade-mode line price (set when the selected fabric's grade maps to a
+    // variant grade price). Falls back to base-price math when null.
+    let gradeLinePrice: string | null = null;
     if (fabricId) {
       const [option] = await db
         .select({
@@ -355,52 +458,95 @@ router.post(
         });
         return;
       }
-      // Treasure Garden + Sunbrella grade upcharge (B +$100, C +$190 per item).
-      fabricUpcharge = fabricGradeUpcharge(
-        product.manufacturerName,
-        option.fabricManufacturerName,
-        option.grade,
-      );
+
+      if (isGradeMode) {
+        // Frankford grade pricing: the selected fabric's grade picks the price
+        // row. Stripe exclusion and min-order-qty come from the variant.
+        if (variantNotes?.excludeStripeFabrics && option.isStripe) {
+          res.status(400).json({
+            error: "Stripe fabrics are not available for this configuration.",
+          });
+          return;
+        }
+        const grade = option.grade ?? "";
+        const gp = gradePriceMap?.get(grade);
+        if (!gp) {
+          res.status(400).json({
+            error:
+              "The selected fabric grade is not available for this configuration.",
+          });
+          return;
+        }
+        gradeLinePrice =
+          Number(gp.salePrice) > 0 ? gp.salePrice : gp.msrp;
+      } else {
+        // Treasure Garden + Sunbrella grade upcharge (B +$100, C +$190 per item).
+        fabricUpcharge = fabricGradeUpcharge(
+          product.manufacturerName,
+          option.fabricManufacturerName,
+          option.grade,
+        );
+      }
     }
 
-    // Frame-only orders use frameOnlyPrice; otherwise fall through to
-    // salePrice → price as usual. Variant price adjustments still apply
-    // on top of either base.
-    const isFrameOnly = supportsFrameOnly && !fabricId;
-    let basePriceStr: string | null;
-    if (isFrameOnly) {
-      basePriceStr = product.frameOnlyPrice;
-    } else {
-      basePriceStr =
-        product.salePrice && Number(product.salePrice) > 0
-          ? product.salePrice
-          : product.price;
-    }
-    if (!basePriceStr) {
-      res.status(400).json({ error: "Product has no price set" });
+    // Minimum order quantity floor (grade-mode configurations only). The upsert
+    // sums quantities, so we only enforce that this single add meets the floor.
+    if (
+      isGradeMode &&
+      variantNotes?.minOrderQty != null &&
+      quantity < variantNotes.minOrderQty
+    ) {
+      res.status(400).json({
+        error: `This configuration has a minimum order quantity of ${variantNotes.minOrderQty}.`,
+      });
       return;
     }
-    const snapshotPrice = (
-      Number(basePriceStr) +
-      variantPriceAdj +
-      fabricUpcharge
-    ).toFixed(2);
+
+    let snapshotPrice: string;
+    if (gradeLinePrice !== null) {
+      // Grade-priced line: price is the full per-grade price (already includes
+      // the configuration). No base price or variant adjustment is added.
+      snapshotPrice = Number(gradeLinePrice).toFixed(2);
+    } else {
+      // Frame-only orders use frameOnlyPrice; otherwise fall through to
+      // salePrice → price as usual. Variant price adjustments still apply
+      // on top of either base.
+      const isFrameOnly = supportsFrameOnly && !fabricId;
+      let basePriceStr: string | null;
+      if (isFrameOnly) {
+        basePriceStr = product.frameOnlyPrice;
+      } else {
+        basePriceStr =
+          product.salePrice && Number(product.salePrice) > 0
+            ? product.salePrice
+            : product.price;
+      }
+      if (!basePriceStr) {
+        res.status(400).json({ error: "Product has no price set" });
+        return;
+      }
+      snapshotPrice = (
+        Number(basePriceStr) +
+        variantPriceAdj +
+        fabricUpcharge
+      ).toFixed(2);
+    }
 
     await ensureSessionPersisted(req);
     const owner = ownerFor(req);
     const cart = await getOrCreateCart(owner);
 
     // Atomic upsert against the partial unique index on
-    // (cart_id, product_id, COALESCE(variant_id,0), COALESCE(fabric_id,0)) so
-    // concurrent adds of the same tuple merge into a single row instead of
-    // racing into duplicates.
+    // (cart_id, product_id, COALESCE(variant_id,0), COALESCE(finish_id,0),
+    // COALESCE(fabric_id,0)) so concurrent adds of the same tuple merge into a
+    // single row instead of racing into duplicates.
     await db.execute(sql`
-      INSERT INTO cart_items (cart_id, product_id, variant_id, fabric_id, quantity, price)
+      INSERT INTO cart_items (cart_id, product_id, variant_id, finish_id, fabric_id, quantity, price)
       VALUES (
-        ${cart.id}, ${productId}, ${variantId}, ${fabricId},
+        ${cart.id}, ${productId}, ${variantId}, ${finishId}, ${fabricId},
         ${quantity}, ${snapshotPrice}
       )
-      ON CONFLICT (cart_id, product_id, (COALESCE(variant_id, 0)), (COALESCE(fabric_id, 0)))
+      ON CONFLICT (cart_id, product_id, (COALESCE(variant_id, 0)), (COALESCE(finish_id, 0)), (COALESCE(fabric_id, 0)))
       DO UPDATE SET quantity = cart_items.quantity + EXCLUDED.quantity
     `);
 
@@ -433,11 +579,19 @@ router.patch(
     const cart = await getOrCreateCart(owner);
 
     // Look up the item's fabric (if any) so we can enforce the stripe pair rule
-    // on quantity changes, not just on add-to-cart.
+    // on quantity changes, not just on add-to-cart. Also pull the variant's
+    // minimum order quantity to keep the grade-mode floor enforced on edits.
     const [existing] = await db
-      .select({ isStripe: fabricsTable.isStripe })
+      .select({
+        isStripe: fabricsTable.isStripe,
+        minOrderQty: productVariantsTable.minOrderQty,
+      })
       .from(cartItemsTable)
       .leftJoin(fabricsTable, eq(fabricsTable.id, cartItemsTable.fabricId))
+      .leftJoin(
+        productVariantsTable,
+        eq(productVariantsTable.id, cartItemsTable.variantId),
+      )
       .where(
         and(eq(cartItemsTable.id, itemId), eq(cartItemsTable.cartId, cart.id)),
       )
@@ -453,6 +607,15 @@ router.patch(
       res.status(400).json({
         error:
           "Striped fabrics must be ordered in pairs. Please choose an even quantity of 2 or more.",
+      });
+      return;
+    }
+    if (
+      existing.minOrderQty != null &&
+      parsed.data.quantity < existing.minOrderQty
+    ) {
+      res.status(400).json({
+        error: `This configuration has a minimum order quantity of ${existing.minOrderQty}.`,
       });
       return;
     }

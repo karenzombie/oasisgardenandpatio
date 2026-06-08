@@ -14,6 +14,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./users";
 import { productsTable } from "./products";
+import { finishesTable } from "./finishes";
 import {
   productVariantsTable,
   fabricsTable,
@@ -76,6 +77,12 @@ export const cartItemsTable = pgTable(
     fabricId: integer("fabric_id").references(() => fabricsTable.id, {
       onDelete: "set null",
     }),
+    // Frame-finish selection for grade-priced products (e.g. Frankford). Null
+    // for legacy products where the finish is the variant. Validated against the
+    // product's finish pool/options at the application layer (no composite FK).
+    finishId: integer("finish_id").references(() => finishesTable.id, {
+      onDelete: "set null",
+    }),
     quantity: integer("quantity").notNull(),
     price: numeric("price", { precision: 10, scale: 2 }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -84,12 +91,15 @@ export const cartItemsTable = pgTable(
   },
   (t) => [
     index("cart_items_cart_id_idx").on(t.cartId),
-    // Enforce one row per (cart, product, variant, fabric). NULLs collapsed
-    // via COALESCE so duplicate "no-variant" / "no-fabric" rows can't race in.
+    // Enforce one row per (cart, product, variant, finish, fabric). NULLs
+    // collapsed via COALESCE so duplicate "no-variant" / "no-finish" /
+    // "no-fabric" rows can't race in. finish_id distinguishes grade-priced
+    // lines that differ only by frame finish (e.g. Frankford).
     uniqueIndex("cart_items_cart_product_variant_fabric_unique").on(
       t.cartId,
       t.productId,
       sql`COALESCE(${t.variantId}, 0)`,
+      sql`COALESCE(${t.finishId}, 0)`,
       sql`COALESCE(${t.fabricId}, 0)`,
     ),
     // Composite FKs mirror order_items: a cart can't hold a (product, variant)

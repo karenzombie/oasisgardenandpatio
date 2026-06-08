@@ -91,6 +91,17 @@ export const productVariantsTable = pgTable(
     priceAdjustment: numeric("price_adjustment", { precision: 10, scale: 2 })
       .notNull()
       .default("0"),
+    // Free-text vendor note for this specific SKU (e.g. lead-time warnings).
+    // Surfaced as an inline callout on the product page.
+    notes: text("notes"),
+    // Hard minimum order quantity for this SKU. When set, the quantity selector
+    // defaults to and cannot go below this value.
+    minOrderQty: integer("min_order_qty"),
+    // When true, stripe-classified fabrics are filtered out of the fabric
+    // selector for this SKU (some configurations can't be made with stripes).
+    excludeStripeFabrics: boolean("exclude_stripe_fabrics")
+      .notNull()
+      .default(false),
     displayOrder: integer("display_order").notNull().default(0),
     isActive: boolean("is_active").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -116,6 +127,54 @@ export const insertProductVariantSchema = createInsertSchema(
 ).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertProductVariant = z.infer<typeof insertProductVariantSchema>;
 export type ProductVariant = typeof productVariantsTable.$inferSelect;
+
+// ---------------------------------------------------------------------------
+// Variant grade prices (per-grade MSRP + sale price for a variant)
+// ---------------------------------------------------------------------------
+// Some manufacturers (e.g. Frankford) publish an explicit price matrix where
+// every configuration SKU has a distinct MSRP and sale price for each fabric
+// grade (A, A+, B, C, D, E, F, ...). These prices are NOT derivable from a
+// base price + upcharge formula, so they're stored per (variant, grade). When
+// a customer selects a fabric, its grade selects the row that drives the
+// displayed price. Products WITHOUT rows here keep using the legacy
+// base-price + fabricUpcharge model (e.g. Treasure Garden).
+
+export const variantGradePricesTable = pgTable(
+  "variant_grade_prices",
+  {
+    id: serial("id").primaryKey(),
+    variantId: integer("variant_id")
+      .notNull()
+      .references(() => productVariantsTable.id, { onDelete: "cascade" }),
+    // Fabric grade label exactly as classified on fabrics.grade (e.g. "A",
+    // "A+", "B", "C", "D", "E", "F"). Case-sensitive match at lookup time.
+    grade: text("grade").notNull(),
+    msrp: numeric("msrp", { precision: 10, scale: 2 }).notNull(),
+    salePrice: numeric("sale_price", { precision: 10, scale: 2 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [
+    unique("variant_grade_prices_variant_grade_unique").on(
+      t.variantId,
+      t.grade,
+    ),
+    index("variant_grade_prices_variant_idx").on(t.variantId),
+  ],
+);
+
+export const insertVariantGradePriceSchema = createInsertSchema(
+  variantGradePricesTable,
+).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertVariantGradePrice = z.infer<
+  typeof insertVariantGradePriceSchema
+>;
+export type VariantGradePrice = typeof variantGradePricesTable.$inferSelect;
 
 // ---------------------------------------------------------------------------
 // Product fabric options (M:N: which fabrics each product accepts)

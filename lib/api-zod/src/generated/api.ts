@@ -423,6 +423,46 @@ export const GetCatalogProductBySlugResponse = zod
               .describe(
                 "Collection name from the finish row, if set (Couture Jardin only). Used to group variants by collection on the product page.",
               ),
+            gradePrices: zod
+              .array(
+                zod.object({
+                  grade: zod
+                    .string()
+                    .describe(
+                      'Fabric grade (e.g. \"A\", \"A+\", \"B\", \"C\", \"D\", \"E\", \"F\").',
+                    ),
+                  msrp: zod
+                    .string()
+                    .describe(
+                      "Decimal MSRP for this configuration at this grade.",
+                    ),
+                  salePrice: zod
+                    .string()
+                    .describe(
+                      "Decimal sale price for this configuration at this grade.",
+                    ),
+                }),
+              )
+              .describe(
+                "Per-fabric-grade MSRP + sale price for this configuration. Non-empty only for grade-priced products (e.g. Frankford). When present, the product page is in 3-step grade mode and the selected fabric's grade picks the price row.",
+              ),
+            notes: zod
+              .string()
+              .nullable()
+              .describe(
+                "Free-text vendor note for this configuration (e.g. extended lead times), shown as an inline callout. Excludes structured min-order-qty \/ stripe rules.",
+              ),
+            minOrderQty: zod
+              .number()
+              .nullable()
+              .describe(
+                "Minimum order quantity for this configuration. When set, the quantity selector floors at this value.",
+              ),
+            excludeStripeFabrics: zod
+              .boolean()
+              .describe(
+                "When true, stripe-pattern fabrics are not selectable for this configuration.",
+              ),
           }),
         )
         .describe(
@@ -475,6 +515,29 @@ export const GetCatalogProductBySlugResponse = zod
         )
         .describe(
           "Finish collections relevant to this product (non-empty only when some variants have a collection value). Used to show panel images grouped by collection on the product page.",
+        ),
+      finishes: zod
+        .array(
+          zod
+            .object({
+              id: zod.number(),
+              code: zod
+                .string()
+                .describe('Short finish code (e.g. \"SR\", \"MS\").'),
+              name: zod
+                .string()
+                .describe(
+                  'Display name (e.g. \"Platinum\", \"Brushed Silver\").',
+                ),
+              swatchImageUrl: zod.string().nullable(),
+              displayOrder: zod.number(),
+            })
+            .describe(
+              "A discrete frame-finish choice for a grade-priced product (resolved from the product's finish pool\/options).",
+            ),
+        )
+        .describe(
+          "Discrete frame-finish choices for grade-priced products (3-step mode). Empty for legacy (variant-as-finish) products.",
         ),
     }),
   );
@@ -963,6 +1026,8 @@ export const GetCartResponse = zod.object({
       availableOnline: zod.boolean(),
       variantId: zod.number().nullable(),
       variantName: zod.string().nullable(),
+      finishId: zod.number().nullable(),
+      finishName: zod.string().nullable(),
       fabricId: zod.number().nullable(),
       fabricName: zod.string().nullable(),
       fabricItemNumber: zod.string().nullable(),
@@ -994,6 +1059,8 @@ export const ClearCartResponse = zod.object({
       availableOnline: zod.boolean(),
       variantId: zod.number().nullable(),
       variantName: zod.string().nullable(),
+      finishId: zod.number().nullable(),
+      finishName: zod.string().nullable(),
       fabricId: zod.number().nullable(),
       fabricName: zod.string().nullable(),
       fabricItemNumber: zod.string().nullable(),
@@ -1019,6 +1086,10 @@ export const AddCartItemBody = zod.object({
     .number()
     .nullish()
     .describe("Required when the product has fabric options."),
+  finishId: zod
+    .number()
+    .nullish()
+    .describe("Selected frame-finish id for grade-priced (3-step) products."),
 });
 
 export const AddCartItemResponse = zod.object({
@@ -1039,6 +1110,8 @@ export const AddCartItemResponse = zod.object({
       availableOnline: zod.boolean(),
       variantId: zod.number().nullable(),
       variantName: zod.string().nullable(),
+      finishId: zod.number().nullable(),
+      finishName: zod.string().nullable(),
       fabricId: zod.number().nullable(),
       fabricName: zod.string().nullable(),
       fabricItemNumber: zod.string().nullable(),
@@ -1077,6 +1150,8 @@ export const UpdateCartItemResponse = zod.object({
       availableOnline: zod.boolean(),
       variantId: zod.number().nullable(),
       variantName: zod.string().nullable(),
+      finishId: zod.number().nullable(),
+      finishName: zod.string().nullable(),
       fabricId: zod.number().nullable(),
       fabricName: zod.string().nullable(),
       fabricItemNumber: zod.string().nullable(),
@@ -1111,6 +1186,8 @@ export const RemoveCartItemResponse = zod.object({
       availableOnline: zod.boolean(),
       variantId: zod.number().nullable(),
       variantName: zod.string().nullable(),
+      finishId: zod.number().nullable(),
+      finishName: zod.string().nullable(),
       fabricId: zod.number().nullable(),
       fabricName: zod.string().nullable(),
       fabricItemNumber: zod.string().nullable(),
@@ -2417,6 +2494,44 @@ export const AdminGetProductPickerResponse = zod
           .describe(
             "Collection name from the finish row, if set (Couture Jardin only). Used to group variants by collection on the product page.",
           ),
+        gradePrices: zod
+          .array(
+            zod.object({
+              grade: zod
+                .string()
+                .describe(
+                  'Fabric grade (e.g. \"A\", \"A+\", \"B\", \"C\", \"D\", \"E\", \"F\").',
+                ),
+              msrp: zod
+                .string()
+                .describe("Decimal MSRP for this configuration at this grade."),
+              salePrice: zod
+                .string()
+                .describe(
+                  "Decimal sale price for this configuration at this grade.",
+                ),
+            }),
+          )
+          .describe(
+            "Per-fabric-grade MSRP + sale price for this configuration. Non-empty only for grade-priced products (e.g. Frankford). When present, the product page is in 3-step grade mode and the selected fabric's grade picks the price row.",
+          ),
+        notes: zod
+          .string()
+          .nullable()
+          .describe(
+            "Free-text vendor note for this configuration (e.g. extended lead times), shown as an inline callout. Excludes structured min-order-qty \/ stripe rules.",
+          ),
+        minOrderQty: zod
+          .number()
+          .nullable()
+          .describe(
+            "Minimum order quantity for this configuration. When set, the quantity selector floors at this value.",
+          ),
+        excludeStripeFabrics: zod
+          .boolean()
+          .describe(
+            "When true, stripe-pattern fabrics are not selectable for this configuration.",
+          ),
       }),
     ),
     fabricOptions: zod.array(
@@ -2447,6 +2562,29 @@ export const AdminGetProductPickerResponse = zod
         displayOrder: zod.number(),
       }),
     ),
+    finishes: zod
+      .array(
+        zod
+          .object({
+            id: zod.number(),
+            code: zod
+              .string()
+              .describe('Short finish code (e.g. \"SR\", \"MS\").'),
+            name: zod
+              .string()
+              .describe(
+                'Display name (e.g. \"Platinum\", \"Brushed Silver\").',
+              ),
+            swatchImageUrl: zod.string().nullable(),
+            displayOrder: zod.number(),
+          })
+          .describe(
+            "A discrete frame-finish choice for a grade-priced product (resolved from the product's finish pool\/options).",
+          ),
+      )
+      .describe(
+        "Discrete frame-finish choices for grade-priced products. Empty for legacy (variant-as-finish) products.",
+      ),
   })
   .describe("Variants and fabric options for the staff order picker.");
 
@@ -3873,8 +4011,15 @@ export const AdminUpdateOrderShippingMethodResponse = zod.object({
       productSkuSnapshot: zod.string().nullable(),
       variantSkuSnapshot: zod.string().nullable(),
       variantNameSnapshot: zod.string().nullable(),
+      finishId: zod.number().nullable(),
+      finishCodeSnapshot: zod.string().nullable(),
+      finishNameSnapshot: zod.string().nullable(),
       fabricId: zod.number().nullable(),
       fabricNameSnapshot: zod.string().nullable(),
+      fabricItemNumberSnapshot: zod.string().nullable(),
+      fabricBrandSnapshot: zod.string().nullable(),
+      fabricGradeSnapshot: zod.string().nullable(),
+      unitMsrpSnapshot: zod.string().nullable(),
       fabricVendorId: zod
         .number()
         .nullable()
@@ -4187,8 +4332,15 @@ export const AdminMarkOrderPaidInFullResponse = zod.object({
       productSkuSnapshot: zod.string().nullable(),
       variantSkuSnapshot: zod.string().nullable(),
       variantNameSnapshot: zod.string().nullable(),
+      finishId: zod.number().nullable(),
+      finishCodeSnapshot: zod.string().nullable(),
+      finishNameSnapshot: zod.string().nullable(),
       fabricId: zod.number().nullable(),
       fabricNameSnapshot: zod.string().nullable(),
+      fabricItemNumberSnapshot: zod.string().nullable(),
+      fabricBrandSnapshot: zod.string().nullable(),
+      fabricGradeSnapshot: zod.string().nullable(),
+      unitMsrpSnapshot: zod.string().nullable(),
       fabricVendorId: zod
         .number()
         .nullable()
@@ -4383,8 +4535,15 @@ export const AdminUpdateOrderPaymentResponse = zod.object({
       productSkuSnapshot: zod.string().nullable(),
       variantSkuSnapshot: zod.string().nullable(),
       variantNameSnapshot: zod.string().nullable(),
+      finishId: zod.number().nullable(),
+      finishCodeSnapshot: zod.string().nullable(),
+      finishNameSnapshot: zod.string().nullable(),
       fabricId: zod.number().nullable(),
       fabricNameSnapshot: zod.string().nullable(),
+      fabricItemNumberSnapshot: zod.string().nullable(),
+      fabricBrandSnapshot: zod.string().nullable(),
+      fabricGradeSnapshot: zod.string().nullable(),
+      unitMsrpSnapshot: zod.string().nullable(),
       fabricVendorId: zod
         .number()
         .nullable()
@@ -4568,8 +4727,15 @@ export const AdminDeleteOrderPaymentResponse = zod.object({
       productSkuSnapshot: zod.string().nullable(),
       variantSkuSnapshot: zod.string().nullable(),
       variantNameSnapshot: zod.string().nullable(),
+      finishId: zod.number().nullable(),
+      finishCodeSnapshot: zod.string().nullable(),
+      finishNameSnapshot: zod.string().nullable(),
       fabricId: zod.number().nullable(),
       fabricNameSnapshot: zod.string().nullable(),
+      fabricItemNumberSnapshot: zod.string().nullable(),
+      fabricBrandSnapshot: zod.string().nullable(),
+      fabricGradeSnapshot: zod.string().nullable(),
+      unitMsrpSnapshot: zod.string().nullable(),
       fabricVendorId: zod
         .number()
         .nullable()
@@ -5026,6 +5192,18 @@ export const AdminCreateOrderBody = zod.object({
       zod.object({
         productId: zod.number().nullish(),
         variantId: zod.number().nullish(),
+        finishId: zod
+          .number()
+          .nullish()
+          .describe(
+            "Frame-finish choice for grade-priced (3-step) products. Recovers the finish code\/name snapshots for the order line and vendor PO.",
+          ),
+        grade: zod
+          .string()
+          .nullish()
+          .describe(
+            "Fabric grade for grade-priced products (e.g. A, B, C). Used to snapshot the fabric grade + unit MSRP from variant_grade_prices.",
+          ),
         fabricId: zod.number().nullish(),
         fabricVendorId: zod
           .number()
@@ -5243,8 +5421,15 @@ export const AdminGetOrderResponse = zod.object({
       productSkuSnapshot: zod.string().nullable(),
       variantSkuSnapshot: zod.string().nullable(),
       variantNameSnapshot: zod.string().nullable(),
+      finishId: zod.number().nullable(),
+      finishCodeSnapshot: zod.string().nullable(),
+      finishNameSnapshot: zod.string().nullable(),
       fabricId: zod.number().nullable(),
       fabricNameSnapshot: zod.string().nullable(),
+      fabricItemNumberSnapshot: zod.string().nullable(),
+      fabricBrandSnapshot: zod.string().nullable(),
+      fabricGradeSnapshot: zod.string().nullable(),
+      unitMsrpSnapshot: zod.string().nullable(),
       fabricVendorId: zod
         .number()
         .nullable()
@@ -5432,8 +5617,15 @@ export const AdminUpdateOrderStatusResponse = zod.object({
       productSkuSnapshot: zod.string().nullable(),
       variantSkuSnapshot: zod.string().nullable(),
       variantNameSnapshot: zod.string().nullable(),
+      finishId: zod.number().nullable(),
+      finishCodeSnapshot: zod.string().nullable(),
+      finishNameSnapshot: zod.string().nullable(),
       fabricId: zod.number().nullable(),
       fabricNameSnapshot: zod.string().nullable(),
+      fabricItemNumberSnapshot: zod.string().nullable(),
+      fabricBrandSnapshot: zod.string().nullable(),
+      fabricGradeSnapshot: zod.string().nullable(),
+      unitMsrpSnapshot: zod.string().nullable(),
       fabricVendorId: zod
         .number()
         .nullable()
@@ -5629,8 +5821,15 @@ export const AdminRefundOrderResponse = zod.object({
       productSkuSnapshot: zod.string().nullable(),
       variantSkuSnapshot: zod.string().nullable(),
       variantNameSnapshot: zod.string().nullable(),
+      finishId: zod.number().nullable(),
+      finishCodeSnapshot: zod.string().nullable(),
+      finishNameSnapshot: zod.string().nullable(),
       fabricId: zod.number().nullable(),
       fabricNameSnapshot: zod.string().nullable(),
+      fabricItemNumberSnapshot: zod.string().nullable(),
+      fabricBrandSnapshot: zod.string().nullable(),
+      fabricGradeSnapshot: zod.string().nullable(),
+      unitMsrpSnapshot: zod.string().nullable(),
       fabricVendorId: zod
         .number()
         .nullable()
@@ -5835,8 +6034,15 @@ export const AdminUpdateOrderTotalsResponse = zod.object({
       productSkuSnapshot: zod.string().nullable(),
       variantSkuSnapshot: zod.string().nullable(),
       variantNameSnapshot: zod.string().nullable(),
+      finishId: zod.number().nullable(),
+      finishCodeSnapshot: zod.string().nullable(),
+      finishNameSnapshot: zod.string().nullable(),
       fabricId: zod.number().nullable(),
       fabricNameSnapshot: zod.string().nullable(),
+      fabricItemNumberSnapshot: zod.string().nullable(),
+      fabricBrandSnapshot: zod.string().nullable(),
+      fabricGradeSnapshot: zod.string().nullable(),
+      unitMsrpSnapshot: zod.string().nullable(),
       fabricVendorId: zod
         .number()
         .nullable()
@@ -6025,8 +6231,15 @@ export const AdminUpdateOrderItemFabricVendorResponse = zod.object({
       productSkuSnapshot: zod.string().nullable(),
       variantSkuSnapshot: zod.string().nullable(),
       variantNameSnapshot: zod.string().nullable(),
+      finishId: zod.number().nullable(),
+      finishCodeSnapshot: zod.string().nullable(),
+      finishNameSnapshot: zod.string().nullable(),
       fabricId: zod.number().nullable(),
       fabricNameSnapshot: zod.string().nullable(),
+      fabricItemNumberSnapshot: zod.string().nullable(),
+      fabricBrandSnapshot: zod.string().nullable(),
+      fabricGradeSnapshot: zod.string().nullable(),
+      unitMsrpSnapshot: zod.string().nullable(),
       fabricVendorId: zod
         .number()
         .nullable()
@@ -6213,8 +6426,15 @@ export const AdminUpdateOrderNotesResponse = zod.object({
       productSkuSnapshot: zod.string().nullable(),
       variantSkuSnapshot: zod.string().nullable(),
       variantNameSnapshot: zod.string().nullable(),
+      finishId: zod.number().nullable(),
+      finishCodeSnapshot: zod.string().nullable(),
+      finishNameSnapshot: zod.string().nullable(),
       fabricId: zod.number().nullable(),
       fabricNameSnapshot: zod.string().nullable(),
+      fabricItemNumberSnapshot: zod.string().nullable(),
+      fabricBrandSnapshot: zod.string().nullable(),
+      fabricGradeSnapshot: zod.string().nullable(),
+      unitMsrpSnapshot: zod.string().nullable(),
       fabricVendorId: zod
         .number()
         .nullable()

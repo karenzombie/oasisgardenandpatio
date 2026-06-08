@@ -7,6 +7,7 @@
  */
 import type { CatalogFabricOption } from "./catalogFabricOption";
 import type { CatalogFinishCollection } from "./catalogFinishCollection";
+import type { CatalogFinishOption } from "./catalogFinishOption";
 import type { CatalogProduct } from "./catalogProduct";
 import type { CatalogProductDetailSpecs } from "./catalogProductDetailSpecs";
 import type { CatalogProductImage } from "./catalogProductImage";
@@ -37,4 +38,6 @@ export type CatalogProductDetail = CatalogProduct & {
   fabricOptions: CatalogFabricOption[];
   /** Finish collections relevant to this product (non-empty only when some variants have a collection value). Used to show panel images grouped by collection on the product page. */
   finishCollections: CatalogFinishCollection[];
+  /** Discrete frame-finish choices for grade-priced products (3-step mode). Empty for legacy (variant-as-finish) products. */
+  finishes: CatalogFinishOption[];
 };

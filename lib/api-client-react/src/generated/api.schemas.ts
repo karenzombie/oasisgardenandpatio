@@ -100,8 +100,15 @@ export interface AdminOrderItem {
   productSkuSnapshot: string | null;
   variantSkuSnapshot: string | null;
   variantNameSnapshot: string | null;
+  finishId: number | null;
+  finishCodeSnapshot: string | null;
+  finishNameSnapshot: string | null;
   fabricId: number | null;
   fabricNameSnapshot: string | null;
+  fabricItemNumberSnapshot: string | null;
+  fabricBrandSnapshot: string | null;
+  fabricGradeSnapshot: string | null;
+  unitMsrpSnapshot: string | null;
   /** Optional alternate vendor for this line's fabric. Null = fabric ships with the product vendor (the default). */
   fabricVendorId: number | null;
   fabricVendorName: string | null;
@@ -1260,6 +1267,15 @@ export interface CatalogProductImage {
   imageKind: CatalogProductImageImageKind;
 }
 
+export interface CatalogVariantGradePrice {
+  /** Fabric grade (e.g. "A", "A+", "B", "C", "D", "E", "F"). */
+  grade: string;
+  /** Decimal MSRP for this configuration at this grade. */
+  msrp: string;
+  /** Decimal sale price for this configuration at this grade. */
+  salePrice: string;
+}
+
 export interface CatalogProductVariant {
   id: number;
   sku: string;
@@ -1279,6 +1295,34 @@ export interface CatalogProductVariant {
    * @nullable
    */
   collection: string | null;
+  /** Per-fabric-grade MSRP + sale price for this configuration. Non-empty only for grade-priced products (e.g. Frankford). When present, the product page is in 3-step grade mode and the selected fabric's grade picks the price row. */
+  gradePrices: CatalogVariantGradePrice[];
+  /**
+   * Free-text vendor note for this configuration (e.g. extended lead times), shown as an inline callout. Excludes structured min-order-qty / stripe rules.
+   * @nullable
+   */
+  notes: string | null;
+  /**
+   * Minimum order quantity for this configuration. When set, the quantity selector floors at this value.
+   * @nullable
+   */
+  minOrderQty: number | null;
+  /** When true, stripe-pattern fabrics are not selectable for this configuration. */
+  excludeStripeFabrics: boolean;
+}
+
+/**
+ * A discrete frame-finish choice for a grade-priced product (resolved from the product's finish pool/options).
+ */
+export interface CatalogFinishOption {
+  id: number;
+  /** Short finish code (e.g. "SR", "MS"). */
+  code: string;
+  /** Display name (e.g. "Platinum", "Brushed Silver"). */
+  name: string;
+  /** @nullable */
+  swatchImageUrl: string | null;
+  displayOrder: number;
 }
 
 export interface CatalogFabricOption {
@@ -1317,6 +1361,8 @@ export interface AdminProductPickerDetail {
   frameOnlyPrice: string | null;
   variants: CatalogProductVariant[];
   fabricOptions: CatalogFabricOption[];
+  /** Discrete frame-finish choices for grade-priced products. Empty for legacy (variant-as-finish) products. */
+  finishes: CatalogFinishOption[];
 }
 
 export interface CatalogFabricsResponse {
@@ -1368,6 +1414,8 @@ export type CatalogProductDetail = CatalogProduct & {
   fabricOptions: CatalogFabricOption[];
   /** Finish collections relevant to this product (non-empty only when some variants have a collection value). Used to show panel images grouped by collection on the product page. */
   finishCollections: CatalogFinishCollection[];
+  /** Discrete frame-finish choices for grade-priced products (3-step mode). Empty for legacy (variant-as-finish) products. */
+  finishes: CatalogFinishOption[];
 };
 
 export interface WishlistItem {
@@ -1426,6 +1474,10 @@ export interface CartItem {
   /** @nullable */
   variantName: string | null;
   /** @nullable */
+  finishId: number | null;
+  /** @nullable */
+  finishName: string | null;
+  /** @nullable */
   fabricId: number | null;
   /** @nullable */
   fabricName: string | null;
@@ -1454,6 +1506,11 @@ export interface AddCartItemRequest {
    * @nullable
    */
   fabricId?: number | null;
+  /**
+   * Selected frame-finish id for grade-priced (3-step) products.
+   * @nullable
+   */
+  finishId?: number | null;
 }
 
 export interface UpdateCartItemRequest {
@@ -2895,6 +2952,16 @@ export interface CreateOrderItemRequest {
   productId?: number | null;
   /** @nullable */
   variantId?: number | null;
+  /**
+   * Frame-finish choice for grade-priced (3-step) products. Recovers the finish code/name snapshots for the order line and vendor PO.
+   * @nullable
+   */
+  finishId?: number | null;
+  /**
+   * Fabric grade for grade-priced products (e.g. A, B, C). Used to snapshot the fabric grade + unit MSRP from variant_grade_prices.
+   * @nullable
+   */
+  grade?: string | null;
   /** @nullable */
   fabricId?: number | null;
   /**

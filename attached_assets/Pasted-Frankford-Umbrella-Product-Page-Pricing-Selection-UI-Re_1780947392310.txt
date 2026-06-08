@@ -1,0 +1,32 @@
+Frankford Umbrella Product Page — Pricing & Selection UI
+Reference the Treasure Garden product page as the visual and functional template. The Frankford pages should match that look and feel exactly, with one additional selection step.
+Data sources already in Replit:
+* frankford_2026_pricing.csv — contains all SKUs, grade-based MSRP and sale prices, available finishes, and notes
+* Frankford fabrics CSV — contains all fabric options organized by grade (A, A+, B, C, D, E, F)
+
+How Frankford products differ from Treasure Garden
+Many Frankford SKUs are the same physical umbrella sold in multiple configurations (e.g., valance/no vent, valance/vent, no valance/vent). These share a product name but have distinct SKUs and different price points. This means Frankford needs three sequential selections instead of two:
+1. Configuration (e.g., No Valance No Vent / Valance + Vent / No Valance + Vent) — shown first, since it affects base price
+2. Frame Finish — shown only when the Available Finishes column is not "ALL"; when it is ALL, skip or auto-select; when it lists a single finish (e.g., SR - Platinum), show it as a read-only/display-only label rather than a selector
+3. Fabric — dropdown or selector pulling from the Frankford fabrics list, grouped by grade; selecting a fabric grade updates the displayed price to the corresponding grade column
+
+Pricing display
+Match the Treasure Garden layout: show MSRP with strikethrough alongside the larger sale price. Both values update dynamically as the customer changes configuration, finish, and fabric selections. Pull MSRP and sale price from the matching grade column in the pricing CSV based on whichever fabric grade the customer has selected.
+
+Finish swatch + fabric swatch summary panel
+Below the selectors, show the same two-item summary panel Treasure Garden uses (frame finish swatch on the left, fabric swatch on the right with brand and name). For finishes listed as SR - Platinum or MS - Brushed Silver with no choice available, still show the finish swatch in that panel so the layout stays consistent.
+
+Notes column handling and stripe fabric filtering
+Parse the Notes column for each SKU when the product page loads. If the note contains "stripe fabrics not available," filter the fabric selector so that any fabric Replit has already flagged as a stripe is excluded from the selectable options for that SKU — they should not appear in the list at all, not just be grayed out. Replit already has stripe classification on the Frankford fabrics, so this is purely a filter applied at render time based on the Notes value.
+If the note contains a minimum order quantity (e.g., "Min Order Qty 5"), the quantity selector must default to that minimum value and enforce it as a hard floor — the customer cannot reduce quantity below it. Display a clear inline note near the quantity selector explaining the minimum requirement, so the customer understands why they cannot go lower.
+For any remaining notes not handled by the above rules, surface them as a small inline callout near the fabric selector or below the price, similar to the existing "NOTE: Image does not update with your fabric/finish selections" line already on the page.
+
+
+SKU display
+The SKU shown on the page should reflect whichever configuration the customer has currently selected, not a static parent SKU. This matches how the Catalina currently shows 844FA01 and needs to update when the customer picks a different variant.
+
+Staff page view
+The same three-step selection UI (configuration, finish, fabric) must be fully functional on the Staff page view, not just the customer-facing page. Staff should be able to make all selections and see prices update identically to the customer experience.
+
+Order generation
+When an order is generated from either the customer or staff view, the vendor order record must capture all selected values as discrete fields: product SKU, product name and configuration description, frame finish code and name, fabric SKU/number, fabric brand and name, fabric grade, quantity, unit MSRP, and unit sale price. This gives everything needed to place the order directly with Frankford without any ambiguity about what was selected.

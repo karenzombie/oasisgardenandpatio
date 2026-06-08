@@ -27,6 +27,10 @@ export interface CartItem {
   /** @nullable */
   variantName: string | null;
   /** @nullable */
+  finishId: number | null;
+  /** @nullable */
+  finishName: string | null;
+  /** @nullable */
   fabricId: number | null;
   /** @nullable */
   fabricName: string | null;

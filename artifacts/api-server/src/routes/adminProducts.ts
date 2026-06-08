@@ -11,6 +11,10 @@ import {
   manufacturersTable,
   categoriesTable,
   materialsTable,
+  variantGradePricesTable,
+  finishesTable,
+  productFinishPoolsTable,
+  productFinishOptionsTable,
   type Product,
   type ProductImage,
 } from "@workspace/db";
@@ -796,7 +800,11 @@ router.get(
       return;
     }
     const [product] = await db
-      .select({ id: productsTable.id, frameOnlyPrice: productsTable.frameOnlyPrice })
+      .select({
+        id: productsTable.id,
+        frameOnlyPrice: productsTable.frameOnlyPrice,
+        manufacturerId: productsTable.manufacturerId,
+      })
       .from(productsTable)
       .where(eq(productsTable.id, params.data.id))
       .limit(1);
@@ -813,6 +821,9 @@ router.get(
           optionLabel: productVariantsTable.optionLabel,
           priceAdjustment: productVariantsTable.priceAdjustment,
           displayOrder: productVariantsTable.displayOrder,
+          notes: productVariantsTable.notes,
+          minOrderQty: productVariantsTable.minOrderQty,
+          excludeStripeFabrics: productVariantsTable.excludeStripeFabrics,
         })
         .from(productVariantsTable)
         .where(
@@ -859,12 +870,102 @@ router.get(
           asc(fabricsTable.name),
         ),
     ]);
+
+    // Per-variant grade prices (grade-mode products). Empty for legacy TG-style.
+    const variantIds = variantRows.map((v) => v.id);
+    const gradePriceRows = variantIds.length
+      ? await db
+          .select({
+            variantId: variantGradePricesTable.variantId,
+            grade: variantGradePricesTable.grade,
+            msrp: variantGradePricesTable.msrp,
+            salePrice: variantGradePricesTable.salePrice,
+          })
+          .from(variantGradePricesTable)
+          .where(inArray(variantGradePricesTable.variantId, variantIds))
+          .orderBy(asc(variantGradePricesTable.grade))
+      : [];
+    const gradePricesByVariant = new Map<
+      number,
+      Array<{ grade: string; msrp: string; salePrice: string | null }>
+    >();
+    for (const gp of gradePriceRows) {
+      const list = gradePricesByVariant.get(gp.variantId) ?? [];
+      list.push({ grade: gp.grade, msrp: gp.msrp, salePrice: gp.salePrice });
+      gradePricesByVariant.set(gp.variantId, list);
+    }
+
+    // Discrete frame-finish choices: UNION of pool-expanded manufacturer
+    // finishes and individually-picked finish options (mirrors detail route).
+    const poolMfrRows = await db
+      .select({ manufacturerId: productFinishPoolsTable.manufacturerId })
+      .from(productFinishPoolsTable)
+      .where(eq(productFinishPoolsTable.productId, product.id));
+    const poolMfrIds = poolMfrRows.map((p) => p.manufacturerId);
+    const pooledFinishRows = poolMfrIds.length
+      ? await db
+          .select({
+            id: finishesTable.id,
+            code: finishesTable.itemNumber,
+            name: finishesTable.name,
+            imageUrl: finishesTable.imageUrl,
+            displayOrder: finishesTable.displayOrder,
+          })
+          .from(finishesTable)
+          .where(
+            and(
+              inArray(finishesTable.manufacturerId, poolMfrIds),
+              eq(finishesTable.isActive, true),
+            ),
+          )
+      : [];
+    const optionFinishRows = await db
+      .select({
+        id: finishesTable.id,
+        code: finishesTable.itemNumber,
+        name: finishesTable.name,
+        imageUrl: finishesTable.imageUrl,
+        displayOrder: productFinishOptionsTable.displayOrder,
+      })
+      .from(productFinishOptionsTable)
+      .innerJoin(
+        finishesTable,
+        eq(finishesTable.id, productFinishOptionsTable.finishId),
+      )
+      .where(
+        and(
+          eq(productFinishOptionsTable.productId, product.id),
+          eq(finishesTable.isActive, true),
+        ),
+      );
+    const finishByIdMap = new Map<
+      number,
+      { id: number; code: string | null; name: string; imageUrl: string | null; displayOrder: number }
+    >();
+    for (const f of [...pooledFinishRows, ...optionFinishRows]) {
+      if (!finishByIdMap.has(f.id)) finishByIdMap.set(f.id, f);
+    }
+    const discreteFinishes = [...finishByIdMap.values()].sort(
+      (a, b) => a.displayOrder - b.displayOrder || a.name.localeCompare(b.name),
+    );
+
     res.json({
       productId: product.id,
       frameOnlyPrice: product.frameOnlyPrice ?? null,
       variants: variantRows.map((v) => ({
         ...v,
         priceAdjustment: String(v.priceAdjustment ?? "0"),
+        gradePrices: gradePricesByVariant.get(v.id) ?? [],
+        notes: v.notes ?? null,
+        minOrderQty: v.minOrderQty ?? null,
+        excludeStripeFabrics: v.excludeStripeFabrics ?? false,
+      })),
+      finishes: discreteFinishes.map((f) => ({
+        id: f.id,
+        code: f.code ?? "",
+        name: f.name,
+        swatchImageUrl: toPublicImageUrl(f.imageUrl),
+        displayOrder: f.displayOrder,
       })),
       fabricOptions: fabricRows.map((f) => ({
         id: f.id,

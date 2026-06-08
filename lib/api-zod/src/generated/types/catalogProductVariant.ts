@@ -5,6 +5,7 @@
  * Oasis Garden & Patio API
  * OpenAPI spec version: 0.1.0
  */
+import type { CatalogVariantGradePrice } from "./catalogVariantGradePrice";
 
 export interface CatalogProductVariant {
   id: number;
@@ -25,4 +26,18 @@ export interface CatalogProductVariant {
    * @nullable
    */
   collection: string | null;
+  /** Per-fabric-grade MSRP + sale price for this configuration. Non-empty only for grade-priced products (e.g. Frankford). When present, the product page is in 3-step grade mode and the selected fabric's grade picks the price row. */
+  gradePrices: CatalogVariantGradePrice[];
+  /**
+   * Free-text vendor note for this configuration (e.g. extended lead times), shown as an inline callout. Excludes structured min-order-qty / stripe rules.
+   * @nullable
+   */
+  notes: string | null;
+  /**
+   * Minimum order quantity for this configuration. When set, the quantity selector floors at this value.
+   * @nullable
+   */
+  minOrderQty: number | null;
+  /** When true, stripe-pattern fabrics are not selectable for this configuration. */
+  excludeStripeFabrics: boolean;
 }

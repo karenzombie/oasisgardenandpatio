@@ -45,6 +45,7 @@ export default function Product() {
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   const [qty, setQty] = useState(1);
   const [variantId, setVariantId] = useState<number | null>(null);
+  const [finishId, setFinishId] = useState<number | null>(null);
   const [fabricId, setFabricId] = useState<number | null>(null);
   const [fabricOpen, setFabricOpen] = useState(false);
 
@@ -81,41 +82,119 @@ export default function Product() {
   // variantId/fabricId from a previous PDP can't unlock the gate here.
   useEffect(() => {
     setVariantId(null);
+    setFinishId(null);
     setFabricId(null);
     setFrameOnly(false);
     setActiveImageIdx(0);
     setQty(1);
   }, [data?.id]);
 
+  // Discrete frame finishes for grade-priced (Frankford) products. Empty for
+  // legacy products where variants double as finishes.
+  const finishes = useMemo(() => data?.finishes ?? [], [data?.finishes]);
+
   const selectedVariant = useMemo(
     () => variants.find((v) => v.id === variantId) ?? null,
     [variants, variantId],
+  );
+  const selectedFinish = useMemo(
+    () => finishes.find((f) => f.id === finishId) ?? null,
+    [finishes, finishId],
   );
   const selectedFabric = useMemo(
     () => fabricOptions.find((f) => f.id === fabricId) ?? null,
     [fabricOptions, fabricId],
   );
 
+  // Grade mode: a product is grade-priced when any of its configurations carry
+  // per-fabric-grade prices. In this mode the page runs a 3-step selection
+  // (Configuration -> Frame Finish -> Fabric) and the line price is driven by
+  // the selected fabric's grade rather than base price + adjustment.
+  const isGradeMode = useMemo(
+    () => variants.some((v) => (v.gradePrices?.length ?? 0) > 0),
+    [variants],
+  );
+
+  // Map of grade -> {msrp, salePrice} for the currently selected configuration.
+  const gradePriceMap = useMemo(() => {
+    const m = new Map<string, { msrp: string; salePrice: string }>();
+    for (const gp of selectedVariant?.gradePrices ?? []) {
+      m.set(gp.grade, { msrp: gp.msrp, salePrice: gp.salePrice });
+    }
+    return m;
+  }, [selectedVariant]);
+
   const sortedFabricOptions = useMemo(
     () => [...fabricOptions].sort((a, b) => a.name.localeCompare(b.name)),
     [fabricOptions],
   );
+
+  // In grade mode, a fabric is only selectable when the chosen configuration has
+  // a price for that fabric's grade, and (when the config excludes stripes) it
+  // is not a stripe pattern. Mirrors the server-side cart validation.
+  const gradeModeFabrics = useMemo(() => {
+    if (!isGradeMode || !selectedVariant) return [];
+    return sortedFabricOptions.filter((f) => {
+      if (!f.grade || !gradePriceMap.has(f.grade)) return false;
+      if (selectedVariant.excludeStripeFabrics && f.isStripe) return false;
+      return true;
+    });
+  }, [isGradeMode, selectedVariant, sortedFabricOptions, gradePriceMap]);
+
+  // Auto-select the only finish for single-finish grade-priced products.
+  useEffect(() => {
+    if (isGradeMode && finishes.length === 1) {
+      setFinishId(finishes[0].id);
+    }
+  }, [isGradeMode, finishes]);
+
+  // Clear a now-invalid fabric when the configuration changes (its grade may no
+  // longer be priced, or stripes may now be excluded).
+  useEffect(() => {
+    if (isGradeMode && selectedFabric && selectedVariant) {
+      const ok =
+        !!selectedFabric.grade &&
+        gradePriceMap.has(selectedFabric.grade) &&
+        !(selectedVariant.excludeStripeFabrics && selectedFabric.isStripe);
+      if (!ok) setFabricId(null);
+    }
+  }, [isGradeMode, selectedVariant, selectedFabric, gradePriceMap]);
+
   // Stripe fabrics must be ordered in even pairs (2, 4, 6...). When such a
   // fabric is selected we lock the quantity stepper to even values >= 2.
   const isStripeSelected = selectedFabric?.isStripe === true;
 
+  // Minimum order quantity for the selected configuration (grade mode only).
+  const minOrderQty =
+    isGradeMode && selectedVariant?.minOrderQty != null
+      ? selectedVariant.minOrderQty
+      : 1;
+  // Combined quantity floor: config minimum, raised to an even number when a
+  // stripe fabric (sold in pairs) is selected.
+  let qtyFloor = Math.max(minOrderQty, isStripeSelected ? 2 : 1);
+  if (isStripeSelected && qtyFloor % 2 !== 0) qtyFloor += 1;
+
   useEffect(() => {
-    if (isStripeSelected) {
-      setQty((q) => (q < 2 ? 2 : q % 2 !== 0 ? q + 1 : q));
-    }
-  }, [isStripeSelected]);
+    setQty((q) => {
+      let next = q < qtyFloor ? qtyFloor : q;
+      if (isStripeSelected && next % 2 !== 0) next += 1;
+      return next;
+    });
+  }, [qtyFloor, isStripeSelected]);
 
   const frameOnlyPrice = data?.frameOnlyPrice ?? null;
-  const offersFrameOnly = hasFabrics && frameOnlyPrice != null;
+  // Grade-priced products always run the full 3-step flow (fabric is required
+  // to derive the line price), so the frame-only shortcut never applies there.
+  const offersFrameOnly = !isGradeMode && hasFabrics && frameOnlyPrice != null;
 
   const missingSelections: string[] = [];
   if (requiresVariant && !selectedVariant) {
-    missingSelections.push(variants[0]?.optionLabel ?? "Variant");
+    missingSelections.push(
+      isGradeMode ? "Configuration" : variants[0]?.optionLabel ?? "Variant",
+    );
+  }
+  if (isGradeMode && finishes.length > 0 && !selectedFinish) {
+    missingSelections.push("Frame Finish");
   }
   if (requiresFabric && !selectedFabric) missingSelections.push("Fabric");
   const optionsMissingMsg =
@@ -123,6 +202,7 @@ export default function Product() {
       ? `Please choose ${missingSelections.join(" and ")} first.`
       : "";
   const stripeQtyInvalid = isStripeSelected && (qty < 2 || qty % 2 !== 0);
+  const minQtyInvalid = minOrderQty > 1 && qty < minOrderQty;
 
   function handleAddToCart() {
     if (!data) return;
@@ -138,11 +218,19 @@ export default function Product() {
       });
       return;
     }
+    if (minQtyInvalid) {
+      toast({
+        title: "Minimum quantity required",
+        description: `This configuration has a minimum order quantity of ${minOrderQty}.`,
+      });
+      return;
+    }
     addToCartM.mutate({
       data: {
         productId: data.id,
         quantity: qty,
         ...(selectedVariant ? { variantId: selectedVariant.id } : {}),
+        ...(selectedFinish ? { finishId: selectedFinish.id } : {}),
         ...(selectedFabric ? { fabricId: selectedFabric.id } : {}),
       },
     });
@@ -188,6 +276,50 @@ export default function Product() {
         )
       : 0;
   const effectivePrice = basePrice + variantAdj + fabricUpcharge;
+
+  // ---- Grade-mode pricing ----
+  // gradeLinePrice/gradeMsrp are set once a fabric is chosen (its grade picks
+  // the price row). gradeFromPrice is the lowest line price across all grades
+  // for the chosen configuration, used for the "From $X" teaser before a fabric
+  // is selected.
+  let gradeLinePrice: number | null = null;
+  let gradeMsrp: number | null = null;
+  let gradeFromPrice: number | null = null;
+  if (isGradeMode) {
+    if (selectedFabric?.grade) {
+      const gp = gradePriceMap.get(selectedFabric.grade);
+      if (gp) {
+        gradeMsrp = Number(gp.msrp);
+        gradeLinePrice =
+          Number(gp.salePrice) > 0 ? Number(gp.salePrice) : Number(gp.msrp);
+      }
+    }
+    if (selectedVariant) {
+      let minLine = Infinity;
+      for (const gp of selectedVariant.gradePrices) {
+        const line =
+          Number(gp.salePrice) > 0 ? Number(gp.salePrice) : Number(gp.msrp);
+        if (line < minLine) minLine = line;
+      }
+      if (minLine !== Infinity) gradeFromPrice = minLine;
+    }
+  }
+  const gradeOnSale =
+    gradeLinePrice != null && gradeMsrp != null && gradeMsrp > gradeLinePrice;
+
+  // Dynamic SKU: combine the configuration SKU with the chosen finish code and
+  // fabric item number so each unique selection has a traceable code.
+  const dynamicSku =
+    isGradeMode &&
+    (selectedVariant || selectedFinish || selectedFabric)
+      ? [
+          selectedVariant?.sku,
+          selectedFinish?.code,
+          selectedFabric?.itemNumber,
+        ]
+          .filter(Boolean)
+          .join("-") || data.sku
+      : data.sku;
 
   const variantOptionLabel = variants[0]?.optionLabel ?? "Variant";
 
@@ -275,25 +407,59 @@ export default function Product() {
           )}
 
           {showPriceBlock ? (
-            <div className="mb-6">
-              {onSale && !frameOnly ? (
-                <div className="flex items-baseline gap-3 flex-wrap">
-                  <span className="text-muted-foreground">
-                    <span className="text-xs uppercase tracking-widest mr-1.5">MSRP</span>
-                    <span className="line-through text-lg">{formatMoney(Number(data.price) + fabricUpcharge)}</span>
+            isGradeMode ? (
+              <div className="mb-6">
+                {gradeLinePrice != null ? (
+                  gradeOnSale ? (
+                    <div className="flex items-baseline gap-3 flex-wrap">
+                      <span className="text-muted-foreground">
+                        <span className="text-xs uppercase tracking-widest mr-1.5">MSRP</span>
+                        <span className="line-through text-lg">{formatMoney(gradeMsrp)}</span>
+                      </span>
+                      <span className="text-primary font-bold text-3xl md:text-4xl">{formatMoney(gradeLinePrice)}</span>
+                    </div>
+                  ) : (
+                    <span className="text-2xl font-semibold">{formatMoney(gradeLinePrice)}</span>
+                  )
+                ) : gradeFromPrice != null ? (
+                  <span className="text-2xl font-semibold">
+                    From {formatMoney(gradeFromPrice)}
+                    <span className="text-sm text-muted-foreground ml-2">
+                      Select a fabric to see your price.
+                    </span>
                   </span>
-                  <span className="text-primary font-bold text-3xl md:text-4xl">{formatMoney(effectivePrice)}</span>
-                </div>
-              ) : (
-                <span className="text-2xl font-semibold">{formatMoney(effectivePrice)}</span>
-              )}
-              {variantAdj !== 0 ? (
-                <span className="text-sm text-muted-foreground mt-1 block">
-                  ({variantAdj > 0 ? "+" : ""}
-                  {formatMoney(variantAdj)} for {selectedVariant?.name})
-                </span>
-              ) : null}
-            </div>
+                ) : (
+                  <span className="text-sm text-muted-foreground">
+                    Select a configuration to see pricing.
+                  </span>
+                )}
+                {selectedFabric?.grade ? (
+                  <span className="text-sm text-muted-foreground mt-1 block">
+                    Grade {selectedFabric.grade} fabric
+                  </span>
+                ) : null}
+              </div>
+            ) : (
+              <div className="mb-6">
+                {onSale && !frameOnly ? (
+                  <div className="flex items-baseline gap-3 flex-wrap">
+                    <span className="text-muted-foreground">
+                      <span className="text-xs uppercase tracking-widest mr-1.5">MSRP</span>
+                      <span className="line-through text-lg">{formatMoney(Number(data.price) + fabricUpcharge)}</span>
+                    </span>
+                    <span className="text-primary font-bold text-3xl md:text-4xl">{formatMoney(effectivePrice)}</span>
+                  </div>
+                ) : (
+                  <span className="text-2xl font-semibold">{formatMoney(effectivePrice)}</span>
+                )}
+                {variantAdj !== 0 ? (
+                  <span className="text-sm text-muted-foreground mt-1 block">
+                    ({variantAdj > 0 ? "+" : ""}
+                    {formatMoney(variantAdj)} for {selectedVariant?.name})
+                  </span>
+                ) : null}
+              </div>
+            )
           ) : null}
 
           {data.shortDescription ? (
@@ -327,11 +493,11 @@ export default function Product() {
             </div>
           ) : (
             <>
-              {/* Variant selector (e.g. Frame Finish) */}
+              {/* Variant selector (Configuration in grade mode, else Frame Finish) */}
               {requiresVariant ? (
                 <div className="mb-5">
                   <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">
-                    {variantOptionLabel}
+                    {isGradeMode ? "Configuration" : variantOptionLabel}
                     <span className="text-destructive ml-1">*</span>
                     {selectedVariant ? (
                       <span className="ml-2 normal-case tracking-normal text-foreground">
@@ -439,6 +605,66 @@ export default function Product() {
                 </div>
               ) : null}
 
+              {/* Frame Finish selector (grade-priced products only). A single
+                  finish renders read-only; multiple finishes render as a
+                  swatch picker. */}
+              {isGradeMode && finishes.length > 0 ? (
+                <div className="mb-5">
+                  <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">
+                    Frame Finish
+                    <span className="text-destructive ml-1">*</span>
+                    {selectedFinish ? (
+                      <span className="ml-2 normal-case tracking-normal text-foreground">
+                        {selectedFinish.name}
+                      </span>
+                    ) : null}
+                  </p>
+                  {finishes.length === 1 ? (
+                    <div className="flex items-center gap-3">
+                      {finishes[0].swatchImageUrl ? (
+                        <img
+                          src={finishes[0].swatchImageUrl}
+                          alt={finishes[0].name}
+                          className="h-12 w-12 shrink-0 object-cover border border-border"
+                        />
+                      ) : null}
+                      <span className="text-sm font-medium">{finishes[0].name}</span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {finishes.map((f) => (
+                        <button
+                          key={f.id}
+                          type="button"
+                          onClick={() => setFinishId(f.id)}
+                          className={`flex items-center gap-2 px-3 py-2 border text-sm transition-colors ${
+                            finishId === f.id
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-input hover:border-foreground"
+                          }`}
+                        >
+                          {f.swatchImageUrl ? (
+                            <img
+                              src={f.swatchImageUrl}
+                              alt={f.name}
+                              className="h-6 w-6 shrink-0 object-cover border border-border/50"
+                            />
+                          ) : null}
+                          {f.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : null}
+
+              {/* Configuration note callout (grade-priced products only). */}
+              {isGradeMode && selectedVariant?.notes ? (
+                <div className="mb-5 border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                  {selectedVariant.notes}
+                </div>
+              ) : null}
+
               {/* Frame only / Frame + Fabric toggle */}
               {offersFrameOnly ? (
                 <div className="mb-5">
@@ -498,7 +724,7 @@ export default function Product() {
                       >
                         <span className={selectedFabric ? "text-foreground" : "text-muted-foreground"}>
                           {selectedFabric
-                            ? `${selectedFabric.manufacturerName} · ${selectedFabric.name} (${selectedFabric.itemNumber})`
+                            ? `${selectedFabric.manufacturerName} · ${selectedFabric.name} (${selectedFabric.itemNumber})${isGradeMode && selectedFabric.grade ? ` — Grade ${selectedFabric.grade}` : ""}`
                             : "— Select a fabric —"}
                         </span>
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -514,13 +740,24 @@ export default function Product() {
                         <CommandList>
                           <CommandEmpty>No fabrics found.</CommandEmpty>
                           <CommandGroup>
-                            {sortedFabricOptions.map((f) => {
-                              const up = fabricGradeUpcharge(
-                                data.manufacturerName,
-                                f.manufacturerName,
-                                f.grade,
-                              );
-                              const label = `${f.manufacturerName} · ${f.name} (${f.itemNumber})${up > 0 ? ` (+${formatMoney(up)})` : ""}`;
+                            {(isGradeMode ? gradeModeFabrics : sortedFabricOptions).map((f) => {
+                              let label: string;
+                              if (isGradeMode) {
+                                const gp = f.grade ? gradePriceMap.get(f.grade) : undefined;
+                                const line = gp
+                                  ? Number(gp.salePrice) > 0
+                                    ? Number(gp.salePrice)
+                                    : Number(gp.msrp)
+                                  : null;
+                                label = `${f.manufacturerName} · ${f.name} (${f.itemNumber}) — Grade ${f.grade}${line != null ? ` · ${formatMoney(line)}` : ""}`;
+                              } else {
+                                const up = fabricGradeUpcharge(
+                                  data.manufacturerName,
+                                  f.manufacturerName,
+                                  f.grade,
+                                );
+                                label = `${f.manufacturerName} · ${f.name} (${f.itemNumber})${up > 0 ? ` (+${formatMoney(up)})` : ""}`;
+                              }
                               return (
                                 <CommandItem
                                   key={f.id}
@@ -562,7 +799,7 @@ export default function Product() {
               ) : null}
 
               {/* Selection summary: finish + fabric swatch images with plain text */}
-              {(selectedFabric && !frameOnly) || selectedVariant ? (
+              {(selectedFabric && !frameOnly) || selectedVariant || (isGradeMode && selectedFinish) ? (
                 <div className="mb-5 flex flex-wrap items-center gap-6 border border-border bg-muted/30 px-4 py-3">
                   {selectedVariant ? (
                     <div className="flex items-center gap-3">
@@ -574,8 +811,23 @@ export default function Product() {
                         />
                       ) : null}
                       <div className="text-sm">
-                        <p className="text-muted-foreground">{variantOptionLabel}</p>
+                        <p className="text-muted-foreground">{isGradeMode ? "Configuration" : variantOptionLabel}</p>
                         <p className="font-medium">{selectedVariant.name}</p>
+                      </div>
+                    </div>
+                  ) : null}
+                  {isGradeMode && selectedFinish ? (
+                    <div className="flex items-center gap-3">
+                      {selectedFinish.swatchImageUrl ? (
+                        <img
+                          src={selectedFinish.swatchImageUrl}
+                          alt={selectedFinish.name}
+                          className="h-14 w-14 shrink-0 object-cover border border-border"
+                        />
+                      ) : null}
+                      <div className="text-sm">
+                        <p className="text-muted-foreground">Frame Finish</p>
+                        <p className="font-medium">{selectedFinish.name}</p>
                       </div>
                     </div>
                   ) : null}
@@ -606,13 +858,10 @@ export default function Product() {
                     className="px-3 py-2.5 hover:bg-muted disabled:opacity-40"
                     onClick={() =>
                       setQty((q) =>
-                        Math.max(
-                          isStripeSelected ? 2 : 1,
-                          q - (isStripeSelected ? 2 : 1),
-                        ),
+                        Math.max(qtyFloor, q - (isStripeSelected ? 2 : 1)),
                       )
                     }
-                    disabled={qty <= (isStripeSelected ? 2 : 1)}
+                    disabled={qty <= qtyFloor}
                     aria-label="Decrease quantity"
                   >
                     −
@@ -634,7 +883,8 @@ export default function Product() {
                     addToCartM.isPending ||
                     !data.availableOnline ||
                     Boolean(optionsMissingMsg) ||
-                    stripeQtyInvalid
+                    stripeQtyInvalid ||
+                    minQtyInvalid
                   }
                   title={optionsMissingMsg || undefined}
                   className="flex-1 sm:flex-none bg-primary text-primary-foreground px-8 py-3 text-sm uppercase tracking-widest font-medium hover:bg-primary/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
@@ -662,7 +912,7 @@ export default function Product() {
           <dl className="mt-8 pt-6 border-t border-border space-y-2 text-sm">
             <div className="flex gap-2">
               <dt className="text-muted-foreground min-w-[100px]">SKU</dt>
-              <dd className="text-foreground">{data.sku}</dd>
+              <dd className="text-foreground">{dynamicSku}</dd>
             </div>
             {data.categoryName ? (
               <div className="flex gap-2">

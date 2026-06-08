@@ -11,6 +11,16 @@ export interface CreateOrderItemRequest {
   productId?: number | null;
   /** @nullable */
   variantId?: number | null;
+  /**
+   * Frame-finish choice for grade-priced (3-step) products. Recovers the finish code/name snapshots for the order line and vendor PO.
+   * @nullable
+   */
+  finishId?: number | null;
+  /**
+   * Fabric grade for grade-priced products (e.g. A, B, C). Used to snapshot the fabric grade + unit MSRP from variant_grade_prices.
+   * @nullable
+   */
+  grade?: string | null;
   /** @nullable */
   fabricId?: number | null;
   /**

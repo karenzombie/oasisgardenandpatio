@@ -217,8 +217,12 @@ export interface PdfVendorOrderItem {
   productSkuSnapshot: string | null;
   variantSkuSnapshot: string | null;
   variantNameSnapshot: string | null;
+  finishCodeSnapshot: string | null;
+  finishNameSnapshot: string | null;
   fabricItemNumberSnapshot: string | null;
   fabricNameSnapshot: string | null;
+  fabricBrandSnapshot: string | null;
+  fabricGradeSnapshot: string | null;
   description: string | null;
   quantity: number;
   unitPrice: number;
@@ -328,10 +332,21 @@ function optionWithSku(name: string | null, sku: string | null): string | null {
   return `${name} (${sku})`;
 }
 
+// "Sunbrella — Spectrum Cilantro (48022)" — prefix the fabric line with its
+// brand and append grade so the vendor can match the exact fabric line.
+function fabricOption(it: PdfVendorOrderItem): string | null {
+  if (!it.fabricNameSnapshot) return null;
+  const brand = it.fabricBrandSnapshot ? `${it.fabricBrandSnapshot} — ` : "";
+  const base = optionWithSku(it.fabricNameSnapshot, it.fabricItemNumberSnapshot);
+  const grade = it.fabricGradeSnapshot ? ` [Grade ${it.fabricGradeSnapshot}]` : "";
+  return `${brand}${base}${grade}`;
+}
+
 function itemOptions(it: PdfVendorOrderItem): string[] {
   return [
     optionWithSku(it.variantNameSnapshot, it.variantSkuSnapshot),
-    optionWithSku(it.fabricNameSnapshot, it.fabricItemNumberSnapshot),
+    optionWithSku(it.finishNameSnapshot, it.finishCodeSnapshot),
+    fabricOption(it),
   ].filter((v): v is string => Boolean(v));
 }
 

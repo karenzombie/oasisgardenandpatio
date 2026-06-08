@@ -23,6 +23,7 @@ import {
   fabricsTable,
   productFabricOptionsTable,
 } from "./variants";
+import { finishesTable } from "./finishes";
 
 export const ordersTable = pgTable(
   "orders",
@@ -150,11 +151,29 @@ export const orderItemsTable = pgTable(
       () => manufacturersTable.id,
       { onDelete: "set null" },
     ),
+    // Frame-finish selection for grade-priced products (e.g. Frankford). Null
+    // for legacy products where the finish IS the variant. Snapshots capture
+    // the finish identity at order time so vendor PDFs survive catalog renames.
+    finishId: integer("finish_id").references(() => finishesTable.id, {
+      onDelete: "set null",
+    }),
     productSkuSnapshot: text("product_sku_snapshot"),
     variantSkuSnapshot: text("variant_sku_snapshot"),
     variantNameSnapshot: text("variant_name_snapshot"),
+    finishCodeSnapshot: text("finish_code_snapshot"),
+    finishNameSnapshot: text("finish_name_snapshot"),
     fabricItemNumberSnapshot: text("fabric_item_number_snapshot"),
     fabricNameSnapshot: text("fabric_name_snapshot"),
+    // Fabric brand (manufacturer) and grade at order time — both needed on the
+    // vendor PO so the manufacturer knows exactly which fabric line to pull.
+    fabricBrandSnapshot: text("fabric_brand_snapshot"),
+    fabricGradeSnapshot: text("fabric_grade_snapshot"),
+    // List price (MSRP) for this line at order time. unitPrice holds the
+    // actual charged (sale) price; this captures the strike-through list price.
+    unitMsrpSnapshot: numeric("unit_msrp_snapshot", {
+      precision: 10,
+      scale: 2,
+    }),
     vendorOrderId: integer("vendor_order_id"),
     // Companion to vendor_order_id: when fabric_vendor_id is set, the
     // line's fabric goes to a SEPARATE vendor PO (this column), while

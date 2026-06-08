@@ -15,6 +15,8 @@ import {
   productsTable,
   productVariantsTable,
   fabricsTable,
+  finishesTable,
+  variantGradePricesTable,
   inventoryTable,
   inventoryAdjustmentsTable,
   type Order,
@@ -106,8 +108,15 @@ function itemToPayload(
     productSkuSnapshot: it.productSkuSnapshot,
     variantSkuSnapshot: it.variantSkuSnapshot,
     variantNameSnapshot: it.variantNameSnapshot,
+    finishId: it.finishId,
+    finishCodeSnapshot: it.finishCodeSnapshot,
+    finishNameSnapshot: it.finishNameSnapshot,
     fabricId: it.fabricId,
     fabricNameSnapshot: it.fabricNameSnapshot,
+    fabricItemNumberSnapshot: it.fabricItemNumberSnapshot,
+    fabricBrandSnapshot: it.fabricBrandSnapshot,
+    fabricGradeSnapshot: it.fabricGradeSnapshot,
+    unitMsrpSnapshot: it.unitMsrpSnapshot,
     fabricVendorId: it.fabricVendorId,
     fabricVendorName,
     fabricVendorOrderId: it.fabricVendorOrderId,
@@ -1448,11 +1457,17 @@ router.post(
           variantId: number | null;
           fabricId: number | null;
           fabricVendorId: number | null;
+          finishId: number | null;
           productSkuSnapshot: string | null;
           variantSkuSnapshot: string | null;
           variantNameSnapshot: string | null;
+          finishCodeSnapshot: string | null;
+          finishNameSnapshot: string | null;
           fabricItemNumberSnapshot: string | null;
           fabricNameSnapshot: string | null;
+          fabricBrandSnapshot: string | null;
+          fabricGradeSnapshot: string | null;
+          unitMsrpSnapshot: string | null;
           description: string;
           quantity: number;
           unitPrice: string;
@@ -1470,6 +1485,11 @@ router.post(
           let variantName: string | null = null;
           let fabricItem: string | null = null;
           let fabricName: string | null = null;
+          let fabricBrand: string | null = null;
+          let fabricGrade: string | null = null;
+          let finishCode: string | null = null;
+          let finishName: string | null = null;
+          let unitMsrp: string | null = null;
 
           if (it.productId != null) {
             const [p] = await tx
@@ -1497,18 +1517,60 @@ router.post(
             variantSku = v.sku;
             variantName = v.name;
           }
+          // Frame finish (grade-priced 3-step products). Recover the finish
+          // code/name snapshots so the order line + vendor PO show the exact
+          // frame finish the staff member picked.
+          if (it.finishId != null) {
+            const [fin] = await tx
+              .select({
+                code: finishesTable.itemNumber,
+                name: finishesTable.name,
+              })
+              .from(finishesTable)
+              .where(eq(finishesTable.id, it.finishId))
+              .limit(1);
+            if (!fin) throw new Error(`Finish ${it.finishId} not found`);
+            finishCode = fin.code;
+            finishName = fin.name;
+          }
           if (it.fabricId != null) {
             const [f] = await tx
               .select({
                 itemNumber: fabricsTable.itemNumber,
                 name: fabricsTable.name,
+                grade: fabricsTable.grade,
+                brand: manufacturersTable.name,
               })
               .from(fabricsTable)
+              .leftJoin(
+                manufacturersTable,
+                eq(manufacturersTable.id, fabricsTable.manufacturerId),
+              )
               .where(eq(fabricsTable.id, it.fabricId))
               .limit(1);
             if (!f) throw new Error(`Fabric ${it.fabricId} not found`);
             fabricItem = f.itemNumber;
             fabricName = f.name;
+            fabricBrand = f.brand ?? null;
+            // Snapshot the fabric grade. Prefer the explicit request grade
+            // (grade-priced products), else fall back to the fabric's own
+            // classified grade.
+            fabricGrade = it.grade ?? f.grade ?? null;
+          }
+          // Snapshot the unit MSRP for grade-priced products from
+          // variant_grade_prices, matched on the selected variant + grade.
+          if (it.variantId != null && it.grade != null) {
+            const [gp] = await tx
+              .select({ msrp: variantGradePricesTable.msrp })
+              .from(variantGradePricesTable)
+              .where(
+                and(
+                  eq(variantGradePricesTable.variantId, it.variantId),
+                  eq(variantGradePricesTable.grade, it.grade),
+                ),
+              )
+              .limit(1);
+            if (gp) unitMsrp = gp.msrp;
           }
           // An alternate fabric vendor only makes sense when the line has a
           // fabric. If supplied, validate the manufacturer exists so we
@@ -1569,11 +1631,17 @@ router.post(
             variantId: it.variantId ?? null,
             fabricId: it.fabricId ?? null,
             fabricVendorId: it.fabricVendorId ?? null,
+            finishId: it.finishId ?? null,
             productSkuSnapshot: productSku,
             variantSkuSnapshot: variantSku,
             variantNameSnapshot: variantName,
+            finishCodeSnapshot: finishCode,
+            finishNameSnapshot: finishName,
             fabricItemNumberSnapshot: fabricItem,
             fabricNameSnapshot: fabricName,
+            fabricBrandSnapshot: fabricBrand,
+            fabricGradeSnapshot: fabricGrade,
+            unitMsrpSnapshot: unitMsrp,
             description: it.description,
             quantity: it.quantity,
             unitPrice: money(it.unitPrice),

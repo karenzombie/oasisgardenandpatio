@@ -20,4 +20,9 @@ export interface AddCartItemRequest {
    * @nullable
    */
   fabricId?: number | null;
+  /**
+   * Selected frame-finish id for grade-priced (3-step) products.
+   * @nullable
+   */
+  finishId?: number | null;
 }

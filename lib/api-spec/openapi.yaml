@@ -4877,8 +4877,15 @@ components:
         productSkuSnapshot: { type: string, nullable: true }
         variantSkuSnapshot: { type: string, nullable: true }
         variantNameSnapshot: { type: string, nullable: true }
+        finishId: { type: integer, nullable: true }
+        finishCodeSnapshot: { type: string, nullable: true }
+        finishNameSnapshot: { type: string, nullable: true }
         fabricId: { type: integer, nullable: true }
         fabricNameSnapshot: { type: string, nullable: true }
+        fabricItemNumberSnapshot: { type: string, nullable: true }
+        fabricBrandSnapshot: { type: string, nullable: true }
+        fabricGradeSnapshot: { type: string, nullable: true }
+        unitMsrpSnapshot: { type: string, nullable: true }
         fabricVendorId:
           type: integer
           nullable: true
@@ -4900,7 +4907,7 @@ components:
         useInventory: { type: boolean, description: "When true this line is sourced from store inventory (staff orders only)." }
         inventoryQtyUsed: { type: integer, description: "Units drawn from store inventory at order creation time. 0 when useInventory is false." }
       required:
-        [id, productId, productSkuSnapshot, variantSkuSnapshot, variantNameSnapshot, fabricId, fabricNameSnapshot, fabricVendorId, fabricVendorName, fabricVendorOrderId, department, description, quantity, unitPrice, amount, discountAmount, discountReason, notes, vendorOrderId, useInventory, inventoryQtyUsed]
+        [id, productId, productSkuSnapshot, variantSkuSnapshot, variantNameSnapshot, finishId, finishCodeSnapshot, finishNameSnapshot, fabricId, fabricNameSnapshot, fabricItemNumberSnapshot, fabricBrandSnapshot, fabricGradeSnapshot, unitMsrpSnapshot, fabricVendorId, fabricVendorName, fabricVendorOrderId, department, description, quantity, unitPrice, amount, discountAmount, discountReason, notes, vendorOrderId, useInventory, inventoryQtyUsed]
     AdminOrderAddress:
       type: object
       properties:
@@ -6354,6 +6361,20 @@ components:
         collection:
           type: ["string", "null"]
           description: Collection name from the finish row, if set (Couture Jardin only). Used to group variants by collection on the product page.
+        gradePrices:
+          type: array
+          description: Per-fabric-grade MSRP + sale price for this configuration. Non-empty only for grade-priced products (e.g. Frankford). When present, the product page is in 3-step grade mode and the selected fabric's grade picks the price row.
+          items:
+            $ref: "#/components/schemas/CatalogVariantGradePrice"
+        notes:
+          type: ["string", "null"]
+          description: Free-text vendor note for this configuration (e.g. extended lead times), shown as an inline callout. Excludes structured min-order-qty / stripe rules.
+        minOrderQty:
+          type: ["integer", "null"]
+          description: Minimum order quantity for this configuration. When set, the quantity selector floors at this value.
+        excludeStripeFabrics:
+          type: boolean
+          description: When true, stripe-pattern fabrics are not selectable for this configuration.
       required:
         - id
         - sku
@@ -6363,6 +6384,48 @@ components:
         - displayOrder
         - swatchImageUrl
         - collection
+        - gradePrices
+        - notes
+        - minOrderQty
+        - excludeStripeFabrics
+    CatalogVariantGradePrice:
+      type: object
+      properties:
+        grade:
+          type: string
+          description: Fabric grade (e.g. "A", "A+", "B", "C", "D", "E", "F").
+        msrp:
+          type: string
+          description: Decimal MSRP for this configuration at this grade.
+        salePrice:
+          type: string
+          description: Decimal sale price for this configuration at this grade.
+      required:
+        - grade
+        - msrp
+        - salePrice
+    CatalogFinishOption:
+      type: object
+      description: A discrete frame-finish choice for a grade-priced product (resolved from the product's finish pool/options).
+      properties:
+        id:
+          type: integer
+        code:
+          type: string
+          description: Short finish code (e.g. "SR", "MS").
+        name:
+          type: string
+          description: Display name (e.g. "Platinum", "Brushed Silver").
+        swatchImageUrl:
+          type: ["string", "null"]
+        displayOrder:
+          type: integer
+      required:
+        - id
+        - code
+        - name
+        - swatchImageUrl
+        - displayOrder
     CatalogFabricOption:
       type: object
       properties:
@@ -6417,11 +6480,17 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/CatalogFabricOption"
+        finishes:
+          type: array
+          description: Discrete frame-finish choices for grade-priced products. Empty for legacy (variant-as-finish) products.
+          items:
+            $ref: "#/components/schemas/CatalogFinishOption"
       required:
         - productId
         - frameOnlyPrice
         - variants
         - fabricOptions
+        - finishes
     CatalogFabricsResponse:
       type: object
       properties:
@@ -6472,6 +6541,11 @@ components:
               description: Finish collections relevant to this product (non-empty only when some variants have a collection value). Used to show panel images grouped by collection on the product page.
               items:
                 $ref: "#/components/schemas/CatalogFinishCollection"
+            finishes:
+              type: array
+              description: Discrete frame-finish choices for grade-priced products (3-step mode). Empty for legacy (variant-as-finish) products.
+              items:
+                $ref: "#/components/schemas/CatalogFinishOption"
           required:
             - description
             - dimensions
@@ -6483,6 +6557,7 @@ components:
             - variants
             - fabricOptions
             - finishCollections
+            - finishes
     WishlistItem:
       type: object
       properties:
@@ -6588,6 +6663,10 @@ components:
           type: ["integer", "null"]
         variantName:
           type: ["string", "null"]
+        finishId:
+          type: ["integer", "null"]
+        finishName:
+          type: ["string", "null"]
         fabricId:
           type: ["integer", "null"]
         fabricName:
@@ -6608,6 +6687,8 @@ components:
         - availableOnline
         - variantId
         - variantName
+        - finishId
+        - finishName
         - fabricId
         - fabricName
         - fabricItemNumber
@@ -6642,6 +6723,9 @@ components:
         fabricId:
           type: ["integer", "null"]
           description: Required when the product has fabric options.
+        finishId:
+          type: ["integer", "null"]
+          description: Selected frame-finish id for grade-priced (3-step) products.
       required:
         - productId
     UpdateCartItemRequest:
@@ -8061,6 +8145,12 @@ components:
       properties:
         productId: { type: ["integer", "null"] }
         variantId: { type: ["integer", "null"] }
+        finishId:
+          type: ["integer", "null"]
+          description: "Frame-finish choice for grade-priced (3-step) products. Recovers the finish code/name snapshots for the order line and vendor PO."
+        grade:
+          type: ["string", "null"]
+          description: "Fabric grade for grade-priced products (e.g. A, B, C). Used to snapshot the fabric grade + unit MSRP from variant_grade_prices."
         fabricId: { type: ["integer", "null"] }
         fabricVendorId:
           type: ["integer", "null"]

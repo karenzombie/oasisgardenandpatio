@@ -12,8 +12,15 @@ export interface AdminOrderItem {
   productSkuSnapshot: string | null;
   variantSkuSnapshot: string | null;
   variantNameSnapshot: string | null;
+  finishId: number | null;
+  finishCodeSnapshot: string | null;
+  finishNameSnapshot: string | null;
   fabricId: number | null;
   fabricNameSnapshot: string | null;
+  fabricItemNumberSnapshot: string | null;
+  fabricBrandSnapshot: string | null;
+  fabricGradeSnapshot: string | null;
+  unitMsrpSnapshot: string | null;
   /** Optional alternate vendor for this line's fabric. Null = fabric ships with the product vendor (the default). */
   fabricVendorId: number | null;
   fabricVendorName: string | null;

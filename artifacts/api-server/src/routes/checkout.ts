@@ -12,6 +12,9 @@ import {
   productsTable,
   fabricsTable,
   productVariantsTable,
+  finishesTable,
+  variantGradePricesTable,
+  manufacturersTable,
   type Customer,
 } from "@workspace/db";
 import {
@@ -277,10 +280,16 @@ router.post(
             fabricIsStripe: fabricsTable.isStripe,
             variantId: cartItemsTable.variantId,
             fabricId: cartItemsTable.fabricId,
+            finishId: cartItemsTable.finishId,
             variantSku: productVariantsTable.variantSku,
             variantName: productVariantsTable.variantName,
+            finishCode: finishesTable.itemNumber,
+            finishName: finishesTable.name,
             fabricItemNumber: fabricsTable.itemNumber,
             fabricName: fabricsTable.name,
+            fabricGrade: fabricsTable.grade,
+            fabricBrand: manufacturersTable.name,
+            unitMsrp: variantGradePricesTable.msrp,
           })
           .from(cartItemsTable)
           .innerJoin(
@@ -289,8 +298,23 @@ router.post(
           )
           .leftJoin(fabricsTable, eq(fabricsTable.id, cartItemsTable.fabricId))
           .leftJoin(
+            manufacturersTable,
+            eq(manufacturersTable.id, fabricsTable.manufacturerId),
+          )
+          .leftJoin(
             productVariantsTable,
             eq(productVariantsTable.id, cartItemsTable.variantId),
+          )
+          .leftJoin(
+            finishesTable,
+            eq(finishesTable.id, cartItemsTable.finishId),
+          )
+          .leftJoin(
+            variantGradePricesTable,
+            and(
+              eq(variantGradePricesTable.variantId, cartItemsTable.variantId),
+              eq(variantGradePricesTable.grade, fabricsTable.grade),
+            ),
           )
           .where(eq(cartItemsTable.cartId, cart.id));
 
@@ -370,14 +394,20 @@ router.post(
             quantity: l.quantity,
             unitPrice: String(l.unitPrice),
             amount: moneyFromCents(lineCents[i]),
-            // Snapshot the chosen finish (variant) + fabric so order history
-            // can render the swatch + finish even if the catalog changes.
+            // Snapshot the chosen finish (variant) + frame finish + fabric so
+            // order history and vendor POs survive catalog changes.
             variantId: l.variantId,
             fabricId: l.fabricId,
+            finishId: l.finishId,
             variantSkuSnapshot: l.variantSku,
             variantNameSnapshot: l.variantName,
+            finishCodeSnapshot: l.finishCode,
+            finishNameSnapshot: l.finishName,
             fabricItemNumberSnapshot: l.fabricItemNumber,
             fabricNameSnapshot: l.fabricName,
+            fabricBrandSnapshot: l.fabricBrand,
+            fabricGradeSnapshot: l.fabricGrade,
+            unitMsrpSnapshot: l.unitMsrp != null ? String(l.unitMsrp) : null,
           });
         }
 

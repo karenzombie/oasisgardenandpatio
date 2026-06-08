@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { CatalogFabricOption } from "./catalogFabricOption";
+import type { CatalogFinishOption } from "./catalogFinishOption";
 import type { CatalogProductVariant } from "./catalogProductVariant";
 
 /**
@@ -20,4 +21,6 @@ export interface AdminProductPickerDetail {
   frameOnlyPrice: string | null;
   variants: CatalogProductVariant[];
   fabricOptions: CatalogFabricOption[];
+  /** Discrete frame-finish choices for grade-priced products. Empty for legacy (variant-as-finish) products. */
+  finishes: CatalogFinishOption[];
 }
