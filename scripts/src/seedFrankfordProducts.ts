@@ -285,7 +285,7 @@ async function main() {
     );
 
     // Use first SKU as the product-level SKU
-    const productSku = `FU-${firstRow.SKU.trim()}`;
+    const productSku = firstRow.SKU.trim();
 
     const [existingProduct] = await db
       .select({ id: productsTable.id })
