@@ -5,8 +5,6 @@ import {
   productsTable,
   productImagesTable,
   productVariantsTable,
-  productFabricOptionsTable,
-  fabricsTable,
   inventoryTable,
   manufacturersTable,
   categoriesTable,
@@ -37,6 +35,7 @@ import {
 } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import { toPublicImageUrl } from "../lib/imageUrl";
+import { resolveProductFabrics } from "../lib/productFabrics";
 import { isUniqueViolation } from "../lib/dbErrors";
 import { recordHistory } from "../lib/history";
 
@@ -836,39 +835,7 @@ router.get(
           asc(productVariantsTable.displayOrder),
           asc(productVariantsTable.variantName),
         ),
-      db
-        .select({
-          id: fabricsTable.id,
-          name: fabricsTable.name,
-          itemNumber: fabricsTable.itemNumber,
-          manufacturerName: manufacturersTable.name,
-          manufacturerLogoUrl: manufacturersTable.logoUrl,
-          swatchImageUrl: fabricsTable.swatchImageUrl,
-          grade: fabricsTable.grade,
-          colorFamily: fabricsTable.colorFamily,
-          isStripe: fabricsTable.isStripe,
-          displayOrder: productFabricOptionsTable.displayOrder,
-        })
-        .from(productFabricOptionsTable)
-        .innerJoin(
-          fabricsTable,
-          eq(fabricsTable.id, productFabricOptionsTable.fabricId),
-        )
-        .innerJoin(
-          manufacturersTable,
-          eq(manufacturersTable.id, fabricsTable.manufacturerId),
-        )
-        .where(
-          and(
-            eq(productFabricOptionsTable.productId, product.id),
-            eq(fabricsTable.isActive, true),
-          ),
-        )
-        .orderBy(
-          asc(productFabricOptionsTable.displayOrder),
-          asc(manufacturersTable.name),
-          asc(fabricsTable.name),
-        ),
+      resolveProductFabrics(product.id),
     ]);
 
     // Per-variant grade prices (grade-mode products). Empty for legacy TG-style.
