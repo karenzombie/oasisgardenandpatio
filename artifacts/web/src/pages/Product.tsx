@@ -149,7 +149,12 @@ export default function Product() {
     if (!desc) return "";
     const normalized = desc.replace(/\r\n/g, "\n").replace(/^\s+/, "");
     const idx = normalized.search(/\n\s*\n/);
-    return idx === -1 ? "" : normalized.slice(idx).trim();
+    if (idx === -1) {
+      // No blank-line separator means the whole description is features content
+      // (product has no separate top blurb). Show it all in the Features tab.
+      return normalized.trim();
+    }
+    return normalized.slice(idx).trim();
   }, [data?.description]);
 
   const visibleTabs = useMemo(
