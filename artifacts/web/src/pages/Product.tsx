@@ -29,19 +29,19 @@ function formatMoney(v: string | number | null | undefined): string {
   return `$${n.toFixed(2)}`;
 }
 
-const TABS = [
-  { id: "description", label: "Description" },
+const ALL_TABS = [
+  { id: "features", label: "Features" },
   { id: "specs", label: "Specifications" },
   { id: "care", label: "Care" },
   { id: "warranty", label: "Warranty" },
 ] as const;
-type TabId = (typeof TABS)[number]["id"];
+type TabId = (typeof ALL_TABS)[number]["id"];
 
 export default function Product() {
   const [, params] = useRoute<{ slug: string }>("/shop/:slug");
   const slug = params?.slug ?? "";
   const { data, isLoading, error } = useGetCatalogProductBySlug(slug);
-  const [tab, setTab] = useState<TabId>("description");
+  const [tab, setTab] = useState<TabId>("features");
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   const [qty, setQty] = useState(1);
   const [variantId, setVariantId] = useState<number | null>(null);
@@ -140,6 +140,26 @@ export default function Product() {
       return true;
     });
   }, [isGradeMode, selectedVariant, sortedFabricOptions, gradePriceMap]);
+
+  // The top blurb (shortDescription) shows the first paragraph of the full
+  // description. The "Features" tab shows everything after that first
+  // paragraph so the two areas never duplicate the same copy.
+  const featuresHtml = useMemo(() => {
+    const desc = data?.description;
+    if (!desc) return "";
+    const normalized = desc.replace(/\r\n/g, "\n").replace(/^\s+/, "");
+    const idx = normalized.search(/\n\s*\n/);
+    return idx === -1 ? "" : normalized.slice(idx).trim();
+  }, [data?.description]);
+
+  const visibleTabs = useMemo(
+    () =>
+      ALL_TABS.filter((t) => (t.id === "features" ? featuresHtml.length > 0 : true)),
+    [featuresHtml],
+  );
+  const activeTab = visibleTabs.some((t) => t.id === tab)
+    ? tab
+    : (visibleTabs[0]?.id ?? "specs");
 
   // Auto-select the only finish for single-finish grade-priced products.
   useEffect(() => {
@@ -957,25 +977,21 @@ export default function Product() {
       {/* Tabbed content */}
       <div className="mt-16 border-t border-border">
         <div className="flex border-b border-border overflow-x-auto">
-          {TABS.map((t) => (
+          {visibleTabs.map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`px-6 py-4 text-sm uppercase tracking-widest font-medium border-b-2 transition-colors whitespace-nowrap ${tab === t.id ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+              className={`px-6 py-4 text-sm uppercase tracking-widest font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === t.id ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
             >
               {t.label}
             </button>
           ))}
         </div>
         <div className="py-8 max-w-3xl">
-          {tab === "description" ? (
-            data.description ? (
-              <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(data.description) }} />
-            ) : (
-              <p className="text-muted-foreground">No description available.</p>
-            )
+          {activeTab === "features" ? (
+            <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(featuresHtml) }} />
           ) : null}
-          {tab === "specs" ? (
+          {activeTab === "specs" ? (
             <div>
               {data.specs && Object.keys(data.specs).length > 0 ? (
                 <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-sm">
@@ -1005,7 +1021,7 @@ export default function Product() {
               ) : null}
             </div>
           ) : null}
-          {tab === "care" ? (
+          {activeTab === "care" ? (
             <div className="prose max-w-none text-foreground/80">
               <p>For everyday care of your outdoor furniture:</p>
               <ul>
@@ -1017,7 +1033,7 @@ export default function Product() {
               <p>For specific manufacturer guidance, see the warranty tab or contact our showroom.</p>
             </div>
           ) : null}
-          {tab === "warranty" ? (
+          {activeTab === "warranty" ? (
             <div className="prose max-w-none text-foreground/80">
               <p>This product is covered by the manufacturer's warranty. Coverage terms vary by brand and component.</p>
               <p>
