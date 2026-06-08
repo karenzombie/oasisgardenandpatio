@@ -798,9 +798,11 @@ export default function Product() {
                 </div>
               ) : null}
 
-              {/* Selection summary: finish + fabric swatch images with plain text */}
+              {/* Selection summary: each row is swatch mini-box (left) + label/value
+                  (right), stacked vertically so all swatches and descriptions
+                  align in consistent columns. */}
               {(selectedFabric && !frameOnly) || selectedVariant || (isGradeMode && selectedFinish) ? (
-                <div className="mb-5 flex flex-wrap items-center gap-6 border border-border bg-muted/30 px-4 py-3">
+                <div className="mb-5 flex flex-col gap-3 border border-border bg-muted/30 px-4 py-3">
                   {selectedVariant ? (
                     <div className="flex items-center gap-3">
                       {selectedVariant.swatchImageUrl ? (
@@ -809,7 +811,9 @@ export default function Product() {
                           alt={selectedVariant.name}
                           className="h-14 w-14 shrink-0 object-cover border border-border"
                         />
-                      ) : null}
+                      ) : (
+                        <div className="h-14 w-14 shrink-0" aria-hidden="true" />
+                      )}
                       <div className="text-sm">
                         <p className="text-muted-foreground">{isGradeMode ? "Configuration" : variantOptionLabel}</p>
                         <p className="font-medium">{selectedVariant.name}</p>
@@ -824,7 +828,9 @@ export default function Product() {
                           alt={selectedFinish.name}
                           className="h-14 w-14 shrink-0 object-cover border border-border"
                         />
-                      ) : null}
+                      ) : (
+                        <div className="h-14 w-14 shrink-0" aria-hidden="true" />
+                      )}
                       <div className="text-sm">
                         <p className="text-muted-foreground">Frame Finish</p>
                         <p className="font-medium">{selectedFinish.name}</p>
@@ -839,7 +845,9 @@ export default function Product() {
                           alt={selectedFabric.name}
                           className="h-14 w-14 shrink-0 object-cover border border-border"
                         />
-                      ) : null}
+                      ) : (
+                        <div className="h-14 w-14 shrink-0" aria-hidden="true" />
+                      )}
                       <div className="text-sm">
                         <p className="text-muted-foreground">Fabric</p>
                         <p className="font-medium">
