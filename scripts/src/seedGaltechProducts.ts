@@ -13,6 +13,7 @@ import {
   finishesTable,
 } from "@workspace/db";
 import { productFinishOptionsTable } from "@workspace/db";
+import { firstParagraph } from "./firstParagraph";
 
 // ---------------------------------------------------------------------------
 // Config
@@ -298,7 +299,7 @@ async function main() {
           slug,
           sku,
           description,
-          shortDescription: description ? description.slice(0, 200).replace(/\s+\S*$/, "") + "…" : null,
+          shortDescription: description ? firstParagraph(description) : null,
           manufacturerId: mfg.id,
           categoryId,
           availableOnline: true,

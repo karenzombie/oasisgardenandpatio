@@ -23,6 +23,7 @@ import {
   inventoryTable,
   categoriesTable,
 } from "@workspace/db";
+import { firstParagraph } from "./firstParagraph";
 
 // ---------------------------------------------------------------------------
 // Config
@@ -325,9 +326,7 @@ async function main() {
     const rawDesc = row.description?.trim() ?? "";
     const lines = rawDesc.split(/\s*\|\s*/).filter(Boolean);
     const description = lines.join("\n• ").replace(/^/, "• ") || null;
-    const shortDescription = description
-      ? description.slice(0, 250).replace(/\s+\S*$/, "") + "…"
-      : null;
+    const shortDescription = description ? firstParagraph(description) : null;
 
     // Specs + dimensions
     const specs = buildSpecs(row);

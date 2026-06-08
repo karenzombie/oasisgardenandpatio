@@ -11,6 +11,7 @@ import {
   inventoryTable,
 } from "@workspace/db";
 import { productVariantsTable } from "@workspace/db";
+import { firstParagraph } from "./firstParagraph";
 
 // ---------------------------------------------------------------------------
 // Config
@@ -254,8 +255,7 @@ async function main() {
 
     // Build product-level content
     const description = firstRow.Description?.trim() ?? null;
-    const shortDescription =
-      description ? description.slice(0, 300).replace(/\s+\S*$/, "") + "…" : null;
+    const shortDescription = description ? firstParagraph(description) : null;
 
     // Dimensions from first SKU (varies per variant but product-level is an overview)
     const dimensions = buildDimensions(firstRow);

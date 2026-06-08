@@ -27,6 +27,7 @@ import {
   productImagesTable,
   inventoryTable,
 } from "@workspace/db";
+import { firstParagraph } from "./firstParagraph";
 
 // ---------------------------------------------------------------------------
 // Config
@@ -383,9 +384,7 @@ async function main() {
           slug: baseSlug,
           sku: dbSku,
           description,
-          shortDescription: description
-            ? description.slice(0, 250).replace(/\s\S*$/, "") + (description.length > 250 ? "…" : "")
-            : null,
+          shortDescription: description ? firstParagraph(description) : null,
           manufacturerId: MANUFACTURER_ID,
           categoryId: null,
           tags: tags.length > 0 ? tags : [],

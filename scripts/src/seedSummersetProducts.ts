@@ -23,6 +23,7 @@ import {
   productImagesTable,
   inventoryTable,
 } from "@workspace/db";
+import { firstParagraph } from "./firstParagraph";
 
 // ---------------------------------------------------------------------------
 // Config
@@ -275,9 +276,7 @@ async function main() {
     // Description: use as-is from CSV
     const description = row.description?.trim() || null;
     // Short description: first sentence / up to 250 chars
-    const shortDescription = description
-      ? description.replace(/\s+/g, " ").slice(0, 250).replace(/\s\S*$/, "") + "…"
-      : null;
+    const shortDescription = description ? firstParagraph(description) : null;
 
     // Dimensions: store exactly as given (do not parse)
     const dimensions = row.product_dimension?.trim() || null;

@@ -31,6 +31,7 @@ import {
   finishesTable,
   productFinishOptionsTable,
 } from "@workspace/db";
+import { firstParagraph } from "./firstParagraph";
 
 // ---------------------------------------------------------------------------
 // Config
@@ -303,10 +304,7 @@ async function main() {
       descParts.push(features.split(" | ").join("\n"));
     const description = descParts.length > 0 ? descParts.join("\n\n") : null;
 
-    const shortDescription = descBody
-      ? descBody.slice(0, 250).replace(/\s\S*$/, "") +
-        (descBody.length > 250 ? "…" : "")
-      : null;
+    const shortDescription = descBody ? firstParagraph(descBody) : null;
 
     // Tags: collection, material type, category
     const tags: string[] = [];
