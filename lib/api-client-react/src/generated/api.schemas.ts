@@ -3568,6 +3568,55 @@ export interface AdminUpdateProductFabricsRequest {
   fabricIds: number[];
 }
 
+export interface AdminVariantGradePrice {
+  /** Fabric grade label (e.g. "A", "B", "C", "D"). */
+  grade: string;
+  /** Decimal MSRP for this configuration at this grade. */
+  msrp: string;
+  /** Decimal sale price for this configuration at this grade. */
+  salePrice: string;
+}
+
+export interface AdminProductVariant {
+  id: number;
+  variantSku: string;
+  variantName: string;
+  optionLabel: string;
+  priceAdjustment: string;
+  /** @nullable */
+  notes: string | null;
+  /** @nullable */
+  minOrderQty: number | null;
+  excludeStripeFabrics: boolean;
+  displayOrder: number;
+  isActive: boolean;
+  gradePrices: AdminVariantGradePrice[];
+}
+
+export interface AdminProductVariantsConfig {
+  variants: AdminProductVariant[];
+}
+
+export interface AdminProductVariantInput {
+  variantSku: string;
+  variantName: string;
+  optionLabel: string;
+  priceAdjustment: string;
+  /** @nullable */
+  notes?: string | null;
+  /** @nullable */
+  minOrderQty?: number | null;
+  excludeStripeFabrics?: boolean;
+  displayOrder?: number;
+  isActive?: boolean;
+  gradePrices: AdminVariantGradePrice[];
+}
+
+export interface AdminUpdateProductVariantsRequest {
+  /** Full replacement set of variants for this product. */
+  variants: AdminProductVariantInput[];
+}
+
 export interface CatalogFinish {
   id: number;
   name: string;

@@ -12,6 +12,8 @@ import {
   productFinishOptionsTable,
   productFinishPoolsTable,
   productAttributesTable,
+  productVariantsTable,
+  variantGradePricesTable,
 } from "@workspace/db";
 import {
   AdminCreateFabricBody,
@@ -36,6 +38,9 @@ import {
   AdminGetProductAttributesParams,
   AdminUpdateProductAttributesParams,
   AdminUpdateProductAttributesBody,
+  AdminGetProductVariantsParams,
+  AdminUpdateProductVariantsParams,
+  AdminUpdateProductVariantsBody,
 } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import { recordHistory } from "../lib/history";
@@ -1301,6 +1306,267 @@ router.put(
       .where(eq(finishCollectionsTable.id, id));
 
     res.json({ ...full, panelImageUrl: toPublicImageUrl(full.panelImageUrl) });
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Admin: per-product variants + grade pricing
+// ---------------------------------------------------------------------------
+async function loadVariantsConfig(productId: number) {
+  const variants = await db
+    .select({
+      id: productVariantsTable.id,
+      variantSku: productVariantsTable.variantSku,
+      variantName: productVariantsTable.variantName,
+      optionLabel: productVariantsTable.optionLabel,
+      priceAdjustment: productVariantsTable.priceAdjustment,
+      notes: productVariantsTable.notes,
+      minOrderQty: productVariantsTable.minOrderQty,
+      excludeStripeFabrics: productVariantsTable.excludeStripeFabrics,
+      displayOrder: productVariantsTable.displayOrder,
+      isActive: productVariantsTable.isActive,
+    })
+    .from(productVariantsTable)
+    .where(eq(productVariantsTable.productId, productId))
+    .orderBy(asc(productVariantsTable.displayOrder), asc(productVariantsTable.id));
+
+  if (variants.length === 0) return { variants: [] };
+
+  const prices = await db
+    .select({
+      variantId: variantGradePricesTable.variantId,
+      grade: variantGradePricesTable.grade,
+      msrp: variantGradePricesTable.msrp,
+      salePrice: variantGradePricesTable.salePrice,
+    })
+    .from(variantGradePricesTable)
+    .where(
+      inArray(
+        variantGradePricesTable.variantId,
+        variants.map((v) => v.id),
+      ),
+    )
+    .orderBy(asc(variantGradePricesTable.grade));
+
+  const byVariant = new Map<number, { grade: string; msrp: string; salePrice: string }[]>();
+  for (const p of prices) {
+    const list = byVariant.get(p.variantId) ?? [];
+    list.push({ grade: p.grade, msrp: p.msrp, salePrice: p.salePrice });
+    byVariant.set(p.variantId, list);
+  }
+
+  return {
+    variants: variants.map((v) => ({
+      ...v,
+      gradePrices: byVariant.get(v.id) ?? [],
+    })),
+  };
+}
+
+router.get(
+  "/admin/products/:id/variants",
+  requireAuth,
+  requireRole("admin"),
+  async (req: Request, res: Response): Promise<void> => {
+    const params = AdminGetProductVariantsParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: "Invalid product id" });
+      return;
+    }
+    const product = await db
+      .select({ id: productsTable.id })
+      .from(productsTable)
+      .where(eq(productsTable.id, params.data.id))
+      .limit(1);
+    if (product.length === 0) {
+      res.status(404).json({ error: "Product not found" });
+      return;
+    }
+    res.json(await loadVariantsConfig(params.data.id));
+  },
+);
+
+router.put(
+  "/admin/products/:id/variants",
+  requireAuth,
+  requireRole("admin"),
+  async (req: Request, res: Response): Promise<void> => {
+    const params = AdminUpdateProductVariantsParams.safeParse(req.params);
+    const body = AdminUpdateProductVariantsBody.safeParse(req.body);
+    if (!params.success || !body.success) {
+      res.status(400).json({ error: "Invalid input" });
+      return;
+    }
+    const productId = params.data.id;
+    const { variants } = body.data;
+
+    const product = await db
+      .select({ id: productsTable.id })
+      .from(productsTable)
+      .where(eq(productsTable.id, productId))
+      .limit(1);
+    if (product.length === 0) {
+      res.status(404).json({ error: "Product not found" });
+      return;
+    }
+
+    // Reject duplicate SKUs within the submitted set.
+    const skus = variants.map((v) => v.variantSku.trim());
+    if (new Set(skus).size !== skus.length) {
+      res.status(400).json({ error: "Duplicate variant SKU in submission" });
+      return;
+    }
+    // Reject duplicate grade rows within a single variant.
+    for (const v of variants) {
+      const grades = v.gradePrices.map((g) => g.grade.trim());
+      if (new Set(grades).size !== grades.length) {
+        res
+          .status(400)
+          .json({ error: `Duplicate grade for variant "${v.variantSku}"` });
+        return;
+      }
+    }
+
+    // Field-level validation: required identifiers + well-formed money/qty.
+    // These are config rows that feed dynamic SKUs and pricing, so reject
+    // malformed input with a clear 400 rather than 500-ing on a DB parse error.
+    const money = /^\d+(\.\d{1,2})?$/;
+    const signedMoney = /^-?\d+(\.\d{1,2})?$/;
+    for (const v of variants) {
+      if (v.variantSku.trim() === "" || v.variantName.trim() === "") {
+        res
+          .status(400)
+          .json({ error: "Every variant needs a SKU and a name" });
+        return;
+      }
+      if (
+        v.priceAdjustment != null &&
+        v.priceAdjustment.trim() !== "" &&
+        !signedMoney.test(v.priceAdjustment.trim())
+      ) {
+        res.status(400).json({
+          error: `Invalid price adjustment for variant "${v.variantSku}"`,
+        });
+        return;
+      }
+      if (
+        v.minOrderQty != null &&
+        (!Number.isInteger(v.minOrderQty) || v.minOrderQty < 0)
+      ) {
+        res.status(400).json({
+          error: `Invalid minimum order quantity for variant "${v.variantSku}"`,
+        });
+        return;
+      }
+      for (const g of v.gradePrices) {
+        if (
+          g.grade.trim() === "" ||
+          !money.test(g.msrp.trim()) ||
+          !money.test(g.salePrice.trim())
+        ) {
+          res.status(400).json({
+            error: `Invalid grade price for variant "${v.variantSku}"`,
+          });
+          return;
+        }
+      }
+    }
+
+    const previousConfig = await loadVariantsConfig(productId);
+    try {
+      await db.transaction(async (tx) => {
+        // Keyed upsert (matched by variantSku) instead of delete-all + reinsert.
+        // product_variants.id is referenced by cart_items.variant_id with ON
+        // DELETE CASCADE, so churning IDs on every save would silently drop
+        // customers' cart lines. Preserve identity: update existing rows,
+        // insert new ones, and delete only the variants that were removed.
+        const existing = await tx
+          .select({
+            id: productVariantsTable.id,
+            variantSku: productVariantsTable.variantSku,
+          })
+          .from(productVariantsTable)
+          .where(eq(productVariantsTable.productId, productId));
+        const existingBySku = new Map(
+          existing.map((e) => [e.variantSku, e.id]),
+        );
+        const submittedSkus = new Set(variants.map((v) => v.variantSku.trim()));
+
+        const removedIds = existing
+          .filter((e) => !submittedSkus.has(e.variantSku))
+          .map((e) => e.id);
+        if (removedIds.length > 0) {
+          await tx
+            .delete(productVariantsTable)
+            .where(inArray(productVariantsTable.id, removedIds));
+        }
+
+        for (let i = 0; i < variants.length; i++) {
+          const v = variants[i]!;
+          const sku = v.variantSku.trim();
+          const values = {
+            variantName: v.variantName.trim(),
+            optionLabel: v.optionLabel.trim() || "Option",
+            priceAdjustment: v.priceAdjustment ?? "0",
+            notes: v.notes?.trim() || null,
+            minOrderQty: v.minOrderQty ?? null,
+            excludeStripeFabrics: v.excludeStripeFabrics ?? false,
+            displayOrder: v.displayOrder ?? i,
+            isActive: v.isActive ?? true,
+          };
+
+          let variantId = existingBySku.get(sku);
+          if (variantId != null) {
+            await tx
+              .update(productVariantsTable)
+              .set(values)
+              .where(eq(productVariantsTable.id, variantId));
+            // Grade prices have no inbound cart FK, so replace them wholesale.
+            await tx
+              .delete(variantGradePricesTable)
+              .where(eq(variantGradePricesTable.variantId, variantId));
+          } else {
+            const [row] = await tx
+              .insert(productVariantsTable)
+              .values({ productId, variantSku: sku, ...values })
+              .returning({ id: productVariantsTable.id });
+            variantId = row!.id;
+          }
+
+          if (v.gradePrices.length > 0) {
+            await tx.insert(variantGradePricesTable).values(
+              v.gradePrices.map((g) => ({
+                variantId: variantId!,
+                grade: g.grade.trim(),
+                msrp: g.msrp,
+                salePrice: g.salePrice,
+              })),
+            );
+          }
+        }
+      });
+    } catch (err: unknown) {
+      const pgErr = err as { code?: string };
+      if (pgErr.code === "23505") {
+        res
+          .status(409)
+          .json({ error: "A variant SKU is already in use by another product" });
+        return;
+      }
+      req.log.error({ err }, "Failed to save product variants");
+      res.status(500).json({ error: "Failed to save product variants" });
+      return;
+    }
+
+    const newConfig = await loadVariantsConfig(productId);
+    await recordHistory(req, {
+      entityType: "product_variants",
+      entityId: productId,
+      changeType: "replace",
+      snapshot: newConfig,
+      previousSnapshot: previousConfig,
+    });
+    res.json(newConfig);
   },
 );
 

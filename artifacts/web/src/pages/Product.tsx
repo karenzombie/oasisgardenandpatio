@@ -173,6 +173,15 @@ export default function Product() {
     }
   }, [isGradeMode, finishes]);
 
+  // Auto-select the only configuration when a product has a single variant
+  // (replacement covers, single-vent umbrellas, single-finish bases/frames).
+  useEffect(() => {
+    if (variants.length === 1) {
+      setVariantId((cur) => cur ?? variants[0]!.id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data?.id, variants.length]);
+
   // Clear a now-invalid fabric when the configuration changes (its grade may no
   // longer be priced, or stripes may now be excluded).
   useEffect(() => {
@@ -215,7 +224,7 @@ export default function Product() {
   const missingSelections: string[] = [];
   if (requiresVariant && !selectedVariant) {
     missingSelections.push(
-      isGradeMode ? "Configuration" : variants[0]?.optionLabel ?? "Variant",
+      variants[0]?.optionLabel ?? (isGradeMode ? "Configuration" : "Variant"),
     );
   }
   if (isGradeMode && finishes.length > 0 && !selectedFinish) {
@@ -346,7 +355,8 @@ export default function Product() {
           .join("-") || data.sku
       : data.sku;
 
-  const variantOptionLabel = variants[0]?.optionLabel ?? "Variant";
+  const variantOptionLabel =
+    variants[0]?.optionLabel ?? (isGradeMode ? "Configuration" : "Variant");
 
   // A product can only be purchased online when ALL of these are true:
   //   1. it isn't flagged as quote-only,
@@ -522,7 +532,7 @@ export default function Product() {
               {requiresVariant ? (
                 <div className="mb-5">
                   <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">
-                    {isGradeMode ? "Configuration" : variantOptionLabel}
+                    {variantOptionLabel}
                     <span className="text-destructive ml-1">*</span>
                     {selectedVariant ? (
                       <span className="ml-2 normal-case tracking-normal text-foreground">
@@ -840,7 +850,7 @@ export default function Product() {
                         <div className="h-14 w-14 shrink-0" aria-hidden="true" />
                       )}
                       <div className="text-sm">
-                        <p className="text-muted-foreground">{isGradeMode ? "Configuration" : variantOptionLabel}</p>
+                        <p className="text-muted-foreground">{variantOptionLabel}</p>
                         <p className="font-medium">{selectedVariant.name}</p>
                       </div>
                     </div>

@@ -34,16 +34,20 @@ import {
   useAdminUpdateProductFinishes,
   useAdminGetProductAttributes,
   useAdminUpdateProductAttributes,
+  useAdminGetProductVariants,
+  useAdminUpdateProductVariants,
   useAdminListHistory,
   getAdminGetProductQueryKey,
   getAdminListProductsQueryKey,
   getAdminGetProductFabricsQueryKey,
   getAdminGetProductFinishesQueryKey,
   getAdminGetProductAttributesQueryKey,
+  getAdminGetProductVariantsQueryKey,
   type AdminProductImage,
   type AdminFabric,
   type AdminFinish,
   type AdminProductAttribute,
+  type AdminProductVariant,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -190,6 +194,12 @@ export default function ProductEdit() {
       queryKey: getAdminGetProductAttributesQueryKey(productId ?? 0),
     },
   });
+  const variantsConfigQuery = useAdminGetProductVariants(productId ?? 0, {
+    query: {
+      enabled: !isNew && Number.isFinite(productId) && (productId ?? 0) > 0,
+      queryKey: getAdminGetProductVariantsQueryKey(productId ?? 0),
+    },
+  });
   const createMut = useAdminCreateProduct();
   const updateMut = useAdminUpdateProduct();
   const addImageMut = useAdminAddProductImage();
@@ -199,6 +209,7 @@ export default function ProductEdit() {
   const fabricsMut = useAdminUpdateProductFabrics();
   const finishesMut = useAdminUpdateProductFinishes();
   const attributesMut = useAdminUpdateProductAttributes();
+  const variantsMut = useAdminUpdateProductVariants();
 
   const [form, setForm] = useState<FormState>(emptyForm);
   const [error, setError] = useState<string | null>(null);
@@ -231,6 +242,24 @@ export default function ProductEdit() {
   const [attrs, setAttrs] = useState<AttrDraft[]>([]);
   const [fabAttrHydrated, setFabAttrHydrated] = useState(false);
 
+  // Variants + per-grade pricing (umbrella vents, cover sizes, frame/base
+  // finishes, etc.). The full set is replaced on save.
+  type GradePriceDraft = { grade: string; msrp: string; salePrice: string };
+  type VariantDraft = {
+    key: string;
+    variantSku: string;
+    variantName: string;
+    optionLabel: string;
+    priceAdjustment: string;
+    notes: string;
+    minOrderQty: string;
+    excludeStripeFabrics: boolean;
+    isActive: boolean;
+    gradePrices: GradePriceDraft[];
+  };
+  const [variants, setVariants] = useState<VariantDraft[]>([]);
+  const [variantsHydrated, setVariantsHydrated] = useState(false);
+
   // Reset hydration when the route param changes (router may reuse the
   // component when navigating between /products/A and /products/B), so the
   // form re-hydrates from the new product's data.
@@ -245,6 +274,8 @@ export default function ProductEdit() {
     setFinishPoolMfgIds([]);
     setPickedFinishIds([]);
     setAttrs([]);
+    setVariants([]);
+    setVariantsHydrated(false);
   }, [productId]);
 
   // Hydrate fabric + attribute state from server data once both queries land.
@@ -275,6 +306,33 @@ export default function ProductEdit() {
       setFabAttrHydrated(true);
     }
   }, [fabricsConfigQuery.data, finishesConfigQuery.data, attributesQuery.data, isNew, fabAttrHydrated]);
+
+  // Hydrate variant + grade-price drafts from server data.
+  useEffect(() => {
+    if (!isNew && variantsConfigQuery.data && !variantsHydrated) {
+      setVariants(
+        variantsConfigQuery.data.variants.map(
+          (v: AdminProductVariant, i: number) => ({
+            key: `${v.id}-${i}`,
+            variantSku: v.variantSku,
+            variantName: v.variantName,
+            optionLabel: v.optionLabel,
+            priceAdjustment: v.priceAdjustment,
+            notes: v.notes ?? "",
+            minOrderQty: v.minOrderQty != null ? String(v.minOrderQty) : "",
+            excludeStripeFabrics: v.excludeStripeFabrics,
+            isActive: v.isActive,
+            gradePrices: v.gradePrices.map((g) => ({
+              grade: g.grade,
+              msrp: g.msrp,
+              salePrice: g.salePrice,
+            })),
+          }),
+        ),
+      );
+      setVariantsHydrated(true);
+    }
+  }, [variantsConfigQuery.data, isNew, variantsHydrated]);
 
   useEffect(() => {
     // Wait for all three queries to land before hydrating so the
@@ -529,6 +587,16 @@ export default function ProductEdit() {
           return;
         }
 
+        // Block save until variant data has hydrated. The variants PUT replaces
+        // the full set, so saving with an un-hydrated empty array would wipe
+        // every variant + grade price for the product.
+        if (!variantsHydrated) {
+          setError(
+            "Still loading this product's variants. Try again in a moment.",
+          );
+          return;
+        }
+
         // Validate attributes locally BEFORE the main update so we don't
         // commit a partial save (product core fields would otherwise persist
         // even though attributes are invalid).
@@ -613,6 +681,44 @@ export default function ProductEdit() {
           );
         }
 
+        try {
+          await variantsMut.mutateAsync({
+            id: productId,
+            data: {
+              variants: variants.map((v, i) => ({
+                variantSku: v.variantSku.trim(),
+                variantName: v.variantName.trim(),
+                optionLabel: v.optionLabel.trim() || "Option",
+                priceAdjustment: v.priceAdjustment.trim() || "0",
+                notes: v.notes.trim() === "" ? null : v.notes.trim(),
+                minOrderQty:
+                  v.minOrderQty.trim() === ""
+                    ? null
+                    : Number(v.minOrderQty),
+                excludeStripeFabrics: v.excludeStripeFabrics,
+                displayOrder: i,
+                isActive: v.isActive,
+                gradePrices: v.gradePrices
+                  .filter(
+                    (g) =>
+                      g.grade.trim() !== "" &&
+                      g.msrp.trim() !== "" &&
+                      g.salePrice.trim() !== "",
+                  )
+                  .map((g) => ({
+                    grade: g.grade.trim(),
+                    msrp: g.msrp.trim(),
+                    salePrice: g.salePrice.trim(),
+                  })),
+              })),
+            },
+          });
+        } catch (vErr) {
+          followUpFailures.push(
+            `Variants: ${vErr instanceof Error ? vErr.message : "failed"}`,
+          );
+        }
+
         if (followUpFailures.length === 0) {
           toast.toast({ title: "Product saved" });
         } else {
@@ -633,6 +739,9 @@ export default function ProductEdit() {
         });
         await qc.invalidateQueries({
           queryKey: getAdminGetProductAttributesQueryKey(productId),
+        });
+        await qc.invalidateQueries({
+          queryKey: getAdminGetProductVariantsQueryKey(productId),
         });
       }
     } catch (err: unknown) {
@@ -788,7 +897,8 @@ export default function ProductEdit() {
     inventoryMut.isPending ||
     fabricsMut.isPending ||
     finishesMut.isPending ||
-    attributesMut.isPending;
+    attributesMut.isPending ||
+    variantsMut.isPending;
 
   function togglePool(manufacturerId: number) {
     setPoolManufacturerIds((cur) =>
@@ -1403,6 +1513,360 @@ export default function ProductEdit() {
                   </p>
                 </div>
               </div>
+            </section>
+          )}
+
+          {/* Variants & grade pricing */}
+          {!isNew && (
+            <section className="bg-white border border-slate-200 rounded-md p-6">
+              <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-2">
+                Variants &amp; grade pricing
+              </h3>
+              <p className="text-xs text-slate-500 mb-4">
+                Configurations a customer selects before fabric (e.g. vent type,
+                size, frame finish). Add per-grade prices (A/B/C/D) to put this
+                product into grade-pricing mode; leave grade prices empty for a
+                flat-priced finish/size selector.
+              </p>
+
+              {variants.length === 0 ? (
+                <p className="text-sm text-slate-500 mb-4">
+                  No variants configured.
+                </p>
+              ) : (
+                <div className="space-y-4 mb-4">
+                  {variants.map((v, vi) => (
+                    <div
+                      key={v.key}
+                      className="border border-slate-200 rounded-md p-4"
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-xs font-semibold text-slate-500 uppercase">
+                          Variant {vi + 1}
+                        </span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-600 hover:text-red-700"
+                          onClick={() =>
+                            setVariants((cur) =>
+                              cur.filter((_, i) => i !== vi),
+                            )
+                          }
+                        >
+                          Remove
+                        </Button>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <Label>Variant SKU</Label>
+                          <Input
+                            value={v.variantSku}
+                            onChange={(e) =>
+                              setVariants((cur) =>
+                                cur.map((x, i) =>
+                                  i === vi
+                                    ? { ...x, variantSku: e.target.value }
+                                    : x,
+                                ),
+                              )
+                            }
+                          />
+                        </div>
+                        <div>
+                          <Label>Display name</Label>
+                          <Input
+                            value={v.variantName}
+                            onChange={(e) =>
+                              setVariants((cur) =>
+                                cur.map((x, i) =>
+                                  i === vi
+                                    ? { ...x, variantName: e.target.value }
+                                    : x,
+                                ),
+                              )
+                            }
+                          />
+                        </div>
+                        <div>
+                          <Label>Option label</Label>
+                          <Input
+                            placeholder="e.g. Vent Type, Finish, Size"
+                            value={v.optionLabel}
+                            onChange={(e) =>
+                              setVariants((cur) =>
+                                cur.map((x, i) =>
+                                  i === vi
+                                    ? { ...x, optionLabel: e.target.value }
+                                    : x,
+                                ),
+                              )
+                            }
+                          />
+                        </div>
+                        <div>
+                          <Label>Price adjustment</Label>
+                          <Input
+                            value={v.priceAdjustment}
+                            onChange={(e) =>
+                              setVariants((cur) =>
+                                cur.map((x, i) =>
+                                  i === vi
+                                    ? {
+                                        ...x,
+                                        priceAdjustment: e.target.value,
+                                      }
+                                    : x,
+                                ),
+                              )
+                            }
+                          />
+                        </div>
+                        <div>
+                          <Label>Min order qty</Label>
+                          <Input
+                            type="number"
+                            min={0}
+                            value={v.minOrderQty}
+                            onChange={(e) =>
+                              setVariants((cur) =>
+                                cur.map((x, i) =>
+                                  i === vi
+                                    ? { ...x, minOrderQty: e.target.value }
+                                    : x,
+                                ),
+                              )
+                            }
+                          />
+                        </div>
+                        <div className="md:col-span-2">
+                          <Label>Notes</Label>
+                          <Textarea
+                            rows={2}
+                            value={v.notes}
+                            onChange={(e) =>
+                              setVariants((cur) =>
+                                cur.map((x, i) =>
+                                  i === vi
+                                    ? { ...x, notes: e.target.value }
+                                    : x,
+                                ),
+                              )
+                            }
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-6 mt-3">
+                        <label className="flex items-center gap-2 text-sm text-slate-700">
+                          <Switch
+                            checked={v.excludeStripeFabrics}
+                            onCheckedChange={(checked) =>
+                              setVariants((cur) =>
+                                cur.map((x, i) =>
+                                  i === vi
+                                    ? { ...x, excludeStripeFabrics: checked }
+                                    : x,
+                                ),
+                              )
+                            }
+                          />
+                          Exclude stripe fabrics
+                        </label>
+                        <label className="flex items-center gap-2 text-sm text-slate-700">
+                          <Switch
+                            checked={v.isActive}
+                            onCheckedChange={(checked) =>
+                              setVariants((cur) =>
+                                cur.map((x, i) =>
+                                  i === vi
+                                    ? { ...x, isActive: checked }
+                                    : x,
+                                ),
+                              )
+                            }
+                          />
+                          Active
+                        </label>
+                      </div>
+
+                      {/* Grade prices */}
+                      <div className="mt-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <Label className="text-xs uppercase tracking-wide text-slate-500">
+                            Grade prices
+                          </Label>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              setVariants((cur) =>
+                                cur.map((x, i) =>
+                                  i === vi
+                                    ? {
+                                        ...x,
+                                        gradePrices: [
+                                          ...x.gradePrices,
+                                          {
+                                            grade: "",
+                                            msrp: "",
+                                            salePrice: "",
+                                          },
+                                        ],
+                                      }
+                                    : x,
+                                ),
+                              )
+                            }
+                          >
+                            Add grade
+                          </Button>
+                        </div>
+                        {v.gradePrices.length === 0 ? (
+                          <p className="text-xs text-slate-400">
+                            Flat-priced (uses the product price above). Add
+                            grades to enable grade pricing.
+                          </p>
+                        ) : (
+                          <div className="space-y-2">
+                            {v.gradePrices.map((g, gi) => (
+                              <div
+                                key={gi}
+                                className="grid grid-cols-[80px_1fr_1fr_auto] gap-2 items-center"
+                              >
+                                <Input
+                                  placeholder="Grade"
+                                  value={g.grade}
+                                  onChange={(e) =>
+                                    setVariants((cur) =>
+                                      cur.map((x, i) =>
+                                        i === vi
+                                          ? {
+                                              ...x,
+                                              gradePrices: x.gradePrices.map(
+                                                (y, j) =>
+                                                  j === gi
+                                                    ? {
+                                                        ...y,
+                                                        grade: e.target.value,
+                                                      }
+                                                    : y,
+                                              ),
+                                            }
+                                          : x,
+                                      ),
+                                    )
+                                  }
+                                />
+                                <Input
+                                  placeholder="MSRP"
+                                  value={g.msrp}
+                                  onChange={(e) =>
+                                    setVariants((cur) =>
+                                      cur.map((x, i) =>
+                                        i === vi
+                                          ? {
+                                              ...x,
+                                              gradePrices: x.gradePrices.map(
+                                                (y, j) =>
+                                                  j === gi
+                                                    ? {
+                                                        ...y,
+                                                        msrp: e.target.value,
+                                                      }
+                                                    : y,
+                                              ),
+                                            }
+                                          : x,
+                                      ),
+                                    )
+                                  }
+                                />
+                                <Input
+                                  placeholder="Sale price"
+                                  value={g.salePrice}
+                                  onChange={(e) =>
+                                    setVariants((cur) =>
+                                      cur.map((x, i) =>
+                                        i === vi
+                                          ? {
+                                              ...x,
+                                              gradePrices: x.gradePrices.map(
+                                                (y, j) =>
+                                                  j === gi
+                                                    ? {
+                                                        ...y,
+                                                        salePrice:
+                                                          e.target.value,
+                                                      }
+                                                    : y,
+                                              ),
+                                            }
+                                          : x,
+                                      ),
+                                    )
+                                  }
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-red-600 hover:text-red-700"
+                                  onClick={() =>
+                                    setVariants((cur) =>
+                                      cur.map((x, i) =>
+                                        i === vi
+                                          ? {
+                                              ...x,
+                                              gradePrices:
+                                                x.gradePrices.filter(
+                                                  (_, j) => j !== gi,
+                                                ),
+                                            }
+                                          : x,
+                                      ),
+                                    )
+                                  }
+                                >
+                                  ✕
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setVariants((cur) => [
+                    ...cur,
+                    {
+                      key: `new-${Date.now()}-${cur.length}`,
+                      variantSku: "",
+                      variantName: "",
+                      optionLabel: "Option",
+                      priceAdjustment: "0",
+                      notes: "",
+                      minOrderQty: "",
+                      excludeStripeFabrics: false,
+                      isActive: true,
+                      gradePrices: [],
+                    },
+                  ])
+                }
+              >
+                Add variant
+              </Button>
             </section>
           )}
 

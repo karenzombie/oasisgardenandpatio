@@ -2789,6 +2789,119 @@ export const AdminUpdateProductFabricsResponse = zod.object({
 });
 
 /**
+ * @summary Get a product's variants with per-grade pricing
+ */
+export const AdminGetProductVariantsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminGetProductVariantsResponse = zod.object({
+  variants: zod.array(
+    zod.object({
+      id: zod.number(),
+      variantSku: zod.string(),
+      variantName: zod.string(),
+      optionLabel: zod.string(),
+      priceAdjustment: zod.string(),
+      notes: zod.string().nullable(),
+      minOrderQty: zod.number().nullable(),
+      excludeStripeFabrics: zod.boolean(),
+      displayOrder: zod.number(),
+      isActive: zod.boolean(),
+      gradePrices: zod.array(
+        zod.object({
+          grade: zod
+            .string()
+            .describe('Fabric grade label (e.g. \"A\", \"B\", \"C\", \"D\").'),
+          msrp: zod
+            .string()
+            .describe("Decimal MSRP for this configuration at this grade."),
+          salePrice: zod
+            .string()
+            .describe(
+              "Decimal sale price for this configuration at this grade.",
+            ),
+        }),
+      ),
+    }),
+  ),
+});
+
+/**
+ * @summary Replace a product's variants and their grade prices
+ */
+export const AdminUpdateProductVariantsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminUpdateProductVariantsBody = zod.object({
+  variants: zod
+    .array(
+      zod.object({
+        variantSku: zod.string(),
+        variantName: zod.string(),
+        optionLabel: zod.string(),
+        priceAdjustment: zod.string(),
+        notes: zod.string().nullish(),
+        minOrderQty: zod.number().nullish(),
+        excludeStripeFabrics: zod.boolean().optional(),
+        displayOrder: zod.number().optional(),
+        isActive: zod.boolean().optional(),
+        gradePrices: zod.array(
+          zod.object({
+            grade: zod
+              .string()
+              .describe(
+                'Fabric grade label (e.g. \"A\", \"B\", \"C\", \"D\").',
+              ),
+            msrp: zod
+              .string()
+              .describe("Decimal MSRP for this configuration at this grade."),
+            salePrice: zod
+              .string()
+              .describe(
+                "Decimal sale price for this configuration at this grade.",
+              ),
+          }),
+        ),
+      }),
+    )
+    .describe("Full replacement set of variants for this product."),
+});
+
+export const AdminUpdateProductVariantsResponse = zod.object({
+  variants: zod.array(
+    zod.object({
+      id: zod.number(),
+      variantSku: zod.string(),
+      variantName: zod.string(),
+      optionLabel: zod.string(),
+      priceAdjustment: zod.string(),
+      notes: zod.string().nullable(),
+      minOrderQty: zod.number().nullable(),
+      excludeStripeFabrics: zod.boolean(),
+      displayOrder: zod.number(),
+      isActive: zod.boolean(),
+      gradePrices: zod.array(
+        zod.object({
+          grade: zod
+            .string()
+            .describe('Fabric grade label (e.g. \"A\", \"B\", \"C\", \"D\").'),
+          msrp: zod
+            .string()
+            .describe("Decimal MSRP for this configuration at this grade."),
+          salePrice: zod
+            .string()
+            .describe(
+              "Decimal sale price for this configuration at this grade.",
+            ),
+        }),
+      ),
+    }),
+  ),
+});
+
+/**
  * @summary List all finishes across manufacturers (admin)
  */
 export const AdminListFinishesResponseItem = zod.object({

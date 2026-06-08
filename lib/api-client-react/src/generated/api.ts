@@ -81,6 +81,7 @@ import type {
   AdminProductImage,
   AdminProductInventory,
   AdminProductPickerDetail,
+  AdminProductVariantsConfig,
   AdminProductsPage,
   AdminRecoveryRequestRow,
   AdminRefundOrderRequest,
@@ -108,6 +109,7 @@ import type {
   AdminUpdateProductAttributesRequest,
   AdminUpdateProductFabricsRequest,
   AdminUpdateProductFinishesRequest,
+  AdminUpdateProductVariantsRequest,
   AdminUpdateShipmentRequest,
   AdminUserDetail,
   AdminUserSummary,
@@ -6961,6 +6963,189 @@ export const useAdminUpdateProductFabrics = <
   TContext
 > => {
   return useMutation(getAdminUpdateProductFabricsMutationOptions(options));
+};
+
+/**
+ * @summary Get a product's variants with per-grade pricing
+ */
+export const getAdminGetProductVariantsUrl = (id: number) => {
+  return `/api/admin/products/${id}/variants`;
+};
+
+export const adminGetProductVariants = async (
+  id: number,
+  options?: RequestInit,
+): Promise<AdminProductVariantsConfig> => {
+  return customFetch<AdminProductVariantsConfig>(
+    getAdminGetProductVariantsUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getAdminGetProductVariantsQueryKey = (id: number) => {
+  return [`/api/admin/products/${id}/variants`] as const;
+};
+
+export const getAdminGetProductVariantsQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminGetProductVariants>>,
+  TError = ErrorType<Error>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminGetProductVariants>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getAdminGetProductVariantsQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminGetProductVariants>>
+  > = ({ signal }) =>
+    adminGetProductVariants(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetProductVariants>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminGetProductVariantsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminGetProductVariants>>
+>;
+export type AdminGetProductVariantsQueryError = ErrorType<Error>;
+
+/**
+ * @summary Get a product's variants with per-grade pricing
+ */
+
+export function useAdminGetProductVariants<
+  TData = Awaited<ReturnType<typeof adminGetProductVariants>>,
+  TError = ErrorType<Error>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminGetProductVariants>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminGetProductVariantsQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Replace a product's variants and their grade prices
+ */
+export const getAdminUpdateProductVariantsUrl = (id: number) => {
+  return `/api/admin/products/${id}/variants`;
+};
+
+export const adminUpdateProductVariants = async (
+  id: number,
+  adminUpdateProductVariantsRequest: AdminUpdateProductVariantsRequest,
+  options?: RequestInit,
+): Promise<AdminProductVariantsConfig> => {
+  return customFetch<AdminProductVariantsConfig>(
+    getAdminUpdateProductVariantsUrl(id),
+    {
+      ...options,
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(adminUpdateProductVariantsRequest),
+    },
+  );
+};
+
+export const getAdminUpdateProductVariantsMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateProductVariants>>,
+    TError,
+    { id: number; data: BodyType<AdminUpdateProductVariantsRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUpdateProductVariants>>,
+  TError,
+  { id: number; data: BodyType<AdminUpdateProductVariantsRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminUpdateProductVariants"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUpdateProductVariants>>,
+    { id: number; data: BodyType<AdminUpdateProductVariantsRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminUpdateProductVariants(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminUpdateProductVariantsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUpdateProductVariants>>
+>;
+export type AdminUpdateProductVariantsMutationBody =
+  BodyType<AdminUpdateProductVariantsRequest>;
+export type AdminUpdateProductVariantsMutationError = ErrorType<Error>;
+
+/**
+ * @summary Replace a product's variants and their grade prices
+ */
+export const useAdminUpdateProductVariants = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateProductVariants>>,
+    TError,
+    { id: number; data: BodyType<AdminUpdateProductVariantsRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUpdateProductVariants>>,
+  TError,
+  { id: number; data: BodyType<AdminUpdateProductVariantsRequest> },
+  TContext
+> => {
+  return useMutation(getAdminUpdateProductVariantsMutationOptions(options));
 };
 
 /**

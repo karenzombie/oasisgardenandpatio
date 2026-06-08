@@ -2111,6 +2111,65 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
+  /admin/products/{id}/variants:
+    get:
+      operationId: adminGetProductVariants
+      tags: [admin-products]
+      summary: Get a product's variants with per-grade pricing
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Variant configuration for the product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminProductVariantsConfig"
+        "404":
+          description: Product not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+    put:
+      operationId: adminUpdateProductVariants
+      tags: [admin-products]
+      summary: Replace a product's variants and their grade prices
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUpdateProductVariantsRequest"
+      responses:
+        "200":
+          description: Updated configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminProductVariantsConfig"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "404":
+          description: Product not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "409":
+          description: Duplicate variant SKU
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
   /admin/finishes:
     get:
       operationId: adminListFinishes
@@ -8494,6 +8553,111 @@ components:
       required:
         - manufacturerIds
         - fabricIds
+    AdminVariantGradePrice:
+      type: object
+      properties:
+        grade:
+          type: string
+          description: Fabric grade label (e.g. "A", "B", "C", "D").
+        msrp:
+          type: string
+          description: Decimal MSRP for this configuration at this grade.
+        salePrice:
+          type: string
+          description: Decimal sale price for this configuration at this grade.
+      required:
+        - grade
+        - msrp
+        - salePrice
+    AdminProductVariant:
+      type: object
+      properties:
+        id:
+          type: integer
+        variantSku:
+          type: string
+        variantName:
+          type: string
+        optionLabel:
+          type: string
+        priceAdjustment:
+          type: string
+        notes:
+          type: ["string", "null"]
+        minOrderQty:
+          type: ["integer", "null"]
+        excludeStripeFabrics:
+          type: boolean
+        displayOrder:
+          type: integer
+        isActive:
+          type: boolean
+        gradePrices:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminVariantGradePrice"
+      required:
+        - id
+        - variantSku
+        - variantName
+        - optionLabel
+        - priceAdjustment
+        - notes
+        - minOrderQty
+        - excludeStripeFabrics
+        - displayOrder
+        - isActive
+        - gradePrices
+    AdminProductVariantsConfig:
+      type: object
+      properties:
+        variants:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminProductVariant"
+      required:
+        - variants
+    AdminProductVariantInput:
+      type: object
+      properties:
+        variantSku:
+          type: string
+        variantName:
+          type: string
+        optionLabel:
+          type: string
+        priceAdjustment:
+          type: string
+        notes:
+          type: ["string", "null"]
+        minOrderQty:
+          type: ["integer", "null"]
+        excludeStripeFabrics:
+          type: boolean
+        displayOrder:
+          type: integer
+        isActive:
+          type: boolean
+        gradePrices:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminVariantGradePrice"
+      required:
+        - variantSku
+        - variantName
+        - optionLabel
+        - priceAdjustment
+        - gradePrices
+    AdminUpdateProductVariantsRequest:
+      type: object
+      properties:
+        variants:
+          type: array
+          description: Full replacement set of variants for this product.
+          items:
+            $ref: "#/components/schemas/AdminProductVariantInput"
+      required:
+        - variants
     CatalogFinishCollection:
       type: object
       description: A named collection of finishes for a manufacturer (e.g. Couture Jardin "Billie"). Includes a panel image showing all finishes in the collection together.
