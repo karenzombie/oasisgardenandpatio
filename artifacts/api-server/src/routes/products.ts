@@ -8,6 +8,8 @@ import {
   categoriesTable,
   materialsTable,
   productVariantsTable,
+  productFabricOptionsTable,
+  fabricsTable,
   finishCollectionsTable,
   finishesTable,
   variantGradePricesTable,
@@ -21,7 +23,6 @@ import {
   GetCatalogProductBySlugResponse,
 } from "@workspace/api-zod";
 import { toPublicImageUrl } from "../lib/imageUrl";
-import { resolveProductFabrics } from "../lib/productFabrics";
 
 const router: IRouter = Router();
 
@@ -510,10 +511,39 @@ router.get(
       (a, b) => a.displayOrder - b.displayOrder || a.name.localeCompare(b.name),
     );
 
-    // Selectable fabrics = explicit options UNION pool-expanded manufacturer
-    // fabrics (e.g. "all Sunbrella"). Resolved via the shared helper so PDP,
-    // cart, and staff order builder stay in parity.
-    const fabricRows = await resolveProductFabrics(row.id);
+    const fabricRows = await db
+      .select({
+        id: fabricsTable.id,
+        name: fabricsTable.name,
+        itemNumber: fabricsTable.itemNumber,
+        manufacturerName: manufacturersTable.name,
+        manufacturerLogoUrl: manufacturersTable.logoUrl,
+        swatchImageUrl: fabricsTable.swatchImageUrl,
+        grade: fabricsTable.grade,
+        colorFamily: fabricsTable.colorFamily,
+        isStripe: fabricsTable.isStripe,
+        displayOrder: productFabricOptionsTable.displayOrder,
+      })
+      .from(productFabricOptionsTable)
+      .innerJoin(
+        fabricsTable,
+        eq(fabricsTable.id, productFabricOptionsTable.fabricId),
+      )
+      .innerJoin(
+        manufacturersTable,
+        eq(manufacturersTable.id, fabricsTable.manufacturerId),
+      )
+      .where(
+        and(
+          eq(productFabricOptionsTable.productId, row.id),
+          eq(fabricsTable.isActive, true),
+        ),
+      )
+      .orderBy(
+        asc(productFabricOptionsTable.displayOrder),
+        asc(manufacturersTable.name),
+        asc(fabricsTable.name),
+      );
 
     const tagsArray: string[] = Array.isArray(row.tags) ? (row.tags as string[]) : [];
     const specsObj: Record<string, unknown> | null =

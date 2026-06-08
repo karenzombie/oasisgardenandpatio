@@ -8,6 +8,7 @@ import {
   productImagesTable,
   manufacturersTable,
   productVariantsTable,
+  productFabricOptionsTable,
   fabricsTable,
   finishesTable,
   variantGradePricesTable,
@@ -21,7 +22,6 @@ import {
 } from "@workspace/api-zod";
 import { toPublicImageUrl } from "../lib/imageUrl";
 import { fabricGradeUpcharge } from "../lib/fabricUpcharge";
-import { resolveProductFabrics } from "../lib/productFabrics";
 
 const router: IRouter = Router();
 
@@ -248,11 +248,22 @@ router.post(
       );
     const requiresVariant = (variantCountRow[0]?.n ?? 0) > 0;
 
-    // Eligible fabrics = explicit options UNION manufacturer pools (e.g. "all
-    // Sunbrella"), resolved exactly as the PDP exposes them so server validation
-    // matches what the customer could actually pick.
-    const eligibleFabrics = await resolveProductFabrics(productId);
-    const requiresFabric = eligibleFabrics.length > 0;
+    // Count only ACTIVE fabrics linked to this product so the server matches
+    // what the PDP exposes (PDP filters fabricsTable.isActive=true).
+    const fabricCountRow = await db
+      .select({ n: sql<number>`count(*)::int` })
+      .from(productFabricOptionsTable)
+      .innerJoin(
+        fabricsTable,
+        eq(fabricsTable.id, productFabricOptionsTable.fabricId),
+      )
+      .where(
+        and(
+          eq(productFabricOptionsTable.productId, productId),
+          eq(fabricsTable.isActive, true),
+        ),
+      );
+    const requiresFabric = (fabricCountRow[0]?.n ?? 0) > 0;
 
     if (requiresVariant && !variantId) {
       res.status(400).json({
@@ -407,7 +418,30 @@ router.post(
     // variant grade price). Falls back to base-price math when null.
     let gradeLinePrice: string | null = null;
     if (fabricId) {
-      const option = eligibleFabrics.find((f) => f.id === fabricId);
+      const [option] = await db
+        .select({
+          id: productFabricOptionsTable.id,
+          isStripe: fabricsTable.isStripe,
+          grade: fabricsTable.grade,
+          fabricManufacturerName: manufacturersTable.name,
+        })
+        .from(productFabricOptionsTable)
+        .innerJoin(
+          fabricsTable,
+          eq(fabricsTable.id, productFabricOptionsTable.fabricId),
+        )
+        .leftJoin(
+          manufacturersTable,
+          eq(manufacturersTable.id, fabricsTable.manufacturerId),
+        )
+        .where(
+          and(
+            eq(productFabricOptionsTable.productId, productId),
+            eq(productFabricOptionsTable.fabricId, fabricId),
+            eq(fabricsTable.isActive, true),
+          ),
+        )
+        .limit(1);
       if (!option) {
         res
           .status(400)
@@ -449,7 +483,7 @@ router.post(
         // Treasure Garden + Sunbrella grade upcharge (B +$100, C +$190 per item).
         fabricUpcharge = fabricGradeUpcharge(
           product.manufacturerName,
-          option.manufacturerName,
+          option.fabricManufacturerName,
           option.grade,
         );
       }

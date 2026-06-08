@@ -28,6 +28,8 @@ import {
   variantGradePricesTable,
   productFinishOptionsTable,
   productFabricPoolsTable,
+  productFabricOptionsTable,
+  fabricsTable,
   finishesTable,
 } from "@workspace/db";
 
@@ -213,6 +215,37 @@ async function clearProductConfig(productId: number) {
   await db
     .delete(productFabricPoolsTable)
     .where(eq(productFabricPoolsTable.productId, productId));
+  await db
+    .delete(productFabricOptionsTable)
+    .where(eq(productFabricOptionsTable.productId, productId));
+}
+
+// All active Sunbrella fabric ids, ordered for stable display.
+async function sunbrellaFabricIds(): Promise<number[]> {
+  const rows = await db
+    .select({ id: fabricsTable.id })
+    .from(fabricsTable)
+    .where(
+      and(
+        eq(fabricsTable.manufacturerId, SUNBRELLA_MFR),
+        eq(fabricsTable.isActive, true),
+      ),
+    )
+    .orderBy(fabricsTable.name);
+  return rows.map((r) => r.id);
+}
+
+// Mirror Treasure Garden: link every active Sunbrella fabric to the product as
+// an explicit product_fabric_options row (satisfies cart/order fabric FKs).
+async function linkSunbrellaFabrics(productId: number, fabricIds: number[]) {
+  if (!fabricIds.length) return;
+  await db.insert(productFabricOptionsTable).values(
+    fabricIds.map((fabricId, idx) => ({
+      productId,
+      fabricId,
+      displayOrder: idx,
+    })),
+  );
 }
 
 async function insertGradePrices(
@@ -238,6 +271,8 @@ async function main() {
   console.log(`Reading ${csv}`);
   const rows = parseCsvFile(csv);
   const maps = await buildFinishMaps();
+  const sunbrellaIds = await sunbrellaFabricIds();
+  console.log(`Linking ${sunbrellaIds.length} active Sunbrella fabrics`);
 
   // Group umbrella rows by product SKU (one product, 1-2 vent variants).
   const umbrellaGroups = new Map<string, Record<string, string>[]>();
@@ -319,10 +354,8 @@ async function main() {
       );
     }
 
-    // All-Sunbrella fabric pool.
-    await db
-      .insert(productFabricPoolsTable)
-      .values({ productId, manufacturerId: SUNBRELLA_MFR });
+    // Explicit all-Sunbrella fabric links (mirrors Treasure Garden).
+    await linkSunbrellaFabrics(productId, sunbrellaIds);
 
     counts.umbrella++;
   }
@@ -409,9 +442,8 @@ async function main() {
         })
         .returning({ id: productVariantsTable.id });
       await insertGradePrices(v!.id, row);
-      await db
-        .insert(productFabricPoolsTable)
-        .values({ productId, manufacturerId: SUNBRELLA_MFR });
+      // Explicit all-Sunbrella fabric links (mirrors Treasure Garden).
+      await linkSunbrellaFabrics(productId, sunbrellaIds);
       counts.cover++;
     } else if (type === "FLAT_FINISH") {
       const finishIds = resolveFinishList(row.available_finishes, maps);
