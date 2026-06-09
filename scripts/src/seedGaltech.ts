@@ -110,15 +110,20 @@ function classify(row: Record<string, string>): RowType {
   return "FLAT_PLAIN";
 }
 
-/** Map a CSV umbrella model (sans -DV) to its product SKU. */
+/** Map a CSV umbrella model (sans -DV) to its product SKU.
+ * All umbrella products use the "GT-{number}" SKU format.
+ * - Strip the -DV double-vent suffix.
+ * - Strip the TK teak suffix (e.g. 532TK → GT-532).
+ * - Apply dual-model overrides (121-221 → GT-121, 132-232 → GT-132).
+ */
 function umbrellaSku(model: string): string {
-  const m = model.replace(/-DV$/, "");
-  // CSV uses "121-221" and "132-232" for dual-model umbrellas; map to the primary model number.
+  const m = model.replace(/-DV$/, "").replace(/TK$/i, "");
   const overrides: Record<string, string> = {
     "121-221": "121",
     "132-232": "132",
   };
-  return overrides[m] ?? m;
+  const base = overrides[m] ?? m;
+  return `GT-${base}`;
 }
 
 function partSku(model: string, type: RowType): string {
