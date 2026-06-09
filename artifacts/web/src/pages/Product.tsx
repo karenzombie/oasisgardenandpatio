@@ -198,9 +198,10 @@ export default function Product() {
   // fabric is selected we lock the quantity stepper to even values >= 2.
   const isStripeSelected = selectedFabric?.isStripe === true;
 
-  // Minimum order quantity for the selected configuration (grade mode only).
+  // Minimum order quantity — applies whenever the selected variant carries one,
+  // regardless of whether the product is in grade mode.
   const minOrderQty =
-    isGradeMode && selectedVariant?.minOrderQty != null
+    selectedVariant?.minOrderQty != null && selectedVariant.minOrderQty > 1
       ? selectedVariant.minOrderQty
       : 1;
   // Combined quantity floor: config minimum, raised to an even number when a
@@ -895,29 +896,36 @@ export default function Product() {
               ) : null}
 
               <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
-                <div className="inline-flex items-center border border-input self-start">
-                  <button
-                    type="button"
-                    className="px-3 py-2.5 hover:bg-muted disabled:opacity-40"
-                    onClick={() =>
-                      setQty((q) =>
-                        Math.max(qtyFloor, q - (isStripeSelected ? 2 : 1)),
-                      )
-                    }
-                    disabled={qty <= qtyFloor}
-                    aria-label="Decrease quantity"
-                  >
-                    −
-                  </button>
-                  <span className="px-4 text-sm w-12 text-center">{qty}</span>
-                  <button
-                    type="button"
-                    className="px-3 py-2.5 hover:bg-muted"
-                    onClick={() => setQty((q) => q + (isStripeSelected ? 2 : 1))}
-                    aria-label="Increase quantity"
-                  >
-                    +
-                  </button>
+                <div className="flex flex-col gap-1 self-start">
+                  <div className="inline-flex items-center border border-input">
+                    <button
+                      type="button"
+                      className="px-3 py-2.5 hover:bg-muted disabled:opacity-40"
+                      onClick={() =>
+                        setQty((q) =>
+                          Math.max(qtyFloor, q - (isStripeSelected ? 2 : 1)),
+                        )
+                      }
+                      disabled={qty <= qtyFloor}
+                      aria-label="Decrease quantity"
+                    >
+                      −
+                    </button>
+                    <span className="px-4 text-sm w-12 text-center">{qty}</span>
+                    <button
+                      type="button"
+                      className="px-3 py-2.5 hover:bg-muted"
+                      onClick={() => setQty((q) => q + (isStripeSelected ? 2 : 1))}
+                      aria-label="Increase quantity"
+                    >
+                      +
+                    </button>
+                  </div>
+                  {minOrderQty > 1 ? (
+                    <p className="text-xs text-destructive">
+                      Minimum order quantity: {minOrderQty}
+                    </p>
+                  ) : null}
                 </div>
                 <button
                   type="button"
