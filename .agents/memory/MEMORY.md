@@ -5,3 +5,4 @@
 - [Variant PUT cart cascade](variant-put-cart-cascade.md) — admin variant replace-all must keyed-upsert by variantSku (not delete+reinsert) or cart_items cascade-delete; gate Save on variantsHydrated.
 - [Product short_description teaser](product-short-description.md) — PDP top blurb = short_description (first paragraph of description, NOT char-clamp+"…"); description is the full copy in the tab.
 - [Image upload location](image-upload-location.md) — user always uploads image folders to workspace root (e.g. ./coture_jardin_finish_images/), NOT Object Storage. Check root first.
+- [Dev→prod sync direction](dev-prod-sync-direction.md) — always update prod to match dev, never dev to match prod; prod often has stale data.
