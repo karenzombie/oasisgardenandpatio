@@ -126,6 +126,15 @@ function partSku(model: string, type: RowType): string {
   return model;
 }
 
+/** Strip the leading model-number token from a CSV product_name.
+ * e.g. "727 7.5' Deluxe Auto Tilt" → "7.5' Deluxe Auto Tilt"
+ *      "121/221 7.5' Cafe, Bistro" → "7.5' Cafe, Bistro"
+ *      "532TK 9' Designer Teak"   → "9' Designer Teak"
+ */
+function cleanProductName(csvProductName: string): string {
+  return csvProductName.replace(/^\S+\s+/, "").trim();
+}
+
 // ─── finish resolution ────────────────────────────────────────────────────
 
 async function buildFinishMaps() {
@@ -307,6 +316,7 @@ async function main() {
     await db
       .update(productsTable)
       .set({
+        name: cleanProductName(defaultRow.product_name),
         price: defaultRow.sunbrella_a_msrp,
         msrp: defaultRow.sunbrella_a_msrp,
         salePrice: defaultRow.sunbrella_a_sale,
@@ -360,7 +370,7 @@ async function main() {
 
   // ── Covers / flat-finish / flat-plain ──────────────────────────────────
   for (const { sku, type, row } of singles) {
-    const name = row.product_name;
+    const name = cleanProductName(row.product_name);
     const notes = row.notes;
     const baseFields = {
       manufacturerId: GALTECH_MFR,

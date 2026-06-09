@@ -268,7 +268,9 @@ async function main() {
   let noFolder = 0;
 
   for (const row of rows) {
-    const name = row["Product Name"].trim();
+    // Strip any leading numeric code that bleeds into the product name
+    // e.g. "694077 Swing Cushion" → "Swing Cushion"
+    const name = row["Product Name"].trim().replace(/^\d+\s+/, "");
     const csvSku = row.SKU?.trim() ?? "";
     const collection = row.Collection?.trim() ?? "";
     const description = row.Description?.trim() || null;
