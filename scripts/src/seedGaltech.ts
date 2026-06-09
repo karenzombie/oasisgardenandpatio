@@ -110,22 +110,20 @@ function classify(row: Record<string, string>): RowType {
   return "FLAT_PLAIN";
 }
 
-/** Map a CSV umbrella model (sans -DV) to its existing GT-XXX product SKU. */
+/** Map a CSV umbrella model (sans -DV) to its product SKU. */
 function umbrellaSku(model: string): string {
   const m = model.replace(/-DV$/, "");
+  // CSV uses "121-221" and "132-232" for dual-model umbrellas; map to the primary model number.
   const overrides: Record<string, string> = {
-    "121-221": "GT-121",
-    "132-232": "GT-132",
-    "532TK": "GT-532",
-    "537TK": "GT-537",
-    "587TK": "GT-587",
+    "121-221": "121",
+    "132-232": "132",
   };
-  return overrides[m] ?? `GT-${m}`;
+  return overrides[m] ?? m;
 }
 
 function partSku(model: string, type: RowType): string {
-  if (type === "COVER") return `GT-COVER-${model.replace(/-xx$/, "")}`;
-  return `GT-${model}`;
+  if (type === "COVER") return `COVER-${model.replace(/-xx$/, "")}`;
+  return model;
 }
 
 // ─── finish resolution ────────────────────────────────────────────────────
@@ -472,10 +470,10 @@ async function main() {
 
   // ── Deactivate the legacy grouped base placeholders ────────────────────
   const groupedBaseSkus = [
-    "GT-europeanbases",
-    "GT-steel-plate-bases",
-    "GT-wheels-bases",
-    "GT-heavy-weight-bases",
+    "europeanbases",
+    "steel-plate-bases",
+    "wheels-bases",
+    "heavy-weight-bases",
   ];
   await db
     .update(productsTable)
