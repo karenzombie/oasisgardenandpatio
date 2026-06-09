@@ -80,12 +80,25 @@ async function syncOwLeeMaterials() {
   );
 }
 
+// ── 3. Category images ───────────────────────────────────────────────────────
+
+async function syncCategoryImages() {
+  const result = await db.execute(sql`
+    UPDATE categories
+    SET image_url = '/objects/categories/umbrellas.jpg', updated_at = NOW()
+    WHERE id = 38 AND image_url IS DISTINCT FROM '/objects/categories/umbrellas.jpg'
+  `);
+  const n = Number((result as { rowCount?: number }).rowCount ?? 0);
+  console.log(`Category images: ${n} row(s) updated`);
+}
+
 // ── main ────────────────────────────────────────────────────────────────────
 
 async function main() {
   console.log("Running production data sync…");
   await syncGaltechFinishCodes();
   await syncOwLeeMaterials();
+  await syncCategoryImages();
   console.log("Done.");
   process.exit(0);
 }
