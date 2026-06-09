@@ -290,6 +290,7 @@ router.post(
             fabricGrade: fabricsTable.grade,
             fabricBrand: manufacturersTable.name,
             unitMsrp: variantGradePricesTable.msrp,
+            variantShippingSurcharge: productVariantsTable.shippingSurcharge,
           })
           .from(cartItemsTable)
           .innerJoin(
@@ -352,6 +353,10 @@ router.post(
           lines.map((l) => ({
             weightLbs: l.weight == null ? null : Number(l.weight),
             quantity: l.quantity,
+            shippingSurchargeCents:
+              l.variantShippingSurcharge == null
+                ? 0
+                : Math.round(Number(l.variantShippingSurcharge) * 100),
           })),
           pricingSettings,
           false,
@@ -476,18 +481,27 @@ router.post(
     const cart = await loadCartForCheckout(cartLookupFor(req));
 
     let subtotalCents = 0;
-    let lineInputs: { weightLbs: number | null; quantity: number }[] = [];
+    let lineInputs: {
+      weightLbs: number | null;
+      quantity: number;
+      shippingSurchargeCents: number;
+    }[] = [];
     if (cart) {
       const lines = await db
         .select({
           quantity: cartItemsTable.quantity,
           unitPrice: cartItemsTable.price,
           weight: productsTable.weight,
+          variantShippingSurcharge: productVariantsTable.shippingSurcharge,
         })
         .from(cartItemsTable)
         .innerJoin(
           productsTable,
           eq(productsTable.id, cartItemsTable.productId),
+        )
+        .leftJoin(
+          productVariantsTable,
+          eq(productVariantsTable.id, cartItemsTable.variantId),
         )
         .where(eq(cartItemsTable.cartId, cart.id));
       for (const l of lines) {
@@ -496,6 +510,10 @@ router.post(
       lineInputs = lines.map((l) => ({
         weightLbs: l.weight == null ? null : Number(l.weight),
         quantity: l.quantity,
+        shippingSurchargeCents:
+          l.variantShippingSurcharge == null
+            ? 0
+            : Math.round(Number(l.variantShippingSurcharge) * 100),
       }));
     }
 

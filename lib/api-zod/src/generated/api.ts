@@ -429,6 +429,23 @@ export const GetCatalogProductBySlugResponse = zod
               .describe(
                 "Decimal added to the base price when this variant is selected.",
               ),
+            msrp: zod
+              .string()
+              .nullable()
+              .describe(
+                "Absolute per-variant MSRP. When set together with salePrice, overrides the product base price + priceAdjustment for this variant (e.g. per-size rug pricing).",
+              ),
+            salePrice: zod
+              .string()
+              .nullable()
+              .describe(
+                "Absolute per-variant sale price. When set together with msrp, drives the displayed and line price for this variant.",
+              ),
+            shippingSurcharge: zod
+              .string()
+              .describe(
+                'Flat per-unit shipping surcharge for this variant in dollars (e.g. oversize \"truck only\" freight). \"0\" when none.',
+              ),
             displayOrder: zod.number(),
             swatchImageUrl: zod
               .string()
@@ -2500,6 +2517,23 @@ export const AdminGetProductPickerResponse = zod
           .describe(
             "Decimal added to the base price when this variant is selected.",
           ),
+        msrp: zod
+          .string()
+          .nullable()
+          .describe(
+            "Absolute per-variant MSRP. When set together with salePrice, overrides the product base price + priceAdjustment for this variant (e.g. per-size rug pricing).",
+          ),
+        salePrice: zod
+          .string()
+          .nullable()
+          .describe(
+            "Absolute per-variant sale price. When set together with msrp, drives the displayed and line price for this variant.",
+          ),
+        shippingSurcharge: zod
+          .string()
+          .describe(
+            'Flat per-unit shipping surcharge for this variant in dollars (e.g. oversize \"truck only\" freight). \"0\" when none.',
+          ),
         displayOrder: zod.number(),
         swatchImageUrl: zod
           .string()
@@ -2822,6 +2856,23 @@ export const AdminGetProductVariantsResponse = zod.object({
       variantName: zod.string(),
       optionLabel: zod.string(),
       priceAdjustment: zod.string(),
+      msrp: zod
+        .string()
+        .nullable()
+        .describe(
+          "Absolute per-variant MSRP. When set with salePrice, overrides base price + priceAdjustment for this variant.",
+        ),
+      salePrice: zod
+        .string()
+        .nullable()
+        .describe(
+          "Absolute per-variant sale price. When set with msrp, drives the line\/displayed price for this variant.",
+        ),
+      shippingSurcharge: zod
+        .string()
+        .describe(
+          'Flat per-unit shipping surcharge for this variant in dollars (e.g. oversize \"truck only\" freight). \"0\" when none.',
+        ),
       notes: zod.string().nullable(),
       minOrderQty: zod.number().nullable(),
       excludeStripeFabrics: zod.boolean(),
@@ -2861,6 +2912,24 @@ export const AdminUpdateProductVariantsBody = zod.object({
         variantName: zod.string(),
         optionLabel: zod.string(),
         priceAdjustment: zod.string(),
+        msrp: zod
+          .string()
+          .nullish()
+          .describe(
+            "Absolute per-variant MSRP. Send with salePrice to enable absolute per-variant pricing; null\/omit to use base price + priceAdjustment.",
+          ),
+        salePrice: zod
+          .string()
+          .nullish()
+          .describe(
+            "Absolute per-variant sale price. Send with msrp to enable absolute per-variant pricing.",
+          ),
+        shippingSurcharge: zod
+          .string()
+          .nullish()
+          .describe(
+            'Flat per-unit shipping surcharge in dollars (e.g. oversize \"truck only\" freight). Omit\/null\/\"\" for none.',
+          ),
         notes: zod.string().nullish(),
         minOrderQty: zod.number().nullish(),
         excludeStripeFabrics: zod.boolean().optional(),
@@ -2896,6 +2965,23 @@ export const AdminUpdateProductVariantsResponse = zod.object({
       variantName: zod.string(),
       optionLabel: zod.string(),
       priceAdjustment: zod.string(),
+      msrp: zod
+        .string()
+        .nullable()
+        .describe(
+          "Absolute per-variant MSRP. When set with salePrice, overrides base price + priceAdjustment for this variant.",
+        ),
+      salePrice: zod
+        .string()
+        .nullable()
+        .describe(
+          "Absolute per-variant sale price. When set with msrp, drives the line\/displayed price for this variant.",
+        ),
+      shippingSurcharge: zod
+        .string()
+        .describe(
+          'Flat per-unit shipping surcharge for this variant in dollars (e.g. oversize \"truck only\" freight). \"0\" when none.',
+        ),
       notes: zod.string().nullable(),
       minOrderQty: zod.number().nullable(),
       excludeStripeFabrics: zod.boolean(),

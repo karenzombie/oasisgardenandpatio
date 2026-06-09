@@ -15,6 +15,18 @@ export interface CatalogProductVariant {
   optionLabel: string;
   /** Decimal added to the base price when this variant is selected. */
   priceAdjustment: string;
+  /**
+   * Absolute per-variant MSRP. When set together with salePrice, overrides the product base price + priceAdjustment for this variant (e.g. per-size rug pricing).
+   * @nullable
+   */
+  msrp: string | null;
+  /**
+   * Absolute per-variant sale price. When set together with msrp, drives the displayed and line price for this variant.
+   * @nullable
+   */
+  salePrice: string | null;
+  /** Flat per-unit shipping surcharge for this variant in dollars (e.g. oversize "truck only" freight). "0" when none. */
+  shippingSurcharge: string;
   displayOrder: number;
   /**
    * Public URL of the matching finish swatch image, if one exists for this finish name.

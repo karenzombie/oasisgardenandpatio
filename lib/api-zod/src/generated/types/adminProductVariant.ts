@@ -13,6 +13,18 @@ export interface AdminProductVariant {
   variantName: string;
   optionLabel: string;
   priceAdjustment: string;
+  /**
+   * Absolute per-variant MSRP. When set with salePrice, overrides base price + priceAdjustment for this variant.
+   * @nullable
+   */
+  msrp: string | null;
+  /**
+   * Absolute per-variant sale price. When set with msrp, drives the line/displayed price for this variant.
+   * @nullable
+   */
+  salePrice: string | null;
+  /** Flat per-unit shipping surcharge for this variant in dollars (e.g. oversize "truck only" freight). "0" when none. */
+  shippingSurcharge: string;
   /** @nullable */
   notes: string | null;
   /** @nullable */

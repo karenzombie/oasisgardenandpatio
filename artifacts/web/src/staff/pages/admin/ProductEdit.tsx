@@ -251,6 +251,9 @@ export default function ProductEdit() {
     variantName: string;
     optionLabel: string;
     priceAdjustment: string;
+    msrp: string;
+    salePrice: string;
+    shippingSurcharge: string;
     notes: string;
     minOrderQty: string;
     excludeStripeFabrics: boolean;
@@ -318,6 +321,9 @@ export default function ProductEdit() {
             variantName: v.variantName,
             optionLabel: v.optionLabel,
             priceAdjustment: v.priceAdjustment,
+            msrp: v.msrp ?? "",
+            salePrice: v.salePrice ?? "",
+            shippingSurcharge: v.shippingSurcharge ?? "0",
             notes: v.notes ?? "",
             minOrderQty: v.minOrderQty != null ? String(v.minOrderQty) : "",
             excludeStripeFabrics: v.excludeStripeFabrics,
@@ -690,6 +696,9 @@ export default function ProductEdit() {
                 variantName: v.variantName.trim(),
                 optionLabel: v.optionLabel.trim() || "Option",
                 priceAdjustment: v.priceAdjustment.trim() || "0",
+                msrp: v.msrp.trim() === "" ? null : v.msrp.trim(),
+                salePrice: v.salePrice.trim() === "" ? null : v.salePrice.trim(),
+                shippingSurcharge: v.shippingSurcharge.trim() || "0",
                 notes: v.notes.trim() === "" ? null : v.notes.trim(),
                 minOrderQty:
                   v.minOrderQty.trim() === ""
@@ -1625,6 +1634,55 @@ export default function ProductEdit() {
                           />
                         </div>
                         <div>
+                          <Label>MSRP</Label>
+                          <Input
+                            placeholder="Absolute price (overrides base)"
+                            value={v.msrp}
+                            onChange={(e) =>
+                              setVariants((cur) =>
+                                cur.map((x, i) =>
+                                  i === vi ? { ...x, msrp: e.target.value } : x,
+                                ),
+                              )
+                            }
+                          />
+                        </div>
+                        <div>
+                          <Label>Sale price</Label>
+                          <Input
+                            placeholder="Optional; blank = no sale"
+                            value={v.salePrice}
+                            onChange={(e) =>
+                              setVariants((cur) =>
+                                cur.map((x, i) =>
+                                  i === vi
+                                    ? { ...x, salePrice: e.target.value }
+                                    : x,
+                                ),
+                              )
+                            }
+                          />
+                        </div>
+                        <div>
+                          <Label>Shipping surcharge</Label>
+                          <Input
+                            placeholder="0.00"
+                            value={v.shippingSurcharge}
+                            onChange={(e) =>
+                              setVariants((cur) =>
+                                cur.map((x, i) =>
+                                  i === vi
+                                    ? {
+                                        ...x,
+                                        shippingSurcharge: e.target.value,
+                                      }
+                                    : x,
+                                ),
+                              )
+                            }
+                          />
+                        </div>
+                        <div>
                           <Label>Min order qty</Label>
                           <Input
                             type="number"
@@ -1856,6 +1914,9 @@ export default function ProductEdit() {
                       variantName: "",
                       optionLabel: "Option",
                       priceAdjustment: "0",
+                      msrp: "",
+                      salePrice: "",
+                      shippingSurcharge: "0",
                       notes: "",
                       minOrderQty: "",
                       excludeStripeFabrics: false,

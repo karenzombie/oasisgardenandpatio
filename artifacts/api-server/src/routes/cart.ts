@@ -297,6 +297,9 @@ router.post(
     }
 
     let variantPriceAdj = 0;
+    // Absolute per-variant line price (e.g. per-size rugs). When set, it
+    // replaces base price + priceAdjustment for the snapshot below.
+    let variantAbsoluteBase: number | null = null;
     // Grade-mode state. Populated only for grade-priced products (Frankford):
     // when a variant carries per-grade prices, the line price is driven by the
     // selected fabric's grade rather than base price + adjustment.
@@ -311,6 +314,8 @@ router.post(
         .select({
           id: productVariantsTable.id,
           priceAdjustment: productVariantsTable.priceAdjustment,
+          msrp: productVariantsTable.msrp,
+          salePrice: productVariantsTable.salePrice,
           minOrderQty: productVariantsTable.minOrderQty,
           excludeStripeFabrics: productVariantsTable.excludeStripeFabrics,
         })
@@ -330,6 +335,14 @@ router.post(
         return;
       }
       variantPriceAdj = Number(variant.priceAdjustment ?? 0);
+      // Absolute per-variant pricing (e.g. per-size rugs): when the variant
+      // carries its own MSRP, the line price is the variant's sale price (or
+      // MSRP when there's no sale) and the product base price + priceAdjustment
+      // are NOT applied. Legacy variants leave msrp null and keep base + adj.
+      if (variant.msrp != null) {
+        const vSale = variant.salePrice != null ? Number(variant.salePrice) : 0;
+        variantAbsoluteBase = vSale > 0 ? vSale : Number(variant.msrp);
+      }
       variantNotes = {
         minOrderQty: variant.minOrderQty ?? null,
         excludeStripeFabrics: variant.excludeStripeFabrics ?? false,
@@ -507,6 +520,11 @@ router.post(
       // Grade-priced line: price is the full per-grade price (already includes
       // the configuration). No base price or variant adjustment is added.
       snapshotPrice = Number(gradeLinePrice).toFixed(2);
+    } else if (variantAbsoluteBase !== null) {
+      // Absolute per-variant line (e.g. per-size rug): use the variant's own
+      // sale/MSRP price. Base price + variant adjustment are not applied; any
+      // fabric upcharge (0 for products without fabrics) is still honored.
+      snapshotPrice = (variantAbsoluteBase + fabricUpcharge).toFixed(2);
     } else {
       // Frame-only orders use frameOnlyPrice; otherwise fall through to
       // salePrice → price as usual. Variant price adjustments still apply

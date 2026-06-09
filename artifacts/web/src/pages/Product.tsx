@@ -300,6 +300,21 @@ export default function Product() {
           : data.price) ?? 0,
       );
   const variantAdj = Number(selectedVariant?.priceAdjustment ?? 0);
+  // Absolute per-variant pricing (e.g. per-size rugs). When the selected
+  // variant carries its own MSRP, it fully overrides the product base price and
+  // the variant price adjustment. Legacy variants leave msrp null.
+  const variantHasAbsolute =
+    selectedVariant?.msrp != null && String(selectedVariant.msrp) !== "";
+  const variantMsrp = variantHasAbsolute
+    ? Number(selectedVariant!.msrp)
+    : null;
+  const variantSale =
+    variantHasAbsolute &&
+    selectedVariant!.salePrice != null &&
+    Number(selectedVariant!.salePrice) > 0
+      ? Number(selectedVariant!.salePrice)
+      : null;
+  const variantSurcharge = Number(selectedVariant?.shippingSurcharge ?? 0);
   // Treasure Garden + Sunbrella grade upcharge (B +$100, C +$190 per item).
   // Only applies once a fabric is chosen and not when buying frame-only.
   const fabricUpcharge =
@@ -310,7 +325,17 @@ export default function Product() {
           selectedFabric.grade,
         )
       : 0;
-  const effectivePrice = basePrice + variantAdj + fabricUpcharge;
+  const effectivePrice = variantHasAbsolute
+    ? (variantSale ?? variantMsrp ?? 0) + fabricUpcharge
+    : basePrice + variantAdj + fabricUpcharge;
+  // Strikethrough display: absolute variants show their own MSRP vs sale;
+  // otherwise fall back to the product-level sale logic.
+  const showStrikethrough = variantHasAbsolute
+    ? variantSale != null && variantMsrp != null && variantMsrp > variantSale
+    : Boolean(onSale) && !frameOnly;
+  const strikePrice = variantHasAbsolute
+    ? (variantMsrp ?? 0) + fabricUpcharge
+    : Number(data.price) + fabricUpcharge;
 
   // ---- Grade-mode pricing ----
   // gradeLinePrice/gradeMsrp are set once a fabric is chosen (its grade picks
@@ -477,11 +502,11 @@ export default function Product() {
               </div>
             ) : (
               <div className="mb-6">
-                {onSale && !frameOnly ? (
+                {showStrikethrough ? (
                   <div className="flex items-baseline gap-3 flex-wrap">
                     <span className="text-muted-foreground">
                       <span className="text-xs uppercase tracking-widest mr-1.5">MSRP</span>
-                      <span className="line-through text-lg">{formatMoney(Number(data.price) + fabricUpcharge)}</span>
+                      <span className="line-through text-lg">{formatMoney(strikePrice)}</span>
                     </span>
                     <span className="text-primary font-bold text-3xl md:text-4xl">{formatMoney(effectivePrice)}</span>
                   </div>
@@ -492,6 +517,12 @@ export default function Product() {
                   <span className="text-sm text-muted-foreground mt-1 block">
                     ({variantAdj > 0 ? "+" : ""}
                     {formatMoney(variantAdj)} for {selectedVariant?.name})
+                  </span>
+                ) : null}
+                {variantSurcharge > 0 ? (
+                  <span className="text-sm text-muted-foreground mt-1 block">
+                    + {formatMoney(variantSurcharge)} oversized delivery surcharge
+                    {selectedVariant?.name ? ` (${selectedVariant.name})` : ""}, applied at checkout
                   </span>
                 ) : null}
               </div>

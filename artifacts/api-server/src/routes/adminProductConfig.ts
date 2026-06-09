@@ -1320,6 +1320,9 @@ async function loadVariantsConfig(productId: number) {
       variantName: productVariantsTable.variantName,
       optionLabel: productVariantsTable.optionLabel,
       priceAdjustment: productVariantsTable.priceAdjustment,
+      msrp: productVariantsTable.msrp,
+      salePrice: productVariantsTable.salePrice,
+      shippingSurcharge: productVariantsTable.shippingSurcharge,
       notes: productVariantsTable.notes,
       minOrderQty: productVariantsTable.minOrderQty,
       excludeStripeFabrics: productVariantsTable.excludeStripeFabrics,
@@ -1450,6 +1453,49 @@ router.put(
         return;
       }
       if (
+        v.msrp != null &&
+        v.msrp.trim() !== "" &&
+        !money.test(v.msrp.trim())
+      ) {
+        res.status(400).json({
+          error: `Invalid MSRP for variant "${v.variantSku}"`,
+        });
+        return;
+      }
+      if (
+        v.salePrice != null &&
+        v.salePrice.trim() !== "" &&
+        !money.test(v.salePrice.trim())
+      ) {
+        res.status(400).json({
+          error: `Invalid sale price for variant "${v.variantSku}"`,
+        });
+        return;
+      }
+      // Absolute per-variant pricing is keyed on MSRP across PDP/cart/checkout.
+      // A sale price without an MSRP would be silently ignored (falling back to
+      // base pricing), so reject that ambiguous state rather than misprice.
+      {
+        const hasMsrp = v.msrp != null && v.msrp.trim() !== "";
+        const hasSale = v.salePrice != null && v.salePrice.trim() !== "";
+        if (hasSale && !hasMsrp) {
+          res.status(400).json({
+            error: `Variant "${v.variantSku}" has a sale price but no MSRP. Set an MSRP to enable per-variant pricing, or clear the sale price.`,
+          });
+          return;
+        }
+      }
+      if (
+        v.shippingSurcharge != null &&
+        v.shippingSurcharge.trim() !== "" &&
+        !money.test(v.shippingSurcharge.trim())
+      ) {
+        res.status(400).json({
+          error: `Invalid shipping surcharge for variant "${v.variantSku}"`,
+        });
+        return;
+      }
+      if (
         v.minOrderQty != null &&
         (!Number.isInteger(v.minOrderQty) || v.minOrderQty < 0)
       ) {
@@ -1508,6 +1554,16 @@ router.put(
             variantName: v.variantName.trim(),
             optionLabel: v.optionLabel.trim() || "Option",
             priceAdjustment: v.priceAdjustment ?? "0",
+            msrp:
+              v.msrp != null && v.msrp.trim() !== "" ? v.msrp.trim() : null,
+            salePrice:
+              v.salePrice != null && v.salePrice.trim() !== ""
+                ? v.salePrice.trim()
+                : null,
+            shippingSurcharge:
+              v.shippingSurcharge != null && v.shippingSurcharge.trim() !== ""
+                ? v.shippingSurcharge.trim()
+                : "0",
             notes: v.notes?.trim() || null,
             minOrderQty: v.minOrderQty ?? null,
             excludeStripeFabrics: v.excludeStripeFabrics ?? false,

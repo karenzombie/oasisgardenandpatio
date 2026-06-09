@@ -6427,6 +6427,15 @@ components:
         priceAdjustment:
           type: string
           description: Decimal added to the base price when this variant is selected.
+        msrp:
+          type: ["string", "null"]
+          description: Absolute per-variant MSRP. When set together with salePrice, overrides the product base price + priceAdjustment for this variant (e.g. per-size rug pricing).
+        salePrice:
+          type: ["string", "null"]
+          description: Absolute per-variant sale price. When set together with msrp, drives the displayed and line price for this variant.
+        shippingSurcharge:
+          type: string
+          description: Flat per-unit shipping surcharge for this variant in dollars (e.g. oversize "truck only" freight). "0" when none.
         displayOrder:
           type: integer
         swatchImageUrl:
@@ -6455,6 +6464,9 @@ components:
         - name
         - optionLabel
         - priceAdjustment
+        - msrp
+        - salePrice
+        - shippingSurcharge
         - displayOrder
         - swatchImageUrl
         - collection
@@ -8601,6 +8613,15 @@ components:
           type: string
         priceAdjustment:
           type: string
+        msrp:
+          type: ["string", "null"]
+          description: Absolute per-variant MSRP. When set with salePrice, overrides base price + priceAdjustment for this variant.
+        salePrice:
+          type: ["string", "null"]
+          description: Absolute per-variant sale price. When set with msrp, drives the line/displayed price for this variant.
+        shippingSurcharge:
+          type: string
+          description: Flat per-unit shipping surcharge for this variant in dollars (e.g. oversize "truck only" freight). "0" when none.
         notes:
           type: ["string", "null"]
         minOrderQty:
@@ -8621,6 +8642,9 @@ components:
         - variantName
         - optionLabel
         - priceAdjustment
+        - msrp
+        - salePrice
+        - shippingSurcharge
         - notes
         - minOrderQty
         - excludeStripeFabrics
@@ -8647,6 +8671,15 @@ components:
           type: string
         priceAdjustment:
           type: string
+        msrp:
+          type: ["string", "null"]
+          description: Absolute per-variant MSRP. Send with salePrice to enable absolute per-variant pricing; null/omit to use base price + priceAdjustment.
+        salePrice:
+          type: ["string", "null"]
+          description: Absolute per-variant sale price. Send with msrp to enable absolute per-variant pricing.
+        shippingSurcharge:
+          type: ["string", "null"]
+          description: Flat per-unit shipping surcharge in dollars (e.g. oversize "truck only" freight). Omit/null/"" for none.
         notes:
           type: ["string", "null"]
         minOrderQty:

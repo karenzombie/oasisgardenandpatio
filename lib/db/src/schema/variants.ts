@@ -91,6 +91,19 @@ export const productVariantsTable = pgTable(
     priceAdjustment: numeric("price_adjustment", { precision: 10, scale: 2 })
       .notNull()
       .default("0"),
+    // Absolute per-variant pricing. When BOTH are set they OVERRIDE the
+    // product base-price + priceAdjustment model for this variant. Used by
+    // size-priced products (e.g. rugs) where each size carries its own MSRP
+    // and sale price that aren't derivable from a single base + adjustment.
+    // Null on legacy variants, which keep the base + adjustment model.
+    msrp: numeric("msrp", { precision: 10, scale: 2 }),
+    salePrice: numeric("sale_price", { precision: 10, scale: 2 }),
+    // Flat per-unit shipping surcharge in dollars for this SKU (e.g. an
+    // oversize "truck only" freight fee). Added on top of computed shipping
+    // for each unit of this variant ordered. Defaults to 0 (no surcharge).
+    shippingSurcharge: numeric("shipping_surcharge", { precision: 10, scale: 2 })
+      .notNull()
+      .default("0"),
     // Free-text vendor note for this specific SKU (e.g. lead-time warnings).
     // Surfaced as an inline callout on the product page.
     notes: text("notes"),

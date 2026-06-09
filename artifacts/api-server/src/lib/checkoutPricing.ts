@@ -116,6 +116,13 @@ export interface ShippableLine {
   /** Per-unit weight in pounds; null/undefined treated as a 5-lb default. */
   weightLbs: number | null | undefined;
   quantity: number;
+  /**
+   * Flat per-unit shipping surcharge in cents for this line (e.g. an oversize
+   * "truck only" freight fee carried on a product variant). Added on top of
+   * the computed shipping cost for every unit ordered. Null/undefined/0 means
+   * no surcharge. Never charged when the order ships to the store.
+   */
+  shippingSurchargeCents?: number | null;
 }
 
 const DEFAULT_LINE_WEIGHT_LBS = 5;
@@ -130,6 +137,24 @@ export function totalCartWeight(lines: ShippableLine[]): number {
     total += w * Math.max(0, l.quantity);
   }
   return total;
+}
+
+/**
+ * Sum of per-unit shipping surcharges across all lines, in cents. These are
+ * mandatory freight fees (e.g. oversize "truck only" items) added on top of
+ * normal shipping whenever the customer is charged shipping at all.
+ */
+export function totalShippingSurchargeCents(lines: ShippableLine[]): number {
+  let total = 0;
+  for (const l of lines) {
+    const s =
+      l.shippingSurchargeCents == null ||
+      !Number.isFinite(Number(l.shippingSurchargeCents))
+        ? 0
+        : Number(l.shippingSurchargeCents);
+    total += s * Math.max(0, l.quantity);
+  }
+  return Math.round(total);
 }
 
 function pickTier(weightLbs: number, tiers: ShippingTier[]): ShippingTier {
@@ -167,6 +192,11 @@ export function computeShipping(
 ): ShippingComputation {
   const zone = getShippingZone(state);
   const weightLbs = totalCartWeight(lines);
+  // Mandatory oversize freight (e.g. "truck only" rug sizes). Charged on top of
+  // every customer-facing shipping mode — including free-shipping promotions —
+  // because it reflects an unavoidable carrier cost. Only waived when the order
+  // ships to the store (vendor → Oasis, no customer shipping leg).
+  const surchargeCents = totalShippingSurchargeCents(lines);
 
   if (shipToStore) {
     return {
@@ -181,7 +211,7 @@ export function computeShipping(
 
   if (settings.shippingMode === "free") {
     return {
-      cents: 0,
+      cents: surchargeCents,
       weightLbs,
       zone,
       tierMaxWeightLbs: null,
@@ -196,7 +226,7 @@ export function computeShipping(
     subtotalDollars >= settings.freeShippingThreshold;
   if (freeShippingApplied) {
     return {
-      cents: 0,
+      cents: surchargeCents,
       weightLbs,
       zone,
       tierMaxWeightLbs: null,
@@ -208,7 +238,7 @@ export function computeShipping(
   if (settings.shippingMode === "flat_per_item") {
     const totalQty = lines.reduce((sum, l) => sum + Math.max(0, l.quantity), 0);
     return {
-      cents: roundCents(totalQty * settings.flatShippingRate * 100),
+      cents: roundCents(totalQty * settings.flatShippingRate * 100) + surchargeCents,
       weightLbs,
       zone,
       tierMaxWeightLbs: null,
@@ -219,7 +249,7 @@ export function computeShipping(
 
   if (settings.shippingMode === "percentage") {
     return {
-      cents: roundCents(subtotalCents * settings.shippingPercentage),
+      cents: roundCents(subtotalCents * settings.shippingPercentage) + surchargeCents,
       weightLbs,
       zone,
       tierMaxWeightLbs: null,
@@ -233,7 +263,7 @@ export function computeShipping(
   const handlingCents = roundCents(settings.flatShippingRate * 100);
   const carrierCents = roundCents(tier.baseCents * zone.multiplier);
   return {
-    cents: carrierCents + handlingCents,
+    cents: carrierCents + handlingCents + surchargeCents,
     weightLbs,
     zone,
     tierMaxWeightLbs: Number.isFinite(tier.maxWeightLbs)

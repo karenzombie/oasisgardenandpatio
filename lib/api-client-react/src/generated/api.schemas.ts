@@ -1286,6 +1286,18 @@ export interface CatalogProductVariant {
   optionLabel: string;
   /** Decimal added to the base price when this variant is selected. */
   priceAdjustment: string;
+  /**
+   * Absolute per-variant MSRP. When set together with salePrice, overrides the product base price + priceAdjustment for this variant (e.g. per-size rug pricing).
+   * @nullable
+   */
+  msrp: string | null;
+  /**
+   * Absolute per-variant sale price. When set together with msrp, drives the displayed and line price for this variant.
+   * @nullable
+   */
+  salePrice: string | null;
+  /** Flat per-unit shipping surcharge for this variant in dollars (e.g. oversize "truck only" freight). "0" when none. */
+  shippingSurcharge: string;
   displayOrder: number;
   /**
    * Public URL of the matching finish swatch image, if one exists for this finish name.
@@ -3590,6 +3602,18 @@ export interface AdminProductVariant {
   variantName: string;
   optionLabel: string;
   priceAdjustment: string;
+  /**
+   * Absolute per-variant MSRP. When set with salePrice, overrides base price + priceAdjustment for this variant.
+   * @nullable
+   */
+  msrp: string | null;
+  /**
+   * Absolute per-variant sale price. When set with msrp, drives the line/displayed price for this variant.
+   * @nullable
+   */
+  salePrice: string | null;
+  /** Flat per-unit shipping surcharge for this variant in dollars (e.g. oversize "truck only" freight). "0" when none. */
+  shippingSurcharge: string;
   /** @nullable */
   notes: string | null;
   /** @nullable */
@@ -3609,6 +3633,21 @@ export interface AdminProductVariantInput {
   variantName: string;
   optionLabel: string;
   priceAdjustment: string;
+  /**
+   * Absolute per-variant MSRP. Send with salePrice to enable absolute per-variant pricing; null/omit to use base price + priceAdjustment.
+   * @nullable
+   */
+  msrp?: string | null;
+  /**
+   * Absolute per-variant sale price. Send with msrp to enable absolute per-variant pricing.
+   * @nullable
+   */
+  salePrice?: string | null;
+  /**
+   * Flat per-unit shipping surcharge in dollars (e.g. oversize "truck only" freight). Omit/null/"" for none.
+   * @nullable
+   */
+  shippingSurcharge?: string | null;
   /** @nullable */
   notes?: string | null;
   /** @nullable */
