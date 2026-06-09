@@ -15,9 +15,17 @@ import { getCategoryImage } from "@/lib/categoryImages";
 import { WishlistButton } from "@/components/WishlistButton";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const PAGE_SIZE_API = 60;
 const PAGE_SIZE_DISPLAY = 24;
+const ALL_COLLECTIONS = "__all__";
 
 /**
  * Collection = the product name's FIRST WORD, but only when at least 2 products
@@ -339,20 +347,29 @@ export default function ManufacturerProducts() {
                 <label className="text-xs uppercase tracking-widest text-muted-foreground block">
                   Collection
                 </label>
-                <select
-                  value={activeCollection}
-                  onChange={(e) =>
-                    updateSearch({ collection: e.target.value || null, page: "1" })
+                <Select
+                  value={activeCollection || ALL_COLLECTIONS}
+                  onValueChange={(v) =>
+                    updateSearch({
+                      collection: v === ALL_COLLECTIONS ? null : v,
+                      page: "1",
+                    })
                   }
-                  className={selectClass}
                 >
-                  <option value="">All collections</option>
-                  {collections.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className={selectClass}>
+                    <SelectValue placeholder="All collections" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ALL_COLLECTIONS}>
+                      All collections
+                    </SelectItem>
+                    {collections.map((c) => (
+                      <SelectItem key={c} value={c}>
+                        {c}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           )}
