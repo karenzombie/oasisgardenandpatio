@@ -1,13 +1,17 @@
 import { Link, useRoute, useLocation, useSearch } from "wouter";
 import { useMemo } from "react";
+import { useQueries } from "@tanstack/react-query";
 import { X, SlidersHorizontal } from "lucide-react";
 import {
   useListCatalogProducts,
   useListManufacturers,
+  useListCategories,
+  listCatalogProducts,
   getListCatalogProductsQueryKey,
 } from "@workspace/api-client-react";
-import type { CatalogProduct } from "@workspace/api-client-react";
+import type { CatalogProduct, Category } from "@workspace/api-client-react";
 import { getBrandLogo } from "@/lib/brandLogos";
+import { getCategoryImage } from "@/lib/categoryImages";
 import { WishlistButton } from "@/components/WishlistButton";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -16,50 +20,23 @@ const PAGE_SIZE_API = 60;
 const PAGE_SIZE_DISPLAY = 24;
 
 /**
- * For each product name, find the longest prefix (1–N-1 words) shared by at
- * least 2 products. That shared prefix is the "collection".
+ * Collection = the product name's FIRST WORD, but only when at least 2 products
+ * in this manufacturer share that first word. Products whose first word is
+ * unique get no collection.
  */
 function buildCollectionMap(names: string[]): Map<string, string> {
-  const prefixCount = new Map<string, number>();
+  const firstWordCount = new Map<string, number>();
   for (const name of names) {
-    const words = name.split(" ");
-    for (let len = 1; len < words.length; len++) {
-      const prefix = words.slice(0, len).join(" ");
-      prefixCount.set(prefix, (prefixCount.get(prefix) ?? 0) + 1);
-    }
+    const first = name.trim().split(/\s+/)[0];
+    if (first) firstWordCount.set(first, (firstWordCount.get(first) ?? 0) + 1);
   }
-
-  const validPrefixes = [...prefixCount.entries()]
-    .filter(([, count]) => count >= 2)
-    .map(([prefix]) => prefix)
-    .sort((a, b) => b.length - a.length);
 
   const result = new Map<string, string>();
   for (const name of names) {
-    const words = name.split(" ");
-    let match = "";
-    for (let len = words.length - 1; len >= 1; len--) {
-      const prefix = words.slice(0, len).join(" ");
-      if (validPrefixes.includes(prefix)) {
-        match = prefix;
-        break;
-      }
-    }
-    result.set(name, match);
+    const first = name.trim().split(/\s+/)[0] ?? "";
+    result.set(name, (firstWordCount.get(first) ?? 0) >= 2 ? first : "");
   }
   return result;
-}
-
-function deriveType(
-  product: CatalogProduct,
-  collectionMap: Map<string, string>,
-): string {
-  if (product.categoryName) return product.categoryName;
-  const collection = collectionMap.get(product.name) ?? "";
-  if (collection && product.name.startsWith(collection)) {
-    return product.name.slice(collection.length).trim();
-  }
-  return "";
 }
 
 function formatMoney(v: string | null | undefined): string {
@@ -84,7 +61,19 @@ export default function ManufacturerProducts() {
   const { data: manufacturers } = useListManufacturers();
   const manufacturer = manufacturers?.find((m) => m.slug === slug);
 
-  const { data: page1Data, isLoading: loading1 } = useListCatalogProducts({
+  const { data: categories } = useListCategories();
+  const categoryBySlug = useMemo(() => {
+    const m = new Map<string, Category>();
+    for (const c of categories ?? []) m.set(c.slug, c);
+    return m;
+  }, [categories]);
+
+  // Page 1 determines how many total pages exist for this manufacturer.
+  const {
+    data: page1Data,
+    isLoading: loading1,
+    error: page1Error,
+  } = useListCatalogProducts({
     manufacturerSlug: slug,
     sort: "name_asc",
     page: 1,
@@ -92,31 +81,44 @@ export default function ManufacturerProducts() {
   });
 
   const total = page1Data?.total ?? 0;
+  const pageCount = Math.ceil(total / PAGE_SIZE_API);
 
-  const p2Params = { manufacturerSlug: slug, sort: "name_asc" as const, page: 2, pageSize: PAGE_SIZE_API };
-  const { data: page2Data, isLoading: loading2 } = useListCatalogProducts(
-    p2Params,
-    { query: { enabled: total > PAGE_SIZE_API, queryKey: getListCatalogProductsQueryKey(p2Params) } },
+  // Fetch every remaining page (2..N) so collection/type filters are built from
+  // the manufacturer's full catalog, not just the first page.
+  const restPages = useMemo(
+    () => (pageCount > 1 ? Array.from({ length: pageCount - 1 }, (_, i) => i + 2) : []),
+    [pageCount],
   );
 
-  const p3Params = { manufacturerSlug: slug, sort: "name_asc" as const, page: 3, pageSize: PAGE_SIZE_API };
-  const { data: page3Data, isLoading: loading3 } = useListCatalogProducts(
-    p3Params,
-    { query: { enabled: total > PAGE_SIZE_API * 2, queryKey: getListCatalogProductsQueryKey(p3Params) } },
-  );
+  const restQueries = useQueries({
+    queries: restPages.map((page) => {
+      const p = {
+        manufacturerSlug: slug,
+        sort: "name_asc" as const,
+        page,
+        pageSize: PAGE_SIZE_API,
+      };
+      return {
+        queryKey: getListCatalogProductsQueryKey(p),
+        queryFn: () => listCatalogProducts(p),
+        enabled: slug.length > 0 && total > 0,
+      };
+    }),
+  });
 
-  const isLoading =
-    loading1 ||
-    (total > PAGE_SIZE_API && loading2) ||
-    (total > PAGE_SIZE_API * 2 && loading3);
+  const restLoading = restQueries.some((r) => r.isLoading && r.fetchStatus !== "idle");
+  const isLoading = loading1 || restLoading;
+  // If any catalog page fails, the manufacturer's collections/types would be
+  // built from a partial catalog. Surface that as a hard error instead of
+  // silently rendering incomplete filters.
+  const loadError = page1Error != null || restQueries.some((r) => r.isError);
 
   const allProducts = useMemo<CatalogProduct[]>(() => {
     return [
       ...(page1Data?.products ?? []),
-      ...(page2Data?.products ?? []),
-      ...(page3Data?.products ?? []),
+      ...restQueries.flatMap((r) => r.data?.products ?? []),
     ];
-  }, [page1Data, page2Data, page3Data]);
+  }, [page1Data, restQueries]);
 
   const collectionMap = useMemo(
     () => buildCollectionMap(allProducts.map((p) => p.name)),
@@ -132,14 +134,30 @@ export default function ManufacturerProducts() {
     return [...set].sort();
   }, [allProducts, collectionMap]);
 
+  // Types are the real product categories present in this manufacturer's
+  // catalog, rendered as image tiles like the homepage category grid.
   const types = useMemo(() => {
-    const set = new Set<string>();
+    const seen = new Map<string, { category: Category; count: number }>();
     for (const p of allProducts) {
-      const t = deriveType(p, collectionMap);
-      if (t) set.add(t);
+      if (!p.categorySlug) continue;
+      const cat =
+        categoryBySlug.get(p.categorySlug) ??
+        ({
+          id: -1,
+          name: p.categoryName ?? p.categorySlug,
+          slug: p.categorySlug,
+          parentId: null,
+          imageUrl: null,
+          displayOrder: 0,
+        } as Category);
+      const entry = seen.get(cat.slug);
+      if (entry) entry.count += 1;
+      else seen.set(cat.slug, { category: cat, count: 1 });
     }
-    return [...set].sort();
-  }, [allProducts, collectionMap]);
+    return [...seen.values()].sort((a, b) =>
+      a.category.name.localeCompare(b.category.name),
+    );
+  }, [allProducts, categoryBySlug]);
 
   const filtered = useMemo(() => {
     return allProducts.filter((p) => {
@@ -147,7 +165,7 @@ export default function ManufacturerProducts() {
         if ((collectionMap.get(p.name) ?? "") !== activeCollection) return false;
       }
       if (activeType) {
-        if (deriveType(p, collectionMap) !== activeType) return false;
+        if (p.categorySlug !== activeType) return false;
       }
       return true;
     });
@@ -172,10 +190,12 @@ export default function ManufacturerProducts() {
     setLocation(qs ? `/manufacturers/${slug}?${qs}` : `/manufacturers/${slug}`);
   }
 
+  const activeTypeName =
+    types.find((t) => t.category.slug === activeType)?.category.name ?? activeType;
+
   const activeFilterCount = (activeCollection ? 1 : 0) + (activeType ? 1 : 0);
   const brandLogo = getBrandLogo(manufacturer?.name ?? "");
-  const displayName =
-    manufacturer?.name ?? slug.replace(/-/g, " ");
+  const displayName = manufacturer?.name ?? slug.replace(/-/g, " ");
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-7xl">
@@ -207,13 +227,89 @@ export default function ManufacturerProducts() {
           </h1>
         </div>
         <p className="text-muted-foreground text-sm shrink-0">
-          {isLoading
-            ? "Loading…"
-            : `${totalFiltered} ${totalFiltered === 1 ? "product" : "products"}`}
+          {loadError
+            ? ""
+            : isLoading
+              ? "Loading…"
+              : `${totalFiltered} ${totalFiltered === 1 ? "product" : "products"}`}
         </p>
       </div>
 
-      {!isLoading && (collections.length > 0 || types.length > 0) && (
+      {/* Type tiles — real product categories, styled like the homepage grid */}
+      {!isLoading && !loadError && types.length > 0 && (
+        <div className="mb-10">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-serif text-2xl">Shop by Type</h2>
+            {activeType && (
+              <button
+                onClick={() => updateSearch({ type: null, page: "1" })}
+                className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+              >
+                <X className="h-3 w-3" /> Clear type
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+            {types.map(({ category, count }) => {
+              const img = getCategoryImage(category);
+              const isActive = activeType === category.slug;
+              return (
+                <button
+                  key={category.slug}
+                  onClick={() =>
+                    updateSearch({
+                      type: isActive ? null : category.slug,
+                      page: "1",
+                    })
+                  }
+                  className="group block text-left cursor-pointer"
+                  aria-pressed={isActive}
+                >
+                  <div
+                    className={`relative aspect-square overflow-hidden mb-3 bg-muted rounded-sm border-2 transition-colors ${
+                      isActive ? "border-primary" : "border-transparent"
+                    }`}
+                  >
+                    {img ? (
+                      <>
+                        <img
+                          src={img}
+                          alt={category.name}
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                          loading="lazy"
+                        />
+                        <div
+                          className={`absolute inset-0 transition-colors duration-500 ${
+                            isActive
+                              ? "bg-primary/25"
+                              : "bg-black/10 group-hover:bg-transparent"
+                          }`}
+                        />
+                      </>
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-secondary/40 text-secondary-foreground/60 font-serif text-sm tracking-widest uppercase">
+                        {category.name}
+                      </div>
+                    )}
+                  </div>
+                  <h3
+                    className={`font-serif text-base md:text-lg transition-colors flex items-center justify-between ${
+                      isActive ? "text-primary" : "group-hover:text-primary"
+                    }`}
+                  >
+                    {category.name}
+                    <span className="text-xs text-muted-foreground font-sans">
+                      {count}
+                    </span>
+                  </h3>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {!isLoading && !loadError && (collections.length > 0 || activeFilterCount > 0) && (
         <div className="mb-8 border border-border rounded-sm bg-card p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-medium text-sm uppercase tracking-widest flex items-center gap-2">
@@ -237,8 +333,8 @@ export default function ManufacturerProducts() {
             )}
           </div>
 
-          <div className="grid gap-5 sm:grid-cols-2">
-            {collections.length > 0 && (
+          {collections.length > 0 && (
+            <div className="grid gap-5 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <label className="text-xs uppercase tracking-widest text-muted-foreground block">
                   Collection
@@ -258,29 +354,8 @@ export default function ManufacturerProducts() {
                   ))}
                 </select>
               </div>
-            )}
-            {types.length > 0 && (
-              <div className="space-y-1.5">
-                <label className="text-xs uppercase tracking-widest text-muted-foreground block">
-                  Type
-                </label>
-                <select
-                  value={activeType}
-                  onChange={(e) =>
-                    updateSearch({ type: e.target.value || null, page: "1" })
-                  }
-                  className={selectClass}
-                >
-                  <option value="">All types</option>
-                  {types.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-          </div>
+            </div>
+          )}
 
           {activeFilterCount > 0 && (
             <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-border">
@@ -298,7 +373,7 @@ export default function ManufacturerProducts() {
               )}
               {activeType && (
                 <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
-                  Type: {activeType}
+                  Type: {activeTypeName}
                   <button
                     onClick={() => updateSearch({ type: null, page: "1" })}
                   >
@@ -311,7 +386,19 @@ export default function ManufacturerProducts() {
         </div>
       )}
 
-      {isLoading ? (
+      {loadError ? (
+        <div className="py-24 text-center">
+          <h3 className="font-serif text-2xl mb-3">
+            We couldn’t load this collection
+          </h3>
+          <p className="text-muted-foreground mb-4">
+            Something went wrong fetching these products. Please try again.
+          </p>
+          <Button variant="outline" onClick={() => window.location.reload()}>
+            Retry
+          </Button>
+        </div>
+      ) : isLoading ? (
         <div className="flex items-center justify-center py-24">
           <Spinner />
         </div>
