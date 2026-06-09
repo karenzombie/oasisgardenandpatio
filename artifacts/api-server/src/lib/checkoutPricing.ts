@@ -12,7 +12,7 @@ export interface ShippingTier {
 
 export interface PricingSettings {
   defaultTaxRate: number;
-  shippingMode: "flat" | "percentage" | "free";
+  shippingMode: "flat" | "flat_per_item" | "percentage" | "free";
   flatShippingRate: number;
   shippingPercentage: number;
   freeShippingThreshold: number;
@@ -31,10 +31,10 @@ const DEFAULT_TIERS: ShippingTier[] = [
 
 const DEFAULTS: PricingSettings = {
   defaultTaxRate: 0.0975,
-  shippingMode: "flat",
-  flatShippingRate: 0,
+  shippingMode: "flat_per_item",
+  flatShippingRate: 20,
   shippingPercentage: 0.1,
-  freeShippingThreshold: 1000,
+  freeShippingThreshold: 0,
   shippingTiers: DEFAULT_TIERS,
 };
 
@@ -79,7 +79,10 @@ export async function loadPricingSettings(): Promise<PricingSettings> {
 
   const mode = found.get(SETTING_KEYS.shippingMode);
   const shippingMode: PricingSettings["shippingMode"] =
-    mode === "flat" || mode === "percentage" || mode === "free"
+    mode === "flat" ||
+    mode === "flat_per_item" ||
+    mode === "percentage" ||
+    mode === "free"
       ? mode
       : DEFAULTS.shippingMode;
 
@@ -145,24 +148,36 @@ export interface ShippingComputation {
 
 /**
  * Compute shipping based on:
- *  - cart weight (sum of product weight × quantity)
- *  - destination state, mapped to a distance zone with a multiplier
- *  - the admin-configured tier table (weight → base price)
- *
- * `flatShippingRate` (when > 0) is treated as a flat handling surcharge that
- * is added on top of the carrier rate. `percentage` mode keeps the simpler
- * "X% of subtotal" model for stores that prefer it. `free` mode always
- * returns 0. The free-shipping threshold continues to waive shipping for
- * large orders regardless of mode (except `free`, which is already 0).
+ *  - `shipToStore`: when true (vendor ships to Oasis store, not direct to customer),
+ *    no customer-facing shipping fee is charged — returns $0 immediately.
+ *  - `flat_per_item` mode (default): $flatShippingRate × total item quantity.
+ *    This is the standard Oasis direct-ship charge applied per unit ordered.
+ *  - `flat` mode: carrier-style weight × zone rate plus optional handling surcharge.
+ *  - `percentage` mode: X% of merchandise subtotal.
+ *  - `free` mode: always $0.
+ *  - `freeShippingThreshold`: waives shipping when subtotal meets or exceeds the
+ *    threshold (does not apply to `free` mode which is already $0).
  */
 export function computeShipping(
   subtotalCents: number,
   state: string | null,
   lines: ShippableLine[],
   settings: PricingSettings,
+  shipToStore: boolean = false,
 ): ShippingComputation {
   const zone = getShippingZone(state);
   const weightLbs = totalCartWeight(lines);
+
+  if (shipToStore) {
+    return {
+      cents: 0,
+      weightLbs,
+      zone,
+      tierMaxWeightLbs: null,
+      baseCents: 0,
+      freeShippingApplied: false,
+    };
+  }
 
   if (settings.shippingMode === "free") {
     return {
@@ -174,6 +189,7 @@ export function computeShipping(
       freeShippingApplied: false,
     };
   }
+
   const subtotalDollars = subtotalCents / 100;
   const freeShippingApplied =
     settings.freeShippingThreshold > 0 &&
@@ -189,6 +205,18 @@ export function computeShipping(
     };
   }
 
+  if (settings.shippingMode === "flat_per_item") {
+    const totalQty = lines.reduce((sum, l) => sum + Math.max(0, l.quantity), 0);
+    return {
+      cents: roundCents(totalQty * settings.flatShippingRate * 100),
+      weightLbs,
+      zone,
+      tierMaxWeightLbs: null,
+      baseCents: 0,
+      freeShippingApplied: false,
+    };
+  }
+
   if (settings.shippingMode === "percentage") {
     return {
       cents: roundCents(subtotalCents * settings.shippingPercentage),
@@ -200,8 +228,7 @@ export function computeShipping(
     };
   }
 
-  // mode === "flat" — interpret as carrier-style weight × zone rate, with
-  // flatShippingRate as an optional handling surcharge.
+  // mode === "flat" — carrier-style weight × zone rate with optional handling surcharge.
   const tier = pickTier(weightLbs, settings.shippingTiers);
   const handlingCents = roundCents(settings.flatShippingRate * 100);
   const carrierCents = roundCents(tier.baseCents * zone.multiplier);

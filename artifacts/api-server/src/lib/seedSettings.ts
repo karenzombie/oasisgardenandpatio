@@ -10,21 +10,23 @@ const DEFAULTS: Record<string, DefaultEntry> = {
     description: "Default sales tax rate (Santa Clarita, CA). Decimal 0-1.",
   },
   [SETTING_KEYS.shippingMode]: {
-    value: "flat",
-    description: "How shipping is calculated: flat | percentage | free",
+    value: "flat_per_item",
+    description:
+      "How shipping is calculated: flat_per_item | flat | percentage | free",
   },
   [SETTING_KEYS.flatShippingRate]: {
-    value: 0,
+    value: 20,
     description:
-      "Flat handling surcharge in USD added on top of carrier rate when shipping_mode=flat",
+      "Per-item shipping fee in USD when shipping_mode=flat_per_item; or flat handling surcharge when shipping_mode=flat",
   },
   [SETTING_KEYS.shippingPercentage]: {
     value: 0.1,
     description: "Shipping as a fraction of merchandise total (0-1)",
   },
   [SETTING_KEYS.freeShippingThreshold]: {
-    value: 1000,
-    description: "Order subtotal at or above which shipping is free",
+    value: 0,
+    description:
+      "Order subtotal at or above which shipping is waived (0 = disabled)",
   },
   [SETTING_KEYS.shippingTiers]: {
     value: [

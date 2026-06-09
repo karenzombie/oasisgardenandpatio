@@ -11,6 +11,7 @@ export type SystemSettingsUpdateShippingMode =
 
 export const SystemSettingsUpdateShippingMode = {
   flat: "flat",
+  flat_per_item: "flat_per_item",
   percentage: "percentage",
   free: "free",
 } as const;

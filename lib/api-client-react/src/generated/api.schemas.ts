@@ -1684,6 +1684,7 @@ export type CheckoutQuoteResponseShippingMode =
 
 export const CheckoutQuoteResponseShippingMode = {
   flat: "flat",
+  flat_per_item: "flat_per_item",
   percentage: "percentage",
   free: "free",
 } as const;
@@ -2403,6 +2404,7 @@ export type SystemSettingsShippingMode =
 
 export const SystemSettingsShippingMode = {
   flat: "flat",
+  flat_per_item: "flat_per_item",
   percentage: "percentage",
   free: "free",
 } as const;
@@ -2446,6 +2448,7 @@ export type SystemSettingsUpdateShippingMode =
 
 export const SystemSettingsUpdateShippingMode = {
   flat: "flat",
+  flat_per_item: "flat_per_item",
   percentage: "percentage",
   free: "free",
 } as const;
@@ -3096,6 +3099,8 @@ export interface QuoteOrderPricingRequest {
   shippingState?: string | null;
   /** @nullable */
   shippingZip?: string | null;
+  /** When true, order ships to the Oasis store — no customer shipping fee applies. When false (default), direct-ship fee applies. */
+  shipToStore?: boolean;
 }
 
 export interface QuoteOrderPricingResponse {

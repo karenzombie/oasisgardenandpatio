@@ -235,7 +235,7 @@ export default function Settings() {
 
           <Panel
             title="Shipping"
-            description="How shipping fees are calculated at checkout."
+            description="How shipping fees are calculated at checkout. Applies to direct-ship online orders only — ship-to-store orders are always free."
           >
             <Field id="shipMode" label="Shipping mode">
               <Select
@@ -248,7 +248,8 @@ export default function Settings() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="flat">Flat fee</SelectItem>
+                  <SelectItem value="flat_per_item">Flat fee per item</SelectItem>
+                  <SelectItem value="flat">Flat fee (carrier weight tiers)</SelectItem>
                   <SelectItem value="percentage">
                     Percentage of subtotal
                   </SelectItem>
@@ -258,9 +259,13 @@ export default function Settings() {
             </Field>
             <Field
               id="flatRate"
-              label="Flat shipping rate"
+              label="Rate"
               suffix="USD"
-              hint="Used when mode = Flat fee"
+              hint={
+                form.shippingMode === "flat_per_item"
+                  ? "Charged per item when mode = Flat fee per item (e.g. $20 per unit)"
+                  : "Handling surcharge added on top of carrier weight-tier rate when mode = Flat fee (carrier)"
+              }
             >
               <Input
                 id="flatRate"
@@ -269,7 +274,7 @@ export default function Settings() {
                 min="0"
                 value={form.flatShippingRate}
                 onChange={(e) => update("flatShippingRate", e.target.value)}
-                disabled={form.shippingMode !== "flat"}
+                disabled={form.shippingMode !== "flat" && form.shippingMode !== "flat_per_item"}
               />
             </Field>
             <Field

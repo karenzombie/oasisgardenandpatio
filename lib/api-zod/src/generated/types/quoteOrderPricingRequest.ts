@@ -17,4 +17,6 @@ export interface QuoteOrderPricingRequest {
   shippingState?: string | null;
   /** @nullable */
   shippingZip?: string | null;
+  /** When true, order ships to the Oasis store — no customer shipping fee applies. When false (default), direct-ship fee applies. */
+  shipToStore?: boolean;
 }

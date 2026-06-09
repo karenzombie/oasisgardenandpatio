@@ -24,7 +24,7 @@ router.post(
         .json({ error: parsed.error.issues[0]?.message ?? "Invalid body" });
       return;
     }
-    const { items, shippingState, shippingZip } = parsed.data;
+    const { items, shippingState, shippingZip, shipToStore } = parsed.data;
 
     // Pre-load product weights for any items that reference a product.
     const productIds = Array.from(
@@ -66,6 +66,7 @@ router.post(
       shippingState ?? null,
       shippableLines,
       settings,
+      shipToStore ?? false,
     );
     const tax = computeTax(
       subtotalCents,

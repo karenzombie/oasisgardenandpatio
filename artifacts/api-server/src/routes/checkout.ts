@@ -354,6 +354,7 @@ router.post(
             quantity: l.quantity,
           })),
           pricingSettings,
+          false,
         );
         const tax = computeTax(
           subtotalCents,
@@ -381,6 +382,7 @@ router.post(
             billingAddressId,
             shippingMethod: data.shippingMethod ?? "standard",
             specialInstructions: data.specialInstructions ?? null,
+            shipToStore: false,
           })
           .returning();
 
@@ -504,7 +506,7 @@ router.post(
         : null;
     const zip =
       parsed.data.zip && parsed.data.zip.trim() ? parsed.data.zip.trim() : null;
-    const shipping = computeShipping(subtotalCents, state, lineInputs, settings);
+    const shipping = computeShipping(subtotalCents, state, lineInputs, settings, false);
     const tax = computeTax(subtotalCents, state, zip, settings);
     const totalCents = subtotalCents + shipping.cents + tax.cents;
 

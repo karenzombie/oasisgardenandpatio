@@ -115,10 +115,11 @@ try {
   const listBody = (await listRes.json()) as { products: Array<{ slug: string }> };
   const slug = listBody.products?.[0]?.slug;
   if (slug) {
-    const detailRes = await fetch(`${BASE}/api/catalog/product/${slug}`);
+    const detailRes = await fetch(`${BASE}/api/products/by-slug/${slug}`);
     const detail = (await detailRes.json()) as {
       images?: Array<{ url: string }>;
       fabricOptions?: Array<{ swatchImageUrl?: string }>;
+      finishes?: Array<{ swatchImageUrl?: string }>;
       primaryImageUrl?: string;
     };
     const leaking: string[] = [];
@@ -129,10 +130,14 @@ try {
       if (typeof f.swatchImageUrl === "string" && f.swatchImageUrl.startsWith("/objects/"))
         leaking.push(f.swatchImageUrl);
     }
+    for (const f of detail.finishes ?? []) {
+      if (typeof f.swatchImageUrl === "string" && f.swatchImageUrl.startsWith("/objects/"))
+        leaking.push(f.swatchImageUrl);
+    }
     if (typeof detail.primaryImageUrl === "string" && detail.primaryImageUrl.startsWith("/objects/"))
       leaking.push(detail.primaryImageUrl);
 
-    const label = `GET /api/catalog/product/${slug} — images, fabricOptions.swatchImageUrl`;
+    const label = `GET /api/products/by-slug/${slug} — images, fabricOptions, finishes`;
     if (leaking.length > 0) {
       console.error(`  FAIL  ${label}`);
       leaking.forEach((v) => console.error(`        raw URL leaked: ${v}`));

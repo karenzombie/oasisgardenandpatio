@@ -7085,7 +7085,7 @@ components:
         total: { type: string }
         shippingMode:
           type: string
-          enum: [flat, percentage, free]
+          enum: [flat, flat_per_item, percentage, free]
         freeShippingThresholdMet: { type: boolean }
         taxRate:
           type: number
@@ -7878,7 +7878,7 @@ components:
         defaultTaxRate: { type: number, minimum: 0, maximum: 1 }
         shippingMode:
           type: string
-          enum: [flat, percentage, free]
+          enum: [flat, flat_per_item, percentage, free]
         flatShippingRate: { type: number, minimum: 0 }
         shippingPercentage: { type: number, minimum: 0, maximum: 1 }
         freeShippingThreshold: { type: number, minimum: 0 }
@@ -7904,7 +7904,7 @@ components:
         defaultTaxRate: { type: number, minimum: 0, maximum: 1 }
         shippingMode:
           type: string
-          enum: [flat, percentage, free]
+          enum: [flat, flat_per_item, percentage, free]
         flatShippingRate: { type: number, minimum: 0 }
         shippingPercentage: { type: number, minimum: 0, maximum: 1 }
         freeShippingThreshold: { type: number, minimum: 0 }
@@ -8278,6 +8278,10 @@ components:
             required: [quantity, unitPrice]
         shippingState: { type: ["string", "null"], description: "2-letter US state code; tax computed only for CA" }
         shippingZip: { type: ["string", "null"] }
+        shipToStore:
+          type: boolean
+          default: false
+          description: "When true, order ships to the Oasis store — no customer shipping fee applies. When false (default), direct-ship fee applies."
       required: [items]
     QuoteOrderPricingResponse:
       type: object

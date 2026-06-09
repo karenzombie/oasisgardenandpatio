@@ -11,6 +11,7 @@ export type CheckoutQuoteResponseShippingMode =
 
 export const CheckoutQuoteResponseShippingMode = {
   flat: "flat",
+  flat_per_item: "flat_per_item",
   percentage: "percentage",
   free: "free",
 } as const;

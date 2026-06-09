@@ -820,7 +820,7 @@ export const QuoteCheckoutResponse = zod.object({
   shipping: zod.string(),
   tax: zod.string(),
   total: zod.string(),
-  shippingMode: zod.enum(["flat", "percentage", "free"]),
+  shippingMode: zod.enum(["flat", "flat_per_item", "percentage", "free"]),
   freeShippingThresholdMet: zod.boolean(),
   taxRate: zod
     .number()
@@ -7022,6 +7022,8 @@ export const adminQuoteOrderPricingBodyItemsItemUnitPriceMin = 0;
 export const adminQuoteOrderPricingBodyItemsItemDiscountAmountDefault = 0;
 export const adminQuoteOrderPricingBodyItemsItemDiscountAmountMin = 0;
 
+export const adminQuoteOrderPricingBodyShipToStoreDefault = false;
+
 export const AdminQuoteOrderPricingBody = zod.object({
   items: zod
     .array(
@@ -7043,6 +7045,12 @@ export const AdminQuoteOrderPricingBody = zod.object({
     .nullish()
     .describe("2-letter US state code; tax computed only for CA"),
   shippingZip: zod.string().nullish(),
+  shipToStore: zod
+    .boolean()
+    .default(adminQuoteOrderPricingBodyShipToStoreDefault)
+    .describe(
+      "When true, order ships to the Oasis store — no customer shipping fee applies. When false (default), direct-ship fee applies.",
+    ),
 });
 
 export const AdminQuoteOrderPricingResponse = zod.object({
@@ -8032,7 +8040,7 @@ export const AdminGetSettingsResponse = zod.object({
     .number()
     .min(adminGetSettingsResponseDefaultTaxRateMin)
     .max(adminGetSettingsResponseDefaultTaxRateMax),
-  shippingMode: zod.enum(["flat", "percentage", "free"]),
+  shippingMode: zod.enum(["flat", "flat_per_item", "percentage", "free"]),
   flatShippingRate: zod
     .number()
     .min(adminGetSettingsResponseFlatShippingRateMin),
@@ -8089,7 +8097,9 @@ export const AdminUpdateSettingsBody = zod.object({
     .min(adminUpdateSettingsBodyDefaultTaxRateMin)
     .max(adminUpdateSettingsBodyDefaultTaxRateMax)
     .optional(),
-  shippingMode: zod.enum(["flat", "percentage", "free"]).optional(),
+  shippingMode: zod
+    .enum(["flat", "flat_per_item", "percentage", "free"])
+    .optional(),
   flatShippingRate: zod
     .number()
     .min(adminUpdateSettingsBodyFlatShippingRateMin)
@@ -8149,7 +8159,7 @@ export const AdminUpdateSettingsResponse = zod.object({
     .number()
     .min(adminUpdateSettingsResponseDefaultTaxRateMin)
     .max(adminUpdateSettingsResponseDefaultTaxRateMax),
-  shippingMode: zod.enum(["flat", "percentage", "free"]),
+  shippingMode: zod.enum(["flat", "flat_per_item", "percentage", "free"]),
   flatShippingRate: zod
     .number()
     .min(adminUpdateSettingsResponseFlatShippingRateMin),
