@@ -531,6 +531,7 @@ async function main() {
         msrp: s.price.msrp,
         salePrice: s.price.sale,
         shippingSurcharge: surcharge,
+        weight: parseWeight(s.row["Weight (lbs)"]),
         displayOrder: j,
         isActive: true,
       };

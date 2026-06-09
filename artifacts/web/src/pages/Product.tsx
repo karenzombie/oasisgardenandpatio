@@ -368,18 +368,25 @@ export default function Product() {
     gradeLinePrice != null && gradeMsrp != null && gradeMsrp > gradeLinePrice;
 
   // Dynamic SKU: combine the configuration SKU with the chosen finish code and
-  // fabric item number so each unique selection has a traceable code.
-  const dynamicSku =
-    isGradeMode &&
-    (selectedVariant || selectedFinish || selectedFabric)
-      ? [
-          selectedVariant?.sku,
-          selectedFinish?.code,
-          selectedFabric?.itemNumber,
-        ]
-          .filter(Boolean)
-          .join("-") || data.sku
-      : data.sku;
+  // fabric item number so each unique selection has a traceable code. For
+  // simple (non-grade) variant products like rugs, the variant IS the SKU
+  // (e.g. each size has its own -35/-80 SKU), so show that variant's SKU.
+  const dynamicSku = isGradeMode
+    ? (selectedVariant || selectedFinish || selectedFabric
+        ? [
+            selectedVariant?.sku,
+            selectedFinish?.code,
+            selectedFabric?.itemNumber,
+          ]
+            .filter(Boolean)
+            .join("-") || data.sku
+        : data.sku)
+    : (selectedVariant?.sku ?? data.sku);
+
+  // Effective weight: size-priced products (e.g. rugs) carry a per-variant
+  // weight that differs by size, so prefer the selected variant's weight and
+  // fall back to the product-level weight.
+  const effectiveWeight = selectedVariant?.weight ?? data.weight;
 
   const variantOptionLabel =
     variants[0]?.optionLabel ?? (isGradeMode ? "Configuration" : "Variant");
@@ -1060,8 +1067,8 @@ export default function Product() {
               {data.dimensions ? (
                 <p className="text-sm mt-4"><span className="text-muted-foreground mr-2">Dimensions:</span>{data.dimensions}</p>
               ) : null}
-              {data.weight ? (
-                <p className="text-sm mt-1"><span className="text-muted-foreground mr-2">Weight:</span>{data.weight} lbs</p>
+              {effectiveWeight ? (
+                <p className="text-sm mt-1"><span className="text-muted-foreground mr-2">Weight:</span>{effectiveWeight} lbs</p>
               ) : null}
               {specImages.length > 0 ? (
                 <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">

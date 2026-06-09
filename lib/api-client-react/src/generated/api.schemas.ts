@@ -109,6 +109,7 @@ export interface AdminOrderItem {
   fabricBrandSnapshot: string | null;
   fabricGradeSnapshot: string | null;
   unitMsrpSnapshot: string | null;
+  weightSnapshot: string | null;
   /** Optional alternate vendor for this line's fabric. Null = fabric ships with the product vendor (the default). */
   fabricVendorId: number | null;
   fabricVendorName: string | null;
@@ -203,6 +204,7 @@ export interface AdminVendorOrderItem {
   productSkuSnapshot: string | null;
   variantSkuSnapshot: string | null;
   variantNameSnapshot: string | null;
+  weightSnapshot: string | null;
   fabricNameSnapshot: string | null;
   description: string;
   quantity: number;
@@ -1298,6 +1300,11 @@ export interface CatalogProductVariant {
   salePrice: string | null;
   /** Flat per-unit shipping surcharge for this variant in dollars (e.g. oversize "truck only" freight). "0" when none. */
   shippingSurcharge: string;
+  /**
+   * Per-variant shipping weight in lbs (e.g. per-size rug weight). Null falls back to the product-level weight.
+   * @nullable
+   */
+  weight: string | null;
   displayOrder: number;
   /**
    * Public URL of the matching finish swatch image, if one exists for this finish name.
@@ -3614,6 +3621,11 @@ export interface AdminProductVariant {
   salePrice: string | null;
   /** Flat per-unit shipping surcharge for this variant in dollars (e.g. oversize "truck only" freight). "0" when none. */
   shippingSurcharge: string;
+  /**
+   * Per-variant shipping weight in lbs (e.g. per-size rug weight). Null falls back to the product-level weight.
+   * @nullable
+   */
+  weight: string | null;
   /** @nullable */
   notes: string | null;
   /** @nullable */
@@ -3648,6 +3660,11 @@ export interface AdminProductVariantInput {
    * @nullable
    */
   shippingSurcharge?: string | null;
+  /**
+   * Per-variant shipping weight in lbs (e.g. per-size rug weight). Omit/null/"" to fall back to the product-level weight.
+   * @nullable
+   */
+  weight?: string | null;
   /** @nullable */
   notes?: string | null;
   /** @nullable */

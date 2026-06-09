@@ -217,6 +217,7 @@ export interface PdfVendorOrderItem {
   productSkuSnapshot: string | null;
   variantSkuSnapshot: string | null;
   variantNameSnapshot: string | null;
+  weightSnapshot: string | null;
   finishCodeSnapshot: string | null;
   finishNameSnapshot: string | null;
   fabricItemNumberSnapshot: string | null;
@@ -342,11 +343,20 @@ function fabricOption(it: PdfVendorOrderItem): string | null {
   return `${brand}${base}${grade}`;
 }
 
+function weightOption(it: PdfVendorOrderItem): string | null {
+  if (it.weightSnapshot == null || it.weightSnapshot.trim() === "") return null;
+  const n = Number(it.weightSnapshot);
+  if (!Number.isFinite(n)) return null;
+  // String(n) drops trailing ".00" so "19.00" reads as "19 lbs".
+  return `Weight: ${String(n)} lbs`;
+}
+
 function itemOptions(it: PdfVendorOrderItem): string[] {
   return [
     optionWithSku(it.variantNameSnapshot, it.variantSkuSnapshot),
     optionWithSku(it.finishNameSnapshot, it.finishCodeSnapshot),
     fabricOption(it),
+    weightOption(it),
   ].filter((v): v is string => Boolean(v));
 }
 

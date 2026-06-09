@@ -104,6 +104,11 @@ export const productVariantsTable = pgTable(
     shippingSurcharge: numeric("shipping_surcharge", { precision: 10, scale: 2 })
       .notNull()
       .default("0"),
+    // Per-variant shipping weight in lbs. Used by size-priced products (e.g.
+    // rugs) where each size weighs a different amount. Null falls back to the
+    // parent product weight. Surfaced on the PDP spec sheet (per selected
+    // size) and snapshotted onto order lines for the vendor PO.
+    weight: numeric("weight", { precision: 10, scale: 2 }),
     // Free-text vendor note for this specific SKU (e.g. lead-time warnings).
     // Surfaced as an inline callout on the product page.
     notes: text("notes"),

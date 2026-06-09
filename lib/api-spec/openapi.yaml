@@ -4957,6 +4957,7 @@ components:
         fabricBrandSnapshot: { type: string, nullable: true }
         fabricGradeSnapshot: { type: string, nullable: true }
         unitMsrpSnapshot: { type: string, nullable: true }
+        weightSnapshot: { type: string, nullable: true }
         fabricVendorId:
           type: integer
           nullable: true
@@ -4978,7 +4979,7 @@ components:
         useInventory: { type: boolean, description: "When true this line is sourced from store inventory (staff orders only)." }
         inventoryQtyUsed: { type: integer, description: "Units drawn from store inventory at order creation time. 0 when useInventory is false." }
       required:
-        [id, productId, productSkuSnapshot, variantSkuSnapshot, variantNameSnapshot, finishId, finishCodeSnapshot, finishNameSnapshot, fabricId, fabricNameSnapshot, fabricItemNumberSnapshot, fabricBrandSnapshot, fabricGradeSnapshot, unitMsrpSnapshot, fabricVendorId, fabricVendorName, fabricVendorOrderId, department, description, quantity, unitPrice, amount, discountAmount, discountReason, notes, vendorOrderId, useInventory, inventoryQtyUsed]
+        [id, productId, productSkuSnapshot, variantSkuSnapshot, variantNameSnapshot, finishId, finishCodeSnapshot, finishNameSnapshot, fabricId, fabricNameSnapshot, fabricItemNumberSnapshot, fabricBrandSnapshot, fabricGradeSnapshot, unitMsrpSnapshot, weightSnapshot, fabricVendorId, fabricVendorName, fabricVendorOrderId, department, description, quantity, unitPrice, amount, discountAmount, discountReason, notes, vendorOrderId, useInventory, inventoryQtyUsed]
     AdminOrderAddress:
       type: object
       properties:
@@ -5052,6 +5053,7 @@ components:
         productSkuSnapshot: { type: string, nullable: true }
         variantSkuSnapshot: { type: string, nullable: true }
         variantNameSnapshot: { type: string, nullable: true }
+        weightSnapshot: { type: string, nullable: true }
         fabricNameSnapshot: { type: string, nullable: true }
         description: { type: string }
         quantity: { type: integer }
@@ -5063,7 +5065,7 @@ components:
           enum: [product, fabric]
           description: "'product' = the product line on the product vendor's PO. 'fabric' = a fabric-only line that was split out to an alternate fabric vendor's PO."
       required:
-        [id, productId, productSkuSnapshot, variantSkuSnapshot, variantNameSnapshot, fabricNameSnapshot, description, quantity, unitPrice, amount, notes, kind]
+        [id, productId, productSkuSnapshot, variantSkuSnapshot, variantNameSnapshot, weightSnapshot, fabricNameSnapshot, description, quantity, unitPrice, amount, notes, kind]
     AdminVendorOrderSend:
       type: object
       properties:
@@ -6436,6 +6438,9 @@ components:
         shippingSurcharge:
           type: string
           description: Flat per-unit shipping surcharge for this variant in dollars (e.g. oversize "truck only" freight). "0" when none.
+        weight:
+          type: ["string", "null"]
+          description: Per-variant shipping weight in lbs (e.g. per-size rug weight). Null falls back to the product-level weight.
         displayOrder:
           type: integer
         swatchImageUrl:
@@ -6467,6 +6472,7 @@ components:
         - msrp
         - salePrice
         - shippingSurcharge
+        - weight
         - displayOrder
         - swatchImageUrl
         - collection
@@ -8622,6 +8628,9 @@ components:
         shippingSurcharge:
           type: string
           description: Flat per-unit shipping surcharge for this variant in dollars (e.g. oversize "truck only" freight). "0" when none.
+        weight:
+          type: ["string", "null"]
+          description: Per-variant shipping weight in lbs (e.g. per-size rug weight). Null falls back to the product-level weight.
         notes:
           type: ["string", "null"]
         minOrderQty:
@@ -8645,6 +8654,7 @@ components:
         - msrp
         - salePrice
         - shippingSurcharge
+        - weight
         - notes
         - minOrderQty
         - excludeStripeFabrics
@@ -8680,6 +8690,9 @@ components:
         shippingSurcharge:
           type: ["string", "null"]
           description: Flat per-unit shipping surcharge in dollars (e.g. oversize "truck only" freight). Omit/null/"" for none.
+        weight:
+          type: ["string", "null"]
+          description: Per-variant shipping weight in lbs (e.g. per-size rug weight). Omit/null/"" to fall back to the product-level weight.
         notes:
           type: ["string", "null"]
         minOrderQty:

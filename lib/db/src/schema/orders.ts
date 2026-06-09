@@ -174,6 +174,10 @@ export const orderItemsTable = pgTable(
       precision: 10,
       scale: 2,
     }),
+    // Per-unit shipping weight (lbs) at order time. Captured from the chosen
+    // variant's weight (or the product weight when the variant has none) so
+    // the vendor PO can list the size-specific weight even after catalog edits.
+    weightSnapshot: numeric("weight_snapshot", { precision: 10, scale: 2 }),
     vendorOrderId: integer("vendor_order_id"),
     // Companion to vendor_order_id: when fabric_vendor_id is set, the
     // line's fabric goes to a SEPARATE vendor PO (this column), while

@@ -91,6 +91,7 @@ function itemToPayload(it: OrderItem, kind: "product" | "fabric" = "product") {
     productSkuSnapshot: it.productSkuSnapshot,
     variantSkuSnapshot: it.variantSkuSnapshot,
     variantNameSnapshot: it.variantNameSnapshot,
+    weightSnapshot: it.weightSnapshot,
     finishCodeSnapshot: it.finishCodeSnapshot,
     finishNameSnapshot: it.finishNameSnapshot,
     fabricItemNumberSnapshot: it.fabricItemNumberSnapshot,
@@ -268,6 +269,12 @@ router.post(
           productSkuSnapshot: p.sku,
           variantSkuSnapshot: v?.variantSku ?? null,
           variantNameSnapshot: v?.variantName ?? null,
+          weightSnapshot:
+            v?.weight != null
+              ? String(v.weight)
+              : p.weight != null
+                ? String(p.weight)
+                : null,
           description,
           quantity: item.quantity,
           unitPrice,
@@ -1479,6 +1486,7 @@ function orderItemToPdfItem(
     productSkuSnapshot: it.productSkuSnapshot,
     variantSkuSnapshot: it.variantSkuSnapshot,
     variantNameSnapshot: it.variantNameSnapshot,
+    weightSnapshot: it.weightSnapshot,
     finishCodeSnapshot: it.finishCodeSnapshot,
     finishNameSnapshot: it.finishNameSnapshot,
     fabricItemNumberSnapshot: it.fabricItemNumberSnapshot,

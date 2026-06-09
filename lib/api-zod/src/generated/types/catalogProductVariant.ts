@@ -27,6 +27,11 @@ export interface CatalogProductVariant {
   salePrice: string | null;
   /** Flat per-unit shipping surcharge for this variant in dollars (e.g. oversize "truck only" freight). "0" when none. */
   shippingSurcharge: string;
+  /**
+   * Per-variant shipping weight in lbs (e.g. per-size rug weight). Null falls back to the product-level weight.
+   * @nullable
+   */
+  weight: string | null;
   displayOrder: number;
   /**
    * Public URL of the matching finish swatch image, if one exists for this finish name.

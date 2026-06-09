@@ -254,6 +254,7 @@ export default function ProductEdit() {
     msrp: string;
     salePrice: string;
     shippingSurcharge: string;
+    weight: string;
     notes: string;
     minOrderQty: string;
     excludeStripeFabrics: boolean;
@@ -324,6 +325,7 @@ export default function ProductEdit() {
             msrp: v.msrp ?? "",
             salePrice: v.salePrice ?? "",
             shippingSurcharge: v.shippingSurcharge ?? "0",
+            weight: v.weight ?? "",
             notes: v.notes ?? "",
             minOrderQty: v.minOrderQty != null ? String(v.minOrderQty) : "",
             excludeStripeFabrics: v.excludeStripeFabrics,
@@ -699,6 +701,7 @@ export default function ProductEdit() {
                 msrp: v.msrp.trim() === "" ? null : v.msrp.trim(),
                 salePrice: v.salePrice.trim() === "" ? null : v.salePrice.trim(),
                 shippingSurcharge: v.shippingSurcharge.trim() || "0",
+                weight: v.weight.trim() === "" ? null : v.weight.trim(),
                 notes: v.notes.trim() === "" ? null : v.notes.trim(),
                 minOrderQty:
                   v.minOrderQty.trim() === ""
@@ -1683,6 +1686,22 @@ export default function ProductEdit() {
                           />
                         </div>
                         <div>
+                          <Label>Weight (lbs)</Label>
+                          <Input
+                            placeholder="Defaults to product weight"
+                            value={v.weight}
+                            onChange={(e) =>
+                              setVariants((cur) =>
+                                cur.map((x, i) =>
+                                  i === vi
+                                    ? { ...x, weight: e.target.value }
+                                    : x,
+                                ),
+                              )
+                            }
+                          />
+                        </div>
+                        <div>
                           <Label>Min order qty</Label>
                           <Input
                             type="number"
@@ -1917,6 +1936,7 @@ export default function ProductEdit() {
                       msrp: "",
                       salePrice: "",
                       shippingSurcharge: "0",
+                      weight: "",
                       notes: "",
                       minOrderQty: "",
                       excludeStripeFabrics: false,

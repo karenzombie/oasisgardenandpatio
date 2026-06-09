@@ -1323,6 +1323,7 @@ async function loadVariantsConfig(productId: number) {
       msrp: productVariantsTable.msrp,
       salePrice: productVariantsTable.salePrice,
       shippingSurcharge: productVariantsTable.shippingSurcharge,
+      weight: productVariantsTable.weight,
       notes: productVariantsTable.notes,
       minOrderQty: productVariantsTable.minOrderQty,
       excludeStripeFabrics: productVariantsTable.excludeStripeFabrics,
@@ -1496,6 +1497,16 @@ router.put(
         return;
       }
       if (
+        v.weight != null &&
+        v.weight.trim() !== "" &&
+        !money.test(v.weight.trim())
+      ) {
+        res.status(400).json({
+          error: `Invalid weight for variant "${v.variantSku}"`,
+        });
+        return;
+      }
+      if (
         v.minOrderQty != null &&
         (!Number.isInteger(v.minOrderQty) || v.minOrderQty < 0)
       ) {
@@ -1564,6 +1575,10 @@ router.put(
               v.shippingSurcharge != null && v.shippingSurcharge.trim() !== ""
                 ? v.shippingSurcharge.trim()
                 : "0",
+            weight:
+              v.weight != null && v.weight.trim() !== ""
+                ? v.weight.trim()
+                : null,
             notes: v.notes?.trim() || null,
             minOrderQty: v.minOrderQty ?? null,
             excludeStripeFabrics: v.excludeStripeFabrics ?? false,

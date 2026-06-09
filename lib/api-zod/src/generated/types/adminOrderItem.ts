@@ -21,6 +21,7 @@ export interface AdminOrderItem {
   fabricBrandSnapshot: string | null;
   fabricGradeSnapshot: string | null;
   unitMsrpSnapshot: string | null;
+  weightSnapshot: string | null;
   /** Optional alternate vendor for this line's fabric. Null = fabric ships with the product vendor (the default). */
   fabricVendorId: number | null;
   fabricVendorName: string | null;

@@ -27,6 +27,11 @@ export interface AdminProductVariantInput {
    * @nullable
    */
   shippingSurcharge?: string | null;
+  /**
+   * Per-variant shipping weight in lbs (e.g. per-size rug weight). Omit/null/"" to fall back to the product-level weight.
+   * @nullable
+   */
+  weight?: string | null;
   /** @nullable */
   notes?: string | null;
   /** @nullable */

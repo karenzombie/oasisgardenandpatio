@@ -291,6 +291,7 @@ router.post(
             fabricBrand: manufacturersTable.name,
             unitMsrp: variantGradePricesTable.msrp,
             variantShippingSurcharge: productVariantsTable.shippingSurcharge,
+            variantWeight: productVariantsTable.weight,
           })
           .from(cartItemsTable)
           .innerJoin(
@@ -415,6 +416,12 @@ router.post(
             fabricBrandSnapshot: l.fabricBrand,
             fabricGradeSnapshot: l.fabricGrade,
             unitMsrpSnapshot: l.unitMsrp != null ? String(l.unitMsrp) : null,
+            weightSnapshot:
+              l.variantWeight != null
+                ? String(l.variantWeight)
+                : l.weight != null
+                  ? String(l.weight)
+                  : null,
           });
         }
 

@@ -13,6 +13,7 @@ export interface AdminVendorOrderItem {
   productSkuSnapshot: string | null;
   variantSkuSnapshot: string | null;
   variantNameSnapshot: string | null;
+  weightSnapshot: string | null;
   fabricNameSnapshot: string | null;
   description: string;
   quantity: number;

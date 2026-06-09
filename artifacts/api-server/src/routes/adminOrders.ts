@@ -117,6 +117,7 @@ function itemToPayload(
     fabricBrandSnapshot: it.fabricBrandSnapshot,
     fabricGradeSnapshot: it.fabricGradeSnapshot,
     unitMsrpSnapshot: it.unitMsrpSnapshot,
+    weightSnapshot: it.weightSnapshot,
     fabricVendorId: it.fabricVendorId,
     fabricVendorName,
     fabricVendorOrderId: it.fabricVendorOrderId,
@@ -1468,6 +1469,7 @@ router.post(
           fabricBrandSnapshot: string | null;
           fabricGradeSnapshot: string | null;
           unitMsrpSnapshot: string | null;
+          weightSnapshot: string | null;
           description: string;
           quantity: number;
           unitPrice: string;
@@ -1490,16 +1492,19 @@ router.post(
           let finishCode: string | null = null;
           let finishName: string | null = null;
           let unitMsrp: string | null = null;
+          let productWeight: string | null = null;
+          let variantWeight: string | null = null;
 
           if (it.productId != null) {
             const [p] = await tx
-              .select({ sku: productsTable.sku })
+              .select({ sku: productsTable.sku, weight: productsTable.weight })
               .from(productsTable)
               .where(eq(productsTable.id, it.productId))
               .limit(1);
             if (!p)
               throw new Error(`Product ${it.productId} not found`);
             productSku = p.sku;
+            productWeight = p.weight == null ? null : String(p.weight);
           }
           if (it.variantId != null) {
             const [v] = await tx
@@ -1507,6 +1512,7 @@ router.post(
                 sku: productVariantsTable.variantSku,
                 name: productVariantsTable.variantName,
                 productId: productVariantsTable.productId,
+                weight: productVariantsTable.weight,
               })
               .from(productVariantsTable)
               .where(eq(productVariantsTable.id, it.variantId))
@@ -1516,6 +1522,7 @@ router.post(
               throw new Error("Variant does not belong to product");
             variantSku = v.sku;
             variantName = v.name;
+            variantWeight = v.weight == null ? null : String(v.weight);
           }
           // Frame finish (grade-priced 3-step products). Recover the finish
           // code/name snapshots so the order line + vendor PO show the exact
@@ -1642,6 +1649,7 @@ router.post(
             fabricBrandSnapshot: fabricBrand,
             fabricGradeSnapshot: fabricGrade,
             unitMsrpSnapshot: unitMsrp,
+            weightSnapshot: variantWeight ?? productWeight,
             description: it.description,
             quantity: it.quantity,
             unitPrice: money(it.unitPrice),

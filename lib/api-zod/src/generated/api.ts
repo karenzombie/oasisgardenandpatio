@@ -446,6 +446,12 @@ export const GetCatalogProductBySlugResponse = zod
               .describe(
                 'Flat per-unit shipping surcharge for this variant in dollars (e.g. oversize \"truck only\" freight). \"0\" when none.',
               ),
+            weight: zod
+              .string()
+              .nullable()
+              .describe(
+                "Per-variant shipping weight in lbs (e.g. per-size rug weight). Null falls back to the product-level weight.",
+              ),
             displayOrder: zod.number(),
             swatchImageUrl: zod
               .string()
@@ -2534,6 +2540,12 @@ export const AdminGetProductPickerResponse = zod
           .describe(
             'Flat per-unit shipping surcharge for this variant in dollars (e.g. oversize \"truck only\" freight). \"0\" when none.',
           ),
+        weight: zod
+          .string()
+          .nullable()
+          .describe(
+            "Per-variant shipping weight in lbs (e.g. per-size rug weight). Null falls back to the product-level weight.",
+          ),
         displayOrder: zod.number(),
         swatchImageUrl: zod
           .string()
@@ -2873,6 +2885,12 @@ export const AdminGetProductVariantsResponse = zod.object({
         .describe(
           'Flat per-unit shipping surcharge for this variant in dollars (e.g. oversize \"truck only\" freight). \"0\" when none.',
         ),
+      weight: zod
+        .string()
+        .nullable()
+        .describe(
+          "Per-variant shipping weight in lbs (e.g. per-size rug weight). Null falls back to the product-level weight.",
+        ),
       notes: zod.string().nullable(),
       minOrderQty: zod.number().nullable(),
       excludeStripeFabrics: zod.boolean(),
@@ -2930,6 +2948,12 @@ export const AdminUpdateProductVariantsBody = zod.object({
           .describe(
             'Flat per-unit shipping surcharge in dollars (e.g. oversize \"truck only\" freight). Omit\/null\/\"\" for none.',
           ),
+        weight: zod
+          .string()
+          .nullish()
+          .describe(
+            'Per-variant shipping weight in lbs (e.g. per-size rug weight). Omit\/null\/\"\" to fall back to the product-level weight.',
+          ),
         notes: zod.string().nullish(),
         minOrderQty: zod.number().nullish(),
         excludeStripeFabrics: zod.boolean().optional(),
@@ -2981,6 +3005,12 @@ export const AdminUpdateProductVariantsResponse = zod.object({
         .string()
         .describe(
           'Flat per-unit shipping surcharge for this variant in dollars (e.g. oversize \"truck only\" freight). \"0\" when none.',
+        ),
+      weight: zod
+        .string()
+        .nullable()
+        .describe(
+          "Per-variant shipping weight in lbs (e.g. per-size rug weight). Null falls back to the product-level weight.",
         ),
       notes: zod.string().nullable(),
       minOrderQty: zod.number().nullable(),
@@ -4238,6 +4268,7 @@ export const AdminUpdateOrderShippingMethodResponse = zod.object({
       fabricBrandSnapshot: zod.string().nullable(),
       fabricGradeSnapshot: zod.string().nullable(),
       unitMsrpSnapshot: zod.string().nullable(),
+      weightSnapshot: zod.string().nullable(),
       fabricVendorId: zod
         .number()
         .nullable()
@@ -4559,6 +4590,7 @@ export const AdminMarkOrderPaidInFullResponse = zod.object({
       fabricBrandSnapshot: zod.string().nullable(),
       fabricGradeSnapshot: zod.string().nullable(),
       unitMsrpSnapshot: zod.string().nullable(),
+      weightSnapshot: zod.string().nullable(),
       fabricVendorId: zod
         .number()
         .nullable()
@@ -4762,6 +4794,7 @@ export const AdminUpdateOrderPaymentResponse = zod.object({
       fabricBrandSnapshot: zod.string().nullable(),
       fabricGradeSnapshot: zod.string().nullable(),
       unitMsrpSnapshot: zod.string().nullable(),
+      weightSnapshot: zod.string().nullable(),
       fabricVendorId: zod
         .number()
         .nullable()
@@ -4954,6 +4987,7 @@ export const AdminDeleteOrderPaymentResponse = zod.object({
       fabricBrandSnapshot: zod.string().nullable(),
       fabricGradeSnapshot: zod.string().nullable(),
       unitMsrpSnapshot: zod.string().nullable(),
+      weightSnapshot: zod.string().nullable(),
       fabricVendorId: zod
         .number()
         .nullable()
@@ -5648,6 +5682,7 @@ export const AdminGetOrderResponse = zod.object({
       fabricBrandSnapshot: zod.string().nullable(),
       fabricGradeSnapshot: zod.string().nullable(),
       unitMsrpSnapshot: zod.string().nullable(),
+      weightSnapshot: zod.string().nullable(),
       fabricVendorId: zod
         .number()
         .nullable()
@@ -5844,6 +5879,7 @@ export const AdminUpdateOrderStatusResponse = zod.object({
       fabricBrandSnapshot: zod.string().nullable(),
       fabricGradeSnapshot: zod.string().nullable(),
       unitMsrpSnapshot: zod.string().nullable(),
+      weightSnapshot: zod.string().nullable(),
       fabricVendorId: zod
         .number()
         .nullable()
@@ -6048,6 +6084,7 @@ export const AdminRefundOrderResponse = zod.object({
       fabricBrandSnapshot: zod.string().nullable(),
       fabricGradeSnapshot: zod.string().nullable(),
       unitMsrpSnapshot: zod.string().nullable(),
+      weightSnapshot: zod.string().nullable(),
       fabricVendorId: zod
         .number()
         .nullable()
@@ -6261,6 +6298,7 @@ export const AdminUpdateOrderTotalsResponse = zod.object({
       fabricBrandSnapshot: zod.string().nullable(),
       fabricGradeSnapshot: zod.string().nullable(),
       unitMsrpSnapshot: zod.string().nullable(),
+      weightSnapshot: zod.string().nullable(),
       fabricVendorId: zod
         .number()
         .nullable()
@@ -6458,6 +6496,7 @@ export const AdminUpdateOrderItemFabricVendorResponse = zod.object({
       fabricBrandSnapshot: zod.string().nullable(),
       fabricGradeSnapshot: zod.string().nullable(),
       unitMsrpSnapshot: zod.string().nullable(),
+      weightSnapshot: zod.string().nullable(),
       fabricVendorId: zod
         .number()
         .nullable()
@@ -6653,6 +6692,7 @@ export const AdminUpdateOrderNotesResponse = zod.object({
       fabricBrandSnapshot: zod.string().nullable(),
       fabricGradeSnapshot: zod.string().nullable(),
       unitMsrpSnapshot: zod.string().nullable(),
+      weightSnapshot: zod.string().nullable(),
       fabricVendorId: zod
         .number()
         .nullable()
@@ -6971,6 +7011,7 @@ export const AdminGetVendorOrderResponse = zod.object({
       productSkuSnapshot: zod.string().nullable(),
       variantSkuSnapshot: zod.string().nullable(),
       variantNameSnapshot: zod.string().nullable(),
+      weightSnapshot: zod.string().nullable(),
       fabricNameSnapshot: zod.string().nullable(),
       description: zod.string(),
       quantity: zod.number(),
@@ -7070,6 +7111,7 @@ export const AdminUpdateVendorOrderResponse = zod.object({
       productSkuSnapshot: zod.string().nullable(),
       variantSkuSnapshot: zod.string().nullable(),
       variantNameSnapshot: zod.string().nullable(),
+      weightSnapshot: zod.string().nullable(),
       fabricNameSnapshot: zod.string().nullable(),
       description: zod.string(),
       quantity: zod.number(),
@@ -7264,6 +7306,7 @@ export const AdminSendVendorOrderResponse = zod.object({
       productSkuSnapshot: zod.string().nullable(),
       variantSkuSnapshot: zod.string().nullable(),
       variantNameSnapshot: zod.string().nullable(),
+      weightSnapshot: zod.string().nullable(),
       fabricNameSnapshot: zod.string().nullable(),
       description: zod.string(),
       quantity: zod.number(),
@@ -7363,6 +7406,7 @@ export const AdminUpdateVendorOrderStatusResponse = zod.object({
       productSkuSnapshot: zod.string().nullable(),
       variantSkuSnapshot: zod.string().nullable(),
       variantNameSnapshot: zod.string().nullable(),
+      weightSnapshot: zod.string().nullable(),
       fabricNameSnapshot: zod.string().nullable(),
       description: zod.string(),
       quantity: zod.number(),
@@ -7461,6 +7505,7 @@ export const AdminReceiveVendorOrderResponse = zod.object({
       productSkuSnapshot: zod.string().nullable(),
       variantSkuSnapshot: zod.string().nullable(),
       variantNameSnapshot: zod.string().nullable(),
+      weightSnapshot: zod.string().nullable(),
       fabricNameSnapshot: zod.string().nullable(),
       description: zod.string(),
       quantity: zod.number(),
@@ -7582,6 +7627,7 @@ export const AdminCancelVendorOrderResponse = zod.object({
       productSkuSnapshot: zod.string().nullable(),
       variantSkuSnapshot: zod.string().nullable(),
       variantNameSnapshot: zod.string().nullable(),
+      weightSnapshot: zod.string().nullable(),
       fabricNameSnapshot: zod.string().nullable(),
       description: zod.string(),
       quantity: zod.number(),

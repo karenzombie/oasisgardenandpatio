@@ -25,6 +25,11 @@ export interface AdminProductVariant {
   salePrice: string | null;
   /** Flat per-unit shipping surcharge for this variant in dollars (e.g. oversize "truck only" freight). "0" when none. */
   shippingSurcharge: string;
+  /**
+   * Per-variant shipping weight in lbs (e.g. per-size rug weight). Null falls back to the product-level weight.
+   * @nullable
+   */
+  weight: string | null;
   /** @nullable */
   notes: string | null;
   /** @nullable */
