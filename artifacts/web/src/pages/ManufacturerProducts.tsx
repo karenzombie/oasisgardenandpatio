@@ -340,8 +340,8 @@ export default function ManufacturerProducts() {
             const onSale =
               p.salePrice && p.price && Number(p.salePrice) < Number(p.price);
             return (
-              <Link key={p.id} href={`/shop/${p.slug}`} className="group block">
-                <div className="relative aspect-square bg-card overflow-hidden mb-3 border border-border">
+              <Link key={p.id} href={`/shop/${p.slug}`} className="group block border-2 border-primary bg-card hover:shadow-md transition-shadow duration-150">
+                <div className="relative aspect-square bg-card overflow-hidden">
                   {p.primaryImageUrl ? (
                     <img
                       src={p.primaryImageUrl}
@@ -372,9 +372,9 @@ export default function ManufacturerProducts() {
                     </h3>
                   </div>
                 </div>
-                <div className="text-center">
-                  {p.showPriceOnline && p.price ? (
-                    onSale ? (
+                {p.showPriceOnline && p.price ? (
+                  <div className="border-t border-primary/30 px-4 py-3 text-center">
+                    {onSale ? (
                       <p className="text-sm">
                         <span className="text-muted-foreground line-through mr-2">
                           {formatMoney(p.price)}
@@ -385,9 +385,9 @@ export default function ManufacturerProducts() {
                       </p>
                     ) : (
                       <p className="text-sm">{formatMoney(p.price)}</p>
-                    )
-                  ) : null}
-                </div>
+                    )}
+                  </div>
+                ) : null}
               </Link>
             );
           })}

@@ -433,8 +433,8 @@ export default function SearchPage() {
                   p.salePrice && p.price && Number(p.salePrice) < Number(p.price);
                 const brandLogo = getBrandLogo(p.manufacturerName);
                 return (
-                  <Link key={p.id} href={`/shop/${p.slug}`} className="group block">
-                    <div className="relative aspect-square bg-card overflow-hidden mb-4 border border-border">
+                  <Link key={p.id} href={`/shop/${p.slug}`} className="group block border-2 border-primary bg-card hover:shadow-md transition-shadow duration-150">
+                    <div className="relative aspect-square bg-card overflow-hidden">
                       {p.primaryImageUrl ? (
                         <img
                           src={p.primaryImageUrl}
@@ -472,7 +472,9 @@ export default function SearchPage() {
                         </h3>
                       </div>
                     </div>
-                    <div className="space-y-1 text-center">
+                    {((!brandLogo && p.manufacturerName) ||
+                      (p.showPriceOnline && p.price)) ? (
+                    <div className="border-t border-primary/30 px-4 py-3 space-y-1 text-center">
                       {!brandLogo && p.manufacturerName && (
                         <p className="text-xs uppercase tracking-widest text-muted-foreground">
                           {p.manufacturerName}
@@ -489,6 +491,7 @@ export default function SearchPage() {
                         )
                       )}
                     </div>
+                    ) : null}
                   </Link>
                 );
               })}
