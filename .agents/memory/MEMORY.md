@@ -10,4 +10,5 @@
 - [Dev→prod sync direction](dev-prod-sync-direction.md) — always update prod to match dev, never dev to match prod; prod often has stale data.
 - [Variant absolute pricing](variant-absolute-pricing.md) — per-variant msrp/sale/surcharge override base+adjustment across PDP/cart/checkout, keyed on msrp; admin rejects sale-without-msrp; adminOrders skipped (no variantId).
 - [CSV bare inch quotes](csv-bare-inch-quotes.md) — vendor product-list CSVs mix bare/escaped inch marks; preprocess `([0-9'])"(?!")`→″ (product list only, not pricing); image SKUs may drop hyphen.
+- [Radix Select long-list scroll bug](radix-select-long-list-scroll.md) — Radix Select clips/won't-scroll long lists (Safari); use Popover+cmdk Command combobox (Fabrics.tsx pattern) instead.
 - [Dev/prod category taxonomy drift](dev-prod-category-taxonomy-drift.md) — prod category set lags dev (prod lacked outdoor-rugs/protective-covers); slug-keyed data scripts must skip missing slugs, not fail.

@@ -1,7 +1,7 @@
 import { Link, useRoute, useLocation, useSearch } from "wouter";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQueries } from "@tanstack/react-query";
-import { X, SlidersHorizontal } from "lucide-react";
+import { X, SlidersHorizontal, Check, ChevronDown } from "lucide-react";
 import {
   useListCatalogProducts,
   useListManufacturers,
@@ -16,16 +16,21 @@ import { WishlistButton } from "@/components/WishlistButton";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 
 const PAGE_SIZE_API = 60;
 const PAGE_SIZE_DISPLAY = 24;
-const ALL_COLLECTIONS = "__all__";
 
 /**
  * Collection = the product name's FIRST WORD, but only when at least 2 products
@@ -65,6 +70,8 @@ export default function ManufacturerProducts() {
   const activeCollection = q.get("collection") ?? "";
   const activeType = q.get("type") ?? "";
   const displayPage = Number(q.get("page") ?? "1") || 1;
+
+  const [collectionOpen, setCollectionOpen] = useState(false);
 
   const { data: manufacturers } = useListManufacturers();
   const manufacturer = manufacturers?.find((m) => m.slug === slug);
@@ -347,29 +354,59 @@ export default function ManufacturerProducts() {
                 <label className="text-xs uppercase tracking-widest text-muted-foreground block">
                   Collection
                 </label>
-                <Select
-                  value={activeCollection || ALL_COLLECTIONS}
-                  onValueChange={(v) =>
-                    updateSearch({
-                      collection: v === ALL_COLLECTIONS ? null : v,
-                      page: "1",
-                    })
-                  }
-                >
-                  <SelectTrigger className={selectClass}>
-                    <SelectValue placeholder="All collections" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={ALL_COLLECTIONS}>
-                      All collections
-                    </SelectItem>
-                    {collections.map((c) => (
-                      <SelectItem key={c} value={c}>
-                        {c}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={collectionOpen} onOpenChange={setCollectionOpen}>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label="Filter by collection"
+                      className={`${selectClass} flex items-center justify-between text-left`}
+                    >
+                      <span className={activeCollection ? "" : "text-muted-foreground"}>
+                        {activeCollection || "All collections"}
+                      </span>
+                      <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search collections..." className="h-9 text-sm" />
+                      <CommandList>
+                        <CommandEmpty>No collections found.</CommandEmpty>
+                        <CommandGroup>
+                          <CommandItem
+                            value="All collections"
+                            onSelect={() => {
+                              updateSearch({ collection: null, page: "1" });
+                              setCollectionOpen(false);
+                            }}
+                            className="cursor-pointer"
+                          >
+                            <Check
+                              className={`size-4 mr-2 shrink-0 ${activeCollection ? "opacity-0" : "opacity-100"}`}
+                            />
+                            All collections
+                          </CommandItem>
+                          {collections.map((c) => (
+                            <CommandItem
+                              key={c}
+                              value={c}
+                              onSelect={() => {
+                                updateSearch({ collection: c, page: "1" });
+                                setCollectionOpen(false);
+                              }}
+                              className="cursor-pointer"
+                            >
+                              <Check
+                                className={`size-4 mr-2 shrink-0 ${activeCollection === c ? "opacity-100" : "opacity-0"}`}
+                              />
+                              {c}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
           )}
