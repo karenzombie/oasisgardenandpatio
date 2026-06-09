@@ -126,6 +126,12 @@ paths:
       operationId: listCategories
       tags: [categories]
       summary: List active categories
+      parameters:
+        - in: query
+          name: onlineOnly
+          schema:
+            type: boolean
+          description: When true, only return categories that have at least one directly purchasable online product (excludes quote-only and in-store-only products)
       responses:
         "200":
           description: Active categories (top-level and nested)

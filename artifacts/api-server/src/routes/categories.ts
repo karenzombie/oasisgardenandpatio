@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, exists, sql } from "drizzle-orm";
 import {
   db,
   categoriesTable,
@@ -23,7 +23,19 @@ import { toPublicImageUrl } from "../lib/imageUrl";
 const router: IRouter = Router();
 
 // Public list of active categories (for storefront)
-router.get("/categories", async (_req, res): Promise<void> => {
+router.get("/categories", async (req, res): Promise<void> => {
+  const onlineOnly = req.query.onlineOnly === "true";
+
+  const productConditions = [
+    eq(productsTable.categoryId, categoriesTable.id),
+    eq(productsTable.isActive, true),
+    eq(productsTable.availableOnline, true),
+  ];
+  if (onlineOnly) {
+    productConditions.push(eq(productsTable.quoteOnly, false));
+    productConditions.push(eq(productsTable.inStoreOnly, false));
+  }
+
   const rows = await db
     .select({
       id: categoriesTable.id,
@@ -34,7 +46,17 @@ router.get("/categories", async (_req, res): Promise<void> => {
       displayOrder: categoriesTable.displayOrder,
     })
     .from(categoriesTable)
-    .where(eq(categoriesTable.isActive, true))
+    .where(
+      and(
+        eq(categoriesTable.isActive, true),
+        exists(
+          db
+            .select({ v: sql`1` })
+            .from(productsTable)
+            .where(and(...productConditions)),
+        ),
+      ),
+    )
     .orderBy(
       sql`${categoriesTable.displayOrder} asc`,
       sql`${categoriesTable.name} asc`,

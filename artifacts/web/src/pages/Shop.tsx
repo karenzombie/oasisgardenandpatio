@@ -59,7 +59,7 @@ export default function Shop() {
   }, [search, params?.slug, isOnlineOnly]);
 
   const { data, isLoading } = useListCatalogProducts(queryParams);
-  const { data: categories } = useListCategories();
+  const { data: categories } = useListCategories(isOnlineOnly ? { onlineOnly: true } : undefined);
   const { data: finishes } = useListCatalogFinishes();
   const { data: manufacturers } = useListManufacturers(isOnlineOnly ? { onlineOnly: true } : undefined);
 

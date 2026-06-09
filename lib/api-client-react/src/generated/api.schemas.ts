@@ -3986,6 +3986,13 @@ export type ListManufacturersParams = {
   onlineOnly?: boolean;
 };
 
+export type ListCategoriesParams = {
+  /**
+   * When true, only return categories that have at least one directly purchasable online product (excludes quote-only and in-store-only products)
+   */
+  onlineOnly?: boolean;
+};
+
 export type GetPopularProduct200 = {
   product: FeaturedProduct | null;
   /** ISO timestamp when the cache was last refreshed. */
