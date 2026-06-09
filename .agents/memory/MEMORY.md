@@ -1,6 +1,7 @@
 - [Running seed scripts against prod](seed-scripts-prod.md) — override DATABASE_URL with $PROD_DATABASE_URL; bulk-insert junction tables (onConflictDoNothing) or per-row inserts time out on prod.
 - [TG Sunbrella grade upcharge](tg-sunbrella-grade-upcharge.md) — TG+Sunbrella per-item upcharge (B+$100,C+$190) folded into MSRP+Sale+snapshots, not a line item; dual helper kept in sync.
 - [Finish swatch ↔ variant linkage](finish-variant-swatch-link.md) — no FK; recover finish swatch by manufacturerId+name via JS map (never leftJoin — dup names multiply rows); fabrics have a real FK.
+- [Telescope item_number not a SKU](telescope-item-number-not-sku.md) — it's a shared price code (42 distinct over 254 rows); keep generated TC- SKUs; products.sku is globally unique. Also notes Shoreline/OW Lee generated-SKU audit results.
 - [Variant PUT cart cascade](variant-put-cart-cascade.md) — admin variant replace-all must keyed-upsert by variantSku (not delete+reinsert) or cart_items cascade-delete; gate Save on variantsHydrated.
 - [Product short_description teaser](product-short-description.md) — PDP top blurb = short_description (first paragraph of description, NOT char-clamp+"…"); description is the full copy in the tab.
 - [Image upload location](image-upload-location.md) — user always uploads image folders to workspace root (e.g. ./coture_jardin_finish_images/), NOT Object Storage. Check root first.
