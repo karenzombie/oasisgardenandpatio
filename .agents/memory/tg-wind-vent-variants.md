@@ -32,6 +32,13 @@ and the server cart check read the product price, not the variant. UM970 had a N
 catalog price and was unsellable until the seed set its product price to the SWV value.
 When adding absolute-variant products, always set a product-level price too.
 
+**Publish ordering gotcha:** the absolute-variant pricing columns
+(`product_variants.msrp` / `sale_price` / `shipping_surcharge` / `weight`) existed only
+in DEV — PROD gains them automatically during Publish (additive, no rename/no data loss).
+Any data seed that reads/writes those columns therefore FAILS against prod (Postgres
+42703) until Publish has run. Correct order: Publish first (migrates prod schema +
+deploys code), THEN run the seed against `$PROD_DATABASE_URL`. Never hand-ALTER prod.
+
 **Swatch gotcha:** the by-slug endpoint matches each variant's frame-finish swatch by
 EXACT variant name against the finishes catalog. Renaming variants (e.g. appending a
 vent suffix) drops the swatch — so the endpoint strips the vent suffix before matching.
