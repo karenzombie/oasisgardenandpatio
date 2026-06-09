@@ -92,6 +92,22 @@ async function syncCategoryImages() {
   console.log(`Category images: ${n} row(s) updated`);
 }
 
+// ── 4. Treasure Garden SKU corrections ──────────────────────────────────────
+// Prod drifted from dev (source of truth): the "Steel" base shipped with SKU
+// BS709-2.0 in prod but BS70-2.0 in dev (and in the TG price CSV). The wrong SKU
+// meant importTreasureGardenPrices.ts (matches by SKU) could never price it.
+// Correcting the SKU lets the price import populate it like every other product.
+
+async function syncTreasureGardenSkus() {
+  const result = await db.execute(sql`
+    UPDATE products
+    SET sku = 'BS70-2.0', updated_at = NOW()
+    WHERE manufacturer_id = 12 AND sku = 'BS709-2.0'
+  `);
+  const n = Number((result as { rowCount?: number }).rowCount ?? 0);
+  console.log(`Treasure Garden SKU corrections: ${n} row(s) updated`);
+}
+
 // ── main ────────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -99,6 +115,7 @@ async function main() {
   await syncGaltechFinishCodes();
   await syncOwLeeMaterials();
   await syncCategoryImages();
+  await syncTreasureGardenSkus();
   console.log("Done.");
   process.exit(0);
 }

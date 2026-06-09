@@ -12,3 +12,4 @@ DATABASE_URL=$PROD_DATABASE_URL pnpm --filter @workspace/scripts exec tsx src/se
 DATABASE_URL=$PROD_DATABASE_URL pnpm --filter @workspace/scripts exec tsx src/seedTelescopeFinishes.ts
 DATABASE_URL=$PROD_DATABASE_URL pnpm --filter @workspace/scripts exec tsx src/seedTelescopeFabricFinishes.ts
 DATABASE_URL=$PROD_DATABASE_URL pnpm --filter @workspace/scripts exec tsx src/seedNorthcapeProducts.ts
+DATABASE_URL=$PROD_DATABASE_URL pnpm --filter @workspace/scripts exec tsx src/importTreasureGardenPrices.ts
