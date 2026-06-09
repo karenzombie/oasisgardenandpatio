@@ -6,6 +6,7 @@ import {
   useAddCartItem,
   getGetCartQueryKey,
 } from "@workspace/api-client-react";
+import swvDwvImage from "@assets/SWV_DWV_image_1781037074957.png";
 import { getBrandLogo } from "@/lib/brandLogos";
 import { fabricGradeUpcharge } from "@/lib/fabricUpcharge";
 import { sanitizeHtml } from "@/lib/sanitize";
@@ -37,6 +38,24 @@ const ALL_TABS = [
 ] as const;
 type TabId = (typeof ALL_TABS)[number]["id"];
 
+// ---- Combined Finish x Wind Vent variant helpers ----
+// Treasure Garden market umbrellas encode the wind-vent choice as a SKU suffix
+// (`...-SWV` / `...-DWV`) on top of the finish SKU. These helpers split that
+// combined variant back into its finish key and vent so the PDP can render two
+// independent selectors. The convention is owned by seedTgWindVents.ts.
+const VENT_SUFFIX_RE = /-(SWV|DWV)$/i;
+const VENT_NAME_RE = /\s*[–—-]\s*(Single|Double)\s+Wind\s+Vent\s*$/i;
+function ventOf(sku: string): "SWV" | "DWV" | null {
+  const m = VENT_SUFFIX_RE.exec(sku);
+  return m ? (m[1].toUpperCase() as "SWV" | "DWV") : null;
+}
+function finishKeyOf(sku: string): string {
+  return sku.replace(VENT_SUFFIX_RE, "");
+}
+function finishLabelOf(name: string): string {
+  return name.replace(VENT_NAME_RE, "").trim();
+}
+
 export default function Product() {
   const [, params] = useRoute<{ slug: string }>("/shop/:slug");
   const slug = params?.slug ?? "";
@@ -48,6 +67,12 @@ export default function Product() {
   const [finishId, setFinishId] = useState<number | null>(null);
   const [fabricId, setFabricId] = useState<number | null>(null);
   const [fabricOpen, setFabricOpen] = useState(false);
+  // Wind-vent products (Treasure Garden market umbrellas) use combined
+  // Finish x Wind Vent variants. The PDP drives the single combined variantId
+  // from two independent selections so neither is preselected (the customer
+  // must consciously pick the wind vent — Single vs Double).
+  const [windFinishKey, setWindFinishKey] = useState<string | null>(null);
+  const [windVent, setWindVent] = useState<"SWV" | "DWV" | null>(null);
 
   const { toast } = useToast();
   const qc = useQueryClient();
@@ -87,6 +112,8 @@ export default function Product() {
     setFrameOnly(false);
     setActiveImageIdx(0);
     setQty(1);
+    setWindFinishKey(null);
+    setWindVent(null);
   }, [data?.id]);
 
   // Discrete frame finishes for grade-priced (Frankford) products. Empty for
@@ -114,6 +141,62 @@ export default function Product() {
     () => variants.some((v) => (v.gradePrices?.length ?? 0) > 0),
     [variants],
   );
+
+  // Wind-vent mode: the product's variants are combined Finish x Wind Vent rows
+  // (SKU suffix -SWV/-DWV). Renders two independent selectors instead of the
+  // single variant picker. Galtech umbrellas (single "Vent Type" dimension, no
+  // -SWV/-DWV suffix) are NOT in this mode and keep their existing picker.
+  const isWindVentMode = useMemo(
+    () => !isGradeMode && variants.some((v) => ventOf(v.sku) != null),
+    [isGradeMode, variants],
+  );
+
+  // Unique finishes (key + display label) for the wind-vent finish selector,
+  // in variant displayOrder. Swatch image is borrowed from the SWV row.
+  const windFinishOptions = useMemo(() => {
+    if (!isWindVentMode) return [];
+    const out: { key: string; label: string; swatchImageUrl: string | null }[] = [];
+    const seen = new Set<string>();
+    for (const v of variants) {
+      const key = finishKeyOf(v.sku);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push({
+        key,
+        label: finishLabelOf(v.name),
+        swatchImageUrl: v.swatchImageUrl ?? null,
+      });
+    }
+    return out;
+  }, [isWindVentMode, variants]);
+
+  // Wind-vent options actually present (typically both SWV and DWV).
+  const windVentOptions = useMemo<("SWV" | "DWV")[]>(() => {
+    if (!isWindVentMode) return [];
+    const present = new Set(variants.map((v) => ventOf(v.sku)).filter(Boolean));
+    return (["SWV", "DWV"] as const).filter((vent) => present.has(vent));
+  }, [isWindVentMode, variants]);
+
+  // Whether this product offers a wind-vent choice at all — true for both the
+  // Treasure Garden combined variants AND Galtech's single "Vent Type" picker.
+  // Drives the SWV/DWV comparison diagram in the Specifications tab.
+  const offersWindVentChoice = useMemo(
+    () => variants.some((v) => /vent/i.test(v.optionLabel) || /vent/i.test(v.name)),
+    [variants],
+  );
+
+  // Drive the single combined variantId from the two wind-vent selections.
+  useEffect(() => {
+    if (!isWindVentMode) return;
+    if (windFinishKey && windVent) {
+      const match = variants.find(
+        (v) => finishKeyOf(v.sku) === windFinishKey && ventOf(v.sku) === windVent,
+      );
+      setVariantId(match?.id ?? null);
+    } else {
+      setVariantId(null);
+    }
+  }, [isWindVentMode, windFinishKey, windVent, variants]);
 
   // Map of grade -> {msrp, salePrice} for the currently selected configuration.
   const gradePriceMap = useMemo(() => {
@@ -223,7 +306,16 @@ export default function Product() {
   const offersFrameOnly = !isGradeMode && hasFabrics && frameOnlyPrice != null;
 
   const missingSelections: string[] = [];
-  if (requiresVariant && !selectedVariant) {
+  if (isWindVentMode) {
+    if (!windFinishKey) missingSelections.push("Frame Finish");
+    if (!windVent) missingSelections.push("Wind Vent");
+    // Guard against an incomplete Finish x Vent matrix: both controls picked
+    // but no matching variant. Current seed data is complete, but this keeps
+    // a stray add-to-cart from firing without a variantId.
+    if (windFinishKey && windVent && !selectedVariant) {
+      missingSelections.push("a valid Finish + Wind Vent combination");
+    }
+  } else if (requiresVariant && !selectedVariant) {
     missingSelections.push(
       variants[0]?.optionLabel ?? (isGradeMode ? "Configuration" : "Variant"),
     );
@@ -567,8 +659,77 @@ export default function Product() {
             </div>
           ) : (
             <>
+              {/* Wind-vent products: two independent selectors (Frame Finish +
+                  Wind Vent) mapping to a single combined variant. Neither is
+                  preselected — the customer must consciously pick the vent. */}
+              {isWindVentMode ? (
+                <>
+                  <div className="mb-5">
+                    <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">
+                      Frame Finish
+                      <span className="text-destructive ml-1">*</span>
+                      {windFinishKey ? (
+                        <span className="ml-2 normal-case tracking-normal text-foreground">
+                          {windFinishOptions.find((f) => f.key === windFinishKey)?.label}
+                        </span>
+                      ) : null}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {windFinishOptions.map((f) => (
+                        <button
+                          key={f.key}
+                          type="button"
+                          onClick={() => setWindFinishKey(f.key)}
+                          className={`flex items-center gap-2 px-3 py-2 border text-sm transition-colors ${
+                            windFinishKey === f.key
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-input hover:border-foreground"
+                          }`}
+                        >
+                          {f.swatchImageUrl ? (
+                            <img
+                              src={f.swatchImageUrl}
+                              alt={f.label}
+                              className="h-6 w-6 shrink-0 object-cover border border-border/50"
+                            />
+                          ) : null}
+                          {f.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="mb-5">
+                    <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">
+                      Wind Vent
+                      <span className="text-destructive ml-1">*</span>
+                      {windVent ? (
+                        <span className="ml-2 normal-case tracking-normal text-foreground">
+                          {windVent === "SWV" ? "Single Wind Vent" : "Double Wind Vent"}
+                        </span>
+                      ) : null}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {windVentOptions.map((vent) => (
+                        <button
+                          key={vent}
+                          type="button"
+                          onClick={() => setWindVent(vent)}
+                          className={`px-3 py-2 border text-sm transition-colors ${
+                            windVent === vent
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-input hover:border-foreground"
+                          }`}
+                        >
+                          {vent === "SWV" ? "Single Wind Vent" : "Double Wind Vent"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              ) : null}
+
               {/* Variant selector (Configuration in grade mode, else Frame Finish) */}
-              {requiresVariant ? (
+              {!isWindVentMode && requiresVariant ? (
                 <div className="mb-5">
                   <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">
                     {variantOptionLabel}
@@ -1077,7 +1238,19 @@ export default function Product() {
                   ))}
                 </div>
               ) : null}
-              {!data.specs && !data.dimensions && !data.weight && specImages.length === 0 ? (
+              {offersWindVentChoice ? (
+                <div className="mt-6">
+                  <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">
+                    Single vs Double Wind Vent
+                  </p>
+                  <img
+                    src={swvDwvImage}
+                    alt="Single wind vent versus double wind vent comparison"
+                    className="w-full max-w-md border border-border"
+                  />
+                </div>
+              ) : null}
+              {!data.specs && !data.dimensions && !data.weight && specImages.length === 0 && !offersWindVentChoice ? (
                 <p className="text-muted-foreground">No specifications available.</p>
               ) : null}
             </div>

@@ -8,6 +8,7 @@
     "seed": "tsx ./src/seed.ts",
     "load-vendor-data": "tsx ./src/loadVendorData.ts",
     "seed-treasure-garden-products": "tsx ./src/seedTreasureGardenProducts.ts",
+    "seed-tg-wind-vents": "tsx ./src/seedTgWindVents.ts",
     "load-ow-lee": "tsx ./src/loadOwLee.ts",
     "upload-swatches": "tsx ./src/uploadSwatches.ts",
     "seed-ow-lee-finishes": "tsx ./src/seedOwLeeFinishes.ts",
