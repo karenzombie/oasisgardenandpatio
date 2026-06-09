@@ -268,6 +268,7 @@ export * from "./listCatalogProductsParams";
 export * from "./listCatalogProductsSort";
 export * from "./listCushionOrdersParams";
 export * from "./listCushionOrdersStatus";
+export * from "./listManufacturersParams";
 export * from "./loginRequest";
 export * from "./manufacturer";
 export * from "./material";

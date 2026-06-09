@@ -92,6 +92,12 @@ paths:
       operationId: listManufacturers
       tags: [manufacturers]
       summary: List active manufacturers
+      parameters:
+        - in: query
+          name: onlineOnly
+          schema:
+            type: boolean
+          description: When true, only return manufacturers that have at least one directly purchasable online product (excludes quote-only and in-store-only products)
       responses:
         "200":
           description: Active manufacturers

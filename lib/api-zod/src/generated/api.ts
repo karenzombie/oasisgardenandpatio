@@ -56,6 +56,15 @@ export const ListActiveBannersResponse = zod.array(
 /**
  * @summary List active manufacturers
  */
+export const ListManufacturersQueryParams = zod.object({
+  onlineOnly: zod.coerce
+    .boolean()
+    .optional()
+    .describe(
+      "When true, only return manufacturers that have at least one directly purchasable online product (excludes quote-only and in-store-only products)",
+    ),
+});
+
 export const ListManufacturersResponseItem = zod.object({
   id: zod.number(),
   name: zod.string(),

@@ -61,7 +61,7 @@ export default function Shop() {
   const { data, isLoading } = useListCatalogProducts(queryParams);
   const { data: categories } = useListCategories();
   const { data: finishes } = useListCatalogFinishes();
-  const { data: manufacturers } = useListManufacturers();
+  const { data: manufacturers } = useListManufacturers(isOnlineOnly ? { onlineOnly: true } : undefined);
 
   const total = data?.total ?? 0;
   const pageSize = queryParams.pageSize ?? 12;

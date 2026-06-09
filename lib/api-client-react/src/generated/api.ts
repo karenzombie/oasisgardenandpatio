@@ -166,6 +166,7 @@ import type {
   ListCatalogManufacturerFinishesParams,
   ListCatalogProductsParams,
   ListCushionOrdersParams,
+  ListManufacturersParams,
   LoginRequest,
   Manufacturer,
   Material,
@@ -500,41 +501,60 @@ export function useListActiveBanners<
 /**
  * @summary List active manufacturers
  */
-export const getListManufacturersUrl = () => {
-  return `/api/manufacturers`;
+export const getListManufacturersUrl = (params?: ListManufacturersParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/manufacturers?${stringifiedParams}`
+    : `/api/manufacturers`;
 };
 
 export const listManufacturers = async (
+  params?: ListManufacturersParams,
   options?: RequestInit,
 ): Promise<Manufacturer[]> => {
-  return customFetch<Manufacturer[]>(getListManufacturersUrl(), {
+  return customFetch<Manufacturer[]>(getListManufacturersUrl(params), {
     ...options,
     method: "GET",
   });
 };
 
-export const getListManufacturersQueryKey = () => {
-  return [`/api/manufacturers`] as const;
+export const getListManufacturersQueryKey = (
+  params?: ListManufacturersParams,
+) => {
+  return [`/api/manufacturers`, ...(params ? [params] : [])] as const;
 };
 
 export const getListManufacturersQueryOptions = <
   TData = Awaited<ReturnType<typeof listManufacturers>>,
   TError = ErrorType<unknown>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof listManufacturers>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}) => {
+>(
+  params?: ListManufacturersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listManufacturers>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getListManufacturersQueryKey();
+  const queryKey =
+    queryOptions?.queryKey ?? getListManufacturersQueryKey(params);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof listManufacturers>>
-  > = ({ signal }) => listManufacturers({ signal, ...requestOptions });
+  > = ({ signal }) => listManufacturers(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof listManufacturers>>,
@@ -555,15 +575,18 @@ export type ListManufacturersQueryError = ErrorType<unknown>;
 export function useListManufacturers<
   TData = Awaited<ReturnType<typeof listManufacturers>>,
   TError = ErrorType<unknown>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof listManufacturers>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getListManufacturersQueryOptions(options);
+>(
+  params?: ListManufacturersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listManufacturers>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListManufacturersQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

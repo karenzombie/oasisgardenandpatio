@@ -3979,6 +3979,13 @@ export interface EntityHistoryEntry {
   createdAt: string;
 }
 
+export type ListManufacturersParams = {
+  /**
+   * When true, only return manufacturers that have at least one directly purchasable online product (excludes quote-only and in-store-only products)
+   */
+  onlineOnly?: boolean;
+};
+
 export type GetPopularProduct200 = {
   product: FeaturedProduct | null;
   /** ISO timestamp when the cache was last refreshed. */

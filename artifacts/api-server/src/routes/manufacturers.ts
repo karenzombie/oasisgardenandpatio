@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { and, eq, ne, sql } from "drizzle-orm";
-import { db, manufacturersTable, type Manufacturer } from "@workspace/db";
+import { and, eq, exists, ne, sql } from "drizzle-orm";
+import { db, manufacturersTable, productsTable, type Manufacturer } from "@workspace/db";
 import {
   ListManufacturersResponse,
   AdminListManufacturersResponse,
@@ -18,7 +18,19 @@ import { toPublicImageUrl } from "../lib/imageUrl";
 const router: IRouter = Router();
 
 // Public list of active manufacturers (for storefront)
-router.get("/manufacturers", async (_req, res): Promise<void> => {
+router.get("/manufacturers", async (req, res): Promise<void> => {
+  const onlineOnly = req.query.onlineOnly === "true";
+
+  const productConditions = [
+    eq(productsTable.manufacturerId, manufacturersTable.id),
+    eq(productsTable.isActive, true),
+    eq(productsTable.availableOnline, true),
+  ];
+  if (onlineOnly) {
+    productConditions.push(eq(productsTable.quoteOnly, false));
+    productConditions.push(eq(productsTable.inStoreOnly, false));
+  }
+
   const manufacturers = await db
     .select({
       id: manufacturersTable.id,
@@ -31,6 +43,12 @@ router.get("/manufacturers", async (_req, res): Promise<void> => {
       and(
         eq(manufacturersTable.isActive, true),
         ne(manufacturersTable.slug, "andrew-sewing"),
+        exists(
+          db
+            .select({ v: sql`1` })
+            .from(productsTable)
+            .where(and(...productConditions)),
+        ),
       ),
     )
     .orderBy(
