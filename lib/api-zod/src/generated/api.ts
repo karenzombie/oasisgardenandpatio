@@ -87,6 +87,7 @@ export const ListCategoriesResponseItem = zod.object({
   name: zod.string(),
   slug: zod.string(),
   parentId: zod.number().nullable(),
+  imageUrl: zod.string().nullable(),
   displayOrder: zod.number(),
 });
 export const ListCategoriesResponse = zod.array(ListCategoriesResponseItem);

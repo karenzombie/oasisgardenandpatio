@@ -97,12 +97,12 @@ export default function Home() {
             {(topLevelCategories.length > 0
               ? topLevelCategories
               : [
-                  { id: "fallback-lounge", name: "Lounge Furniture", slug: "lounge" },
-                  { id: "fallback-dining", name: "Dining Sets", slug: "dining" },
-                  { id: "fallback-shade", name: "Shade & Accessories", slug: "shade" },
+                  { id: "fallback-lounge", name: "Lounge Furniture", slug: "lounge", imageUrl: null },
+                  { id: "fallback-dining", name: "Dining Sets", slug: "dining", imageUrl: null },
+                  { id: "fallback-shade", name: "Shade & Accessories", slug: "shade", imageUrl: null },
                 ]
             ).map((category) => {
-              const img = CATEGORY_IMAGES[category.slug];
+              const img = category.imageUrl ?? CATEGORY_IMAGES[category.slug];
               return (
                 <Link
                   key={category.id}

@@ -6262,6 +6262,8 @@ components:
           type: string
         parentId:
           type: ["integer", "null"]
+        imageUrl:
+          type: ["string", "null"]
         displayOrder:
           type: integer
       required:
@@ -6269,6 +6271,7 @@ components:
         - name
         - slug
         - parentId
+        - imageUrl
         - displayOrder
     FeaturedProduct:
       type: object

@@ -24,12 +24,13 @@ const router: IRouter = Router();
 
 // Public list of active categories (for storefront)
 router.get("/categories", async (_req, res): Promise<void> => {
-  const categories = await db
+  const rows = await db
     .select({
       id: categoriesTable.id,
       name: categoriesTable.name,
       slug: categoriesTable.slug,
       parentId: categoriesTable.parentId,
+      imageUrl: categoriesTable.imageUrl,
       displayOrder: categoriesTable.displayOrder,
     })
     .from(categoriesTable)
@@ -39,7 +40,10 @@ router.get("/categories", async (_req, res): Promise<void> => {
       sql`${categoriesTable.name} asc`,
     );
 
-  res.json(ListCategoriesResponse.parse(categories));
+  res.json(ListCategoriesResponse.parse(rows.map((r) => ({
+    ...r,
+    imageUrl: toPublicImageUrl(r.imageUrl),
+  }))));
 });
 
 // ----- Admin endpoints -----

@@ -1197,6 +1197,8 @@ export interface Category {
   slug: string;
   /** @nullable */
   parentId: number | null;
+  /** @nullable */
+  imageUrl: string | null;
   displayOrder: number;
 }
 
