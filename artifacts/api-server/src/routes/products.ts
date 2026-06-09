@@ -580,7 +580,14 @@ router.get(
       primaryImageUrl: toPublicImageUrl(primaryGallery?.url ?? null),
       images: images.map((i) => ({ ...i, url: toPublicImageUrl(i.url) })),
       variants: variantRows.map((v) => {
-        const finishData = finishDataByName.get(v.name.trim().toLowerCase());
+        // Wind-vent variants store the finish plus a vent suffix in their name
+        // (e.g. "Silver Shadow – Single Wind Vent"). Strip that suffix so the
+        // frame-finish swatch lookup still matches the plain finish name.
+        const finishLookupName = v.name
+          .replace(/\s*[–—-]\s*(Single|Double)\s+Wind\s+Vent\s*$/i, "")
+          .trim()
+          .toLowerCase();
+        const finishData = finishDataByName.get(finishLookupName);
         return {
           ...v,
           priceAdjustment: String(v.priceAdjustment ?? "0"),
