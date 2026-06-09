@@ -24,8 +24,14 @@
  *
  * Usage:  pnpm --filter @workspace/scripts exec tsx src/seedTgWindVents.ts
  */
-import { eq } from "drizzle-orm";
-import { db, productsTable, productVariantsTable } from "@workspace/db";
+import { and, eq } from "drizzle-orm";
+import {
+  db,
+  productsTable,
+  productVariantsTable,
+  finishesTable,
+  manufacturersTable,
+} from "@workspace/db";
 
 type Price = { msrp: string; sale: string };
 
@@ -89,6 +95,29 @@ function stripVentFromName(name: string): string {
 async function run() {
   let updated = 0;
   let inserted = 0;
+
+  // Align the Treasure Garden silver frame-finish swatch name with the variant
+  // name ("Silver Shadow") so the PDP swatch lookup (which matches finishes by
+  // name) resolves it. The catalog entry shipped as "Silver Shadow, Anodized".
+  const [tgMfr] = await db
+    .select({ id: manufacturersTable.id })
+    .from(manufacturersTable)
+    .where(eq(manufacturersTable.name, "Treasure Garden"));
+  if (tgMfr) {
+    const renamed = await db
+      .update(finishesTable)
+      .set({ name: "Silver Shadow" })
+      .where(
+        and(
+          eq(finishesTable.manufacturerId, tgMfr.id),
+          eq(finishesTable.name, "Silver Shadow, Anodized"),
+        ),
+      )
+      .returning({ id: finishesTable.id });
+    if (renamed.length) {
+      console.log(`  renamed finish "Silver Shadow, Anodized" -> "Silver Shadow"`);
+    }
+  }
 
   for (const cfg of CONFIGS) {
     const [product] = await db

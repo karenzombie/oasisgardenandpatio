@@ -31,3 +31,11 @@ product-level `price`/`salePrice`, because the PDP buy-gate (`hasPrice`/`canBuyO
 and the server cart check read the product price, not the variant. UM970 had a NULL
 catalog price and was unsellable until the seed set its product price to the SWV value.
 When adding absolute-variant products, always set a product-level price too.
+
+**Swatch gotcha:** the by-slug endpoint matches each variant's frame-finish swatch by
+EXACT variant name against the finishes catalog. Renaming variants (e.g. appending a
+vent suffix) drops the swatch — so the endpoint strips the vent suffix before matching.
+Separately, the finish catalog name must equal the variant's finish label, or the swatch
+never resolves (TG shipped "Silver Shadow, Anodized" vs variant "Silver Shadow"; the
+seed renames the finish to align them). Do NOT fuzzy/prefix-match finishes — "Black"
+would falsely match "Black Cherry".
