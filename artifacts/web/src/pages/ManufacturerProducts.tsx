@@ -277,14 +277,10 @@ export default function ManufacturerProducts() {
                       page: "1",
                     })
                   }
-                  className="group block text-left cursor-pointer"
+                  className="group block cursor-pointer border-2 border-primary bg-card overflow-hidden hover:shadow-md transition-shadow duration-150"
                   aria-pressed={isActive}
                 >
-                  <div
-                    className={`relative aspect-square overflow-hidden mb-3 bg-muted rounded-sm border-2 transition-colors ${
-                      isActive ? "border-primary" : "border-transparent"
-                    }`}
-                  >
+                  <div className="relative aspect-square overflow-hidden bg-muted">
                     {img ? (
                       <>
                         <img
@@ -307,16 +303,18 @@ export default function ManufacturerProducts() {
                       </div>
                     )}
                   </div>
-                  <h3
-                    className={`font-serif text-base md:text-lg transition-colors flex items-center justify-between ${
-                      isActive ? "text-primary" : "group-hover:text-primary"
-                    }`}
-                  >
-                    {category.name}
+                  <div className="py-3 px-2 border-t border-primary/30 text-center">
+                    <h3
+                      className={`font-serif text-base md:text-lg transition-colors ${
+                        isActive ? "text-primary" : "group-hover:text-primary"
+                      }`}
+                    >
+                      {category.name}
+                    </h3>
                     <span className="text-xs text-muted-foreground font-sans">
-                      {count}
+                      {count} {count === 1 ? "item" : "items"}
                     </span>
-                  </h3>
+                  </div>
                 </button>
               );
             })}

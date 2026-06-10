@@ -71,9 +71,9 @@ export default function Home() {
                 <Link
                   key={category.id}
                   href={`/shop?category=${category.slug}`}
-                  className="group group/card block cursor-pointer"
+                  className="group group/card block cursor-pointer border-2 border-primary bg-card overflow-hidden hover:shadow-md transition-shadow duration-150"
                 >
-                  <div className="relative aspect-square overflow-hidden mb-3 bg-muted">
+                  <div className="relative aspect-square overflow-hidden bg-muted">
                     {img ? (
                       <>
                         <img
@@ -89,9 +89,8 @@ export default function Home() {
                       </div>
                     )}
                   </div>
-                  <h3 className="font-serif text-base md:text-lg group-hover:text-primary transition-colors flex items-center justify-between">
+                  <h3 className="font-serif text-base md:text-lg group-hover:text-primary transition-colors text-center py-3 px-2 border-t border-primary/30">
                     {category.name}
-                    <ArrowRight className="w-4 h-4 opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
                   </h3>
                 </Link>
               );

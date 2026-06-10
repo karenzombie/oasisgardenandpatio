@@ -200,14 +200,10 @@ export default function Shop() {
               onClick={() =>
                 updateSearch({ online: isOnlineOnly ? null : "true", page: "1" })
               }
-              className="group block text-left cursor-pointer"
+              className="group block cursor-pointer border-2 border-primary bg-card overflow-hidden hover:shadow-md transition-shadow duration-150"
               aria-pressed={isOnlineOnly}
             >
-              <div
-                className={`relative aspect-square overflow-hidden mb-3 bg-muted rounded-sm border-2 transition-colors ${
-                  isOnlineOnly ? "border-primary" : "border-transparent"
-                }`}
-              >
+              <div className="relative aspect-square overflow-hidden bg-muted">
                 <img
                   src={shopOnlineImg}
                   alt="Available Online"
@@ -223,7 +219,7 @@ export default function Shop() {
                 />
               </div>
               <h3
-                className={`font-serif text-base leading-snug transition-colors ${
+                className={`font-serif text-base leading-snug text-center py-3 px-2 border-t border-primary/30 transition-colors ${
                   isOnlineOnly ? "text-primary" : "group-hover:text-primary"
                 }`}
               >
@@ -237,14 +233,10 @@ export default function Shop() {
                 <button
                   key={c.slug}
                   onClick={() => handleCategoryClick(c.slug)}
-                  className="group block text-left cursor-pointer"
+                  className="group block cursor-pointer border-2 border-primary bg-card overflow-hidden hover:shadow-md transition-shadow duration-150"
                   aria-pressed={isActive}
                 >
-                  <div
-                    className={`relative aspect-square overflow-hidden mb-3 bg-muted rounded-sm border-2 transition-colors ${
-                      isActive ? "border-primary" : "border-transparent"
-                    }`}
-                  >
+                  <div className="relative aspect-square overflow-hidden bg-muted">
                     {img ? (
                       <>
                         <img
@@ -268,7 +260,7 @@ export default function Shop() {
                     )}
                   </div>
                   <h3
-                    className={`font-serif text-base leading-snug capitalize transition-colors ${
+                    className={`font-serif text-base leading-snug capitalize text-center py-3 px-2 border-t border-primary/30 transition-colors ${
                       isActive ? "text-primary" : "group-hover:text-primary"
                     }`}
                   >
