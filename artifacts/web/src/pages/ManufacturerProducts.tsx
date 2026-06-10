@@ -319,6 +319,7 @@ export default function ManufacturerProducts() {
               );
             })}
           </div>
+          <div className="mt-12 mb-12 h-1 bg-primary" />
         </div>
       )}
 
