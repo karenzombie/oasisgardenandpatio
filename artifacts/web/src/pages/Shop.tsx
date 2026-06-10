@@ -1,6 +1,6 @@
 import { Link, useLocation, useSearch, useRoute } from "wouter";
 import { useMemo, useState } from "react";
-import { SlidersHorizontal, X, Globe } from "lucide-react";
+import { SlidersHorizontal, X } from "lucide-react";
 import {
   useListCatalogProducts,
   useListCategories,
@@ -12,6 +12,7 @@ import { getBrandLogo } from "@/lib/brandLogos";
 import { getCategoryImage } from "@/lib/categoryImages";
 import { WishlistButton } from "@/components/WishlistButton";
 import { Button } from "@/components/ui/button";
+import shopOnlineImg from "@/assets/category-available-online.jpg";
 
 const SORTS = [
   { value: "featured", label: "Featured" },
@@ -203,23 +204,23 @@ export default function Shop() {
               aria-pressed={isOnlineOnly}
             >
               <div
-                className={`relative aspect-square overflow-hidden mb-3 rounded-sm border-2 transition-colors flex items-center justify-center bg-gradient-to-br from-primary/15 to-primary/5 ${
-                  isOnlineOnly
-                    ? "border-primary"
-                    : "border-transparent group-hover:border-primary/40"
+                className={`relative aspect-square overflow-hidden mb-3 bg-muted rounded-sm border-2 transition-colors ${
+                  isOnlineOnly ? "border-primary" : "border-transparent"
                 }`}
               >
-                <Globe
-                  className={`h-14 w-14 transition-colors ${
-                    isOnlineOnly
-                      ? "text-primary"
-                      : "text-primary/60 group-hover:text-primary"
-                  }`}
-                  strokeWidth={1.25}
+                <img
+                  src={shopOnlineImg}
+                  alt="Available Online"
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  loading="lazy"
                 />
-                {isOnlineOnly && (
-                  <div className="absolute inset-0 bg-primary/10" />
-                )}
+                <div
+                  className={`absolute inset-0 transition-colors duration-500 ${
+                    isOnlineOnly
+                      ? "bg-primary/25"
+                      : "bg-black/10 group-hover:bg-transparent"
+                  }`}
+                />
               </div>
               <h3
                 className={`font-serif text-base leading-snug transition-colors ${
