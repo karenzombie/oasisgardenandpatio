@@ -8,7 +8,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Menu, X, ChevronDown, User, ShoppingBag, Search } from "lucide-react";
-import { useState, useEffect, type FormEvent } from "react";
+import { useState, useEffect, useRef, type FormEvent } from "react";
 import { useClerk } from "@clerk/react";
 import { useAuth } from "@/lib/auth";
 import { WishlistIconLink } from "@/components/layout/WishlistIconLink";
@@ -128,8 +128,24 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const navRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = navRef.current;
+    if (!el) return;
+    const setHeight = () => {
+      document.documentElement.style.setProperty(
+        "--nav-height",
+        `${el.offsetHeight}px`,
+      );
+    };
+    setHeight();
+    const observer = new ResizeObserver(setHeight);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <div className="w-full flex flex-col z-50 sticky top-0">
+    <div ref={navRef} className="w-full flex flex-col z-50 sticky top-0">
       {/* Top Banner */}
       {activeBanners.length > 0 && (
         <div className="bg-primary text-primary-foreground text-center py-2 px-4 text-sm font-medium tracking-wide">

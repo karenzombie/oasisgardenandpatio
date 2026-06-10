@@ -137,48 +137,13 @@ export default function Shop() {
         )}
       </nav>
 
-      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
-        <div>
-          <h1 className="font-serif text-4xl md:text-5xl capitalize">{heading}</h1>
-          {isOnlineOnly && (
-            <p className="text-sm text-muted-foreground mt-2">
-              Browse products available for online purchase — no showroom visit required.
-            </p>
-          )}
-        </div>
-        <div className="flex items-center gap-4 text-sm flex-wrap">
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-2"
-            onClick={() => setFiltersOpen((v) => !v)}
-          >
-            <SlidersHorizontal className="h-4 w-4" />
-            Filters
-            {activeFilterCount > 0 && (
-              <span className="ml-0.5 bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
-                {activeFilterCount}
-              </span>
-            )}
-          </Button>
-          <label className="flex items-center gap-2 text-muted-foreground">
-            Sort
-            <select
-              value={queryParams.sort}
-              onChange={(e) => updateSearch({ sort: e.target.value, page: "1" })}
-              className="border border-input bg-background rounded-sm px-3 py-1.5 text-sm"
-            >
-              {SORTS.map((s) => (
-                <option key={s.value} value={s.value}>{s.label}</option>
-              ))}
-            </select>
-          </label>
-          <span className="text-muted-foreground">
-            {total === 0
-              ? "No results"
-              : `Showing ${startIdx}–${endIdx} of ${total}`}
-          </span>
-        </div>
+      <div className="mb-8">
+        <h1 className="font-serif text-4xl md:text-5xl capitalize">{heading}</h1>
+        {isOnlineOnly && (
+          <p className="text-sm text-muted-foreground mt-2">
+            Browse products available for online purchase — no showroom visit required.
+          </p>
+        )}
       </div>
 
       {/* Category tiles */}
@@ -274,9 +239,46 @@ export default function Shop() {
         </div>
       )}
 
-      {/* Filter panel */}
-      {filtersOpen && (
-        <div className="mb-8 border border-border rounded-sm bg-card p-5">
+      {/* Sticky filter / sort toolbar — stays in view while scrolling products */}
+      <div
+        className="sticky z-30 -mx-4 px-4 bg-background/95 backdrop-blur-sm border-b border-border mb-8"
+        style={{ top: "var(--nav-height, 0px)" }}
+      >
+        <div className="flex items-center gap-4 text-sm flex-wrap justify-end py-3">
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+            onClick={() => setFiltersOpen((v) => !v)}
+          >
+            <SlidersHorizontal className="h-4 w-4" />
+            Filters
+            {activeFilterCount > 0 && (
+              <span className="ml-0.5 bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
+                {activeFilterCount}
+              </span>
+            )}
+          </Button>
+          <label className="flex items-center gap-2 text-muted-foreground">
+            Sort
+            <select
+              value={queryParams.sort}
+              onChange={(e) => updateSearch({ sort: e.target.value, page: "1" })}
+              className="border border-input bg-background rounded-sm px-3 py-1.5 text-sm"
+            >
+              {SORTS.map((s) => (
+                <option key={s.value} value={s.value}>{s.label}</option>
+              ))}
+            </select>
+          </label>
+          <span className="text-muted-foreground">
+            {total === 0
+              ? "No results"
+              : `Showing ${startIdx}–${endIdx} of ${total}`}
+          </span>
+        </div>
+        {filtersOpen && (
+          <div className="mb-4 border border-border rounded-sm bg-card p-5">
           <div className="flex items-center justify-between mb-5">
             <h2 className="font-medium text-sm uppercase tracking-widest">Filter products</h2>
             {activeFilterCount > 0 && (
@@ -396,7 +398,8 @@ export default function Shop() {
             </div>
           )}
         </div>
-      )}
+        )}
+      </div>
 
       {isLoading ? (
         <div className="py-24 text-center text-muted-foreground">Loading…</div>

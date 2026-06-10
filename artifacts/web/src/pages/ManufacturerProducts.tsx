@@ -324,7 +324,10 @@ export default function ManufacturerProducts() {
       )}
 
       {!isLoading && !loadError && (collections.length > 0 || activeFilterCount > 0) && (
-        <div className="mb-8 border border-border rounded-sm bg-card p-5">
+        <div
+          className="sticky z-30 mb-8 border border-border rounded-sm bg-card p-5"
+          style={{ top: "var(--nav-height, 0px)" }}
+        >
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-medium text-sm uppercase tracking-widest flex items-center gap-2">
               <SlidersHorizontal className="h-4 w-4" />
