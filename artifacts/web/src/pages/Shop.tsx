@@ -1,6 +1,6 @@
 import { Link, useLocation, useSearch, useRoute } from "wouter";
 import { useMemo, useState } from "react";
-import { SlidersHorizontal, X } from "lucide-react";
+import { SlidersHorizontal, X, Globe } from "lucide-react";
 import {
   useListCatalogProducts,
   useListCategories,
@@ -98,11 +98,13 @@ export default function Shop() {
 
   function handleCategoryClick(slug: string) {
     if (params?.slug) {
-      if (params.slug === slug) {
-        setLocation(isOnlineOnly ? "/shop?online=true" : "/shop");
-      } else {
-        setLocation(isOnlineOnly ? `/shop/category/${slug}?online=true` : `/shop/category/${slug}`);
-      }
+      // Category lives in the route path; preserve all other query state.
+      const next = new URLSearchParams(search);
+      next.delete("category");
+      next.set("page", "1");
+      const qs = next.toString();
+      const base = params.slug === slug ? "/shop" : `/shop/category/${slug}`;
+      setLocation(qs ? `${base}?${qs}` : base);
     } else {
       updateSearch({ category: activeCategory === slug ? null : slug, page: "1" });
     }
@@ -179,7 +181,7 @@ export default function Shop() {
       </div>
 
       {/* Category tiles */}
-      {categories && categories.length > 0 && (
+      {((categories && categories.length > 0) || isOnlineOnly) && (
         <div className="mb-10">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-serif text-2xl">Shop by Type</h2>
@@ -193,7 +195,41 @@ export default function Shop() {
             )}
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
-            {categories.map((c) => {
+            <button
+              onClick={() =>
+                updateSearch({ online: isOnlineOnly ? null : "true", page: "1" })
+              }
+              className="group block text-left cursor-pointer"
+              aria-pressed={isOnlineOnly}
+            >
+              <div
+                className={`relative aspect-square overflow-hidden mb-3 rounded-sm border-2 transition-colors flex items-center justify-center bg-gradient-to-br from-primary/15 to-primary/5 ${
+                  isOnlineOnly
+                    ? "border-primary"
+                    : "border-transparent group-hover:border-primary/40"
+                }`}
+              >
+                <Globe
+                  className={`h-14 w-14 transition-colors ${
+                    isOnlineOnly
+                      ? "text-primary"
+                      : "text-primary/60 group-hover:text-primary"
+                  }`}
+                  strokeWidth={1.25}
+                />
+                {isOnlineOnly && (
+                  <div className="absolute inset-0 bg-primary/10" />
+                )}
+              </div>
+              <h3
+                className={`font-serif text-base leading-snug transition-colors ${
+                  isOnlineOnly ? "text-primary" : "group-hover:text-primary"
+                }`}
+              >
+                Available Online
+              </h3>
+            </button>
+            {categories?.map((c) => {
               const img = getCategoryImage(c);
               const isActive = activeCategory === c.slug;
               return (
