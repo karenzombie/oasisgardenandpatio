@@ -38,6 +38,8 @@
     "seed-ow-lee-additional": "tsx ./src/seedOwLeeAdditional.ts",
     "seed-ow-lee-fabrics": "tsx ./src/seedOwLeeFabrics.ts",
     "import-treasure-garden-prices": "tsx ./src/importTreasureGardenPrices.ts",
+    "seed-galtech-fabrics": "tsx ./src/seedGaltechFabrics.ts",
+    "seed-tg-fabrics": "tsx ./src/seedTgFabrics.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
