@@ -9,6 +9,7 @@ import {
 } from "@workspace/api-client-react";
 import type { ListCatalogProductsParams } from "@workspace/api-client-react";
 import { getBrandLogo } from "@/lib/brandLogos";
+import { getCategoryImage } from "@/lib/categoryImages";
 import { WishlistButton } from "@/components/WishlistButton";
 import { Button } from "@/components/ui/button";
 
@@ -86,7 +87,6 @@ export default function Shop() {
   const activeFinish = q.get("finish") ?? "";
   const activeName = q.get("q") ?? "";
   const activeFilterCount =
-    (activeCategory ? 1 : 0) +
     (activeManufacturer ? 1 : 0) +
     (activeFinish ? 1 : 0) +
     (activeName ? 1 : 0);
@@ -94,6 +94,18 @@ export default function Shop() {
   function clearAll() {
     const base = params?.slug ? `/shop/category/${params.slug}` : "/shop";
     setLocation(isOnlineOnly ? `${base}?online=true` : base);
+  }
+
+  function handleCategoryClick(slug: string) {
+    if (params?.slug) {
+      if (params.slug === slug) {
+        setLocation(isOnlineOnly ? "/shop?online=true" : "/shop");
+      } else {
+        setLocation(isOnlineOnly ? `/shop/category/${slug}?online=true` : `/shop/category/${slug}`);
+      }
+    } else {
+      updateSearch({ category: activeCategory === slug ? null : slug, page: "1" });
+    }
   }
 
   const heading = isOnlineOnly && !params?.slug
@@ -166,6 +178,72 @@ export default function Shop() {
         </div>
       </div>
 
+      {/* Category tiles */}
+      {categories && categories.length > 0 && (
+        <div className="mb-10">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-serif text-2xl">Shop by Type</h2>
+            {activeCategory && (
+              <button
+                onClick={() => handleCategoryClick(activeCategory)}
+                className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+              >
+                <X className="h-3 w-3" /> Clear type
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+            {categories.map((c) => {
+              const img = getCategoryImage(c);
+              const isActive = activeCategory === c.slug;
+              return (
+                <button
+                  key={c.slug}
+                  onClick={() => handleCategoryClick(c.slug)}
+                  className="group block text-left cursor-pointer"
+                  aria-pressed={isActive}
+                >
+                  <div
+                    className={`relative aspect-square overflow-hidden mb-3 bg-muted rounded-sm border-2 transition-colors ${
+                      isActive ? "border-primary" : "border-transparent"
+                    }`}
+                  >
+                    {img ? (
+                      <>
+                        <img
+                          src={img}
+                          alt={c.name}
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                          loading="lazy"
+                        />
+                        <div
+                          className={`absolute inset-0 transition-colors duration-500 ${
+                            isActive
+                              ? "bg-primary/25"
+                              : "bg-black/10 group-hover:bg-transparent"
+                          }`}
+                        />
+                      </>
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-secondary/40 text-secondary-foreground/60 font-serif text-sm tracking-widest uppercase">
+                        {c.name}
+                      </div>
+                    )}
+                  </div>
+                  <h3
+                    className={`font-serif text-base leading-snug capitalize transition-colors ${
+                      isActive ? "text-primary" : "group-hover:text-primary"
+                    }`}
+                  >
+                    {c.name}
+                  </h3>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Filter panel */}
       {filtersOpen && (
         <div className="mb-8 border border-border rounded-sm bg-card p-5">
@@ -180,7 +258,7 @@ export default function Shop() {
               </button>
             )}
           </div>
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {/* Name search */}
             <div className="space-y-1.5">
               <label className="text-xs uppercase tracking-widest text-muted-foreground block">
@@ -228,29 +306,6 @@ export default function Shop() {
               </select>
             </div>
 
-            {/* Category */}
-            {!params?.slug && (
-              <div className="space-y-1.5">
-                <label className="text-xs uppercase tracking-widest text-muted-foreground block">
-                  Category
-                </label>
-                <select
-                  value={activeCategory}
-                  onChange={(e) =>
-                    updateSearch({ category: e.target.value || null, page: "1" })
-                  }
-                  className={selectClass}
-                >
-                  <option value="">All categories</option>
-                  {categories?.map((c) => (
-                    <option key={c.id} value={c.slug}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
             {/* Finish */}
             {finishes && finishes.length > 0 && (
               <div className="space-y-1.5">
@@ -293,18 +348,6 @@ export default function Shop() {
                     activeManufacturer}
                   <button
                     onClick={() => updateSearch({ manufacturer: null, page: "1" })}
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </span>
-              )}
-              {activeCategory && !params?.slug && (
-                <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full capitalize">
-                  Category:{" "}
-                  {categories?.find((c) => c.slug === activeCategory)?.name ??
-                    activeCategory}
-                  <button
-                    onClick={() => updateSearch({ category: null, page: "1" })}
                   >
                     <X className="h-3 w-3" />
                   </button>
