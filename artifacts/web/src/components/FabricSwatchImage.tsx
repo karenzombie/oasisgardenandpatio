@@ -5,6 +5,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { getBrandLogo } from "@/lib/brandLogos";
 
 export type FabricSwatchData = {
   name: string;
@@ -22,15 +23,26 @@ export function FabricSwatchImage({
   fabric: FabricSwatchData;
   placeholder?: string;
 }) {
+  const logoSrc =
+    getBrandLogo(fabric.manufacturerName) ?? fabric.manufacturerLogoUrl ?? null;
+
   if (!fabric.swatchImageUrl) {
     return (
-      <div className="aspect-square bg-muted border border-border overflow-hidden relative">
-        <div
-          className="w-full h-full flex items-center justify-center text-[10px] uppercase tracking-widest text-muted-foreground/70 text-center px-2"
-          aria-label="Swatch image coming soon"
-        >
+      <div className="aspect-square bg-muted border border-border overflow-hidden relative flex flex-col items-center justify-center gap-2 px-3">
+        {logoSrc ? (
+          <img
+            src={logoSrc}
+            alt={fabric.manufacturerName ?? ""}
+            className="h-6 w-auto max-w-[70%] object-contain opacity-60"
+          />
+        ) : fabric.manufacturerName ? (
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground/60 text-center font-medium">
+            {fabric.manufacturerName}
+          </p>
+        ) : null}
+        <p className="text-[9px] uppercase tracking-widest text-muted-foreground/50 text-center">
           {placeholder}
-        </div>
+        </p>
       </div>
     );
   }
@@ -48,13 +60,13 @@ export function FabricSwatchImage({
             alt={fabric.name}
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
-          {fabric.manufacturerLogoUrl && (
+          {logoSrc && (
             <div
               className="absolute top-1.5 left-1.5 bg-white/90 px-1 py-0.5 rounded-sm shadow-sm max-w-[55%] pointer-events-none"
               aria-hidden="true"
             >
               <img
-                src={fabric.manufacturerLogoUrl}
+                src={logoSrc}
                 alt=""
                 className="h-4 w-auto object-contain"
               />
@@ -73,14 +85,23 @@ export function FabricSwatchImage({
             className="w-full object-contain max-h-[55vh]"
           />
         </div>
-        <div className="text-sm text-muted-foreground space-y-0.5">
-          {fabric.manufacturerName && <p>{fabric.manufacturerName}</p>}
-          <p>{fabric.itemNumber}</p>
-          {fabric.grade && (
-            <p className="text-[11px] uppercase tracking-wider text-muted-foreground/80">
-              Grade {fabric.grade}
-            </p>
+        <div className="flex items-center gap-3">
+          {logoSrc && (
+            <img
+              src={logoSrc}
+              alt={fabric.manufacturerName ?? ""}
+              className="h-6 w-auto object-contain shrink-0"
+            />
           )}
+          <div className="text-sm text-muted-foreground space-y-0.5 min-w-0">
+            {!logoSrc && fabric.manufacturerName && <p>{fabric.manufacturerName}</p>}
+            <p>{fabric.itemNumber}</p>
+            {fabric.grade && (
+              <p className="text-[11px] uppercase tracking-wider text-muted-foreground/80">
+                Grade {fabric.grade}
+              </p>
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
