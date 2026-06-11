@@ -32,10 +32,10 @@ export default function Home() {
         </div>
         
         <div className="relative z-10 container mx-auto px-4 text-center max-w-4xl text-white">
-          <h1 className="font-serif text-5xl md:text-7xl font-medium tracking-tight mb-6 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+          <h1 className="font-bodoni text-5xl md:text-7xl font-medium tracking-tight mb-6 animate-in fade-in slide-in-from-bottom-8 duration-1000">
             Outdoor Living,<br />Refined.
           </h1>
-          <p className="text-xl md:text-2xl font-bold text-white mb-10 max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-150 [text-shadow:0_2px_4px_rgba(0,0,0,0.85),0_4px_16px_rgba(0,0,0,0.7)]">
+          <p className="font-vibes text-2xl md:text-4xl text-white mb-10 max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-150 [text-shadow:0_2px_4px_rgba(0,0,0,0.85),0_4px_16px_rgba(0,0,0,0.7)]">
             Discover curated outdoor furniture collections designed for the way you live outside. Craftsmanship that endures.
           </p>
           <div className="flex flex-col items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
