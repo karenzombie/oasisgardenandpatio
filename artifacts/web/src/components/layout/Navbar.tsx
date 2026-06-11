@@ -66,7 +66,6 @@ export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Search bar — sync input value with the URL's ?q= param when on /search
   const currentQ = location === "/search"
     ? (new URLSearchParams(rawSearch).get("q") ?? "")
     : "";
@@ -83,7 +82,6 @@ export function Navbar() {
     navigate(val ? `/search?q=${encodeURIComponent(val)}` : "/search");
     setIsMobileMenuOpen(false);
   }
-
 
   const { data: banners } = useListActiveBanners();
   const activeBanners = Array.isArray(banners) ? banners.filter(b => b.type === "banner") : [];
@@ -105,9 +103,6 @@ export function Navbar() {
 
   const handleLogout = async () => {
     try {
-      // End the Clerk session first so its cookie is cleared, then drop
-      // the local Express session. Both can fail independently — keep the
-      // client-side cleanup running either way.
       await clerkSignOut().catch(() => {});
       await logoutMutation.mutateAsync().catch(() => {});
     } finally {
@@ -144,6 +139,27 @@ export function Navbar() {
     return () => observer.disconnect();
   }, []);
 
+  const searchBar = (
+    <form onSubmit={handleSearch} className="flex w-full">
+      <div className="relative flex-1">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
+        <input
+          type="search"
+          value={searchValue}
+          onChange={(e) => setSearchValue(e.target.value)}
+          placeholder="Search products, brands, materials…"
+          className="w-full border border-input bg-background pl-9 pr-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary rounded-none"
+        />
+      </div>
+      <button
+        type="submit"
+        className="px-5 bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors shrink-0"
+      >
+        Search
+      </button>
+    </form>
+  );
+
   return (
     <div ref={navRef} className="w-full flex flex-col z-50 sticky top-0">
       {/* Top Banner */}
@@ -161,129 +177,133 @@ export function Navbar() {
       <header
         className={`w-full transition-all duration-300 border-b ${
           isScrolled
-            ? "bg-background/95 backdrop-blur-md border-border py-3 shadow-sm"
-            : "bg-background border-transparent py-5"
+            ? "bg-background/95 backdrop-blur-md border-border shadow-sm"
+            : "bg-background border-transparent"
         }`}
       >
         <div className="container mx-auto px-4 md:px-6">
-          <div className="flex items-center justify-between gap-4">
-            {/* Logo */}
-            <Link href="/" className="flex items-center z-50 shrink-0">
+          <div className="flex items-stretch gap-4 md:gap-6">
+
+            {/* Logo — large on desktop, fills the full header height */}
+            <Link href="/" className="flex items-center shrink-0 z-50 py-3">
               <img
                 src={logoImg}
                 alt="Oasis Garden & Patio"
-                className="h-12 sm:h-14 md:h-14 lg:h-24 xl:h-28 object-contain"
+                className={`w-auto object-contain transition-all duration-300 ${
+                  isScrolled
+                    ? "h-12 sm:h-14 md:h-16 lg:h-20"
+                    : "h-14 sm:h-16 md:h-20 lg:h-24 xl:h-28"
+                }`}
               />
             </Link>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center space-x-4 lg:space-x-6 xl:space-x-8">
-              {NAV_LINKS.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`text-sm font-medium transition-colors hover:text-primary ${
-                    location === link.href
-                      ? "text-primary border-b-2 border-primary pb-1"
-                      : "text-foreground/80"
-                  }`}
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </nav>
+            {/* Right column: nav row + search row (desktop) / actions + hamburger (mobile) */}
+            <div className="flex-1 flex flex-col justify-center md:justify-between min-w-0">
 
-            {/* Right Actions — always visible so customers can reach the cart
-                and their account on every viewport size. Only the main nav
-                links collapse into the hamburger on small screens. */}
-            <div className="flex items-center space-x-4 sm:space-x-5">
-              <WishlistIconLink />
-              <Link
-                href="/cart"
-                aria-label={`Shopping cart${cartCount > 0 ? ` (${cartCount} items)` : ""}`}
-                className="relative text-foreground/80 hover:text-primary transition-colors"
-              >
-                <ShoppingBag className="w-5 h-5" />
-                {cartCount > 0 ? (
-                  <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-[10px] font-semibold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1">
-                    {cartCount > 99 ? "99+" : cartCount}
-                  </span>
-                ) : null}
-              </Link>
-              {isAuthenticated && user ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger
-                    className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground/80 hover:text-primary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm px-1"
-                    aria-label="Account menu"
-                  >
-                    <User className="w-4 h-4" />
-                    <span>{user.firstName ?? "Account"}</span>
-                    <ChevronDown className="w-3.5 h-3.5 opacity-70" />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem asChild>
-                      <Link href="/account" className="cursor-pointer">
-                        My Account
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onSelect={(e) => {
-                        e.preventDefault();
-                        handleLogout();
-                      }}
-                      disabled={logoutMutation.isPending}
-                      className="cursor-pointer"
+              {/* Top row: desktop nav + actions; mobile: actions + hamburger */}
+              <div className="flex items-center justify-between pt-3 md:pt-4 pb-1">
+
+                {/* Desktop Navigation */}
+                <nav className="hidden md:flex items-center space-x-4 lg:space-x-6 xl:space-x-8">
+                  {NAV_LINKS.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      className={`text-sm font-medium transition-colors hover:text-primary ${
+                        location === link.href
+                          ? "text-primary border-b-2 border-primary pb-1"
+                          : "text-foreground/80"
+                      }`}
                     >
-                      Log Out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : (
-                <Link
-                  href="/sign-in"
-                  className="text-sm font-medium text-foreground/70 hover:text-primary transition-colors"
-                >
-                  Sign In
-                </Link>
+                      {link.label}
+                    </Link>
+                  ))}
+                </nav>
+
+                {/* Right Actions */}
+                <div className="flex items-center space-x-4 sm:space-x-5 md:ml-auto">
+                  <WishlistIconLink />
+                  <Link
+                    href="/cart"
+                    aria-label={`Shopping cart${cartCount > 0 ? ` (${cartCount} items)` : ""}`}
+                    className="relative text-foreground/80 hover:text-primary transition-colors"
+                  >
+                    <ShoppingBag className="w-5 h-5" />
+                    {cartCount > 0 ? (
+                      <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-[10px] font-semibold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1">
+                        {cartCount > 99 ? "99+" : cartCount}
+                      </span>
+                    ) : null}
+                  </Link>
+                  {isAuthenticated && user ? (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger
+                        className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground/80 hover:text-primary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm px-1"
+                        aria-label="Account menu"
+                      >
+                        <User className="w-4 h-4" />
+                        <span>{user.firstName ?? "Account"}</span>
+                        <ChevronDown className="w-3.5 h-3.5 opacity-70" />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuItem asChild>
+                          <Link href="/account" className="cursor-pointer">
+                            My Account
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onSelect={(e) => {
+                            e.preventDefault();
+                            handleLogout();
+                          }}
+                          disabled={logoutMutation.isPending}
+                          className="cursor-pointer"
+                        >
+                          Log Out
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  ) : (
+                    <Link
+                      href="/sign-in"
+                      className="text-sm font-medium text-foreground/70 hover:text-primary transition-colors"
+                    >
+                      Sign In
+                    </Link>
+                  )}
+
+                  {/* Mobile Menu Toggle */}
+                  <button
+                    className="md:hidden p-2 -mr-2 text-foreground z-50"
+                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                    aria-label="Toggle menu"
+                  >
+                    {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Search bar — desktop only, sits under the nav row */}
+              {location !== "/search" && (
+                <div className="hidden md:block pb-3 pt-1">
+                  {searchBar}
+                </div>
               )}
             </div>
 
-            {/* Mobile Menu Toggle */}
-            <button
-              className="md:hidden p-2 -mr-2 text-foreground z-50"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              aria-label="Toggle menu"
-            >
-              {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
           </div>
         </div>
       </header>
 
-      {/* Search strip — hidden on the /search page which has its own bar */}
-      {location !== "/search" && <div className="bg-muted/40 border-b border-border">
-        <div className="container mx-auto px-4 md:px-6 py-2">
-          <form onSubmit={handleSearch} className="flex w-full max-w-lg">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
-              <input
-                type="search"
-                value={searchValue}
-                onChange={(e) => setSearchValue(e.target.value)}
-                placeholder="Search products, brands, materials…"
-                className="w-full border border-input bg-background pl-9 pr-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary rounded-none"
-              />
-            </div>
-            <button
-              type="submit"
-              className="px-5 bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors shrink-0"
-            >
-              Search
-            </button>
-          </form>
+      {/* Mobile search strip — below header, hidden on desktop */}
+      {location !== "/search" && (
+        <div className="md:hidden bg-muted/40 border-b border-border">
+          <div className="container mx-auto px-4 py-2">
+            {searchBar}
+          </div>
         </div>
-      </div>}
+      )}
 
       {/* Mobile Menu Drawer */}
       {isMobileMenuOpen && (
