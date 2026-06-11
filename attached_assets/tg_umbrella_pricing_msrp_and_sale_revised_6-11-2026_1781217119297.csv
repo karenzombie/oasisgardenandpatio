@@ -1,0 +1,48 @@
+collection,product_name,sku,finish_group,canopy_option,msrp_grade_awning,sale_grade_awning,msrp_grade_a,sale_grade_a,msrp_grade_c,sale_grade_c
+Cantilever,13' STARLUX AKZ PLUS,AKZP13LX-_,00 | 09,DWV,n/a,n/a,3605,2704,2805,2104
+Cantilever,10'x13' STARLUX AKZ PLUS,AKZPRTLX-_,00 | 09,SWV,n/a,n/a,3600,2700,2800,2100
+Cantilever,13' AKZ PLUS,AKZP13-_,SS | WO,DWV,n/a,n/a,3240,2430,2525,1894
+Cantilever,13' AKZ PLUS,AKZP13-_,00 | 02 | 09,DWV,n/a,n/a,3085,2314,2410,1808
+Cantilever,10'x13' AKZ PLUS,AKZPRT-_,SS | WO,SWV,n/a,n/a,3235,2427,2520,1890
+Cantilever,10'x13' AKZ PLUS,AKZPRT-_,00 | 02 | 09,SWV,n/a,n/a,3080,2310,2400,1800
+Cantilever,11.5'x11.5' AKZ PLUS,AKZPSQ11-_,00 | 09,SWV,n/a,n/a,3015,2262,2380,1785
+Cantilever,11' AKZ PLUS,AKZP-_,00 | 02 | 09,DWV,n/a,n/a,2795,2097,2235,1677
+Cantilever,11.5' AG25T,AG25TR-_,00 | 09,DWV,n/a,n/a,2345,1759,1835,1377
+Cantilever,10'x10' AG25TSQ,AG25TSQR-_,00 | 09,SWV,n/a,n/a,2245,1684,1770,1328
+Cantilever,10' AG25T,AG25TR10-_,00 | 09,DWV,n/a,n/a,2160,1620,1720,1290
+Specialty,10'x13' Easy Track,ET3RT-_,00 | 09,SWV,n/a,n/a,2250,1688,1520,1140
+Specialty,10' Easy Track,ET310-_,00 | 09,SWV,n/a,n/a,1420,1065,1020,765
+Specialty,10' Shanghai Collar Tilt,USA45-_,09,n/a,n/a,n/a,1120,840,890,668
+Market,11' Twist,UM851-_,02 | 03,SWV,n/a,n/a,1195,897,980,735
+Market,9' Twist,UM850-_,02 | 03,SWV,n/a,n/a,875,657,690,518
+Market,9' Starlux Collar Tilt,UM800LX-_,00 | 09,SWV,n/a,n/a,1260,945,1065,799
+Market,9' Starlux Collar Tilt,UM800LX-_,00 | 09,DWV,n/a,n/a,1310,983,1100,825
+Market,11' Collar Tilt,UM801-_,00 | 09,SWV,1745,1309,1105,829,890,668
+Market,11' Collar Tilt,UM801-_,00 | 09,DWV,1870,1403,1180,885,950,713
+Market,9' Collar Tilt,UM800-_,00 | 02 | 09,SWV,1295,972,785,589,590,443
+Market,9' Collar Tilt,UM800-_,00 | 02 | 09,DWV,1355,1017,825,619,620,465
+Market,11' Flex,UM841-_,SS,SWV,1480,1110,1025,769,810,608
+Market,11' Flex,UM841-_,SS,DWV,1730,1298,1095,822,900,675
+Market,11' Flex,UM841-_,00 | 09,SWV,1430,1073,975,732,770,578
+Market,11' Flex,UM841-_,00 | 09,DWV,1655,1242,1045,784,855,642
+Market,9' Flex,UM840-_,SS,SWV,1165,874,735,552,540,405
+Market,9' Flex,UM840-_,SS,DWV,1295,972,760,570,575,432
+Market,9' Flex,UM840-_,00 | 09,SWV,1130,848,715,537,520,390
+Market,9' Flex,UM840-_,00 | 09,DWV,1265,949,745,559,560,420
+Market,7.5'x7.5' Flex,UM847SQ-_,SS,SWV,1090,818,720,540,505,379
+Market,7.5'x7.5' Flex,UM847SQ-_,00 | 09,SWV,1060,795,700,525,480,360
+Market,11' Auto Tilt,UM812-_,00 | 02 | 03 | 09,SWV,1555,1167,945,709,750,563
+Market,11' Auto Tilt,UM812-_,00 | 02 | 03 | 09,DWV,1745,1309,1015,762,830,623
+Market,9' Auto Tilt,UM810-_,SS | WO,SWV,1275,957,730,548,550,413
+Market,9' Auto Tilt,UM810-_,SS | WO,DWV,1315,987,775,582,590,443
+Market,9' Auto Tilt,UM810-_,00 | 02 | 03 | 09,SWV,1180,885,690,518,500,375
+Market,9' Auto Tilt,UM810-_,00 | 02 | 03 | 09,DWV,1225,919,720,540,545,409
+Market,8'x10' Auto Tilt,UM8810RT-_,00 | 02 | 03 | 09,SWV,n/a,n/a,875,657,715,537
+Market,9' Glide Tilt,UM970-_,00 | 09,SWV,n/a,n/a,580,435,415,312
+Market,9' Glide Tilt,UM970-_,00 | 09,DWV,n/a,n/a,640,480,460,345
+Market,7.5' Glide Tilt,UM977-_,00 | 09,SWV,n/a,n/a,495,372,380,285
+Market,9' Push Button Tilt,UM920-_,00 | 02 | 03 | 09,SWV,n/a,n/a,505,379,390,293
+Market,9' Push Button Tilt,UM920-_,00 | 02 | 03 | 09,DWV,n/a,n/a,565,424,415,312
+Market,7.5' Push Button Tilt,UM907-_,00 | 03 | 09,SWV,n/a,n/a,425,319,335,252
+Wood Market,9' Quad Pulley Lift,UM809-_,1H,SWV,515,387,405,304,n/a,n/a
+Wood Market,9' Quad Pulley Lift,UM809-_,1H,DWV,570,428,430,323,n/a,n/a
