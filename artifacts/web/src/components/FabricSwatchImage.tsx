@@ -10,6 +10,7 @@ export type FabricSwatchData = {
   name: string;
   itemNumber: string;
   manufacturerName?: string | null;
+  manufacturerLogoUrl?: string | null;
   swatchImageUrl: string | null;
   grade?: string | null;
 };
@@ -47,6 +48,18 @@ export function FabricSwatchImage({
             alt={fabric.name}
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
+          {fabric.manufacturerLogoUrl && (
+            <div
+              className="absolute top-1.5 left-1.5 bg-white/90 px-1 py-0.5 rounded-sm shadow-sm max-w-[55%] pointer-events-none"
+              aria-hidden="true"
+            >
+              <img
+                src={fabric.manufacturerLogoUrl}
+                alt=""
+                className="h-4 w-auto object-contain"
+              />
+            </div>
+          )}
         </button>
       </DialogTrigger>
       <DialogContent className="max-w-md w-[90vw]">

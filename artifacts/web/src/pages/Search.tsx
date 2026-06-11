@@ -7,6 +7,8 @@ import {
   getListCatalogFabricsQueryKey,
   useListCategories,
   useListCatalogFinishes,
+  useListCatalogManufacturerFinishes,
+  getListCatalogManufacturerFinishesQueryKey,
   useListManufacturers,
   useListMaterials,
 } from "@workspace/api-client-react";
@@ -164,6 +166,15 @@ export default function SearchPage() {
     },
   });
   const matchingFabrics = fabricData?.fabrics ?? [];
+
+  const finishSearchParams = activeQ ? { q: activeQ } : undefined;
+  const { data: finishSearchData } = useListCatalogManufacturerFinishes(finishSearchParams, {
+    query: {
+      queryKey: getListCatalogManufacturerFinishesQueryKey(finishSearchParams),
+      enabled: !!activeQ,
+    },
+  });
+  const matchingFinishes = finishSearchData?.finishes ?? [];
 
   const { data: categories } = useListCategories();
   const { data: manufacturers } = useListManufacturers();
@@ -381,6 +392,38 @@ export default function SearchPage() {
                       {fabric.name}
                     </p>
                     <p className="text-[11px] text-muted-foreground">{fabric.itemNumber}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="border-t border-border mt-8 mb-8" />
+            </div>
+          )}
+
+          {/* Finish swatch results */}
+          {matchingFinishes.length > 0 && (
+            <div className="mb-10">
+              <h2 className="text-xs uppercase tracking-widest font-semibold text-foreground mb-4">
+                Matching Finishes
+                <span className="ml-2 font-normal text-muted-foreground">({matchingFinishes.length})</span>
+              </h2>
+              <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
+                {matchingFinishes.map((finish) => (
+                  <div key={finish.id} className="group block">
+                    <FabricSwatchImage
+                      fabric={{
+                        name: finish.name,
+                        itemNumber: finish.itemNumber ?? "",
+                        manufacturerName: finish.manufacturerName,
+                        manufacturerLogoUrl: finish.manufacturerLogoUrl,
+                        swatchImageUrl: finish.imageUrl,
+                        grade: null,
+                      }}
+                      placeholder="Sample coming soon"
+                    />
+                    <p className="mt-1.5 text-xs text-foreground line-clamp-1" title={finish.name}>
+                      {finish.name}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">{finish.itemNumber}</p>
                   </div>
                 ))}
               </div>
