@@ -241,7 +241,7 @@ export default function Shop() {
 
       {/* Sticky filter / sort toolbar — stays in view while scrolling products */}
       <div
-        className="sticky z-30 -mx-4 px-4 bg-background/95 backdrop-blur-sm border-b border-border mb-8"
+        className="sticky z-30 -mx-4 px-4 bg-sand/50 backdrop-blur-sm border-b border-border mb-8"
         style={{ top: "var(--nav-height, 0px)" }}
       >
         <div className="flex items-center gap-4 text-sm flex-wrap justify-end py-3">

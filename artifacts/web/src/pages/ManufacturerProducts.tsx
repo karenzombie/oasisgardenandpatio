@@ -325,7 +325,7 @@ export default function ManufacturerProducts() {
 
       {!isLoading && !loadError && (collections.length > 0 || activeFilterCount > 0) && (
         <div
-          className="sticky z-30 mb-8 border border-border rounded-sm bg-card p-5"
+          className="sticky z-30 mb-8 border border-border rounded-sm bg-sand/50 backdrop-blur-sm p-5"
           style={{ top: "var(--nav-height, 0px)" }}
         >
           <div className="flex items-center justify-between mb-4">

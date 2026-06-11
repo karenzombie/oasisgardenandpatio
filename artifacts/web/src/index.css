@@ -39,6 +39,9 @@
   --color-destructive-foreground: hsl(var(--destructive-foreground));
   --color-destructive-border: var(--destructive-border);
 
+  /* Warm sand tint — reusable accent shade (e.g. sticky filter/sort bars). Use as bg-sand, bg-sand/50, etc. */
+  --color-sand: #e3bda6;
+
   --font-sans: var(--app-font-sans);
   --font-serif: var(--app-font-serif);
   --font-mono: var(--app-font-mono);
