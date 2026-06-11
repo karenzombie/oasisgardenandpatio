@@ -21,6 +21,13 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { ChevronDown, X, Check } from "lucide-react";
 
 type FabricItem = {
@@ -37,22 +44,55 @@ type FabricItem = {
 function FabricSwatch({ fabric }: { fabric: FabricItem }) {
   return (
     <div className="group">
-      <div className="aspect-square bg-muted border border-border overflow-hidden relative">
-        {fabric.swatchImageUrl ? (
-          <img
-            src={fabric.swatchImageUrl}
-            alt={fabric.name}
-            className="w-full h-full object-cover"
-          />
-        ) : (
+      {fabric.swatchImageUrl ? (
+        <Dialog>
+          <DialogTrigger asChild>
+            <button
+              type="button"
+              className="block w-full aspect-square bg-muted border border-border overflow-hidden relative cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              aria-label={`Enlarge ${fabric.name} swatch`}
+            >
+              <img
+                src={fabric.swatchImageUrl}
+                alt={fabric.name}
+                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+            </button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="font-serif text-2xl">
+                {fabric.name}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="bg-muted border border-border overflow-hidden">
+              <img
+                src={fabric.swatchImageUrl}
+                alt={fabric.name}
+                className="w-full h-auto object-contain"
+              />
+            </div>
+            <div className="text-sm text-muted-foreground space-y-0.5">
+              <p>{fabric.manufacturerName}</p>
+              <p>{fabric.itemNumber}</p>
+              {fabric.grade && (
+                <p className="text-[11px] uppercase tracking-wider text-muted-foreground/80">
+                  Grade {fabric.grade}
+                </p>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      ) : (
+        <div className="aspect-square bg-muted border border-border overflow-hidden relative">
           <div
             className="w-full h-full flex items-center justify-center text-[10px] uppercase tracking-widest text-muted-foreground/70 text-center px-2"
             aria-label="Swatch image coming soon"
           >
             Swatch coming soon
           </div>
-        )}
-      </div>
+        </div>
+      )}
       <p className="mt-2 text-sm text-foreground line-clamp-1" title={fabric.name}>
         {fabric.name}
       </p>
