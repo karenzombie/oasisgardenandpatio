@@ -2,12 +2,11 @@
  * Seed ALL Galtech products from the 2026 MSRP + sale pricing CSV.
  *
  * Product classes (derived per CSV row):
- *  - UMBRELLA   : grade pricing (Sunbrella A/B/C/D) + REQUIRED vent-type
- *                 variant (Single/Double, price-driving, button UI) + finish
- *                 options + all-Sunbrella fabric pool. Updates existing GT-XXX
- *                 products in place.
- *  - COVER      : grade pricing + Sunbrella fabric pool, NO vent, NO finish.
- *                 One variant carries the grade prices.
+ *  - UMBRELLA   : quote-only (NO price; new fabric-grade list pending) + REQUIRED
+ *                 vent-type variant (Single/Double, button UI) + finish options +
+ *                 Galtech's OWN fabric library. Updates existing GT-XXX products.
+ *  - COVER      : quote-only (NO price) + Galtech's OWN fabrics, NO vent, NO
+ *                 finish. One variant per product.
  *  - FLAT_FINISH: flat single price + finish selection, modeled as the legacy
  *                 "variant == finish" pattern (one variant per finish color).
  *  - FLAT_PLAIN : flat single price, no options (hardware, "all finishes" tube).
@@ -25,7 +24,6 @@ import {
   db,
   productsTable,
   productVariantsTable,
-  variantGradePricesTable,
   productFinishOptionsTable,
   productFabricPoolsTable,
   productFabricOptionsTable,
@@ -37,12 +35,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ASSETS = path.resolve(__dirname, "../../attached_assets");
 
 const GALTECH_MFR = 29;
-const SUNBRELLA_MFR = 11;
-const CAT_UMBRELLAS = 38;
 const CAT_BASES = 39;
 const CAT_PARTS = 41;
-
-const GRADES = ["A", "B", "C", "D"] as const;
 
 // ─── CSV parsing ────────────────────────────────────────────────────────────
 
@@ -227,14 +221,15 @@ async function clearProductConfig(productId: number) {
     .where(eq(productFabricOptionsTable.productId, productId));
 }
 
-// All active Sunbrella fabric ids, ordered for stable display.
-async function sunbrellaFabricIds(): Promise<number[]> {
+// All active Galtech fabric ids, ordered for stable display. Galtech umbrellas
+// and replacement covers use Galtech's OWN fabric library (NOT Sunbrella).
+async function galtechFabricIds(): Promise<number[]> {
   const rows = await db
     .select({ id: fabricsTable.id })
     .from(fabricsTable)
     .where(
       and(
-        eq(fabricsTable.manufacturerId, SUNBRELLA_MFR),
+        eq(fabricsTable.manufacturerId, GALTECH_MFR),
         eq(fabricsTable.isActive, true),
       ),
     )
@@ -242,9 +237,9 @@ async function sunbrellaFabricIds(): Promise<number[]> {
   return rows.map((r) => r.id);
 }
 
-// Mirror Treasure Garden: link every active Sunbrella fabric to the product as
-// an explicit product_fabric_options row (satisfies cart/order fabric FKs).
-async function linkSunbrellaFabrics(productId: number, fabricIds: number[]) {
+// Link each active Galtech fabric to the product as an explicit
+// product_fabric_options row (satisfies cart/order fabric FKs).
+async function linkFabricOptions(productId: number, fabricIds: number[]) {
   if (!fabricIds.length) return;
   await db.insert(productFabricOptionsTable).values(
     fabricIds.map((fabricId, idx) => ({
@@ -253,19 +248,6 @@ async function linkSunbrellaFabrics(productId: number, fabricIds: number[]) {
       displayOrder: idx,
     })),
   );
-}
-
-async function insertGradePrices(
-  variantId: number,
-  row: Record<string, string>,
-) {
-  const vals = GRADES.map((g) => {
-    const msrp = row[`sunbrella_${g.toLowerCase()}_msrp`];
-    const sale = row[`sunbrella_${g.toLowerCase()}_sale`];
-    if (!msrp || !sale) return null;
-    return { variantId, grade: g, msrp, salePrice: sale };
-  }).filter((v): v is NonNullable<typeof v> => v !== null);
-  if (vals.length) await db.insert(variantGradePricesTable).values(vals);
 }
 
 // ─── main ────────────────────────────────────────────────────────────────
@@ -278,8 +260,13 @@ async function main() {
   console.log(`Reading ${csv}`);
   const rows = parseCsvFile(csv);
   const maps = await buildFinishMaps();
-  const sunbrellaIds = await sunbrellaFabricIds();
-  console.log(`Linking ${sunbrellaIds.length} active Sunbrella fabrics`);
+  const galtechIds = await galtechFabricIds();
+  console.log(`Linking ${galtechIds.length} active Galtech fabrics`);
+  if (!galtechIds.length) {
+    console.warn(
+      "  WARN: no active Galtech fabrics found — umbrella/cover fabric pools will be empty",
+    );
+  }
 
   // Group umbrella rows by product SKU (one product, 1-2 vent variants).
   const umbrellaGroups = new Map<string, Record<string, string>[]>();
@@ -310,44 +297,44 @@ async function main() {
     }
     await clearProductConfig(productId);
 
-    // Default price = Single Vent (or only vent) grade A.
+    // Default config row = Single Vent (or only vent).
     const defaultRow =
       ventRows.find((r) => /single/i.test(r.vent_type)) ?? ventRows[0]!;
+    // Pricing intentionally removed: Galtech umbrellas are quote-only until the
+    // new fabric-grade price list is loaded. No product price + quoteOnly flag.
     await db
       .update(productsTable)
       .set({
         name: cleanProductName(defaultRow.product_name),
-        price: defaultRow.sunbrella_a_msrp,
-        msrp: defaultRow.sunbrella_a_msrp,
-        salePrice: defaultRow.sunbrella_a_sale,
+        price: null,
+        msrp: null,
+        salePrice: null,
+        frameOnlyPrice: null,
         showPriceOnline: true,
         availableOnline: true,
         isActive: true,
+        quoteOnly: true,
         pricingMode: "fixed",
       })
       .where(eq(productsTable.id, productId));
 
-    // Vent variants (price-driving). Single first.
+    // Vent variants. Single first. No grade prices (pricing removed).
     const ordered = [...ventRows].sort((a, b) =>
       /single/i.test(a.vent_type) ? -1 : /single/i.test(b.vent_type) ? 1 : 0,
     );
     for (let i = 0; i < ordered.length; i++) {
       const r = ordered[i]!;
       const isDouble = /double/i.test(r.vent_type);
-      const [v] = await db
-        .insert(productVariantsTable)
-        .values({
-          productId,
-          variantSku: isDouble ? `${sku}-DV` : sku,
-          variantName: r.vent_type,
-          optionLabel: "Vent Type",
-          priceAdjustment: "0",
-          notes: r.notes || null,
-          displayOrder: i,
-          isActive: true,
-        })
-        .returning({ id: productVariantsTable.id });
-      await insertGradePrices(v!.id, r);
+      await db.insert(productVariantsTable).values({
+        productId,
+        variantSku: isDouble ? `${sku}-DV` : sku,
+        variantName: r.vent_type,
+        optionLabel: "Vent Type",
+        priceAdjustment: "0",
+        notes: r.notes || null,
+        displayOrder: i,
+        isActive: true,
+      });
     }
 
     // Finish options (from the available_finishes column).
@@ -362,8 +349,8 @@ async function main() {
       );
     }
 
-    // Explicit all-Sunbrella fabric links (mirrors Treasure Garden).
-    await linkSunbrellaFabrics(productId, sunbrellaIds);
+    // Galtech's own fabric library (replaces the former all-Sunbrella links).
+    await linkFabricOptions(productId, galtechIds);
 
     counts.umbrella++;
   }
@@ -372,13 +359,16 @@ async function main() {
   for (const { sku, type, row } of singles) {
     const name = cleanProductName(row.product_name);
     const notes = row.notes;
+    // Covers are treated like umbrellas: quote-only, no price (the new
+    // fabric-grade list is pending). Flat finish/plain items keep their pricing.
+    const quoteOnly = type === "COVER";
     const baseFields = {
       manufacturerId: GALTECH_MFR,
       showPriceOnline: true,
       availableOnline: true,
       inStoreOnly: false,
       isActive: true,
-      quoteOnly: false,
+      quoteOnly,
       pricingMode: "fixed" as const,
     };
 
@@ -391,11 +381,7 @@ async function main() {
     let price: string | null = null;
     let msrp: string | null = null;
     let salePrice: string | null = null;
-    if (type === "COVER") {
-      price = row.sunbrella_a_msrp || null;
-      msrp = row.sunbrella_a_msrp || null;
-      salePrice = row.sunbrella_a_sale || null;
-    } else {
+    if (type !== "COVER") {
       price = row.single_item_msrp || null;
       msrp = row.single_item_msrp || null;
       salePrice = row.single_item_sale || null;
@@ -436,22 +422,18 @@ async function main() {
     await clearProductConfig(productId);
 
     if (type === "COVER") {
-      const [v] = await db
-        .insert(productVariantsTable)
-        .values({
-          productId,
-          variantSku: sku,
-          variantName: row.size || "Standard",
-          optionLabel: "Configuration",
-          priceAdjustment: "0",
-          notes: notes || null,
-          displayOrder: 0,
-          isActive: true,
-        })
-        .returning({ id: productVariantsTable.id });
-      await insertGradePrices(v!.id, row);
-      // Explicit all-Sunbrella fabric links (mirrors Treasure Garden).
-      await linkSunbrellaFabrics(productId, sunbrellaIds);
+      await db.insert(productVariantsTable).values({
+        productId,
+        variantSku: sku,
+        variantName: row.size || "Standard",
+        optionLabel: "Configuration",
+        priceAdjustment: "0",
+        notes: notes || null,
+        displayOrder: 0,
+        isActive: true,
+      });
+      // Galtech's own fabric library (no grade prices — pricing removed).
+      await linkFabricOptions(productId, galtechIds);
       counts.cover++;
     } else if (type === "FLAT_FINISH") {
       const finishIds = resolveFinishList(row.available_finishes, maps);

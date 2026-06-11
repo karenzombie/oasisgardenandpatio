@@ -26,10 +26,18 @@ import { readFileSync, readdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import Papa from "papaparse";
-import { db, productsTable, manufacturersTable } from "@workspace/db";
+import {
+  db,
+  productsTable,
+  manufacturersTable,
+  categoriesTable,
+} from "@workspace/db";
 import { eq } from "drizzle-orm";
 
 const TG_NAME = "Treasure Garden";
+// Umbrella products are quote-only (no price) until the new fabric-grade list is
+// loaded; this loader must never re-apply legacy umbrella pricing to them.
+const UMBRELLA_CATEGORY_SLUG = "cat-umbrellas";
 
 type PriceRow = { sku: string; name: string; msrp: number; sale: number };
 
@@ -100,17 +108,33 @@ async function main() {
     .where(eq(manufacturersTable.name, TG_NAME));
   if (!tg) throw new Error(`Manufacturer "${TG_NAME}" not found`);
 
+  const [umbrellaCat] = await db
+    .select({ id: categoriesTable.id })
+    .from(categoriesTable)
+    .where(eq(categoriesTable.slug, UMBRELLA_CATEGORY_SLUG));
+  const umbrellaCatId = umbrellaCat?.id ?? null;
+
   const products = await db
-    .select({ id: productsTable.id, sku: productsTable.sku })
+    .select({
+      id: productsTable.id,
+      sku: productsTable.sku,
+      categoryId: productsTable.categoryId,
+    })
     .from(productsTable)
     .where(eq(productsTable.manufacturerId, tg.id));
   console.log(`Found ${products.length} ${TG_NAME} products`);
 
   let updated = 0;
+  let umbrellasSkipped = 0;
   const fallbacks: string[] = [];
   const skipped: string[] = [];
 
   for (const p of products) {
+    // Skip umbrella-category products — they are quote-only (no price).
+    if (umbrellaCatId != null && p.categoryId === umbrellaCatId) {
+      umbrellasSkipped += 1;
+      continue;
+    }
     if (!p.sku) {
       skipped.push(`(id ${p.id}, no sku)`);
       continue;
@@ -134,6 +158,9 @@ async function main() {
   }
 
   console.log(`\nUpdated ${updated} products.`);
+  if (umbrellasSkipped) {
+    console.log(`Skipped ${umbrellasSkipped} umbrella products (quote-only).`);
+  }
   if (fallbacks.length) {
     console.log(`\nFinish fallback used (single price, no per-finish change):`);
     for (const f of fallbacks) console.log(`  - ${f}`);

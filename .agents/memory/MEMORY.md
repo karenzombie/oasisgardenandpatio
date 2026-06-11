@@ -1,5 +1,5 @@
 - [Running seed scripts against prod](seed-scripts-prod.md) — override DATABASE_URL with $PROD_DATABASE_URL; bulk-insert junction tables (onConflictDoNothing) or per-row inserts time out on prod.
-- [TG Sunbrella grade upcharge](tg-sunbrella-grade-upcharge.md) — TG+Sunbrella per-item upcharge (B+$100,C+$190) folded into MSRP+Sale+snapshots, not a line item; dual helper kept in sync.
+- [Galtech/TG umbrellas quote-only](galtech-tg-umbrellas-quote-only.md) — Galtech+TG umbrellas/covers use own fabrics (not Sunbrella), no price, quoteOnly=true; old TG+Sunbrella upcharge code deleted entirely.
 - [Finish swatch ↔ variant linkage](finish-variant-swatch-link.md) — no FK; recover finish swatch by manufacturerId+name via JS map (never leftJoin — dup names multiply rows); fabrics have a real FK.
 - [TG wind-vent variants](tg-wind-vent-variants.md) — SWV/DWV folded into one Finish×Vent variant (sku -SWV/-DWV, absolute price); PDP splits into 2 selectors; absolute-variant products still need product-level price.
 - [Per-manufacturer price storage](per-manufacturer-price-storage.md) — prices stored differently per mfr (TG=flat products.*, Galtech/Frankford=grade engine); audit BOTH columns; watch SKU drift breaking SKU-matched imports.

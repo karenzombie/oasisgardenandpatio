@@ -47,7 +47,6 @@ const ASSETS_DIR = resolve(__dirname, "../../attached_assets");
 const IMAGES_DIR = resolve(__dirname, "../../tg_images");
 
 const TG_SLUG = "treasure-garden";
-const SUNBRELLA_SLUG = "sunbrella";
 const UMBRELLA_CATEGORY_SLUG = "cat-umbrellas";
 const BASE_CATEGORY_SLUG = "cat-umbrella-bases";
 
@@ -293,19 +292,17 @@ async function main() {
     "Category",
   );
 
-  // Sunbrella fabrics for umbrella canopy options (optional).
-  let sunbrellaFabricIds: number[] = [];
-  try {
-    const sunId = await lookupId(manufacturersTable, SUNBRELLA_SLUG, "Manufacturer");
-    const fabs = await db
-      .select({ id: fabricsTable.id })
-      .from(fabricsTable)
-      .where(eq(fabricsTable.manufacturerId, sunId));
-    sunbrellaFabricIds = fabs.map((f) => f.id);
-  } catch {
-    console.warn("  ! Sunbrella not found — skipping fabric links");
-  }
-  console.log(`Sunbrella fabrics available for linking: ${sunbrellaFabricIds.length}\n`);
+  // Treasure Garden's OWN active fabrics for umbrella canopy options. Umbrellas
+  // no longer use Sunbrella fabrics.
+  const tgFabricRows = await db
+    .select({ id: fabricsTable.id })
+    .from(fabricsTable)
+    .where(
+      and(eq(fabricsTable.manufacturerId, tgId), eq(fabricsTable.isActive, true)),
+    )
+    .orderBy(fabricsTable.name);
+  const tgFabricIds = tgFabricRows.map((f) => f.id);
+  console.log(`Treasure Garden fabrics available for linking: ${tgFabricIds.length}\n`);
 
   const { bucket: bucketName, prefix } = parsePrivateDir();
   const bucket = objectStorage.bucket(bucketName);
@@ -356,7 +353,7 @@ async function main() {
           showPriceOnline: true,
           availableOnline: true,
           inStoreOnly: false,
-          quoteOnly: false,
+          quoteOnly: isUmbrella,
           isActive: true,
           displayOrder: i,
           updatedAt: new Date(),
@@ -381,7 +378,7 @@ async function main() {
           availableOnline: true,
           inStoreOnly: false,
           featured: false,
-          quoteOnly: false,
+          quoteOnly: isUmbrella,
           lowStockThreshold: 0,
           isActive: true,
         })
@@ -481,8 +478,8 @@ async function main() {
     // ── fabric options (umbrellas only) ──────────────────────────────────────
     // Bulk insert with ON CONFLICT DO NOTHING against the (product_id, fabric_id)
     // unique key — one round-trip per product instead of per link.
-    if (isUmbrella && sunbrellaFabricIds.length > 0) {
-      const rowsToInsert = sunbrellaFabricIds.map((fabricId, k) => ({
+    if (isUmbrella && tgFabricIds.length > 0) {
+      const rowsToInsert = tgFabricIds.map((fabricId, k) => ({
         productId,
         fabricId,
         displayOrder: k,

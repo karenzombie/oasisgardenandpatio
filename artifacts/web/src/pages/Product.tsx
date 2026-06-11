@@ -8,7 +8,6 @@ import {
 } from "@workspace/api-client-react";
 import swvDwvImage from "@assets/SWV_DWV_image_1781037074957.png";
 import { getBrandLogo } from "@/lib/brandLogos";
-import { fabricGradeUpcharge } from "@/lib/fabricUpcharge";
 import { sanitizeHtml } from "@/lib/sanitize";
 import { WishlistButton } from "@/components/WishlistButton";
 import { useToast } from "@/hooks/use-toast";
@@ -407,27 +406,17 @@ export default function Product() {
       ? Number(selectedVariant!.salePrice)
       : null;
   const variantSurcharge = Number(selectedVariant?.shippingSurcharge ?? 0);
-  // Treasure Garden + Sunbrella grade upcharge (B +$100, C +$190 per item).
-  // Only applies once a fabric is chosen and not when buying frame-only.
-  const fabricUpcharge =
-    selectedFabric && !frameOnly
-      ? fabricGradeUpcharge(
-          data.manufacturerName,
-          selectedFabric.manufacturerName,
-          selectedFabric.grade,
-        )
-      : 0;
   const effectivePrice = variantHasAbsolute
-    ? (variantSale ?? variantMsrp ?? 0) + fabricUpcharge
-    : basePrice + variantAdj + fabricUpcharge;
+    ? (variantSale ?? variantMsrp ?? 0)
+    : basePrice + variantAdj;
   // Strikethrough display: absolute variants show their own MSRP vs sale;
   // otherwise fall back to the product-level sale logic.
   const showStrikethrough = variantHasAbsolute
     ? variantSale != null && variantMsrp != null && variantMsrp > variantSale
     : Boolean(onSale) && !frameOnly;
   const strikePrice = variantHasAbsolute
-    ? (variantMsrp ?? 0) + fabricUpcharge
-    : Number(data.price) + fabricUpcharge;
+    ? (variantMsrp ?? 0)
+    : Number(data.price);
 
   // ---- Grade-mode pricing ----
   // gradeLinePrice/gradeMsrp are set once a fabric is chosen (its grade picks
@@ -986,12 +975,7 @@ export default function Product() {
                                   : null;
                                 label = `${f.manufacturerName} · ${f.name} (${f.itemNumber}) — Grade ${f.grade}${line != null ? ` · ${formatMoney(line)}` : ""}`;
                               } else {
-                                const up = fabricGradeUpcharge(
-                                  data.manufacturerName,
-                                  f.manufacturerName,
-                                  f.grade,
-                                );
-                                label = `${f.manufacturerName} · ${f.name} (${f.itemNumber})${up > 0 ? ` (+${formatMoney(up)})` : ""}`;
+                                label = `${f.manufacturerName} · ${f.name} (${f.itemNumber})`;
                               }
                               return (
                                 <CommandItem

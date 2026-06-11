@@ -21,7 +21,6 @@ import {
   UpdateCartItemBody,
 } from "@workspace/api-zod";
 import { toPublicImageUrl } from "../lib/imageUrl";
-import { fabricGradeUpcharge } from "../lib/fabricUpcharge";
 
 const router: IRouter = Router();
 
@@ -426,7 +425,6 @@ router.post(
       return;
     }
 
-    let fabricUpcharge = 0;
     // Grade-mode line price (set when the selected fabric's grade maps to a
     // variant grade price). Falls back to base-price math when null.
     let gradeLinePrice: string | null = null;
@@ -492,13 +490,6 @@ router.post(
         }
         gradeLinePrice =
           Number(gp.salePrice) > 0 ? gp.salePrice : gp.msrp;
-      } else {
-        // Treasure Garden + Sunbrella grade upcharge (B +$100, C +$190 per item).
-        fabricUpcharge = fabricGradeUpcharge(
-          product.manufacturerName,
-          option.fabricManufacturerName,
-          option.grade,
-        );
       }
     }
 
@@ -522,9 +513,8 @@ router.post(
       snapshotPrice = Number(gradeLinePrice).toFixed(2);
     } else if (variantAbsoluteBase !== null) {
       // Absolute per-variant line (e.g. per-size rug): use the variant's own
-      // sale/MSRP price. Base price + variant adjustment are not applied; any
-      // fabric upcharge (0 for products without fabrics) is still honored.
-      snapshotPrice = (variantAbsoluteBase + fabricUpcharge).toFixed(2);
+      // sale/MSRP price. Base price + variant adjustment are not applied.
+      snapshotPrice = variantAbsoluteBase.toFixed(2);
     } else {
       // Frame-only orders use frameOnlyPrice; otherwise fall through to
       // salePrice → price as usual. Variant price adjustments still apply
@@ -543,11 +533,7 @@ router.post(
         res.status(400).json({ error: "Product has no price set" });
         return;
       }
-      snapshotPrice = (
-        Number(basePriceStr) +
-        variantPriceAdj +
-        fabricUpcharge
-      ).toFixed(2);
+      snapshotPrice = (Number(basePriceStr) + variantPriceAdj).toFixed(2);
     }
 
     await ensureSessionPersisted(req);
