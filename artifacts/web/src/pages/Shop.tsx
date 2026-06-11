@@ -1,5 +1,5 @@
 import { Link, useLocation, useSearch, useRoute } from "wouter";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { SlidersHorizontal, X } from "lucide-react";
 import {
   useListCatalogProducts,
@@ -97,6 +97,13 @@ export default function Shop() {
     setLocation(isOnlineOnly ? `${base}?online=true` : base);
   }
 
+  const productsRef = useRef<HTMLDivElement>(null);
+  const scrollToProducts = () =>
+    setTimeout(
+      () => productsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
+      0,
+    );
+
   function handleCategoryClick(slug: string) {
     if (params?.slug) {
       // Category lives in the route path; preserve all other query state.
@@ -109,6 +116,7 @@ export default function Shop() {
     } else {
       updateSearch({ category: activeCategory === slug ? null : slug, page: "1" });
     }
+    scrollToProducts();
   }
 
   const heading = isOnlineOnly && !params?.slug
@@ -163,7 +171,7 @@ export default function Shop() {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
             {!isOnlineOnly && (
               <button
-                onClick={() => updateSearch({ online: "true", page: "1" })}
+                onClick={() => { updateSearch({ online: "true", page: "1" }); scrollToProducts(); }}
                 className="group block cursor-pointer border-2 border-primary bg-card overflow-hidden hover:shadow-md transition-shadow duration-150"
               >
                 <div className="relative aspect-square overflow-hidden bg-muted">
@@ -230,6 +238,7 @@ export default function Shop() {
 
       {/* Sticky filter / sort toolbar — stays in view while scrolling products */}
       <div
+        ref={productsRef}
         className="sticky z-30 -mx-4 px-4 bg-sand/50 backdrop-blur-sm border-b border-border mb-8"
         style={{ top: "var(--nav-height, 0px)" }}
       >

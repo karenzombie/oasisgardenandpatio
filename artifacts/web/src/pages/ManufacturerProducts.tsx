@@ -1,5 +1,5 @@
 import { Link, useRoute, useLocation, useSearch } from "wouter";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useQueries } from "@tanstack/react-query";
 import { X, SlidersHorizontal, Check, ChevronDown } from "lucide-react";
 import {
@@ -205,6 +205,13 @@ export default function ManufacturerProducts() {
     setLocation(qs ? `/manufacturers/${slug}?${qs}` : `/manufacturers/${slug}`);
   }
 
+  const productsRef = useRef<HTMLDivElement>(null);
+  const scrollToProducts = () =>
+    setTimeout(
+      () => productsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
+      0,
+    );
+
   const activeTypeName =
     types.find((t) => t.category.slug === activeType)?.category.name ?? activeType;
 
@@ -271,12 +278,13 @@ export default function ManufacturerProducts() {
               return (
                 <button
                   key={category.slug}
-                  onClick={() =>
+                  onClick={() => {
                     updateSearch({
                       type: isActive ? null : category.slug,
                       page: "1",
-                    })
-                  }
+                    });
+                    scrollToProducts();
+                  }}
                   className="group block cursor-pointer border-2 border-primary bg-card overflow-hidden hover:shadow-md transition-shadow duration-150"
                   aria-pressed={isActive}
                 >
@@ -325,6 +333,7 @@ export default function ManufacturerProducts() {
 
       {!isLoading && !loadError && (collections.length > 0 || activeFilterCount > 0) && (
         <div
+          ref={productsRef}
           className="sticky z-30 mb-8 border border-border rounded-sm bg-sand/50 backdrop-blur-sm p-5"
           style={{ top: "var(--nav-height, 0px)" }}
         >
