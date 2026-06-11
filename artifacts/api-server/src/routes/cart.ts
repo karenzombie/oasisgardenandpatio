@@ -376,15 +376,12 @@ router.post(
       return;
     }
 
-    // Frame finish: required and validated only in grade mode; rejected for
-    // legacy products that have no discrete finish set.
+    // Frame finish: in grade mode the finish is required ONLY when the product
+    // exposes discrete finish options (pool-expanded mfr finishes or individually
+    // picked options). Finish-in-variant products (e.g. Treasure Garden market
+    // umbrellas) carry the finish in the chosen variant, so no separate finishId
+    // applies — it is rejected if sent. Non-grade products never take a finish.
     if (isGradeMode) {
-      if (!finishId) {
-        res
-          .status(400)
-          .json({ error: "Please choose a frame finish before adding this item." });
-        return;
-      }
       // Resolve the product's allowed finish set = pool-expanded mfr finishes
       // UNION individually-picked finish options.
       const poolMfrRows = await db
@@ -412,10 +409,24 @@ router.post(
           .where(eq(productFinishOptionsTable.productId, productId))
       ).map((o) => o.finishId);
       const allowedFinishIds = new Set([...pooledIds, ...optionIds]);
-      if (!allowedFinishIds.has(finishId)) {
+      const hasDiscreteFinishes = allowedFinishIds.size > 0;
+      if (hasDiscreteFinishes) {
+        if (!finishId) {
+          res
+            .status(400)
+            .json({ error: "Please choose a frame finish before adding this item." });
+          return;
+        }
+        if (!allowedFinishIds.has(finishId)) {
+          res
+            .status(400)
+            .json({ error: "Selected frame finish is not offered for this product." });
+          return;
+        }
+      } else if (finishId) {
         res
           .status(400)
-          .json({ error: "Selected frame finish is not offered for this product." });
+          .json({ error: "This product does not have frame finish options." });
         return;
       }
     } else if (finishId) {

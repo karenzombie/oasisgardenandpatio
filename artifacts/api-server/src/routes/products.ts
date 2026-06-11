@@ -584,7 +584,10 @@ router.get(
         // (e.g. "Silver Shadow – Single Wind Vent"). Strip that suffix so the
         // frame-finish swatch lookup still matches the plain finish name.
         const finishLookupName = v.name
-          .replace(/\s*[–—-]\s*(Single|Double)\s+Wind\s+Vent\s*$/i, "")
+          .replace(
+            /\s*(?:[–—-]\s*(?:Single|Double)\s+Wind\s+Vent|\((?:SWV|DWV)\))\s*$/i,
+            "",
+          )
           .trim()
           .toLowerCase();
         const finishData = finishDataByName.get(finishLookupName);

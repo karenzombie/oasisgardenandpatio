@@ -1,11 +1,16 @@
 /**
- * One-time-per-DB migration: Galtech (29) and Treasure Garden (12) umbrella
- * products must use ONLY their own manufacturer's fabrics (no Sunbrella), and
- * have ALL pricing removed (a new fabric-grade price list is coming). Affected
- * products become quote-only ("Call for Pricing", not purchasable online).
+ * One-time-per-DB migration: Galtech (29) umbrella products must use ONLY their
+ * own manufacturer's fabrics (no Sunbrella), and have ALL pricing removed (a new
+ * fabric-grade price list is coming). Affected products become quote-only
+ * ("Call for Pricing", not purchasable online).
+ *
+ * NOTE: Treasure Garden (12) is intentionally NOT a target here. TG umbrella
+ * pricing is (re)built by `loadTgUmbrellaPricing.ts` from the CSV price list as
+ * grade-priced, purchasable Finish × Wind Vent variants; this remover must not
+ * strip that pricing back out.
  *
  * Target set = each manufacturer's products that currently carry Sunbrella
- * fabric options (Galtech: umbrellas + replacement covers; TG: umbrellas).
+ * fabric options (Galtech: umbrellas + replacement covers).
  *
  * Idempotent: once a product's Sunbrella options are gone it is no longer a
  * target, so re-running is a safe no-op. Safe-guarded: if a manufacturer has no
@@ -30,7 +35,6 @@ import {
 const SUNBRELLA_MFR = 11;
 const TARGETS = [
   { mfrId: 29, label: "Galtech International" },
-  { mfrId: 12, label: "Treasure Garden" },
 ];
 
 async function ownActiveFabricIds(mfrId: number): Promise<number[]> {

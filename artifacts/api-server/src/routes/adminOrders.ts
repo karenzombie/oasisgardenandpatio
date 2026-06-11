@@ -47,6 +47,7 @@ import { recordHistory } from "../lib/history";
 import { loadOrderShipments } from "./adminOrderShipments";
 import { loadOrderPayments } from "./adminOrderPayments";
 import { autoGenerateVendorOrders } from "../lib/autoGenerateVendorOrders";
+import { stripVentSuffix } from "../lib/variantSku";
 import { sendOrderStatusEmail, sendOrderRefundEmail } from "../lib/orderStatusEmail";
 import { processAuthnetRefund } from "../lib/authorizeNet";
 import {
@@ -1640,7 +1641,9 @@ router.post(
             fabricVendorId: it.fabricVendorId ?? null,
             finishId: it.finishId ?? null,
             productSkuSnapshot: productSku,
-            variantSkuSnapshot: variantSku,
+            // Order/PO SKU = base + finish only; the wind vent (kept in the
+            // variant name snapshot) is not part of the orderable SKU.
+            variantSkuSnapshot: stripVentSuffix(variantSku),
             variantNameSnapshot: variantName,
             finishCodeSnapshot: finishCode,
             finishNameSnapshot: finishName,

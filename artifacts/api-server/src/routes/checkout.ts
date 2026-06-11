@@ -25,6 +25,7 @@ import {
 } from "@workspace/api-zod";
 import { getOrCreateCustomer } from "./account";
 import { autoGenerateVendorOrders } from "../lib/autoGenerateVendorOrders";
+import { stripVentSuffix } from "../lib/variantSku";
 import {
   loadPricingSettings,
   computeShipping,
@@ -407,7 +408,9 @@ router.post(
             variantId: l.variantId,
             fabricId: l.fabricId,
             finishId: l.finishId,
-            variantSkuSnapshot: l.variantSku,
+            // Order/PO SKU = base + finish only; the wind vent (kept in the
+            // variant name snapshot) is not part of the orderable SKU.
+            variantSkuSnapshot: stripVentSuffix(l.variantSku),
             variantNameSnapshot: l.variantName,
             finishCodeSnapshot: l.finishCode,
             finishNameSnapshot: l.finishName,

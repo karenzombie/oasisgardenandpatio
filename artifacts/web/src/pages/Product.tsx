@@ -43,7 +43,10 @@ type TabId = (typeof ALL_TABS)[number]["id"];
 // combined variant back into its finish key and vent so the PDP can render two
 // independent selectors. The convention is owned by seedTgWindVents.ts.
 const VENT_SUFFIX_RE = /-(SWV|DWV)$/i;
-const VENT_NAME_RE = /\s*[–—-]\s*(Single|Double)\s+Wind\s+Vent\s*$/i;
+// Strips the wind-vent suffix from a variant name in either form: the legacy
+// "– Single/Double Wind Vent" dash form, or the current "(SWV)"/"(DWV)" form.
+const VENT_NAME_RE =
+  /\s*(?:[–—-]\s*(?:Single|Double)\s+Wind\s+Vent|\((?:SWV|DWV)\))\s*$/i;
 function ventOf(sku: string): "SWV" | "DWV" | null {
   const m = VENT_SUFFIX_RE.exec(sku);
   return m ? (m[1].toUpperCase() as "SWV" | "DWV") : null;
@@ -150,31 +153,51 @@ export default function Product() {
     [isGradeMode, variants],
   );
 
+  // Finish-in-variant mode: a grade-priced product whose frame finish lives in
+  // the variant SKU/name (no discrete `finishes`), with the finish (and, when
+  // present, the wind vent) chosen via the wind-vent-style selectors. This is
+  // how Treasure Garden market umbrellas are modeled: each variant is a
+  // Finish (× Wind Vent) row whose option label reads "Finish ...". Frankford
+  // grade products without discrete finishes use a "Configuration" option label
+  // (size/tilt rows, not finishes) and are deliberately excluded.
+  const finishVariantMode = useMemo(
+    () =>
+      isGradeMode &&
+      finishes.length === 0 &&
+      variants.length > 0 &&
+      variants.every((v) => /finish/i.test(v.optionLabel)),
+    [isGradeMode, finishes.length, variants],
+  );
+
   // Unique finishes (key + display label) for the wind-vent finish selector,
   // in variant displayOrder. Swatch image is borrowed from the SWV row.
   const windFinishOptions = useMemo(() => {
-    if (!isWindVentMode) return [];
+    if (!isWindVentMode && !finishVariantMode) return [];
     const out: { key: string; label: string; swatchImageUrl: string | null }[] = [];
     const seen = new Set<string>();
     for (const v of variants) {
       const key = finishKeyOf(v.sku);
       if (seen.has(key)) continue;
       seen.add(key);
+      // Finish display label = finish name + finish code (the last SKU segment
+      // after the base), e.g. "Bronze 00". The code mirrors what prints on POs.
+      const code = key.split("-").pop() ?? "";
+      const name = finishLabelOf(v.name);
       out.push({
         key,
-        label: finishLabelOf(v.name),
+        label: code && code !== name ? `${name} ${code}` : name,
         swatchImageUrl: v.swatchImageUrl ?? null,
       });
     }
     return out;
-  }, [isWindVentMode, variants]);
+  }, [isWindVentMode, finishVariantMode, variants]);
 
   // Wind-vent options actually present (typically both SWV and DWV).
   const windVentOptions = useMemo<("SWV" | "DWV")[]>(() => {
-    if (!isWindVentMode) return [];
+    if (!isWindVentMode && !finishVariantMode) return [];
     const present = new Set(variants.map((v) => ventOf(v.sku)).filter(Boolean));
     return (["SWV", "DWV"] as const).filter((vent) => present.has(vent));
-  }, [isWindVentMode, variants]);
+  }, [isWindVentMode, finishVariantMode, variants]);
 
   // Whether this product offers a wind-vent choice at all — true for both the
   // Treasure Garden combined variants AND Galtech's single "Vent Type" picker.
@@ -186,16 +209,36 @@ export default function Product() {
 
   // Drive the single combined variantId from the two wind-vent selections.
   useEffect(() => {
-    if (!isWindVentMode) return;
-    if (windFinishKey && windVent) {
+    if (!isWindVentMode && !finishVariantMode) return;
+    const needsVent = windVentOptions.length > 0;
+    if (windFinishKey && (!needsVent || windVent)) {
       const match = variants.find(
-        (v) => finishKeyOf(v.sku) === windFinishKey && ventOf(v.sku) === windVent,
+        (v) =>
+          finishKeyOf(v.sku) === windFinishKey &&
+          (!needsVent || ventOf(v.sku) === windVent),
       );
       setVariantId(match?.id ?? null);
     } else {
       setVariantId(null);
     }
-  }, [isWindVentMode, windFinishKey, windVent, variants]);
+  }, [
+    isWindVentMode,
+    finishVariantMode,
+    windFinishKey,
+    windVent,
+    windVentOptions,
+    variants,
+  ]);
+
+  // Auto-select the wind vent when only one is offered (the customer still
+  // explicitly picks the finish). When no vent applies (e.g. USA45 Shanghai)
+  // the vent selector is hidden entirely.
+  useEffect(() => {
+    if (!isWindVentMode && !finishVariantMode) return;
+    if (windVentOptions.length === 1) {
+      setWindVent((cur) => cur ?? windVentOptions[0]);
+    }
+  }, [isWindVentMode, finishVariantMode, windVentOptions]);
 
   // Map of grade -> {msrp, salePrice} for the currently selected configuration.
   const gradePriceMap = useMemo(() => {
@@ -258,11 +301,14 @@ export default function Product() {
   // Auto-select the only configuration when a product has a single variant
   // (replacement covers, single-vent umbrellas, single-finish bases/frames).
   useEffect(() => {
+    // Finish-in-variant / wind-vent products drive variantId from the finish
+    // (+ vent) selectors, so never pre-select even with a single variant.
+    if (isWindVentMode || finishVariantMode) return;
     if (variants.length === 1) {
       setVariantId((cur) => cur ?? variants[0]!.id);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data?.id, variants.length]);
+  }, [data?.id, variants.length, isWindVentMode, finishVariantMode]);
 
   // Clear a now-invalid fabric when the configuration changes (its grade may no
   // longer be priced, or stripes may now be excluded).
@@ -305,13 +351,14 @@ export default function Product() {
   const offersFrameOnly = !isGradeMode && hasFabrics && frameOnlyPrice != null;
 
   const missingSelections: string[] = [];
-  if (isWindVentMode) {
+  if (isWindVentMode || finishVariantMode) {
     if (!windFinishKey) missingSelections.push("Frame Finish");
-    if (!windVent) missingSelections.push("Wind Vent");
-    // Guard against an incomplete Finish x Vent matrix: both controls picked
-    // but no matching variant. Current seed data is complete, but this keeps
-    // a stray add-to-cart from firing without a variantId.
-    if (windFinishKey && windVent && !selectedVariant) {
+    const ventRequired = windVentOptions.length > 0;
+    if (ventRequired && !windVent) missingSelections.push("Wind Vent");
+    // Guard against an incomplete Finish x Vent matrix: controls picked but no
+    // matching variant. Current seed data is complete, but this keeps a stray
+    // add-to-cart from firing without a variantId.
+    if (windFinishKey && (!ventRequired || windVent) && !selectedVariant) {
       missingSelections.push("a valid Finish + Wind Vent combination");
     }
   } else if (requiresVariant && !selectedVariant) {
@@ -452,17 +499,22 @@ export default function Product() {
   // fabric item number so each unique selection has a traceable code. For
   // simple (non-grade) variant products like rugs, the variant IS the SKU
   // (e.g. each size has its own -35/-80 SKU), so show that variant's SKU.
-  const dynamicSku = isGradeMode
-    ? (selectedVariant || selectedFinish || selectedFabric
-        ? [
-            selectedVariant?.sku,
-            selectedFinish?.code,
-            selectedFabric?.itemNumber,
-          ]
-            .filter(Boolean)
-            .join("-") || data.sku
-        : data.sku)
-    : (selectedVariant?.sku ?? data.sku);
+  const dynamicSku = finishVariantMode
+    ? // Order/PO + display SKU = base + finish only (wind-vent suffix stripped).
+      selectedVariant
+      ? finishKeyOf(selectedVariant.sku)
+      : data.sku
+    : isGradeMode
+      ? (selectedVariant || selectedFinish || selectedFabric
+          ? [
+              selectedVariant?.sku,
+              selectedFinish?.code,
+              selectedFabric?.itemNumber,
+            ]
+              .filter(Boolean)
+              .join("-") || data.sku
+          : data.sku)
+      : (selectedVariant?.sku ?? data.sku);
 
   // Effective weight: size-priced products (e.g. rugs) carry a per-variant
   // weight that differs by size, so prefer the selected variant's weight and
@@ -651,7 +703,7 @@ export default function Product() {
               {/* Wind-vent products: two independent selectors (Frame Finish +
                   Wind Vent) mapping to a single combined variant. Neither is
                   preselected — the customer must consciously pick the vent. */}
-              {isWindVentMode ? (
+              {isWindVentMode || finishVariantMode ? (
                 <>
                   <div className="mb-5">
                     <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">
@@ -687,38 +739,40 @@ export default function Product() {
                       ))}
                     </div>
                   </div>
-                  <div className="mb-5">
-                    <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">
-                      Wind Vent
-                      <span className="text-destructive ml-1">*</span>
-                      {windVent ? (
-                        <span className="ml-2 normal-case tracking-normal text-foreground">
-                          {windVent === "SWV" ? "Single Wind Vent" : "Double Wind Vent"}
-                        </span>
-                      ) : null}
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {windVentOptions.map((vent) => (
-                        <button
-                          key={vent}
-                          type="button"
-                          onClick={() => setWindVent(vent)}
-                          className={`px-3 py-2 border text-sm transition-colors ${
-                            windVent === vent
-                              ? "border-primary bg-primary text-primary-foreground"
-                              : "border-input hover:border-foreground"
-                          }`}
-                        >
-                          {vent === "SWV" ? "Single Wind Vent" : "Double Wind Vent"}
-                        </button>
-                      ))}
+                  {windVentOptions.length > 0 ? (
+                    <div className="mb-5">
+                      <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">
+                        Wind Vent
+                        <span className="text-destructive ml-1">*</span>
+                        {windVent ? (
+                          <span className="ml-2 normal-case tracking-normal text-foreground">
+                            {windVent === "SWV" ? "Single Wind Vent" : "Double Wind Vent"}
+                          </span>
+                        ) : null}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {windVentOptions.map((vent) => (
+                          <button
+                            key={vent}
+                            type="button"
+                            onClick={() => setWindVent(vent)}
+                            className={`px-3 py-2 border text-sm transition-colors ${
+                              windVent === vent
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-input hover:border-foreground"
+                            }`}
+                          >
+                            {vent === "SWV" ? "Single Wind Vent" : "Double Wind Vent"}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  ) : null}
                 </>
               ) : null}
 
               {/* Variant selector (Configuration in grade mode, else Frame Finish) */}
-              {!isWindVentMode && requiresVariant ? (
+              {!isWindVentMode && !finishVariantMode && requiresVariant ? (
                 <div className="mb-5">
                   <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">
                     {variantOptionLabel}

@@ -14,7 +14,11 @@ DATABASE_URL=$PROD_DATABASE_URL pnpm --filter @workspace/scripts exec tsx src/se
 DATABASE_URL=$PROD_DATABASE_URL pnpm --filter @workspace/scripts exec tsx src/seedNorthcapeProducts.ts
 DATABASE_URL=$PROD_DATABASE_URL pnpm --filter @workspace/scripts exec tsx src/importTreasureGardenPrices.ts
 
-# Galtech + Treasure Garden umbrellas/covers: drop Sunbrella fabrics for each
-# manufacturer's own fabrics and remove pricing (quote-only). Idempotent + safe;
-# runs last so it is the final authority over umbrella pricing/fabric state.
+# Galtech umbrellas/covers: drop Sunbrella fabrics for Galtech's own fabrics and
+# remove pricing (quote-only). Idempotent + safe.
 DATABASE_URL=$PROD_DATABASE_URL pnpm --filter @workspace/scripts exec tsx src/removeSunbrellaUmbrellaPricing.ts
+
+# Treasure Garden market umbrellas: (re)build grade-priced, purchasable
+# Finish × Wind Vent variants from the CSV price list. Idempotent. Runs last so
+# it is the final authority over TG umbrella pricing/variant/fabric state.
+DATABASE_URL=$PROD_DATABASE_URL pnpm --filter @workspace/scripts exec tsx src/loadTgUmbrellaPricing.ts
