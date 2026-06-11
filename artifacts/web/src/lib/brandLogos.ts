@@ -8,7 +8,7 @@ import hanamint from "@assets/hanamint-logo_1777762880085.jpg";
 import northcape from "@assets/northcape-logo_1777762880085.jpg";
 import sunsetWest from "@assets/sunset-west-logo_1777762880085.jpeg";
 import homecrest from "@assets/homecrest-logo_1777762880085.png";
-import treasureGarden from "@assets/treasure-garden-logo_1777762880085.jpg";
+import treasureGarden from "@assets/tg_updated_logo_1781215322920.png";
 import telescopeCasual from "@assets/TelescopeCasual-logo_1777762880085.png";
 import frankford from "@assets/frankford-logo_1780107775769.jpg";
 import galtech from "@assets/galtech_logo_image_1780285724532.png";
