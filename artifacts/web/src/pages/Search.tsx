@@ -13,6 +13,7 @@ import {
 import type { ListCatalogProductsParams } from "@workspace/api-client-react";
 import { getBrandLogo } from "@/lib/brandLogos";
 import { WishlistButton } from "@/components/WishlistButton";
+import { FabricSwatchImage } from "@/components/FabricSwatchImage";
 import { Button } from "@/components/ui/button";
 
 const SORTS = [
@@ -374,25 +375,13 @@ export default function SearchPage() {
               </h2>
               <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
                 {matchingFabrics.map((fabric) => (
-                  <Link key={fabric.id} href="/fabrics" className="group block">
-                    <div className="aspect-square bg-muted border border-border overflow-hidden">
-                      {fabric.swatchImageUrl ? (
-                        <img
-                          src={fabric.swatchImageUrl}
-                          alt={fabric.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-[10px] uppercase tracking-widest text-muted-foreground/70 text-center px-1">
-                          No swatch
-                        </div>
-                      )}
-                    </div>
+                  <div key={fabric.id} className="group block">
+                    <FabricSwatchImage fabric={fabric} placeholder="No swatch" />
                     <p className="mt-1.5 text-xs text-foreground line-clamp-1" title={fabric.name}>
                       {fabric.name}
                     </p>
                     <p className="text-[11px] text-muted-foreground">{fabric.itemNumber}</p>
-                  </Link>
+                  </div>
                 ))}
               </div>
               <div className="border-t border-border mt-8 mb-8" />
