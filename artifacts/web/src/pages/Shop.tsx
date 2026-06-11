@@ -161,36 +161,25 @@ export default function Shop() {
             )}
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
-            <button
-              onClick={() =>
-                updateSearch({ online: isOnlineOnly ? null : "true", page: "1" })
-              }
-              className="group block cursor-pointer border-2 border-primary bg-card overflow-hidden hover:shadow-md transition-shadow duration-150"
-              aria-pressed={isOnlineOnly}
-            >
-              <div className="relative aspect-square overflow-hidden bg-muted">
-                <img
-                  src={shopOnlineImg}
-                  alt="Available Online"
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  loading="lazy"
-                />
-                <div
-                  className={`absolute inset-0 transition-colors duration-500 ${
-                    isOnlineOnly
-                      ? "bg-primary/25"
-                      : "bg-black/10 group-hover:bg-transparent"
-                  }`}
-                />
-              </div>
-              <h3
-                className={`font-serif text-base leading-snug text-center py-3 px-2 border-t border-primary/30 transition-colors ${
-                  isOnlineOnly ? "text-primary" : "group-hover:text-primary"
-                }`}
+            {!isOnlineOnly && (
+              <button
+                onClick={() => updateSearch({ online: "true", page: "1" })}
+                className="group block cursor-pointer border-2 border-primary bg-card overflow-hidden hover:shadow-md transition-shadow duration-150"
               >
-                Available Online
-              </h3>
-            </button>
+                <div className="relative aspect-square overflow-hidden bg-muted">
+                  <img
+                    src={shopOnlineImg}
+                    alt="Available Online"
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 transition-colors duration-500 bg-black/10 group-hover:bg-transparent" />
+                </div>
+                <h3 className="font-serif text-base leading-snug text-center py-3 px-2 border-t border-primary/30 transition-colors group-hover:text-primary">
+                  Available Online
+                </h3>
+              </button>
+            )}
             {categories?.map((c) => {
               const img = getCategoryImage(c);
               const isActive = activeCategory === c.slug;
