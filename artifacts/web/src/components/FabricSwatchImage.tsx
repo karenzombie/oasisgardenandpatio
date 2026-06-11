@@ -49,15 +49,15 @@ export function FabricSwatchImage({
           />
         </button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-md w-[90vw]">
         <DialogHeader>
-          <DialogTitle className="font-serif text-2xl">{fabric.name}</DialogTitle>
+          <DialogTitle className="font-serif text-xl pr-6">{fabric.name}</DialogTitle>
         </DialogHeader>
         <div className="bg-muted border border-border overflow-hidden">
           <img
             src={fabric.swatchImageUrl}
             alt={fabric.name}
-            className="w-full h-auto object-contain"
+            className="w-full object-contain max-h-[55vh]"
           />
         </div>
         <div className="text-sm text-muted-foreground space-y-0.5">
