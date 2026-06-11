@@ -266,33 +266,20 @@ export default function Product() {
     });
   }, [isGradeMode, selectedVariant, sortedFabricOptions, gradePriceMap]);
 
-  // For grade-priced umbrellas (Treasure Garden / Galtech / Frankford), the
-  // available fabrics depend on the chosen configuration, so the fabric list is
-  // empty until the customer picks the upstream selection(s). When that's the
-  // only reason the list is empty — i.e. the product DOES have fabrics — prompt
-  // the customer to choose those first instead of implying there are none.
-  const fabricPendingPrompt = useMemo(() => {
-    if (!isGradeMode || !hasFabrics || selectedVariant) return null;
-    const pending: string[] = [];
-    if (finishVariantMode) {
-      if (!windFinishKey) pending.push("a frame finish");
-      if (windVentOptions.length > 0 && !windVent) pending.push("a wind vent");
-    } else {
-      const label = (variants[0]?.optionLabel ?? "configuration").toLowerCase();
-      pending.push(`a ${label}`);
-    }
-    if (pending.length === 0) return null;
-    return `Choose ${pending.join(" and ")} first.`;
-  }, [
-    isGradeMode,
-    hasFabrics,
-    selectedVariant,
-    finishVariantMode,
-    windFinishKey,
-    windVentOptions,
-    windVent,
-    variants,
-  ]);
+  // For grade-priced products (Treasure Garden / Galtech / Frankford / any
+  // future grade product), the available fabrics depend on the chosen
+  // configuration, so the fabric list is empty until the customer makes the
+  // upstream selection(s). When that's the only reason the list is empty — i.e.
+  // the product DOES have fabrics — prompt the customer to choose first instead
+  // of implying there are none. A single consistent message is used across all
+  // products for clarity.
+  const fabricPendingPrompt = useMemo(
+    () =>
+      isGradeMode && hasFabrics && !selectedVariant
+        ? "Choose a configuration first."
+        : null,
+    [isGradeMode, hasFabrics, selectedVariant],
+  );
 
   // The top blurb (shortDescription) shows the first paragraph of the full
   // description. The "Features" tab shows everything after that first
