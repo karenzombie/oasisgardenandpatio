@@ -66,6 +66,7 @@ A full-stack e-commerce platform for a luxury outdoor furniture retailer, suppor
 - Ask me for clarification instead of making assumptions on ambiguous build decisions.
 - Do not make changes to files outside the `artifacts/web` and `artifacts/api-server` directories without explicit instruction.
 - I prefer clear, concise communication and detailed explanations for complex technical concepts.
+- **Before any publish**: run a full readiness audit — identify the last publish commit, list every task completed since, verify each one is reflected in prod (schema, seed data, post-merge.sh coverage, dev/prod count cross-checks), typecheck clean, check-image-urls clean. Report mismatches before publishing, not after.
 
 ## Gotchas
 
