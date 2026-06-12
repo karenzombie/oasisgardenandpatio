@@ -33,9 +33,11 @@ import {
 } from "@workspace/db";
 
 const SUNBRELLA_MFR = 11;
-const TARGETS = [
-  { mfrId: 29, label: "Galtech International" },
-];
+// Galtech (29) is intentionally NOT listed here. loadGaltechUmbrellaPricing.ts
+// is the final authority over Galtech umbrella fabric state — it reconciles
+// size-aware Galtech-own fabrics directly and does not leave any Sunbrella
+// options behind for this script to clean up.
+const TARGETS: { mfrId: number; label: string }[] = [];
 
 async function ownActiveFabricIds(mfrId: number): Promise<number[]> {
   const rows = await db

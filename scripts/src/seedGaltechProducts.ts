@@ -22,7 +22,7 @@ import { firstParagraph } from "./firstParagraph";
 const WORKSPACE_ROOT = resolve(process.cwd(), "..");
 const PRODUCTS_CSV = resolve(
   WORKSPACE_ROOT,
-  "attached_assets/galtech_products_1780285430825.csv",
+  "attached_assets/galtech_products_1781232430110.csv",
 );
 const FINISHES_CSV = resolve(
   WORKSPACE_ROOT,

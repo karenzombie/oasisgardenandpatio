@@ -6,6 +6,9 @@ pnpm --filter db push
 
 # Sync production data (all scripts are idempotent — safe to re-run on every deploy)
 DATABASE_URL=$PROD_DATABASE_URL pnpm --filter @workspace/scripts exec tsx src/syncProd.ts
+# seedGaltechBases creates the 4 grouped base products (GT-europeanbases, etc.)
+# that live in the products CSV but are absent from the pricing CSV.
+DATABASE_URL=$PROD_DATABASE_URL pnpm --filter @workspace/scripts exec tsx src/seedGaltechBases.ts
 DATABASE_URL=$PROD_DATABASE_URL pnpm --filter @workspace/scripts exec tsx src/seedGaltech.ts
 DATABASE_URL=$PROD_DATABASE_URL pnpm --filter @workspace/scripts exec tsx src/seedFrankfordPricing.ts
 DATABASE_URL=$PROD_DATABASE_URL pnpm --filter @workspace/scripts exec tsx src/seedTropitoneFinishes.ts
