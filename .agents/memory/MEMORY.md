@@ -12,4 +12,5 @@
 - [CSV bare inch quotes](csv-bare-inch-quotes.md) — vendor product-list CSVs mix bare/escaped inch marks; preprocess `([0-9'])"(?!")`→″ (product list only, not pricing); image SKUs may drop hyphen.
 - [Radix Select long-list scroll bug](radix-select-long-list-scroll.md) — Radix Select clips/won't-scroll long lists (Safari); use Popover+cmdk Command combobox (Fabrics.tsx pattern) instead.
 - [Dev/prod category taxonomy drift](dev-prod-category-taxonomy-drift.md) — prod category set lags dev (prod lacked outdoor-rugs/protective-covers); slug-keyed data scripts must skip missing slugs, not fail.
+- [CatalogFabricOption producers](catalog-fabric-option-producers.md) — schema built by multiple routes (by-slug, /catalog/fabrics, admin); adding a required field needs the column in EVERY select or that endpoint 500s at .parse().
 - [Cart finish-in-variant grade products](cart-finish-in-variant.md) — grade-mode finishId requirement must be gated on discrete-finish existence; TG umbrellas carry finish in the variant (0 finish options/pools), require no separate finishId.
