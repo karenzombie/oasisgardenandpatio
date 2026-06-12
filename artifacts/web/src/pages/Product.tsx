@@ -199,12 +199,13 @@ export default function Product() {
     return (["SWV", "DWV"] as const).filter((vent) => present.has(vent));
   }, [isWindVentMode, finishVariantMode, variants]);
 
-  // Whether this product offers a wind-vent choice at all — true for both the
-  // Treasure Garden combined variants AND Galtech's single "Vent Type" picker.
+  // Whether this product offers a wind-vent choice at all — true only when both
+  // SWV and DWV are available (i.e. the customer actually picks between them).
+  // Double-vent-only products (windVentOptions = ["DWV"]) correctly return false.
   // Drives the SWV/DWV comparison diagram in the Specifications tab.
   const offersWindVentChoice = useMemo(
-    () => variants.some((v) => /vent/i.test(v.optionLabel) || /vent/i.test(v.name)),
-    [variants],
+    () => windVentOptions.length > 1,
+    [windVentOptions],
   );
 
   // Drive the single combined variantId from the two wind-vent selections.
