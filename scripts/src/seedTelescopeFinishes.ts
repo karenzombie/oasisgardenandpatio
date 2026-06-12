@@ -19,7 +19,7 @@ const WORKSPACE_ROOT = resolve(process.cwd(), "..");
 const IMG_DIR = join(WORKSPACE_ROOT, "telescope_images/finishes");
 const FINISHES_CSV = resolve(
   WORKSPACE_ROOT,
-  "attached_assets/telescope_frame_finishes_1780290802221.csv",
+  "attached_assets/telescope_frame_finishes_1781232216388.csv",
 );
 const MANUFACTURER_NAME = "Telescope Casual";
 
@@ -90,10 +90,29 @@ async function main() {
 
   for (let i = 0; i < parsed.data.length; i++) {
     const row = parsed.data[i];
-    const name = row.finish_name?.trim();
+    const rawName = row.finish_name?.trim();
     const itemNumber = row.finish_code?.trim();
     const frameType = row.finish_type?.trim(); // "Powdercoat" or "MGP"
-    if (!name || !frameType) continue;
+    if (!rawName || !frameType) continue;
+
+    // Differentiated display names so MGP and Powdercoat finishes are
+    // distinguishable when both apply to the same product.
+    const name = (() => {
+      if (frameType === "Powdercoat") {
+        const overrides: Record<string, string> = {
+          White: "White Txt PC",
+          Graphite: "Graphite Txt PC",
+        };
+        return overrides[rawName] ?? `${rawName} PC`;
+      }
+      if (frameType === "MGP") {
+        const overrides: Record<string, string> = {
+          Desert: "Desert Sand MGP",
+        };
+        return overrides[rawName] ?? `${rawName} MGP`;
+      }
+      return rawName;
+    })();
 
     // swatch_image_path = "images/finishes/powdercoat_overview.jpg"
     const swatchFile = row.swatch_image_path?.split("/").pop() ?? "";

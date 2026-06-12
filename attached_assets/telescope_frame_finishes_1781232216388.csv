@@ -1,0 +1,18 @@
+finish_type,finish_code,finish_name,finish_slug,applies_to,swatch_image_path,swatch_image_url
+Powdercoat,W,White,white,All products with Powdercoat frame,images/finishes/powdercoat_overview.jpg,https://img.telescopecasual.com/SPL/200/powdercoat_swatches.jpg
+Powdercoat,6,Snow,snow,All products with Powdercoat frame,images/finishes/powdercoat_overview.jpg,https://img.telescopecasual.com/SPL/200/powdercoat_swatches.jpg
+Powdercoat,Y,Warm Grey,warm_grey,All products with Powdercoat frame,images/finishes/powdercoat_overview.jpg,https://img.telescopecasual.com/SPL/200/powdercoat_swatches.jpg
+Powdercoat,2,Desert Sand,desert_sand,All products with Powdercoat frame,images/finishes/powdercoat_overview.jpg,https://img.telescopecasual.com/SPL/200/powdercoat_swatches.jpg
+Powdercoat,J,Beachwood,beachwood,All products with Powdercoat frame,images/finishes/powdercoat_overview.jpg,https://img.telescopecasual.com/SPL/200/powdercoat_swatches.jpg
+Powdercoat,K,Kona,kona,All products with Powdercoat frame,images/finishes/powdercoat_overview.jpg,https://img.telescopecasual.com/SPL/200/powdercoat_swatches.jpg
+Powdercoat,F,Storm,storm,All products with Powdercoat frame,images/finishes/powdercoat_overview.jpg,https://img.telescopecasual.com/SPL/200/powdercoat_swatches.jpg
+Powdercoat,T,Graphite,graphite,All products with Powdercoat frame,images/finishes/powdercoat_overview.jpg,https://img.telescopecasual.com/SPL/200/powdercoat_swatches.jpg
+Powdercoat,8,Black,black,All products with Powdercoat frame,images/finishes/powdercoat_overview.jpg,https://img.telescopecasual.com/SPL/200/powdercoat_swatches.jpg
+MGP,P50,Snow,snow,All products with MGP frame,images/finishes/mgp_overview.jpg,https://img.telescopecasual.com/SPL/200/standard_mgp_swatches.jpg
+MGP,PY0,Warm Grey,warm_grey,All products with MGP frame,images/finishes/mgp_overview.jpg,https://img.telescopecasual.com/SPL/200/standard_mgp_swatches.jpg
+MGP,P60,Desert,desert,All products with MGP frame,images/finishes/mgp_overview.jpg,https://img.telescopecasual.com/SPL/200/standard_mgp_swatches.jpg
+MGP,P40,Beachwood,beachwood,All products with MGP frame,images/finishes/mgp_overview.jpg,https://img.telescopecasual.com/SPL/200/standard_mgp_swatches.jpg
+MGP,P10,Kona,kona,All products with MGP frame,images/finishes/mgp_overview.jpg,https://img.telescopecasual.com/SPL/200/standard_mgp_swatches.jpg
+MGP,PF0,Storm,storm,All products with MGP frame,images/finishes/mgp_overview.jpg,https://img.telescopecasual.com/SPL/200/standard_mgp_swatches.jpg
+MGP,P30,Classic Graphite,classic_graphite,All products with MGP frame,images/finishes/mgp_overview.jpg,https://img.telescopecasual.com/SPL/200/standard_mgp_swatches.jpg
+MGP,P70,Black,black,All products with MGP frame,images/finishes/mgp_overview.jpg,https://img.telescopecasual.com/SPL/200/standard_mgp_swatches.jpg

@@ -20,7 +20,7 @@ import { db, finishesTable, manufacturersTable } from "@workspace/db";
 const WORKSPACE_ROOT = resolve(process.cwd(), "..");
 const CSV_PATH = resolve(
   WORKSPACE_ROOT,
-  "attached_assets/telescope_finishes_1780625033311.csv",
+  "attached_assets/telescope_finishes_1781232213160.csv",
 );
 const MANUFACTURER_NAME = "Telescope Casual";
 
@@ -52,10 +52,15 @@ async function main() {
   for (const row of data) {
     const name = row.finish_name?.trim();
     const description = row.finish_type?.trim();
-    const itemNumber = row.sku?.trim();
+    // Powdercoat and MGP frame finishes are owned by seedTelescopeFinishes.ts —
+    // skip them here to avoid duplicating rows with mismatched item_numbers.
+    if (description === "Powdercoat" || description === "MGP") continue;
+
+    // Use name as stable item_number when SKU is absent (Rustic Polymer, etc.).
+    const itemNumber = row.sku?.trim() || name;
     const imageUrl = row.swatch_url?.trim() || null;
 
-    if (!name || !description || !itemNumber) continue;
+    if (!name || !description) continue;
 
     const [existing] = await db
       .select({ id: finishesTable.id })
