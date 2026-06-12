@@ -1,0 +1,102 @@
+fabric_number,fabric_name,grade,fabric_brand,style_number,in_stock,sizes_available,notes
+80,Sesame Linen,A,Sunbrella,8318,yes,9,
+82,Dolce Oasis,A,Sunbrella,56001,yes,9,
+83,Milano Char,A,Sunbrella,56079,yes,9,
+84,Straw Linen,A,Sunbrella,8314,yes,9,Not available in any other sizes
+85,Stone Linen,A,Sunbrella,8319,yes,9,
+87,Champagne Linen,A,Sunbrella,8300,yes,9,Not available in any other sizes
+97,Sand Dupione,A,Sunbrella,8011,yes,9,
+41,Melon,B,Sunbrella,5415,yes,6 | 7.5 | 9,
+42,Flax,B,Sunbrella,5492,yes,6 | 7.5 | 9,
+43,Terra Cotta,B,Sunbrella,5440,yes,6 | 7.5 | 9,
+44,Granite,B,Sunbrella,5402,yes,6 | 7.5 | 9 | 8x11 | 11,
+45,Buttercup,B,Sunbrella,5438,yes,6 | 7.5 | 9,
+47,Tangerine,B,Sunbrella,5406,yes,6 | 7.5 | 9,
+48,Air Blue,B,Sunbrella,5410,yes,6 | 7.5 | 9,
+49,Cocoa,B,Sunbrella,5425,yes,6 | 7.5 | 9 | 8x11 | 11,
+50,Black,B,Sunbrella,5408,yes,6 | 7.5 | 9 | 6x6 | 3.5x7 | 8x8 | 10x10 | 8x11 | 11 | 13,
+51,Canvas,B,Sunbrella,5453,yes,6 | 7.5 | 9 | 6x6 | 3.5x7 | 8x8 | 10x10 | 8x11 | 11 | 13,
+52,Forest Green,B,Sunbrella,5446,yes,6 | 7.5 | 9 | 6x6 | 3.5x7 | 8x8 | 10x10 | 8x11 | 11 | 13,
+53,Pacific Blue,B,Sunbrella,5401,yes,6 | 7.5 | 9 | 8x11 | 11,
+54,Natural,B,Sunbrella,5404,yes,6 | 7.5 | 9 | 6x6 | 3.5x7 | 8x8 | 10x10 | 8x11 | 11 | 13,
+55,Taupe,B,Sunbrella,5461,yes,6 | 7.5 | 9 | 8x11 | 11,
+56,Jockey Red,B,Sunbrella,5403,yes,6 | 7.5 | 9 | 6x6 | 3.5x7 | 8x8 | 10x10 | 8x11 | 11 | 13,
+57,Burgundy,B,Sunbrella,5436,yes,6 | 7.5 | 9,
+58,Navy Blue,B,Sunbrella,5439,yes,6 | 7.5 | 9 | 6x6 | 3.5x7 | 8x8 | 10x10 | 8x11 | 11 | 13,
+59,Antique Beige,B,Sunbrella,5422,yes,6 | 7.5 | 9 | 6x6 | 3.5x7 | 8x8 | 10x10 | 8x11 | 11 | 13,
+60,Tuscan,B,Sunbrella,5417,yes,6 | 7.5 | 9,
+61,Ginkgo,B,Sunbrella,54011,yes,6 | 7.5 | 9,
+62,Minerals,B,Sunbrella,5420,yes,6 | 7.5 | 9,
+63,Henna,B,Sunbrella,5407,yes,6 | 7.5 | 9 | 8x11 | 11,
+64,Spa,B,Sunbrella,5413,yes,6 | 7.5 | 9,
+65,Brick,B,Sunbrella,5409,yes,6 | 7.5 | 9 | 8x11 | 11,
+66,Coal,B,Sunbrella,5489,yes,6 | 7.5 | 9,
+67,Fern,B,Sunbrella,5487,yes,6 | 7.5 | 9,
+68,Teak,B,Sunbrella,5488,yes,6 | 7.5 | 9 | 8x11 | 11,
+70,Cast Slate,B,Sunbrella,40434,yes,6 | 7.5 | 9,
+71,Macaw,B,Sunbrella,5429,yes,6 | 7.5 | 9,
+72,Camel,B,Sunbrella,5468,yes,6 | 7.5 | 9,
+73,True Blue,B,Sunbrella,5499,yes,6 | 7.5 | 9,
+74,Capri,B,Sunbrella,5426,yes,6 | 7.5 | 9,
+75,Aruba,B,Sunbrella,5416,yes,6 | 7.5 | 9,
+76,Heather Beige,B,Sunbrella,5476,yes,6 | 7.5 | 9 | 8x11 | 11,
+77,Sunflower Yellow,B,Sunbrella,5457,yes,6 | 7.5 | 9,
+78,Vellum,B,Sunbrella,5498,yes,6 | 7.5 | 9,
+79,Spectrum Indigo,B,Sunbrella,48080,yes,6 | 7.5 | 9,
+20,Black,C,Suncrylic,,yes,7.5 | 9 | 11,Galtech exclusive solution-dyed blended fabric. No special orders accepted.
+21,Canvas,C,Suncrylic,,yes,7.5 | 9,Galtech exclusive solution-dyed blended fabric. No special orders accepted.
+22,Forest Green,C,Suncrylic,,yes,7.5 | 9 | 11,Galtech exclusive solution-dyed blended fabric. No special orders accepted.
+23,Caribbean Blue,C,Suncrylic,,yes,7.5,Galtech exclusive solution-dyed blended fabric. No special orders accepted.
+24,White,C,Suncrylic,,yes,7.5 | 9,Galtech exclusive solution-dyed blended fabric. No special orders accepted.
+26,Cardinal Red,C,Suncrylic,,yes,9 | 11,Galtech exclusive solution-dyed blended fabric. No special orders accepted.
+27,Lemon Yellow,C,Suncrylic,,yes,7.5 | 9,Galtech exclusive solution-dyed blended fabric. No special orders accepted.
+28,Navy,C,Suncrylic,,yes,7.5 | 9,Galtech exclusive solution-dyed blended fabric. No special orders accepted.
+29,Beige,C,Suncrylic,,yes,7.5 | 9 | 11,Galtech exclusive solution-dyed blended fabric. No special orders accepted.
+36,Kiwi Green,C,Suncrylic,,yes,7.5 | 9,Galtech exclusive solution-dyed blended fabric. No special orders accepted.
+5608-0000,Seville Seaside,AA,Sunbrella,5608,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+5612-0000,Brannon Redwood,AA,Sunbrella,5612,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+5621-0000,Brannon Whisper,AA,Sunbrella,5621,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+5674-0000,Maxim Heather Beige,AA,Sunbrella,5674,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+8019-0000,Deep Sea Dupione,AA,Sunbrella,8019,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+8067-0000,Celeste Dupione,AA,Sunbrella,8067,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+8351-0000,Silver Linen,AA,Sunbrella,8351,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+8521-0000,Berenson Tuxedo,AA,Sunbrella,8521,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+56000-0000,Dolce Mango,AA,Sunbrella,56000,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+56080-0000,Milano Cobalt,AA,Sunbrella,56080,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+56095-0000,Astoria Sunset,AA,Sunbrella,56095,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+56107-0000,Cultivate Stone,AA,Sunbrella,56107,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+58030-0000,Cabana Classic,AA,Sunbrella,58030,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+58033-0000,Shore Classic,AA,Sunbrella,58033,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+58036-0000,Cove Pebble,AA,Sunbrella,58036,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+58039-0000,Gateway Mist,AA,Sunbrella,58039,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+58040-0000,Token Surfside,AA,Sunbrella,58040,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+5429-0000,Macaw,BB,Sunbrella,5429,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+5452-0000,Sapphire Blue,BB,Sunbrella,5452,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+5456-0000,Teal,BB,Sunbrella,5456,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+5462-0000,Hot Pink,BB,Sunbrella,5462,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+5493-0000,Regatta,BB,Sunbrella,5493,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+14106-0000,Seasalt,BB,Sunbrella,14106,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+14107-0000,Raffia,BB,Sunbrella,14107,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+40428-0000,Cast Ash,BB,Sunbrella,40428,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+40429-0000,Cast Mist,BB,Sunbrella,40429,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+40432-0000,Cast Shale,BB,Sunbrella,40432,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+40433-0000,Cast Silver,BB,Sunbrella,40433,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+40456-0000,Cast Lagoon,BB,Sunbrella,40456,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+48022-0000,Spectrum Cilantro,BB,Sunbrella,48022,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+48030-0000,Spectrum Graphite,BB,Sunbrella,48030,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+48031-0000,Spectrum Mushroom,BB,Sunbrella,48031,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+48032-0000,Spectrum Dove,BB,Sunbrella,48032,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+48081-0000,Spectrum Peacock,BB,Sunbrella,48081,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+48085-0000,Spectrum Carbon,BB,Sunbrella,48085,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+48086-0000,Spectrum Denim,BB,Sunbrella,48086,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+48091-0000,Cast Horizon,BB,Sunbrella,48091,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+48092-0000,Cast Sage,BB,Sunbrella,48092,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+48094-0000,Cast Breeze,BB,Sunbrella,48094,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+48103-0000,Cast Ocean,BB,Sunbrella,48103,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+48141-0000,Cast Ivy,BB,Sunbrella,48141,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+54010-0000,Rust,BB,Sunbrella,54010,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+54048-0000,Charcoal,BB,Sunbrella,54048,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+56105-0000,Cyan,BB,Sunbrella,56105,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+57003-0000,White,BB,Sunbrella,57003,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+57012-0000,Cloud,BB,Sunbrella,57012,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
+57014-0000,Java,BB,Sunbrella,57014,no,,Non-stock. Allow additional lead time. Cannot cancel after 72 hours.
