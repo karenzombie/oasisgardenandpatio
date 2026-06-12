@@ -13,6 +13,7 @@ DATABASE_URL=$PROD_DATABASE_URL pnpm --filter @workspace/scripts exec tsx src/se
 DATABASE_URL=$PROD_DATABASE_URL pnpm --filter @workspace/scripts exec tsx src/seedTelescopeFabricFinishes.ts
 DATABASE_URL=$PROD_DATABASE_URL pnpm --filter @workspace/scripts exec tsx src/seedNorthcapeProducts.ts
 DATABASE_URL=$PROD_DATABASE_URL pnpm --filter @workspace/scripts exec tsx src/importTreasureGardenPrices.ts
+DATABASE_URL=$PROD_DATABASE_URL pnpm --filter @workspace/scripts exec tsx src/seedTgRugsCovers.ts
 
 # Galtech umbrellas/covers: drop Sunbrella fabrics for Galtech's own fabrics and
 # remove pricing (quote-only). Idempotent + safe.

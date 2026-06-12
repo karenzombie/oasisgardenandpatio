@@ -305,26 +305,22 @@ async function main(): Promise<void> {
       .delete(productFinishOptionsTable)
       .where(eq(productFinishOptionsTable.productId, product.id));
 
-    // Ensure TG's own fabrics are attached (insert missing only; idempotent).
+    // Replace fabric options: delete stale links, then insert the full correct
+    // set. Insert-only accumulates old Sunbrella links across runs.
+    await db
+      .delete(productFabricOptionsTable)
+      .where(eq(productFabricOptionsTable.productId, product.id));
     if (tgFabrics.length) {
-      const haveRows = await db
-        .select({ fabricId: productFabricOptionsTable.fabricId })
-        .from(productFabricOptionsTable)
-        .where(eq(productFabricOptionsTable.productId, product.id));
-      const have = new Set(haveRows.map((r) => r.fabricId));
-      const missing = tgFabrics.filter((f) => !have.has(f.id));
-      if (missing.length) {
-        await db
-          .insert(productFabricOptionsTable)
-          .values(
-            missing.map((f, k) => ({
-              productId: product.id,
-              fabricId: f.id,
-              displayOrder: have.size + k,
-            })),
-          )
-          .onConflictDoNothing();
-      }
+      await db
+        .insert(productFabricOptionsTable)
+        .values(
+          tgFabrics.map((f, k) => ({
+            productId: product.id,
+            fabricId: f.id,
+            displayOrder: k,
+          })),
+        )
+        .onConflictDoNothing();
     }
 
     // Product-level price = lowest configured line (drives buy-gate + the
