@@ -35,6 +35,10 @@ export const fabricsTable = pgTable(
     name: text("name").notNull(),
     swatchImageUrl: text("swatch_image_url"),
     grade: text("grade"),
+    // Free-text vendor note for this fabric (e.g. "Non-stock. Allow additional
+    // lead time."). Shown to customers as an inline callout when the fabric is
+    // selected, and editable by staff.
+    notes: text("notes"),
     // Color family (e.g. "Blue", "Beige", "Multicolor") used for storefront
     // search/filter. Plain text — values normalized at import time.
     colorFamily: text("color_family"),

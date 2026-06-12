@@ -525,6 +525,7 @@ router.get(
         swatchImageUrl: fabricsTable.swatchImageUrl,
         grade: fabricsTable.grade,
         colorFamily: fabricsTable.colorFamily,
+        notes: fabricsTable.notes,
         isStripe: fabricsTable.isStripe,
         displayOrder: productFabricOptionsTable.displayOrder,
       })
@@ -626,6 +627,7 @@ router.get(
         swatchImageUrl: toPublicImageUrl(f.swatchImageUrl),
         grade: f.grade,
         colorFamily: f.colorFamily,
+        notes: f.notes,
         isStripe: f.isStripe,
         displayOrder: f.displayOrder,
       })),

@@ -27,5 +27,10 @@ export interface CatalogFabricOption {
   colorFamily: string | null;
   /** When true, this fabric is a stripe pattern. Umbrellas ordered with a stripe fabric must be purchased in even pairs (quantity 2, 4, 6...). */
   isStripe: boolean;
+  /**
+   * Free-text vendor note for this fabric (e.g. "Non-stock. Allow additional lead time."). Shown as an inline callout when the fabric is selected.
+   * @nullable
+   */
+  notes: string | null;
   displayOrder: number;
 }

@@ -18,6 +18,8 @@ export interface AdminCreateFabricRequest {
   grade?: string | null;
   /** @nullable */
   colorFamily?: string | null;
+  /** @nullable */
+  notes?: string | null;
   isStripe?: boolean;
   isActive?: boolean;
   displayOrder?: number;

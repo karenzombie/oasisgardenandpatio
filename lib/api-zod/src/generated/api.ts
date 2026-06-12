@@ -270,6 +270,12 @@ export const ListCatalogFabricsResponse = zod.object({
         .describe(
           "When true, this fabric is a stripe pattern. Umbrellas ordered with a stripe fabric must be purchased in even pairs (quantity 2, 4, 6...).",
         ),
+      notes: zod
+        .string()
+        .nullable()
+        .describe(
+          'Free-text vendor note for this fabric (e.g. \"Non-stock. Allow additional lead time.\"). Shown as an inline callout when the fabric is selected.',
+        ),
       displayOrder: zod.number(),
     }),
   ),
@@ -535,6 +541,12 @@ export const GetCatalogProductBySlugResponse = zod
               .boolean()
               .describe(
                 "When true, this fabric is a stripe pattern. Umbrellas ordered with a stripe fabric must be purchased in even pairs (quantity 2, 4, 6...).",
+              ),
+            notes: zod
+              .string()
+              .nullable()
+              .describe(
+                'Free-text vendor note for this fabric (e.g. \"Non-stock. Allow additional lead time.\"). Shown as an inline callout when the fabric is selected.',
               ),
             displayOrder: zod.number(),
           }),
@@ -2624,6 +2636,12 @@ export const AdminGetProductPickerResponse = zod
           .describe(
             "When true, this fabric is a stripe pattern. Umbrellas ordered with a stripe fabric must be purchased in even pairs (quantity 2, 4, 6...).",
           ),
+        notes: zod
+          .string()
+          .nullable()
+          .describe(
+            'Free-text vendor note for this fabric (e.g. \"Non-stock. Allow additional lead time.\"). Shown as an inline callout when the fabric is selected.',
+          ),
         displayOrder: zod.number(),
       }),
     ),
@@ -2734,6 +2752,7 @@ export const AdminListFabricsResponseItem = zod.object({
   swatchImageUrl: zod.string().nullable(),
   grade: zod.string().nullable(),
   colorFamily: zod.string().nullable(),
+  notes: zod.string().nullable(),
   isStripe: zod.boolean(),
   isActive: zod.boolean(),
   displayOrder: zod.number(),
@@ -2751,6 +2770,7 @@ export const AdminCreateFabricBody = zod.object({
   swatchImageUrl: zod.string().nullish(),
   grade: zod.string().nullish(),
   colorFamily: zod.string().nullish(),
+  notes: zod.string().nullish(),
   isStripe: zod.boolean().optional(),
   isActive: zod.boolean().optional(),
   displayOrder: zod.number().optional(),
@@ -2770,6 +2790,7 @@ export const AdminUpdateFabricBody = zod.object({
   swatchImageUrl: zod.string().nullish(),
   grade: zod.string().nullish(),
   colorFamily: zod.string().nullish(),
+  notes: zod.string().nullish(),
   isStripe: zod.boolean().optional(),
   isActive: zod.boolean().optional(),
   displayOrder: zod.number().optional(),
@@ -2784,6 +2805,7 @@ export const AdminUpdateFabricResponse = zod.object({
   swatchImageUrl: zod.string().nullable(),
   grade: zod.string().nullable(),
   colorFamily: zod.string().nullable(),
+  notes: zod.string().nullable(),
   isStripe: zod.boolean(),
   isActive: zod.boolean(),
   displayOrder: zod.number(),

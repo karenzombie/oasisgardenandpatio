@@ -1079,6 +1079,13 @@ export default function Product() {
                 </div>
               ) : null}
 
+              {/* Vendor note for the selected fabric (e.g. non-stock lead times) */}
+              {selectedFabric?.notes ? (
+                <div className="mb-5 border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                  {selectedFabric.notes}
+                </div>
+              ) : null}
+
               {/* Stripe fabrics must be ordered in even pairs */}
               {isStripeSelected ? (
                 <div className="mb-5 border border-primary/30 bg-primary/5 px-4 py-3 text-sm text-foreground">

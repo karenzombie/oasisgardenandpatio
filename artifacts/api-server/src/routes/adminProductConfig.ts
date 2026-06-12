@@ -67,6 +67,7 @@ router.get(
         swatchImageUrl: fabricsTable.swatchImageUrl,
         grade: fabricsTable.grade,
         colorFamily: fabricsTable.colorFamily,
+        notes: fabricsTable.notes,
         isStripe: fabricsTable.isStripe,
         isActive: fabricsTable.isActive,
         displayOrder: fabricsTable.displayOrder,
@@ -103,7 +104,7 @@ router.post(
       res.status(400).json({ error: body.error.issues[0]?.message ?? "Invalid input" });
       return;
     }
-    const { manufacturerId, itemNumber, name, swatchImageUrl, grade, colorFamily, isStripe, isActive, displayOrder } = body.data;
+    const { manufacturerId, itemNumber, name, swatchImageUrl, grade, colorFamily, notes, isStripe, isActive, displayOrder } = body.data;
 
     const mfg = await db
       .select({ id: manufacturersTable.id })
@@ -125,6 +126,7 @@ router.post(
           swatchImageUrl: swatchImageUrl ?? null,
           grade: grade ?? null,
           colorFamily: colorFamily ?? null,
+          notes: notes ?? null,
           isStripe: isStripe ?? false,
           isActive: isActive ?? true,
           displayOrder: displayOrder ?? 0,
@@ -141,6 +143,7 @@ router.post(
           swatchImageUrl: fabricsTable.swatchImageUrl,
           grade: fabricsTable.grade,
           colorFamily: fabricsTable.colorFamily,
+          notes: fabricsTable.notes,
           isStripe: fabricsTable.isStripe,
           isActive: fabricsTable.isActive,
           displayOrder: fabricsTable.displayOrder,
@@ -180,7 +183,7 @@ router.put(
       return;
     }
     const { id } = params.data;
-    const { manufacturerId, itemNumber, name, swatchImageUrl, grade, colorFamily, isStripe, isActive, displayOrder } = body.data;
+    const { manufacturerId, itemNumber, name, swatchImageUrl, grade, colorFamily, notes, isStripe, isActive, displayOrder } = body.data;
 
     const existing = await db
       .select({ id: fabricsTable.id })
@@ -211,6 +214,7 @@ router.put(
     if ("swatchImageUrl" in body.data) updates.swatchImageUrl = swatchImageUrl ?? null;
     if ("grade" in body.data) updates.grade = grade ?? null;
     if ("colorFamily" in body.data) updates.colorFamily = colorFamily ?? null;
+    if ("notes" in body.data) updates.notes = notes ?? null;
     if (isStripe !== undefined) updates.isStripe = isStripe;
     if (isActive !== undefined) updates.isActive = isActive;
     if (displayOrder !== undefined) updates.displayOrder = displayOrder;
@@ -238,6 +242,7 @@ router.put(
         swatchImageUrl: fabricsTable.swatchImageUrl,
         grade: fabricsTable.grade,
         colorFamily: fabricsTable.colorFamily,
+        notes: fabricsTable.notes,
         isStripe: fabricsTable.isStripe,
         isActive: fabricsTable.isActive,
         displayOrder: fabricsTable.displayOrder,

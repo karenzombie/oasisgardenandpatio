@@ -12,6 +12,7 @@ import {
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Spinner } from "@/components/ui/spinner";
@@ -53,13 +54,14 @@ interface FabricFormState {
   name: string;
   grade: string;
   colorFamily: string;
+  notes: string;
   isStripe: boolean;
   swatchImageUrl: string;
   isActive: boolean;
   displayOrder: string;
 }
 
-const GRADE_OPTIONS = ["A", "B", "C"] as const;
+const GRADE_OPTIONS = ["A", "B", "C", "AA", "BB"] as const;
 const COLOR_FAMILY_OPTIONS = [
   "Beige",
   "Black",
@@ -85,6 +87,7 @@ function emptyForm(mfgId?: string): FabricFormState {
     name: "",
     grade: "",
     colorFamily: "",
+    notes: "",
     isStripe: false,
     swatchImageUrl: "",
     isActive: true,
@@ -99,6 +102,7 @@ function formFromFabric(f: AdminFabric): FabricFormState {
     name: f.name,
     grade: f.grade ?? "",
     colorFamily: f.colorFamily ?? "",
+    notes: f.notes ?? "",
     isStripe: f.isStripe,
     swatchImageUrl: f.swatchImageUrl ?? "",
     isActive: f.isActive,
@@ -209,6 +213,7 @@ export default function Fabrics() {
       name,
       grade: form.grade || null,
       colorFamily: form.colorFamily || null,
+      notes: form.notes.trim() || null,
       isStripe: form.isStripe,
       swatchImageUrl: form.swatchImageUrl.trim() || null,
       isActive: form.isActive,
@@ -595,6 +600,17 @@ export default function Fabrics() {
                   />
                 </div>
               </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="fab-notes">Notes</Label>
+              <Textarea
+                id="fab-notes"
+                value={form.notes}
+                onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+                placeholder="Customer-facing note shown on the product page (e.g. special-order lead time)."
+                rows={3}
+              />
             </div>
 
             <div className="flex items-center gap-2">
