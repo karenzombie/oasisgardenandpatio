@@ -1334,7 +1334,7 @@ export default function Product() {
             <div className="prose max-w-none text-foreground/80">
               <p>This product is covered by the manufacturer's warranty. Coverage terms vary by brand and component.</p>
               <p>
-                For full warranty details please <Link href="/warranty" className="text-primary underline">visit our warranty page</Link> or contact our showroom.
+                For full warranty details please <a href="/warranty.pdf" target="_blank" rel="noopener noreferrer" className="text-primary underline">visit our warranty page</a> or contact our showroom.
               </p>
             </div>
           ) : null}
