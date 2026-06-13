@@ -175,15 +175,23 @@ export default function ManufacturerProducts() {
   }, [allProducts, categoryBySlug]);
 
   const filtered = useMemo(() => {
-    return allProducts.filter((p) => {
-      if (activeCollection) {
-        if ((collectionMap.get(p.name) ?? "") !== activeCollection) return false;
-      }
-      if (activeType) {
-        if (p.categorySlug !== activeType) return false;
-      }
-      return true;
-    });
+    return allProducts
+      .filter((p) => {
+        if (activeCollection) {
+          if ((collectionMap.get(p.name) ?? "") !== activeCollection) return false;
+        }
+        if (activeType) {
+          if (p.categorySlug !== activeType) return false;
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        const catA = a.categoryName ?? a.categorySlug ?? "";
+        const catB = b.categoryName ?? b.categorySlug ?? "";
+        const catCmp = catA.localeCompare(catB);
+        if (catCmp !== 0) return catCmp;
+        return a.name.localeCompare(b.name);
+      });
   }, [allProducts, activeCollection, activeType, collectionMap]);
 
   const totalFiltered = filtered.length;
