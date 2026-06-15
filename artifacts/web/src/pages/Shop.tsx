@@ -432,7 +432,7 @@ export default function Shop() {
                     />
                   ) : (
                     <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground font-serif">
-                      Oasis
+                      Image not available
                     </div>
                   )}
                   {onSale ? (

@@ -475,7 +475,7 @@ export default function SearchPage() {
                         />
                       ) : (
                         <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground font-serif text-sm">
-                          Oasis
+                          Image not available
                         </div>
                       )}
                       {brandLogo && (
