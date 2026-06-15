@@ -41,7 +41,10 @@ function buildCollectionMap(names: string[]): Map<string, string> {
   const firstWordCount = new Map<string, number>();
   for (const name of names) {
     const first = name.trim().split(/\s+/)[0];
-    if (first) firstWordCount.set(first, (firstWordCount.get(first) ?? 0) + 1);
+    // Skip first words that start with a digit — these are measurements or
+    // quantities (e.g. 42", 36", 2PC) not collection names.
+    if (first && !/^\d/.test(first))
+      firstWordCount.set(first, (firstWordCount.get(first) ?? 0) + 1);
   }
 
   const result = new Map<string, string>();
