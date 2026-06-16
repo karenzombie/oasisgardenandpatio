@@ -173,7 +173,9 @@ export default function ManufacturerProducts() {
       else seen.set(cat.slug, { category: cat, count: 1 });
     }
     return [...seen.values()].sort((a, b) =>
-      a.category.name.localeCompare(b.category.name),
+      a.category.displayOrder !== b.category.displayOrder
+        ? a.category.displayOrder - b.category.displayOrder
+        : a.category.name.localeCompare(b.category.name),
     );
   }, [allProducts, categoryBySlug]);
 
