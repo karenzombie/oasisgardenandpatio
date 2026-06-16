@@ -40,6 +40,7 @@
     "import-treasure-garden-prices": "tsx ./src/importTreasureGardenPrices.ts",
     "seed-galtech-fabrics": "tsx ./src/seedGaltechFabrics.ts",
     "seed-tg-fabrics": "tsx ./src/seedTgFabrics.ts",
+    "seed-frankford-non-umbrella": "tsx ./src/seedFrankfordNonUmbrellaProducts.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
