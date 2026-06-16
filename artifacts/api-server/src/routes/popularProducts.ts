@@ -9,6 +9,7 @@ import {
 } from "@workspace/db";
 import { GetPopularProductResponse } from "@workspace/api-zod";
 import { toPublicImageUrl } from "../lib/imageUrl";
+import { computeStartingPrices } from "../lib/startingPrices";
 
 const router: IRouter = Router();
 
@@ -96,6 +97,7 @@ async function computePopularProduct(req: Request): Promise<CachedPopular> {
         manufacturerName: manufacturersTable.name,
         categoryName: categoriesTable.name,
         price: productsTable.price,
+        salePrice: productsTable.salePrice,
         showPriceOnline: productsTable.showPriceOnline,
         availableOnline: productsTable.availableOnline,
         primaryImageUrl: sql<string | null>`(
@@ -119,11 +121,15 @@ async function computePopularProduct(req: Request): Promise<CachedPopular> {
       .limit(1);
 
     if (row) {
+      const starting = (await computeStartingPrices([row.id])).get(row.id);
       product = {
         ...row,
         manufacturerName: row.manufacturerName ?? "",
         categoryName: row.categoryName ?? "",
         primaryImageUrl: toPublicImageUrl(row.primaryImageUrl),
+        priceVaries: starting?.priceVaries ?? false,
+        startingPrice: starting?.startingPrice ?? null,
+        startingSalePrice: starting?.startingSalePrice ?? null,
       };
     }
   }

@@ -23,6 +23,7 @@ import {
   GetCatalogProductBySlugResponse,
 } from "@workspace/api-zod";
 import { toPublicImageUrl } from "../lib/imageUrl";
+import { computeStartingPrices } from "../lib/startingPrices";
 
 const router: IRouter = Router();
 
@@ -36,6 +37,7 @@ router.get("/products/featured", async (_req, res): Promise<void> => {
       manufacturerName: manufacturersTable.name,
       categoryName: categoriesTable.name,
       price: productsTable.price,
+      salePrice: productsTable.salePrice,
       showPriceOnline: productsTable.showPriceOnline,
       availableOnline: productsTable.availableOnline,
       quoteOnly: productsTable.quoteOnly,
@@ -65,12 +67,20 @@ router.get("/products/featured", async (_req, res): Promise<void> => {
     )
     .limit(12);
 
-  const normalized = rows.map((r) => ({
-    ...r,
-    manufacturerName: r.manufacturerName ?? "",
-    categoryName: r.categoryName ?? "",
-    primaryImageUrl: toPublicImageUrl(r.primaryImageUrl),
-  }));
+  const startingMap = await computeStartingPrices(rows.map((r) => r.id));
+  const normalized = rows.map((r) => {
+    const starting = startingMap.get(r.id);
+    return {
+      ...r,
+      manufacturerName: r.manufacturerName ?? "",
+      categoryName: r.categoryName ?? "",
+      primaryImageUrl: toPublicImageUrl(r.primaryImageUrl),
+      salePrice: r.salePrice,
+      priceVaries: starting?.priceVaries ?? false,
+      startingPrice: starting?.startingPrice ?? null,
+      startingSalePrice: starting?.startingSalePrice ?? null,
+    };
+  });
 
   res.json(ListFeaturedProductsResponse.parse(normalized));
 });
@@ -232,12 +242,19 @@ router.get(
       .where(whereClause);
 
     const [rows, totalResult] = await Promise.all([rowsP, totalP]);
+    const startingMap = await computeStartingPrices(rows.map((r) => r.id));
     res.json(
       ListCatalogProductsResponse.parse({
-        products: rows.map((r) => ({
-          ...r,
-          primaryImageUrl: toPublicImageUrl(r.primaryImageUrl),
-        })),
+        products: rows.map((r) => {
+          const starting = startingMap.get(r.id);
+          return {
+            ...r,
+            primaryImageUrl: toPublicImageUrl(r.primaryImageUrl),
+            priceVaries: starting?.priceVaries ?? false,
+            startingPrice: starting?.startingPrice ?? null,
+            startingSalePrice: starting?.startingSalePrice ?? null,
+          };
+        }),
         total: totalResult[0]?.count ?? 0,
         page,
         pageSize,
@@ -556,6 +573,8 @@ router.get(
         ? (row.specs as Record<string, unknown>)
         : null;
 
+    const starting = (await computeStartingPrices([row.id])).get(row.id);
+
     const payload = {
       id: row.id,
       name: row.name,
@@ -569,6 +588,9 @@ router.get(
       categorySlug: row.categorySlug,
       price: row.price,
       salePrice: row.salePrice,
+      priceVaries: starting?.priceVaries ?? false,
+      startingPrice: starting?.startingPrice ?? null,
+      startingSalePrice: starting?.startingSalePrice ?? null,
       frameOnlyPrice: row.frameOnlyPrice ?? null,
       weight: row.weight,
       dimensions: row.dimensions,

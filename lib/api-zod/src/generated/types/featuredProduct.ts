@@ -15,8 +15,22 @@ export interface FeaturedProduct {
   categoryName: string;
   /** @nullable */
   price: string | null;
+  /** @nullable */
+  salePrice: string | null;
   showPriceOnline: boolean;
   availableOnline: boolean;
   /** @nullable */
   primaryImageUrl: string | null;
+  /** True when the product has customer-selectable options that change the price. When true, the storefront shows "Starting at" and uses startingPrice/startingSalePrice. */
+  priceVaries: boolean;
+  /**
+   * Lowest configuration MSRP. Only populated when priceVaries is true.
+   * @nullable
+   */
+  startingPrice: string | null;
+  /**
+   * Lowest configuration sale price. Only populated when priceVaries is true.
+   * @nullable
+   */
+  startingSalePrice: string | null;
 }

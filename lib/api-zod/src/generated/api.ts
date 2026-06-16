@@ -121,9 +121,27 @@ export const ListFeaturedProductsResponseItem = zod.object({
   manufacturerName: zod.string(),
   categoryName: zod.string(),
   price: zod.string().nullable(),
+  salePrice: zod.string().nullable(),
   showPriceOnline: zod.boolean(),
   availableOnline: zod.boolean(),
   primaryImageUrl: zod.string().nullable(),
+  priceVaries: zod
+    .boolean()
+    .describe(
+      'True when the product has customer-selectable options that change the price. When true, the storefront shows \"Starting at\" and uses startingPrice\/startingSalePrice.',
+    ),
+  startingPrice: zod
+    .string()
+    .nullable()
+    .describe(
+      "Lowest configuration MSRP. Only populated when priceVaries is true.",
+    ),
+  startingSalePrice: zod
+    .string()
+    .nullable()
+    .describe(
+      "Lowest configuration sale price. Only populated when priceVaries is true.",
+    ),
 });
 export const ListFeaturedProductsResponse = zod.array(
   ListFeaturedProductsResponseItem,
@@ -144,9 +162,27 @@ export const GetPopularProductResponse = zod.object({
       manufacturerName: zod.string(),
       categoryName: zod.string(),
       price: zod.string().nullable(),
+      salePrice: zod.string().nullable(),
       showPriceOnline: zod.boolean(),
       availableOnline: zod.boolean(),
       primaryImageUrl: zod.string().nullable(),
+      priceVaries: zod
+        .boolean()
+        .describe(
+          'True when the product has customer-selectable options that change the price. When true, the storefront shows \"Starting at\" and uses startingPrice\/startingSalePrice.',
+        ),
+      startingPrice: zod
+        .string()
+        .nullable()
+        .describe(
+          "Lowest configuration MSRP. Only populated when priceVaries is true.",
+        ),
+      startingSalePrice: zod
+        .string()
+        .nullable()
+        .describe(
+          "Lowest configuration sale price. Only populated when priceVaries is true.",
+        ),
     }),
     zod.null(),
   ]),
@@ -211,6 +247,23 @@ export const ListCatalogProductsResponse = zod.object({
       quoteOnly: zod.boolean(),
       featured: zod.boolean(),
       primaryImageUrl: zod.string().nullable(),
+      priceVaries: zod
+        .boolean()
+        .describe(
+          'True when the product has customer-selectable options (size, fabric grade, vent, etc.) that change the price. When true, the storefront shows \"Starting at\" before the price and uses startingPrice\/startingSalePrice (the lowest possible configuration).',
+        ),
+      startingPrice: zod
+        .string()
+        .nullable()
+        .describe(
+          "Lowest configuration MSRP across all option combinations. Only populated when priceVaries is true; otherwise null and the storefront uses price.",
+        ),
+      startingSalePrice: zod
+        .string()
+        .nullable()
+        .describe(
+          "Lowest configuration sale price (matching the cheapest configuration). Only populated when priceVaries is true.",
+        ),
     }),
   ),
   total: zod.number(),
@@ -392,6 +445,23 @@ export const GetCatalogProductBySlugResponse = zod
     quoteOnly: zod.boolean(),
     featured: zod.boolean(),
     primaryImageUrl: zod.string().nullable(),
+    priceVaries: zod
+      .boolean()
+      .describe(
+        'True when the product has customer-selectable options (size, fabric grade, vent, etc.) that change the price. When true, the storefront shows \"Starting at\" before the price and uses startingPrice\/startingSalePrice (the lowest possible configuration).',
+      ),
+    startingPrice: zod
+      .string()
+      .nullable()
+      .describe(
+        "Lowest configuration MSRP across all option combinations. Only populated when priceVaries is true; otherwise null and the storefront uses price.",
+      ),
+    startingSalePrice: zod
+      .string()
+      .nullable()
+      .describe(
+        "Lowest configuration sale price (matching the cheapest configuration). Only populated when priceVaries is true.",
+      ),
   })
   .and(
     zod.object({

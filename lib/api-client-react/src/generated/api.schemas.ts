@@ -1213,10 +1213,24 @@ export interface FeaturedProduct {
   categoryName: string;
   /** @nullable */
   price: string | null;
+  /** @nullable */
+  salePrice: string | null;
   showPriceOnline: boolean;
   availableOnline: boolean;
   /** @nullable */
   primaryImageUrl: string | null;
+  /** True when the product has customer-selectable options that change the price. When true, the storefront shows "Starting at" and uses startingPrice/startingSalePrice. */
+  priceVaries: boolean;
+  /**
+   * Lowest configuration MSRP. Only populated when priceVaries is true.
+   * @nullable
+   */
+  startingPrice: string | null;
+  /**
+   * Lowest configuration sale price. Only populated when priceVaries is true.
+   * @nullable
+   */
+  startingSalePrice: string | null;
 }
 
 export interface CatalogProduct {
@@ -1244,6 +1258,18 @@ export interface CatalogProduct {
   featured: boolean;
   /** @nullable */
   primaryImageUrl: string | null;
+  /** True when the product has customer-selectable options (size, fabric grade, vent, etc.) that change the price. When true, the storefront shows "Starting at" before the price and uses startingPrice/startingSalePrice (the lowest possible configuration). */
+  priceVaries: boolean;
+  /**
+   * Lowest configuration MSRP across all option combinations. Only populated when priceVaries is true; otherwise null and the storefront uses price.
+   * @nullable
+   */
+  startingPrice: string | null;
+  /**
+   * Lowest configuration sale price (matching the cheapest configuration). Only populated when priceVaries is true.
+   * @nullable
+   */
+  startingSalePrice: string | null;
 }
 
 export interface CatalogProductsPage {

@@ -15,5 +15,6 @@
 - [CatalogFabricOption producers](catalog-fabric-option-producers.md) — schema built by multiple routes (by-slug, /catalog/fabrics, admin); adding a required field needs the column in EVERY select or that endpoint 500s at .parse().
 - [Cart finish-in-variant grade products](cart-finish-in-variant.md) — grade-mode finishId requirement must be gated on discrete-finish existence; TG umbrellas carry finish in the variant (0 finish options/pools), require no separate finishId.
 - [Publish readiness check](publish-readiness-check.md) — before any publish: audit every task since last deploy, cross-check dev/prod counts, typecheck + check-image-urls clean, report mismatches first.
+- [CatalogProduct/FeaturedProduct schema reuse](catalog-product-schema-reuse.md) — required field on these breaks by-slug (allOf) + popular (FeaturedProduct); populate ALL producers (list/featured/popular/by-slug).
 - [Telescope finish seeding](telescope-finish-seeding.md) — two scripts (frame vs fabric), Powdercoat/MGP owned by seedTelescopeFinishes.ts with differentiated names; Rustic Polymer uses name as item_number fallback (no SKU).
 - [No-image placeholder text](no-image-placeholder.md) — every no-image fallback div must say exactly "No image available"; never "No image" or "Image not available".

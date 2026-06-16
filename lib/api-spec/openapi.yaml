@@ -6304,12 +6304,23 @@ components:
           type: string
         price:
           type: ["string", "null"]
+        salePrice:
+          type: ["string", "null"]
         showPriceOnline:
           type: boolean
         availableOnline:
           type: boolean
         primaryImageUrl:
           type: ["string", "null"]
+        priceVaries:
+          type: boolean
+          description: True when the product has customer-selectable options that change the price. When true, the storefront shows "Starting at" and uses startingPrice/startingSalePrice.
+        startingPrice:
+          type: ["string", "null"]
+          description: Lowest configuration MSRP. Only populated when priceVaries is true.
+        startingSalePrice:
+          type: ["string", "null"]
+          description: Lowest configuration sale price. Only populated when priceVaries is true.
       required:
         - id
         - name
@@ -6318,9 +6329,13 @@ components:
         - manufacturerName
         - categoryName
         - price
+        - salePrice
         - showPriceOnline
         - availableOnline
         - primaryImageUrl
+        - priceVaries
+        - startingPrice
+        - startingSalePrice
     CatalogProduct:
       type: object
       properties:
@@ -6356,6 +6371,15 @@ components:
           type: boolean
         primaryImageUrl:
           type: ["string", "null"]
+        priceVaries:
+          type: boolean
+          description: True when the product has customer-selectable options (size, fabric grade, vent, etc.) that change the price. When true, the storefront shows "Starting at" before the price and uses startingPrice/startingSalePrice (the lowest possible configuration).
+        startingPrice:
+          type: ["string", "null"]
+          description: Lowest configuration MSRP across all option combinations. Only populated when priceVaries is true; otherwise null and the storefront uses price.
+        startingSalePrice:
+          type: ["string", "null"]
+          description: Lowest configuration sale price (matching the cheapest configuration). Only populated when priceVaries is true.
       required:
         - id
         - name
@@ -6373,6 +6397,9 @@ components:
         - quoteOnly
         - featured
         - primaryImageUrl
+        - priceVaries
+        - startingPrice
+        - startingSalePrice
     CatalogProductsPage:
       type: object
       properties:

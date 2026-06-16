@@ -461,8 +461,13 @@ export default function SearchPage() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {data.products.map((p) => {
+                const varies = p.priceVaries && p.showPriceOnline;
+                const displayPrice = varies ? p.startingPrice : p.price;
+                const displaySale = varies ? p.startingSalePrice : p.salePrice;
                 const onSale =
-                  p.salePrice && p.price && Number(p.salePrice) < Number(p.price);
+                  displaySale &&
+                  displayPrice &&
+                  Number(displaySale) < Number(displayPrice);
                 const brandLogo = getBrandLogo(p.manufacturerName);
                 return (
                   <Link key={p.id} href={`/shop/${p.slug}`} className="group block border-2 border-primary bg-card hover:shadow-md transition-shadow duration-150">
@@ -505,22 +510,29 @@ export default function SearchPage() {
                       </div>
                     </div>
                     {((!brandLogo && p.manufacturerName) ||
-                      (p.showPriceOnline && p.price)) ? (
+                      (p.showPriceOnline && displayPrice)) ? (
                     <div className="border-t border-primary/30 px-4 py-3 space-y-1 text-center">
                       {!brandLogo && p.manufacturerName && (
                         <p className="text-xs uppercase tracking-widest text-muted-foreground">
                           {p.manufacturerName}
                         </p>
                       )}
-                      {p.showPriceOnline && p.price && (
-                        onSale ? (
-                          <p className="text-sm">
-                            <span className="text-muted-foreground line-through mr-2">{formatMoney(p.price)}</span>
-                            <span className="text-primary font-semibold">{formatMoney(p.salePrice)}</span>
-                          </p>
-                        ) : (
-                          <p className="text-sm">{formatMoney(p.price)}</p>
-                        )
+                      {p.showPriceOnline && displayPrice && (
+                        <p className="text-sm">
+                          {varies && (
+                            <span className="block text-xs uppercase tracking-widest text-muted-foreground">
+                              Starting at
+                            </span>
+                          )}
+                          {onSale ? (
+                            <>
+                              <span className="text-muted-foreground line-through mr-2">{formatMoney(displayPrice)}</span>
+                              <span className="text-primary font-semibold">{formatMoney(displaySale)}</span>
+                            </>
+                          ) : (
+                            <span>{formatMoney(displayPrice)}</span>
+                          )}
+                        </p>
                       )}
                     </div>
                     ) : null}

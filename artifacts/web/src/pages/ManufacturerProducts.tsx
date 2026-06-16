@@ -511,8 +511,13 @@ export default function ManufacturerProducts() {
       ) : (
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
           {pageProducts.map((p) => {
+            const varies = p.priceVaries && p.showPriceOnline;
+            const displayPrice = varies ? p.startingPrice : p.price;
+            const displaySale = varies ? p.startingSalePrice : p.salePrice;
             const onSale =
-              p.salePrice && p.price && Number(p.salePrice) < Number(p.price);
+              displaySale &&
+              displayPrice &&
+              Number(displaySale) < Number(displayPrice);
             return (
               <Link key={p.id} href={`/shop/${p.slug}`} className="group block border-2 border-primary bg-card hover:shadow-md transition-shadow duration-150">
                 <div className="relative aspect-square bg-card overflow-hidden">
@@ -546,20 +551,27 @@ export default function ManufacturerProducts() {
                     </h3>
                   </div>
                 </div>
-                {p.showPriceOnline && p.price ? (
+                {p.showPriceOnline && displayPrice ? (
                   <div className="border-t border-primary/30 px-4 py-3 text-center">
-                    {onSale ? (
-                      <p className="text-sm">
-                        <span className="text-muted-foreground line-through mr-2">
-                          {formatMoney(p.price)}
+                    <p className="text-sm">
+                      {varies && (
+                        <span className="block text-xs uppercase tracking-widest text-muted-foreground">
+                          Starting at
                         </span>
-                        <span className="text-primary font-semibold">
-                          {formatMoney(p.salePrice)}
-                        </span>
-                      </p>
-                    ) : (
-                      <p className="text-sm">{formatMoney(p.price)}</p>
-                    )}
+                      )}
+                      {onSale ? (
+                        <>
+                          <span className="text-muted-foreground line-through mr-2">
+                            {formatMoney(displayPrice)}
+                          </span>
+                          <span className="text-primary font-semibold">
+                            {formatMoney(displaySale)}
+                          </span>
+                        </>
+                      ) : (
+                        <span>{formatMoney(displayPrice)}</span>
+                      )}
+                    </p>
                   </div>
                 ) : null}
               </Link>

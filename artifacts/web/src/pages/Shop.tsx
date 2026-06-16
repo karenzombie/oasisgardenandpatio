@@ -418,8 +418,13 @@ export default function Shop() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {data.products.map((p) => {
+            const varies = p.priceVaries && p.showPriceOnline;
+            const displayPrice = varies ? p.startingPrice : p.price;
+            const displaySale = varies ? p.startingSalePrice : p.salePrice;
             const onSale =
-              p.salePrice && p.price && Number(p.salePrice) < Number(p.price);
+              displaySale &&
+              displayPrice &&
+              Number(displaySale) < Number(displayPrice);
             const brandLogo = getBrandLogo(p.manufacturerName);
             return (
               <Link key={p.id} href={`/shop/${p.slug}`} className="group block border-2 border-primary bg-card hover:shadow-md transition-shadow duration-150">
@@ -467,18 +472,30 @@ export default function Shop() {
                       {p.manufacturerName}
                     </p>
                   ) : null}
-                  {p.showPriceOnline && p.price ? (
+                  {p.showPriceOnline && displayPrice ? (
                     onSale ? (
                       <p className="text-sm font-bold">
+                        {varies && (
+                          <span className="block text-xs font-normal uppercase tracking-widest text-muted-foreground">
+                            Starting at
+                          </span>
+                        )}
                         <span className="text-muted-foreground line-through mr-2">
-                          MSRP {formatMoney(p.price)}
+                          {varies ? formatMoney(displayPrice) : `MSRP ${formatMoney(displayPrice)}`}
                         </span>
                         <span className="text-primary">
-                          Sale {formatMoney(p.salePrice)}
+                          {varies ? formatMoney(displaySale) : `Sale ${formatMoney(displaySale)}`}
                         </span>
                       </p>
                     ) : (
-                      <p className="text-sm font-bold">MSRP {formatMoney(p.price)}</p>
+                      <p className="text-sm font-bold">
+                        {varies && (
+                          <span className="block text-xs font-normal uppercase tracking-widest text-muted-foreground">
+                            Starting at
+                          </span>
+                        )}
+                        {varies ? formatMoney(displayPrice) : `MSRP ${formatMoney(displayPrice)}`}
+                      </p>
                     )
                   ) : null}
                   <div className="pt-1">
