@@ -33,11 +33,27 @@ const PAGE_SIZE_API = 60;
 const PAGE_SIZE_DISPLAY = 24;
 
 /**
+ * Per-manufacturer allowlist of first words that ARE real collection names even
+ * though they look like product codes (e.g. they're numeric). Keyed by
+ * manufacturer slug. Only affects the listed manufacturer — all others keep the
+ * default product-code skipping rules below.
+ */
+const COLLECTION_NAME_ALLOWLIST: Record<string, ReadonlySet<string>> = {
+  // NorthCape's "6510" series is an actual collection name, not a part number.
+  northcape: new Set(["6510"]),
+};
+
+/**
  * Collection = the product name's FIRST WORD, but only when at least 2 products
  * in this manufacturer share that first word. Products whose first word is
  * unique get no collection.
  */
-function buildCollectionMap(names: string[]): Map<string, string> {
+function buildCollectionMap(
+  names: string[],
+  manufacturerSlug: string,
+): Map<string, string> {
+  const allowlist =
+    COLLECTION_NAME_ALLOWLIST[manufacturerSlug] ?? new Set<string>();
   const firstWordCount = new Map<string, number>();
   for (const name of names) {
     const first = name.trim().split(/\s+/)[0];
@@ -46,12 +62,14 @@ function buildCollectionMap(names: string[]): Map<string, string> {
     //   - contains any digit   (NGU550, CB87)
     //   - contains a hyphen    (DP-ST, IG-ST, SS-DB)
     //   - has no lowercase     (IG, LED, DP — all-caps abbreviations)
+    // Manufacturer-specific allowlist entries bypass these checks.
     if (
       first &&
-      !/^\d/.test(first) &&
-      !/\d/.test(first) &&
-      !first.includes("-") &&
-      /[a-z]/.test(first)
+      (allowlist.has(first) ||
+        (!/^\d/.test(first) &&
+          !/\d/.test(first) &&
+          !first.includes("-") &&
+          /[a-z]/.test(first)))
     )
       firstWordCount.set(first, (firstWordCount.get(first) ?? 0) + 1);
   }
@@ -148,8 +166,8 @@ export default function ManufacturerProducts() {
   }, [page1Data, restQueries]);
 
   const collectionMap = useMemo(
-    () => buildCollectionMap(allProducts.map((p) => p.name)),
-    [allProducts],
+    () => buildCollectionMap(allProducts.map((p) => p.name), slug),
+    [allProducts, slug],
   );
 
   const collections = useMemo(() => {
