@@ -41,9 +41,18 @@ function buildCollectionMap(names: string[]): Map<string, string> {
   const firstWordCount = new Map<string, number>();
   for (const name of names) {
     const first = name.trim().split(/\s+/)[0];
-    // Skip first words that start with a digit — these are measurements or
-    // quantities (e.g. 42", 36", 2PC) not collection names.
-    if (first && !/^\d/.test(first))
+    // Skip first words that look like product codes, not collection names:
+    //   - starts with a digit  (42", 36", 2PC)
+    //   - contains any digit   (NGU550, CB87)
+    //   - contains a hyphen    (DP-ST, IG-ST, SS-DB)
+    //   - has no lowercase     (IG, LED, DP — all-caps abbreviations)
+    if (
+      first &&
+      !/^\d/.test(first) &&
+      !/\d/.test(first) &&
+      !first.includes("-") &&
+      /[a-z]/.test(first)
+    )
       firstWordCount.set(first, (firstWordCount.get(first) ?? 0) + 1);
   }
 
