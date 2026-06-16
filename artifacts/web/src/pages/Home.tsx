@@ -149,7 +149,7 @@ export default function Home() {
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-secondary/40 text-secondary-foreground/60 font-serif text-xs tracking-widest uppercase transition-colors group-hover:bg-secondary/60">
-                        {item.placeholder ? "Popular Pick Coming Soon" : "Image not available"}
+                        {item.placeholder ? "Popular Pick Coming Soon" : "No image available"}
                       </div>
                     )}
                     {brandLogo ? (

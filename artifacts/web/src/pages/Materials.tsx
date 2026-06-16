@@ -112,7 +112,7 @@ export default function Materials() {
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">
-                        No image
+                        No image available
                       </div>
                     )}
                   </div>

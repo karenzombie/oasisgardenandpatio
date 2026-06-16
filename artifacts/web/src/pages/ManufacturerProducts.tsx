@@ -525,7 +525,7 @@ export default function ManufacturerProducts() {
                     />
                   ) : (
                     <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground font-serif text-sm">
-                      No image
+                      No image available
                     </div>
                   )}
                   {onSale ? (

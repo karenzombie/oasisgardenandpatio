@@ -585,7 +585,7 @@ export default function Product() {
                 className="absolute inset-0 w-full h-full object-contain p-6 mix-blend-multiply"
               />
             ) : (
-              <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground font-serif">No image</div>
+              <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground font-serif">No image available</div>
             )}
             {onSale ? (
               <div className="absolute top-4 right-4 bg-primary text-primary-foreground px-3 py-1 text-xs uppercase tracking-widest font-semibold">Sale</div>
