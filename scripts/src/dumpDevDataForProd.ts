@@ -17,16 +17,27 @@ export {};
 import { writeFileSync } from "node:fs";
 import pg from "pg";
 
+// Full catalog table set in FK-dependency order (parents before children).
+// Transactional / user / inventory tables are intentionally excluded — prod
+// keeps no real data there (test-only), and they are wiped by TRUNCATE CASCADE.
 const TABLES_IN_ORDER = [
   "manufacturers",
+  "materials",
   "categories",
   "fabrics",
+  "finish_collections",
+  "finishes",
   "products",
   "product_variants",
   "product_images",
   "product_attributes",
   "product_fabric_pools",
   "product_fabric_options",
+  "product_finish_pools",
+  "product_finish_options",
+  "variant_grade_prices",
+  "product_sets",
+  "product_set_items",
 ];
 
 const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
@@ -81,10 +92,16 @@ for (const table of TABLES_IN_ORDER) {
     .map((c) => `"${c}" = EXCLUDED."${c}"`)
     .join(", ");
 
-  for (const row of rowsRes.rows) {
-    const values = cols.map((c) => quote(row[c])).join(", ");
+  // Emit batched multi-row INSERTs (≈1000 rows/statement) so applying the dump
+  // to a remote prod DB needs ~80 round-trips instead of one per row (~60k).
+  const BATCH = 1000;
+  for (let i = 0; i < rowsRes.rows.length; i += BATCH) {
+    const chunk = rowsRes.rows.slice(i, i + BATCH);
+    const tuples = chunk
+      .map((row) => `(${cols.map((c) => quote(row[c])).join(", ")})`)
+      .join(",\n");
     out.push(
-      `INSERT INTO "${table}" (${colList}) VALUES (${values}) ` +
+      `INSERT INTO "${table}" (${colList}) VALUES\n${tuples}\n` +
         `ON CONFLICT (id) DO UPDATE SET ${updateList};`,
     );
   }

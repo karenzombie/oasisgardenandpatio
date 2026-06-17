@@ -4,33 +4,25 @@ set -e
 pnpm install --frozen-lockfile
 pnpm --filter db push
 
-# Sync production data (all scripts are idempotent — safe to re-run on every deploy)
-DATABASE_URL=$PROD_DATABASE_URL pnpm --filter @workspace/scripts exec tsx src/syncProd.ts
-# seedGaltechBases creates the 4 grouped base products (GT-europeanbases, etc.)
-# that live in the products CSV but are absent from the pricing CSV.
-DATABASE_URL=$PROD_DATABASE_URL pnpm --filter @workspace/scripts exec tsx src/seedGaltechBases.ts
-DATABASE_URL=$PROD_DATABASE_URL pnpm --filter @workspace/scripts exec tsx src/seedGaltech.ts
-DATABASE_URL=$PROD_DATABASE_URL pnpm --filter @workspace/scripts exec tsx src/seedFrankfordPricing.ts
-DATABASE_URL=$PROD_DATABASE_URL pnpm --filter @workspace/scripts exec tsx src/seedTropitoneFinishes.ts
-DATABASE_URL=$PROD_DATABASE_URL pnpm --filter @workspace/scripts exec tsx src/seedTelescopeFinishes.ts
-DATABASE_URL=$PROD_DATABASE_URL pnpm --filter @workspace/scripts exec tsx src/seedTelescopeFabricFinishes.ts
-DATABASE_URL=$PROD_DATABASE_URL pnpm --filter @workspace/scripts exec tsx src/seedNorthcapeProducts.ts
-DATABASE_URL=$PROD_DATABASE_URL pnpm --filter @workspace/scripts exec tsx src/importTreasureGardenPrices.ts
-DATABASE_URL=$PROD_DATABASE_URL pnpm --filter @workspace/scripts exec tsx src/seedTgRugsCovers.ts
-
-# Galtech umbrellas/covers: drop Sunbrella fabrics for Galtech's own fabrics and
-# remove pricing (quote-only). Idempotent + safe.
-DATABASE_URL=$PROD_DATABASE_URL pnpm --filter @workspace/scripts exec tsx src/removeSunbrellaUmbrellaPricing.ts
-
-# Treasure Garden market umbrellas: (re)build grade-priced, purchasable
-# Finish × Wind Vent variants from the CSV price list. Idempotent. Runs last so
-# it is the final authority over TG umbrella pricing/variant/fabric state.
-DATABASE_URL=$PROD_DATABASE_URL pnpm --filter @workspace/scripts exec tsx src/loadTgUmbrellaPricing.ts
-
-# Galtech market umbrellas: (re)build grade-priced, purchasable Finish × Wind
-# Vent variants from the revised CSV price list (+ AA/BB Sunbrella-sourced
-# fabrics, fabric notes, size-aware fabric availability). Idempotent. Runs after
-# seedGaltech (which resets Galtech umbrellas to quote-only) and after
-# removeSunbrellaUmbrellaPricing, so it is the final authority over Galtech
-# umbrella pricing/variant/fabric state.
-DATABASE_URL=$PROD_DATABASE_URL pnpm --filter @workspace/scripts exec tsx src/loadGaltechUmbrellaPricing.ts
+# ── Production data sync ──────────────────────────────────────────────────────
+# Full-catalog mirror: dump the entire dev catalog and reload it into production
+# (TRUNCATE CASCADE + batched reload). This supersedes the previous per-manufacturer
+# seed/image scripts — instead of replaying each loader (which repeatedly drifted
+# because new scripts were forgotten here), we copy dev's exact catalog state, so
+# production always matches dev after a merge.
+#
+# Synced tables (see scripts/src/dumpDevDataForProd.ts TABLES_IN_ORDER):
+#   manufacturers, materials, categories, fabrics, finish_collections, finishes,
+#   products, product_variants, product_images, product_attributes,
+#   product_fabric_pools, product_fabric_options, product_finish_pools,
+#   product_finish_options, variant_grade_prices, product_sets, product_set_items.
+#
+# NOT synced (intentionally): transactional / user / inventory tables
+#   (orders, customers, users, carts, inventory, etc.). These hold no real prod
+#   data today and are wiped by TRUNCATE CASCADE during the reload.
+#
+# Prerequisite: the prod schema must already match dev (the reload inserts dev's
+# exact columns). `pnpm --filter db push` above keeps dev current; apply the same
+# schema changes to prod before relying on this sync if a migration adds columns.
+pnpm --filter @workspace/scripts exec tsx src/dumpDevDataForProd.ts
+pnpm --filter @workspace/scripts exec tsx src/applyDataToProd.ts

@@ -1,4 +1,5 @@
 - [Running seed scripts against prod](seed-scripts-prod.md) — override DATABASE_URL with $PROD_DATABASE_URL; bulk-insert junction tables (onConflictDoNothing) or per-row inserts time out on prod.
+- [Prod catalog full-sync](prod-catalog-full-sync.md) — post-merge mirrors dev catalog to prod via dump+apply (17-table TRUNCATE+batched reload), NOT per-mfr seeds; batch inserts, run foreground, exclude transactional/inventory.
 - [Galtech umbrellas priced; TG quote-only](galtech-tg-umbrellas-quote-only.md) — Galtech umbrellas re-priced via size×vent×grade engine (AA/BB from Sunbrella, A/B/C update-only, fabrics 23/27 skipped); TG umbrellas still quote-only; no upcharge math anywhere.
 - [Finish swatch ↔ variant linkage](finish-variant-swatch-link.md) — no FK; recover finish swatch by manufacturerId+name via JS map (never leftJoin — dup names multiply rows); fabrics have a real FK.
 - [TG wind-vent variants](tg-wind-vent-variants.md) — SWV/DWV folded into one Finish×Vent variant (sku -SWV/-DWV, absolute price); PDP splits into 2 selectors; absolute-variant products still need product-level price.

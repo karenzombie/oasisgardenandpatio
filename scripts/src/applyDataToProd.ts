@@ -4,7 +4,8 @@
  */
 export {};
 
-import { readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { readFileSync, writeFileSync, unlinkSync } from "node:fs";
 import pg from "pg";
 
 const url = process.env.PROD_DATABASE_URL;
@@ -17,21 +18,28 @@ const rawSql = readFileSync("./dev-data-for-prod.sql", "utf8");
 
 // Prepend a TRUNCATE CASCADE so dev IDs can be inserted cleanly.
 // User confirmed prod has no real customer/inventory data to preserve.
-// CASCADE will wipe: inventory, cart_items, order_items, orders,
-// wishlist_items, vendor_orders, product_attributes,
-// product_fabric_options, product_fabric_pools, product_variants,
-// product_images, products, fabrics, categories, manufacturers.
+// CASCADE wipes dependent transactional/user/inventory rows (inventory,
+// cart_items, order_items, orders, wishlist_items, vendor_orders, etc.).
+// Table list MUST match TABLES_IN_ORDER in dumpDevDataForProd.ts.
 const truncate = `
 TRUNCATE
   manufacturers,
+  materials,
   categories,
   fabrics,
+  finish_collections,
+  finishes,
   products,
   product_variants,
   product_images,
   product_attributes,
   product_fabric_pools,
-  product_fabric_options
+  product_fabric_options,
+  product_finish_pools,
+  product_finish_options,
+  variant_grade_prices,
+  product_sets,
+  product_set_items
 RESTART IDENTITY CASCADE;
 `;
 
@@ -39,19 +47,32 @@ RESTART IDENTITY CASCADE;
 const sql = rawSql.replace("BEGIN;", `BEGIN;\n${truncate}`);
 console.log(`Loaded SQL: ${sql.length.toLocaleString()} bytes (TRUNCATE CASCADE prepended)`);
 
-const client = new pg.Client({ connectionString: url });
-await client.connect();
-console.log("Connected to production database.");
+// Apply via psql -f rather than a single node-pg query: the full-catalog dump
+// is ~60k INSERT statements and streaming through psql is far more reliable
+// than buffering one giant query string. ON_ERROR_STOP rolls back on any error
+// (the dump is wrapped in BEGIN;/COMMIT;).
+const tmpPath = "./.dev-data-for-prod.apply.sql";
+writeFileSync(tmpPath, sql, "utf8");
 
 const start = Date.now();
 try {
-  await client.query(sql);
+  execFileSync("psql", [url, "-v", "ON_ERROR_STOP=1", "-q", "-f", tmpPath], {
+    stdio: ["ignore", "inherit", "inherit"],
+  });
   console.log(`✓ Sync complete in ${((Date.now() - start) / 1000).toFixed(1)}s`);
 } catch (err) {
-  console.error("✗ Sync failed:", err);
+  console.error("✗ Sync failed:", err instanceof Error ? err.message : err);
   process.exitCode = 1;
 } finally {
-  await client.end();
+  try {
+    unlinkSync(tmpPath);
+  } catch {
+    // ignore cleanup failure
+  }
+}
+
+if (process.exitCode === 1) {
+  process.exit(1);
 }
 
 // Verification queries
@@ -63,6 +84,11 @@ const checks = await verifyClient.query<{ tbl: string; cnt: number; with_url: nu
   UNION ALL SELECT 'product_images', COUNT(*)::int, COUNT(url)::int FROM product_images
   UNION ALL SELECT 'manufacturers', COUNT(*)::int, NULL FROM manufacturers
   UNION ALL SELECT 'categories', COUNT(*)::int, NULL FROM categories
+  UNION ALL SELECT 'finishes', COUNT(*)::int, NULL FROM finishes
+  UNION ALL SELECT 'finish_collections', COUNT(*)::int, NULL FROM finish_collections
+  UNION ALL SELECT 'product_finish_options', COUNT(*)::int, NULL FROM product_finish_options
+  UNION ALL SELECT 'product_fabric_options', COUNT(*)::int, NULL FROM product_fabric_options
+  UNION ALL SELECT 'variant_grade_prices', COUNT(*)::int, NULL FROM variant_grade_prices
   ORDER BY tbl;
 `);
 console.log("\nProduction DB counts after sync:");
