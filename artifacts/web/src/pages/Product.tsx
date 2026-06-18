@@ -1000,9 +1000,9 @@ export default function Product() {
                   <button
                     type="button"
                     onClick={() => setFabricOpen(true)}
-                    className="w-full inline-flex items-center justify-between gap-2 border border-input bg-background px-4 py-2.5 text-sm hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary text-left"
+                    className="w-full inline-flex items-center justify-between gap-2 border border-border bg-secondary text-secondary-foreground px-4 py-2.5 text-sm hover:bg-secondary/90 focus:outline-none focus:ring-2 focus:ring-primary text-left"
                   >
-                    <span className={selectedFabric ? "text-foreground truncate" : "text-muted-foreground"}>
+                    <span className={selectedFabric ? "text-secondary-foreground truncate" : "text-secondary-foreground/70"}>
                       {selectedFabric
                         ? `${selectedFabric.name} (${selectedFabric.itemNumber})${isGradeMode && selectedFabric.grade ? ` — Grade ${selectedFabric.grade}` : ""}`
                         : "No fabric selected"}
