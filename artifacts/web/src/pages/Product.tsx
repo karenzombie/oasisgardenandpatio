@@ -11,16 +11,8 @@ import { getBrandLogo } from "@/lib/brandLogos";
 import { sanitizeHtml } from "@/lib/sanitize";
 import { WishlistButton } from "@/components/WishlistButton";
 import { useToast } from "@/hooks/use-toast";
-import { ChevronsUpDown, Check } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
+import { Palette } from "lucide-react";
+import { FabricSwatchDialog } from "@/components/FabricSwatchDialog";
 
 function formatMoney(v: string | number | null | undefined): string {
   if (v == null || v === "") return "";
@@ -1004,79 +996,71 @@ export default function Product() {
                   <p className="block text-sm uppercase tracking-widest text-muted-foreground mb-2">
                     Fabric
                     <span className="text-destructive ml-1">*</span>
+                  </p>
+                  <div className="flex items-center gap-3 flex-wrap">
                     {selectedFabric ? (
-                      <span className="ml-2 normal-case tracking-normal text-foreground">
-                        {selectedFabric.name} ({selectedFabric.itemNumber})
-                      </span>
-                    ) : null}
-                  </p>
-                  <Popover open={fabricOpen} onOpenChange={setFabricOpen}>
-                    <PopoverTrigger asChild>
-                      <button
-                        type="button"
-                        className="w-full flex items-center justify-between border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary text-left"
-                      >
-                        <span className={selectedFabric ? "text-foreground" : "text-muted-foreground"}>
-                          {selectedFabric
-                            ? `${selectedFabric.manufacturerName} · ${selectedFabric.name} (${selectedFabric.itemNumber})${isGradeMode && selectedFabric.grade ? ` — Grade ${selectedFabric.grade}` : ""}`
-                            : "— Select a fabric —"}
+                      <div className="flex items-center gap-2 min-w-0">
+                        {selectedFabric.swatchImageUrl ? (
+                          <img
+                            src={selectedFabric.swatchImageUrl}
+                            alt={selectedFabric.name}
+                            className="h-10 w-10 shrink-0 object-cover border border-border"
+                          />
+                        ) : (
+                          <div className="h-10 w-10 shrink-0 border border-border bg-muted" />
+                        )}
+                        <span className="text-sm text-foreground truncate">
+                          {selectedFabric.name} ({selectedFabric.itemNumber})
+                          {isGradeMode && selectedFabric.grade
+                            ? ` — Grade ${selectedFabric.grade}`
+                            : ""}
                         </span>
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent
-                      className="p-0 w-[--radix-popover-trigger-width]"
-                      align="start"
-                      style={{ width: "var(--radix-popover-trigger-width)" }}
+                      </div>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">
+                        No fabric selected
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setFabricOpen(true)}
+                      className="ml-auto inline-flex items-center gap-2 border border-input bg-background px-4 py-2.5 text-sm hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary"
                     >
-                      <Command>
-                        <CommandInput placeholder="Search by name or item number…" />
-                        <CommandList>
-                          <CommandEmpty>
-                            {fabricPendingPrompt ?? "No fabrics found."}
-                          </CommandEmpty>
-                          <CommandGroup>
-                            {(isGradeMode ? gradeModeFabrics : sortedFabricOptions).map((f) => {
-                              let label: string;
-                              if (isGradeMode) {
-                                const gp = f.grade ? gradePriceMap.get(f.grade) : undefined;
-                                const line = gp
-                                  ? Number(gp.salePrice) > 0
-                                    ? Number(gp.salePrice)
-                                    : Number(gp.msrp)
-                                  : null;
-                                label = `${f.manufacturerName} · ${f.name} (${f.itemNumber}) — Grade ${f.grade}${line != null ? ` · ${formatMoney(line)}` : ""}`;
-                              } else {
-                                label = `${f.manufacturerName} · ${f.name} (${f.itemNumber})`;
-                              }
-                              return (
-                                <CommandItem
-                                  key={f.id}
-                                  value={`${f.name} ${f.itemNumber}`}
-                                  onSelect={() => {
-                                    setFabricId(f.id);
-                                    setFabricOpen(false);
-                                  }}
-                                >
-                                  <Check
-                                    className={fabricId === f.id ? "opacity-100" : "opacity-0"}
-                                  />
-                                  {label}
-                                </CommandItem>
-                              );
-                            })}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Browse the full fabric library on our{" "}
-                    <Link href="/fabrics" className="text-primary underline">
-                      Fabrics page
-                    </Link>
-                    .
-                  </p>
+                      <Palette className="h-4 w-4" />
+                      Browse swatches
+                    </button>
+                  </div>
+                  {fabricPendingPrompt ? (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {fabricPendingPrompt}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Browse the full fabric library on our{" "}
+                      <Link href="/fabrics" className="text-primary underline">
+                        Fabrics page
+                      </Link>
+                      .
+                    </p>
+                  )}
+                  <FabricSwatchDialog
+                    open={fabricOpen}
+                    onOpenChange={setFabricOpen}
+                    fabrics={isGradeMode ? gradeModeFabrics : sortedFabricOptions}
+                    selectedFabricId={fabricId}
+                    onConfirm={(id) => setFabricId(id)}
+                    isGradeMode={isGradeMode}
+                    linePriceForGrade={(grade) => {
+                      if (!grade) return null;
+                      const gp = gradePriceMap.get(grade);
+                      if (!gp) return null;
+                      return Number(gp.salePrice) > 0
+                        ? Number(gp.salePrice)
+                        : Number(gp.msrp);
+                    }}
+                    formatPrice={(n) => formatMoney(n)}
+                    emptyPrompt={fabricPendingPrompt}
+                  />
                 </div>
               ) : null}
 

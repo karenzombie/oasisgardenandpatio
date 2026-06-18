@@ -1,0 +1,16 @@
+Fabric Swatch Popup -- New Feature Request
+I need you to add a fabric swatch popup to the product detail page. This is a visual enhancement only -- do not change any existing logic related to how fabrics are queried, filtered by product, filtered by finish, or priced. All of that stays exactly as-is.
+What to add:
+Replace the fabric dropdown with a "Browse swatches" button. The dropdown itself should remain in the page code (hidden) because it still needs to hold the selected fabric value and drive the existing pricing and recap logic -- customers just won't see it anymore. When a customer confirms a selection in the popup, the hidden dropdown updates to that value exactly as if they had picked it themselves.
+When the button is clicked, it opens a popup overlay on top of the current page.
+The popup contains:
+A grade filter row at the top -- pill-shaped buttons for each grade (All, Grade AA, Grade B, Grade BB, etc.) with the corresponding price shown on each. These grades and prices should come from whatever the fabric dropdown is already receiving for that product.
+Below that, a color category filter row -- pill-shaped buttons for each color category (All, Black, Blue, Gray, Green, Red, Tan, Yellow, etc.) each with a small color dot next to the label. The color category data already exists in the fabric table; use that column to populate these buttons dynamically.
+Below that, a text search box so customers can search by fabric name or item number.
+Below that, a scrollable grid of fabric swatches. Each swatch tile shows the color swatch image (or color block if no image), the fabric name, the grade, the color category, and the price. All three filters (grade, color, search) work together to narrow the grid in real time. Show a result count at the bottom of the popup.
+A Cancel button and a "Select this fabric" confirm button at the bottom. Confirming updates the hidden fabric dropdown to that selection, which in turn updates the price and the fabric recap display that already exists on the page.
+Important constraints:
+The popup must work on both desktop and mobile.
+Do not change how the fabric list is built or queried. The popup pulls from the exact same data the dropdown already uses -- it is just a different way to browse and select from that list.
+Do not change the add-to-cart flow, the finish/wind vent selectors, or any other product option logic.
+The existing fabric recap display (the selected fabric shown near the product image) should continue to update exactly as it does now when a selection is confirmed.
