@@ -997,39 +997,21 @@ export default function Product() {
                     Fabric
                     <span className="text-destructive ml-1">*</span>
                   </p>
-                  <div className="flex items-center gap-3 flex-wrap">
-                    {selectedFabric ? (
-                      <div className="flex items-center gap-2 min-w-0">
-                        {selectedFabric.swatchImageUrl ? (
-                          <img
-                            src={selectedFabric.swatchImageUrl}
-                            alt={selectedFabric.name}
-                            className="h-10 w-10 shrink-0 object-cover border border-border"
-                          />
-                        ) : (
-                          <div className="h-10 w-10 shrink-0 border border-border bg-muted" />
-                        )}
-                        <span className="text-sm text-foreground truncate">
-                          {selectedFabric.name} ({selectedFabric.itemNumber})
-                          {isGradeMode && selectedFabric.grade
-                            ? ` — Grade ${selectedFabric.grade}`
-                            : ""}
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="text-sm text-muted-foreground">
-                        No fabric selected
-                      </span>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => setFabricOpen(true)}
-                      className="ml-auto inline-flex items-center gap-2 border border-input bg-background px-4 py-2.5 text-sm hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary"
-                    >
+                  <button
+                    type="button"
+                    onClick={() => setFabricOpen(true)}
+                    className="w-full inline-flex items-center justify-between gap-2 border border-input bg-background px-4 py-2.5 text-sm hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary text-left"
+                  >
+                    <span className={selectedFabric ? "text-foreground truncate" : "text-muted-foreground"}>
+                      {selectedFabric
+                        ? `${selectedFabric.name} (${selectedFabric.itemNumber})${isGradeMode && selectedFabric.grade ? ` — Grade ${selectedFabric.grade}` : ""}`
+                        : "No fabric selected"}
+                    </span>
+                    <span className="inline-flex items-center gap-2 shrink-0">
                       <Palette className="h-4 w-4" />
                       Browse swatches
-                    </button>
-                  </div>
+                    </span>
+                  </button>
                   {fabricPendingPrompt ? (
                     <p className="text-xs text-muted-foreground mt-2">
                       {fabricPendingPrompt}
