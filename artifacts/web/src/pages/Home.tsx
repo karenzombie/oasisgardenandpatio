@@ -49,10 +49,10 @@ export default function Home() {
 
   return (
     <div className="w-full">
-      {/* Hero Section — split layout: hero on the left, ship-direct panel on the right */}
+      {/* Hero Section — split layout: ship-direct panel on the left, hero photo on the right */}
       <section className="relative w-full flex flex-col md:flex-row md:h-[80vh] md:min-h-[600px]">
         {/* Left: existing hero */}
-        <div className="relative flex-1 h-[70vh] min-h-[500px] md:h-auto md:min-h-0 flex items-center justify-center overflow-hidden">
+        <div className="relative flex-1 h-[70vh] min-h-[500px] md:h-auto md:min-h-0 flex items-center justify-center overflow-hidden md:order-2">
           <div className="absolute inset-0 z-0">
             <img
               src={heroImg}
@@ -77,11 +77,11 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Right: order online & ship direct panel — floats as a card centered in the hero */}
-        <aside className="w-full md:w-[300px] md:shrink-0 md:self-center md:mx-8 md:max-h-[calc(80vh-4rem)] overflow-hidden bg-primary/[0.06] text-foreground border border-border border-t-[3px] border-t-primary md:shadow-sm flex flex-col">
-          <div className="flex items-center gap-2.5 px-5 py-4 border-b border-border">
-            <Truck className="w-5 h-5 text-primary shrink-0" />
-            <h2 className="font-serif text-lg leading-tight">
+        {/* Left: order online & ship direct panel — full-height column flush to the left edge */}
+        <aside className="w-full md:w-[300px] md:shrink-0 md:order-1 bg-primary/[0.06] text-foreground border-r border-border border-t-[3px] border-t-primary flex flex-col">
+          <div className="flex items-center gap-2.5 px-5 py-5 border-b border-border">
+            <Truck className="w-6 h-6 text-primary shrink-0" />
+            <h2 className="font-serif font-bold text-xl leading-tight">
               Order online &amp; ship direct
             </h2>
           </div>
