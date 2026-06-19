@@ -92,15 +92,15 @@ export default function Home() {
                 <Link
                   key={category.id}
                   href={`/shop?category=${category.slug}`}
-                  className="group flex flex-1 items-center gap-3 px-5 py-3 hover:bg-primary/10 transition-colors"
+                  className="group flex flex-1 flex-col justify-center gap-3 px-5 py-4 hover:bg-primary/10 transition-colors"
                 >
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary/40 text-primary shrink-0">
-                    <Icon className="w-4 h-4" />
-                  </span>
-                  <span className="flex-1 font-serif text-lg group-hover:text-primary transition-colors">
-                    {category.name}
-                  </span>
-                  <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-serif text-lg group-hover:text-primary transition-colors">
+                      {category.name}
+                    </span>
+                    <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                  </div>
+                  <Icon className="w-12 h-12 text-primary mx-auto" />
                 </Link>
               );
             })}
