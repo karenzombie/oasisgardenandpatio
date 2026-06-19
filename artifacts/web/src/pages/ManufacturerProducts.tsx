@@ -12,6 +12,8 @@ import {
 import type { CatalogProduct, Category } from "@workspace/api-client-react";
 import { getBrandLogo } from "@/lib/brandLogos";
 import { getCategoryImage } from "@/lib/categoryImages";
+import { getManufacturerAbout } from "@/lib/manufacturerAbout";
+import { ManufacturerAbout } from "@/components/ManufacturerAbout";
 import { WishlistButton } from "@/components/WishlistButton";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -258,6 +260,12 @@ export default function ManufacturerProducts() {
   const activeFilterCount = (activeCollection ? 1 : 0) + (activeType ? 1 : 0);
   const brandLogo = getBrandLogo(manufacturer?.name ?? "");
   const displayName = manufacturer?.name ?? slug.replace(/-/g, " ");
+  const aboutInfo = getManufacturerAbout(slug);
+  const countLabel = loadError
+    ? ""
+    : isLoading
+      ? "Loading…"
+      : `${totalFiltered} ${totalFiltered === 1 ? "product" : "products"}`;
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-7xl">
@@ -273,29 +281,32 @@ export default function ManufacturerProducts() {
         <span className="text-foreground">{displayName}</span>
       </nav>
 
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
-        <div className="flex items-center gap-4">
-          {brandLogo && (
-            <div className="bg-white border border-border rounded-sm px-3 py-2 h-14 flex items-center shrink-0">
-              <img
-                src={brandLogo}
-                alt=""
-                className="h-9 w-auto object-contain"
-              />
-            </div>
-          )}
-          <h1 className="font-serif text-4xl md:text-5xl capitalize">
-            {displayName}
-          </h1>
+      {aboutInfo ? (
+        <ManufacturerAbout
+          name={displayName}
+          logo={brandLogo}
+          about={aboutInfo}
+          countLabel={countLabel}
+        />
+      ) : (
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
+          <div className="flex items-center gap-4">
+            {brandLogo && (
+              <div className="bg-white border border-border rounded-sm px-3 py-2 h-14 flex items-center shrink-0">
+                <img
+                  src={brandLogo}
+                  alt=""
+                  className="h-9 w-auto object-contain"
+                />
+              </div>
+            )}
+            <h1 className="font-serif text-4xl md:text-5xl capitalize">
+              {displayName}
+            </h1>
+          </div>
+          <p className="text-muted-foreground text-sm shrink-0">{countLabel}</p>
         </div>
-        <p className="text-muted-foreground text-sm shrink-0">
-          {loadError
-            ? ""
-            : isLoading
-              ? "Loading…"
-              : `${totalFiltered} ${totalFiltered === 1 ? "product" : "products"}`}
-        </p>
-      </div>
+      )}
 
       {/* Type tiles — real product categories, styled like the homepage grid */}
       {!isLoading && !loadError && types.length > 0 && (
