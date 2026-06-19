@@ -1,0 +1,14 @@
+Homepage split hero -- new layout request
+I want to update the homepage hero section to use a split layout. Please do not change any other pages, navigation logic, or product/category data structures.
+The new layout:
+The hero becomes a two-column layout. The left side keeps the existing full hero -- background photo, "Outdoor Living, Refined." headline, subtext, and the "Visit Showroom" button. Remove the "Shop Online" button from the hero text area entirely, as that function moves to the right panel.
+The right side is a clean white panel, approximately 260--280px wide, that sits flush with the hero height. It contains:
+A small heading at the top that reads something like "Order online & ship direct" with a small delivery truck icon. This panel is the new entry point for online shopping.
+Below that, three clickable category rows -- Umbrellas, Umbrella Bases, and Furniture Covers -- each with a small icon, the category name, a short descriptor line, and a right-pointing arrow indicating it's tappable.
+Critical -- how the three categories are populated:
+Do not hardcode these three categories. Instead, pull them from whatever existing logic or data already determines which categories are available for direct-to-consumer online purchase. The site already has logic controlling which products and categories are available for online DTC purchase vs. showroom only -- these three rows must respect that same source of truth, so that if a category is ever added or removed from online availability in the future, the panel updates automatically without any additional code changes.
+Each row, when clicked, should navigate the customer to that category's existing product listing page, exactly as if they had clicked it from the main navigation.
+On mobile:
+The two columns should stack vertically -- hero photo and text on top, the ship-direct panel below it as a full-width section. The panel should not be hidden on mobile; it is important content.
+What not to change:
+Do not change the announcement banner at the top. Do not change the navigation menu. Do not change any product, pricing, fabric, or cart logic. Do not change any other pages. This change is limited to the homepage hero section layout only.
