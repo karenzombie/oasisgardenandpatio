@@ -1,0 +1,21 @@
+Replit Build Instructions — Manufacturer About Section
+Goal: Add a brand info header to the top of every manufacturer page, above the existing "Shop by Type" section. Use the site's existing fonts, colors, and component styles throughout — do not introduce new styling.
+Data source: Use the attached file manufacturer_about.csv. Each row corresponds to one manufacturer. The columns are:
+
+manufacturer_name — matches the manufacturer name already used in the site
+founded_year and location — used for the tagline/subheading line
+tagline — one-line brand descriptor displayed below the name
+about_paragraph — the main body copy for the brand
+pills — comma-separated list of attribute tags to render as small pill/badge chips
+stat1_label, stat1_value, stat2_label, stat2_value, stat3_label, stat3_value — up to 3 stats to display; some manufacturers have fewer than 3, so render only the ones with values
+
+Layout (refer to the attached screenshot for visual reference — use site styles, not screenshot styles):
+The brand header block sits between the breadcrumb and the "Shop by Type" heading. It contains:
+
+Manufacturer logo (already exists on site) displayed at roughly the same size as current, left-aligned
+To the right of the logo: manufacturer name (use existing h1/page title style), tagline in muted subtext, then the pills row, then the about paragraph
+Below the logo/text block: a stats row showing stat label above stat value (or value above label — match whatever pattern looks best in the existing site's type scale), only rendering stats that have values
+A horizontal rule or divider (use the site's existing divider style) before the "Shop by Type" heading
+
+Handling missing data: A few manufacturers (NorthCape, Sunset West) have minimal info. The layout should degrade gracefully — if stats are empty, omit the stats row entirely. If location is empty, omit it from the tagline line. The pills and about paragraph are present for all 13 manufacturers.
+No new dependencies — use whatever the site already uses for layout, typography, and components.
