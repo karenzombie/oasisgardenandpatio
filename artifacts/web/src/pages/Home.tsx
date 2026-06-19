@@ -1,5 +1,15 @@
 import { Link } from "wouter";
-import { ArrowRight } from "lucide-react";
+import {
+  ArrowRight,
+  Truck,
+  Umbrella,
+  CircleDot,
+  Shield,
+  Wrench,
+  LayoutGrid,
+  Package,
+  type LucideIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   useListCategories,
@@ -9,8 +19,25 @@ import { BRAND_LOGOS, getBrandLogo } from "@/lib/brandLogos";
 import heroImg from "@/assets/hero.png";
 import { getCategoryImage } from "@/lib/categoryImages";
 
+/**
+ * Decorative icon for a ship-direct category row. Matched heuristically by
+ * slug so the row set stays driven by the online-availability source of
+ * truth (no hardcoded category list); unknown categories fall back to a
+ * generic icon.
+ */
+function iconForCategory(slug: string): LucideIcon {
+  const s = slug.toLowerCase();
+  if (s.includes("umbrella-base") || s.includes("base")) return CircleDot;
+  if (s.includes("umbrella")) return Umbrella;
+  if (s.includes("cover")) return Shield;
+  if (s.includes("rug")) return LayoutGrid;
+  if (s.includes("part") || s.includes("replacement")) return Wrench;
+  return Package;
+}
+
 export default function Home() {
   const { data: categories } = useListCategories();
+  const { data: onlineCategories } = useListCategories({ onlineOnly: true });
   const { data: popularData } = useGetPopularProduct();
   const popularProduct = popularData?.product ?? null;
 
@@ -18,35 +45,75 @@ export default function Home() {
     .slice()
     .sort((a, b) => a.name.localeCompare(b.name));
 
+  const shipDirectCategories = onlineCategories ?? [];
+
   return (
     <div className="w-full">
-      {/* Hero Section */}
-      <section className="relative w-full h-[80vh] min-h-[600px] flex items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 z-0">
-          <img
-            src={heroImg}
-            alt="Beautiful outdoor patio furniture"
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-black/40 mix-blend-multiply" />
-        </div>
-        
-        <div className="relative z-10 container mx-auto px-4 text-center max-w-4xl text-white">
-          <h1 className="font-bodoni italic text-5xl md:text-7xl font-medium tracking-tight mb-6 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-            Outdoor Living,<br />Refined.
-          </h1>
-          <p className="font-bodoni text-2xl md:text-4xl text-white mb-10 max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-150 [text-shadow:0_2px_4px_rgba(0,0,0,0.85),0_4px_16px_rgba(0,0,0,0.7)]">
-            Discover curated outdoor furniture collections designed for the way you live outside. Craftsmanship that endures.
-          </p>
-          <div className="flex flex-col items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
-            <Button className="bg-white text-black hover:bg-white/90 rounded-none px-12 py-5 text-lg font-serif font-bold tracking-wide btn-hero-pulse w-56 h-auto" asChild>
-              <Link href="/shop?online=true">Shop Online</Link>
-            </Button>
-            <Button variant="outline" className="text-white border-white hover:bg-white/10 rounded-none px-12 py-5 text-lg font-serif tracking-wide bg-transparent w-56 h-auto" asChild>
-              <Link href="/contact">Visit Showroom</Link>
-            </Button>
+      {/* Hero Section — split layout: hero on the left, ship-direct panel on the right */}
+      <section className="relative w-full flex flex-col md:flex-row md:h-[80vh] md:min-h-[600px]">
+        {/* Left: existing hero */}
+        <div className="relative flex-1 h-[70vh] min-h-[500px] md:h-auto md:min-h-0 flex items-center justify-center overflow-hidden">
+          <div className="absolute inset-0 z-0">
+            <img
+              src={heroImg}
+              alt="Beautiful outdoor patio furniture"
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-black/40 mix-blend-multiply" />
+          </div>
+
+          <div className="relative z-10 container mx-auto px-4 text-center max-w-4xl text-white">
+            <h1 className="font-bodoni italic text-5xl md:text-7xl font-medium tracking-tight mb-6 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+              Outdoor Living,<br />Refined.
+            </h1>
+            <p className="font-bodoni text-2xl md:text-4xl text-white mb-10 max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-150 [text-shadow:0_2px_4px_rgba(0,0,0,0.85),0_4px_16px_rgba(0,0,0,0.7)]">
+              Discover curated outdoor furniture collections designed for the way you live outside. Craftsmanship that endures.
+            </p>
+            <div className="flex flex-col items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
+              <Button variant="outline" className="text-white border-white hover:bg-white/10 rounded-none px-12 py-5 text-lg font-serif tracking-wide bg-transparent w-56 h-auto" asChild>
+                <Link href="/contact">Visit Showroom</Link>
+              </Button>
+            </div>
           </div>
         </div>
+
+        {/* Right: order online & ship direct panel */}
+        <aside className="w-full md:w-[280px] md:shrink-0 bg-white text-foreground border-t md:border-t-0 md:border-l border-border flex flex-col">
+          <div className="flex items-center gap-2.5 px-6 py-6 border-b border-border">
+            <Truck className="w-5 h-5 text-primary shrink-0" />
+            <h2 className="font-serif text-lg leading-tight">
+              Order online &amp; ship direct
+            </h2>
+          </div>
+          <nav className="flex flex-col divide-y divide-border">
+            {shipDirectCategories.map((category) => {
+              const Icon = iconForCategory(category.slug);
+              return (
+                <Link
+                  key={category.id}
+                  href={`/shop?category=${category.slug}`}
+                  className="group flex items-center gap-3 px-6 py-4 hover:bg-muted transition-colors"
+                >
+                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary/40 text-primary shrink-0">
+                    <Icon className="w-4 h-4" />
+                  </span>
+                  <span className="flex-1 font-serif text-base group-hover:text-primary transition-colors">
+                    {category.name}
+                  </span>
+                  <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                </Link>
+              );
+            })}
+            {shipDirectCategories.length === 0 ? (
+              <Link
+                href="/shop?online=true"
+                className="px-6 py-4 text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
+                Browse everything available to order online →
+              </Link>
+            ) : null}
+          </nav>
+        </aside>
       </section>
 
       {/* Categories Section */}
