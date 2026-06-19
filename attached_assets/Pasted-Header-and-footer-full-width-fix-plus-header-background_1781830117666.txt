@@ -1,0 +1,10 @@
+Header and footer full-width fix, plus header background color
+This is a layout bug fix and a minor visual addition only. Do not change any fonts, navigation items, logo, search bar, or any other styling or logic anywhere on the site.
+Fix 1 -- full-width header and footer
+The header and footer are currently constrained by a max-width container, which causes them to appear indented from the browser edges at certain window sizes. They should always stretch edge to edge regardless of browser width.
+For both the header and the footer, ensure the background fills 100% of the viewport width at all times. The fix is on the outer wrapper element for each -- it should have width: 100% with no max-width constraint and zero left/right margin or padding on that outer shell.
+The inner content within the header (logo, navigation, search bar) and footer can keep whatever internal padding or max-width centering it currently has to keep content readable at wide screen sizes -- that is fine and expected. The issue is only that the background of the header and footer must bleed fully to both edges of the browser window with no visible gap or indentation on either side at any screen width.
+Fix 2 -- header background color
+Find whatever background color is currently used in the footer. Apply that same color to the header background, but at a lower opacity -- somewhere around 20 to 30% opacity is a good starting point, adjust visually from there so it reads as a subtle tint rather than a solid block. The color should sit behind all existing header elements -- logo, navigation links, search bar, and icons. Nothing in the header moves or changes position.
+What not to change
+Do not change the footer color itself. Do not change any text colors, logo, navigation, search bar, or any other header content. Do not change the split hero layout, the ship-direct panel, or anything else on any page. These two fixes are scoped to the outer wrapper width of the header and footer, and the header background color only.
