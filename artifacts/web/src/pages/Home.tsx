@@ -79,11 +79,11 @@ export default function Home() {
 
         {/* Left: order online & ship direct panel — full-height column flush to the left edge */}
         <aside className="w-full md:w-[300px] md:shrink-0 md:order-1 bg-primary/[0.06] text-foreground border-r border-border border-t-[3px] border-t-primary flex flex-col">
-          <div className="flex items-center gap-2.5 px-5 py-5 border-b border-border">
-            <Truck className="w-6 h-6 text-primary shrink-0" />
+          <div className="flex flex-col items-center gap-2.5 px-5 py-5 border-b border-border text-center">
             <h2 className="font-serif font-bold text-xl leading-tight">
               Order online &amp; ship direct
             </h2>
+            <Truck className="w-8 h-8 text-primary shrink-0" />
           </div>
           <nav className="flex flex-col flex-1 divide-y divide-border">
             {shipDirectCategories.map((category) => {
