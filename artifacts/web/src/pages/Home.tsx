@@ -94,7 +94,7 @@ export default function Home() {
                   href={`/shop?category=${category.slug}`}
                   className="group flex flex-1 flex-col justify-center gap-3 px-5 py-4 hover:bg-primary/10 transition-colors"
                 >
-                  <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center justify-center gap-2">
                     <span className="font-serif text-lg group-hover:text-primary transition-colors">
                       {category.name}
                     </span>
