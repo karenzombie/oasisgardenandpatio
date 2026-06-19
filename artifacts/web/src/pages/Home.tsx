@@ -85,14 +85,14 @@ export default function Home() {
               Order online &amp; ship direct
             </h2>
           </div>
-          <nav className="flex flex-col divide-y divide-border">
+          <nav className="flex flex-col flex-1 divide-y divide-border">
             {shipDirectCategories.map((category) => {
               const Icon = iconForCategory(category.slug);
               return (
                 <Link
                   key={category.id}
                   href={`/shop?category=${category.slug}`}
-                  className="group flex items-center gap-3 px-5 py-2.5 hover:bg-primary/10 transition-colors"
+                  className="group flex flex-1 items-center gap-3 px-5 py-3 hover:bg-primary/10 transition-colors"
                 >
                   <span className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary/40 text-primary shrink-0">
                     <Icon className="w-4 h-4" />
