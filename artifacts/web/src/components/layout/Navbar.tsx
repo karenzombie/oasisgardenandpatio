@@ -181,7 +181,7 @@ export function Navbar() {
             : "bg-secondary/25 border-transparent"
         }`}
       >
-        <div className="container mx-auto px-4 md:px-6">
+        <div className="w-full px-4 md:px-6">
           <div className="flex items-stretch gap-4 md:gap-6">
 
             {/* Logo — large on desktop, fills the full header height */}
@@ -299,7 +299,7 @@ export function Navbar() {
       {/* Mobile search strip — below header, hidden on desktop */}
       {location !== "/search" && (
         <div className="md:hidden bg-muted/40 border-b border-border">
-          <div className="container mx-auto px-4 py-2">
+          <div className="w-full px-4 py-2">
             {searchBar}
           </div>
         </div>
