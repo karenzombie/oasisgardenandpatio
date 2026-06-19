@@ -77,9 +77,9 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Right: order online & ship direct panel */}
-        <aside className="w-full md:w-[280px] md:shrink-0 bg-white text-foreground border-t md:border-t-0 md:border-l border-border flex flex-col">
-          <div className="flex items-center gap-2.5 px-6 py-6 border-b border-border">
+        {/* Right: order online & ship direct panel — floats as a card centered in the hero */}
+        <aside className="w-full md:w-[300px] md:shrink-0 md:self-center md:mx-8 md:max-h-[calc(80vh-4rem)] overflow-hidden bg-primary/[0.06] text-foreground border border-border border-t-[3px] border-t-primary md:shadow-sm flex flex-col">
+          <div className="flex items-center gap-2.5 px-5 py-4 border-b border-border">
             <Truck className="w-5 h-5 text-primary shrink-0" />
             <h2 className="font-serif text-lg leading-tight">
               Order online &amp; ship direct
@@ -92,12 +92,12 @@ export default function Home() {
                 <Link
                   key={category.id}
                   href={`/shop?category=${category.slug}`}
-                  className="group flex items-center gap-3 px-6 py-4 hover:bg-muted transition-colors"
+                  className="group flex items-center gap-3 px-5 py-2.5 hover:bg-primary/10 transition-colors"
                 >
-                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary/40 text-primary shrink-0">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary/40 text-primary shrink-0">
                     <Icon className="w-4 h-4" />
                   </span>
-                  <span className="flex-1 font-serif text-base group-hover:text-primary transition-colors">
+                  <span className="flex-1 font-serif text-lg group-hover:text-primary transition-colors">
                     {category.name}
                   </span>
                   <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
@@ -107,7 +107,7 @@ export default function Home() {
             {shipDirectCategories.length === 0 ? (
               <Link
                 href="/shop?online=true"
-                className="px-6 py-4 text-sm text-muted-foreground hover:text-primary transition-colors"
+                className="px-5 py-2.5 text-sm text-muted-foreground hover:text-primary transition-colors"
               >
                 Browse everything available to order online →
               </Link>
