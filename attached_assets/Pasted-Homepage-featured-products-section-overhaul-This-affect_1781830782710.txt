@@ -1,0 +1,16 @@
+Homepage featured products section -- overhaul
+This affects the "Popular Products" section on the homepage only. Do not change anything else on the site.
+The problem with the current logic
+The current section automatically displays whichever product customers are clicking or buying most. The client wants to replace this with a manually curated selection that staff can control themselves.
+Part 1 -- homepage display changes
+Replace the single auto-selected product with a carousel of featured products. The carousel should auto-advance, pausing on each product for a few seconds before sliding to the next one. It should also include left and right manual navigation arrows so customers can move through the items themselves. Each product card in the carousel should show the product image and product name, and be fully clickable -- clicking the card brings the customer to that product's existing detail page.
+The section heading can be updated from "Popular Products" to "Featured Products" or "Staff Picks."
+For the initial launch, populate the carousel with any three Frankford umbrella products that have good product images already in the system.
+On mobile the carousel should still work, with the arrows remaining tappable.
+Part 2 -- staff portal: featured product flag
+On each individual product's page inside the staff portal, add a simple toggle or checkbox labeled "Featured on homepage." When enabled, that product is marked as a featured item. The homepage carousel should display all products that have this flag enabled, in the order they were flagged. There is no maximum limit -- staff can feature as many products as they like, and all of them will appear in the carousel rotation.
+This flag should be stored in the database alongside the product record so it persists across sessions.
+Part 3 -- removing the old logic
+Remove the existing auto-selection logic that was pulling the most-clicked or most-purchased product. It is being fully replaced by the manual flag system described above. Do not leave both systems running in parallel.
+What not to change
+Do not change any product data, pricing, fabric, cart, or purchase logic. Do not change the hero section, the ship-direct panel, the header, the footer, or any other page. This change is scoped to the homepage featured products carousel and the per-product staff portal flag only.
