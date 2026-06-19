@@ -89,6 +89,11 @@ export const productsTable = pgTable(
     // notice. Wishlist still works so customers can flag interest.
     quoteOnly: boolean("quote_only").notNull().default(false),
     featured: boolean("featured").notNull().default(false),
+    // Timestamp the product was last flagged as featured (null when not
+    // featured). Drives the homepage Featured carousel's "order flagged"
+    // sorting. Server-managed: set when featured flips true (preserved if
+    // already featured), cleared to null when featured flips false.
+    featuredAt: timestamp("featured_at", { withTimezone: true }),
     displayOrder: integer("display_order").notNull().default(0),
     lowStockThreshold: integer("low_stock_threshold").notNull().default(0),
     isActive: boolean("is_active").notNull().default(true),

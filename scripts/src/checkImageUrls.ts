@@ -47,8 +47,8 @@ const CHECKS: Check[] = [
     paths: ["[].imageUrl"],
   },
   {
-    label: "GET /api/products/popular — primaryImageUrl",
-    url: `${BASE}/api/products/popular`,
+    label: "GET /api/products/featured — primaryImageUrl",
+    url: `${BASE}/api/products/featured`,
     paths: ["[].primaryImageUrl"],
   },
 ];

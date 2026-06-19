@@ -24,7 +24,7 @@ A full-stack e-commerce platform for a luxury outdoor furniture retailer, suppor
 - `lib/db/src/schema/index.ts`: Database schema barrel file.
 - `lib/api-spec/openapi.yaml`: Single source of truth for the API contract.
 - `artifacts/api-server/src/routes/index.ts`: API route registry.
-- `artifacts/api-server/src/routes/popularProducts.ts`: Weekly-refreshed "most popular product" computation (orders + wishlist score).
+- `artifacts/api-server/src/routes/products.ts`: `/products/featured` route — staff-curated featured products for the homepage carousel, ordered by `featuredAt DESC NULLS LAST, displayOrder ASC, name ASC`. Filtered to active + online so cards always link to a valid PDP.
 - `artifacts/api-server/src/lib/autoGenerateVendorOrders.ts`: Shared helper that auto-creates pending vendor POs (grouped by manufacturer) on every customer order. Called by `/checkout` and `/admin/orders`. Locks candidate rows `FOR UPDATE` for idempotency.
 - `artifacts/api-server/src/lib/vendorOrderPdf.tsx`: React-PDF vendor PO + cancellation docs. Logo is inlined via `oasisLogoData.ts` (base64) so it survives the esbuild bundle. PO Ship-To uses Oasis address by default; switches to customer shipping address when `orders.shipToStore = false`.
 - `scripts/src/seed.ts`: Idempotent seed script.
@@ -45,7 +45,7 @@ A full-stack e-commerce platform for a luxury outdoor furniture retailer, suppor
 
 ## Product
 
-- **Customer-facing Storefront**: Product browsing (list, filters, detail pages), shopping cart, checkout (guest + registered), customer account management (order history, addresses), homepage "Popular Products" tile (refreshed weekly from purchases + wishlist).
+- **Customer-facing Storefront**: Product browsing (list, filters, detail pages), shopping cart, checkout (guest + registered), customer account management (order history, addresses), homepage "Featured Products" carousel (staff-curated via the product `featured` toggle; `featuredAt` records when each was flagged for ordering).
 - **Staff/Admin Portal**:
     - **CRUD Operations**: Manufacturers, categories, products (with variants, fabrics, multi-image management), carriers, banners, legal documents.
     - **Inventory Management**: Manual adjustments, location tracking, and linking to vendor orders.

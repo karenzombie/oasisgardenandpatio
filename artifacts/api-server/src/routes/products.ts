@@ -59,9 +59,14 @@ router.get("/products/featured", async (_req, res): Promise<void> => {
       eq(categoriesTable.id, productsTable.categoryId),
     )
     .where(
-      and(eq(productsTable.isActive, true), eq(productsTable.featured, true)),
+      and(
+        eq(productsTable.isActive, true),
+        eq(productsTable.availableOnline, true),
+        eq(productsTable.featured, true),
+      ),
     )
     .orderBy(
+      sql`${productsTable.featuredAt} desc nulls last`,
       sql`${productsTable.displayOrder} asc`,
       sql`${productsTable.name} asc`,
     )

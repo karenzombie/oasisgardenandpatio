@@ -183,7 +183,12 @@ router.post(
     const scalarSet: Record<string, unknown> = {};
     if (fields) {
       if (fields.isActive !== undefined) scalarSet.isActive = fields.isActive;
-      if (fields.featured !== undefined) scalarSet.featured = fields.featured;
+      if (fields.featured !== undefined) {
+        scalarSet.featured = fields.featured;
+        scalarSet.featuredAt = fields.featured
+          ? sql`COALESCE(${productsTable.featuredAt}, now())`
+          : null;
+      }
       if (fields.inStoreOnly !== undefined) scalarSet.inStoreOnly = fields.inStoreOnly;
       if (fields.availableOnline !== undefined) scalarSet.availableOnline = fields.availableOnline;
       if (fields.quoteOnly !== undefined) scalarSet.quoteOnly = fields.quoteOnly;

@@ -152,6 +152,7 @@ function baseSelect() {
       inStoreOnly: productsTable.inStoreOnly,
       quoteOnly: productsTable.quoteOnly,
       featured: productsTable.featured,
+      featuredAt: productsTable.featuredAt,
       displayOrder: productsTable.displayOrder,
       lowStockThreshold: productsTable.lowStockThreshold,
       isActive: productsTable.isActive,
@@ -412,6 +413,7 @@ router.post(
           inStoreOnly: parsed.data.inStoreOnly ?? false,
           quoteOnly: parsed.data.quoteOnly ?? false,
           featured: parsed.data.featured ?? false,
+          featuredAt: parsed.data.featured ? new Date() : null,
           displayOrder: parsed.data.displayOrder ?? 0,
           lowStockThreshold: parsed.data.lowStockThreshold ?? 0,
           isActive: parsed.data.isActive ?? true,
@@ -503,7 +505,12 @@ router.put(
             ? { quoteOnly: body.data.quoteOnly }
             : {}),
           ...(body.data.featured !== undefined
-            ? { featured: body.data.featured }
+            ? {
+                featured: body.data.featured,
+                featuredAt: body.data.featured
+                  ? sql`COALESCE(${productsTable.featuredAt}, now())`
+                  : null,
+              }
             : {}),
           ...(body.data.displayOrder !== undefined
             ? { displayOrder: body.data.displayOrder }

@@ -1,4 +1,5 @@
 import { Link } from "wouter";
+import { useRef } from "react";
 import {
   ArrowRight,
   Truck,
@@ -8,16 +9,25 @@ import {
   Wrench,
   LayoutGrid,
   Package,
+  ChevronLeft,
+  ChevronRight,
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   useListCategories,
-  useGetPopularProduct,
+  useListFeaturedProducts,
 } from "@workspace/api-client-react";
 import { BRAND_LOGOS, getBrandLogo } from "@/lib/brandLogos";
 import heroImg from "@/assets/hero.png";
 import { getCategoryImage } from "@/lib/categoryImages";
+
+function formatMoney(v: string | null | undefined): string {
+  if (v == null || v === "") return "";
+  const n = Number(v);
+  if (!Number.isFinite(n)) return "";
+  return `$${n.toFixed(2)}`;
+}
 
 /**
  * Decorative icon for a ship-direct category row. Matched heuristically by
@@ -38,8 +48,17 @@ function iconForCategory(slug: string): LucideIcon {
 export default function Home() {
   const { data: categories } = useListCategories();
   const { data: onlineCategories } = useListCategories({ onlineOnly: true });
-  const { data: popularData } = useGetPopularProduct();
-  const popularProduct = popularData?.product ?? null;
+  const { data: featuredProducts } = useListFeaturedProducts();
+  const featured = featuredProducts ?? [];
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const scrollFeatured = (dir: number) => {
+    const el = carouselRef.current;
+    if (!el) return;
+    el.scrollBy({
+      left: dir * Math.min(el.clientWidth * 0.8, 600),
+      behavior: "smooth",
+    });
+  };
 
   const topLevelCategories = (categories?.filter(c => c.parentId === null) || [])
     .slice()
@@ -171,76 +190,136 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Popular Products Section — single most-loved item, refreshed weekly */}
-      <section className="py-24 bg-muted/30 border-y border-border">
-        <div className="container mx-auto px-4 md:px-6">
-          <div className="flex flex-col items-center text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-serif mb-4">Popular Products</h2>
-            <div className="h-px w-24 bg-primary/40 mb-4" />
-            <p className="text-sm text-muted-foreground max-w-md">
-              The piece our customers are loving most this week.
-            </p>
-          </div>
+      {/* Featured Products Section — staff-curated carousel, ordered by when flagged */}
+      {featured.length > 0 ? (
+        <section className="py-24 bg-muted/30 border-y border-border">
+          <div className="container mx-auto px-4 md:px-6">
+            <div className="flex flex-col items-center text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-serif mb-4">Featured Products</h2>
+              <div className="h-px w-24 bg-primary/40 mb-4" />
+              <p className="text-sm text-muted-foreground max-w-md">
+                A curated selection of the pieces we're loving right now.
+              </p>
+            </div>
 
-          {(() => {
-            const item = popularProduct
-              ? {
-                  href: `/shop/${popularProduct.slug}`,
-                  name: popularProduct.name,
-                  imageUrl: popularProduct.primaryImageUrl ?? null,
-                  manufacturerName: popularProduct.manufacturerName ?? null,
-                  placeholder: false as const,
-                }
-              : {
-                  href: "/shop",
-                  name: "Coming Soon",
-                  imageUrl: null,
-                  manufacturerName: null,
-                  placeholder: true as const,
-                };
-            const brandLogo = item.placeholder
-              ? null
-              : getBrandLogo(item.manufacturerName);
-            return (
-              <div className="flex justify-center max-w-md mx-auto">
-                <Link
-                  href={item.href}
-                  className="group block w-64 md:w-80"
-                >
-                  <div className="aspect-square overflow-hidden mb-4 relative bg-card">
-                    {item.imageUrl ? (
-                      <img
-                        src={item.imageUrl}
-                        alt={item.name}
-                        className="w-full h-full object-cover mix-blend-multiply transition-transform duration-500 group-hover:scale-105"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-secondary/40 text-secondary-foreground/60 font-serif text-xs tracking-widest uppercase transition-colors group-hover:bg-secondary/60">
-                        {item.placeholder ? "Popular Pick Coming Soon" : "No image available"}
+            <div className="relative">
+              {featured.length > 1 ? (
+                <>
+                  <button
+                    type="button"
+                    aria-label="Scroll featured products left"
+                    onClick={() => scrollFeatured(-1)}
+                    className="hidden md:flex absolute -left-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 items-center justify-center rounded-full bg-card border border-border shadow-sm hover:bg-accent transition-colors"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Scroll featured products right"
+                    onClick={() => scrollFeatured(1)}
+                    className="hidden md:flex absolute -right-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 items-center justify-center rounded-full bg-card border border-border shadow-sm hover:bg-accent transition-colors"
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
+                </>
+              ) : null}
+
+              <div
+                ref={carouselRef}
+                className="flex gap-6 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-4 -mx-4 px-4 md:mx-0 md:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              >
+                {featured.map((p) => {
+                  const varies = p.priceVaries && p.showPriceOnline;
+                  const displayPrice = varies ? p.startingPrice : p.price;
+                  const displaySale = varies ? p.startingSalePrice : p.salePrice;
+                  const onSale =
+                    displaySale &&
+                    displayPrice &&
+                    Number(displaySale) < Number(displayPrice);
+                  const brandLogo = getBrandLogo(p.manufacturerName);
+                  return (
+                    <Link
+                      key={p.id}
+                      href={`/shop/${p.slug}`}
+                      className="group block shrink-0 w-60 md:w-64 snap-start border-2 border-primary bg-card hover:shadow-md transition-shadow duration-150"
+                    >
+                      <div className="relative aspect-square bg-card overflow-hidden">
+                        {p.primaryImageUrl ? (
+                          <img
+                            src={p.primaryImageUrl}
+                            alt={p.name}
+                            className="absolute inset-0 w-full h-full object-contain p-6 mix-blend-multiply"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground font-serif text-sm">
+                            No image available
+                          </div>
+                        )}
+                        {onSale ? (
+                          <div className="absolute top-3 right-3 bg-primary text-primary-foreground px-3 py-1 text-xs uppercase tracking-widest font-semibold">
+                            Sale
+                          </div>
+                        ) : null}
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent pt-10 pb-3 px-4">
+                          <h3 className="font-serif text-base text-white drop-shadow line-clamp-2">
+                            {p.name}
+                          </h3>
+                        </div>
                       </div>
-                    )}
-                    {brandLogo ? (
-                      <div
-                        className="absolute top-2 left-2 bg-white/95 px-2 py-1 rounded-sm shadow-sm"
-                        aria-hidden="true"
-                      >
-                        <img
-                          src={brandLogo}
-                          alt=""
-                          className="h-4 w-auto object-contain"
-                        />
+                      <div className="border-t border-primary/30 px-4 py-4 space-y-2 text-center">
+                        {brandLogo ? (
+                          <div className="flex justify-center">
+                            <img
+                              src={brandLogo}
+                              alt={p.manufacturerName ?? ""}
+                              className="h-6 w-auto object-contain"
+                            />
+                          </div>
+                        ) : p.manufacturerName ? (
+                          <p className="text-xs uppercase tracking-widest text-muted-foreground">
+                            {p.manufacturerName}
+                          </p>
+                        ) : null}
+                        {p.showPriceOnline && displayPrice ? (
+                          onSale ? (
+                            <p className="text-sm font-bold">
+                              {varies && (
+                                <span className="block text-xs font-normal uppercase tracking-widest text-muted-foreground">
+                                  Starting at
+                                </span>
+                              )}
+                              <span className="text-muted-foreground line-through mr-2">
+                                {varies ? formatMoney(displayPrice) : `MSRP ${formatMoney(displayPrice)}`}
+                              </span>
+                              <span className="text-primary">
+                                {varies ? formatMoney(displaySale) : `Sale ${formatMoney(displaySale)}`}
+                              </span>
+                            </p>
+                          ) : (
+                            <p className="text-sm font-bold">
+                              {varies && (
+                                <span className="block text-xs font-normal uppercase tracking-widest text-muted-foreground">
+                                  Starting at
+                                </span>
+                              )}
+                              {varies ? formatMoney(displayPrice) : `MSRP ${formatMoney(displayPrice)}`}
+                            </p>
+                          )
+                        ) : null}
+                        <div className="pt-1">
+                          <span className="inline-block w-full border border-primary text-primary text-xs uppercase tracking-widest px-4 py-2.5 font-semibold group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-150">
+                            Select Options
+                          </span>
+                        </div>
                       </div>
-                    ) : null}
-                  </div>
-                  <h3 className="font-serif text-base md:text-lg text-center group-hover:text-primary transition-colors line-clamp-1">
-                    {item.name}
-                  </h3>
-                </Link>
+                    </Link>
+                  );
+                })}
               </div>
-            );
-          })()}
-        </div>
-      </section>
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       {/* Manufacturers Marquee */}
       <section className="py-16 bg-background border-t border-border overflow-hidden flex flex-col items-center">

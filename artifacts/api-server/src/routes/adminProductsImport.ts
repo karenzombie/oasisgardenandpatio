@@ -489,6 +489,7 @@ router.post(
                   availableOnline: r.availableOnline!,
                   inStoreOnly: r.inStoreOnly!,
                   featured: r.featured!,
+                  featuredAt: r.featured ? new Date() : null,
                   displayOrder: 0,
                   lowStockThreshold: 0,
                   isActive: true,
@@ -520,6 +521,9 @@ router.post(
                   availableOnline: r.availableOnline!,
                   inStoreOnly: r.inStoreOnly!,
                   featured: r.featured!,
+                  featuredAt: r.featured
+                    ? sql`COALESCE(${productsTable.featuredAt}, now())`
+                    : null,
                   updatedAt: new Date(),
                 })
                 .where(eq(productsTable.id, r.existingProductId));

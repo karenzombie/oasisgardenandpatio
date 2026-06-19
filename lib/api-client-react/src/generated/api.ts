@@ -155,7 +155,6 @@ import type {
   FeaturedProduct,
   GenerateVendorOrdersRequest,
   GenerateVendorOrdersResponse,
-  GetPopularProduct200,
   HealthStatus,
   ImportProductsCommitResult,
   ImportProductsDryRunResult,
@@ -832,83 +831,6 @@ export function useListFeaturedProducts<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getListFeaturedProductsQueryOptions(options);
-
-  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
-    queryKey: QueryKey;
-  };
-
-  return { ...query, queryKey: queryOptions.queryKey };
-}
-
-/**
- * Returns the single product with the highest combined popularity score across all order types (online + in-store) and wishlist additions over the most recent scoring window. Result is cached server-side and refreshed once per week.
-
- * @summary The single most popular product (refreshed weekly)
- */
-export const getGetPopularProductUrl = () => {
-  return `/api/products/popular`;
-};
-
-export const getPopularProduct = async (
-  options?: RequestInit,
-): Promise<GetPopularProduct200> => {
-  return customFetch<GetPopularProduct200>(getGetPopularProductUrl(), {
-    ...options,
-    method: "GET",
-  });
-};
-
-export const getGetPopularProductQueryKey = () => {
-  return [`/api/products/popular`] as const;
-};
-
-export const getGetPopularProductQueryOptions = <
-  TData = Awaited<ReturnType<typeof getPopularProduct>>,
-  TError = ErrorType<unknown>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof getPopularProduct>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getGetPopularProductQueryKey();
-
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getPopularProduct>>
-  > = ({ signal }) => getPopularProduct({ signal, ...requestOptions });
-
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getPopularProduct>>,
-    TError,
-    TData
-  > & { queryKey: QueryKey };
-};
-
-export type GetPopularProductQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getPopularProduct>>
->;
-export type GetPopularProductQueryError = ErrorType<unknown>;
-
-/**
- * @summary The single most popular product (refreshed weekly)
- */
-
-export function useGetPopularProduct<
-  TData = Awaited<ReturnType<typeof getPopularProduct>>,
-  TError = ErrorType<unknown>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof getPopularProduct>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getGetPopularProductQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

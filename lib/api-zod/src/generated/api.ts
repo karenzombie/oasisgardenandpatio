@@ -148,50 +148,6 @@ export const ListFeaturedProductsResponse = zod.array(
 );
 
 /**
- * Returns the single product with the highest combined popularity score across all order types (online + in-store) and wishlist additions over the most recent scoring window. Result is cached server-side and refreshed once per week.
-
- * @summary The single most popular product (refreshed weekly)
- */
-export const GetPopularProductResponse = zod.object({
-  product: zod.union([
-    zod.object({
-      id: zod.number(),
-      name: zod.string(),
-      slug: zod.string(),
-      sku: zod.string(),
-      manufacturerName: zod.string(),
-      categoryName: zod.string(),
-      price: zod.string().nullable(),
-      salePrice: zod.string().nullable(),
-      showPriceOnline: zod.boolean(),
-      availableOnline: zod.boolean(),
-      primaryImageUrl: zod.string().nullable(),
-      priceVaries: zod
-        .boolean()
-        .describe(
-          'True when the product has customer-selectable options that change the price. When true, the storefront shows \"Starting at\" and uses startingPrice\/startingSalePrice.',
-        ),
-      startingPrice: zod
-        .string()
-        .nullable()
-        .describe(
-          "Lowest configuration MSRP. Only populated when priceVaries is true.",
-        ),
-      startingSalePrice: zod
-        .string()
-        .nullable()
-        .describe(
-          "Lowest configuration sale price. Only populated when priceVaries is true.",
-        ),
-    }),
-    zod.null(),
-  ]),
-  refreshedAt: zod
-    .string()
-    .describe("ISO timestamp when the cache was last refreshed."),
-});
-
-/**
  * @summary Public product listing with filters, sort, and pagination
  */
 export const listCatalogProductsQuerySortDefault = `featured`;
