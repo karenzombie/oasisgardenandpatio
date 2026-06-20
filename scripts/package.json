@@ -42,6 +42,7 @@
     "seed-tg-fabrics": "tsx ./src/seedTgFabrics.ts",
     "seed-frankford-non-umbrella": "tsx ./src/seedFrankfordNonUmbrellaProducts.ts",
     "upload-galtech-replacement-images": "tsx ./src/uploadGaltechReplacementImages.ts",
+    "export-products": "tsx ./src/exportProducts.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
