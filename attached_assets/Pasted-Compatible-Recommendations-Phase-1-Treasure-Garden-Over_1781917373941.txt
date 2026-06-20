@@ -1,0 +1,68 @@
+Compatible Recommendations — Phase 1 (Treasure Garden)
+
+Overview and intent
+We are adding a "Compatible Recommendations" section to product detail pages across the Oasis site. This feature will eventually apply to all manufacturers and all product types sold online. We are building it now for Treasure Garden umbrellas as Phase 1, but the implementation must be architected generically so that adding recommendations for other manufacturers and product types later requires only data additions, not code changes.
+The core rule: only show this section if the recommended item is available for online purchase on the Oasis site. If a compatible item exists in the database but is not purchasable online, do not show it as a recommendation. This applies now and for all future phases.
+
+Do not touch any existing configurator logic, cart functionality, pricing, fabric/finish selectors, wishlist, tabs, breadcrumbs, or any other existing behavior on any product page. This is a UI-only addition.
+
+What to build
+A reusable "Compatible Recommendations" component that can be dropped onto any product detail page. The component:
+
+Takes the current product's SKU as its input
+Looks up that SKU in a recommendations data table (details below)
+If matching recommendations exist, and those recommended products are marked as available for online purchase, renders the section below the Add to Cart / Add to Wishlist button area
+If no matching recommendations exist, or none of the matched items are purchasable online, renders nothing — no empty section, no placeholder
+
+
+The section UI
+Label: "Compatible Recommendations" — styled to match existing section label treatment on the product page.
+Below the label, a responsive card grid: 2 columns on desktop, 1 column on mobile (use existing site breakpoints).
+Each card:
+
+White/surface background, subtle border, rounded corners — match existing site card style
+The recommended item gets a green border accent (#2E5E35) and a small "Recommended" badge top-left
+Contains: product image (from existing product record), product name, short descriptor (weight and item number)
+The entire card is a link — clicking navigates to that item's own product detail page where the customer configures and adds to cart independently
+No inline add-to-cart, no modal, no drawer — just a standard page navigation
+
+If there are more than 4 compatible items: show the first 4 cards and a "Show all X options" text link below the grid that reveals the rest without a page reload. The Recommended card always appears first.
+
+Recommendations data table — Phase 1 (Treasure Garden umbrellas)
+Store this as a data table/config that maps umbrella SKUs to compatible item SKUs. This same table structure will be extended for other manufacturers and product types in future phases — keep it generic.
+Cantilevers — 400 lb. base required (SKUs: AKZP13LX, AKZPRTLX, AKZP13, AKZPRT, AKZPSQ11)
+
+Compatible items: BASE-13 (AKZ13 Base) · BASE-13R (AKZ13 Rolling Base)
+
+Recommended: BASE-13
+Cantilevers — 200 lb. base required (SKUs: AKZP, AG25TR, AG25TSQR, AG25TR10)
+
+Compatible items: BASE-AKZ (AKZ Base) · BASE-13 (AKZ13 Base) · BASE-13R (AKZ13 Rolling Base)
+
+Recommended: BASE-AKZ
+11' market umbrellas (SKUs: UM851, UM801, UM841, UM812)
+
+Compatible items: BA150 · BSK120 · ZB115 · BTT100 · BRW100 · BKM100 · BKMSQ100 · BS709-2.0
+
+Recommended: BA150
+8x10' rectangle market (SKU: UM8810RT)
+
+Compatible items: BA150 · BSK120 · ZB115 · BTT100 · BRW100 · BKM100 · BKMSQ100 · BS709-2.0
+
+Recommended: BA150
+9' and 7.5' market umbrellas (SKUs: UM850, UM800LX, UM800, UM840, UM847SQ, UM810, UM970, UM977, UM920, UM907, UM809-1H)
+
+Compatible items: BA150 · BSK120 · ZB115 · BTT100 · BRW100 · BKM100 · BKMSQ100 · BS709-2.0 · BG50 · BA50 · BW50 · BS359
+
+Recommended: BKM100
+Specialty umbrellas (SKUs: ET3RT, ET310, USA45-09)
+
+Compatible items: BA150 · BSK120 · ZB115 · BTT100 · BRW100 · BKM100 · BKMSQ100 · BS709-2.0
+
+Recommended: BA150
+
+Online availability filter
+Before rendering any card, check whether that item's SKU is flagged as available for online purchase in the existing product database. Only render cards for items that pass this check. If none of the compatible items for a given umbrella are purchasable online, suppress the entire section.
+This filter applies to all future phases as well — it is the governing rule for whether anything appears in this section, regardless of manufacturer or product type.
+
+Future phases will follow the same pattern: add rows to the recommendations data table mapping new product SKUs to their compatible items, confirm online availability flags are set, and the component renders automatically. No code changes should be required to support new manufacturers or product types.
