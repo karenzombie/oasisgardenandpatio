@@ -109,6 +109,7 @@ async function loadCart(owner: CartOwner) {
       fabricId: cartItemsTable.fabricId,
       fabricName: fabricsTable.name,
       fabricItemNumber: fabricsTable.itemNumber,
+      fabricIsStripe: sql<boolean>`coalesce(${fabricsTable.isStripe}, false)`,
       primaryImageUrl: sql<string | null>`(
         select ${productImagesTable.url}
         from ${productImagesTable}

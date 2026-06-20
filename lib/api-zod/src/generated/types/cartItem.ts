@@ -36,4 +36,6 @@ export interface CartItem {
   fabricName: string | null;
   /** @nullable */
   fabricItemNumber: string | null;
+  /** True when the selected fabric is a stripe pattern (quantity must be ordered in even pairs). */
+  fabricIsStripe: boolean;
 }

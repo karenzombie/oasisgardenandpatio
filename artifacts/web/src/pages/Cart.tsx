@@ -171,6 +171,13 @@ export default function Cart() {
                       Remove
                     </button>
                   </div>
+                  {item.fabricIsStripe ? (
+                    <div className="mt-3 border border-border bg-secondary px-4 py-3 text-sm text-secondary-foreground">
+                      <span className="font-semibold">Striped fabrics are sold in pairs.</span>{" "}
+                      This canopy must be ordered in even quantities (2, 4, 6…), so
+                      the quantity is set in multiples of two.
+                    </div>
+                  ) : null}
                 </div>
                 <div className="font-serif text-lg shrink-0 text-right">
                   {formatMoney(item.lineTotal)}

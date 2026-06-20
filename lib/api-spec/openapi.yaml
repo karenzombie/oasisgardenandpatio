@@ -6817,6 +6817,9 @@ components:
           type: ["string", "null"]
         fabricItemNumber:
           type: ["string", "null"]
+        fabricIsStripe:
+          type: boolean
+          description: True when the selected fabric is a stripe pattern (quantity must be ordered in even pairs).
       required:
         - id
         - productId
@@ -6836,6 +6839,7 @@ components:
         - fabricId
         - fabricName
         - fabricItemNumber
+        - fabricIsStripe
     CartResponse:
       type: object
       properties:

@@ -1132,6 +1132,11 @@ export const GetCartResponse = zod.object({
       fabricId: zod.number().nullable(),
       fabricName: zod.string().nullable(),
       fabricItemNumber: zod.string().nullable(),
+      fabricIsStripe: zod
+        .boolean()
+        .describe(
+          "True when the selected fabric is a stripe pattern (quantity must be ordered in even pairs).",
+        ),
     }),
   ),
   itemCount: zod.number().describe("Sum of quantities across all line items."),
@@ -1165,6 +1170,11 @@ export const ClearCartResponse = zod.object({
       fabricId: zod.number().nullable(),
       fabricName: zod.string().nullable(),
       fabricItemNumber: zod.string().nullable(),
+      fabricIsStripe: zod
+        .boolean()
+        .describe(
+          "True when the selected fabric is a stripe pattern (quantity must be ordered in even pairs).",
+        ),
     }),
   ),
   itemCount: zod.number().describe("Sum of quantities across all line items."),
@@ -1216,6 +1226,11 @@ export const AddCartItemResponse = zod.object({
       fabricId: zod.number().nullable(),
       fabricName: zod.string().nullable(),
       fabricItemNumber: zod.string().nullable(),
+      fabricIsStripe: zod
+        .boolean()
+        .describe(
+          "True when the selected fabric is a stripe pattern (quantity must be ordered in even pairs).",
+        ),
     }),
   ),
   itemCount: zod.number().describe("Sum of quantities across all line items."),
@@ -1256,6 +1271,11 @@ export const UpdateCartItemResponse = zod.object({
       fabricId: zod.number().nullable(),
       fabricName: zod.string().nullable(),
       fabricItemNumber: zod.string().nullable(),
+      fabricIsStripe: zod
+        .boolean()
+        .describe(
+          "True when the selected fabric is a stripe pattern (quantity must be ordered in even pairs).",
+        ),
     }),
   ),
   itemCount: zod.number().describe("Sum of quantities across all line items."),
@@ -1292,6 +1312,11 @@ export const RemoveCartItemResponse = zod.object({
       fabricId: zod.number().nullable(),
       fabricName: zod.string().nullable(),
       fabricItemNumber: zod.string().nullable(),
+      fabricIsStripe: zod
+        .boolean()
+        .describe(
+          "True when the selected fabric is a stripe pattern (quantity must be ordered in even pairs).",
+        ),
     }),
   ),
   itemCount: zod.number().describe("Sum of quantities across all line items."),
