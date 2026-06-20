@@ -1056,7 +1056,7 @@ export default function Product() {
 
               {/* Stripe fabrics must be ordered in even pairs */}
               {isStripeSelected ? (
-                <div className="mb-5 border border-primary/30 bg-primary/5 px-4 py-3 text-sm text-foreground">
+                <div className="mb-5 border border-border bg-secondary px-4 py-3 text-sm text-secondary-foreground">
                   <span className="font-semibold">Striped fabrics are sold in pairs.</span>{" "}
                   This canopy must be ordered in even quantities (2, 4, 6…), so
                   the quantity is set in multiples of two.
