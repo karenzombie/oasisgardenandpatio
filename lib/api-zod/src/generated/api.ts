@@ -148,6 +148,27 @@ export const ListFeaturedProductsResponse = zod.array(
 );
 
 /**
+ * Returns items compatible with the given product SKU. Only items whose product is active and available for online purchase are returned; the recommended pick is sorted first. Empty array when nothing qualifies.
+ * @summary Compatible product recommendations for a product SKU
+ */
+export const ListProductRecommendationsParams = zod.object({
+  sku: zod.coerce.string(),
+});
+
+export const ListProductRecommendationsResponseItem = zod.object({
+  id: zod.number(),
+  sku: zod.string(),
+  name: zod.string(),
+  slug: zod.string(),
+  weight: zod.string().nullable(),
+  primaryImageUrl: zod.string().nullable(),
+  isRecommended: zod.boolean(),
+});
+export const ListProductRecommendationsResponse = zod.array(
+  ListProductRecommendationsResponseItem,
+);
+
+/**
  * @summary Public product listing with filters, sort, and pagination
  */
 export const listCatalogProductsQuerySortDefault = `featured`;

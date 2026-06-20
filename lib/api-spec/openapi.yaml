@@ -155,6 +155,30 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/FeaturedProduct"
+  /products/{sku}/recommendations:
+    get:
+      operationId: listProductRecommendations
+      tags: [products]
+      summary: Compatible product recommendations for a product SKU
+      description: >-
+        Returns items compatible with the given product SKU. Only items whose
+        product is active and available for online purchase are returned; the
+        recommended pick is sorted first. Empty array when nothing qualifies.
+      parameters:
+        - name: sku
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Compatible recommendations (online-available only)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProductRecommendation"
   /products:
     get:
       operationId: listCatalogProducts
@@ -5901,6 +5925,31 @@ components:
         - onHand
         - createdAt
         - updatedAt
+    ProductRecommendation:
+      type: object
+      properties:
+        id:
+          type: integer
+        sku:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+        weight:
+          type: ["string", "null"]
+        primaryImageUrl:
+          type: ["string", "null"]
+        isRecommended:
+          type: boolean
+      required:
+        - id
+        - sku
+        - name
+        - slug
+        - weight
+        - primaryImageUrl
+        - isRecommended
     AdminProductImage:
       type: object
       properties:

@@ -274,6 +274,7 @@ export * from "./manufacturer";
 export * from "./material";
 export * from "./placeOrderRequest";
 export * from "./placeOrderResult";
+export * from "./productRecommendation";
 export * from "./quoteOrderPricingRequest";
 export * from "./quoteOrderPricingRequestItemsItem";
 export * from "./quoteOrderPricingResponse";

@@ -963,6 +963,18 @@ export interface AdminProduct {
   updatedAt: string;
 }
 
+export interface ProductRecommendation {
+  id: number;
+  sku: string;
+  name: string;
+  slug: string;
+  /** @nullable */
+  weight: string | null;
+  /** @nullable */
+  primaryImageUrl: string | null;
+  isRecommended: boolean;
+}
+
 export interface AdminProductImage {
   id: number;
   productId: number;

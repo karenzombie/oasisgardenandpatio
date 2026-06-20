@@ -10,6 +10,7 @@ import swvDwvImage from "@assets/SWV_DWV_image_1781037074957.png";
 import { getBrandLogo } from "@/lib/brandLogos";
 import { sanitizeHtml } from "@/lib/sanitize";
 import { WishlistButton } from "@/components/WishlistButton";
+import { CompatibleRecommendations } from "@/components/CompatibleRecommendations";
 import { useToast } from "@/hooks/use-toast";
 import { Palette } from "lucide-react";
 import { FabricSwatchDialog } from "@/components/FabricSwatchDialog";
@@ -1186,6 +1187,8 @@ export default function Product() {
               )}
             </>
           )}
+
+          <CompatibleRecommendations sku={data.sku} />
 
           {/* Meta */}
           <dl className="mt-8 pt-6 border-t border-border space-y-2 text-sm">

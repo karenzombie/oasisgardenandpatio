@@ -15,9 +15,11 @@ import {
   variantGradePricesTable,
   productFinishPoolsTable,
   productFinishOptionsTable,
+  productRecommendationsTable,
 } from "@workspace/db";
 import {
   ListFeaturedProductsResponse,
+  ListProductRecommendationsResponse,
   ListCatalogProductsQueryParams,
   ListCatalogProductsResponse,
   GetCatalogProductBySlugResponse,
@@ -89,6 +91,66 @@ router.get("/products/featured", async (_req, res): Promise<void> => {
 
   res.json(ListFeaturedProductsResponse.parse(normalized));
 });
+
+// Compatible Recommendations for a product detail page. Generic + data-driven:
+// the mapping lives in `product_recommendations` (source SKU -> compatible SKU)
+// and is extended by adding rows, not code. The governing rule for the whole
+// feature is online availability — we only return compatible items whose
+// product is active AND availableOnline, so a not-yet-online (or not-yet-
+// created) SKU in the mapping simply stays hidden. Recommended pick sorts
+// first; the caller renders nothing when the array is empty.
+router.get(
+  "/products/:sku/recommendations",
+  async (req: Request, res: Response): Promise<void> => {
+    const sku = String(req.params.sku ?? "").trim();
+    const rows = await db
+      .select({
+        id: productsTable.id,
+        sku: productsTable.sku,
+        name: productsTable.name,
+        slug: productsTable.slug,
+        weight: productsTable.weight,
+        isRecommended: productRecommendationsTable.isRecommended,
+        displayOrder: productRecommendationsTable.displayOrder,
+        primaryImageUrl: sql<string | null>`(
+          select ${productImagesTable.url}
+          from ${productImagesTable}
+          where ${productImagesTable.productId} = ${productsTable.id}
+          order by ${productImagesTable.isPrimary} desc, ${productImagesTable.displayOrder} asc, ${productImagesTable.id} asc
+          limit 1
+        )`,
+      })
+      .from(productRecommendationsTable)
+      .innerJoin(
+        productsTable,
+        eq(productsTable.sku, productRecommendationsTable.compatibleSku),
+      )
+      .where(
+        and(
+          eq(productRecommendationsTable.sourceSku, sku),
+          eq(productsTable.isActive, true),
+          eq(productsTable.availableOnline, true),
+        ),
+      )
+      .orderBy(
+        desc(productRecommendationsTable.isRecommended),
+        asc(productRecommendationsTable.displayOrder),
+        asc(productsTable.name),
+      );
+
+    const normalized = rows.map((r) => ({
+      id: r.id,
+      sku: r.sku,
+      name: r.name,
+      slug: r.slug,
+      weight: r.weight,
+      isRecommended: r.isRecommended,
+      primaryImageUrl: toPublicImageUrl(r.primaryImageUrl),
+    }));
+
+    res.json(ListProductRecommendationsResponse.parse(normalized));
+  },
+);
 
 // Public catalog listing. Filters/joins by manufacturer/category/material
 // SLUG (not id) so the customer URLs stay clean and can be deep-linked.

@@ -172,6 +172,7 @@ import type {
   Material,
   PlaceOrderRequest,
   PlaceOrderResult,
+  ProductRecommendation,
   QuoteOrderPricingRequest,
   QuoteOrderPricingResponse,
   ReceiveVendorOrderRequest,
@@ -831,6 +832,99 @@ export function useListFeaturedProducts<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getListFeaturedProductsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Returns items compatible with the given product SKU. Only items whose product is active and available for online purchase are returned; the recommended pick is sorted first. Empty array when nothing qualifies.
+ * @summary Compatible product recommendations for a product SKU
+ */
+export const getListProductRecommendationsUrl = (sku: string) => {
+  return `/api/products/${sku}/recommendations`;
+};
+
+export const listProductRecommendations = async (
+  sku: string,
+  options?: RequestInit,
+): Promise<ProductRecommendation[]> => {
+  return customFetch<ProductRecommendation[]>(
+    getListProductRecommendationsUrl(sku),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListProductRecommendationsQueryKey = (sku: string) => {
+  return [`/api/products/${sku}/recommendations`] as const;
+};
+
+export const getListProductRecommendationsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listProductRecommendations>>,
+  TError = ErrorType<unknown>,
+>(
+  sku: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listProductRecommendations>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListProductRecommendationsQueryKey(sku);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listProductRecommendations>>
+  > = ({ signal }) =>
+    listProductRecommendations(sku, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!sku,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listProductRecommendations>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListProductRecommendationsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listProductRecommendations>>
+>;
+export type ListProductRecommendationsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Compatible product recommendations for a product SKU
+ */
+
+export function useListProductRecommendations<
+  TData = Awaited<ReturnType<typeof listProductRecommendations>>,
+  TError = ErrorType<unknown>,
+>(
+  sku: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listProductRecommendations>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListProductRecommendationsQueryOptions(sku, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
