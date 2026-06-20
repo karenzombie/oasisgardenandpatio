@@ -242,6 +242,8 @@ export function FabricSwatchDialog({
                       <img
                         src={f.swatchImageUrl}
                         alt={f.name}
+                        loading="lazy"
+                        decoding="async"
                         className="aspect-square w-full object-cover"
                       />
                     ) : (
