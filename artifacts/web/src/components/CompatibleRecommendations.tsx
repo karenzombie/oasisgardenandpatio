@@ -5,14 +5,6 @@ import { useListProductRecommendations } from "@workspace/api-client-react";
 const RECOMMENDED_GREEN = "#2E5E35";
 const INITIAL_VISIBLE = 4;
 
-function descriptorOf(weight: string | null, sku: string): string {
-  const w = weight != null ? Number(weight) : NaN;
-  if (Number.isFinite(w) && w > 0) {
-    return `${w} lbs · ${sku}`;
-  }
-  return sku;
-}
-
 /**
  * Generic, data-driven "Compatible Recommendations" section. Given the current
  * product's SKU, it fetches compatible items (the API already filters to items
@@ -74,9 +66,6 @@ export function CompatibleRecommendations({ sku }: { sku: string }) {
             <div className="min-w-0">
               <p className="text-sm font-medium text-foreground leading-snug group-hover:text-primary">
                 {item.name}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                {descriptorOf(item.weight, item.sku)}
               </p>
             </div>
           </Link>
