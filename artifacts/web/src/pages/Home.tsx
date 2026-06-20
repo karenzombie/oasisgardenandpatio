@@ -110,7 +110,7 @@ export default function Home() {
               return (
                 <Link
                   key={category.id}
-                  href={`/shop?category=${category.slug}`}
+                  href={`/shop/category/${category.slug}?online=true`}
                   className="group flex flex-1 flex-col justify-center gap-3 px-5 py-4 hover:bg-primary/10 transition-colors"
                 >
                   <div className="flex items-center justify-center gap-2">

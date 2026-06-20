@@ -154,8 +154,10 @@ export default function Shop() {
         )}
       </div>
 
-      {/* Category tiles */}
-      {((categories && categories.length > 0) || isOnlineOnly) && (
+      {/* Category tiles — hidden on focused category landing pages so the
+          customer lands directly on that category's products (e.g. arriving
+          from the homepage "order online & ship direct" links). */}
+      {!params?.slug && ((categories && categories.length > 0) || isOnlineOnly) && (
         <div className="mb-10">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-serif text-2xl">Shop by Type</h2>
