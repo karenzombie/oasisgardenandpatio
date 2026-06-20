@@ -38,13 +38,8 @@ export function CompatibleRecommendations({ sku }: { sku: string }) {
 
   return (
     <section className="mt-8 pt-6 border-t border-border">
-      <h2 className="flex items-baseline gap-3 mb-4">
-        <span className="text-sm font-semibold uppercase tracking-widest text-foreground">
-          Compatible Recommendations
-        </span>
-        <span className="text-xs text-muted-foreground">
-          click to configure and add to cart
-        </span>
+      <h2 className="text-sm font-semibold uppercase tracking-widest text-foreground mb-4">
+        Compatible Recommendations – Click to Configure and Add to Cart
       </h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {visible.map((item) => (
