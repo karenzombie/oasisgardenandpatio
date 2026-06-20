@@ -1001,7 +1001,7 @@ export default function Product() {
                   <button
                     type="button"
                     onClick={() => setFabricOpen(true)}
-                    className="w-full sm:max-w-[460px] inline-flex items-center gap-2 border border-border bg-secondary text-secondary-foreground px-4 py-2.5 text-sm hover:bg-secondary/90 focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full sm:max-w-[460px] inline-flex items-center gap-2 border border-primary bg-primary text-primary-foreground px-4 py-2.5 text-sm hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary"
                   >
                     <Palette className="h-4 w-4" />
                     Browse swatches
