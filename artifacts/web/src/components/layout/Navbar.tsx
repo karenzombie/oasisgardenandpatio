@@ -177,8 +177,8 @@ export function Navbar() {
       <header
         className={`w-full transition-all duration-300 border-b ${
           isScrolled
-            ? "bg-secondary/40 backdrop-blur-md border-border shadow-sm"
-            : "bg-secondary/25 border-transparent"
+            ? "bg-secondary border-border shadow-sm"
+            : "bg-secondary border-border"
         }`}
       >
         <div className="w-full px-4 md:px-6">
