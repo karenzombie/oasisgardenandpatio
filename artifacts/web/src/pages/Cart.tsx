@@ -134,13 +134,18 @@ export default function Cart() {
                       <button
                         type="button"
                         className="px-2 py-1.5 hover:bg-muted disabled:opacity-40"
-                        onClick={() =>
+                        onClick={() => {
+                          const step = item.fabricIsStripe ? 2 : 1;
+                          const min = item.fabricIsStripe ? 2 : 1;
                           updateM.mutate({
                             itemId: item.id,
-                            data: { quantity: Math.max(1, item.quantity - 1) },
-                          })
+                            data: { quantity: Math.max(min, item.quantity - step) },
+                          });
+                        }}
+                        disabled={
+                          item.quantity <= (item.fabricIsStripe ? 2 : 1) ||
+                          updateM.isPending
                         }
-                        disabled={item.quantity <= 1 || updateM.isPending}
                         aria-label="Decrease quantity"
                       >
                         <Minus className="w-3.5 h-3.5" />
@@ -152,7 +157,9 @@ export default function Cart() {
                         onClick={() =>
                           updateM.mutate({
                             itemId: item.id,
-                            data: { quantity: item.quantity + 1 },
+                            data: {
+                              quantity: item.quantity + (item.fabricIsStripe ? 2 : 1),
+                            },
                           })
                         }
                         disabled={updateM.isPending}
