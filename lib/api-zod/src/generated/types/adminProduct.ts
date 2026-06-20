@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { AdminProductPricingMode } from "./adminProductPricingMode";
+import type { Material } from "./material";
 
 export interface AdminProduct {
   id: number;
@@ -24,10 +25,31 @@ export interface AdminProduct {
   categoryId: number | null;
   /** @nullable */
   categoryName: string | null;
+  /** Materials associated via the product_materials junction (ordered by displayOrder). */
+  materials: Material[];
   /** @nullable */
-  materialId: number | null;
+  collection: string | null;
+  /**
+   * Server-derived from collection on save. Read-only.
+   * @nullable
+   */
+  collectionSlug: string | null;
   /** @nullable */
-  materialName: string | null;
+  seatType: string | null;
+  /** @nullable */
+  umbrellaType: string | null;
+  /** @nullable */
+  umbrellaShape: string | null;
+  /** @nullable */
+  umbrellaSize: string | null;
+  /** @nullable */
+  liftMechanism: string | null;
+  /** @nullable */
+  tiltMechanism: string | null;
+  /** @nullable */
+  poleMaterial: string | null;
+  hasLedLighting: boolean;
+  isCommercialGrade: boolean;
   /** @nullable */
   price: string | null;
   /**

@@ -7,6 +7,7 @@ import {
   manufacturersTable,
   categoriesTable,
   materialsTable,
+  productMaterialsTable,
   productVariantsTable,
   productFabricOptionsTable,
   fabricsTable,
@@ -201,7 +202,23 @@ router.get(
       conditions.push(ilike(categoriesTable.slug, categorySlug));
     }
     if (materialSlug) {
-      conditions.push(ilike(materialsTable.slug, materialSlug));
+      conditions.push(
+        exists(
+          db
+            .select({ one: sql`1` })
+            .from(productMaterialsTable)
+            .innerJoin(
+              materialsTable,
+              eq(materialsTable.id, productMaterialsTable.materialId),
+            )
+            .where(
+              and(
+                eq(productMaterialsTable.productId, productsTable.id),
+                ilike(materialsTable.slug, materialSlug),
+              ),
+            ),
+        ),
+      );
     }
     if (finish) {
       conditions.push(
@@ -279,10 +296,6 @@ router.get(
       .leftJoin(
         categoriesTable,
         eq(categoriesTable.id, productsTable.categoryId),
-      )
-      .leftJoin(
-        materialsTable,
-        eq(materialsTable.id, productsTable.materialId),
       );
 
     const rowsP = baseFrom
@@ -301,10 +314,6 @@ router.get(
       .leftJoin(
         categoriesTable,
         eq(categoriesTable.id, productsTable.categoryId),
-      )
-      .leftJoin(
-        materialsTable,
-        eq(materialsTable.id, productsTable.materialId),
       )
       .where(whereClause);
 

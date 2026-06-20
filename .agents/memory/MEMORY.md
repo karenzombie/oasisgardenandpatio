@@ -18,6 +18,7 @@
 - [Publish readiness check](publish-readiness-check.md) — before any publish: audit every task since last deploy, cross-check dev/prod counts, typecheck + check-image-urls clean, report mismatches first.
 - [CatalogProduct/FeaturedProduct schema reuse](catalog-product-schema-reuse.md) — required field on these breaks by-slug (allOf) + popular (FeaturedProduct); populate ALL producers (list/featured/popular/by-slug).
 - [Telescope finish seeding](telescope-finish-seeding.md) — two scripts (frame vs fabric), Powdercoat/MGP owned by seedTelescopeFinishes.ts with differentiated names; Rustic Polymer uses name as item_number fallback (no SKU).
+- [product material_id → junction](product-materials-junction.md) — single material_id FK replaced by product_materials junction; grep ALL of scripts/ (TS + raw SQL) for dropped columns — app/typecheck stays green while one-off scripts break at runtime.
 - [API server no hot-reload](api-server-no-hot-reload.md) — api-server dev is build-once (restart workflow for route changes to go live); codegen wedges web vite HMR (restart web); curl can't hold cart session.
 - [Compatible Recommendations feature](compatible-recommendations.md) — data-driven product_recommendations map; join keys on real products.sku (TG AKZ bases carry a `-_` suffix, e.g. BASE-13-_); only active+availableOnline render.
 - [Featured/curated homepage online filter](featured-homepage-online-filter.md) — homepage lists linking to /shop/:slug must filter availableOnline=true (PDP by-slug 404s for non-online); featured toggle has no online gate.

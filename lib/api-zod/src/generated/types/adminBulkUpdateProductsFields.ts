@@ -20,6 +20,4 @@ export interface AdminBulkUpdateProductsFields {
   categoryId?: number | null;
   /** @nullable */
   manufacturerId?: number | null;
-  /** @nullable */
-  materialId?: number | null;
 }

@@ -914,10 +914,31 @@ export interface AdminProduct {
   categoryId: number | null;
   /** @nullable */
   categoryName: string | null;
+  /** Materials associated via the product_materials junction (ordered by displayOrder). */
+  materials: Material[];
   /** @nullable */
-  materialId: number | null;
+  collection: string | null;
+  /**
+   * Server-derived from collection on save. Read-only.
+   * @nullable
+   */
+  collectionSlug: string | null;
   /** @nullable */
-  materialName: string | null;
+  seatType: string | null;
+  /** @nullable */
+  umbrellaType: string | null;
+  /** @nullable */
+  umbrellaShape: string | null;
+  /** @nullable */
+  umbrellaSize: string | null;
+  /** @nullable */
+  liftMechanism: string | null;
+  /** @nullable */
+  tiltMechanism: string | null;
+  /** @nullable */
+  poleMaterial: string | null;
+  hasLedLighting: boolean;
+  isCommercialGrade: boolean;
   /** @nullable */
   price: string | null;
   /**
@@ -1031,8 +1052,26 @@ export interface CreateProductRequest {
   manufacturerId?: number | null;
   /** @nullable */
   categoryId?: number | null;
+  /** Material IDs to associate via the product_materials junction. Replaces the former single materialId. */
+  materialIds?: number[];
   /** @nullable */
-  materialId?: number | null;
+  collection?: string | null;
+  /** @nullable */
+  seatType?: string | null;
+  /** @nullable */
+  umbrellaType?: string | null;
+  /** @nullable */
+  umbrellaShape?: string | null;
+  /** @nullable */
+  umbrellaSize?: string | null;
+  /** @nullable */
+  liftMechanism?: string | null;
+  /** @nullable */
+  tiltMechanism?: string | null;
+  /** @nullable */
+  poleMaterial?: string | null;
+  hasLedLighting?: boolean;
+  isCommercialGrade?: boolean;
   /** @nullable */
   price?: string | null;
   /**
@@ -1093,8 +1132,26 @@ export interface UpdateProductRequest {
   manufacturerId?: number | null;
   /** @nullable */
   categoryId?: number | null;
+  /** Material IDs to associate via the product_materials junction. When provided, replaces the product's material set. Omit to leave materials unchanged. */
+  materialIds?: number[];
   /** @nullable */
-  materialId?: number | null;
+  collection?: string | null;
+  /** @nullable */
+  seatType?: string | null;
+  /** @nullable */
+  umbrellaType?: string | null;
+  /** @nullable */
+  umbrellaShape?: string | null;
+  /** @nullable */
+  umbrellaSize?: string | null;
+  /** @nullable */
+  liftMechanism?: string | null;
+  /** @nullable */
+  tiltMechanism?: string | null;
+  /** @nullable */
+  poleMaterial?: string | null;
+  hasLedLighting?: boolean;
+  isCommercialGrade?: boolean;
   /** @nullable */
   price?: string | null;
   /**
@@ -3956,8 +4013,6 @@ export interface AdminBulkUpdateProductsFields {
   categoryId?: number | null;
   /** @nullable */
   manufacturerId?: number | null;
-  /** @nullable */
-  materialId?: number | null;
 }
 
 export type AdminBulkPriceAdjustmentFieldsItem =

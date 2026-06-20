@@ -86,6 +86,50 @@ function slugify(input: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
+// Dropdown option sets — must match the DB CHECK constraints in
+// lib/db/src/schema/products.ts exactly.
+const SEAT_TYPE_OPTIONS = [
+  "Sling",
+  "Cushion",
+  "Strap",
+  "Wicker Weave",
+  "Solid",
+  "Padded Sling",
+] as const;
+const UMBRELLA_TYPE_OPTIONS = [
+  "Cantilever",
+  "Market",
+  "Specialty",
+  "Beach",
+] as const;
+const UMBRELLA_SHAPE_OPTIONS = [
+  "Octagon",
+  "Square",
+  "Rectangle",
+  "Round",
+] as const;
+const LIFT_MECHANISM_OPTIONS = [
+  "Crank",
+  "Manual",
+  "Pulley",
+  "Quad Pulley",
+] as const;
+const TILT_MECHANISM_OPTIONS = [
+  "Auto",
+  "Collar",
+  "Push Button",
+  "Glide",
+  "Rotational",
+  "None",
+] as const;
+const POLE_MATERIAL_OPTIONS = [
+  "Aluminum",
+  "Fiberglass",
+  "Wood",
+  "Teak",
+  "Steel",
+] as const;
+
 interface FormState {
   name: string;
   slug: string;
@@ -95,7 +139,17 @@ interface FormState {
   shortDescription: string;
   manufacturerId: string;
   categoryId: string;
-  materialId: string;
+  materialIds: number[];
+  collection: string;
+  seatType: string;
+  umbrellaType: string;
+  umbrellaShape: string;
+  umbrellaSize: string;
+  liftMechanism: string;
+  tiltMechanism: string;
+  poleMaterial: string;
+  hasLedLighting: boolean;
+  isCommercialGrade: boolean;
   price: string;
   salePrice: string;
   frameOnlyPrice: string;
@@ -128,7 +182,17 @@ function emptyForm(): FormState {
     shortDescription: "",
     manufacturerId: "none",
     categoryId: "none",
-    materialId: "none",
+    materialIds: [],
+    collection: "",
+    seatType: "none",
+    umbrellaType: "none",
+    umbrellaShape: "none",
+    umbrellaSize: "",
+    liftMechanism: "none",
+    tiltMechanism: "none",
+    poleMaterial: "none",
+    hasLedLighting: false,
+    isCommercialGrade: false,
     price: "",
     salePrice: "",
     frameOnlyPrice: "",
@@ -365,7 +429,17 @@ export default function ProductEdit() {
         shortDescription: d.shortDescription ?? "",
         manufacturerId: d.manufacturerId != null ? String(d.manufacturerId) : "none",
         categoryId: d.categoryId != null ? String(d.categoryId) : "none",
-        materialId: d.materialId != null ? String(d.materialId) : "none",
+        materialIds: d.materials.map((m) => m.id),
+        collection: d.collection ?? "",
+        seatType: d.seatType ?? "none",
+        umbrellaType: d.umbrellaType ?? "none",
+        umbrellaShape: d.umbrellaShape ?? "none",
+        umbrellaSize: d.umbrellaSize ?? "",
+        liftMechanism: d.liftMechanism ?? "none",
+        tiltMechanism: d.tiltMechanism ?? "none",
+        poleMaterial: d.poleMaterial ?? "none",
+        hasLedLighting: d.hasLedLighting,
+        isCommercialGrade: d.isCommercialGrade,
         price: d.price ?? "",
         salePrice: d.salePrice ?? "",
         frameOnlyPrice: d.frameOnlyPrice ?? "",
@@ -394,6 +468,16 @@ export default function ProductEdit() {
     () => detailQuery.data?.images ?? [],
     [detailQuery.data],
   );
+
+  // Umbrella Details section is shown only for the Umbrellas category
+  // (slug `cat-umbrellas`), not for umbrella bases or anything else.
+  const isUmbrellaCategory = useMemo(() => {
+    if (form.categoryId === "none") return false;
+    const cat = (catList.data ?? []).find(
+      (c) => String(c.id) === form.categoryId,
+    );
+    return cat?.slug === "cat-umbrellas";
+  }, [catList.data, form.categoryId]);
 
   // Umbrella category IDs — these products are available for online sale.
   // All others default to quote/call-for-price.
@@ -534,7 +618,17 @@ export default function ProductEdit() {
       shortDescription: form.shortDescription.trim() || null,
       manufacturerId: form.manufacturerId === "none" ? null : Number(form.manufacturerId),
       categoryId: form.categoryId === "none" ? null : Number(form.categoryId),
-      materialId: form.materialId === "none" ? null : Number(form.materialId),
+      materialIds: form.materialIds,
+      collection: form.collection.trim() || null,
+      seatType: form.seatType === "none" ? null : form.seatType,
+      umbrellaType: form.umbrellaType === "none" ? null : form.umbrellaType,
+      umbrellaShape: form.umbrellaShape === "none" ? null : form.umbrellaShape,
+      umbrellaSize: form.umbrellaSize.trim() || null,
+      liftMechanism: form.liftMechanism === "none" ? null : form.liftMechanism,
+      tiltMechanism: form.tiltMechanism === "none" ? null : form.tiltMechanism,
+      poleMaterial: form.poleMaterial === "none" ? null : form.poleMaterial,
+      hasLedLighting: form.hasLedLighting,
+      isCommercialGrade: form.isCommercialGrade,
       price,
       salePrice,
       frameOnlyPrice,
@@ -1100,20 +1194,69 @@ export default function ProductEdit() {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="md:col-span-2">
+                <Label>Materials</Label>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {(materialList.data ?? []).map((m) => {
+                    const selected = form.materialIds.includes(m.id);
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() =>
+                          setForm((f) => ({
+                            ...f,
+                            materialIds: selected
+                              ? f.materialIds.filter((id) => id !== m.id)
+                              : [...f.materialIds, m.id],
+                          }))
+                        }
+                        className={
+                          selected
+                            ? "px-3 py-1 rounded-full text-sm border border-emerald-600 bg-emerald-600 text-white"
+                            : "px-3 py-1 rounded-full text-sm border border-slate-300 bg-white text-slate-700 hover:border-slate-400"
+                        }
+                      >
+                        {m.name}
+                      </button>
+                    );
+                  })}
+                  {(materialList.data ?? []).length === 0 && (
+                    <p className="text-xs text-slate-500">No materials defined.</p>
+                  )}
+                </div>
+                <p className="text-xs text-slate-500 mt-1">
+                  Click to toggle. A product can have multiple materials.
+                </p>
+              </div>
               <div>
-                <Label htmlFor="p-mat">Material</Label>
+                <Label htmlFor="p-collection">Collection</Label>
+                <Input
+                  id="p-collection"
+                  value={form.collection}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, collection: e.target.value }))
+                  }
+                  placeholder="e.g. Blair, Laguna, Leeward"
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  Groups related products. Slug is generated automatically.
+                </p>
+              </div>
+              <div>
+                <Label htmlFor="p-seat-type">Seat type</Label>
                 <Select
-                  value={form.materialId}
-                  onValueChange={(v) => setForm((f) => ({ ...f, materialId: v }))}
+                  value={form.seatType}
+                  onValueChange={(v) => setForm((f) => ({ ...f, seatType: v }))}
                 >
-                  <SelectTrigger id="p-mat">
-                    <SelectValue placeholder="Select material" />
+                  <SelectTrigger id="p-seat-type">
+                    <SelectValue placeholder="Select seat type" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">— None —</SelectItem>
-                    {(materialList.data ?? []).map((m) => (
-                      <SelectItem key={m.id} value={String(m.id)}>
-                        {m.name}
+                    {SEAT_TYPE_OPTIONS.map((o) => (
+                      <SelectItem key={o} value={o}>
+                        {o}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -1144,6 +1287,133 @@ export default function ProductEdit() {
               </div>
             </div>
           </section>
+
+          {/* Umbrella details — only relevant to the Umbrellas category. */}
+          {isUmbrellaCategory && (
+            <section className="bg-white border border-slate-200 rounded-md p-6">
+              <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-4">
+                Umbrella details
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="p-umb-type">Type</Label>
+                  <Select
+                    value={form.umbrellaType}
+                    onValueChange={(v) =>
+                      setForm((f) => ({ ...f, umbrellaType: v }))
+                    }
+                  >
+                    <SelectTrigger id="p-umb-type">
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">— None —</SelectItem>
+                      {UMBRELLA_TYPE_OPTIONS.map((o) => (
+                        <SelectItem key={o} value={o}>
+                          {o}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="p-umb-shape">Shape</Label>
+                  <Select
+                    value={form.umbrellaShape}
+                    onValueChange={(v) =>
+                      setForm((f) => ({ ...f, umbrellaShape: v }))
+                    }
+                  >
+                    <SelectTrigger id="p-umb-shape">
+                      <SelectValue placeholder="Select shape" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">— None —</SelectItem>
+                      {UMBRELLA_SHAPE_OPTIONS.map((o) => (
+                        <SelectItem key={o} value={o}>
+                          {o}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="p-umb-size">Size</Label>
+                  <Input
+                    id="p-umb-size"
+                    value={form.umbrellaSize}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, umbrellaSize: e.target.value }))
+                    }
+                    placeholder='e.g. 9 ft, 11 ft'
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="p-lift">Lift mechanism</Label>
+                  <Select
+                    value={form.liftMechanism}
+                    onValueChange={(v) =>
+                      setForm((f) => ({ ...f, liftMechanism: v }))
+                    }
+                  >
+                    <SelectTrigger id="p-lift">
+                      <SelectValue placeholder="Select lift" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">— None —</SelectItem>
+                      {LIFT_MECHANISM_OPTIONS.map((o) => (
+                        <SelectItem key={o} value={o}>
+                          {o}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="p-tilt">Tilt mechanism</Label>
+                  <Select
+                    value={form.tiltMechanism}
+                    onValueChange={(v) =>
+                      setForm((f) => ({ ...f, tiltMechanism: v }))
+                    }
+                  >
+                    <SelectTrigger id="p-tilt">
+                      <SelectValue placeholder="Select tilt" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">— None —</SelectItem>
+                      {TILT_MECHANISM_OPTIONS.map((o) => (
+                        <SelectItem key={o} value={o}>
+                          {o}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="p-pole">Pole material</Label>
+                  <Select
+                    value={form.poleMaterial}
+                    onValueChange={(v) =>
+                      setForm((f) => ({ ...f, poleMaterial: v }))
+                    }
+                  >
+                    <SelectTrigger id="p-pole">
+                      <SelectValue placeholder="Select pole material" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">— None —</SelectItem>
+                      {POLE_MATERIAL_OPTIONS.map((o) => (
+                        <SelectItem key={o} value={o}>
+                          {o}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </section>
+          )}
 
           {/* Pricing & specs */}
           <section className="bg-white border border-slate-200 rounded-md p-6">
@@ -1330,6 +1600,20 @@ export default function ProductEdit() {
                     quoteOnly: v,
                     showPriceOnline: v ? false : f.showPriceOnline,
                   }))
+                }
+              />
+              <FlagRow
+                label="LED lighting"
+                description="Product includes integrated LED lighting."
+                checked={form.hasLedLighting}
+                onChange={(v) => setForm((f) => ({ ...f, hasLedLighting: v }))}
+              />
+              <FlagRow
+                label="Commercial grade"
+                description="Rated for commercial / contract use."
+                checked={form.isCommercialGrade}
+                onChange={(v) =>
+                  setForm((f) => ({ ...f, isCommercialGrade: v }))
                 }
               />
               <div>

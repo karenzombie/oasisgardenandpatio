@@ -25,8 +25,26 @@ export interface UpdateProductRequest {
   manufacturerId?: number | null;
   /** @nullable */
   categoryId?: number | null;
+  /** Material IDs to associate via the product_materials junction. When provided, replaces the product's material set. Omit to leave materials unchanged. */
+  materialIds?: number[];
   /** @nullable */
-  materialId?: number | null;
+  collection?: string | null;
+  /** @nullable */
+  seatType?: string | null;
+  /** @nullable */
+  umbrellaType?: string | null;
+  /** @nullable */
+  umbrellaShape?: string | null;
+  /** @nullable */
+  umbrellaSize?: string | null;
+  /** @nullable */
+  liftMechanism?: string | null;
+  /** @nullable */
+  tiltMechanism?: string | null;
+  /** @nullable */
+  poleMaterial?: string | null;
+  hasLedLighting?: boolean;
+  isCommercialGrade?: boolean;
   /** @nullable */
   price?: string | null;
   /**

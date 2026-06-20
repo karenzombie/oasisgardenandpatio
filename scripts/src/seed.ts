@@ -156,7 +156,7 @@ const MATERIALS: Array<{
   name: string;
   slug: string;
   description: string;
-  imageUrl: string;
+  imageUrl?: string;
   displayOrder: number;
 }> = [
   {
@@ -182,6 +182,42 @@ const MATERIALS: Array<{
     imageUrl: "/materials/wicker1.jpg",
     displayOrder: 3,
   },
+  {
+    name: "Teak",
+    slug: "teak",
+    description: "Sustainably sourced teak wood, naturally weather-resistant.",
+    displayOrder: 4,
+  },
+  {
+    name: "MGP",
+    slug: "mgp",
+    description: "Marine Grade Polymer -- strong, lightweight, splinter-free.",
+    displayOrder: 5,
+  },
+  {
+    name: "Fiberglass",
+    slug: "fiberglass",
+    description: "Fiberglass pole or frame construction for durability and flex.",
+    displayOrder: 6,
+  },
+  {
+    name: "Steel",
+    slug: "steel",
+    description: "Powder-coated or galvanized steel construction.",
+    displayOrder: 7,
+  },
+  {
+    name: "Wood",
+    slug: "wood",
+    description: "Hardwood or treated wood frame construction.",
+    displayOrder: 8,
+  },
+  {
+    name: "Cast Aluminum",
+    slug: "cast-aluminum",
+    description: "Cast aluminum -- heavier and more detailed than extruded.",
+    displayOrder: 9,
+  },
 ];
 
 async function seedMaterials() {
@@ -192,7 +228,7 @@ async function seedMaterials() {
         name: m.name,
         slug: m.slug,
         description: m.description,
-        imageUrl: m.imageUrl,
+        imageUrl: m.imageUrl ?? null,
         displayOrder: m.displayOrder,
         isActive: true,
       })
@@ -201,7 +237,6 @@ async function seedMaterials() {
         set: {
           name: m.name,
           description: m.description,
-          imageUrl: m.imageUrl,
           displayOrder: m.displayOrder,
           isActive: true,
           updatedAt: new Date(),

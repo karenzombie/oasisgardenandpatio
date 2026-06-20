@@ -480,7 +480,6 @@ router.post(
                   shortDescription: r.shortDescription ?? null,
                   manufacturerId: r.manufacturerId!,
                   categoryId: r.categoryId!,
-                  materialId: null,
                   price: r.price!,
                   cost: r.cost ?? null,
                   weight: r.weight ?? null,

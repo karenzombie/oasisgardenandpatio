@@ -51,32 +51,54 @@ async function syncGaltechFinishCodes() {
 // Aluminum collections:     arc, aris, marin (tag or name)
 
 async function syncOwLeeMaterials() {
+  // Material is now stored in the product_materials junction. For each matched
+  // O.W. Lee product, replace its material links with the single target
+  // material so re-runs are idempotent (mirrors the old single-FK behaviour).
+  // Precedence is intentional and order-dependent: wrought-iron runs first,
+  // aluminum second, so any product matching both predicates ends up aluminum
+  // — exactly as the previous single material_id UPDATEs behaved.
   const wroughtIron = await db.execute(sql`
-    UPDATE products
-    SET material_id = 2, updated_at = NOW()
-    WHERE manufacturer_id = 13
-      AND (
-        tags ?| array['classico','monterra','san-cristobal']
-        OR name ILIKE '%san cristobal%'
-      )
-      AND material_id IS DISTINCT FROM 2
+    WITH matched AS (
+      SELECT id FROM products
+      WHERE manufacturer_id = 13
+        AND (
+          tags ?| array['classico','monterra','san-cristobal']
+          OR name ILIKE '%san cristobal%'
+        )
+    ),
+    del AS (
+      DELETE FROM product_materials
+      WHERE product_id IN (SELECT id FROM matched)
+        AND material_id IS DISTINCT FROM 2
+    )
+    INSERT INTO product_materials (product_id, material_id, display_order)
+    SELECT id, 2, 0 FROM matched
+    ON CONFLICT (product_id, material_id) DO NOTHING
   `);
 
   const aluminum = await db.execute(sql`
-    UPDATE products
-    SET material_id = 1, updated_at = NOW()
-    WHERE manufacturer_id = 13
-      AND (
-        tags ?| array['arc','aris','avana','horizon','marin','studio']
-        OR name ILIKE '%marin%'
-      )
-      AND material_id IS DISTINCT FROM 1
+    WITH matched AS (
+      SELECT id FROM products
+      WHERE manufacturer_id = 13
+        AND (
+          tags ?| array['arc','aris','avana','horizon','marin','studio']
+          OR name ILIKE '%marin%'
+        )
+    ),
+    del AS (
+      DELETE FROM product_materials
+      WHERE product_id IN (SELECT id FROM matched)
+        AND material_id IS DISTINCT FROM 1
+    )
+    INSERT INTO product_materials (product_id, material_id, display_order)
+    SELECT id, 1, 0 FROM matched
+    ON CONFLICT (product_id, material_id) DO NOTHING
   `);
 
   const wi = Number((wroughtIron as { rowCount?: number }).rowCount ?? 0);
   const al = Number((aluminum as { rowCount?: number }).rowCount ?? 0);
   console.log(
-    `O.W. Lee materials: ${wi} wrought-iron, ${al} aluminum row(s) updated`,
+    `O.W. Lee materials: ${wi} wrought-iron, ${al} aluminum link(s) added`,
   );
 }
 

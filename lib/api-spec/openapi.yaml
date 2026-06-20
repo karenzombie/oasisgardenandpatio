@@ -5835,10 +5835,34 @@ components:
           type: ["integer", "null"]
         categoryName:
           type: ["string", "null"]
-        materialId:
-          type: ["integer", "null"]
-        materialName:
+        materials:
+          type: array
+          description: Materials associated via the product_materials junction (ordered by displayOrder).
+          items:
+            $ref: "#/components/schemas/Material"
+        collection:
           type: ["string", "null"]
+        collectionSlug:
+          type: ["string", "null"]
+          description: Server-derived from collection on save. Read-only.
+        seatType:
+          type: ["string", "null"]
+        umbrellaType:
+          type: ["string", "null"]
+        umbrellaShape:
+          type: ["string", "null"]
+        umbrellaSize:
+          type: ["string", "null"]
+        liftMechanism:
+          type: ["string", "null"]
+        tiltMechanism:
+          type: ["string", "null"]
+        poleMaterial:
+          type: ["string", "null"]
+        hasLedLighting:
+          type: boolean
+        isCommercialGrade:
+          type: boolean
         price:
           type: ["string", "null"]
         salePrice:
@@ -5901,8 +5925,18 @@ components:
         - manufacturerName
         - categoryId
         - categoryName
-        - materialId
-        - materialName
+        - materials
+        - collection
+        - collectionSlug
+        - seatType
+        - umbrellaType
+        - umbrellaShape
+        - umbrellaSize
+        - liftMechanism
+        - tiltMechanism
+        - poleMaterial
+        - hasLedLighting
+        - isCommercialGrade
         - price
         - salePrice
         - cost
@@ -6041,8 +6075,33 @@ components:
           type: ["integer", "null"]
         categoryId:
           type: ["integer", "null"]
-        materialId:
-          type: ["integer", "null"]
+        materialIds:
+          type: array
+          items:
+            type: integer
+          description: Material IDs to associate via the product_materials junction. Replaces the former single materialId.
+        collection:
+          type: ["string", "null"]
+        seatType:
+          type: ["string", "null"]
+        umbrellaType:
+          type: ["string", "null"]
+        umbrellaShape:
+          type: ["string", "null"]
+        umbrellaSize:
+          type: ["string", "null"]
+        liftMechanism:
+          type: ["string", "null"]
+        tiltMechanism:
+          type: ["string", "null"]
+        poleMaterial:
+          type: ["string", "null"]
+        hasLedLighting:
+          type: boolean
+          default: false
+        isCommercialGrade:
+          type: boolean
+          default: false
         price:
           type: ["string", "null"]
         salePrice:
@@ -6114,8 +6173,31 @@ components:
           type: ["integer", "null"]
         categoryId:
           type: ["integer", "null"]
-        materialId:
-          type: ["integer", "null"]
+        materialIds:
+          type: array
+          items:
+            type: integer
+          description: Material IDs to associate via the product_materials junction. When provided, replaces the product's material set. Omit to leave materials unchanged.
+        collection:
+          type: ["string", "null"]
+        seatType:
+          type: ["string", "null"]
+        umbrellaType:
+          type: ["string", "null"]
+        umbrellaShape:
+          type: ["string", "null"]
+        umbrellaSize:
+          type: ["string", "null"]
+        liftMechanism:
+          type: ["string", "null"]
+        tiltMechanism:
+          type: ["string", "null"]
+        poleMaterial:
+          type: ["string", "null"]
+        hasLedLighting:
+          type: boolean
+        isCommercialGrade:
+          type: boolean
         price:
           type: ["string", "null"]
         salePrice:
@@ -9090,7 +9172,6 @@ components:
         showPriceOnline: { type: boolean }
         categoryId: { type: ["integer", "null"] }
         manufacturerId: { type: ["integer", "null"] }
-        materialId: { type: ["integer", "null"] }
     AdminBulkPriceAdjustment:
       type: object
       description: Apply a flat dollar or percentage change to selected price columns across all chosen products.

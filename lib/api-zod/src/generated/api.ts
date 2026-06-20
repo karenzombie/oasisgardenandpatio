@@ -2143,8 +2143,34 @@ export const AdminListProductsResponse = zod.object({
       manufacturerName: zod.string().nullable(),
       categoryId: zod.number().nullable(),
       categoryName: zod.string().nullable(),
-      materialId: zod.number().nullable(),
-      materialName: zod.string().nullable(),
+      materials: zod
+        .array(
+          zod.object({
+            id: zod.number(),
+            name: zod.string(),
+            slug: zod.string(),
+            description: zod.string().nullable(),
+            imageUrl: zod.string().nullable(),
+            displayOrder: zod.number(),
+          }),
+        )
+        .describe(
+          "Materials associated via the product_materials junction (ordered by displayOrder).",
+        ),
+      collection: zod.string().nullable(),
+      collectionSlug: zod
+        .string()
+        .nullable()
+        .describe("Server-derived from collection on save. Read-only."),
+      seatType: zod.string().nullable(),
+      umbrellaType: zod.string().nullable(),
+      umbrellaShape: zod.string().nullable(),
+      umbrellaSize: zod.string().nullable(),
+      liftMechanism: zod.string().nullable(),
+      tiltMechanism: zod.string().nullable(),
+      poleMaterial: zod.string().nullable(),
+      hasLedLighting: zod.boolean(),
+      isCommercialGrade: zod.boolean(),
       price: zod.string().nullable(),
       salePrice: zod
         .string()
@@ -2204,6 +2230,8 @@ export const adminCreateProductBodySlugRegExp = new RegExp(
   "^[a-z0-9]+(?:-[a-z0-9]+)\*$",
 );
 
+export const adminCreateProductBodyHasLedLightingDefault = false;
+export const adminCreateProductBodyIsCommercialGradeDefault = false;
 export const adminCreateProductBodyPricingModeDefault = `fixed`;
 export const adminCreateProductBodyShowPriceOnlineDefault = true;
 export const adminCreateProductBodyAvailableOnlineDefault = true;
@@ -2222,7 +2250,26 @@ export const AdminCreateProductBody = zod.object({
   shortDescription: zod.string().nullish(),
   manufacturerId: zod.number().nullish(),
   categoryId: zod.number().nullish(),
-  materialId: zod.number().nullish(),
+  materialIds: zod
+    .array(zod.number())
+    .optional()
+    .describe(
+      "Material IDs to associate via the product_materials junction. Replaces the former single materialId.",
+    ),
+  collection: zod.string().nullish(),
+  seatType: zod.string().nullish(),
+  umbrellaType: zod.string().nullish(),
+  umbrellaShape: zod.string().nullish(),
+  umbrellaSize: zod.string().nullish(),
+  liftMechanism: zod.string().nullish(),
+  tiltMechanism: zod.string().nullish(),
+  poleMaterial: zod.string().nullish(),
+  hasLedLighting: zod
+    .boolean()
+    .default(adminCreateProductBodyHasLedLightingDefault),
+  isCommercialGrade: zod
+    .boolean()
+    .default(adminCreateProductBodyIsCommercialGradeDefault),
   price: zod.string().nullish(),
   salePrice: zod
     .string()
@@ -2279,8 +2326,34 @@ export const AdminGetProductResponse = zod
     manufacturerName: zod.string().nullable(),
     categoryId: zod.number().nullable(),
     categoryName: zod.string().nullable(),
-    materialId: zod.number().nullable(),
-    materialName: zod.string().nullable(),
+    materials: zod
+      .array(
+        zod.object({
+          id: zod.number(),
+          name: zod.string(),
+          slug: zod.string(),
+          description: zod.string().nullable(),
+          imageUrl: zod.string().nullable(),
+          displayOrder: zod.number(),
+        }),
+      )
+      .describe(
+        "Materials associated via the product_materials junction (ordered by displayOrder).",
+      ),
+    collection: zod.string().nullable(),
+    collectionSlug: zod
+      .string()
+      .nullable()
+      .describe("Server-derived from collection on save. Read-only."),
+    seatType: zod.string().nullable(),
+    umbrellaType: zod.string().nullable(),
+    umbrellaShape: zod.string().nullable(),
+    umbrellaSize: zod.string().nullable(),
+    liftMechanism: zod.string().nullable(),
+    tiltMechanism: zod.string().nullable(),
+    poleMaterial: zod.string().nullable(),
+    hasLedLighting: zod.boolean(),
+    isCommercialGrade: zod.boolean(),
     price: zod.string().nullable(),
     salePrice: zod
       .string()
@@ -2366,7 +2439,22 @@ export const AdminUpdateProductBody = zod.object({
   shortDescription: zod.string().nullish(),
   manufacturerId: zod.number().nullish(),
   categoryId: zod.number().nullish(),
-  materialId: zod.number().nullish(),
+  materialIds: zod
+    .array(zod.number())
+    .optional()
+    .describe(
+      "Material IDs to associate via the product_materials junction. When provided, replaces the product's material set. Omit to leave materials unchanged.",
+    ),
+  collection: zod.string().nullish(),
+  seatType: zod.string().nullish(),
+  umbrellaType: zod.string().nullish(),
+  umbrellaShape: zod.string().nullish(),
+  umbrellaSize: zod.string().nullish(),
+  liftMechanism: zod.string().nullish(),
+  tiltMechanism: zod.string().nullish(),
+  poleMaterial: zod.string().nullish(),
+  hasLedLighting: zod.boolean().optional(),
+  isCommercialGrade: zod.boolean().optional(),
   price: zod.string().nullish(),
   salePrice: zod
     .string()
@@ -2409,8 +2497,34 @@ export const AdminUpdateProductResponse = zod.object({
   manufacturerName: zod.string().nullable(),
   categoryId: zod.number().nullable(),
   categoryName: zod.string().nullable(),
-  materialId: zod.number().nullable(),
-  materialName: zod.string().nullable(),
+  materials: zod
+    .array(
+      zod.object({
+        id: zod.number(),
+        name: zod.string(),
+        slug: zod.string(),
+        description: zod.string().nullable(),
+        imageUrl: zod.string().nullable(),
+        displayOrder: zod.number(),
+      }),
+    )
+    .describe(
+      "Materials associated via the product_materials junction (ordered by displayOrder).",
+    ),
+  collection: zod.string().nullable(),
+  collectionSlug: zod
+    .string()
+    .nullable()
+    .describe("Server-derived from collection on save. Read-only."),
+  seatType: zod.string().nullable(),
+  umbrellaType: zod.string().nullable(),
+  umbrellaShape: zod.string().nullable(),
+  umbrellaSize: zod.string().nullable(),
+  liftMechanism: zod.string().nullable(),
+  tiltMechanism: zod.string().nullable(),
+  poleMaterial: zod.string().nullable(),
+  hasLedLighting: zod.boolean(),
+  isCommercialGrade: zod.boolean(),
   price: zod.string().nullable(),
   salePrice: zod
     .string()
@@ -2479,8 +2593,34 @@ export const AdminSetProductActiveResponse = zod.object({
   manufacturerName: zod.string().nullable(),
   categoryId: zod.number().nullable(),
   categoryName: zod.string().nullable(),
-  materialId: zod.number().nullable(),
-  materialName: zod.string().nullable(),
+  materials: zod
+    .array(
+      zod.object({
+        id: zod.number(),
+        name: zod.string(),
+        slug: zod.string(),
+        description: zod.string().nullable(),
+        imageUrl: zod.string().nullable(),
+        displayOrder: zod.number(),
+      }),
+    )
+    .describe(
+      "Materials associated via the product_materials junction (ordered by displayOrder).",
+    ),
+  collection: zod.string().nullable(),
+  collectionSlug: zod
+    .string()
+    .nullable()
+    .describe("Server-derived from collection on save. Read-only."),
+  seatType: zod.string().nullable(),
+  umbrellaType: zod.string().nullable(),
+  umbrellaShape: zod.string().nullable(),
+  umbrellaSize: zod.string().nullable(),
+  liftMechanism: zod.string().nullable(),
+  tiltMechanism: zod.string().nullable(),
+  poleMaterial: zod.string().nullable(),
+  hasLedLighting: zod.boolean(),
+  isCommercialGrade: zod.boolean(),
   price: zod.string().nullable(),
   salePrice: zod
     .string()
@@ -3442,7 +3582,6 @@ export const AdminBulkUpdateProductsBody = zod.object({
       showPriceOnline: zod.boolean().optional(),
       categoryId: zod.number().nullish(),
       manufacturerId: zod.number().nullish(),
-      materialId: zod.number().nullish(),
     })
     .optional()
     .describe(

@@ -11,6 +11,7 @@ import {
   manufacturersTable,
   categoriesTable,
   materialsTable,
+  productMaterialsTable,
   variantGradePricesTable,
   finishesTable,
   productFinishPoolsTable,
@@ -45,13 +46,79 @@ const router: IRouter = Router();
 type ProductRow = Product & {
   manufacturerName: string | null;
   categoryName: string | null;
-  materialName: string | null;
   primaryImageUrl: string | null;
   imageCount: number;
   onHand: number;
 };
 
-function toAdminPayload(r: ProductRow) {
+type MaterialPayload = {
+  id: number;
+  name: string;
+  slug: string;
+  description: string | null;
+  imageUrl: string | null;
+  displayOrder: number;
+};
+
+/**
+ * Derive a URL-safe collection slug from the free-form `collection` value.
+ * Staff never type this; it is generated server-side on every save.
+ */
+function slugifyCollection(value: string | null | undefined): string | null {
+  if (value == null) return null;
+  const slug = value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return slug === "" ? null : slug;
+}
+
+/**
+ * Load the materials linked to each product via the product_materials
+ * junction, keyed by productId and ordered by the link's displayOrder.
+ */
+async function loadMaterialsMap(
+  productIds: number[],
+): Promise<Map<number, MaterialPayload[]>> {
+  const map = new Map<number, MaterialPayload[]>();
+  if (productIds.length === 0) return map;
+  const rows = await db
+    .select({
+      productId: productMaterialsTable.productId,
+      id: materialsTable.id,
+      name: materialsTable.name,
+      slug: materialsTable.slug,
+      description: materialsTable.description,
+      imageUrl: materialsTable.imageUrl,
+      displayOrder: materialsTable.displayOrder,
+    })
+    .from(productMaterialsTable)
+    .innerJoin(
+      materialsTable,
+      eq(materialsTable.id, productMaterialsTable.materialId),
+    )
+    .where(inArray(productMaterialsTable.productId, productIds))
+    .orderBy(
+      asc(productMaterialsTable.displayOrder),
+      asc(materialsTable.name),
+    );
+  for (const r of rows) {
+    const list = map.get(r.productId) ?? [];
+    list.push({
+      id: r.id,
+      name: r.name,
+      slug: r.slug,
+      description: r.description,
+      imageUrl: toPublicImageUrl(r.imageUrl),
+      displayOrder: r.displayOrder,
+    });
+    map.set(r.productId, list);
+  }
+  return map;
+}
+
+function toAdminPayload(r: ProductRow, materials: MaterialPayload[]) {
   return {
     id: r.id,
     name: r.name,
@@ -63,8 +130,18 @@ function toAdminPayload(r: ProductRow) {
     manufacturerName: r.manufacturerName,
     categoryId: r.categoryId,
     categoryName: r.categoryName,
-    materialId: r.materialId,
-    materialName: r.materialName,
+    materials,
+    collection: r.collection,
+    collectionSlug: r.collectionSlug,
+    seatType: r.seatType,
+    umbrellaType: r.umbrellaType,
+    umbrellaShape: r.umbrellaShape,
+    umbrellaSize: r.umbrellaSize,
+    liftMechanism: r.liftMechanism,
+    tiltMechanism: r.tiltMechanism,
+    poleMaterial: r.poleMaterial,
+    hasLedLighting: r.hasLedLighting ?? false,
+    isCommercialGrade: r.isCommercialGrade ?? false,
     price: r.price,
     salePrice: r.salePrice,
     cost: r.cost,
@@ -134,8 +211,17 @@ function baseSelect() {
       manufacturerName: manufacturersTable.name,
       categoryId: productsTable.categoryId,
       categoryName: categoriesTable.name,
-      materialId: productsTable.materialId,
-      materialName: materialsTable.name,
+      collection: productsTable.collection,
+      collectionSlug: productsTable.collectionSlug,
+      seatType: productsTable.seatType,
+      umbrellaType: productsTable.umbrellaType,
+      umbrellaShape: productsTable.umbrellaShape,
+      umbrellaSize: productsTable.umbrellaSize,
+      liftMechanism: productsTable.liftMechanism,
+      tiltMechanism: productsTable.tiltMechanism,
+      poleMaterial: productsTable.poleMaterial,
+      hasLedLighting: productsTable.hasLedLighting,
+      isCommercialGrade: productsTable.isCommercialGrade,
       price: productsTable.price,
       salePrice: productsTable.salePrice,
       frameOnlyPrice: productsTable.frameOnlyPrice,
@@ -170,8 +256,7 @@ function baseSelect() {
     .leftJoin(
       categoriesTable,
       eq(categoriesTable.id, productsTable.categoryId),
-    )
-    .leftJoin(materialsTable, eq(materialsTable.id, productsTable.materialId));
+    );
 }
 
 async function loadProductById(id: number): Promise<ProductRow | null> {
@@ -197,7 +282,7 @@ async function ensureFkExists(
 async function validateFks(input: {
   manufacturerId?: number | null;
   categoryId?: number | null;
-  materialId?: number | null;
+  materialIds?: number[];
 }): Promise<string | null> {
   if (input.manufacturerId != null) {
     if (!(await ensureFkExists(manufacturersTable, input.manufacturerId))) {
@@ -209,9 +294,14 @@ async function validateFks(input: {
       return "Category does not exist";
     }
   }
-  if (input.materialId != null) {
-    if (!(await ensureFkExists(materialsTable, input.materialId))) {
-      return "Material does not exist";
+  if (input.materialIds && input.materialIds.length > 0) {
+    const uniqueIds = [...new Set(input.materialIds)];
+    const found = await db
+      .select({ id: materialsTable.id })
+      .from(materialsTable)
+      .where(inArray(materialsTable.id, uniqueIds));
+    if (found.length !== uniqueIds.length) {
+      return "One or more materials do not exist";
     }
   }
   return null;
@@ -316,12 +406,12 @@ router.get(
         categoriesTable,
         eq(categoriesTable.id, productsTable.categoryId),
       )
-      .leftJoin(materialsTable, eq(materialsTable.id, productsTable.materialId))
       .where(whereClause as ReturnType<typeof and>);
 
     const [rows, totalResult] = await Promise.all([rowsP, totalP]);
+    const materialsMap = await loadMaterialsMap(rows.map((r) => r.id));
     res.json({
-      products: rows.map(toAdminPayload),
+      products: rows.map((r) => toAdminPayload(r, materialsMap.get(r.id) ?? [])),
       total: totalResult[0]?.count ?? 0,
       page,
       pageSize,
@@ -357,8 +447,9 @@ router.get(
       .select()
       .from(inventoryTable)
       .where(eq(inventoryTable.productId, row.id));
+    const materialsMap = await loadMaterialsMap([row.id]);
     res.json({
-      ...toAdminPayload(row),
+      ...toAdminPayload(row, materialsMap.get(row.id) ?? []),
       images: images.map(imageToPayload),
       inventory: {
         productId: row.id,
@@ -387,38 +478,61 @@ router.post(
       res.status(400).json({ error: fkError });
       return;
     }
+    const materialIds = [...new Set(parsed.data.materialIds ?? [])];
     try {
-      const [row] = await db
-        .insert(productsTable)
-        .values({
-          name: parsed.data.name,
-          slug: parsed.data.slug,
-          sku: parsed.data.sku,
-          description: parsed.data.description ?? null,
-          shortDescription: parsed.data.shortDescription ?? null,
-          manufacturerId: parsed.data.manufacturerId ?? null,
-          categoryId: parsed.data.categoryId ?? null,
-          materialId: parsed.data.materialId ?? null,
-          price: parsed.data.price ?? null,
-          salePrice: parsed.data.salePrice ?? null,
-          cost: parsed.data.cost ?? null,
-          msrp: parsed.data.msrp ?? null,
-          markupPercent: parsed.data.markupPercent ?? null,
-          frameOnlyPrice: parsed.data.frameOnlyPrice ?? null,
-          pricingMode: parsed.data.pricingMode ?? "fixed",
-          weight: parsed.data.weight ?? null,
-          dimensions: parsed.data.dimensions ?? null,
-          showPriceOnline: parsed.data.showPriceOnline ?? true,
-          availableOnline: parsed.data.availableOnline ?? true,
-          inStoreOnly: parsed.data.inStoreOnly ?? false,
-          quoteOnly: parsed.data.quoteOnly ?? false,
-          featured: parsed.data.featured ?? false,
-          featuredAt: parsed.data.featured ? new Date() : null,
-          displayOrder: parsed.data.displayOrder ?? 0,
-          lowStockThreshold: parsed.data.lowStockThreshold ?? 0,
-          isActive: parsed.data.isActive ?? true,
-        })
-        .returning();
+      const row = await db.transaction(async (tx) => {
+        const [created] = await tx
+          .insert(productsTable)
+          .values({
+            name: parsed.data.name,
+            slug: parsed.data.slug,
+            sku: parsed.data.sku,
+            description: parsed.data.description ?? null,
+            shortDescription: parsed.data.shortDescription ?? null,
+            manufacturerId: parsed.data.manufacturerId ?? null,
+            categoryId: parsed.data.categoryId ?? null,
+            collection: parsed.data.collection ?? null,
+            collectionSlug: slugifyCollection(parsed.data.collection),
+            seatType: parsed.data.seatType ?? null,
+            umbrellaType: parsed.data.umbrellaType ?? null,
+            umbrellaShape: parsed.data.umbrellaShape ?? null,
+            umbrellaSize: parsed.data.umbrellaSize ?? null,
+            liftMechanism: parsed.data.liftMechanism ?? null,
+            tiltMechanism: parsed.data.tiltMechanism ?? null,
+            poleMaterial: parsed.data.poleMaterial ?? null,
+            hasLedLighting: parsed.data.hasLedLighting ?? false,
+            isCommercialGrade: parsed.data.isCommercialGrade ?? false,
+            price: parsed.data.price ?? null,
+            salePrice: parsed.data.salePrice ?? null,
+            cost: parsed.data.cost ?? null,
+            msrp: parsed.data.msrp ?? null,
+            markupPercent: parsed.data.markupPercent ?? null,
+            frameOnlyPrice: parsed.data.frameOnlyPrice ?? null,
+            pricingMode: parsed.data.pricingMode ?? "fixed",
+            weight: parsed.data.weight ?? null,
+            dimensions: parsed.data.dimensions ?? null,
+            showPriceOnline: parsed.data.showPriceOnline ?? true,
+            availableOnline: parsed.data.availableOnline ?? true,
+            inStoreOnly: parsed.data.inStoreOnly ?? false,
+            quoteOnly: parsed.data.quoteOnly ?? false,
+            featured: parsed.data.featured ?? false,
+            featuredAt: parsed.data.featured ? new Date() : null,
+            displayOrder: parsed.data.displayOrder ?? 0,
+            lowStockThreshold: parsed.data.lowStockThreshold ?? 0,
+            isActive: parsed.data.isActive ?? true,
+          })
+          .returning();
+        if (materialIds.length > 0) {
+          await tx.insert(productMaterialsTable).values(
+            materialIds.map((materialId, i) => ({
+              productId: created.id,
+              materialId,
+              displayOrder: i,
+            })),
+          );
+        }
+        return created;
+      });
       // Seed inventory row (best-effort; ignore conflict)
       await db
         .insert(inventoryTable)
@@ -426,13 +540,16 @@ router.post(
         .onConflictDoNothing();
 
       const full = await loadProductById(row.id);
+      const materialsMap = await loadMaterialsMap([row.id]);
       await recordHistory(req, {
         entityType: "product",
         entityId: row.id,
         changeType: "create",
         snapshot: full,
       });
-      res.status(201).json(toAdminPayload(full!));
+      res
+        .status(201)
+        .json(toAdminPayload(full!, materialsMap.get(row.id) ?? []));
     } catch (err) {
       if (isUniqueViolation(err)) {
         res
@@ -470,65 +587,100 @@ router.put(
     }
     const previous = await loadProductById(params.data.id);
     try {
-      const [row] = await db
-        .update(productsTable)
-        .set({
-          name: body.data.name,
-          slug: body.data.slug,
-          sku: body.data.sku,
-          description: body.data.description ?? null,
-          shortDescription: body.data.shortDescription ?? null,
-          manufacturerId: body.data.manufacturerId ?? null,
-          categoryId: body.data.categoryId ?? null,
-          materialId: body.data.materialId ?? null,
-          price: body.data.price ?? null,
-          salePrice: body.data.salePrice ?? null,
-          cost: body.data.cost ?? null,
-          msrp: body.data.msrp ?? null,
-          markupPercent: body.data.markupPercent ?? null,
-          frameOnlyPrice: body.data.frameOnlyPrice ?? null,
-          ...(body.data.pricingMode !== undefined
-            ? { pricingMode: body.data.pricingMode }
-            : {}),
-          weight: body.data.weight ?? null,
-          dimensions: body.data.dimensions ?? null,
-          ...(body.data.showPriceOnline !== undefined
-            ? { showPriceOnline: body.data.showPriceOnline }
-            : {}),
-          ...(body.data.availableOnline !== undefined
-            ? { availableOnline: body.data.availableOnline }
-            : {}),
-          ...(body.data.inStoreOnly !== undefined
-            ? { inStoreOnly: body.data.inStoreOnly }
-            : {}),
-          ...(body.data.quoteOnly !== undefined
-            ? { quoteOnly: body.data.quoteOnly }
-            : {}),
-          ...(body.data.featured !== undefined
-            ? {
-                featured: body.data.featured,
-                featuredAt: body.data.featured
-                  ? sql`COALESCE(${productsTable.featuredAt}, now())`
-                  : null,
-              }
-            : {}),
-          ...(body.data.displayOrder !== undefined
-            ? { displayOrder: body.data.displayOrder }
-            : {}),
-          ...(body.data.lowStockThreshold !== undefined
-            ? { lowStockThreshold: body.data.lowStockThreshold }
-            : {}),
-          ...(body.data.isActive !== undefined
-            ? { isActive: body.data.isActive }
-            : {}),
-        })
-        .where(eq(productsTable.id, params.data.id))
-        .returning();
+      const row = await db.transaction(async (tx) => {
+        const [updated] = await tx
+          .update(productsTable)
+          .set({
+            name: body.data.name,
+            slug: body.data.slug,
+            sku: body.data.sku,
+            description: body.data.description ?? null,
+            shortDescription: body.data.shortDescription ?? null,
+            manufacturerId: body.data.manufacturerId ?? null,
+            categoryId: body.data.categoryId ?? null,
+            collection: body.data.collection ?? null,
+            collectionSlug: slugifyCollection(body.data.collection),
+            seatType: body.data.seatType ?? null,
+            umbrellaType: body.data.umbrellaType ?? null,
+            umbrellaShape: body.data.umbrellaShape ?? null,
+            umbrellaSize: body.data.umbrellaSize ?? null,
+            liftMechanism: body.data.liftMechanism ?? null,
+            tiltMechanism: body.data.tiltMechanism ?? null,
+            poleMaterial: body.data.poleMaterial ?? null,
+            ...(body.data.hasLedLighting !== undefined
+              ? { hasLedLighting: body.data.hasLedLighting }
+              : {}),
+            ...(body.data.isCommercialGrade !== undefined
+              ? { isCommercialGrade: body.data.isCommercialGrade }
+              : {}),
+            price: body.data.price ?? null,
+            salePrice: body.data.salePrice ?? null,
+            cost: body.data.cost ?? null,
+            msrp: body.data.msrp ?? null,
+            markupPercent: body.data.markupPercent ?? null,
+            frameOnlyPrice: body.data.frameOnlyPrice ?? null,
+            ...(body.data.pricingMode !== undefined
+              ? { pricingMode: body.data.pricingMode }
+              : {}),
+            weight: body.data.weight ?? null,
+            dimensions: body.data.dimensions ?? null,
+            ...(body.data.showPriceOnline !== undefined
+              ? { showPriceOnline: body.data.showPriceOnline }
+              : {}),
+            ...(body.data.availableOnline !== undefined
+              ? { availableOnline: body.data.availableOnline }
+              : {}),
+            ...(body.data.inStoreOnly !== undefined
+              ? { inStoreOnly: body.data.inStoreOnly }
+              : {}),
+            ...(body.data.quoteOnly !== undefined
+              ? { quoteOnly: body.data.quoteOnly }
+              : {}),
+            ...(body.data.featured !== undefined
+              ? {
+                  featured: body.data.featured,
+                  featuredAt: body.data.featured
+                    ? sql`COALESCE(${productsTable.featuredAt}, now())`
+                    : null,
+                }
+              : {}),
+            ...(body.data.displayOrder !== undefined
+              ? { displayOrder: body.data.displayOrder }
+              : {}),
+            ...(body.data.lowStockThreshold !== undefined
+              ? { lowStockThreshold: body.data.lowStockThreshold }
+              : {}),
+            ...(body.data.isActive !== undefined
+              ? { isActive: body.data.isActive }
+              : {}),
+          })
+          .where(eq(productsTable.id, params.data.id))
+          .returning();
+        if (!updated) return null;
+        // When materialIds is provided, it replaces the product's material set.
+        if (body.data.materialIds !== undefined) {
+          await tx
+            .delete(productMaterialsTable)
+            .where(eq(productMaterialsTable.productId, params.data.id));
+          const uniqueIds = [...new Set(body.data.materialIds)];
+          if (uniqueIds.length > 0) {
+            await tx.insert(productMaterialsTable).values(
+              uniqueIds.map((materialId, i) => ({
+                productId: params.data.id,
+                materialId,
+                displayOrder: i,
+              })),
+            );
+          }
+        }
+        return updated;
+      });
       if (!row) {
         res.status(404).json({ error: "Product not found" });
         return;
       }
       const full = await loadProductById(row.id);
+      const materialsMap = await loadMaterialsMap([row.id]);
       await recordHistory(req, {
         entityType: "product",
         entityId: row.id,
@@ -536,7 +688,7 @@ router.put(
         snapshot: full,
         previousSnapshot: previous,
       });
-      res.json(toAdminPayload(full!));
+      res.json(toAdminPayload(full!, materialsMap.get(row.id) ?? []));
     } catch (err) {
       if (isUniqueViolation(err)) {
         res
@@ -572,6 +724,7 @@ router.patch(
       return;
     }
     const full = await loadProductById(row.id);
+    const materialsMap = await loadMaterialsMap([row.id]);
     await recordHistory(req, {
       entityType: "product",
       entityId: row.id,
@@ -580,7 +733,7 @@ router.patch(
       previousSnapshot: previous,
       notes: `set isActive=${body.data.isActive}`,
     });
-    res.json(toAdminPayload(full!));
+    res.json(toAdminPayload(full!, materialsMap.get(row.id) ?? []));
   },
 );
 

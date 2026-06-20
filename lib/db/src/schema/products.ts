@@ -9,6 +9,7 @@ import {
   jsonb,
   index,
   uniqueIndex,
+  unique,
   foreignKey,
   check,
 } from "drizzle-orm/pg-core";
@@ -38,9 +39,22 @@ export const productsTable = pgTable(
     categoryId: integer("category_id").references(() => categoriesTable.id, {
       onDelete: "set null",
     }),
-    materialId: integer("material_id").references(() => materialsTable.id, {
-      onDelete: "set null",
-    }),
+    // Collection grouping (e.g. Blair, Laguna, Leeward). `collectionSlug` is
+    // derived server-side from `collection` on save — staff never type it.
+    collection: text("collection"),
+    collectionSlug: text("collection_slug"),
+    // Seating surface type (furniture only; NULL for tables/umbrellas/accessories).
+    seatType: text("seat_type"),
+    // Umbrella-specific filter fields (NULL for all non-umbrella products).
+    umbrellaType: text("umbrella_type"),
+    umbrellaShape: text("umbrella_shape"),
+    umbrellaSize: text("umbrella_size"),
+    liftMechanism: text("lift_mechanism"),
+    tiltMechanism: text("tilt_mechanism"),
+    poleMaterial: text("pole_material"),
+    // Feature flags (nullable, default false).
+    hasLedLighting: boolean("has_led_lighting").default(false),
+    isCommercialGrade: boolean("is_commercial_grade").default(false),
     // Sell price actually shown to customers / used at checkout. Always set
     // (manually or by `pricing_mode` derivation; see below).
     price: numeric("price", { precision: 10, scale: 2 }),
@@ -108,15 +122,83 @@ export const productsTable = pgTable(
   (t) => [
     index("products_manufacturer_id_idx").on(t.manufacturerId),
     index("products_category_id_idx").on(t.categoryId),
-    index("products_material_id_idx").on(t.materialId),
     index("products_featured_idx").on(t.featured),
     index("products_active_idx").on(t.isActive),
+    // Partial filter indexes — only index rows where the value is set.
+    index("idx_products_collection")
+      .on(t.collection)
+      .where(sql`${t.collection} IS NOT NULL`),
+    index("idx_products_umbrella_type")
+      .on(t.umbrellaType)
+      .where(sql`${t.umbrellaType} IS NOT NULL`),
+    index("idx_products_umbrella_shape")
+      .on(t.umbrellaShape)
+      .where(sql`${t.umbrellaShape} IS NOT NULL`),
+    index("idx_products_seat_type")
+      .on(t.seatType)
+      .where(sql`${t.seatType} IS NOT NULL`),
     check(
       "products_pricing_mode_check",
       sql`${t.pricingMode} IN ('fixed', 'cost_plus_markup', 'msrp_minus_dealer_rate')`,
     ),
+    check(
+      "products_seat_type_check",
+      sql`${t.seatType} IS NULL OR ${t.seatType} IN ('Sling', 'Cushion', 'Strap', 'Wicker Weave', 'Solid', 'Padded Sling')`,
+    ),
+    check(
+      "products_umbrella_type_check",
+      sql`${t.umbrellaType} IS NULL OR ${t.umbrellaType} IN ('Cantilever', 'Market', 'Specialty', 'Beach')`,
+    ),
+    check(
+      "products_umbrella_shape_check",
+      sql`${t.umbrellaShape} IS NULL OR ${t.umbrellaShape} IN ('Octagon', 'Square', 'Rectangle', 'Round')`,
+    ),
+    check(
+      "products_lift_mechanism_check",
+      sql`${t.liftMechanism} IS NULL OR ${t.liftMechanism} IN ('Crank', 'Manual', 'Pulley', 'Quad Pulley')`,
+    ),
+    check(
+      "products_tilt_mechanism_check",
+      sql`${t.tiltMechanism} IS NULL OR ${t.tiltMechanism} IN ('Auto', 'Collar', 'Push Button', 'Glide', 'Rotational', 'None')`,
+    ),
+    check(
+      "products_pole_material_check",
+      sql`${t.poleMaterial} IS NULL OR ${t.poleMaterial} IN ('Aluminum', 'Fiberglass', 'Wood', 'Teak', 'Steel')`,
+    ),
   ],
 );
+
+// Many-to-many product ↔ material junction. Replaces the former single
+// products.material_id FK so a product can carry multiple materials
+// (e.g. teak top + aluminum frame). ON DELETE RESTRICT on material_id
+// prevents deleting a material still referenced by products.
+export const productMaterialsTable = pgTable(
+  "product_materials",
+  {
+    id: serial("id").primaryKey(),
+    productId: integer("product_id")
+      .notNull()
+      .references(() => productsTable.id, { onDelete: "cascade" }),
+    materialId: integer("material_id")
+      .notNull()
+      .references(() => materialsTable.id, { onDelete: "restrict" }),
+    displayOrder: integer("display_order").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    unique("product_materials_unique").on(t.productId, t.materialId),
+    index("idx_product_materials_product_id").on(t.productId),
+    index("idx_product_materials_material_id").on(t.materialId),
+  ],
+);
+
+export const insertProductMaterialSchema = createInsertSchema(
+  productMaterialsTable,
+).omit({ id: true, createdAt: true });
+export type InsertProductMaterial = z.infer<typeof insertProductMaterialSchema>;
+export type ProductMaterial = typeof productMaterialsTable.$inferSelect;
 
 export const insertProductSchema = createInsertSchema(productsTable).omit({
   id: true,

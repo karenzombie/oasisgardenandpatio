@@ -5,7 +5,6 @@ import {
   productsTable,
   manufacturersTable,
   categoriesTable,
-  materialsTable,
   fabricsTable,
   productFabricPoolsTable,
   productFabricOptionsTable,
@@ -115,13 +114,11 @@ router.post(
 
     // Validate FKs on scalar fields
     if (fields) {
-      const fkChecks: { id: number; table: typeof manufacturersTable | typeof categoriesTable | typeof materialsTable; label: string }[] = [];
+      const fkChecks: { id: number; table: typeof manufacturersTable | typeof categoriesTable; label: string }[] = [];
       if (fields.manufacturerId != null)
         fkChecks.push({ id: fields.manufacturerId, table: manufacturersTable, label: "Manufacturer" });
       if (fields.categoryId != null)
         fkChecks.push({ id: fields.categoryId, table: categoriesTable, label: "Category" });
-      if (fields.materialId != null)
-        fkChecks.push({ id: fields.materialId, table: materialsTable, label: "Material" });
       for (const c of fkChecks) {
         const [row] = await db
           .select({ id: c.table.id })
@@ -195,7 +192,6 @@ router.post(
       if (fields.showPriceOnline !== undefined) scalarSet.showPriceOnline = fields.showPriceOnline;
       if (fields.categoryId !== undefined) scalarSet.categoryId = fields.categoryId ?? null;
       if (fields.manufacturerId !== undefined) scalarSet.manufacturerId = fields.manufacturerId ?? null;
-      if (fields.materialId !== undefined) scalarSet.materialId = fields.materialId ?? null;
     }
     const scalarHasUpdates = Object.keys(scalarSet).length > 0;
 

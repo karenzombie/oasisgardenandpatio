@@ -259,7 +259,14 @@ const QUERY = `
   FROM products p
   LEFT JOIN manufacturers m   ON m.id = p.manufacturer_id
   LEFT JOIN categories c      ON c.id = p.category_id
-  LEFT JOIN materials mat     ON mat.id = p.material_id
+  LEFT JOIN LATERAL (
+    SELECT
+      string_agg(m2.name, ', ' ORDER BY pm.display_order, m2.name) AS name,
+      string_agg(m2.slug, ', ' ORDER BY pm.display_order, m2.name) AS slug
+    FROM product_materials pm
+    JOIN materials m2 ON m2.id = pm.material_id
+    WHERE pm.product_id = p.id
+  ) mat ON true
   ORDER BY m.slug NULLS LAST, p.sku
 `;
 

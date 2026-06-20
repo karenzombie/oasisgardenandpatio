@@ -37,6 +37,7 @@ import {
   categoriesTable,
   productsTable,
   materialsTable,
+  productMaterialsTable,
 } from "@workspace/db";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -293,7 +294,6 @@ async function main(): Promise<void> {
       .select({
         id: productsTable.id,
         specs: productsTable.specs,
-        materialId: productsTable.materialId,
       })
       .from(productsTable)
       .where(eq(productsTable.sku, sku))
@@ -318,8 +318,6 @@ async function main(): Promise<void> {
         isActive: true,
         updatedAt: new Date(),
       };
-      // Only overwrite material when the CSV provides one.
-      if (materialId !== null) set.materialId = materialId;
       // For the dup fire-pit SKUs, normalize the name to be collection-prefixed
       // so both the Phoenix and Volante variants group under the collection
       // filter (which keys on the product name's first word).
@@ -334,34 +332,49 @@ async function main(): Promise<void> {
         .update(productsTable)
         .set(set)
         .where(eq(productsTable.id, existing.id));
+      // Only link material when the CSV provides one (junction, idempotent).
+      if (materialId !== null) {
+        await db
+          .insert(productMaterialsTable)
+          .values({ productId: existing.id, materialId, displayOrder: 0 })
+          .onConflictDoNothing();
+      }
       updated += 1;
     } else {
       const name = buildName(collection, csvName);
       const categorySlug = categorizeOwLeeProduct(name);
       const categoryId = categoryMap.get(categorySlug)!;
       const slug = slugify(`owlee-${collection}-${csvName}-${sku}`);
-      await db.insert(productsTable).values({
-        name,
-        slug,
-        sku,
-        shortDescription,
-        description: description || null,
-        dimensions: buildDimensions(csvSpecs),
-        weight: weightColumn(csvSpecs),
-        specs: csvSpecs,
-        tags: ["o-w-lee", slugify(collection), "made-in-usa"],
-        manufacturerId,
-        categoryId,
-        materialId,
-        displayOrder: displayOrder++,
-        showPriceOnline: false,
-        availableOnline: true,
-        inStoreOnly: true,
-        quoteOnly: true,
-        featured: false,
-        lowStockThreshold: 0,
-        isActive: true,
-      });
+      const [insertedRow] = await db
+        .insert(productsTable)
+        .values({
+          name,
+          slug,
+          sku,
+          shortDescription,
+          description: description || null,
+          dimensions: buildDimensions(csvSpecs),
+          weight: weightColumn(csvSpecs),
+          specs: csvSpecs,
+          tags: ["o-w-lee", slugify(collection), "made-in-usa"],
+          manufacturerId,
+          categoryId,
+          displayOrder: displayOrder++,
+          showPriceOnline: false,
+          availableOnline: true,
+          inStoreOnly: true,
+          quoteOnly: true,
+          featured: false,
+          lowStockThreshold: 0,
+          isActive: true,
+        })
+        .returning({ id: productsTable.id });
+      if (insertedRow && materialId !== null) {
+        await db
+          .insert(productMaterialsTable)
+          .values({ productId: insertedRow.id, materialId, displayOrder: 0 })
+          .onConflictDoNothing();
+      }
       created += 1;
     }
   }
