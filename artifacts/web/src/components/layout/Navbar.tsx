@@ -73,6 +73,8 @@ export function Navbar() {
   useEffect(() => {
     if (location === "/search") {
       setSearchValue(new URLSearchParams(rawSearch).get("q") ?? "");
+    } else {
+      setSearchValue("");
     }
   }, [location, rawSearch]);
 
