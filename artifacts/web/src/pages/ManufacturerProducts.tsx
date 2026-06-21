@@ -1,7 +1,7 @@
 import { Link, useRoute, useLocation, useSearch } from "wouter";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { useQueries } from "@tanstack/react-query";
-import { X, SlidersHorizontal, Check, ChevronDown } from "lucide-react";
+import { X, SlidersHorizontal } from "lucide-react";
 import {
   useListCatalogProducts,
   useListManufacturers,
@@ -11,25 +11,12 @@ import {
 } from "@workspace/api-client-react";
 import type { CatalogProduct, Category } from "@workspace/api-client-react";
 import { getBrandLogo } from "@/lib/brandLogos";
-import { getCategoryImage } from "@/lib/categoryImages";
 import { getManufacturerAbout } from "@/lib/manufacturerAbout";
 import { ManufacturerAbout } from "@/components/ManufacturerAbout";
 import { WishlistButton } from "@/components/WishlistButton";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
+import { CheckboxGroup, type FilterOption } from "@/components/FilterCheckboxGroup";
 
 const PAGE_SIZE_API = 60;
 const PAGE_SIZE_DISPLAY = 24;
@@ -103,7 +90,7 @@ export default function ManufacturerProducts() {
   const activeType = q.get("type") ?? "";
   const displayPage = Number(q.get("page") ?? "1") || 1;
 
-  const [collectionOpen, setCollectionOpen] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   const { data: manufacturers } = useListManufacturers();
   const manufacturer = manufacturers?.find((m) => m.slug === slug);
@@ -181,8 +168,7 @@ export default function ManufacturerProducts() {
     return [...set].sort();
   }, [allProducts, collectionMap]);
 
-  // Types are the real product categories present in this manufacturer's
-  // catalog, rendered as image tiles like the homepage category grid.
+  // Types are the real product categories present in this manufacturer's catalog.
   const types = useMemo(() => {
     const seen = new Map<string, { category: Category; count: number }>();
     for (const p of allProducts) {
@@ -234,9 +220,6 @@ export default function ManufacturerProducts() {
   const pageStart = (safePage - 1) * PAGE_SIZE_DISPLAY;
   const pageProducts = filtered.slice(pageStart, pageStart + PAGE_SIZE_DISPLAY);
 
-  const selectClass =
-    "w-full border border-input bg-background rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary";
-
   function updateSearch(patch: Record<string, string | null>) {
     const next = new URLSearchParams(search);
     for (const [k, v] of Object.entries(patch)) {
@@ -247,12 +230,18 @@ export default function ManufacturerProducts() {
     setLocation(qs ? `/manufacturers/${slug}?${qs}` : `/manufacturers/${slug}`);
   }
 
-  const productsRef = useRef<HTMLDivElement>(null);
-  const scrollToProducts = () =>
-    setTimeout(
-      () => productsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
-      0,
-    );
+  const typeOptions = useMemo<FilterOption[]>(
+    () =>
+      types.map(({ category, count }) => ({
+        value: category.slug,
+        label: `${category.name} (${count})`,
+      })),
+    [types],
+  );
+  const collectionOptions = useMemo<FilterOption[]>(
+    () => collections.map((c) => ({ value: c, label: c })),
+    [collections],
+  );
 
   const activeTypeName =
     types.find((t) => t.category.slug === activeType)?.category.name ?? activeType;
@@ -266,6 +255,44 @@ export default function ManufacturerProducts() {
     : isLoading
       ? "Loading…"
       : `${totalFiltered} ${totalFiltered === 1 ? "product" : "products"}`;
+
+  function clearAll() {
+    updateSearch({ collection: null, type: null, page: "1" });
+  }
+
+  const sidebar = (
+    <aside className="space-y-0">
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="text-xs uppercase tracking-widest font-semibold text-foreground">
+          Filter
+        </h2>
+        {activeFilterCount > 0 && (
+          <button
+            type="button"
+            onClick={clearAll}
+            className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+          >
+            <X className="size-3" /> Clear all
+          </button>
+        )}
+      </div>
+
+      <CheckboxGroup
+        label="Type"
+        options={typeOptions}
+        selected={activeType}
+        onChange={(v) => updateSearch({ type: v || null, page: "1" })}
+      />
+      <CheckboxGroup
+        label="Collection"
+        options={collectionOptions}
+        selected={activeCollection}
+        onChange={(v) => updateSearch({ collection: v || null, page: "1" })}
+      />
+    </aside>
+  );
+
+  const hasFacets = typeOptions.length > 0 || collectionOptions.length > 0;
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-7xl">
@@ -308,200 +335,6 @@ export default function ManufacturerProducts() {
         </div>
       )}
 
-      {/* Type tiles — real product categories, styled like the homepage grid */}
-      {!isLoading && !loadError && types.length > 0 && (
-        <div className="mb-10">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-serif text-2xl">Shop by Type</h2>
-            {activeType && (
-              <button
-                onClick={() => updateSearch({ type: null, page: "1" })}
-                className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
-              >
-                <X className="h-3 w-3" /> Clear type
-              </button>
-            )}
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
-            {types.map(({ category, count }) => {
-              const img = getCategoryImage(category);
-              const isActive = activeType === category.slug;
-              return (
-                <button
-                  key={category.slug}
-                  onClick={() => {
-                    updateSearch({
-                      type: isActive ? null : category.slug,
-                      page: "1",
-                    });
-                    scrollToProducts();
-                  }}
-                  className="group block cursor-pointer border-2 border-primary bg-card overflow-hidden hover:shadow-md transition-shadow duration-150"
-                  aria-pressed={isActive}
-                >
-                  <div className="relative aspect-square overflow-hidden bg-muted">
-                    {img ? (
-                      <>
-                        <img
-                          src={img}
-                          alt={category.name}
-                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                          loading="lazy"
-                        />
-                        <div
-                          className={`absolute inset-0 transition-colors duration-500 ${
-                            isActive
-                              ? "bg-primary/25"
-                              : "bg-black/10 group-hover:bg-transparent"
-                          }`}
-                        />
-                      </>
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-secondary/40 text-secondary-foreground/60 font-serif text-sm tracking-widest uppercase">
-                        {category.name}
-                      </div>
-                    )}
-                  </div>
-                  <div className="py-3 px-2 border-t border-primary/30 text-center">
-                    <h3
-                      className={`font-serif text-base md:text-lg transition-colors ${
-                        isActive ? "text-primary" : "group-hover:text-primary"
-                      }`}
-                    >
-                      {category.name}
-                    </h3>
-                    <span className="text-xs text-muted-foreground font-sans">
-                      {count} {count === 1 ? "item" : "items"}
-                    </span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-          <div className="mt-12 mb-12 h-1 bg-primary" />
-        </div>
-      )}
-
-      {!isLoading && !loadError && (collections.length > 0 || activeFilterCount > 0) && (
-        <div
-          ref={productsRef}
-          className="sticky z-30 mb-8 border border-border rounded-sm bg-sand/50 backdrop-blur-sm p-5"
-          style={{ top: "var(--nav-height, 0px)" }}
-        >
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-medium text-sm uppercase tracking-widest flex items-center gap-2">
-              <SlidersHorizontal className="h-4 w-4" />
-              Filter
-              {activeFilterCount > 0 && (
-                <span className="ml-0.5 bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
-                  {activeFilterCount}
-                </span>
-              )}
-            </h2>
-            {activeFilterCount > 0 && (
-              <button
-                onClick={() =>
-                  updateSearch({ collection: null, type: null, page: "1" })
-                }
-                className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
-              >
-                <X className="h-3 w-3" /> Clear all
-              </button>
-            )}
-          </div>
-
-          {collections.length > 0 && (
-            <div className="grid gap-5 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <label className="text-xs uppercase tracking-widest text-muted-foreground block">
-                  Collection
-                </label>
-                <Popover open={collectionOpen} onOpenChange={setCollectionOpen}>
-                  <PopoverTrigger asChild>
-                    <button
-                      type="button"
-                      aria-label="Filter by collection"
-                      className={`${selectClass} flex items-center justify-between text-left`}
-                    >
-                      <span className={activeCollection ? "" : "text-muted-foreground"}>
-                        {activeCollection || "All collections"}
-                      </span>
-                      <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                    <Command>
-                      <CommandInput placeholder="Search collections..." className="h-9 text-sm" />
-                      <CommandList>
-                        <CommandEmpty>No collections found.</CommandEmpty>
-                        <CommandGroup>
-                          <CommandItem
-                            value="All collections"
-                            onSelect={() => {
-                              updateSearch({ collection: null, page: "1" });
-                              setCollectionOpen(false);
-                            }}
-                            className="cursor-pointer"
-                          >
-                            <Check
-                              className={`size-4 mr-2 shrink-0 ${activeCollection ? "opacity-0" : "opacity-100"}`}
-                            />
-                            All collections
-                          </CommandItem>
-                          {collections.map((c) => (
-                            <CommandItem
-                              key={c}
-                              value={c}
-                              onSelect={() => {
-                                updateSearch({ collection: c, page: "1" });
-                                setCollectionOpen(false);
-                              }}
-                              className="cursor-pointer"
-                            >
-                              <Check
-                                className={`size-4 mr-2 shrink-0 ${activeCollection === c ? "opacity-100" : "opacity-0"}`}
-                              />
-                              {c}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </div>
-          )}
-
-          {activeFilterCount > 0 && (
-            <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-border">
-              {activeCollection && (
-                <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
-                  Collection: {activeCollection}
-                  <button
-                    onClick={() =>
-                      updateSearch({ collection: null, page: "1" })
-                    }
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </span>
-              )}
-              {activeType && (
-                <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
-                  Type: {activeTypeName}
-                  <button
-                    onClick={() => updateSearch({ type: null, page: "1" })}
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </span>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
       {loadError ? (
         <div className="py-24 text-center">
           <h3 className="font-serif text-2xl mb-3">
@@ -514,131 +347,204 @@ export default function ManufacturerProducts() {
             Retry
           </Button>
         </div>
-      ) : isLoading ? (
-        <div className="flex items-center justify-center py-24">
-          <Spinner />
-        </div>
-      ) : pageProducts.length === 0 ? (
-        <div className="py-24 text-center">
-          <h3 className="font-serif text-2xl mb-3">No products found</h3>
-          <p className="text-muted-foreground mb-4">
-            {activeFilterCount > 0
-              ? "Try adjusting or clearing your filters."
-              : "Check back soon as we add new collections."}
-          </p>
-          {activeFilterCount > 0 && (
-            <Button
-              variant="outline"
-              onClick={() =>
-                updateSearch({ collection: null, type: null, page: "1" })
-              }
-            >
-              Clear filters
-            </Button>
-          )}
-        </div>
       ) : (
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-          {pageProducts.map((p) => {
-            const varies = p.priceVaries && p.showPriceOnline;
-            const displayPrice = varies ? p.startingPrice : p.price;
-            const displaySale = varies ? p.startingSalePrice : p.salePrice;
-            const onSale =
-              displaySale &&
-              displayPrice &&
-              Number(displaySale) < Number(displayPrice);
-            return (
-              <Link key={p.id} href={`/shop/${p.slug}`} className="group block border-2 border-primary bg-card hover:shadow-md transition-shadow duration-150">
-                <div className="relative aspect-square bg-card overflow-hidden">
-                  {p.primaryImageUrl ? (
-                    <img
-                      src={p.primaryImageUrl}
-                      alt={p.name}
-                      className="absolute inset-0 w-full h-full object-contain p-6 mix-blend-multiply"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground font-serif text-sm">
-                      No image available
-                    </div>
+        <>
+          {/* Toolbar: mobile filter toggle + count */}
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+            <div className="flex items-center gap-3">
+              {hasFacets && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2 md:hidden"
+                  onClick={() => setMobileFiltersOpen((v) => !v)}
+                  type="button"
+                >
+                  <SlidersHorizontal className="size-4" />
+                  Filters
+                  {activeFilterCount > 0 && (
+                    <span className="ml-0.5 bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
+                      {activeFilterCount}
+                    </span>
                   )}
-                  {onSale ? (
-                    <div className="absolute top-3 right-3 bg-primary text-primary-foreground px-3 py-1 text-xs uppercase tracking-widest font-semibold">
-                      Sale
-                    </div>
-                  ) : p.quoteOnly ? (
-                    <div className="absolute top-3 right-3 bg-foreground text-background px-3 py-1 text-xs uppercase tracking-widest font-semibold">
-                      Call for Pricing
-                    </div>
-                  ) : null}
-                  <div className="absolute bottom-3 right-3 z-10">
-                    <WishlistButton productId={p.id} />
-                  </div>
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent pt-10 pb-3 px-4">
-                    <h3 className="font-serif text-base md:text-lg text-white drop-shadow line-clamp-2 pr-12">
-                      {p.name}
-                    </h3>
-                  </div>
-                </div>
-                {p.showPriceOnline && displayPrice ? (
-                  <div className="border-t border-primary/30 px-4 py-3 text-center">
-                    <p className="text-sm">
-                      {varies && (
-                        <span className="block text-xs uppercase tracking-widest text-muted-foreground">
-                          Starting at
-                        </span>
-                      )}
-                      {onSale ? (
-                        <>
-                          <span className="text-muted-foreground line-through mr-2">
-                            {formatMoney(displayPrice)}
-                          </span>
-                          <span className="text-primary font-semibold">
-                            {formatMoney(displaySale)}
-                          </span>
-                        </>
-                      ) : (
-                        <span>{formatMoney(displayPrice)}</span>
-                      )}
-                    </p>
-                  </div>
-                ) : null}
-              </Link>
-            );
-          })}
-        </div>
-      )}
+                </Button>
+              )}
+              <span className="text-sm text-muted-foreground">{countLabel}</span>
+            </div>
+          </div>
 
-      {totalPages > 1 && (
-        <nav className="mt-12 flex items-center justify-center gap-2">
-          <button
-            disabled={safePage <= 1}
-            onClick={() => updateSearch({ page: String(safePage - 1) })}
-            className="px-3 py-1.5 text-sm border border-input rounded-sm disabled:opacity-40"
-          >
-            Prev
-          </button>
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-            <button
-              key={n}
-              onClick={() => updateSearch({ page: String(n) })}
-              className={`px-3 py-1.5 text-sm border rounded-sm ${
-                n === safePage
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "border-input hover:bg-muted"
-              }`}
-            >
-              {n}
-            </button>
-          ))}
-          <button
-            disabled={safePage >= totalPages}
-            onClick={() => updateSearch({ page: String(safePage + 1) })}
-            className="px-3 py-1.5 text-sm border border-input rounded-sm disabled:opacity-40"
-          >
-            Next
-          </button>
-        </nav>
+          {/* Active filter chips */}
+          {activeFilterCount > 0 && (
+            <div className="flex flex-wrap gap-2 mb-6">
+              {activeType && (
+                <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
+                  Type: {activeTypeName}
+                  <button type="button" onClick={() => updateSearch({ type: null, page: "1" })}>
+                    <X className="size-3" />
+                  </button>
+                </span>
+              )}
+              {activeCollection && (
+                <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
+                  Collection: {activeCollection}
+                  <button type="button" onClick={() => updateSearch({ collection: null, page: "1" })}>
+                    <X className="size-3" />
+                  </button>
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Mobile filter panel */}
+          {mobileFiltersOpen && hasFacets && (
+            <div className="md:hidden mb-6 border border-border bg-card p-5">
+              {sidebar}
+            </div>
+          )}
+
+          <div className="flex gap-8">
+            {/* Desktop sidebar */}
+            {hasFacets && (
+              <div className="hidden md:block w-52 shrink-0">
+                <div className="sticky top-6">{sidebar}</div>
+              </div>
+            )}
+
+            {/* Results */}
+            <div className="flex-1 min-w-0">
+              {isLoading ? (
+                <div className="flex items-center justify-center py-24">
+                  <Spinner />
+                </div>
+              ) : pageProducts.length === 0 ? (
+                <div className="py-24 text-center">
+                  <h3 className="font-serif text-2xl mb-3">No products found</h3>
+                  <p className="text-muted-foreground mb-4">
+                    {activeFilterCount > 0
+                      ? "Try adjusting or clearing your filters."
+                      : "Check back soon as we add new collections."}
+                  </p>
+                  {activeFilterCount > 0 && (
+                    <Button variant="outline" onClick={clearAll}>
+                      Clear filters
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+                  {pageProducts.map((p) => {
+                    const varies = p.priceVaries && p.showPriceOnline;
+                    const displayPrice = varies ? p.startingPrice : p.price;
+                    const displaySale = varies ? p.startingSalePrice : p.salePrice;
+                    const onSale =
+                      displaySale &&
+                      displayPrice &&
+                      Number(displaySale) < Number(displayPrice);
+                    const cardBrandLogo = getBrandLogo(p.manufacturerName);
+                    return (
+                      <Link key={p.id} href={`/shop/${p.slug}`} className="group block border-2 border-primary bg-card hover:shadow-md transition-shadow duration-150">
+                        <div className="relative aspect-square bg-card overflow-hidden">
+                          {p.primaryImageUrl ? (
+                            <img
+                              src={p.primaryImageUrl}
+                              alt={p.name}
+                              className="absolute inset-0 w-full h-full object-contain p-6 mix-blend-multiply"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground font-serif text-sm">
+                              No image available
+                            </div>
+                          )}
+                          {cardBrandLogo && (
+                            <div
+                              className="absolute top-3 left-3 bg-white/95 px-2 py-1 rounded-sm shadow-sm"
+                              aria-hidden="true"
+                            >
+                              <img src={cardBrandLogo} alt="" className="h-5 w-auto object-contain" />
+                            </div>
+                          )}
+                          {onSale ? (
+                            <div className="absolute top-3 right-3 bg-primary text-primary-foreground px-3 py-1 text-xs uppercase tracking-widest font-semibold">
+                              Sale
+                            </div>
+                          ) : p.quoteOnly ? (
+                            <div className="absolute top-3 right-3 bg-foreground text-background px-3 py-1 text-xs uppercase tracking-widest font-semibold">
+                              Call for Pricing
+                            </div>
+                          ) : null}
+                          <div className="absolute bottom-3 right-3 z-10">
+                            <WishlistButton productId={p.id} />
+                          </div>
+                          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent pt-10 pb-3 px-4">
+                            <h3 className="font-serif text-base md:text-lg text-white drop-shadow line-clamp-2 pr-12">
+                              {p.name}
+                            </h3>
+                          </div>
+                        </div>
+                        {p.showPriceOnline && displayPrice ? (
+                          <div className="border-t border-primary/30 px-4 py-3 text-center">
+                            <p className="text-sm">
+                              {varies && (
+                                <span className="block text-xs uppercase tracking-widest text-muted-foreground">
+                                  Starting at
+                                </span>
+                              )}
+                              {onSale ? (
+                                <>
+                                  <span className="text-muted-foreground line-through mr-2">
+                                    {formatMoney(displayPrice)}
+                                  </span>
+                                  <span className="text-primary font-semibold">
+                                    {formatMoney(displaySale)}
+                                  </span>
+                                </>
+                              ) : (
+                                <span>{formatMoney(displayPrice)}</span>
+                              )}
+                            </p>
+                          </div>
+                        ) : null}
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+
+              {totalPages > 1 && (
+                <nav className="mt-12 flex items-center justify-center gap-2">
+                  <button
+                    disabled={safePage <= 1}
+                    onClick={() => updateSearch({ page: String(safePage - 1) })}
+                    className="px-3 py-1.5 text-sm border border-input rounded-sm disabled:opacity-40"
+                  >
+                    Prev
+                  </button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+                    <button
+                      key={n}
+                      onClick={() => updateSearch({ page: String(n) })}
+                      className={`px-3 py-1.5 text-sm border rounded-sm ${
+                        n === safePage
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "border-input hover:bg-muted"
+                      }`}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                  <button
+                    disabled={safePage >= totalPages}
+                    onClick={() => updateSearch({ page: String(safePage + 1) })}
+                    className="px-3 py-1.5 text-sm border border-input rounded-sm disabled:opacity-40"
+                  >
+                    Next
+                  </button>
+                </nav>
+              )}
+            </div>
+          </div>
+        </>
       )}
     </div>
   );

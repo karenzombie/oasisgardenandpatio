@@ -1,18 +1,18 @@
 import { Link, useLocation, useSearch, useRoute } from "wouter";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { SlidersHorizontal, X } from "lucide-react";
 import {
   useListCatalogProducts,
   useListCategories,
   useListCatalogFinishes,
   useListManufacturers,
+  useListMaterials,
 } from "@workspace/api-client-react";
 import type { ListCatalogProductsParams } from "@workspace/api-client-react";
 import { getBrandLogo } from "@/lib/brandLogos";
-import { getCategoryImage } from "@/lib/categoryImages";
 import { WishlistButton } from "@/components/WishlistButton";
 import { Button } from "@/components/ui/button";
-import shopOnlineImg from "@/assets/category-available-online.jpg";
+import { CheckboxGroup, type FilterOption } from "@/components/FilterCheckboxGroup";
 
 const SORTS = [
   { value: "featured", label: "Featured" },
@@ -33,11 +33,18 @@ export default function Shop() {
   const [, setLocation] = useLocation();
   const search = useSearch();
   const [, params] = useRoute<{ slug: string }>("/shop/category/:slug");
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   const q = useMemo(() => new URLSearchParams(search), [search]);
 
   const isOnlineOnly = q.get("online") === "true";
+  const isCategoryFixed = !!params?.slug;
+
+  const activeCategory = params?.slug ?? q.get("category") ?? "";
+  const activeManufacturer = q.get("manufacturer") ?? "";
+  const activeMaterial = q.get("material") ?? "";
+  const activeFinish = q.get("finish") ?? "";
+  const activeName = q.get("q") ?? "";
 
   const queryParams = useMemo(() => {
     const out: ListCatalogProductsParams = {
@@ -45,25 +52,28 @@ export default function Shop() {
       pageSize: 12,
       sort: (q.get("sort") as ListCatalogProductsParams["sort"]) ?? "featured",
     };
-    const name = q.get("q");
-    if (name) out.q = name;
-    const manufacturer = q.get("manufacturer");
-    if (manufacturer) out.manufacturerSlug = manufacturer;
-    const material = q.get("material");
-    if (material) out.materialSlug = material;
-    const finish = q.get("finish");
-    if (finish) out.finish = finish;
-    const categoryParam = q.get("category");
-    if (params?.slug) out.categorySlug = params.slug;
-    else if (categoryParam) out.categorySlug = categoryParam;
+    if (activeName) out.q = activeName;
+    if (activeManufacturer) out.manufacturerSlug = activeManufacturer;
+    if (activeMaterial) out.materialSlug = activeMaterial;
+    if (activeFinish) out.finish = activeFinish;
+    if (activeCategory) out.categorySlug = activeCategory;
     if (isOnlineOnly) out.onlineOnly = true;
     return out;
-  }, [search, params?.slug, isOnlineOnly]);
+  }, [
+    search,
+    activeCategory,
+    activeManufacturer,
+    activeMaterial,
+    activeFinish,
+    activeName,
+    isOnlineOnly,
+  ]);
 
   const { data, isLoading } = useListCatalogProducts(queryParams);
   const { data: categories } = useListCategories(isOnlineOnly ? { onlineOnly: true } : undefined);
   const { data: finishes } = useListCatalogFinishes();
   const { data: manufacturers } = useListManufacturers(isOnlineOnly ? { onlineOnly: true } : undefined);
+  const { data: materials } = useListMaterials();
 
   const total = data?.total ?? 0;
   const pageSize = queryParams.pageSize ?? 12;
@@ -83,41 +93,46 @@ export default function Shop() {
     setLocation(qs ? `${base}?${qs}` : base);
   }
 
-  const activeCategory = params?.slug ?? q.get("category") ?? "";
-  const activeManufacturer = q.get("manufacturer") ?? "";
-  const activeFinish = q.get("finish") ?? "";
-  const activeName = q.get("q") ?? "";
+  // Category lives in the route path; selecting a category navigates there while
+  // preserving the other active filters. Unchecking returns to the full Shop.
+  function setCategory(v: string) {
+    const next = new URLSearchParams(search);
+    next.delete("category");
+    next.delete("page");
+    const qs = next.toString();
+    const base = v ? `/shop/category/${v}` : "/shop";
+    setLocation(qs ? `${base}?${qs}` : base);
+  }
+
+  const base = params?.slug ? `/shop/category/${params.slug}` : "/shop";
+  function clearAll() {
+    setLocation(base);
+  }
+
   const activeFilterCount =
+    (isOnlineOnly ? 1 : 0) +
+    (!isCategoryFixed && activeCategory ? 1 : 0) +
     (activeManufacturer ? 1 : 0) +
+    (activeMaterial ? 1 : 0) +
     (activeFinish ? 1 : 0) +
     (activeName ? 1 : 0);
 
-  function clearAll() {
-    const base = params?.slug ? `/shop/category/${params.slug}` : "/shop";
-    setLocation(isOnlineOnly ? `${base}?online=true` : base);
-  }
-
-  const productsRef = useRef<HTMLDivElement>(null);
-  const scrollToProducts = () =>
-    setTimeout(
-      () => productsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
-      0,
-    );
-
-  function handleCategoryClick(slug: string) {
-    if (params?.slug) {
-      // Category lives in the route path; preserve all other query state.
-      const next = new URLSearchParams(search);
-      next.delete("category");
-      next.set("page", "1");
-      const qs = next.toString();
-      const base = params.slug === slug ? "/shop" : `/shop/category/${slug}`;
-      setLocation(qs ? `${base}?${qs}` : base);
-    } else {
-      updateSearch({ category: activeCategory === slug ? null : slug, page: "1" });
-    }
-    scrollToProducts();
-  }
+  const categoryOptions = useMemo<FilterOption[]>(
+    () => (categories ?? []).map((c) => ({ value: c.slug, label: c.name })),
+    [categories],
+  );
+  const manufacturerOptions = useMemo<FilterOption[]>(
+    () => (manufacturers ?? []).map((m) => ({ value: m.slug, label: m.name })),
+    [manufacturers],
+  );
+  const materialOptions = useMemo<FilterOption[]>(
+    () => (materials ?? []).map((m) => ({ value: m.slug, label: m.name })),
+    [materials],
+  );
+  const finishOptions = useMemo<FilterOption[]>(
+    () => (finishes ?? []).map((f) => ({ value: f, label: f })),
+    [finishes],
+  );
 
   const heading = isOnlineOnly && !params?.slug
     ? "Shop Online"
@@ -125,8 +140,80 @@ export default function Shop() {
       ? (data?.products[0]?.categoryName ?? params.slug.replace(/-/g, " "))
       : "Shop";
 
-  const selectClass =
-    "w-full border border-input bg-background rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary";
+  const sidebar = (
+    <aside className="space-y-0">
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="text-xs uppercase tracking-widest font-semibold text-foreground">
+          Filter
+        </h2>
+        {activeFilterCount > 0 && (
+          <button
+            type="button"
+            onClick={clearAll}
+            className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+          >
+            <X className="size-3" /> Clear all
+          </button>
+        )}
+      </div>
+
+      {/* Name / SKU search */}
+      <div className="border-b border-border py-4">
+        <label className="text-xs uppercase tracking-widest font-semibold text-foreground block mb-3">
+          Name / SKU
+        </label>
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Search by name or SKU…"
+            value={activeName}
+            onChange={(e) => updateSearch({ q: e.target.value || null, page: "1" })}
+            className="w-full border border-input bg-background rounded-sm pl-3 pr-8 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+          {activeName && (
+            <button
+              type="button"
+              onClick={() => updateSearch({ q: null, page: "1" })}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="size-3.5" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      <CheckboxGroup
+        label="Availability"
+        options={[{ value: "online", label: "Available online" }]}
+        selected={isOnlineOnly ? "online" : ""}
+        onChange={(v) => updateSearch({ online: v ? "true" : null, page: "1" })}
+      />
+      <CheckboxGroup
+        label="Category"
+        options={categoryOptions}
+        selected={activeCategory}
+        onChange={setCategory}
+      />
+      <CheckboxGroup
+        label="Brand"
+        options={manufacturerOptions}
+        selected={activeManufacturer}
+        onChange={(v) => updateSearch({ manufacturer: v || null, page: "1" })}
+      />
+      <CheckboxGroup
+        label="Material"
+        options={materialOptions}
+        selected={activeMaterial}
+        onChange={(v) => updateSearch({ material: v || null, page: "1" })}
+      />
+      <CheckboxGroup
+        label="Frame Finish"
+        options={finishOptions}
+        selected={activeFinish}
+        onChange={(v) => updateSearch({ finish: v || null, page: "1" })}
+      />
+    </aside>
+  );
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-7xl">
@@ -154,104 +241,17 @@ export default function Shop() {
         )}
       </div>
 
-      {/* Category tiles — hidden on focused category landing pages so the
-          customer lands directly on that category's products (e.g. arriving
-          from the homepage "order online & ship direct" links). */}
-      {!params?.slug && ((categories && categories.length > 0) || isOnlineOnly) && (
-        <div className="mb-10">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-serif text-2xl">Shop by Type</h2>
-            {activeCategory && (
-              <button
-                onClick={() => handleCategoryClick(activeCategory)}
-                className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
-              >
-                <X className="h-3 w-3" /> Clear type
-              </button>
-            )}
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
-            {!isOnlineOnly && (
-              <button
-                onClick={() => { updateSearch({ online: "true", page: "1" }); scrollToProducts(); }}
-                className="group block cursor-pointer border-2 border-primary bg-card overflow-hidden hover:shadow-md transition-shadow duration-150"
-              >
-                <div className="relative aspect-square overflow-hidden bg-muted">
-                  <img
-                    src={shopOnlineImg}
-                    alt="Available Online"
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 transition-colors duration-500 bg-black/10 group-hover:bg-transparent" />
-                </div>
-                <h3 className="font-serif text-base leading-snug text-center py-3 px-2 border-t border-primary/30 transition-colors group-hover:text-primary">
-                  Available Online
-                </h3>
-              </button>
-            )}
-            {categories?.map((c) => {
-              const img = getCategoryImage(c);
-              const isActive = activeCategory === c.slug;
-              return (
-                <button
-                  key={c.slug}
-                  onClick={() => handleCategoryClick(c.slug)}
-                  className="group block cursor-pointer border-2 border-primary bg-card overflow-hidden hover:shadow-md transition-shadow duration-150"
-                  aria-pressed={isActive}
-                >
-                  <div className="relative aspect-square overflow-hidden bg-muted">
-                    {img ? (
-                      <>
-                        <img
-                          src={img}
-                          alt={c.name}
-                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                          loading="lazy"
-                        />
-                        <div
-                          className={`absolute inset-0 transition-colors duration-500 ${
-                            isActive
-                              ? "bg-primary/25"
-                              : "bg-black/10 group-hover:bg-transparent"
-                          }`}
-                        />
-                      </>
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-secondary/40 text-secondary-foreground/60 font-serif text-sm tracking-widest uppercase">
-                        {c.name}
-                      </div>
-                    )}
-                  </div>
-                  <h3
-                    className={`font-serif text-base leading-snug capitalize text-center py-3 px-2 border-t border-primary/30 transition-colors ${
-                      isActive ? "text-primary" : "group-hover:text-primary"
-                    }`}
-                  >
-                    {c.name}
-                  </h3>
-                </button>
-              );
-            })}
-          </div>
-          <div className="mt-12 mb-12 h-1 bg-primary" />
-        </div>
-      )}
-
-      {/* Sticky filter / sort toolbar — stays in view while scrolling products */}
-      <div
-        ref={productsRef}
-        className="sticky z-30 -mx-4 px-4 bg-sand/50 backdrop-blur-sm border-b border-border mb-8"
-        style={{ top: "var(--nav-height, 0px)" }}
-      >
-        <div className="flex items-center gap-4 text-sm flex-wrap justify-end py-3">
+      {/* Toolbar: mobile filter toggle + sort + count */}
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+        <div className="flex items-center gap-3">
           <Button
             variant="outline"
             size="sm"
-            className="flex items-center gap-2"
-            onClick={() => setFiltersOpen((v) => !v)}
+            className="flex items-center gap-2 md:hidden"
+            onClick={() => setMobileFiltersOpen((v) => !v)}
+            type="button"
           >
-            <SlidersHorizontal className="h-4 w-4" />
+            <SlidersHorizontal className="size-4" />
             Filters
             {activeFilterCount > 0 && (
               <span className="ml-0.5 bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
@@ -259,286 +259,240 @@ export default function Shop() {
               </span>
             )}
           </Button>
-          <label className="flex items-center gap-2 text-muted-foreground">
-            Sort
-            <select
-              value={queryParams.sort}
-              onChange={(e) => updateSearch({ sort: e.target.value, page: "1" })}
-              className="border border-input bg-background rounded-sm px-3 py-1.5 text-sm"
-            >
-              {SORTS.map((s) => (
-                <option key={s.value} value={s.value}>{s.label}</option>
-              ))}
-            </select>
-          </label>
-          <span className="text-muted-foreground">
-            {total === 0
-              ? "No results"
-              : `Showing ${startIdx}–${endIdx} of ${total}`}
+          <span className="text-sm text-muted-foreground">
+            {isLoading
+              ? "Loading…"
+              : total === 0
+                ? "No results"
+                : `${startIdx}–${endIdx} of ${total} product${total !== 1 ? "s" : ""}`}
           </span>
         </div>
-        {filtersOpen && (
-          <div className="mb-4 border border-border rounded-sm bg-card p-5">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="font-medium text-sm uppercase tracking-widest">Filter products</h2>
-            {activeFilterCount > 0 && (
-              <button
-                onClick={clearAll}
-                className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
-              >
-                <X className="h-3 w-3" /> Clear all
-              </button>
-            )}
-          </div>
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {/* Name search */}
-            <div className="space-y-1.5">
-              <label className="text-xs uppercase tracking-widest text-muted-foreground block">
-                Name / SKU
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search by name or SKU…"
-                  value={activeName}
-                  onChange={(e) =>
-                    updateSearch({ q: e.target.value || null, page: "1" })
-                  }
-                  className={selectClass}
-                />
-                {activeName && (
-                  <button
-                    onClick={() => updateSearch({ q: null, page: "1" })}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                )}
-              </div>
-            </div>
 
-            {/* Manufacturer */}
-            <div className="space-y-1.5">
-              <label className="text-xs uppercase tracking-widest text-muted-foreground block">
-                Brand
-              </label>
-              <select
-                value={activeManufacturer}
-                onChange={(e) =>
-                  updateSearch({ manufacturer: e.target.value || null, page: "1" })
-                }
-                className={selectClass}
-              >
-                <option value="">All brands</option>
-                {manufacturers?.map((m) => (
-                  <option key={m.id} value={m.slug}>
-                    {m.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Finish */}
-            {finishes && finishes.length > 0 && (
-              <div className="space-y-1.5">
-                <label className="text-xs uppercase tracking-widest text-muted-foreground block">
-                  Frame finish
-                </label>
-                <select
-                  value={activeFinish}
-                  onChange={(e) =>
-                    updateSearch({ finish: e.target.value || null, page: "1" })
-                  }
-                  className={selectClass}
-                >
-                  <option value="">All finishes</option>
-                  {finishes.map((f) => (
-                    <option key={f} value={f}>
-                      {f}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-          </div>
-
-          {/* Active filter chips */}
-          {activeFilterCount > 0 && (
-            <div className="flex flex-wrap gap-2 mt-5 pt-4 border-t border-border">
-              {activeName && (
-                <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
-                  Name: "{activeName}"
-                  <button onClick={() => updateSearch({ q: null, page: "1" })}>
-                    <X className="h-3 w-3" />
-                  </button>
-                </span>
-              )}
-              {activeManufacturer && (
-                <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
-                  Brand:{" "}
-                  {manufacturers?.find((m) => m.slug === activeManufacturer)?.name ??
-                    activeManufacturer}
-                  <button
-                    onClick={() => updateSearch({ manufacturer: null, page: "1" })}
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </span>
-              )}
-              {activeFinish && (
-                <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
-                  Finish: {activeFinish}
-                  <button
-                    onClick={() => updateSearch({ finish: null, page: "1" })}
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </span>
-              )}
-            </div>
-          )}
-        </div>
-        )}
+        <label className="flex items-center gap-2 text-sm text-muted-foreground">
+          Sort by
+          <select
+            value={queryParams.sort}
+            onChange={(e) => updateSearch({ sort: e.target.value, page: "1" })}
+            className="border border-input bg-background rounded-none px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+          >
+            {SORTS.map((s) => (
+              <option key={s.value} value={s.value}>{s.label}</option>
+            ))}
+          </select>
+        </label>
       </div>
 
-      {isLoading ? (
-        <div className="py-24 text-center text-muted-foreground">Loading…</div>
-      ) : !data || data.products.length === 0 ? (
-        <div className="py-24 text-center">
-          <h3 className="font-serif text-2xl mb-3">No products found</h3>
-          <p className="text-muted-foreground mb-4">
-            {activeFilterCount > 0
-              ? "Try adjusting or clearing your filters."
-              : "Check back soon as we add new collections."}
-          </p>
-          {activeFilterCount > 0 && (
-            <Button variant="outline" onClick={clearAll}>
-              Clear filters
-            </Button>
+      {/* Active filter chips */}
+      {activeFilterCount > 0 && (
+        <div className="flex flex-wrap gap-2 mb-6">
+          {isOnlineOnly && (
+            <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
+              Available online
+              <button type="button" onClick={() => updateSearch({ online: null, page: "1" })}>
+                <X className="size-3" />
+              </button>
+            </span>
           )}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {data.products.map((p) => {
-            const varies = p.priceVaries && p.showPriceOnline;
-            const displayPrice = varies ? p.startingPrice : p.price;
-            const displaySale = varies ? p.startingSalePrice : p.salePrice;
-            const onSale =
-              displaySale &&
-              displayPrice &&
-              Number(displaySale) < Number(displayPrice);
-            const brandLogo = getBrandLogo(p.manufacturerName);
-            return (
-              <Link key={p.id} href={`/shop/${p.slug}`} className="group block border-2 border-primary bg-card hover:shadow-md transition-shadow duration-150">
-                <div className="relative aspect-square bg-card overflow-hidden">
-                  {p.primaryImageUrl ? (
-                    <img
-                      src={p.primaryImageUrl}
-                      alt={p.name}
-                      className="absolute inset-0 w-full h-full object-contain p-6 mix-blend-multiply"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground font-serif">
-                      No image available
-                    </div>
-                  )}
-                  {onSale ? (
-                    <div className="absolute top-3 right-3 bg-primary text-primary-foreground px-3 py-1 text-xs uppercase tracking-widest font-semibold">
-                      Sale
-                    </div>
-                  ) : p.quoteOnly ? (
-                    <div className="absolute top-3 right-3 bg-foreground text-background px-3 py-1 text-xs uppercase tracking-widest font-semibold">
-                      Call for Pricing
-                    </div>
-                  ) : null}
-                  <div className="absolute bottom-3 right-3 z-10">
-                    <WishlistButton productId={p.id} />
-                  </div>
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent pt-10 pb-3 px-4">
-                    <h3 className="font-serif text-base md:text-lg text-white drop-shadow line-clamp-2 pr-12">
-                      {p.name}
-                    </h3>
-                  </div>
-                </div>
-                <div className="border-t border-primary/30 px-4 py-4 space-y-2 text-center">
-                  {brandLogo ? (
-                    <div className="flex justify-center">
-                      <img
-                        src={brandLogo}
-                        alt={p.manufacturerName ?? ""}
-                        className="h-6 w-auto object-contain"
-                      />
-                    </div>
-                  ) : p.manufacturerName ? (
-                    <p className="text-xs uppercase tracking-widest text-muted-foreground">
-                      {p.manufacturerName}
-                    </p>
-                  ) : null}
-                  {p.showPriceOnline && displayPrice ? (
-                    onSale ? (
-                      <p className="text-sm font-bold">
-                        {varies && (
-                          <span className="block text-xs font-normal uppercase tracking-widest text-muted-foreground">
-                            Starting at
-                          </span>
-                        )}
-                        <span className="text-muted-foreground line-through mr-2">
-                          {varies ? formatMoney(displayPrice) : `MSRP ${formatMoney(displayPrice)}`}
-                        </span>
-                        <span className="text-primary">
-                          {varies ? formatMoney(displaySale) : `Sale ${formatMoney(displaySale)}`}
-                        </span>
-                      </p>
-                    ) : (
-                      <p className="text-sm font-bold">
-                        {varies && (
-                          <span className="block text-xs font-normal uppercase tracking-widest text-muted-foreground">
-                            Starting at
-                          </span>
-                        )}
-                        {varies ? formatMoney(displayPrice) : `MSRP ${formatMoney(displayPrice)}`}
-                      </p>
-                    )
-                  ) : null}
-                  <div className="pt-1">
-                    <span className="inline-block w-full border border-primary text-primary text-xs uppercase tracking-widest px-4 py-2.5 font-semibold group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-150">
-                      Select Options
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
+          {!isCategoryFixed && activeCategory && (
+            <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
+              {categoryOptions.find((c) => c.value === activeCategory)?.label ?? activeCategory}
+              <button type="button" onClick={() => setCategory("")}>
+                <X className="size-3" />
+              </button>
+            </span>
+          )}
+          {activeManufacturer && (
+            <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
+              {manufacturerOptions.find((m) => m.value === activeManufacturer)?.label ?? activeManufacturer}
+              <button type="button" onClick={() => updateSearch({ manufacturer: null, page: "1" })}>
+                <X className="size-3" />
+              </button>
+            </span>
+          )}
+          {activeMaterial && (
+            <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
+              {materialOptions.find((m) => m.value === activeMaterial)?.label ?? activeMaterial}
+              <button type="button" onClick={() => updateSearch({ material: null, page: "1" })}>
+                <X className="size-3" />
+              </button>
+            </span>
+          )}
+          {activeFinish && (
+            <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
+              Finish: {activeFinish}
+              <button type="button" onClick={() => updateSearch({ finish: null, page: "1" })}>
+                <X className="size-3" />
+              </button>
+            </span>
+          )}
+          {activeName && (
+            <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
+              Name: "{activeName}"
+              <button type="button" onClick={() => updateSearch({ q: null, page: "1" })}>
+                <X className="size-3" />
+              </button>
+            </span>
+          )}
         </div>
       )}
 
-      {totalPages > 1 ? (
-        <nav className="mt-12 flex items-center justify-center gap-2">
-          <button
-            disabled={page <= 1}
-            onClick={() => updateSearch({ page: String(page - 1) })}
-            className="px-3 py-1.5 text-sm border border-input rounded-sm disabled:opacity-40"
-          >
-            Prev
-          </button>
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-            <button
-              key={n}
-              onClick={() => updateSearch({ page: String(n) })}
-              className={`px-3 py-1.5 text-sm border rounded-sm ${n === page ? "bg-primary text-primary-foreground border-primary" : "border-input hover:bg-muted"}`}
-            >
-              {n}
-            </button>
-          ))}
-          <button
-            disabled={page >= totalPages}
-            onClick={() => updateSearch({ page: String(page + 1) })}
-            className="px-3 py-1.5 text-sm border border-input rounded-sm disabled:opacity-40"
-          >
-            Next
-          </button>
-        </nav>
-      ) : null}
+      {/* Mobile filter panel */}
+      {mobileFiltersOpen && (
+        <div className="md:hidden mb-6 border border-border bg-card p-5">
+          {sidebar}
+        </div>
+      )}
+
+      <div className="flex gap-8">
+        {/* Desktop sidebar */}
+        <div className="hidden md:block w-52 shrink-0">
+          <div className="sticky top-6">
+            {sidebar}
+          </div>
+        </div>
+
+        {/* Results */}
+        <div className="flex-1 min-w-0">
+          {isLoading ? (
+            <div className="py-24 text-center text-muted-foreground">Loading…</div>
+          ) : !data || data.products.length === 0 ? (
+            <div className="py-24 text-center">
+              <h3 className="font-serif text-2xl mb-3">No products found</h3>
+              <p className="text-muted-foreground mb-4">
+                {activeFilterCount > 0
+                  ? "Try adjusting or clearing your filters."
+                  : "Check back soon as we add new collections."}
+              </p>
+              {activeFilterCount > 0 && (
+                <Button variant="outline" onClick={clearAll}>
+                  Clear filters
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              {data.products.map((p) => {
+                const varies = p.priceVaries && p.showPriceOnline;
+                const displayPrice = varies ? p.startingPrice : p.price;
+                const displaySale = varies ? p.startingSalePrice : p.salePrice;
+                const onSale =
+                  displaySale &&
+                  displayPrice &&
+                  Number(displaySale) < Number(displayPrice);
+                const brandLogo = getBrandLogo(p.manufacturerName);
+                return (
+                  <Link key={p.id} href={`/shop/${p.slug}`} className="group block border-2 border-primary bg-card hover:shadow-md transition-shadow duration-150">
+                    <div className="relative aspect-square bg-card overflow-hidden">
+                      {p.primaryImageUrl ? (
+                        <img
+                          src={p.primaryImageUrl}
+                          alt={p.name}
+                          className="absolute inset-0 w-full h-full object-contain p-6 mix-blend-multiply"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground font-serif">
+                          No image available
+                        </div>
+                      )}
+                      {onSale ? (
+                        <div className="absolute top-3 right-3 bg-primary text-primary-foreground px-3 py-1 text-xs uppercase tracking-widest font-semibold">
+                          Sale
+                        </div>
+                      ) : p.quoteOnly ? (
+                        <div className="absolute top-3 right-3 bg-foreground text-background px-3 py-1 text-xs uppercase tracking-widest font-semibold">
+                          Call for Pricing
+                        </div>
+                      ) : null}
+                      <div className="absolute bottom-3 right-3 z-10">
+                        <WishlistButton productId={p.id} />
+                      </div>
+                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent pt-10 pb-3 px-4">
+                        <h3 className="font-serif text-base md:text-lg text-white drop-shadow line-clamp-2 pr-12">
+                          {p.name}
+                        </h3>
+                      </div>
+                    </div>
+                    <div className="border-t border-primary/30 px-4 py-4 space-y-2 text-center">
+                      {brandLogo ? (
+                        <div className="flex justify-center">
+                          <img
+                            src={brandLogo}
+                            alt={p.manufacturerName ?? ""}
+                            className="h-6 w-auto object-contain"
+                          />
+                        </div>
+                      ) : p.manufacturerName ? (
+                        <p className="text-xs uppercase tracking-widest text-muted-foreground">
+                          {p.manufacturerName}
+                        </p>
+                      ) : null}
+                      {p.showPriceOnline && displayPrice ? (
+                        onSale ? (
+                          <p className="text-sm font-bold">
+                            {varies && (
+                              <span className="block text-xs font-normal uppercase tracking-widest text-muted-foreground">
+                                Starting at
+                              </span>
+                            )}
+                            <span className="text-muted-foreground line-through mr-2">
+                              {varies ? formatMoney(displayPrice) : `MSRP ${formatMoney(displayPrice)}`}
+                            </span>
+                            <span className="text-primary">
+                              {varies ? formatMoney(displaySale) : `Sale ${formatMoney(displaySale)}`}
+                            </span>
+                          </p>
+                        ) : (
+                          <p className="text-sm font-bold">
+                            {varies && (
+                              <span className="block text-xs font-normal uppercase tracking-widest text-muted-foreground">
+                                Starting at
+                              </span>
+                            )}
+                            {varies ? formatMoney(displayPrice) : `MSRP ${formatMoney(displayPrice)}`}
+                          </p>
+                        )
+                      ) : null}
+                      <div className="pt-1">
+                        <span className="inline-block w-full border border-primary text-primary text-xs uppercase tracking-widest px-4 py-2.5 font-semibold group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-150">
+                          Select Options
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+
+          {totalPages > 1 ? (
+            <nav className="mt-12 flex items-center justify-center gap-2">
+              <button
+                disabled={page <= 1}
+                onClick={() => updateSearch({ page: String(page - 1) })}
+                className="px-3 py-1.5 text-sm border border-input rounded-sm disabled:opacity-40"
+              >
+                Prev
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+                <button
+                  key={n}
+                  onClick={() => updateSearch({ page: String(n) })}
+                  className={`px-3 py-1.5 text-sm border rounded-sm ${n === page ? "bg-primary text-primary-foreground border-primary" : "border-input hover:bg-muted"}`}
+                >
+                  {n}
+                </button>
+              ))}
+              <button
+                disabled={page >= totalPages}
+                onClick={() => updateSearch({ page: String(page + 1) })}
+                className="px-3 py-1.5 text-sm border border-input rounded-sm disabled:opacity-40"
+              >
+                Next
+              </button>
+            </nav>
+          ) : null}
+        </div>
+      </div>
     </div>
   );
 }
