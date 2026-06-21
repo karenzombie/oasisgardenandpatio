@@ -98,7 +98,7 @@ export default function Home() {
         {/* Left: order online & ship direct panel — full-height column flush to the left edge */}
         <aside className="w-full md:w-[300px] md:shrink-0 md:order-1 bg-primary/[0.06] text-foreground border-r border-border border-t-[3px] border-t-primary flex flex-col">
           <div className="flex flex-col items-center px-5 py-2.5 border-b border-border text-center">
-            <h2 className="font-serif font-bold text-xl leading-tight">
+            <h2 className="font-bodoni italic text-xl leading-tight">
               Order online &amp; ship direct
             </h2>
           </div>
