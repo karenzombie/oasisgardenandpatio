@@ -188,6 +188,12 @@ export const ListCatalogProductsQueryParams = zod.object({
     .describe(
       'Filter by frame finish (case-insensitive variant name, e.g. \"Black\")',
     ),
+  collection: zod.coerce
+    .string()
+    .optional()
+    .describe(
+      "Filter by product collection name (exact match). Typically used together with manufacturerSlug.",
+    ),
   onlineOnly: zod.coerce
     .boolean()
     .optional()
@@ -247,6 +253,23 @@ export const ListCatalogProductsResponse = zod.object({
   page: zod.number(),
   pageSize: zod.number(),
 });
+
+/**
+ * @summary Distinct product collection names, optionally scoped to a manufacturer
+ */
+export const ListCatalogCollectionsQueryParams = zod.object({
+  manufacturerSlug: zod.coerce
+    .string()
+    .optional()
+    .describe(
+      "Limit collections to a single manufacturer (recommended; the global set is very large)",
+    ),
+});
+
+export const ListCatalogCollectionsResponseItem = zod.string();
+export const ListCatalogCollectionsResponse = zod.array(
+  ListCatalogCollectionsResponseItem,
+);
 
 /**
  * @summary Distinct frame finish values across all active products

@@ -211,6 +211,12 @@ paths:
           description: Filter by frame finish (case-insensitive variant name, e.g. "Black")
           schema:
             type: string
+        - name: collection
+          in: query
+          required: false
+          description: Filter by product collection name (exact match). Typically used together with manufacturerSlug.
+          schema:
+            type: string
         - name: onlineOnly
           in: query
           required: false
@@ -246,6 +252,27 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CatalogProductsPage"
+  /catalog/collections:
+    get:
+      operationId: listCatalogCollections
+      tags: [products]
+      summary: Distinct product collection names, optionally scoped to a manufacturer
+      parameters:
+        - name: manufacturerSlug
+          in: query
+          required: false
+          description: Limit collections to a single manufacturer (recommended; the global set is very large)
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of collection names
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
   /catalog/finishes:
     get:
       operationId: listCatalogFinishes

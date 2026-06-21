@@ -17,6 +17,10 @@ export type ListCatalogProductsParams = {
    */
   finish?: string;
   /**
+   * Filter by product collection name (exact match). Typically used together with manufacturerSlug.
+   */
+  collection?: string;
+  /**
    * When true, exclude quote-only products (show only items purchasable online)
    */
   onlineOnly?: boolean;

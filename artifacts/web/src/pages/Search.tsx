@@ -1,7 +1,8 @@
-import { useMemo, useState, useRef, type FormEvent, type ChangeEvent } from "react";
+import { useMemo, useState, useRef, useEffect, type FormEvent, type ChangeEvent } from "react";
 import { Link, useLocation, useSearch } from "wouter";
 import { SlidersHorizontal, X, Search as SearchIcon } from "lucide-react";
 import { CheckboxGroup } from "@/components/FilterCheckboxGroup";
+import { BrowsePagination } from "@/components/BrowsePagination";
 import {
   useListCatalogProducts,
   useListCatalogFabrics,
@@ -51,7 +52,7 @@ export default function SearchPage() {
   const activeMaterial = q.get("material") ?? "";
   const activeFinish = q.get("finish") ?? "";
   const activeSort = (q.get("sort") ?? "featured") as ListCatalogProductsParams["sort"];
-  const activePage = Number(q.get("page") ?? "1") || 1;
+  const activePage = Math.max(1, Number(q.get("page") ?? "1") || 1);
 
   const activeFilterCount =
     (activeCategory ? 1 : 0) +
@@ -123,8 +124,18 @@ export default function SearchPage() {
 
   const total = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const startIdx = total === 0 ? 0 : (activePage - 1) * PAGE_SIZE + 1;
-  const endIdx = Math.min(total, activePage * PAGE_SIZE);
+  const safePage = Math.min(activePage, totalPages);
+  const startIdx = total === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1;
+  const endIdx = Math.min(total, safePage * PAGE_SIZE);
+
+  // If the URL requests a page beyond the result set, normalize it back to the
+  // last valid page so the query refetches the correct slice.
+  useEffect(() => {
+    if (total > 0 && activePage > totalPages) {
+      updateSearch({ page: String(totalPages) });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [total, totalPages, activePage]);
 
   const categoryOptions = useMemo(
     () => (categories ?? []).map((c) => ({ value: c.slug, label: c.name })),
@@ -483,47 +494,11 @@ export default function SearchPage() {
           )}
 
           {/* Pagination */}
-          {totalPages > 1 && (
-            <nav className="mt-10 flex items-center justify-center gap-2">
-              <button
-                disabled={activePage <= 1}
-                onClick={() => updateSearch({ page: String(activePage - 1) })}
-                className="px-3 py-1.5 text-sm border border-input rounded-sm disabled:opacity-40 hover:bg-muted transition-colors"
-              >
-                Prev
-              </button>
-              {Array.from({ length: Math.min(totalPages, 9) }, (_, i) => {
-                const n =
-                  totalPages <= 9
-                    ? i + 1
-                    : activePage <= 5
-                      ? i + 1
-                      : activePage >= totalPages - 4
-                        ? totalPages - 8 + i
-                        : activePage - 4 + i;
-                return (
-                  <button
-                    key={n}
-                    onClick={() => updateSearch({ page: String(n) })}
-                    className={`px-3 py-1.5 text-sm border rounded-sm transition-colors ${
-                      n === activePage
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "border-input hover:bg-muted"
-                    }`}
-                  >
-                    {n}
-                  </button>
-                );
-              })}
-              <button
-                disabled={activePage >= totalPages}
-                onClick={() => updateSearch({ page: String(activePage + 1) })}
-                className="px-3 py-1.5 text-sm border border-input rounded-sm disabled:opacity-40 hover:bg-muted transition-colors"
-              >
-                Next
-              </button>
-            </nav>
-          )}
+          <BrowsePagination
+            page={safePage}
+            totalPages={totalPages}
+            onPageChange={(n) => updateSearch({ page: String(n) })}
+          />
         </div>
       </div>
     </div>

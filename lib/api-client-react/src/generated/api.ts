@@ -161,6 +161,7 @@ import type {
   ImportProductsRequest,
   InventoryLocation,
   LegalDocument,
+  ListCatalogCollectionsParams,
   ListCatalogFabricsParams,
   ListCatalogManufacturerFinishesParams,
   ListCatalogProductsParams,
@@ -1025,6 +1026,106 @@ export function useListCatalogProducts<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getListCatalogProductsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Distinct product collection names, optionally scoped to a manufacturer
+ */
+export const getListCatalogCollectionsUrl = (
+  params?: ListCatalogCollectionsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/catalog/collections?${stringifiedParams}`
+    : `/api/catalog/collections`;
+};
+
+export const listCatalogCollections = async (
+  params?: ListCatalogCollectionsParams,
+  options?: RequestInit,
+): Promise<string[]> => {
+  return customFetch<string[]>(getListCatalogCollectionsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListCatalogCollectionsQueryKey = (
+  params?: ListCatalogCollectionsParams,
+) => {
+  return [`/api/catalog/collections`, ...(params ? [params] : [])] as const;
+};
+
+export const getListCatalogCollectionsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listCatalogCollections>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListCatalogCollectionsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listCatalogCollections>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListCatalogCollectionsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listCatalogCollections>>
+  > = ({ signal }) =>
+    listCatalogCollections(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listCatalogCollections>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListCatalogCollectionsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listCatalogCollections>>
+>;
+export type ListCatalogCollectionsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Distinct product collection names, optionally scoped to a manufacturer
+ */
+
+export function useListCatalogCollections<
+  TData = Awaited<ReturnType<typeof listCatalogCollections>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListCatalogCollectionsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listCatalogCollections>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListCatalogCollectionsQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

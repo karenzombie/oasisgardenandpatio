@@ -1,10 +1,11 @@
 import { Link, useLocation, useSearch, useRoute } from "wouter";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { SlidersHorizontal, X } from "lucide-react";
 import {
   useListCatalogProducts,
   useListCategories,
   useListCatalogFinishes,
+  useListCatalogCollections,
   useListManufacturers,
   useListMaterials,
 } from "@workspace/api-client-react";
@@ -13,6 +14,7 @@ import { getBrandLogo } from "@/lib/brandLogos";
 import { WishlistButton } from "@/components/WishlistButton";
 import { Button } from "@/components/ui/button";
 import { CheckboxGroup, type FilterOption } from "@/components/FilterCheckboxGroup";
+import { BrowsePagination } from "@/components/BrowsePagination";
 
 const SORTS = [
   { value: "featured", label: "Featured" },
@@ -44,11 +46,12 @@ export default function Shop() {
   const activeManufacturer = q.get("manufacturer") ?? "";
   const activeMaterial = q.get("material") ?? "";
   const activeFinish = q.get("finish") ?? "";
+  const activeCollection = q.get("collection") ?? "";
   const activeName = q.get("q") ?? "";
 
   const queryParams = useMemo(() => {
     const out: ListCatalogProductsParams = {
-      page: Number(q.get("page") ?? "1") || 1,
+      page: Math.max(1, Number(q.get("page") ?? "1") || 1),
       pageSize: 12,
       sort: (q.get("sort") as ListCatalogProductsParams["sort"]) ?? "featured",
     };
@@ -56,6 +59,7 @@ export default function Shop() {
     if (activeManufacturer) out.manufacturerSlug = activeManufacturer;
     if (activeMaterial) out.materialSlug = activeMaterial;
     if (activeFinish) out.finish = activeFinish;
+    if (activeManufacturer && activeCollection) out.collection = activeCollection;
     if (activeCategory) out.categorySlug = activeCategory;
     if (isOnlineOnly) out.onlineOnly = true;
     return out;
@@ -65,6 +69,7 @@ export default function Shop() {
     activeManufacturer,
     activeMaterial,
     activeFinish,
+    activeCollection,
     activeName,
     isOnlineOnly,
   ]);
@@ -74,13 +79,33 @@ export default function Shop() {
   const { data: finishes } = useListCatalogFinishes();
   const { data: manufacturers } = useListManufacturers(isOnlineOnly ? { onlineOnly: true } : undefined);
   const { data: materials } = useListMaterials();
+  const { data: collections } = useListCatalogCollections(
+    activeManufacturer ? { manufacturerSlug: activeManufacturer } : undefined,
+    {
+      query: {
+        enabled: !!activeManufacturer,
+        queryKey: ["/api/catalog/collections", activeManufacturer] as const,
+      },
+    },
+  );
 
   const total = data?.total ?? 0;
   const pageSize = queryParams.pageSize ?? 12;
-  const page = queryParams.page ?? 1;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const requestedPage = queryParams.page ?? 1;
+  const page = Math.min(requestedPage, totalPages);
   const startIdx = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const endIdx = Math.min(total, page * pageSize);
+
+  // If the URL requests a page beyond the result set (e.g. stale link, manual
+  // edit), normalize it back to the last valid page so the query refetches the
+  // correct slice instead of showing an empty page.
+  useEffect(() => {
+    if (total > 0 && requestedPage > totalPages) {
+      updateSearch({ page: String(totalPages) });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [total, totalPages, requestedPage]);
 
   function updateSearch(patch: Record<string, string | null>) {
     const next = new URLSearchParams(search);
@@ -113,6 +138,7 @@ export default function Shop() {
     (isOnlineOnly ? 1 : 0) +
     (!isCategoryFixed && activeCategory ? 1 : 0) +
     (activeManufacturer ? 1 : 0) +
+    (activeManufacturer && activeCollection ? 1 : 0) +
     (activeMaterial ? 1 : 0) +
     (activeFinish ? 1 : 0) +
     (activeName ? 1 : 0);
@@ -128,6 +154,10 @@ export default function Shop() {
   const materialOptions = useMemo<FilterOption[]>(
     () => (materials ?? []).map((m) => ({ value: m.slug, label: m.name })),
     [materials],
+  );
+  const collectionOptions = useMemo<FilterOption[]>(
+    () => (collections ?? []).map((c) => ({ value: c, label: c })),
+    [collections],
   );
   const finishOptions = useMemo<FilterOption[]>(
     () => (finishes ?? []).map((f) => ({ value: f, label: f })),
@@ -198,8 +228,18 @@ export default function Shop() {
         label="Brand"
         options={manufacturerOptions}
         selected={activeManufacturer}
-        onChange={(v) => updateSearch({ manufacturer: v || null, page: "1" })}
+        onChange={(v) =>
+          updateSearch({ manufacturer: v || null, collection: null, page: "1" })
+        }
       />
+      {activeManufacturer && collectionOptions.length > 0 && (
+        <CheckboxGroup
+          label="Collection"
+          options={collectionOptions}
+          selected={activeCollection}
+          onChange={(v) => updateSearch({ collection: v || null, page: "1" })}
+        />
+      )}
       <CheckboxGroup
         label="Material"
         options={materialOptions}
@@ -304,7 +344,15 @@ export default function Shop() {
           {activeManufacturer && (
             <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
               {manufacturerOptions.find((m) => m.value === activeManufacturer)?.label ?? activeManufacturer}
-              <button type="button" onClick={() => updateSearch({ manufacturer: null, page: "1" })}>
+              <button type="button" onClick={() => updateSearch({ manufacturer: null, collection: null, page: "1" })}>
+                <X className="size-3" />
+              </button>
+            </span>
+          )}
+          {activeManufacturer && activeCollection && (
+            <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
+              {activeCollection}
+              <button type="button" onClick={() => updateSearch({ collection: null, page: "1" })}>
                 <X className="size-3" />
               </button>
             </span>
@@ -464,33 +512,11 @@ export default function Shop() {
             </div>
           )}
 
-          {totalPages > 1 ? (
-            <nav className="mt-12 flex items-center justify-center gap-2">
-              <button
-                disabled={page <= 1}
-                onClick={() => updateSearch({ page: String(page - 1) })}
-                className="px-3 py-1.5 text-sm border border-input rounded-sm disabled:opacity-40"
-              >
-                Prev
-              </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-                <button
-                  key={n}
-                  onClick={() => updateSearch({ page: String(n) })}
-                  className={`px-3 py-1.5 text-sm border rounded-sm ${n === page ? "bg-primary text-primary-foreground border-primary" : "border-input hover:bg-muted"}`}
-                >
-                  {n}
-                </button>
-              ))}
-              <button
-                disabled={page >= totalPages}
-                onClick={() => updateSearch({ page: String(page + 1) })}
-                className="px-3 py-1.5 text-sm border border-input rounded-sm disabled:opacity-40"
-              >
-                Next
-              </button>
-            </nav>
-          ) : null}
+          <BrowsePagination
+            page={page}
+            totalPages={totalPages}
+            onPageChange={(n) => updateSearch({ page: String(n) })}
+          />
         </div>
       </div>
     </div>

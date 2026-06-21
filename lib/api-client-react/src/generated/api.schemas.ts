@@ -4165,6 +4165,10 @@ export type ListCatalogProductsParams = {
    */
   finish?: string;
   /**
+   * Filter by product collection name (exact match). Typically used together with manufacturerSlug.
+   */
+  collection?: string;
+  /**
    * When true, exclude quote-only products (show only items purchasable online)
    */
   onlineOnly?: boolean;
@@ -4190,6 +4194,13 @@ export const ListCatalogProductsSort = {
   price_desc: "price_desc",
   name_asc: "name_asc",
 } as const;
+
+export type ListCatalogCollectionsParams = {
+  /**
+   * Limit collections to a single manufacturer (recommended; the global set is very large)
+   */
+  manufacturerSlug?: string;
+};
 
 export type ListCatalogFabricsParams = {
   /**

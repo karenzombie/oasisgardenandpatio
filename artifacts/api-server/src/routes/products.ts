@@ -23,6 +23,7 @@ import {
   ListProductRecommendationsResponse,
   ListCatalogProductsQueryParams,
   ListCatalogProductsResponse,
+  ListCatalogCollectionsQueryParams,
   GetCatalogProductBySlugResponse,
 } from "@workspace/api-zod";
 import { toPublicImageUrl } from "../lib/imageUrl";
@@ -171,6 +172,7 @@ router.get(
       manufacturerSlug,
       materialSlug,
       finish,
+      collection,
       onlineOnly,
       sort,
       page,
@@ -235,6 +237,9 @@ router.get(
             ),
         ),
       );
+    }
+    if (collection && collection.trim()) {
+      conditions.push(eq(productsTable.collection, collection.trim()));
     }
     const whereClause = and(...conditions);
 
@@ -336,6 +341,45 @@ router.get(
         pageSize,
       }),
     );
+  },
+);
+
+// Public: distinct product collection names (for shop filter), optionally
+// scoped to a manufacturer. The global set is very large, so the storefront
+// only requests this once a manufacturer is selected.
+router.get(
+  "/catalog/collections",
+  async (req: Request, res: Response): Promise<void> => {
+    const parsed = ListCatalogCollectionsQueryParams.safeParse(req.query);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: parsed.error.issues[0]?.message ?? "Invalid query" });
+      return;
+    }
+    const { manufacturerSlug } = parsed.data;
+
+    const conditions = [
+      eq(productsTable.isActive, true),
+      eq(productsTable.availableOnline, true),
+      sql`${productsTable.collection} is not null`,
+      sql`${productsTable.collection} <> ''`,
+    ];
+    if (manufacturerSlug) {
+      conditions.push(ilike(manufacturersTable.slug, manufacturerSlug));
+    }
+
+    const rows = await db
+      .selectDistinct({ collection: productsTable.collection })
+      .from(productsTable)
+      .leftJoin(
+        manufacturersTable,
+        eq(manufacturersTable.id, productsTable.manufacturerId),
+      )
+      .where(and(...conditions))
+      .orderBy(productsTable.collection);
+
+    res.json(rows.map((r) => r.collection).filter((c): c is string => !!c));
   },
 );
 

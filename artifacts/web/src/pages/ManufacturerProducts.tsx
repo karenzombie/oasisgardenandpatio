@@ -1,5 +1,5 @@
 import { Link, useRoute, useLocation, useSearch } from "wouter";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useQueries } from "@tanstack/react-query";
 import { X, SlidersHorizontal } from "lucide-react";
 import {
@@ -13,6 +13,7 @@ import type { CatalogProduct, Category } from "@workspace/api-client-react";
 import { getBrandLogo } from "@/lib/brandLogos";
 import { getManufacturerAbout } from "@/lib/manufacturerAbout";
 import { ManufacturerAbout } from "@/components/ManufacturerAbout";
+import { BrowsePagination } from "@/components/BrowsePagination";
 import { WishlistButton } from "@/components/WishlistButton";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -88,7 +89,7 @@ export default function ManufacturerProducts() {
 
   const activeCollection = q.get("collection") ?? "";
   const activeType = q.get("type") ?? "";
-  const displayPage = Number(q.get("page") ?? "1") || 1;
+  const displayPage = Math.max(1, Number(q.get("page") ?? "1") || 1);
 
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
@@ -219,6 +220,14 @@ export default function ManufacturerProducts() {
   const safePage = Math.min(displayPage, totalPages);
   const pageStart = (safePage - 1) * PAGE_SIZE_DISPLAY;
   const pageProducts = filtered.slice(pageStart, pageStart + PAGE_SIZE_DISPLAY);
+
+  // Normalize a stale/out-of-range page in the URL back to the last valid page.
+  useEffect(() => {
+    if (totalFiltered > 0 && displayPage > totalPages) {
+      updateSearch({ page: String(totalPages) });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [totalFiltered, totalPages, displayPage]);
 
   function updateSearch(patch: Record<string, string | null>) {
     const next = new URLSearchParams(search);
@@ -511,37 +520,11 @@ export default function ManufacturerProducts() {
                 </div>
               )}
 
-              {totalPages > 1 && (
-                <nav className="mt-12 flex items-center justify-center gap-2">
-                  <button
-                    disabled={safePage <= 1}
-                    onClick={() => updateSearch({ page: String(safePage - 1) })}
-                    className="px-3 py-1.5 text-sm border border-input rounded-sm disabled:opacity-40"
-                  >
-                    Prev
-                  </button>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-                    <button
-                      key={n}
-                      onClick={() => updateSearch({ page: String(n) })}
-                      className={`px-3 py-1.5 text-sm border rounded-sm ${
-                        n === safePage
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "border-input hover:bg-muted"
-                      }`}
-                    >
-                      {n}
-                    </button>
-                  ))}
-                  <button
-                    disabled={safePage >= totalPages}
-                    onClick={() => updateSearch({ page: String(safePage + 1) })}
-                    className="px-3 py-1.5 text-sm border border-input rounded-sm disabled:opacity-40"
-                  >
-                    Next
-                  </button>
-                </nav>
-              )}
+              <BrowsePagination
+                page={safePage}
+                totalPages={totalPages}
+                onPageChange={(n) => updateSearch({ page: String(n) })}
+              />
             </div>
           </div>
         </>
