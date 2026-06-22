@@ -1250,11 +1250,18 @@ export default function Product() {
                   ))}
                 </dl>
               ) : null}
-              {data.dimensions ? (
-                <p className="text-sm mt-4"><span className="text-muted-foreground mr-2">Dimensions:</span>{data.dimensions}</p>
-              ) : null}
-              {effectiveWeight ? (
-                <p className="text-sm mt-1"><span className="text-muted-foreground mr-2">Weight:</span>{effectiveWeight} lbs</p>
+              {data.materials.length > 0 || data.dimensions || effectiveWeight ? (
+                <div className="mt-4 space-y-1">
+                  {data.materials.length > 0 ? (
+                    <p className="text-sm"><span className="text-muted-foreground mr-2">{data.materials.length > 1 ? "Materials:" : "Material:"}</span>{data.materials.map((m) => m.name).join(", ")}</p>
+                  ) : null}
+                  {data.dimensions ? (
+                    <p className="text-sm"><span className="text-muted-foreground mr-2">Dimensions:</span>{data.dimensions}</p>
+                  ) : null}
+                  {effectiveWeight ? (
+                    <p className="text-sm"><span className="text-muted-foreground mr-2">Weight:</span>{effectiveWeight} lbs</p>
+                  ) : null}
+                </div>
               ) : null}
               {specImages.length > 0 ? (
                 <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1275,7 +1282,7 @@ export default function Product() {
                   />
                 </div>
               ) : null}
-              {!data.specs && !data.dimensions && !data.weight && specImages.length === 0 && !offersWindVentChoice ? (
+              {!data.specs && !data.dimensions && !data.weight && data.materials.length === 0 && specImages.length === 0 && !offersWindVentChoice ? (
                 <p className="text-muted-foreground">No specifications available.</p>
               ) : null}
             </div>

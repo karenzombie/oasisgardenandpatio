@@ -6760,6 +6760,11 @@ components:
           properties:
             description:
               type: ["string", "null"]
+            materials:
+              type: array
+              description: Materials associated via the product_materials junction (ordered by displayOrder).
+              items:
+                $ref: "#/components/schemas/Material"
             dimensions:
               type: ["string", "null"]
             weight:
@@ -6801,6 +6806,7 @@ components:
                 $ref: "#/components/schemas/CatalogFinishOption"
           required:
             - description
+            - materials
             - dimensions
             - weight
             - frameOnlyPrice

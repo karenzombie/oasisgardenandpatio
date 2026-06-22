@@ -486,6 +486,28 @@ router.get(
       images.find((i) => i.imageKind === "gallery") ??
       null;
 
+    // Materials associated via the product_materials junction, ordered by the
+    // junction's displayOrder so the PDP renders them in the curated order.
+    const materialRows = await db
+      .select({
+        id: materialsTable.id,
+        name: materialsTable.name,
+        slug: materialsTable.slug,
+        description: materialsTable.description,
+        imageUrl: materialsTable.imageUrl,
+        displayOrder: materialsTable.displayOrder,
+      })
+      .from(productMaterialsTable)
+      .innerJoin(
+        materialsTable,
+        eq(materialsTable.id, productMaterialsTable.materialId),
+      )
+      .where(eq(productMaterialsTable.productId, row.id))
+      .orderBy(
+        asc(productMaterialsTable.displayOrder),
+        asc(materialsTable.name),
+      );
+
     const variantRows = await db
       .select({
         id: productVariantsTable.id,
@@ -701,6 +723,10 @@ router.get(
       slug: row.slug,
       sku: row.sku,
       description: row.description,
+      materials: materialRows.map((m) => ({
+        ...m,
+        imageUrl: toPublicImageUrl(m.imageUrl),
+      })),
       shortDescription: row.shortDescription,
       manufacturerName: row.manufacturerName,
       manufacturerSlug: row.manufacturerSlug,

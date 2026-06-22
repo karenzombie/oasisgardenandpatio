@@ -1513,6 +1513,8 @@ export interface CatalogFinishCollection {
 export type CatalogProductDetail = CatalogProduct & {
   /** @nullable */
   description: string | null;
+  /** Materials associated via the product_materials junction (ordered by displayOrder). */
+  materials: Material[];
   /** @nullable */
   dimensions: string | null;
   /** @nullable */

@@ -466,6 +466,20 @@ export const GetCatalogProductBySlugResponse = zod
   .and(
     zod.object({
       description: zod.string().nullable(),
+      materials: zod
+        .array(
+          zod.object({
+            id: zod.number(),
+            name: zod.string(),
+            slug: zod.string(),
+            description: zod.string().nullable(),
+            imageUrl: zod.string().nullable(),
+            displayOrder: zod.number(),
+          }),
+        )
+        .describe(
+          "Materials associated via the product_materials junction (ordered by displayOrder).",
+        ),
       dimensions: zod.string().nullable(),
       weight: zod.string().nullable(),
       frameOnlyPrice: zod
