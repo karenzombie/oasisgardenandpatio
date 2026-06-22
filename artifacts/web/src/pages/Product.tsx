@@ -7,6 +7,7 @@ import {
   getGetCartQueryKey,
 } from "@workspace/api-client-react";
 import swvDwvImage from "@assets/SWV_DWV_image_1781037074957.png";
+import owleeCareGuide from "@assets/O.W.-Lee-Care-Maintenance-Guide-2026_1782153939648.pdf?url";
 import { getBrandLogo } from "@/lib/brandLogos";
 import { sanitizeHtml } from "@/lib/sanitize";
 import { WishlistButton } from "@/components/WishlistButton";
@@ -1288,16 +1289,53 @@ export default function Product() {
             </div>
           ) : null}
           {activeTab === "care" ? (
-            <div className="prose max-w-none text-foreground/80">
-              <p>For everyday care of your outdoor furniture:</p>
-              <ul>
-                <li>Brush off loose dirt regularly.</li>
-                <li>Wash with mild soap and water; rinse thoroughly.</li>
-                <li>Allow to air dry before covering or storing.</li>
-                <li>Store cushions indoors during prolonged wet or freezing weather.</li>
-              </ul>
-              <p>For specific manufacturer guidance, see the warranty tab or contact our showroom.</p>
-            </div>
+            data.manufacturerSlug === "o-w-lee" ? (
+              <div>
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                  <p className="text-sm uppercase tracking-widest text-muted-foreground">
+                    O.W. Lee Care &amp; Maintenance Guide
+                  </p>
+                  <a
+                    href={owleeCareGuide}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-medium text-primary underline underline-offset-4"
+                  >
+                    Open / Download PDF
+                  </a>
+                </div>
+                <object
+                  data={owleeCareGuide}
+                  type="application/pdf"
+                  className="w-full h-[600px] sm:h-[800px] border border-border"
+                  aria-label="O.W. Lee Care & Maintenance Guide"
+                >
+                  <p className="text-sm text-muted-foreground">
+                    Your browser can&apos;t display the PDF inline.{" "}
+                    <a
+                      href={owleeCareGuide}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary underline underline-offset-4"
+                    >
+                      Open the O.W. Lee Care &amp; Maintenance Guide
+                    </a>
+                    .
+                  </p>
+                </object>
+              </div>
+            ) : (
+              <div className="prose max-w-none text-foreground/80">
+                <p>For everyday care of your outdoor furniture:</p>
+                <ul>
+                  <li>Brush off loose dirt regularly.</li>
+                  <li>Wash with mild soap and water; rinse thoroughly.</li>
+                  <li>Allow to air dry before covering or storing.</li>
+                  <li>Store cushions indoors during prolonged wet or freezing weather.</li>
+                </ul>
+                <p>For specific manufacturer guidance, see the warranty tab or contact our showroom.</p>
+              </div>
+            )
           ) : null}
           {activeTab === "warranty" ? (
             <div className="prose max-w-none text-foreground/80">
