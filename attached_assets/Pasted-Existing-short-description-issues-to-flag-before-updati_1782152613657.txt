@@ -1,0 +1,59 @@
+Existing short_description issues to flag before updating:
+
+Santorini 5110-42RDO, 5110-54RDC, 5110-54RDO -- currently have stale collection-style text (Santorini collection · 42" Rd. Occasional Height...) instead of the proper blurb. These need to be overwritten.
+Volante 5123-42RDC -- same issue, has Volante collection · 42" Rd. Chat Height Fire Pit by O.W. Lee. Needs to be overwritten.
+Elba -- 7 SKUs are missing short_description entirely: 5122-4272D, 5122-4272K, 5122-3658C, 5122-3050C, 5122-2872C, 5122-3050O, 5122-3658O
+
+Now here's the message for Replit with all the blurb text pulled directly from the catalog screenshots:
+
+Please update the short_description field on the following O.W. Lee fire pit products. For each collection, apply the same blurb text to all SKUs listed. This should overwrite any existing value including stale collection-style text.
+Santorini -- apply to all 12 SKUs: 5110-30RDC, 5110-36RDC, 5110-42RDO, 5110-42RDC, 5110-54RDO, 5110-54RDC, 5110-2872O, 5110-2872C, 5110-3050O, 5110-3050C, 5110-3658O, 5110-3658C
+
+Inspired by the timeless beauty of Mediterranean architecture, the Santorini fire pit blends old-world charm with modern durability, creating the perfect focal point for evening gatherings or serene solo moments.
+
+Capri -- apply to all 12 SKUs: 5112-30RDC, 5112-36RDC, 5112-42RDO, 5112-42RDC, 5112-54RDO, 5112-54RDC, 5112-2872O, 5112-2872C, 5112-3050O, 5112-3050C, 5112-3658O, 5112-3658C
+
+Elevate your outdoor gatherings with the sleek sophistication of the Capri Fire Pit Collection. Designed with clean lines and modern appeal, Capri fire pits bring warmth, style, and exceptional functionality to any outdoor living space.
+
+Phoenix -- apply to all 4 SKUs: 5113-42RDO, 5113-42RDC, 5113-3156O, 5113-3156C
+
+The Phoenix Fire Pit redefines outdoor luxury with a bold, modern design and the unmatched durability of Dekton® -- a premium ultra-compact surface known for its superior resistance to heat, scratches, and weather. Sophisticated and sleek, Phoenix is the perfect fusion of innovation, elegance, and enduring craftsmanship for any outdoor living space.
+
+Basso -- apply to: 5150-36RDC
+
+Sleek, grounded, and effortlessly modern, the Basso Fire Pit by OW Lee brings a bold architectural presence to your outdoor space. With its sculptural design and clean lines, Basso creates an inviting focal point that encourages relaxed, fireside gatherings without overwhelming the environment.
+
+Elba -- apply to all 16 SKUs: 5122-30RDC, 5122-36RDC, 5122-42RDO, 5122-42RDC, 5122-54RDO, 5122-54RDC, 5122-54RDD, 5122-54RDK, 5122-2872O, 5122-2872C, 5122-3050O, 5122-3050C, 5122-3658O, 5122-3658C, 5122-4272D, 5122-4272K
+
+Sleek, stylish, and distinctly modern, the all-aluminum Elba Fire Pit brings a bold architectural statement to your outdoor space. Designed with a clean, linear aesthetic, Elba illuminates the elegance of our unmatched craftsmanship in aluminum to create a fire feature that feels both contemporary and timeless.
+
+Haven -- apply to both SKUs: 5125-42SQO, 5125-42SQC
+
+Introducing the Haven Fire Pit, our only square fire pit in Aluminum -- a bold blend of clean lines, creative spirit, and welcoming warmth. With its sleek metal surface and gently playful proportions, Haven brings a lighthearted edge to serious craftsmanship.
+
+Moda -- apply to both SKUs: 5153-2545O, 5153-2565O
+
+Clean lines, modern form, and advanced materials define the Moda Fire Pit. Designed for contemporary outdoor living, Moda features a sleek, low-profile silhouette and a premium Dekton® hearth top, prized for its ultra-durable, low-maintenance surface. Moda blends seamlessly into any modern space while offering the warmth and ambiance only a fire feature can provide.
+
+Forma -- apply to both SKUs: 5152-2545O, 5152-2565O
+
+Strikingly modern and expertly crafted, the Forma Fire Pit brings bold design to life in any outdoor space. Defined by its clean geometric lines and architectural appeal, Forma pairs minimalist elegance with the enduring quality OW Lee is celebrated for -- delivering a seamless blend of style and performance.
+
+Volante -- apply to all 4 SKUs: 5123-42RDO, 5123-42RDC, 5123-3156O, 5123-3156C
+
+The Volante Fire Pit combines contemporary design with innovative materials to create a fire feature that is both stunning and durable. Crafted from lightweight, rustproof aluminum and topped with ultra-resilient Dekton®, Volante is the ideal centerpiece for modern outdoor living.
+
+Nova -- apply to: 5163-42RDC
+
+Introducing the Nova Fire Pit -- a sleek new design that pairs minimalist form with cutting-edge materials. With its smooth cylindrical base and ultra-durable Dekton® hearth top, Nova offers a refined, architectural presence that anchors any modern outdoor space.
+
+Anello -- apply to: 5162-42RDC
+
+Introducing the Anello Fire Pit -- where clean design meets timeless sophistication. With its sleek cylindrical form and artisan-crafted porcelain tile top, Anello brings a refined, minimalist aesthetic to any outdoor setting.
+
+Compass -- apply to the fire pit surround only: 5160-54RDC
+
+Introducing a bold innovation from O.W. Lee -- our first-ever hearth surround designed specifically for the Breeo® wood-burning smokeless fire pit (X Series 24 Model). This exciting collaboration pairs Breeo's advanced smokeless technology with O.W. Lee's timeless craftsmanship and design expertise, creating a fire feature that's as visually stunning as it is performance-driven.
+
+For the two Breeo inserts (5360-X24P and 5360-X24S), leave short_description empty -- they are accessories, not fire pits, and don't have a collection blurb in the catalog.
+Please dry run a SELECT COUNT first to confirm the SKU counts before executing any updates.
