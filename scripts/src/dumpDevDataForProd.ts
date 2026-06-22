@@ -28,6 +28,7 @@ const TABLES_IN_ORDER = [
   "finish_collections",
   "finishes",
   "products",
+  "product_materials",
   "product_variants",
   "product_images",
   "product_attributes",
