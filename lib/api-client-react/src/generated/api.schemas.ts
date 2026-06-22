@@ -1436,6 +1436,11 @@ export interface CatalogFinishOption {
   code: string;
   /** Display name (e.g. "Platinum", "Brushed Silver"). */
   name: string;
+  /**
+   * Finish category, used to distinguish frame finishes from table-top tiles (e.g. "Frame Finish", "Table Top Tile").
+   * @nullable
+   */
+  description: string | null;
   /** @nullable */
   swatchImageUrl: string | null;
   displayOrder: number;
@@ -1560,6 +1565,12 @@ export interface WishlistItem {
   quoteOnly: boolean;
   /** @nullable */
   primaryImageUrl: string | null;
+  /** @nullable */
+  selectedFinishId: number | null;
+  /** @nullable */
+  selectedFabricId: number | null;
+  /** @nullable */
+  selectedTableTopTileId: number | null;
   createdAt: string;
 }
 
@@ -1569,11 +1580,25 @@ export interface WishlistResponse {
 
 export interface AddWishlistItemRequest {
   productId: number;
+  /** @nullable */
+  deviceToken?: string | null;
+  /** @nullable */
+  selectedFinishId?: number | null;
+  /** @nullable */
+  selectedFabricId?: number | null;
+  /** @nullable */
+  selectedTableTopTileId?: number | null;
+  /** Guests only. When true, an existing saved configuration for this product on the same device is overwritten instead of returning a 409 conflict. */
+  replaceExisting?: boolean;
 }
 
-export interface SyncWishlistRequest {
-  /** @maxItems 200 */
-  productIds: number[];
+export interface MergeWishlistRequest {
+  deviceToken: string;
+}
+
+export interface RemoveWishlistItemRequest {
+  /** @nullable */
+  deviceToken?: string | null;
 }
 
 export interface CartItem {
@@ -4220,6 +4245,10 @@ export type ListCatalogManufacturerFinishesParams = {
    * Filter finishes by name or item number (case-insensitive substring match)
    */
   q?: string;
+};
+
+export type GetWishlistParams = {
+  deviceToken?: string;
 };
 
 export type StaffDisableTotp200 = {

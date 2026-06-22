@@ -6,7 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface SyncWishlistRequest {
-  /** @maxItems 200 */
-  productIds: number[];
+export interface RemoveWishlistItemRequest {
+  /** @nullable */
+  deviceToken?: string | null;
 }

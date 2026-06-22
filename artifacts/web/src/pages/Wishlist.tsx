@@ -1,18 +1,16 @@
-import { useMemo } from "react";
 import { Link } from "wouter";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { Heart, Trash2 } from "lucide-react";
 import {
-  useGetWishlist,
   useRemoveWishlistItem,
   useAddCartItem,
-  lookupWishlistItems,
-  getGetWishlistQueryKey,
   getGetCartQueryKey,
 } from "@workspace/api-client-react";
 import type { WishlistItem } from "@workspace/api-client-react";
-import { useAuth, usePendingWishlist } from "@/lib/auth";
-import { removeFromPendingWishlist } from "@/lib/wishlistHold";
+import {
+  useWishlistItems,
+  WISHLIST_QUERY_KEY,
+} from "@/lib/wishlistHold";
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -25,59 +23,23 @@ function formatMoney(v: string | null | undefined): string {
 }
 
 /**
- * Public wishlist page. Behaves differently per auth state:
- *
- * - Signed-in users: pulls from the server wishlist via GET /wishlist and
- *   uses the existing add-to-cart and remove mutations. Same behavior as
- *   the AccountWishlist page (kept around for the /account/wishlist deep
- *   link from the account dashboard).
- *
- * - Guests: renders the device-local wishlist. Product details are
- *   hydrated via POST /wishlist/lookup (public). Removing an item updates
- *   localStorage. Move-to-cart works because /cart supports guest
- *   sessions.
- *
- * No changes to existing wishlist storage / sync / toast logic — this
- * page only consumes those primitives.
+ * Public wishlist page. Server-backed for both signed-in users and guests
+ * (guests identified by their device token). Each row is a saved
+ * configuration; signed-in users may have multiple per product.
  */
 export default function Wishlist() {
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const qc = useQueryClient();
   const { toast } = useToast();
-  const pendingSet = usePendingWishlist();
+  const {
+    items,
+    isAuthenticated,
+    deviceToken,
+    isLoading,
+  } = useWishlistItems();
 
-  // localStorage stores items in the order they were added (Set insertion
-  // order is preserved). Reverse so the newest save appears first, which
-  // matches the authed wishlist's createdAt-desc ordering. The reversed
-  // array is used in the query key so any add/remove/reorder triggers a
-  // refetch — we don't sort or normalize, so order changes are honored.
-  const guestIds = useMemo(
-    () => Array.from(pendingSet).reverse(),
-    [pendingSet],
-  );
-
-  const serverQuery = useGetWishlist({
-    query: {
-      queryKey: getGetWishlistQueryKey(),
-      enabled: !authLoading && isAuthenticated,
-      retry: false,
-    },
-  });
-
-  // The lookup endpoint is a POST (so a list of IDs can be sent without
-  // URL-length limits), which Orval generates as a mutation. Wrap the
-  // bare async fn in useQuery so the result is cached and tied to the
-  // guest's localStorage contents.
-  const guestQuery = useQuery({
-    queryKey: ["lookupWishlistItems", guestIds],
-    queryFn: () => lookupWishlistItems({ productIds: guestIds }),
-    enabled: !authLoading && !isAuthenticated,
-    retry: false,
-  });
-
-  const removeServer = useRemoveWishlistItem({
+  const removeM = useRemoveWishlistItem({
     mutation: {
-      onSuccess: (resp) => qc.setQueryData(getGetWishlistQueryKey(), resp),
+      onSuccess: (resp) => qc.setQueryData(WISHLIST_QUERY_KEY, resp),
     },
   });
   const addToCart = useAddCartItem({
@@ -85,17 +47,20 @@ export default function Wishlist() {
       onSuccess: (resp, vars) => {
         qc.setQueryData(getGetCartQueryKey(), resp);
         toast({ title: "Added to cart" });
-        // Move = add to cart then remove from wishlist (auth path only).
-        if (isAuthenticated) {
-          removeServer.mutate({ productId: vars.data.productId });
-        } else {
-          removeFromPendingWishlist(vars.data.productId);
-        }
+        const row = items.find((i) => i.productId === vars.data.productId);
+        if (row) removeRow(row);
       },
     },
   });
 
-  if (authLoading || serverQuery.isLoading || guestQuery.isLoading) {
+  function removeRow(item: WishlistItem) {
+    removeM.mutate({
+      id: item.id,
+      data: isAuthenticated ? {} : { deviceToken: deviceToken ?? "" },
+    });
+  }
+
+  if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-24 text-center">
         <Spinner className="size-8 text-primary mx-auto" />
@@ -103,15 +68,9 @@ export default function Wishlist() {
     );
   }
 
-  const items: WishlistItem[] = isAuthenticated
-    ? (serverQuery.data?.items ?? [])
-    : (guestQuery.data?.items ?? []);
-
-  function handleRemove(productId: number) {
-    if (isAuthenticated) {
-      removeServer.mutate({ productId });
-    } else {
-      removeFromPendingWishlist(productId);
+  function handleRemove(item: WishlistItem) {
+    removeRow(item);
+    if (!isAuthenticated) {
       toast({ title: "Removed from your saved items" });
     }
   }
@@ -153,7 +112,7 @@ export default function Wishlist() {
               item.salePrice && item.price && Number(item.salePrice) < Number(item.price);
             return (
               <li
-                key={item.productId}
+                key={item.id}
                 className="py-5 flex flex-col sm:flex-row gap-5 items-start sm:items-center"
               >
                 <Link
@@ -223,8 +182,8 @@ export default function Wishlist() {
                   <Button
                     variant="outline"
                     className="rounded-none"
-                    onClick={() => handleRemove(item.productId)}
-                    disabled={removeServer.isPending}
+                    onClick={() => handleRemove(item)}
+                    disabled={removeM.isPending}
                     aria-label="Remove from wishlist"
                   >
                     <Trash2 className="w-4 h-4" />

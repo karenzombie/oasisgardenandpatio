@@ -632,6 +632,7 @@ router.get(
             code: finishesTable.itemNumber,
             name: finishesTable.name,
             imageUrl: finishesTable.imageUrl,
+            description: finishesTable.description,
             displayOrder: finishesTable.displayOrder,
           })
           .from(finishesTable)
@@ -649,6 +650,7 @@ router.get(
         code: finishesTable.itemNumber,
         name: finishesTable.name,
         imageUrl: finishesTable.imageUrl,
+        description: finishesTable.description,
         displayOrder: productFinishOptionsTable.displayOrder,
       })
       .from(productFinishOptionsTable)
@@ -665,7 +667,14 @@ router.get(
 
     const finishByIdMap = new Map<
       number,
-      { id: number; code: string | null; name: string; imageUrl: string | null; displayOrder: number }
+      {
+        id: number;
+        code: string | null;
+        name: string;
+        imageUrl: string | null;
+        description: string | null;
+        displayOrder: number;
+      }
     >();
     for (const f of [...pooledFinishRows, ...optionFinishRows]) {
       if (!finishByIdMap.has(f.id)) finishByIdMap.set(f.id, f);
@@ -779,6 +788,7 @@ router.get(
         id: f.id,
         code: f.code ?? "",
         name: f.name,
+        description: f.description ?? null,
         swatchImageUrl: toPublicImageUrl(f.imageUrl),
         displayOrder: f.displayOrder,
       })),

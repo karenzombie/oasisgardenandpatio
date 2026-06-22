@@ -15,6 +15,7 @@ import { CompatibleRecommendations } from "@/components/CompatibleRecommendation
 import { useToast } from "@/hooks/use-toast";
 import { Palette } from "lucide-react";
 import { FabricSwatchDialog } from "@/components/FabricSwatchDialog";
+import { ProductOptionPickers } from "@/components/ProductOptionPickers";
 
 function formatMoney(v: string | number | null | undefined): string {
   if (v == null || v === "") return "";
@@ -69,6 +70,12 @@ export default function Product() {
   // must consciously pick the wind vent — Single vs Double).
   const [windFinishKey, setWindFinishKey] = useState<string | null>(null);
   const [windVent, setWindVent] = useState<"SWV" | "DWV" | null>(null);
+  // Wishlist configuration selections for non-purchasable products. These feed
+  // the wishlist entry only (no pricing) so a sales agent knows the customer's
+  // preferred finish / fabric / table-top tile.
+  const [wlFinishId, setWlFinishId] = useState<number | null>(null);
+  const [wlFabricId, setWlFabricId] = useState<number | null>(null);
+  const [wlTileId, setWlTileId] = useState<number | null>(null);
 
   const { toast } = useToast();
   const qc = useQueryClient();
@@ -110,6 +117,9 @@ export default function Product() {
     setQty(1);
     setWindFinishKey(null);
     setWindVent(null);
+    setWlFinishId(null);
+    setWlFabricId(null);
+    setWlTileId(null);
   }, [data?.id]);
 
   // Discrete frame finishes for grade-priced (Frankford) products. Empty for
@@ -701,12 +711,46 @@ export default function Product() {
                 .
               </p>
               <div className="mt-4">
-                <WishlistButton productId={data.id} variant="button" />
+                <ProductOptionPickers
+                  finishes={finishes}
+                  fabrics={fabricOptions}
+                  selectedFinishId={wlFinishId}
+                  selectedFabricId={wlFabricId}
+                  selectedTableTopTileId={wlTileId}
+                  onFinishChange={setWlFinishId}
+                  onFabricChange={setWlFabricId}
+                  onTableTopTileChange={setWlTileId}
+                />
+                <WishlistButton
+                  productId={data.id}
+                  variant="button"
+                  mode="add"
+                  selectedFinishId={wlFinishId}
+                  selectedFabricId={wlFabricId}
+                  selectedTableTopTileId={wlTileId}
+                />
               </div>
             </div>
           ) : !canBuyOnline ? (
             <div className="mb-4">
-              <WishlistButton productId={data.id} variant="button" />
+              <ProductOptionPickers
+                finishes={finishes}
+                fabrics={fabricOptions}
+                selectedFinishId={wlFinishId}
+                selectedFabricId={wlFabricId}
+                selectedTableTopTileId={wlTileId}
+                onFinishChange={setWlFinishId}
+                onFabricChange={setWlFabricId}
+                onTableTopTileChange={setWlTileId}
+              />
+              <WishlistButton
+                productId={data.id}
+                variant="button"
+                mode="add"
+                selectedFinishId={wlFinishId}
+                selectedFabricId={wlFabricId}
+                selectedTableTopTileId={wlTileId}
+              />
             </div>
           ) : (
             <>

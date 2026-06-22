@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import {
   db,
   wishlistItemsTable,
@@ -11,14 +11,28 @@ import {
 import {
   GetWishlistResponse,
   AddWishlistItemBody,
-  SyncWishlistBody,
+  MergeWishlistBody,
+  RemoveWishlistItemBody,
 } from "@workspace/api-zod";
-import { requireAuth } from "../middlewares/requireAuth";
+import { optionalAuth, requireAuth } from "../middlewares/requireAuth";
 import { toPublicImageUrl } from "../lib/imageUrl";
 
 const router: IRouter = Router();
 
-async function loadWishlist(userId: number) {
+type WishlistScope = { userId: number } | { deviceToken: string };
+
+// Load a wishlist for either a signed-in user (by userId) or a guest device
+// (by deviceToken, where user_id IS NULL). Returns the GetWishlistResponse
+// shape including each row's saved configuration ids.
+async function loadWishlist(scope: WishlistScope) {
+  const ownerWhere =
+    "userId" in scope
+      ? eq(wishlistItemsTable.userId, scope.userId)
+      : and(
+          eq(wishlistItemsTable.deviceToken, scope.deviceToken),
+          isNull(wishlistItemsTable.userId),
+        );
+
   const rows = await db
     .select({
       id: wishlistItemsTable.id,
@@ -41,6 +55,9 @@ async function loadWishlist(userId: number) {
         order by ${productImagesTable.isPrimary} desc, ${productImagesTable.displayOrder} asc, ${productImagesTable.id} asc
         limit 1
       )`,
+      selectedFinishId: wishlistItemsTable.selectedFinishId,
+      selectedFabricId: wishlistItemsTable.selectedFabricId,
+      selectedTableTopTileId: wishlistItemsTable.selectedTableTopTileId,
       createdAt: wishlistItemsTable.createdAt,
     })
     .from(wishlistItemsTable)
@@ -56,7 +73,7 @@ async function loadWishlist(userId: number) {
       categoriesTable,
       eq(categoriesTable.id, productsTable.categoryId),
     )
-    .where(eq(wishlistItemsTable.userId, userId))
+    .where(and(ownerWhere, eq(productsTable.isActive, true)))
     .orderBy(desc(wishlistItemsTable.createdAt));
 
   return GetWishlistResponse.parse({
@@ -71,101 +88,44 @@ async function loadWishlist(userId: number) {
   });
 }
 
-// Public hydration endpoint — given a list of product IDs (typically held
-// in a guest's localStorage), return the same payload shape as the auth
-// wishlist endpoint. Used by the public /wishlist page so guests can see
-// what they've saved without an account. Hidden / inactive products are
-// silently omitted, matching the auth wishlist visibility rules.
-router.post(
-  "/wishlist/lookup",
-  async (req: Request, res: Response): Promise<void> => {
-    const parsed = SyncWishlistBody.safeParse(req.body);
-    if (!parsed.success) {
-      res
-        .status(400)
-        .json({ error: parsed.error.issues[0]?.message ?? "Invalid body" });
-      return;
-    }
-    const ids = Array.from(
-      new Set(
-        parsed.data.productIds.filter((n) => Number.isInteger(n) && n > 0),
-      ),
-    );
-    if (ids.length === 0) {
-      res.json(GetWishlistResponse.parse({ items: [] }));
-      return;
-    }
-
-    const rows = await db
-      .select({
-        productId: productsTable.id,
-        name: productsTable.name,
-        slug: productsTable.slug,
-        sku: productsTable.sku,
-        manufacturerName: manufacturersTable.name,
-        categoryName: categoriesTable.name,
-        price: productsTable.price,
-        salePrice: productsTable.salePrice,
-        showPriceOnline: productsTable.showPriceOnline,
-        availableOnline: productsTable.availableOnline,
-        quoteOnly: productsTable.quoteOnly,
-        primaryImageUrl: sql<string | null>`(
-          select ${productImagesTable.url}
-          from ${productImagesTable}
-          where ${productImagesTable.productId} = ${productsTable.id}
-            and ${productImagesTable.imageKind} = 'gallery'
-          order by ${productImagesTable.isPrimary} desc, ${productImagesTable.displayOrder} asc, ${productImagesTable.id} asc
-          limit 1
-        )`,
-      })
-      .from(productsTable)
-      .leftJoin(
-        manufacturersTable,
-        eq(manufacturersTable.id, productsTable.manufacturerId),
-      )
-      .leftJoin(
-        categoriesTable,
-        eq(categoriesTable.id, productsTable.categoryId),
-      )
-      .where(
-        and(
-          inArray(productsTable.id, ids),
-          eq(productsTable.isActive, true),
-          eq(productsTable.availableOnline, true),
-        ),
-      );
-
-    // Preserve the order the client sent (most-recently-added-first by
-    // convention in localStorage). Synthesize id / createdAt because there
-    // is no underlying wishlist row for guests.
-    const byId = new Map(rows.map((r) => [r.productId, r]));
-    const now = new Date().toISOString();
-    const items = ids
-      .map((id) => byId.get(id))
-      .filter((r): r is NonNullable<typeof r> => Boolean(r))
-      .map((r) => ({
-        ...r,
-        id: r.productId,
-        primaryImageUrl: toPublicImageUrl(r.primaryImageUrl),
-        createdAt: now,
-      }));
-
-    res.json(GetWishlistResponse.parse({ items }));
-  },
-);
+// Key used to dedupe identical configurations of the same product. Treats
+// missing selections as null so two rows match only when product + all three
+// selection ids are identical.
+function configKey(o: {
+  productId: number;
+  selectedFinishId: number | null;
+  selectedFabricId: number | null;
+  selectedTableTopTileId: number | null;
+}): string {
+  return [
+    o.productId,
+    o.selectedFinishId ?? "",
+    o.selectedFabricId ?? "",
+    o.selectedTableTopTileId ?? "",
+  ].join(":");
+}
 
 router.get(
   "/wishlist",
-  requireAuth,
+  optionalAuth,
   async (req: Request, res: Response): Promise<void> => {
-    const payload = await loadWishlist(req.user!.id);
-    res.json(payload);
+    if (req.user) {
+      res.json(await loadWishlist({ userId: req.user.id }));
+      return;
+    }
+    const deviceToken =
+      typeof req.query.deviceToken === "string" ? req.query.deviceToken : "";
+    if (!deviceToken) {
+      res.json(GetWishlistResponse.parse({ items: [] }));
+      return;
+    }
+    res.json(await loadWishlist({ deviceToken }));
   },
 );
 
 router.post(
   "/wishlist",
-  requireAuth,
+  optionalAuth,
   async (req: Request, res: Response): Promise<void> => {
     const parsed = AddWishlistItemBody.safeParse(req.body);
     if (!parsed.success) {
@@ -174,19 +134,22 @@ router.post(
         .json({ error: parsed.error.issues[0]?.message ?? "Invalid body" });
       return;
     }
-    const { productId } = parsed.data;
+    const {
+      productId,
+      deviceToken,
+      selectedFinishId,
+      selectedFabricId,
+      selectedTableTopTileId,
+      replaceExisting,
+    } = parsed.data;
 
-    // Confirm the product exists, is active and available online — same
-    // visibility rule as PLP/PDP. Don't allow saving hidden products.
+    // Wishlist may hold non-purchasable products (e.g. most O.W. Lee items),
+    // so only require the product to be active — not available online.
     const [product] = await db
       .select({ id: productsTable.id })
       .from(productsTable)
       .where(
-        and(
-          eq(productsTable.id, productId),
-          eq(productsTable.isActive, true),
-          eq(productsTable.availableOnline, true),
-        ),
+        and(eq(productsTable.id, productId), eq(productsTable.isActive, true)),
       )
       .limit(1);
 
@@ -195,83 +158,200 @@ router.post(
       return;
     }
 
+    const config = {
+      selectedFinishId: selectedFinishId ?? null,
+      selectedFabricId: selectedFabricId ?? null,
+      selectedTableTopTileId: selectedTableTopTileId ?? null,
+    };
+
+    // Signed-in users may save multiple configurations of the same product.
+    // We only skip an insert when an identical configuration already exists.
+    if (req.user) {
+      const existing = await db
+        .select({
+          id: wishlistItemsTable.id,
+          selectedFinishId: wishlistItemsTable.selectedFinishId,
+          selectedFabricId: wishlistItemsTable.selectedFabricId,
+          selectedTableTopTileId: wishlistItemsTable.selectedTableTopTileId,
+        })
+        .from(wishlistItemsTable)
+        .where(
+          and(
+            eq(wishlistItemsTable.userId, req.user.id),
+            eq(wishlistItemsTable.productId, productId),
+          ),
+        );
+      const targetKey = configKey({ productId, ...config });
+      const dup = existing.some(
+        (e) => configKey({ productId, ...e }) === targetKey,
+      );
+      if (!dup) {
+        await db
+          .insert(wishlistItemsTable)
+          .values({ userId: req.user.id, productId, ...config });
+      }
+      res.json(await loadWishlist({ userId: req.user.id }));
+      return;
+    }
+
+    // Guests must identify themselves with a device token.
+    if (!deviceToken) {
+      res.status(400).json({ error: "deviceToken is required for guests" });
+      return;
+    }
+
+    // One configuration per product per device. If a row already exists,
+    // either overwrite it (replaceExisting) or signal a conflict so the
+    // client can prompt the guest to sign in / create an account / replace.
+    const [existingGuest] = await db
+      .select({ id: wishlistItemsTable.id })
+      .from(wishlistItemsTable)
+      .where(
+        and(
+          eq(wishlistItemsTable.deviceToken, deviceToken),
+          eq(wishlistItemsTable.productId, productId),
+          isNull(wishlistItemsTable.userId),
+        ),
+      )
+      .limit(1);
+
+    if (existingGuest) {
+      if (!replaceExisting) {
+        res.status(409).json({
+          error: "A saved configuration already exists for this product",
+        });
+        return;
+      }
+      await db
+        .update(wishlistItemsTable)
+        .set(config)
+        .where(eq(wishlistItemsTable.id, existingGuest.id));
+      res.json(await loadWishlist({ deviceToken }));
+      return;
+    }
+
     await db
       .insert(wishlistItemsTable)
-      .values({ userId: req.user!.id, productId })
-      .onConflictDoNothing({
-        target: [wishlistItemsTable.userId, wishlistItemsTable.productId],
-      });
+      .values({ deviceToken, productId, ...config });
 
-    res.json(await loadWishlist(req.user!.id));
+    res.json(await loadWishlist({ deviceToken }));
   },
 );
 
-// Bulk merge endpoint used by the client immediately after sign-up or login
-// to drain the localStorage-held "guest" wishlist into the user's persistent
-// wishlist. Existing entries are silently skipped via ON CONFLICT DO NOTHING.
+// Merge a guest device's wishlist into the signed-in user's wishlist. Called
+// automatically by the client's auth success handler after sign-in/sign-up.
 router.post(
-  "/wishlist/sync",
+  "/wishlist/merge",
   requireAuth,
   async (req: Request, res: Response): Promise<void> => {
-    const parsed = SyncWishlistBody.safeParse(req.body);
+    const parsed = MergeWishlistBody.safeParse(req.body);
     if (!parsed.success) {
       res
         .status(400)
         .json({ error: parsed.error.issues[0]?.message ?? "Invalid body" });
       return;
     }
-    const ids = Array.from(
-      new Set(parsed.data.productIds.filter((n) => Number.isInteger(n) && n > 0)),
-    );
-    if (ids.length === 0) {
-      res.json(await loadWishlist(req.user!.id));
-      return;
-    }
+    const { deviceToken } = parsed.data;
+    const userId = req.user!.id;
 
-    // Filter to products that are actually visible. Hidden / inactive /
-    // archived products silently drop out of the merge.
-    const visible = await db
-      .select({ id: productsTable.id })
-      .from(productsTable)
+    const guestRows = await db
+      .select({
+        id: wishlistItemsTable.id,
+        productId: wishlistItemsTable.productId,
+        selectedFinishId: wishlistItemsTable.selectedFinishId,
+        selectedFabricId: wishlistItemsTable.selectedFabricId,
+        selectedTableTopTileId: wishlistItemsTable.selectedTableTopTileId,
+      })
+      .from(wishlistItemsTable)
       .where(
         and(
-          inArray(productsTable.id, ids),
-          eq(productsTable.isActive, true),
-          eq(productsTable.availableOnline, true),
+          eq(wishlistItemsTable.deviceToken, deviceToken),
+          isNull(wishlistItemsTable.userId),
         ),
       );
 
-    if (visible.length > 0) {
-      await db
-        .insert(wishlistItemsTable)
-        .values(visible.map((p) => ({ userId: req.user!.id, productId: p.id })))
-        .onConflictDoNothing({
-          target: [wishlistItemsTable.userId, wishlistItemsTable.productId],
-        });
+    if (guestRows.length > 0) {
+      const existing = await db
+        .select({
+          productId: wishlistItemsTable.productId,
+          selectedFinishId: wishlistItemsTable.selectedFinishId,
+          selectedFabricId: wishlistItemsTable.selectedFabricId,
+          selectedTableTopTileId: wishlistItemsTable.selectedTableTopTileId,
+        })
+        .from(wishlistItemsTable)
+        .where(eq(wishlistItemsTable.userId, userId));
+      const existingKeys = new Set(existing.map((e) => configKey(e)));
+
+      for (const row of guestRows) {
+        if (existingKeys.has(configKey(row))) {
+          // Identical config already saved for this user — drop the orphan
+          // guest row instead of leaving it stranded.
+          await db
+            .delete(wishlistItemsTable)
+            .where(eq(wishlistItemsTable.id, row.id));
+        } else {
+          await db
+            .update(wishlistItemsTable)
+            .set({ userId, deviceToken: null })
+            .where(eq(wishlistItemsTable.id, row.id));
+          existingKeys.add(configKey(row));
+        }
+      }
     }
 
-    res.json(await loadWishlist(req.user!.id));
+    res.json(await loadWishlist({ userId }));
   },
 );
 
 router.delete(
-  "/wishlist/:productId",
-  requireAuth,
+  "/wishlist/:id",
+  optionalAuth,
   async (req: Request, res: Response): Promise<void> => {
-    const productId = Number(req.params.productId);
-    if (!Number.isInteger(productId) || productId <= 0) {
-      res.status(400).json({ error: "Invalid productId" });
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      res.status(400).json({ error: "Invalid id" });
       return;
     }
-    await db
+
+    if (req.user) {
+      const deleted = await db
+        .delete(wishlistItemsTable)
+        .where(
+          and(
+            eq(wishlistItemsTable.id, id),
+            eq(wishlistItemsTable.userId, req.user.id),
+          ),
+        )
+        .returning({ id: wishlistItemsTable.id });
+      if (deleted.length === 0) {
+        res.status(404).json({ error: "Wishlist item not found" });
+        return;
+      }
+      res.json(await loadWishlist({ userId: req.user.id }));
+      return;
+    }
+
+    const parsed = RemoveWishlistItemBody.safeParse(req.body ?? {});
+    const deviceToken = parsed.success ? parsed.data.deviceToken : null;
+    if (!deviceToken) {
+      res.status(400).json({ error: "deviceToken is required for guests" });
+      return;
+    }
+    const deleted = await db
       .delete(wishlistItemsTable)
       .where(
         and(
-          eq(wishlistItemsTable.userId, req.user!.id),
-          eq(wishlistItemsTable.productId, productId),
+          eq(wishlistItemsTable.id, id),
+          eq(wishlistItemsTable.deviceToken, deviceToken),
+          isNull(wishlistItemsTable.userId),
         ),
-      );
-    res.json(await loadWishlist(req.user!.id));
+      )
+      .returning({ id: wishlistItemsTable.id });
+    if (deleted.length === 0) {
+      res.status(404).json({ error: "Wishlist item not found" });
+      return;
+    }
+    res.json(await loadWishlist({ deviceToken }));
   },
 );
 

@@ -15,6 +15,11 @@ export interface CatalogFinishOption {
   code: string;
   /** Display name (e.g. "Platinum", "Brushed Silver"). */
   name: string;
+  /**
+   * Finish category, used to distinguish frame finishes from table-top tiles (e.g. "Frame Finish", "Table Top Tile").
+   * @nullable
+   */
+  description: string | null;
   /** @nullable */
   swatchImageUrl: string | null;
   displayOrder: number;

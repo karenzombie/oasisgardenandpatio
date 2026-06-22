@@ -608,7 +608,17 @@ paths:
     get:
       operationId: getWishlist
       tags: [wishlist]
-      summary: List the signed-in user's wishlist items
+      summary: List wishlist items for the signed-in user or a guest device
+      description: >-
+        For signed-in users, returns rows owned by the session user. For
+        guests, pass `deviceToken` as a query parameter to return that
+        device's saved rows (user_id IS NULL).
+      parameters:
+        - name: deviceToken
+          in: query
+          required: false
+          schema:
+            type: string
       responses:
         "200":
           description: Wishlist items
@@ -616,16 +626,15 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/WishlistResponse"
-        "401":
-          description: Authentication required
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
     post:
       operationId: addWishlistItem
       tags: [wishlist]
-      summary: Add a product to the signed-in user's wishlist
+      summary: Add a product (with optional configuration) to a wishlist
+      description: >-
+        For signed-in users, the row is owned by the session user and
+        multiple configurations of the same product are allowed. For guests,
+        `deviceToken` identifies the device; only one row per product is
+        allowed per device (enforced by a partial unique constraint).
       requestBody:
         required: true
         content:
@@ -639,14 +648,23 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/WishlistResponse"
-        "401":
-          description: Authentication required
+        "400":
+          description: Invalid request
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
         "404":
           description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: >-
+            Guest already has a saved configuration for this product. The
+            client should prompt the guest to sign in, create an account, or
+            replace the existing configuration.
           content:
             application/json:
               schema:
@@ -781,46 +799,23 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-  /wishlist/lookup:
+  /wishlist/merge:
     post:
-      operationId: lookupWishlistItems
+      operationId: mergeWishlist
       tags: [wishlist]
-      summary: Public lookup — hydrate a list of product IDs into wishlist items
-      description: >
-        Used by the guest wishlist page to render the device-local
-        wishlist (held in localStorage). Returns the same shape as
-        GET /wishlist; for guest items, `id` is set to `productId` and
-        `createdAt` is set to the current time since there is no
-        underlying wishlist row. Hidden / inactive products are silently
-        omitted, mirroring the auth wishlist visibility rules.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/SyncWishlistRequest"
-      responses:
-        "200":
-          description: Hydrated items
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/WishlistResponse"
-  /wishlist/sync:
-    post:
-      operationId: syncWishlist
-      tags: [wishlist]
-      summary: Bulk-add products to the signed-in user's wishlist
+      summary: Merge a guest device's wishlist into the signed-in user's wishlist
       description: >-
-        Used after sign-up or login to merge a guest's locally-held wishlist
-        into the user's persistent wishlist. Existing items are silently
-        skipped via ON CONFLICT DO NOTHING.
+        Called automatically by the auth success handler immediately after
+        sign-in or account creation. Reassigns all guest rows for the given
+        `deviceToken` (user_id IS NULL) to the session user, skipping any row
+        whose product + configuration already exists for that user. Returns
+        the user's full merged wishlist.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/SyncWishlistRequest"
+              $ref: "#/components/schemas/MergeWishlistRequest"
       responses:
         "200":
           description: Wishlist after merge
@@ -834,17 +829,27 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-  /wishlist/{productId}:
+  /wishlist/{id}:
     delete:
       operationId: removeWishlistItem
       tags: [wishlist]
-      summary: Remove a product from the signed-in user's wishlist
+      summary: Remove a wishlist item by its row id
+      description: >-
+        For signed-in users the row must belong to the session user. For
+        guests, pass `deviceToken` in the request body and the row's
+        device_token must match.
       parameters:
-        - name: productId
+        - name: id
           in: path
           required: true
           schema:
             type: integer
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RemoveWishlistItemRequest"
       responses:
         "200":
           description: Wishlist after removal
@@ -852,8 +857,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/WishlistResponse"
-        "401":
-          description: Authentication required
+        "404":
+          description: Wishlist item not found
           content:
             application/json:
               schema:
@@ -6665,6 +6670,11 @@ components:
         name:
           type: string
           description: Display name (e.g. "Platinum", "Brushed Silver").
+        description:
+          type: ["string", "null"]
+          description: >-
+            Finish category, used to distinguish frame finishes from
+            table-top tiles (e.g. "Frame Finish", "Table Top Tile").
         swatchImageUrl:
           type: ["string", "null"]
         displayOrder:
@@ -6673,6 +6683,7 @@ components:
         - id
         - code
         - name
+        - description
         - swatchImageUrl
         - displayOrder
     CatalogFabricOption:
@@ -6846,6 +6857,12 @@ components:
           type: boolean
         primaryImageUrl:
           type: ["string", "null"]
+        selectedFinishId:
+          type: ["integer", "null"]
+        selectedFabricId:
+          type: ["integer", "null"]
+        selectedTableTopTileId:
+          type: ["integer", "null"]
         createdAt:
           type: string
           format: date-time
@@ -6863,6 +6880,9 @@ components:
         - availableOnline
         - quoteOnly
         - primaryImageUrl
+        - selectedFinishId
+        - selectedFabricId
+        - selectedTableTopTileId
         - createdAt
     WishlistResponse:
       type: object
@@ -6878,19 +6898,34 @@ components:
       properties:
         productId:
           type: integer
+        deviceToken:
+          type: ["string", "null"]
+        selectedFinishId:
+          type: ["integer", "null"]
+        selectedFabricId:
+          type: ["integer", "null"]
+        selectedTableTopTileId:
+          type: ["integer", "null"]
+        replaceExisting:
+          type: boolean
+          description: >-
+            Guests only. When true, an existing saved configuration for this
+            product on the same device is overwritten instead of returning a
+            409 conflict.
       required:
         - productId
-    SyncWishlistRequest:
+    MergeWishlistRequest:
       type: object
       properties:
-        productIds:
-          type: array
-          items:
-            type: integer
-            minimum: 1
-          maxItems: 200
+        deviceToken:
+          type: string
       required:
-        - productIds
+        - deviceToken
+    RemoveWishlistItemRequest:
+      type: object
+      properties:
+        deviceToken:
+          type: ["string", "null"]
     CartItem:
       type: object
       properties:

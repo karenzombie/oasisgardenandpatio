@@ -155,6 +155,7 @@ import type {
   FeaturedProduct,
   GenerateVendorOrdersRequest,
   GenerateVendorOrdersResponse,
+  GetWishlistParams,
   HealthStatus,
   ImportProductsCommitResult,
   ImportProductsDryRunResult,
@@ -171,6 +172,7 @@ import type {
   LoginRequest,
   Manufacturer,
   Material,
+  MergeWishlistRequest,
   PlaceOrderRequest,
   PlaceOrderResult,
   ProductRecommendation,
@@ -178,6 +180,7 @@ import type {
   QuoteOrderPricingResponse,
   ReceiveVendorOrderRequest,
   RecoveryCodeRequest,
+  RemoveWishlistItemRequest,
   ReorderProductImagesRequest,
   ReplaceSetItemsRequest,
   RequestPasswordResetRequest,
@@ -200,7 +203,6 @@ import type {
   StaffStageResponse,
   StaffUnreadCount,
   SubmitCushionOrderRequest,
-  SyncWishlistRequest,
   SystemSettings,
   SystemSettingsUpdate,
   TotpCodeRequest,
@@ -2275,43 +2277,60 @@ export const usePlaceOrder = <
 };
 
 /**
- * @summary List the signed-in user's wishlist items
+ * For signed-in users, returns rows owned by the session user. For guests, pass `deviceToken` as a query parameter to return that device's saved rows (user_id IS NULL).
+ * @summary List wishlist items for the signed-in user or a guest device
  */
-export const getGetWishlistUrl = () => {
-  return `/api/wishlist`;
+export const getGetWishlistUrl = (params?: GetWishlistParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/wishlist?${stringifiedParams}`
+    : `/api/wishlist`;
 };
 
 export const getWishlist = async (
+  params?: GetWishlistParams,
   options?: RequestInit,
 ): Promise<WishlistResponse> => {
-  return customFetch<WishlistResponse>(getGetWishlistUrl(), {
+  return customFetch<WishlistResponse>(getGetWishlistUrl(params), {
     ...options,
     method: "GET",
   });
 };
 
-export const getGetWishlistQueryKey = () => {
-  return [`/api/wishlist`] as const;
+export const getGetWishlistQueryKey = (params?: GetWishlistParams) => {
+  return [`/api/wishlist`, ...(params ? [params] : [])] as const;
 };
 
 export const getGetWishlistQueryOptions = <
   TData = Awaited<ReturnType<typeof getWishlist>>,
-  TError = ErrorType<Error>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof getWishlist>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}) => {
+  TError = ErrorType<unknown>,
+>(
+  params?: GetWishlistParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getWishlist>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getGetWishlistQueryKey();
+  const queryKey = queryOptions?.queryKey ?? getGetWishlistQueryKey(params);
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof getWishlist>>> = ({
     signal,
-  }) => getWishlist({ signal, ...requestOptions });
+  }) => getWishlist(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof getWishlist>>,
@@ -2323,24 +2342,27 @@ export const getGetWishlistQueryOptions = <
 export type GetWishlistQueryResult = NonNullable<
   Awaited<ReturnType<typeof getWishlist>>
 >;
-export type GetWishlistQueryError = ErrorType<Error>;
+export type GetWishlistQueryError = ErrorType<unknown>;
 
 /**
- * @summary List the signed-in user's wishlist items
+ * @summary List wishlist items for the signed-in user or a guest device
  */
 
 export function useGetWishlist<
   TData = Awaited<ReturnType<typeof getWishlist>>,
-  TError = ErrorType<Error>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof getWishlist>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getGetWishlistQueryOptions(options);
+  TError = ErrorType<unknown>,
+>(
+  params?: GetWishlistParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getWishlist>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetWishlistQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
@@ -2350,7 +2372,8 @@ export function useGetWishlist<
 }
 
 /**
- * @summary Add a product to the signed-in user's wishlist
+ * For signed-in users, the row is owned by the session user and multiple configurations of the same product are allowed. For guests, `deviceToken` identifies the device; only one row per product is allowed per device (enforced by a partial unique constraint).
+ * @summary Add a product (with optional configuration) to a wishlist
  */
 export const getAddWishlistItemUrl = () => {
   return `/api/wishlist`;
@@ -2413,7 +2436,7 @@ export type AddWishlistItemMutationBody = BodyType<AddWishlistItemRequest>;
 export type AddWishlistItemMutationError = ErrorType<Error>;
 
 /**
- * @summary Add a product to the signed-in user's wishlist
+ * @summary Add a product (with optional configuration) to a wishlist
  */
 export const useAddWishlistItem = <
   TError = ErrorType<Error>,
@@ -2839,44 +2862,43 @@ export const useRemoveCartItem = <
 };
 
 /**
- * Used by the guest wishlist page to render the device-local wishlist (held in localStorage). Returns the same shape as GET /wishlist; for guest items, `id` is set to `productId` and `createdAt` is set to the current time since there is no underlying wishlist row. Hidden / inactive products are silently omitted, mirroring the auth wishlist visibility rules.
-
- * @summary Public lookup — hydrate a list of product IDs into wishlist items
+ * Called automatically by the auth success handler immediately after sign-in or account creation. Reassigns all guest rows for the given `deviceToken` (user_id IS NULL) to the session user, skipping any row whose product + configuration already exists for that user. Returns the user's full merged wishlist.
+ * @summary Merge a guest device's wishlist into the signed-in user's wishlist
  */
-export const getLookupWishlistItemsUrl = () => {
-  return `/api/wishlist/lookup`;
+export const getMergeWishlistUrl = () => {
+  return `/api/wishlist/merge`;
 };
 
-export const lookupWishlistItems = async (
-  syncWishlistRequest: SyncWishlistRequest,
+export const mergeWishlist = async (
+  mergeWishlistRequest: MergeWishlistRequest,
   options?: RequestInit,
 ): Promise<WishlistResponse> => {
-  return customFetch<WishlistResponse>(getLookupWishlistItemsUrl(), {
+  return customFetch<WishlistResponse>(getMergeWishlistUrl(), {
     ...options,
     method: "POST",
     headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(syncWishlistRequest),
+    body: JSON.stringify(mergeWishlistRequest),
   });
 };
 
-export const getLookupWishlistItemsMutationOptions = <
-  TError = ErrorType<unknown>,
+export const getMergeWishlistMutationOptions = <
+  TError = ErrorType<Error>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof lookupWishlistItems>>,
+    Awaited<ReturnType<typeof mergeWishlist>>,
     TError,
-    { data: BodyType<SyncWishlistRequest> },
+    { data: BodyType<MergeWishlistRequest> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof lookupWishlistItems>>,
+  Awaited<ReturnType<typeof mergeWishlist>>,
   TError,
-  { data: BodyType<SyncWishlistRequest> },
+  { data: BodyType<MergeWishlistRequest> },
   TContext
 > => {
-  const mutationKey = ["lookupWishlistItems"];
+  const mutationKey = ["mergeWishlist"];
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
@@ -2886,147 +2908,64 @@ export const getLookupWishlistItemsMutationOptions = <
     : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof lookupWishlistItems>>,
-    { data: BodyType<SyncWishlistRequest> }
+    Awaited<ReturnType<typeof mergeWishlist>>,
+    { data: BodyType<MergeWishlistRequest> }
   > = (props) => {
     const { data } = props ?? {};
 
-    return lookupWishlistItems(data, requestOptions);
+    return mergeWishlist(data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type LookupWishlistItemsMutationResult = NonNullable<
-  Awaited<ReturnType<typeof lookupWishlistItems>>
+export type MergeWishlistMutationResult = NonNullable<
+  Awaited<ReturnType<typeof mergeWishlist>>
 >;
-export type LookupWishlistItemsMutationBody = BodyType<SyncWishlistRequest>;
-export type LookupWishlistItemsMutationError = ErrorType<unknown>;
+export type MergeWishlistMutationBody = BodyType<MergeWishlistRequest>;
+export type MergeWishlistMutationError = ErrorType<Error>;
 
 /**
- * @summary Public lookup — hydrate a list of product IDs into wishlist items
+ * @summary Merge a guest device's wishlist into the signed-in user's wishlist
  */
-export const useLookupWishlistItems = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof lookupWishlistItems>>,
-    TError,
-    { data: BodyType<SyncWishlistRequest> },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationResult<
-  Awaited<ReturnType<typeof lookupWishlistItems>>,
-  TError,
-  { data: BodyType<SyncWishlistRequest> },
-  TContext
-> => {
-  return useMutation(getLookupWishlistItemsMutationOptions(options));
-};
-
-/**
- * Used after sign-up or login to merge a guest's locally-held wishlist into the user's persistent wishlist. Existing items are silently skipped via ON CONFLICT DO NOTHING.
- * @summary Bulk-add products to the signed-in user's wishlist
- */
-export const getSyncWishlistUrl = () => {
-  return `/api/wishlist/sync`;
-};
-
-export const syncWishlist = async (
-  syncWishlistRequest: SyncWishlistRequest,
-  options?: RequestInit,
-): Promise<WishlistResponse> => {
-  return customFetch<WishlistResponse>(getSyncWishlistUrl(), {
-    ...options,
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(syncWishlistRequest),
-  });
-};
-
-export const getSyncWishlistMutationOptions = <
+export const useMergeWishlist = <
   TError = ErrorType<Error>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof syncWishlist>>,
+    Awaited<ReturnType<typeof mergeWishlist>>,
     TError,
-    { data: BodyType<SyncWishlistRequest> },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof syncWishlist>>,
-  TError,
-  { data: BodyType<SyncWishlistRequest> },
-  TContext
-> => {
-  const mutationKey = ["syncWishlist"];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof syncWishlist>>,
-    { data: BodyType<SyncWishlistRequest> }
-  > = (props) => {
-    const { data } = props ?? {};
-
-    return syncWishlist(data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type SyncWishlistMutationResult = NonNullable<
-  Awaited<ReturnType<typeof syncWishlist>>
->;
-export type SyncWishlistMutationBody = BodyType<SyncWishlistRequest>;
-export type SyncWishlistMutationError = ErrorType<Error>;
-
-/**
- * @summary Bulk-add products to the signed-in user's wishlist
- */
-export const useSyncWishlist = <
-  TError = ErrorType<Error>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof syncWishlist>>,
-    TError,
-    { data: BodyType<SyncWishlistRequest> },
+    { data: BodyType<MergeWishlistRequest> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
-  Awaited<ReturnType<typeof syncWishlist>>,
+  Awaited<ReturnType<typeof mergeWishlist>>,
   TError,
-  { data: BodyType<SyncWishlistRequest> },
+  { data: BodyType<MergeWishlistRequest> },
   TContext
 > => {
-  return useMutation(getSyncWishlistMutationOptions(options));
+  return useMutation(getMergeWishlistMutationOptions(options));
 };
 
 /**
- * @summary Remove a product from the signed-in user's wishlist
+ * For signed-in users the row must belong to the session user. For guests, pass `deviceToken` in the request body and the row's device_token must match.
+ * @summary Remove a wishlist item by its row id
  */
-export const getRemoveWishlistItemUrl = (productId: number) => {
-  return `/api/wishlist/${productId}`;
+export const getRemoveWishlistItemUrl = (id: number) => {
+  return `/api/wishlist/${id}`;
 };
 
 export const removeWishlistItem = async (
-  productId: number,
+  id: number,
+  removeWishlistItemRequest?: RemoveWishlistItemRequest,
   options?: RequestInit,
 ): Promise<WishlistResponse> => {
-  return customFetch<WishlistResponse>(getRemoveWishlistItemUrl(productId), {
+  return customFetch<WishlistResponse>(getRemoveWishlistItemUrl(id), {
     ...options,
     method: "DELETE",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(removeWishlistItemRequest),
   });
 };
 
@@ -3037,14 +2976,14 @@ export const getRemoveWishlistItemMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof removeWishlistItem>>,
     TError,
-    { productId: number },
+    { id: number; data: BodyType<RemoveWishlistItemRequest> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof removeWishlistItem>>,
   TError,
-  { productId: number },
+  { id: number; data: BodyType<RemoveWishlistItemRequest> },
   TContext
 > => {
   const mutationKey = ["removeWishlistItem"];
@@ -3058,11 +2997,11 @@ export const getRemoveWishlistItemMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof removeWishlistItem>>,
-    { productId: number }
+    { id: number; data: BodyType<RemoveWishlistItemRequest> }
   > = (props) => {
-    const { productId } = props ?? {};
+    const { id, data } = props ?? {};
 
-    return removeWishlistItem(productId, requestOptions);
+    return removeWishlistItem(id, data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -3071,11 +3010,12 @@ export const getRemoveWishlistItemMutationOptions = <
 export type RemoveWishlistItemMutationResult = NonNullable<
   Awaited<ReturnType<typeof removeWishlistItem>>
 >;
-
+export type RemoveWishlistItemMutationBody =
+  BodyType<RemoveWishlistItemRequest>;
 export type RemoveWishlistItemMutationError = ErrorType<Error>;
 
 /**
- * @summary Remove a product from the signed-in user's wishlist
+ * @summary Remove a wishlist item by its row id
  */
 export const useRemoveWishlistItem = <
   TError = ErrorType<Error>,
@@ -3084,14 +3024,14 @@ export const useRemoveWishlistItem = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof removeWishlistItem>>,
     TError,
-    { productId: number },
+    { id: number; data: BodyType<RemoveWishlistItemRequest> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof removeWishlistItem>>,
   TError,
-  { productId: number },
+  { id: number; data: BodyType<RemoveWishlistItemRequest> },
   TContext
 > => {
   return useMutation(getRemoveWishlistItemMutationOptions(options));

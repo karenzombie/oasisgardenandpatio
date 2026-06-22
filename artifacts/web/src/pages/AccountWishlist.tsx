@@ -30,7 +30,7 @@ export default function AccountWishlist() {
     if (!authLoading && !isAuthenticated) navigate("/login?next=%2Faccount%2Fwishlist");
   }, [authLoading, isAuthenticated, navigate]);
 
-  const { data, isLoading } = useGetWishlist({
+  const { data, isLoading } = useGetWishlist(undefined, {
     query: {
       queryKey: getGetWishlistQueryKey(),
       enabled: isAuthenticated,
@@ -49,8 +49,12 @@ export default function AccountWishlist() {
       onSuccess: (resp, vars) => {
         qc.setQueryData(getGetCartQueryKey(), resp);
         toast({ title: "Added to cart" });
-        // Move = add to cart then remove from wishlist
-        removeM.mutate({ productId: vars.data.productId });
+        // Move = add to cart then remove from wishlist. Signed-in rows are
+        // removed by their row id (deviceToken not needed).
+        const row = (data?.items ?? []).find(
+          (i) => i.productId === vars.data.productId,
+        );
+        if (row) removeM.mutate({ id: row.id, data: {} });
       },
     },
   });
@@ -143,7 +147,7 @@ export default function AccountWishlist() {
                   <Button
                     variant="outline"
                     className="rounded-none"
-                    onClick={() => removeM.mutate({ productId: item.productId })}
+                    onClick={() => removeM.mutate({ id: item.id, data: {} })}
                     disabled={removeM.isPending}
                     aria-label="Remove from wishlist"
                   >

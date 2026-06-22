@@ -8,7 +8,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Layout } from "@/components/layout/Layout";
 import NotFound from "@/pages/not-found";
 import { trackVisitOnce } from "@/lib/analytics";
-import { useDrainPendingWishlistOnLogin } from "@/lib/auth";
+import { useWishlistBootstrap } from "@/lib/wishlistHold";
 import { useClerkSync } from "@/lib/useClerkSync";
 import { clerkAppearance } from "@/lib/clerkAppearance";
 import { SignInPage, SignUpPage } from "@/pages/auth/ClerkAuthPages";
@@ -113,10 +113,11 @@ function CustomerRouter() {
 }
 
 function CustomerArea() {
-  // Bridge Clerk → local session, then drain any guest wishlist held in
-  // localStorage. Both effects must mount inside ClerkProvider.
+  // Bridge Clerk → local session, then run the wishlist bootstrap (legacy
+  // localStorage migration + guest→account merge on login). Both effects must
+  // mount inside ClerkProvider.
   useClerkSync();
-  useDrainPendingWishlistOnLogin();
+  useWishlistBootstrap();
   return <CustomerRouter />;
 }
 

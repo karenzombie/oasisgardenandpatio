@@ -667,6 +667,12 @@ export const GetCatalogProductBySlugResponse = zod
                 .describe(
                   'Display name (e.g. \"Platinum\", \"Brushed Silver\").',
                 ),
+              description: zod
+                .string()
+                .nullable()
+                .describe(
+                  'Finish category, used to distinguish frame finishes from table-top tiles (e.g. \"Frame Finish\", \"Table Top Tile\").',
+                ),
               swatchImageUrl: zod.string().nullable(),
               displayOrder: zod.number(),
             })
@@ -1091,8 +1097,13 @@ export const PlaceOrderResponse = zod.object({
 });
 
 /**
- * @summary List the signed-in user's wishlist items
+ * For signed-in users, returns rows owned by the session user. For guests, pass `deviceToken` as a query parameter to return that device's saved rows (user_id IS NULL).
+ * @summary List wishlist items for the signed-in user or a guest device
  */
+export const GetWishlistQueryParams = zod.object({
+  deviceToken: zod.coerce.string().optional(),
+});
+
 export const GetWishlistResponse = zod.object({
   items: zod.array(
     zod.object({
@@ -1109,16 +1120,30 @@ export const GetWishlistResponse = zod.object({
       availableOnline: zod.boolean(),
       quoteOnly: zod.boolean(),
       primaryImageUrl: zod.string().nullable(),
+      selectedFinishId: zod.number().nullable(),
+      selectedFabricId: zod.number().nullable(),
+      selectedTableTopTileId: zod.number().nullable(),
       createdAt: zod.coerce.date(),
     }),
   ),
 });
 
 /**
- * @summary Add a product to the signed-in user's wishlist
+ * For signed-in users, the row is owned by the session user and multiple configurations of the same product are allowed. For guests, `deviceToken` identifies the device; only one row per product is allowed per device (enforced by a partial unique constraint).
+ * @summary Add a product (with optional configuration) to a wishlist
  */
 export const AddWishlistItemBody = zod.object({
   productId: zod.number(),
+  deviceToken: zod.string().nullish(),
+  selectedFinishId: zod.number().nullish(),
+  selectedFabricId: zod.number().nullish(),
+  selectedTableTopTileId: zod.number().nullish(),
+  replaceExisting: zod
+    .boolean()
+    .optional()
+    .describe(
+      "Guests only. When true, an existing saved configuration for this product on the same device is overwritten instead of returning a 409 conflict.",
+    ),
 });
 
 export const AddWishlistItemResponse = zod.object({
@@ -1137,6 +1162,9 @@ export const AddWishlistItemResponse = zod.object({
       availableOnline: zod.boolean(),
       quoteOnly: zod.boolean(),
       primaryImageUrl: zod.string().nullable(),
+      selectedFinishId: zod.number().nullable(),
+      selectedFabricId: zod.number().nullable(),
+      selectedTableTopTileId: zod.number().nullable(),
       createdAt: zod.coerce.date(),
     }),
   ),
@@ -1361,20 +1389,14 @@ export const RemoveCartItemResponse = zod.object({
 });
 
 /**
- * Used by the guest wishlist page to render the device-local wishlist (held in localStorage). Returns the same shape as GET /wishlist; for guest items, `id` is set to `productId` and `createdAt` is set to the current time since there is no underlying wishlist row. Hidden / inactive products are silently omitted, mirroring the auth wishlist visibility rules.
-
- * @summary Public lookup — hydrate a list of product IDs into wishlist items
+ * Called automatically by the auth success handler immediately after sign-in or account creation. Reassigns all guest rows for the given `deviceToken` (user_id IS NULL) to the session user, skipping any row whose product + configuration already exists for that user. Returns the user's full merged wishlist.
+ * @summary Merge a guest device's wishlist into the signed-in user's wishlist
  */
-
-export const lookupWishlistItemsBodyProductIdsMax = 200;
-
-export const LookupWishlistItemsBody = zod.object({
-  productIds: zod
-    .array(zod.number().min(1))
-    .max(lookupWishlistItemsBodyProductIdsMax),
+export const MergeWishlistBody = zod.object({
+  deviceToken: zod.string(),
 });
 
-export const LookupWishlistItemsResponse = zod.object({
+export const MergeWishlistResponse = zod.object({
   items: zod.array(
     zod.object({
       id: zod.number(),
@@ -1390,48 +1412,24 @@ export const LookupWishlistItemsResponse = zod.object({
       availableOnline: zod.boolean(),
       quoteOnly: zod.boolean(),
       primaryImageUrl: zod.string().nullable(),
+      selectedFinishId: zod.number().nullable(),
+      selectedFabricId: zod.number().nullable(),
+      selectedTableTopTileId: zod.number().nullable(),
       createdAt: zod.coerce.date(),
     }),
   ),
 });
 
 /**
- * Used after sign-up or login to merge a guest's locally-held wishlist into the user's persistent wishlist. Existing items are silently skipped via ON CONFLICT DO NOTHING.
- * @summary Bulk-add products to the signed-in user's wishlist
- */
-
-export const syncWishlistBodyProductIdsMax = 200;
-
-export const SyncWishlistBody = zod.object({
-  productIds: zod.array(zod.number().min(1)).max(syncWishlistBodyProductIdsMax),
-});
-
-export const SyncWishlistResponse = zod.object({
-  items: zod.array(
-    zod.object({
-      id: zod.number(),
-      productId: zod.number(),
-      name: zod.string(),
-      slug: zod.string(),
-      sku: zod.string(),
-      manufacturerName: zod.string().nullable(),
-      categoryName: zod.string().nullable(),
-      price: zod.string().nullable(),
-      salePrice: zod.string().nullable(),
-      showPriceOnline: zod.boolean(),
-      availableOnline: zod.boolean(),
-      quoteOnly: zod.boolean(),
-      primaryImageUrl: zod.string().nullable(),
-      createdAt: zod.coerce.date(),
-    }),
-  ),
-});
-
-/**
- * @summary Remove a product from the signed-in user's wishlist
+ * For signed-in users the row must belong to the session user. For guests, pass `deviceToken` in the request body and the row's device_token must match.
+ * @summary Remove a wishlist item by its row id
  */
 export const RemoveWishlistItemParams = zod.object({
-  productId: zod.coerce.number(),
+  id: zod.coerce.number(),
+});
+
+export const RemoveWishlistItemBody = zod.object({
+  deviceToken: zod.string().nullish(),
 });
 
 export const RemoveWishlistItemResponse = zod.object({
@@ -1450,6 +1448,9 @@ export const RemoveWishlistItemResponse = zod.object({
       availableOnline: zod.boolean(),
       quoteOnly: zod.boolean(),
       primaryImageUrl: zod.string().nullable(),
+      selectedFinishId: zod.number().nullable(),
+      selectedFabricId: zod.number().nullable(),
+      selectedTableTopTileId: zod.number().nullable(),
       createdAt: zod.coerce.date(),
     }),
   ),
@@ -2906,6 +2907,12 @@ export const AdminGetProductPickerResponse = zod
               .string()
               .describe(
                 'Display name (e.g. \"Platinum\", \"Brushed Silver\").',
+              ),
+            description: zod
+              .string()
+              .nullable()
+              .describe(
+                'Finish category, used to distinguish frame finishes from table-top tiles (e.g. \"Frame Finish\", \"Table Top Tile\").',
               ),
             swatchImageUrl: zod.string().nullable(),
             displayOrder: zod.number(),

@@ -1,39 +1,18 @@
 import { Link } from "wouter";
 import { Heart } from "lucide-react";
-import {
-  useGetWishlist,
-  getGetWishlistQueryKey,
-} from "@workspace/api-client-react";
-import { useAuth, usePendingWishlist } from "@/lib/auth";
+import { useWishlistItems } from "@/lib/wishlistHold";
 
 /**
  * Header wishlist entry point. Mirrors the cart link styling/badge.
  *
- * - Authenticated users: count comes from the server wishlist.
- * - Guests: count comes from the device-local hold in localStorage
- *   (via `usePendingWishlist`), which already powers `<WishlistButton>`.
- *
- * Heart fills solid when there is at least one saved item, outlined when
- * empty. Always links to the existing `/account/wishlist` route — for
- * guests that route already redirects to sign-in, which preserves the
- * existing wishlist behavior.
+ * Count comes from the unified wishlist (server-backed for both signed-in
+ * users and guests, the latter identified by their device token). Heart fills
+ * solid when there is at least one saved item, outlined when empty.
  */
 export function WishlistIconLink() {
-  const { isAuthenticated } = useAuth();
-  const pendingSet = usePendingWishlist();
+  const { items } = useWishlistItems();
 
-  const { data: serverWishlist } = useGetWishlist({
-    query: {
-      queryKey: getGetWishlistQueryKey(),
-      enabled: isAuthenticated,
-      retry: false,
-      staleTime: 30_000,
-    },
-  });
-
-  const count = isAuthenticated
-    ? (serverWishlist?.items.length ?? 0)
-    : pendingSet.size;
+  const count = items.length;
   const hasItems = count > 0;
 
   return (

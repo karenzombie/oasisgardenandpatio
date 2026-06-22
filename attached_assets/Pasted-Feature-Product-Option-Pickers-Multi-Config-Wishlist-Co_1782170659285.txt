@@ -1,0 +1,134 @@
+Feature: Product Option Pickers + Multi-Config Wishlist
+Context
+The PDP (Product.tsx) currently shows no option selectors for non-purchasable products (most O.W. Lee items). We're adding finish, fabric, and table-top-tile pickers, then wiring selections into an enhanced wishlist that supports multiple saved configurations per product for signed-in customers.
+
+Part 1 — PDP Option Pickers
+New component: artifacts/web/src/components/ProductOptionPickers.tsx
+Render three independent pickers, each only appearing if the product has options of that type:
+
+Frame Finish -- driven by product.finishes where description = 'Frame Finish'
+Fabric -- driven by product.fabricOptions (existing data)
+Table Top Tile -- driven by product.finishes where description = 'Table Top Tile'
+
+Use the existing swatch visual style from FabricSwatchDialog.tsx for consistency. These are not variant-based -- no price change, no SKU switch. They are purely configuration selectors for wishlist saving purposes.
+Important: Currently only 4 products in the database have table-top-tile finish options assigned, and all 4 are table bases (available_online = true). For all other products, the Table Top Tile picker simply will not appear because product.finishes will return no rows with description = 'Table Top Tile'. This is expected and correct -- no special handling needed. The picker will appear on additional products as tile options are assigned to them in future data updates.
+API change required (inside artifacts/api-server):
+
+In artifacts/api-server/src/routes/products.ts, add description to the finishes payload. Currently description returns null in the PDP response, which prevents the frontend from distinguishing frame finishes from table-top tiles. This must be fixed before the picker component will work correctly.
+UI label: On products where Table Top Tile options are present (i.e. at least one finish with description = 'Table Top Tile'), label that picker "Tile Color" rather than the default finish label.
+State: Track selectedFinishId, selectedFabricId, selectedTableTopTileId in local component state on the PDP. No defaults -- all start as null (unselected).
+
+Part 2 — Wishlist Schema Changes
+Files outside artifacts/ that need changes -- explicitly authorized:
+
+lib/db/src/schema/wishlist.ts
+lib/api-spec/openapi.yaml
+
+Do not run codegen until both files are fully updated (see order of operations).
+Changes to wishlist_items:
+Add the following columns:
+device_token              varchar, nullable  -- UUID identifying a guest's device; stored in localStorage
+selected_finish_id        integer, nullable, FK → finishes(id), ON DELETE SET NULL
+selected_fabric_id        integer, nullable, FK → fabrics(id), ON DELETE SET NULL
+selected_table_top_tile_id  integer, nullable, FK → finishes(id), ON DELETE SET NULL
+Remove the existing UNIQUE(user_id, product_id) constraint.
+Add a new partial unique constraint applying only to guest rows:
+sqlUNIQUE(device_token, product_id) WHERE user_id IS NULL
+This enforces one saved configuration per product for guests. For signed-in users there is no uniqueness constraint -- multiple configs per product are intentionally allowed. Deduplication of identical configs for signed-in users (same product + same three selection IDs) is handled at the app layer in the merge endpoint (see Part 4).
+Write this as a Drizzle migration. Run the migration before any other steps.
+
+Part 3 — Guest Wishlist Logic
+Current behavior: wishlist saved to localStorage only, with no server record.
+New behavior:
+On first wishlist action (add or remove) after this ships:
+
+Generate a UUID device_token and store it in localStorage under the key oasis_device_token
+All subsequent wishlist reads and writes use this token to identify the guest
+
+One-time localStorage migration on page load:
+
+On app load, check localStorage for any wishlist data saved in the old format (pre-this-feature)
+If old data exists, write those items to wishlist_items in the DB using the new device_token (generating one if needed), then delete the old localStorage keys
+This runs once silently in the background -- no user-facing indication needed
+
+Ongoing guest behavior:
+
+Every POST /wishlist call sends deviceToken in the request body
+Every GET /wishlist call sends deviceToken as a query parameter
+Every DELETE /wishlist/:id call sends deviceToken in the request body
+One config per product is enforced by the DB constraint; attempting to add a second config for the same product triggers the account prompt modal (see Part 5) before any DB write is attempted
+
+
+Part 4 — Merge on Login
+The merge must fire automatically as part of the login/account-creation success handler -- it is not a manual user action. The flow is:
+
+Customer completes sign-in or account creation
+Auth success handler reads oasis_device_token from localStorage
+If a token exists, immediately call POST /wishlist/merge with { deviceToken }
+Server finds all wishlist_items where device_token = deviceToken AND user_id IS NULL
+For each row: check if an identical config already exists for this user_id (same product_id + same selected_finish_id + same selected_fabric_id + same selected_table_top_tile_id). If a match exists, skip. Otherwise assign user_id to the row and set device_token = NULL
+Return the full merged wishlist to the client
+Client updates wishlist state from the response
+Delete oasis_device_token from localStorage
+If no token exists in localStorage, skip the merge call entirely
+
+
+Part 5 — "Sign In to Save Multiple Configs" Modal
+Trigger: Guest attempts to add a configuration for a product that already has a row in wishlist_items for their device_token. Check for this before attempting the DB write.
+Modal content:
+
+Heading: "Want to save multiple configurations?"
+Body: "Sign in or create a free account to save this product in as many finishes and fabrics as you like. Your current wishlist will carry over automatically."
+Buttons:
+
+Sign In -- redirects to sign-in page with return URL set to the current PDP
+Create Account -- redirects to account creation page with return URL set to the current PDP
+Replace my saved configuration -- overwrites the existing wishlist_items row for this device_token + product_id combination with the new selections, then closes the modal. No account required.
+
+
+
+No MFA for customer accounts. Existing email verification on account creation is sufficient and should not be changed.
+
+Part 6 — Wishlist API Updates
+Update all existing wishlist endpoints and add one new one:
+POST /wishlist (add to wishlist)
+
+Accept in request body: productId, deviceToken (required for guests, null for signed-in), selectedFinishId (optional), selectedFabricId (optional), selectedTableTopTileId (optional)
+For guests: use deviceToken to identify the row; user_id is null
+For signed-in users: use session user_id; ignore any deviceToken in the body
+
+GET /wishlist (retrieve wishlist)
+
+Accept deviceToken as a query parameter for guest retrieval
+For guests: return all rows where device_token = deviceToken AND user_id IS NULL
+For signed-in users: return all rows where user_id matches session
+Response must include selectedFinishId, selectedFabricId, selectedTableTopTileId on each item
+
+DELETE /wishlist/:id
+
+Accept deviceToken in request body for guest auth
+For guests: verify the row's device_token matches before deleting
+For signed-in users: verify the row's user_id matches session before deleting
+
+POST /wishlist/merge (new endpoint)
+
+Accepts { deviceToken } in request body
+Must be called from the auth success handler automatically after login or account creation (not triggered manually by the user)
+Logic described in full in Part 4 above
+
+Update lib/api-spec/openapi.yaml to reflect all of the above before running codegen.
+
+Order of Operations for Replit
+Execute in this exact order -- do not proceed to the next step if the current step produces errors:
+
+Update lib/db/src/schema/wishlist.ts with new columns and constraint changes
+Update lib/api-spec/openapi.yaml with all API changes from Part 6
+Run codegen (after both schema and API spec are fully updated)
+Run the Drizzle migration
+Update artifacts/api-server/src/routes/products.ts to add description to finishes payload
+Update wishlist API routes in artifacts/api-server to reflect Part 6
+Build ProductOptionPickers.tsx in artifacts/web/src/components/
+Wire pickers into the PDP in artifacts/web/src/pages/Product.tsx
+Implement guest device_token logic and localStorage one-time migration
+Implement merge-on-login in the auth success handler
+Build the account prompt modal (Part 5)

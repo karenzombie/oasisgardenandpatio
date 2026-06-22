@@ -25,5 +25,11 @@ export interface WishlistItem {
   quoteOnly: boolean;
   /** @nullable */
   primaryImageUrl: string | null;
+  /** @nullable */
+  selectedFinishId: number | null;
+  /** @nullable */
+  selectedFabricId: number | null;
+  /** @nullable */
+  selectedTableTopTileId: number | null;
   createdAt: Date;
 }

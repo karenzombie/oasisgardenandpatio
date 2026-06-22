@@ -8,4 +8,14 @@
 
 export interface AddWishlistItemRequest {
   productId: number;
+  /** @nullable */
+  deviceToken?: string | null;
+  /** @nullable */
+  selectedFinishId?: number | null;
+  /** @nullable */
+  selectedFabricId?: number | null;
+  /** @nullable */
+  selectedTableTopTileId?: number | null;
+  /** Guests only. When true, an existing saved configuration for this product on the same device is overwritten instead of returning a 409 conflict. */
+  replaceExisting?: boolean;
 }

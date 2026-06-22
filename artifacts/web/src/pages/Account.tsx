@@ -30,7 +30,7 @@ export default function Account() {
   // reach this page (the redirect above sends them to /sign-in), which
   // matches the spec: guest wishlists are device-only and surfaced via the
   // header heart icon, not here.
-  const { data: wishlist } = useGetWishlist({
+  const { data: wishlist } = useGetWishlist(undefined, {
     query: {
       queryKey: getGetWishlistQueryKey(),
       enabled: isAuthenticated,
