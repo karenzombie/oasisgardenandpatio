@@ -31,3 +31,15 @@ Hanamint, NorthCape, Galtech. Spec-generated teasers (loadVendorData, loadOwLee)
 are sentences that never end in "…" and should be left alone. To repair stale
 data, target rows whose `short_description` ends in "…"/"..." — that suffix is a
 reliable provenance marker for the clamped seeds.
+
+## Dedup convention: when short_description == description
+Some imports stored the SAME text in both `short_description` and `description`.
+The agreed fix is **keep `short_description` (the blurb), set `description` = NULL**
+— NOT the reverse. **Why:** the Features tab is `description`-driven and already
+auto-hides when `description` is empty (`featuresHtml.length > 0` gate in the PDP),
+so nulling `description` removes the redundant tab while the single copy of the
+text still shows as the top blurb. No PDP code change is needed for "hide the empty
+Features tab" — that behavior already exists. (A first pass mistakenly cleared
+`short_description` instead; it had to be reversed.)
+Other manufacturers carrying exact short==desc duplicates (candidates for the same
+treatment): Sunset West, Frankford, Summerset, Galtech.
