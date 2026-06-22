@@ -1,0 +1,61 @@
+Replit Instructions: Configuration Picker for Non-Purchase (Wishlist-Only) Products
+Preflight -- Answer These Before Building
+Before writing any new code, please locate and review the following in the existing codebase:
+
+Where is the existing finish/fabric picker component? Find the component used on purchasable product pages (e.g., the Treasure Garden umbrella page) that renders the Frame Finish, Wind Vent, and Fabric selectors. The new component should follow the same pattern or reuse it directly. Share the file path and component name before proceeding.
+Can the wishlist schema store configuration selections? Check the current wishlist data model (database schema and any relevant API routes). We need to be able to store selected finish, fabric, and/or table top tile alongside a wishlist entry. If the current schema cannot support this, stop and flag the gap with a proposed minimal schema change before building any UI.
+
+
+Overview
+We need to add a configuration picker to product pages for items that are not available for online purchase (available_online = false). These products currently show no options UI. The goal is to let customers select their finish, fabric, and/or table top tile before clicking "Add to Wishlist," so that wishlist entries capture the customer's intended configuration.
+The umbrella product page (screenshot provided) is the existing reference for how this picker looks and behaves. We want a similar UI, but the only action it gates is Add to Wishlist -- there is no Add to Cart on these pages.
+
+Picker Logic by Product Type
+The configuration options to show depend on the product's category and manufacturer. Use the following rules for O.W. Lee products (we'll extend to other manufacturers after):
+Product TypeShow Finish Picker?Show Fabric Picker?Show Table Top Picker?Seating (dining, deep seating, bar, chaise)YesYes, if product has fabric/cushion/sling optionsNoTables (dining, occasional, coffee/side, bar)YesNoYes, if product has table top tile optionsFire TablesYesNoYes, if product has table top tile optionsFire Pits (no top)YesNoNoAccessories / Accent PiecesYesNoNo
+
+Where the Options Live
+All option data already exists in the system:
+
+Frame Finishes: Materials > Finishes > O.W. Lee -- these are the finish options for the finish picker
+Fabrics: Materials > Fabrics > O.W. Lee -- these are the fabric options for the fabric picker
+Table Top Tiles: Materials > Finishes > Table Top Tiles -- these are the tile options for the table top picker
+
+Use the same data source and swatch rendering already used on the umbrella product pages. Do not hardcode options -- pull them dynamically from the same material pools the online products use, filtered to O.W. Lee.
+
+UI Requirements
+
+The picker should appear on the product detail page for any O.W. Lee product where available_online = false (and the product is otherwise visible on the site -- i.e., is_active = true).
+Show only the pickers that apply to the product (per the table above). Do not show a fabric picker if the product has no fabric options assigned. Do not show a table top picker if the product has no table top tile options assigned.
+The "Add to Wishlist" button should be active whether or not selections have been made -- configuration is optional, not required. If selections are made, they should be stored with the wishlist entry.
+Label the pickers clearly:
+
+"Frame Finish" (not just "Finish")
+"Fabric" (for cushion/sling products)
+"Table Top" (for tables and fire tables with tile options)
+
+
+Visual style should match the existing finish/fabric pickers used on purchasable products.
+
+
+Scope and Extensibility
+
+Start with O.W. Lee only. We will expand to other manufacturers after confirming the pattern works.
+The underlying component should be written in a manufacturer-agnostic way so that extending to other manufacturers (Hanamint, Homecrest, NorthCape, etc.) later only requires configuration, not a new component.
+Each manufacturer has its own set of finishes and fabrics. The component should accept a manufacturerSlug and dynamically load the correct option pools for that manufacturer.
+
+
+What NOT to Change
+
+Do not add or change Add to Cart functionality on these pages.
+Do not change anything on products where available_online = true -- those already have working pickers.
+Do not modify the wishlist schema without flagging it first (see Preflight item 2).
+
+
+Suggested Implementation Order
+
+Complete both preflight checks and share findings.
+Build the configuration picker component (reusable, manufacturer-agnostic).
+Wire it into the O.W. Lee product page for non-purchasable products.
+Test with one seating product (finish + fabric), one dining table (finish + table top), and one fire pit (finish only).
+After Karen confirms it looks and behaves correctly, expand to remaining manufacturers.
