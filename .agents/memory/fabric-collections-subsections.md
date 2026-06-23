@@ -21,9 +21,19 @@ endpoints 500 at `.parse()`. Only the `/catalog/fabrics` route populates
 pattern as Telescope finishes. Risk: editing a name later can break the natural
 key / create duplicates.
 
-**Belenos & Wicker are stored as `finishes` (mfr 17), grouped by `description`,
-NOT `collection`** (NorthCape finishes leave the `collection` column empty).
-They are referenced by ~1344 `product_finish_options` rows. "Moving" them to the
-Fabrics section is therefore NOT a pure catalog reclassification — fully moving
-means re-wiring those product links to `product_fabric_options` and removing the
-finishes, which is destructive. Confirm intent before doing it.
+**Belenos & Wicker were MOVED from `finishes` to `fabrics`** (mfr 17,
+collection='Belenos'/'Wicker'). The move re-wired all 1344 `product_finish_options`
+links to `product_fabric_options` (1:1, displayOrder preserved) and deleted the 20
+finishes. Their swatches stayed as static `/finish-swatches/northcape/...` public
+paths (NOT object storage) — those resolve fine on the web origin and pass
+toPublicImageUrl untouched. No NorthCape product mixed Belenos+Wicker (single-pick),
+so the single `cart_items.fabric_id` model is preserved; cart `requiresFabric`
+(active fabric options exist) now drives the requirement, and non-grade products
+reject any finishId. Untouched: 33 NorthCape products that have other finishes
+(Hixon/Oceanview/Fire Table/etc.) — only Belenos/Wicker were moved.
+
+**Why the move was safe:** verify before any similar finish→fabric move that ALL
+linked products belong to the one manufacturer and there are ZERO live
+cart/order/wishlist references to the finish ids (ON DELETE SET NULL would null
+historical orders otherwise). NorthCape products use neither variants nor grade
+pricing, so there was no pricing impact.
