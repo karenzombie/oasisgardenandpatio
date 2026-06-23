@@ -1,0 +1,12 @@
+O.W. Lee -- Fire Pit Finish and Tile Option Corrections
+Two separate issues need to be fixed:
+Issue 1 -- Table Top Tile options missing from fire pits that have tops
+Wire product_finish_pools for finishes where description = 'Table Top Tile' to all O.W. Lee fire pit products where collection is any of the following: Santorini, Capri, Elba, Anello, Compass. These are porcelain-top fire pits and should receive all porcelain tile finish options.
+Wire Dekton tile options only (Trillium and Soke) to fire pit products where collection is any of: Phoenix, Nova, Volante, Moda. These use Dekton tops exclusively and should only show those two tile options, not the full porcelain set.
+The collections Basso, Haven, and Forma have no separate top material -- they are self-contained cast or formed units. Do not assign any tile options to these.
+Issue 2 -- Frame finish options incorrectly assigned to Compass accessories and inserts
+The following products should have ALL finish options removed -- both frame finishes and tile options. These are Breeo-branded insert and accessory products that ship in fixed materials determined by their SKU. They are not O.W. Lee fabricated products and have no selectable options:
+Remove all entries from product_finish_options and product_finish_pools for any O.W. Lee product where collection = 'Compass' AND category is not Fire Tables. Specifically this covers the Breeo inserts (5360-X24S, 5360-X24P) and all Compass accessories (5360-SS24, 5360-HD24-OP, 5360-ART, 5360-OP24, 5360-1381, 5360-KH24, 5360-OPGD24).
+To be safe, identify these by SKU prefix 5360- rather than by category, since some may have been miscategorized. Any product with a SKU beginning with 5360- should have zero finish options and zero tile options.
+The Compass fire surround itself (SKU 5160-54RDC, collection Compass, category Fire Tables) is the one exception -- it is an O.W. Lee fabricated product and correctly receives both frame finish options and porcelain tile options.
+Dry run first and list affected product IDs and SKUs before committing any changes.
