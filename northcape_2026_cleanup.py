@@ -5,7 +5,7 @@ from psycopg2.extras import execute_values
 conn = psycopg2.connect(os.environ['DATABASE_URL'])
 cur = conn.cursor()
 
-DRY_RUN = False  # Set to False to commit
+DRY_RUN = True  # Set to False to commit
 
 MANUFACTURER_ID = 17  # NorthCape
 
@@ -317,6 +317,14 @@ ins('NC4302CT-REC-GL', 'Lakeside Rectangular Coffee Table Glass Top',  'Lakeside
 ins('NC4302CT-SQ-GL',  'Lakeside Square Coffee Table Glass Top',       'Lakeside', CAT_COFFEE_SIDE, '32" x 32"',     ['Lakeside','Wicker','Coffee & Side Tables'], 'wicker')
 ins('NC4302ET-SQ-GL',  'Lakeside End Table Glass Top',                 'Lakeside', CAT_COFFEE_SIDE, '20" x 20"',     ['Lakeside','Wicker','Coffee & Side Tables'], 'wicker')
 
+import re
+
+def make_slug(name, sku):
+    """Generate a URL-safe slug from name + sku suffix to ensure uniqueness."""
+    base = re.sub(r'[^a-z0-9]+', '-', name.lower()).strip('-')
+    sku_part = re.sub(r'[^a-z0-9]+', '-', sku.lower()).strip('-')
+    return f"{base}-{sku_part}"
+
 # Now run the inserts
 inserted_ids = []
 for sku, name, collection, category_id, dims, tags, mat_slug in new_products:
@@ -328,25 +336,26 @@ for sku, name, collection, category_id, dims, tags, mat_slug in new_products:
     if cur.fetchone():
         log(f"  SKIP (already exists): {sku}")
         continue
-    log(f"  INSERT {sku} | {name} | {collection}")
+    slug = make_slug(name, sku)
+    log(f"  INSERT {sku} | {name} | {collection} | slug={slug}")
     if not DRY_RUN:
         cur.execute("""
             INSERT INTO products (
-                manufacturer_id, sku, name, collection,
+                manufacturer_id, sku, name, slug, collection,
                 category_id, dimensions, tags,
                 pricing_mode, quote_only, available_online,
                 show_price_online, in_store_only, featured,
                 is_active, display_order, low_stock_threshold,
                 created_at, updated_at
             ) VALUES (
-                %s, %s, %s, %s,
+                %s, %s, %s, %s, %s,
                 %s, %s, %s,
                 'fixed', true, false,
                 false, false, false,
                 true, 0, 0,
                 NOW(), NOW()
             ) RETURNING id
-        """, (MANUFACTURER_ID, sku, name, collection, category_id, dims, json.dumps(tags)))
+        """, (MANUFACTURER_ID, sku, name, slug, collection, category_id, dims, json.dumps(tags)))
         new_id = cur.fetchone()[0]
         inserted_ids.append((new_id, mat_slug))
 
