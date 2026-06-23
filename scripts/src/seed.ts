@@ -57,6 +57,13 @@ const TOP_LEVEL_CATEGORIES: SeedCategory[] = [
       "Side tables, ottomans, planters, and the finishing details that complete a patio.",
     displayOrder: 60,
   },
+  {
+    name: "Tables",
+    slug: "tables",
+    description:
+      "Dining tables, occasional tables, coffee tables, side tables, and table bases",
+    displayOrder: 70,
+  },
 ];
 
 const PRIVACY_POLICY_CONTENT = `Oasis Garden & Patio Privacy Policy
