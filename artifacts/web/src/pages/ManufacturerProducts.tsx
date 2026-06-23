@@ -51,6 +51,18 @@ const COLLECTION_MULTIWORD: Record<string, readonly string[]> = {
 };
 
 /**
+ * Per-manufacturer leading phrases to strip from a product name before deriving
+ * its collection. Some products carry a redundant category-like prefix (e.g. OW
+ * Lee "Table Bases <Collection> ...") that would otherwise bucket every such
+ * product under a bogus first-word collection ("Table") instead of its real one
+ * (Marin, Modern Aluminum, Standard Iron, …). Keyed by manufacturer slug;
+ * matched case-insensitively against the start of the name.
+ */
+const COLLECTION_PREFIX_STRIP: Record<string, readonly string[]> = {
+  "o-w-lee": ["Table Bases"],
+};
+
+/**
  * Resolve a single product name to its collection KEY (the candidate collection
  * name), or null when the name has no usable collection. Curated multi-word
  * collection names take priority; otherwise the collection is the first word,
@@ -60,8 +72,17 @@ function collectionKeyFor(
   name: string,
   multiword: readonly string[],
   allowlist: ReadonlySet<string>,
+  stripPrefixes: readonly string[] = [],
 ): string | null {
-  const trimmed = name.trim();
+  let trimmed = name.trim();
+  // Remove a redundant leading phrase (e.g. "Table Bases ") so the real
+  // collection that follows it drives the key instead of the prefix.
+  for (const prefix of stripPrefixes) {
+    if (trimmed.toLowerCase().startsWith(prefix.toLowerCase() + " ")) {
+      trimmed = trimmed.slice(prefix.length).trim();
+      break;
+    }
+  }
   const lower = trimmed.toLowerCase();
   // Curated multi-word collection names win (already sorted longest-first).
   for (const phrase of multiword) {
@@ -103,16 +124,20 @@ function buildCollectionMap(
   const multiword = [...(COLLECTION_MULTIWORD[manufacturerSlug] ?? [])].sort(
     (a, b) => b.length - a.length,
   );
+  // Longest prefixes first so the most specific redundant prefix is stripped.
+  const stripPrefixes = [
+    ...(COLLECTION_PREFIX_STRIP[manufacturerSlug] ?? []),
+  ].sort((a, b) => b.length - a.length);
 
   const keyCount = new Map<string, number>();
   for (const name of names) {
-    const key = collectionKeyFor(name, multiword, allowlist);
+    const key = collectionKeyFor(name, multiword, allowlist, stripPrefixes);
     if (key) keyCount.set(key, (keyCount.get(key) ?? 0) + 1);
   }
 
   const result = new Map<string, string>();
   for (const name of names) {
-    const key = collectionKeyFor(name, multiword, allowlist);
+    const key = collectionKeyFor(name, multiword, allowlist, stripPrefixes);
     result.set(name, key && (keyCount.get(key) ?? 0) >= 2 ? key : "");
   }
   return result;
