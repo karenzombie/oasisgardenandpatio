@@ -10,7 +10,8 @@ import {
 import {
   useWishlistItems,
   ensureDeviceToken,
-  WISHLIST_QUERY_KEY,
+  wishlistKeyFor,
+  getDeviceToken,
 } from "@/lib/wishlistHold";
 import { WishlistAccountPromptModal } from "@/components/WishlistAccountPromptModal";
 import { useToast } from "@/hooks/use-toast";
@@ -52,7 +53,7 @@ export function WishlistButton({
   const [, navigate] = useLocation();
   const [promptOpen, setPromptOpen] = useState(false);
 
-  const { items, isAuthenticated, deviceToken } = useWishlistItems();
+  const { items, isAuthenticated, userId, deviceToken } = useWishlistItems();
   const matching = useMemo(
     () => items.filter((i) => i.productId === productId),
     [items, productId],
@@ -62,7 +63,7 @@ export function WishlistButton({
   const addM = useAddWishlistItem({
     mutation: {
       onSuccess: (resp) => {
-        qc.setQueryData(WISHLIST_QUERY_KEY, resp);
+        qc.setQueryData(wishlistKeyFor(userId, getDeviceToken()), resp);
         setPromptOpen(false);
         toast({ title: "Saved to wishlist" });
       },
@@ -82,7 +83,7 @@ export function WishlistButton({
   const removeM = useRemoveWishlistItem({
     mutation: {
       onSuccess: (resp) => {
-        qc.setQueryData(WISHLIST_QUERY_KEY, resp);
+        qc.setQueryData(wishlistKeyFor(userId, getDeviceToken()), resp);
         toast({ title: "Removed from wishlist" });
       },
     },

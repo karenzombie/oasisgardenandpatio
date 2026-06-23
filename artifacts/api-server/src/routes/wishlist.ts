@@ -19,6 +19,17 @@ import { toPublicImageUrl } from "../lib/imageUrl";
 
 const router: IRouter = Router();
 
+// Postgres unique-violation SQLSTATE. Used to map a lost insert race on the
+// guest partial unique index to the deterministic 409/replace flow.
+function isUniqueViolation(err: unknown): boolean {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    "code" in err &&
+    (err as { code?: unknown }).code === "23505"
+  );
+}
+
 type WishlistScope = { userId: number } | { deviceToken: string };
 
 // Load a wishlist for either a signed-in user (by userId) or a guest device
@@ -230,9 +241,36 @@ router.post(
       return;
     }
 
-    await db
-      .insert(wishlistItemsTable)
-      .values({ deviceToken, productId, ...config });
+    try {
+      await db
+        .insert(wishlistItemsTable)
+        .values({ deviceToken, productId, ...config });
+    } catch (err) {
+      // Concurrent add of the same product on the same device races past the
+      // pre-check above and hits the partial unique index
+      // (device_token, product_id) WHERE user_id IS NULL. Map that to the same
+      // conflict/replace flow instead of leaking a 500.
+      if (isUniqueViolation(err)) {
+        if (!replaceExisting) {
+          res.status(409).json({
+            error: "A saved configuration already exists for this product",
+          });
+          return;
+        }
+        await db
+          .update(wishlistItemsTable)
+          .set(config)
+          .where(
+            and(
+              eq(wishlistItemsTable.deviceToken, deviceToken),
+              eq(wishlistItemsTable.productId, productId),
+              isNull(wishlistItemsTable.userId),
+            ),
+          );
+      } else {
+        throw err;
+      }
+    }
 
     res.json(await loadWishlist({ deviceToken }));
   },

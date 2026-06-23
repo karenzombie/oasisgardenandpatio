@@ -21,10 +21,30 @@ import { useAuth } from "./auth";
 const TOKEN_KEY = "oasis_device_token";
 const LEGACY_KEY = "oasis-pending-wishlist";
 
-// Single, stable cache key shared by the signed-in and guest wishlist so all
-// components and mutations read/write the same React Query entry. The device
-// token is sent as a request param, not baked into the key.
-export const WISHLIST_QUERY_KEY = getGetWishlistQueryKey();
+// Base cache key. The actual query key is scoped by identity (see
+// `wishlistKeyFor`) so a guest can never read a previously signed-in user's
+// cached wishlist — and switching accounts can't show the prior user's data.
+// Use this base for broad invalidation (partial-match invalidates every
+// scoped variant).
+export const WISHLIST_BASE_KEY = getGetWishlistQueryKey();
+
+/**
+ * Identity-scoped wishlist query key:
+ * - signed-in: `[...base, "user:<id>"]`
+ * - guest:     `[...base, "guest:<deviceToken>"]`
+ *
+ * Keeping each identity in its own cache entry is what prevents cross-identity
+ * leakage across login/logout/account-switch transitions.
+ */
+export function wishlistKeyFor(
+  userId: number | null,
+  deviceToken: string | null,
+): readonly unknown[] {
+  return [
+    ...WISHLIST_BASE_KEY,
+    userId != null ? `user:${userId}` : `guest:${deviceToken ?? ""}`,
+  ];
+}
 
 let cachedToken: string | null | undefined; // undefined = not yet read
 const listeners = new Set<() => void>();
@@ -96,15 +116,17 @@ export function useDeviceToken(): string | null {
  * - guest without a token yet: disabled, empty list
  */
 export function useWishlistItems() {
-  const { isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
+  const userId = user?.id ?? null;
   const deviceToken = useDeviceToken();
   const params =
     !isAuthenticated && deviceToken ? { deviceToken } : undefined;
   const enabled = isAuthenticated || Boolean(deviceToken);
+  const queryKey = wishlistKeyFor(userId, deviceToken);
 
   const query = useGetWishlist(params, {
     query: {
-      queryKey: WISHLIST_QUERY_KEY,
+      queryKey,
       enabled,
       retry: false,
       staleTime: 30_000,
@@ -112,9 +134,13 @@ export function useWishlistItems() {
   });
 
   return {
-    items: query.data?.items ?? [],
+    // Never surface cached data when the query is disabled (e.g. a brand-new
+    // guest with no token): each identity reads only its own scoped entry.
+    items: enabled ? (query.data?.items ?? []) : [],
     isAuthenticated,
+    userId,
     deviceToken,
+    queryKey,
     isLoading: query.isLoading,
   };
 }
@@ -178,7 +204,8 @@ async function migrateLegacyGuestWishlist(
  *  2. merging a guest device's wishlist into the account on login.
  */
 export function useWishlistBootstrap(): void {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
+  const userId = user?.id ?? null;
   const qc = useQueryClient();
   const migratedRef = useRef(false);
   const mergedRef = useRef(false);
@@ -188,14 +215,14 @@ export function useWishlistBootstrap(): void {
     if (isLoading || migratedRef.current) return;
     migratedRef.current = true;
     void migrateLegacyGuestWishlist(isAuthenticated).finally(() => {
-      qc.invalidateQueries({ queryKey: WISHLIST_QUERY_KEY });
+      qc.invalidateQueries({ queryKey: WISHLIST_BASE_KEY });
     });
   }, [isLoading, isAuthenticated, qc]);
 
   // Merge guest device wishlist into the account on login.
   useEffect(() => {
     if (isLoading) return;
-    if (!isAuthenticated) {
+    if (!isAuthenticated || userId == null) {
       mergedRef.current = false;
       return;
     }
@@ -208,13 +235,13 @@ export function useWishlistBootstrap(): void {
     mergedRef.current = true;
     void mergeWishlist({ deviceToken: token })
       .then((resp: WishlistResponse) => {
-        qc.setQueryData(WISHLIST_QUERY_KEY, resp);
+        qc.setQueryData(wishlistKeyFor(userId, null), resp);
         clearDeviceToken();
-        qc.invalidateQueries({ queryKey: WISHLIST_QUERY_KEY });
+        qc.invalidateQueries({ queryKey: WISHLIST_BASE_KEY });
       })
       .catch(() => {
         // Retry on the next auth event.
         mergedRef.current = false;
       });
-  }, [isLoading, isAuthenticated, qc]);
+  }, [isLoading, isAuthenticated, userId, qc]);
 }

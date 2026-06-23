@@ -6,10 +6,10 @@ import {
   useGetWishlist,
   useRemoveWishlistItem,
   useAddCartItem,
-  getGetWishlistQueryKey,
   getGetCartQueryKey,
 } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
+import { wishlistKeyFor } from "@/lib/wishlistHold";
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -22,7 +22,8 @@ function formatMoney(v: string | null | undefined): string {
 }
 
 export default function AccountWishlist() {
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const userId = user?.id ?? null;
   const [, navigate] = useLocation();
   const qc = useQueryClient();
 
@@ -32,7 +33,7 @@ export default function AccountWishlist() {
 
   const { data, isLoading } = useGetWishlist(undefined, {
     query: {
-      queryKey: getGetWishlistQueryKey(),
+      queryKey: wishlistKeyFor(userId, null),
       enabled: isAuthenticated,
       retry: false,
     },
@@ -41,7 +42,8 @@ export default function AccountWishlist() {
   const { toast } = useToast();
   const removeM = useRemoveWishlistItem({
     mutation: {
-      onSuccess: (resp) => qc.setQueryData(getGetWishlistQueryKey(), resp),
+      onSuccess: (resp) =>
+        qc.setQueryData(wishlistKeyFor(userId, null), resp),
     },
   });
   const addToCartM = useAddCartItem({

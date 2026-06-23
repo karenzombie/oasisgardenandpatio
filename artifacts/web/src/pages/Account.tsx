@@ -6,9 +6,9 @@ import {
   useResendVerification,
   useGetWishlist,
   getGetCurrentUserQueryKey,
-  getGetWishlistQueryKey,
 } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
+import { wishlistKeyFor } from "@/lib/wishlistHold";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
@@ -32,7 +32,7 @@ export default function Account() {
   // header heart icon, not here.
   const { data: wishlist } = useGetWishlist(undefined, {
     query: {
-      queryKey: getGetWishlistQueryKey(),
+      queryKey: wishlistKeyFor(user?.id ?? null, null),
       enabled: isAuthenticated,
       retry: false,
       staleTime: 30_000,

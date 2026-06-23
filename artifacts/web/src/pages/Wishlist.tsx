@@ -9,7 +9,8 @@ import {
 import type { WishlistItem } from "@workspace/api-client-react";
 import {
   useWishlistItems,
-  WISHLIST_QUERY_KEY,
+  wishlistKeyFor,
+  getDeviceToken,
 } from "@/lib/wishlistHold";
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
@@ -33,13 +34,15 @@ export default function Wishlist() {
   const {
     items,
     isAuthenticated,
+    userId,
     deviceToken,
     isLoading,
   } = useWishlistItems();
 
   const removeM = useRemoveWishlistItem({
     mutation: {
-      onSuccess: (resp) => qc.setQueryData(WISHLIST_QUERY_KEY, resp),
+      onSuccess: (resp) =>
+        qc.setQueryData(wishlistKeyFor(userId, getDeviceToken()), resp),
     },
   });
   const addToCart = useAddCartItem({
