@@ -7,14 +7,14 @@ import {
   useListCatalogProducts,
   useListCatalogFabrics,
   getListCatalogFabricsQueryKey,
-  useListCategories,
-  useListCatalogFinishes,
+  useListCatalogFacets,
   useListCatalogManufacturerFinishes,
   getListCatalogManufacturerFinishesQueryKey,
-  useListManufacturers,
-  useListMaterials,
 } from "@workspace/api-client-react";
-import type { ListCatalogProductsParams } from "@workspace/api-client-react";
+import type {
+  ListCatalogProductsParams,
+  ListCatalogFacetsParams,
+} from "@workspace/api-client-react";
 import { getBrandLogo } from "@/lib/brandLogos";
 import { WishlistButton } from "@/components/WishlistButton";
 import { FabricSwatchImage } from "@/components/FabricSwatchImage";
@@ -50,15 +50,13 @@ export default function SearchPage() {
   const activeCategory = q.get("category") ?? "";
   const activeManufacturer = q.get("manufacturer") ?? "";
   const activeMaterial = q.get("material") ?? "";
-  const activeFinish = q.get("finish") ?? "";
   const activeSort = (q.get("sort") ?? "featured") as ListCatalogProductsParams["sort"];
   const activePage = Math.max(1, Number(q.get("page") ?? "1") || 1);
 
   const activeFilterCount =
     (activeCategory ? 1 : 0) +
     (activeManufacturer ? 1 : 0) +
-    (activeMaterial ? 1 : 0) +
-    (activeFinish ? 1 : 0);
+    (activeMaterial ? 1 : 0);
 
   function updateSearch(patch: Record<string, string | null>) {
     const next = new URLSearchParams(search);
@@ -94,9 +92,8 @@ export default function SearchPage() {
     if (activeCategory) out.categorySlug = activeCategory;
     if (activeManufacturer) out.manufacturerSlug = activeManufacturer;
     if (activeMaterial) out.materialSlug = activeMaterial;
-    if (activeFinish) out.finish = activeFinish;
     return out;
-  }, [activeQ, activeCategory, activeManufacturer, activeMaterial, activeFinish, activeSort, activePage]);
+  }, [activeQ, activeCategory, activeManufacturer, activeMaterial, activeSort, activePage]);
 
   const { data, isLoading } = useListCatalogProducts(queryParams);
   const fabricParams = activeQ ? { q: activeQ } : undefined;
@@ -117,10 +114,17 @@ export default function SearchPage() {
   });
   const matchingFinishes = finishSearchData?.finishes ?? [];
 
-  const { data: categories } = useListCategories();
-  const { data: manufacturers } = useListManufacturers();
-  const { data: materials } = useListMaterials();
-  const { data: finishes } = useListCatalogFinishes();
+  // Filter options come from the live catalog, narrowed to the OTHER active
+  // selections so zero-result options are hidden and adapt to data changes.
+  const facetParams = useMemo<ListCatalogFacetsParams>(() => {
+    const out: ListCatalogFacetsParams = {};
+    if (activeQ) out.q = activeQ;
+    if (activeCategory) out.categorySlug = activeCategory;
+    if (activeManufacturer) out.manufacturerSlug = activeManufacturer;
+    if (activeMaterial) out.materialSlug = activeMaterial;
+    return out;
+  }, [activeQ, activeCategory, activeManufacturer, activeMaterial]);
+  const { data: facets } = useListCatalogFacets(facetParams);
 
   const total = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -138,20 +142,16 @@ export default function SearchPage() {
   }, [total, totalPages, activePage]);
 
   const categoryOptions = useMemo(
-    () => (categories ?? []).map((c) => ({ value: c.slug, label: c.name })),
-    [categories],
+    () => (facets?.categories ?? []).map((c) => ({ value: c.slug, label: c.name })),
+    [facets],
   );
   const manufacturerOptions = useMemo(
-    () => (manufacturers ?? []).map((m) => ({ value: m.slug, label: m.name })),
-    [manufacturers],
+    () => (facets?.manufacturers ?? []).map((m) => ({ value: m.slug, label: m.name })),
+    [facets],
   );
   const materialOptions = useMemo(
-    () => (materials ?? []).map((m) => ({ value: m.slug, label: m.name })),
-    [materials],
-  );
-  const finishOptions = useMemo(
-    () => (finishes ?? []).map((f) => ({ value: f, label: f })),
-    [finishes],
+    () => (facets?.materials ?? []).map((m) => ({ value: m.slug, label: m.name })),
+    [facets],
   );
 
   const sidebar = (
@@ -188,12 +188,6 @@ export default function SearchPage() {
         options={materialOptions}
         selected={activeMaterial}
         onChange={(v) => updateSearch({ material: v || null, page: "1" })}
-      />
-      <CheckboxGroup
-        label="Frame Finish"
-        options={finishOptions}
-        selected={activeFinish}
-        onChange={(v) => updateSearch({ finish: v || null, page: "1" })}
       />
     </aside>
   );
@@ -296,14 +290,6 @@ export default function SearchPage() {
             <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
               {materialOptions.find((m) => m.value === activeMaterial)?.label ?? activeMaterial}
               <button type="button" onClick={() => updateSearch({ material: null, page: "1" })}>
-                <X className="size-3" />
-              </button>
-            </span>
-          )}
-          {activeFinish && (
-            <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
-              Finish: {activeFinish}
-              <button type="button" onClick={() => updateSearch({ finish: null, page: "1" })}>
                 <X className="size-3" />
               </button>
             </span>

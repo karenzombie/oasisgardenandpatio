@@ -13,10 +13,6 @@ export type ListCatalogProductsParams = {
   manufacturerSlug?: string;
   materialSlug?: string;
   /**
-   * Filter by frame finish (case-insensitive variant name, e.g. "Black")
-   */
-  finish?: string;
-  /**
    * Filter by product collection name (exact match). Typically used together with manufacturerSlug.
    */
   collection?: string;

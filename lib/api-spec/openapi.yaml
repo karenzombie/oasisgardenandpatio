@@ -205,12 +205,6 @@ paths:
           required: false
           schema:
             type: string
-        - name: finish
-          in: query
-          required: false
-          description: Filter by frame finish (case-insensitive variant name, e.g. "Black")
-          schema:
-            type: string
         - name: collection
           in: query
           required: false
@@ -273,20 +267,54 @@ paths:
                 type: array
                 items:
                   type: string
-  /catalog/finishes:
+  /catalog/facets:
     get:
-      operationId: listCatalogFinishes
+      operationId: listCatalogFacets
       tags: [products]
-      summary: Distinct frame finish values across all active products
+      summary: Available filter facets (category, brand, material, collection) for the current filter combination
+      description: >-
+        Returns the set of filter options that yield at least one product given the OTHER active
+        filters. Each facet is computed by applying every active filter EXCEPT its own selection, so
+        the user can still switch between values within a facet while zero-result options stay hidden.
+        Options are derived live from catalog data, so they adapt automatically as products change.
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: categorySlug
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: manufacturerSlug
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: materialSlug
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: collection
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: onlineOnly
+          in: query
+          required: false
+          schema:
+            type: boolean
       responses:
         "200":
-          description: List of finish names
+          description: Available filter facets
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: string
+                $ref: "#/components/schemas/CatalogFacets"
   /catalog/fabrics:
     get:
       operationId: listCatalogFabrics
@@ -6553,6 +6581,40 @@ components:
         - total
         - page
         - pageSize
+    FacetOption:
+      type: object
+      properties:
+        slug:
+          type: string
+        name:
+          type: string
+      required:
+        - slug
+        - name
+    CatalogFacets:
+      type: object
+      properties:
+        categories:
+          type: array
+          items:
+            $ref: "#/components/schemas/FacetOption"
+        manufacturers:
+          type: array
+          items:
+            $ref: "#/components/schemas/FacetOption"
+        materials:
+          type: array
+          items:
+            $ref: "#/components/schemas/FacetOption"
+        collections:
+          type: array
+          items:
+            type: string
+      required:
+        - categories
+        - manufacturers
+        - materials
+        - collections
     CatalogProductImage:
       type: object
       properties:

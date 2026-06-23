@@ -1348,6 +1348,18 @@ export interface CatalogProductsPage {
   pageSize: number;
 }
 
+export interface FacetOption {
+  slug: string;
+  name: string;
+}
+
+export interface CatalogFacets {
+  categories: FacetOption[];
+  manufacturers: FacetOption[];
+  materials: FacetOption[];
+  collections: string[];
+}
+
 export type CatalogProductImageImageKind =
   (typeof CatalogProductImageImageKind)[keyof typeof CatalogProductImageImageKind];
 
@@ -4188,10 +4200,6 @@ export type ListCatalogProductsParams = {
   manufacturerSlug?: string;
   materialSlug?: string;
   /**
-   * Filter by frame finish (case-insensitive variant name, e.g. "Black")
-   */
-  finish?: string;
-  /**
    * Filter by product collection name (exact match). Typically used together with manufacturerSlug.
    */
   collection?: string;
@@ -4227,6 +4235,15 @@ export type ListCatalogCollectionsParams = {
    * Limit collections to a single manufacturer (recommended; the global set is very large)
    */
   manufacturerSlug?: string;
+};
+
+export type ListCatalogFacetsParams = {
+  q?: string;
+  categorySlug?: string;
+  manufacturerSlug?: string;
+  materialSlug?: string;
+  collection?: string;
+  onlineOnly?: boolean;
 };
 
 export type ListCatalogFabricsParams = {

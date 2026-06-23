@@ -3,13 +3,12 @@ import { useMemo, useState, useEffect } from "react";
 import { SlidersHorizontal, X } from "lucide-react";
 import {
   useListCatalogProducts,
-  useListCategories,
-  useListCatalogFinishes,
-  useListCatalogCollections,
-  useListManufacturers,
-  useListMaterials,
+  useListCatalogFacets,
 } from "@workspace/api-client-react";
-import type { ListCatalogProductsParams } from "@workspace/api-client-react";
+import type {
+  ListCatalogProductsParams,
+  ListCatalogFacetsParams,
+} from "@workspace/api-client-react";
 import { getBrandLogo } from "@/lib/brandLogos";
 import { WishlistButton } from "@/components/WishlistButton";
 import { Button } from "@/components/ui/button";
@@ -45,7 +44,6 @@ export default function Shop() {
   const activeCategory = params?.slug ?? q.get("category") ?? "";
   const activeManufacturer = q.get("manufacturer") ?? "";
   const activeMaterial = q.get("material") ?? "";
-  const activeFinish = q.get("finish") ?? "";
   const activeCollection = q.get("collection") ?? "";
   const activeName = q.get("q") ?? "";
 
@@ -58,7 +56,6 @@ export default function Shop() {
     if (activeName) out.q = activeName;
     if (activeManufacturer) out.manufacturerSlug = activeManufacturer;
     if (activeMaterial) out.materialSlug = activeMaterial;
-    if (activeFinish) out.finish = activeFinish;
     if (activeManufacturer && activeCollection) out.collection = activeCollection;
     if (activeCategory) out.categorySlug = activeCategory;
     if (isOnlineOnly) out.onlineOnly = true;
@@ -68,26 +65,34 @@ export default function Shop() {
     activeCategory,
     activeManufacturer,
     activeMaterial,
-    activeFinish,
     activeCollection,
     activeName,
     isOnlineOnly,
   ]);
 
   const { data, isLoading } = useListCatalogProducts(queryParams);
-  const { data: categories } = useListCategories(isOnlineOnly ? { onlineOnly: true } : undefined);
-  const { data: finishes } = useListCatalogFinishes();
-  const { data: manufacturers } = useListManufacturers(isOnlineOnly ? { onlineOnly: true } : undefined);
-  const { data: materials } = useListMaterials();
-  const { data: collections } = useListCatalogCollections(
-    activeManufacturer ? { manufacturerSlug: activeManufacturer } : undefined,
-    {
-      query: {
-        enabled: !!activeManufacturer,
-        queryKey: ["/api/catalog/collections", activeManufacturer] as const,
-      },
-    },
-  );
+
+  // All filter options are derived from the live catalog and narrowed to the
+  // OTHER active selections, so options that would return zero products are
+  // hidden automatically (and the lists adapt as catalog data changes).
+  const facetParams = useMemo<ListCatalogFacetsParams>(() => {
+    const out: ListCatalogFacetsParams = {};
+    if (activeName) out.q = activeName;
+    if (activeCategory) out.categorySlug = activeCategory;
+    if (activeManufacturer) out.manufacturerSlug = activeManufacturer;
+    if (activeMaterial) out.materialSlug = activeMaterial;
+    if (activeManufacturer && activeCollection) out.collection = activeCollection;
+    if (isOnlineOnly) out.onlineOnly = true;
+    return out;
+  }, [
+    activeName,
+    activeCategory,
+    activeManufacturer,
+    activeMaterial,
+    activeCollection,
+    isOnlineOnly,
+  ]);
+  const { data: facets } = useListCatalogFacets(facetParams);
 
   const total = data?.total ?? 0;
   const pageSize = queryParams.pageSize ?? 12;
@@ -140,28 +145,23 @@ export default function Shop() {
     (activeManufacturer ? 1 : 0) +
     (activeManufacturer && activeCollection ? 1 : 0) +
     (activeMaterial ? 1 : 0) +
-    (activeFinish ? 1 : 0) +
     (activeName ? 1 : 0);
 
   const categoryOptions = useMemo<FilterOption[]>(
-    () => (categories ?? []).map((c) => ({ value: c.slug, label: c.name })),
-    [categories],
+    () => (facets?.categories ?? []).map((c) => ({ value: c.slug, label: c.name })),
+    [facets],
   );
   const manufacturerOptions = useMemo<FilterOption[]>(
-    () => (manufacturers ?? []).map((m) => ({ value: m.slug, label: m.name })),
-    [manufacturers],
+    () => (facets?.manufacturers ?? []).map((m) => ({ value: m.slug, label: m.name })),
+    [facets],
   );
   const materialOptions = useMemo<FilterOption[]>(
-    () => (materials ?? []).map((m) => ({ value: m.slug, label: m.name })),
-    [materials],
+    () => (facets?.materials ?? []).map((m) => ({ value: m.slug, label: m.name })),
+    [facets],
   );
   const collectionOptions = useMemo<FilterOption[]>(
-    () => (collections ?? []).map((c) => ({ value: c, label: c })),
-    [collections],
-  );
-  const finishOptions = useMemo<FilterOption[]>(
-    () => (finishes ?? []).map((f) => ({ value: f, label: f })),
-    [finishes],
+    () => (facets?.collections ?? []).map((c) => ({ value: c, label: c })),
+    [facets],
   );
 
   const heading = isOnlineOnly && !params?.slug
@@ -245,12 +245,6 @@ export default function Shop() {
         options={materialOptions}
         selected={activeMaterial}
         onChange={(v) => updateSearch({ material: v || null, page: "1" })}
-      />
-      <CheckboxGroup
-        label="Frame Finish"
-        options={finishOptions}
-        selected={activeFinish}
-        onChange={(v) => updateSearch({ finish: v || null, page: "1" })}
       />
     </aside>
   );
@@ -361,14 +355,6 @@ export default function Shop() {
             <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
               {materialOptions.find((m) => m.value === activeMaterial)?.label ?? activeMaterial}
               <button type="button" onClick={() => updateSearch({ material: null, page: "1" })}>
-                <X className="size-3" />
-              </button>
-            </span>
-          )}
-          {activeFinish && (
-            <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
-              Finish: {activeFinish}
-              <button type="button" onClick={() => updateSearch({ finish: null, page: "1" })}>
                 <X className="size-3" />
               </button>
             </span>

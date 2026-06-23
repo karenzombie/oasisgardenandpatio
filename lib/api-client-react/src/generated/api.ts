@@ -121,6 +121,7 @@ import type {
   Carrier,
   CartResponse,
   CatalogFabricsResponse,
+  CatalogFacets,
   CatalogFinishProductsResponse,
   CatalogFinishesResponse,
   CatalogProductDetail,
@@ -164,6 +165,7 @@ import type {
   LegalDocument,
   ListCatalogCollectionsParams,
   ListCatalogFabricsParams,
+  ListCatalogFacetsParams,
   ListCatalogManufacturerFinishesParams,
   ListCatalogProductsParams,
   ListCategoriesParams,
@@ -1137,72 +1139,95 @@ export function useListCatalogCollections<
 }
 
 /**
- * @summary Distinct frame finish values across all active products
+ * Returns the set of filter options that yield at least one product given the OTHER active filters. Each facet is computed by applying every active filter EXCEPT its own selection, so the user can still switch between values within a facet while zero-result options stay hidden. Options are derived live from catalog data, so they adapt automatically as products change.
+ * @summary Available filter facets (category, brand, material, collection) for the current filter combination
  */
-export const getListCatalogFinishesUrl = () => {
-  return `/api/catalog/finishes`;
+export const getListCatalogFacetsUrl = (params?: ListCatalogFacetsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/catalog/facets?${stringifiedParams}`
+    : `/api/catalog/facets`;
 };
 
-export const listCatalogFinishes = async (
+export const listCatalogFacets = async (
+  params?: ListCatalogFacetsParams,
   options?: RequestInit,
-): Promise<string[]> => {
-  return customFetch<string[]>(getListCatalogFinishesUrl(), {
+): Promise<CatalogFacets> => {
+  return customFetch<CatalogFacets>(getListCatalogFacetsUrl(params), {
     ...options,
     method: "GET",
   });
 };
 
-export const getListCatalogFinishesQueryKey = () => {
-  return [`/api/catalog/finishes`] as const;
+export const getListCatalogFacetsQueryKey = (
+  params?: ListCatalogFacetsParams,
+) => {
+  return [`/api/catalog/facets`, ...(params ? [params] : [])] as const;
 };
 
-export const getListCatalogFinishesQueryOptions = <
-  TData = Awaited<ReturnType<typeof listCatalogFinishes>>,
+export const getListCatalogFacetsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listCatalogFacets>>,
   TError = ErrorType<unknown>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof listCatalogFinishes>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}) => {
+>(
+  params?: ListCatalogFacetsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listCatalogFacets>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getListCatalogFinishesQueryKey();
+  const queryKey =
+    queryOptions?.queryKey ?? getListCatalogFacetsQueryKey(params);
 
   const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof listCatalogFinishes>>
-  > = ({ signal }) => listCatalogFinishes({ signal, ...requestOptions });
+    Awaited<ReturnType<typeof listCatalogFacets>>
+  > = ({ signal }) => listCatalogFacets(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof listCatalogFinishes>>,
+    Awaited<ReturnType<typeof listCatalogFacets>>,
     TError,
     TData
   > & { queryKey: QueryKey };
 };
 
-export type ListCatalogFinishesQueryResult = NonNullable<
-  Awaited<ReturnType<typeof listCatalogFinishes>>
+export type ListCatalogFacetsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listCatalogFacets>>
 >;
-export type ListCatalogFinishesQueryError = ErrorType<unknown>;
+export type ListCatalogFacetsQueryError = ErrorType<unknown>;
 
 /**
- * @summary Distinct frame finish values across all active products
+ * @summary Available filter facets (category, brand, material, collection) for the current filter combination
  */
 
-export function useListCatalogFinishes<
-  TData = Awaited<ReturnType<typeof listCatalogFinishes>>,
+export function useListCatalogFacets<
+  TData = Awaited<ReturnType<typeof listCatalogFacets>>,
   TError = ErrorType<unknown>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof listCatalogFinishes>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getListCatalogFinishesQueryOptions(options);
+>(
+  params?: ListCatalogFacetsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listCatalogFacets>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListCatalogFacetsQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

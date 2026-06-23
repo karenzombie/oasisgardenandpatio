@@ -206,19 +206,28 @@ export default function ManufacturerProducts() {
     [allProducts, slug],
   );
 
+  // Collection options are narrowed to the active Type (faceted): only
+  // collections that have products of the selected type are shown. The
+  // collection facet ignores its own selection so the user can still switch
+  // between collections.
   const collections = useMemo(() => {
     const set = new Set<string>();
     for (const p of allProducts) {
+      if (activeType && p.categorySlug !== activeType) continue;
       const col = collectionMap.get(p.name) ?? "";
       if (col) set.add(col);
     }
     return [...set].sort();
-  }, [allProducts, collectionMap]);
+  }, [allProducts, collectionMap, activeType]);
 
-  // Types are the real product categories present in this manufacturer's catalog.
+  // Types are the real product categories present in this manufacturer's
+  // catalog, narrowed to the active Collection (faceted) so a type that has no
+  // products in the selected collection is hidden.
   const types = useMemo(() => {
     const seen = new Map<string, { category: Category; count: number }>();
     for (const p of allProducts) {
+      if (activeCollection && (collectionMap.get(p.name) ?? "") !== activeCollection)
+        continue;
       if (!p.categorySlug) continue;
       const cat =
         categoryBySlug.get(p.categorySlug) ??
@@ -239,7 +248,7 @@ export default function ManufacturerProducts() {
         ? a.category.displayOrder - b.category.displayOrder
         : a.category.name.localeCompare(b.category.name),
     );
-  }, [allProducts, categoryBySlug]);
+  }, [allProducts, categoryBySlug, activeCollection, collectionMap]);
 
   const filtered = useMemo(() => {
     return allProducts

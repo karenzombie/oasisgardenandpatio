@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { and, asc, desc, eq, exists, ilike, inArray, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, exists, ilike, inArray, ne, or, sql } from "drizzle-orm";
 import {
   db,
   productsTable,
@@ -24,6 +24,8 @@ import {
   ListCatalogProductsQueryParams,
   ListCatalogProductsResponse,
   ListCatalogCollectionsQueryParams,
+  ListCatalogFacetsQueryParams,
+  ListCatalogFacetsResponse,
   GetCatalogProductBySlugResponse,
 } from "@workspace/api-zod";
 import { toPublicImageUrl } from "../lib/imageUrl";
@@ -171,7 +173,6 @@ router.get(
       categorySlug,
       manufacturerSlug,
       materialSlug,
-      finish,
       collection,
       onlineOnly,
       sort,
@@ -217,22 +218,6 @@ router.get(
               and(
                 eq(productMaterialsTable.productId, productsTable.id),
                 ilike(materialsTable.slug, materialSlug),
-              ),
-            ),
-        ),
-      );
-    }
-    if (finish) {
-      conditions.push(
-        exists(
-          db
-            .select({ one: sql`1` })
-            .from(productVariantsTable)
-            .where(
-              and(
-                eq(productVariantsTable.productId, productsTable.id),
-                eq(productVariantsTable.optionLabel, "Frame Finish"),
-                ilike(productVariantsTable.variantName, finish),
               ),
             ),
         ),
@@ -383,27 +368,175 @@ router.get(
   },
 );
 
-// Public: distinct frame finish values (for shop filter)
+// Public: dynamic filter facets. For each facet we return the option values that
+// yield at least one product given every OTHER active filter (standard faceted
+// search: a facet never constrains itself, so the user can still switch between
+// values within it while zero-result options stay hidden). Options are derived
+// live from catalog data, so they adapt automatically as the catalog changes.
 router.get(
-  "/catalog/finishes",
-  async (_req, res): Promise<void> => {
-    const rows = await db
-      .selectDistinct({ finish: productVariantsTable.variantName })
-      .from(productVariantsTable)
-      .innerJoin(
-        productsTable,
-        eq(productsTable.id, productVariantsTable.productId),
-      )
-      .where(
-        and(
-          eq(productVariantsTable.optionLabel, "Frame Finish"),
-          eq(productVariantsTable.isActive, true),
-          eq(productsTable.isActive, true),
-          eq(productsTable.availableOnline, true),
-        ),
-      )
-      .orderBy(productVariantsTable.variantName);
-    res.json(rows.map((r) => r.finish));
+  "/catalog/facets",
+  async (req: Request, res: Response): Promise<void> => {
+    const parsed = ListCatalogFacetsQueryParams.safeParse(req.query);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: parsed.error.issues[0]?.message ?? "Invalid query" });
+      return;
+    }
+    const { q, categorySlug, manufacturerSlug, materialSlug, collection, onlineOnly } =
+      parsed.data;
+
+    // Build the product-match conditions for a given subset of active filters.
+    // `exclude` names the facet whose own selection must be ignored so that
+    // facet's available options aren't collapsed to the single chosen value.
+    type Facet = "category" | "manufacturer" | "material" | "collection";
+    const buildConditions = (exclude: Facet | null) => {
+      const conds = [
+        eq(productsTable.isActive, true),
+        eq(productsTable.availableOnline, true),
+      ];
+      if (onlineOnly) {
+        conds.push(eq(productsTable.quoteOnly, false));
+        conds.push(eq(productsTable.inStoreOnly, false));
+      }
+      if (q && q.trim()) {
+        const needle = `%${q.trim()}%`;
+        conds.push(
+          or(
+            ilike(productsTable.name, needle),
+            ilike(productsTable.sku, needle),
+            ilike(productsTable.shortDescription, needle),
+          )!,
+        );
+      }
+      if (manufacturerSlug && exclude !== "manufacturer") {
+        conds.push(ilike(manufacturersTable.slug, manufacturerSlug));
+      }
+      if (categorySlug && exclude !== "category") {
+        conds.push(ilike(categoriesTable.slug, categorySlug));
+      }
+      if (materialSlug && exclude !== "material") {
+        conds.push(
+          exists(
+            db
+              .select({ one: sql`1` })
+              .from(productMaterialsTable)
+              .innerJoin(
+                materialsTable,
+                eq(materialsTable.id, productMaterialsTable.materialId),
+              )
+              .where(
+                and(
+                  eq(productMaterialsTable.productId, productsTable.id),
+                  ilike(materialsTable.slug, materialSlug),
+                  eq(materialsTable.isActive, true),
+                ),
+              ),
+          ),
+        );
+      }
+      if (collection && collection.trim() && exclude !== "collection") {
+        conds.push(eq(productsTable.collection, collection.trim()));
+      }
+      return conds;
+    };
+
+    const withJoins = <T extends ReturnType<typeof db.select>>(qb: T) =>
+      qb
+        .from(productsTable)
+        .leftJoin(
+          manufacturersTable,
+          eq(manufacturersTable.id, productsTable.manufacturerId),
+        )
+        .leftJoin(
+          categoriesTable,
+          eq(categoriesTable.id, productsTable.categoryId),
+        );
+
+    const [categoryRows, manufacturerRows, materialRows, collectionRows] =
+      await Promise.all([
+        withJoins(
+          db.selectDistinct({
+            slug: categoriesTable.slug,
+            name: categoriesTable.name,
+            displayOrder: categoriesTable.displayOrder,
+          }),
+        )
+          .where(
+            and(
+              ...buildConditions("category"),
+              eq(categoriesTable.isActive, true),
+              sql`${categoriesTable.slug} is not null`,
+            ),
+          )
+          .orderBy(categoriesTable.displayOrder, categoriesTable.name),
+        withJoins(
+          db.selectDistinct({
+            slug: manufacturersTable.slug,
+            name: manufacturersTable.name,
+          }),
+        )
+          .where(
+            and(
+              ...buildConditions("manufacturer"),
+              eq(manufacturersTable.isActive, true),
+              ne(manufacturersTable.slug, "andrew-sewing"),
+              sql`${manufacturersTable.slug} is not null`,
+            ),
+          )
+          .orderBy(manufacturersTable.name),
+        // Materials of products matching the other facets, via the junction.
+        db
+          .selectDistinct({
+            slug: materialsTable.slug,
+            name: materialsTable.name,
+          })
+          .from(materialsTable)
+          .innerJoin(
+            productMaterialsTable,
+            eq(productMaterialsTable.materialId, materialsTable.id),
+          )
+          .innerJoin(
+            productsTable,
+            eq(productsTable.id, productMaterialsTable.productId),
+          )
+          .leftJoin(
+            manufacturersTable,
+            eq(manufacturersTable.id, productsTable.manufacturerId),
+          )
+          .leftJoin(
+            categoriesTable,
+            eq(categoriesTable.id, productsTable.categoryId),
+          )
+          .where(and(...buildConditions("material"), eq(materialsTable.isActive, true)))
+          .orderBy(materialsTable.name),
+        withJoins(
+          db.selectDistinct({ collection: productsTable.collection }),
+        )
+          .where(
+            and(
+              ...buildConditions("collection"),
+              sql`${productsTable.collection} is not null`,
+              sql`${productsTable.collection} <> ''`,
+            ),
+          )
+          .orderBy(productsTable.collection),
+      ]);
+
+    res.json(
+      ListCatalogFacetsResponse.parse({
+        categories: categoryRows
+          .filter((r) => r.slug != null)
+          .map((r) => ({ slug: r.slug as string, name: r.name as string })),
+        manufacturers: manufacturerRows
+          .filter((r) => r.slug != null)
+          .map((r) => ({ slug: r.slug as string, name: r.name as string })),
+        materials: materialRows.map((r) => ({ slug: r.slug, name: r.name })),
+        collections: collectionRows
+          .map((r) => r.collection)
+          .filter((c): c is string => !!c),
+      }),
+    );
   },
 );
 

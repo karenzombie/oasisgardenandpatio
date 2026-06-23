@@ -182,12 +182,6 @@ export const ListCatalogProductsQueryParams = zod.object({
   categorySlug: zod.coerce.string().optional(),
   manufacturerSlug: zod.coerce.string().optional(),
   materialSlug: zod.coerce.string().optional(),
-  finish: zod.coerce
-    .string()
-    .optional()
-    .describe(
-      'Filter by frame finish (case-insensitive variant name, e.g. \"Black\")',
-    ),
   collection: zod.coerce
     .string()
     .optional()
@@ -272,12 +266,39 @@ export const ListCatalogCollectionsResponse = zod.array(
 );
 
 /**
- * @summary Distinct frame finish values across all active products
+ * Returns the set of filter options that yield at least one product given the OTHER active filters. Each facet is computed by applying every active filter EXCEPT its own selection, so the user can still switch between values within a facet while zero-result options stay hidden. Options are derived live from catalog data, so they adapt automatically as products change.
+ * @summary Available filter facets (category, brand, material, collection) for the current filter combination
  */
-export const ListCatalogFinishesResponseItem = zod.string();
-export const ListCatalogFinishesResponse = zod.array(
-  ListCatalogFinishesResponseItem,
-);
+export const ListCatalogFacetsQueryParams = zod.object({
+  q: zod.coerce.string().optional(),
+  categorySlug: zod.coerce.string().optional(),
+  manufacturerSlug: zod.coerce.string().optional(),
+  materialSlug: zod.coerce.string().optional(),
+  collection: zod.coerce.string().optional(),
+  onlineOnly: zod.coerce.boolean().optional(),
+});
+
+export const ListCatalogFacetsResponse = zod.object({
+  categories: zod.array(
+    zod.object({
+      slug: zod.string(),
+      name: zod.string(),
+    }),
+  ),
+  manufacturers: zod.array(
+    zod.object({
+      slug: zod.string(),
+      name: zod.string(),
+    }),
+  ),
+  materials: zod.array(
+    zod.object({
+      slug: zod.string(),
+      name: zod.string(),
+    }),
+  ),
+  collections: zod.array(zod.string()),
+});
 
 /**
  * @summary Public list of all active fabrics offered as product options
