@@ -114,6 +114,7 @@ router.get(
         manufacturerLogoUrl: manufacturersTable.logoUrl,
         imageUrl: finishesTable.imageUrl,
         description: finishesTable.description,
+        collection: finishesTable.collection,
         displayOrder: finishesTable.displayOrder,
       })
       .from(finishesTable)
