@@ -64,6 +64,11 @@ export default function Product() {
   const [finishId, setFinishId] = useState<number | null>(null);
   const [fabricId, setFabricId] = useState<number | null>(null);
   const [fabricOpen, setFabricOpen] = useState(false);
+  // Frame-finish pickers (online): the variant-as-finish selector and the
+  // discrete grade-mode Frame Finish selector both open the shared swatch
+  // dialog, mirroring the fabric picker. Single-option finishes render static.
+  const [variantPickerOpen, setVariantPickerOpen] = useState(false);
+  const [finishPickerOpen, setFinishPickerOpen] = useState(false);
   // Wind-vent products (Treasure Garden market umbrellas) use combined
   // Finish x Wind Vent variants. The PDP drives the single combined variantId
   // from two independent selections so neither is preselected (the customer
@@ -543,6 +548,12 @@ export default function Product() {
 
   const variantOptionLabel =
     variants[0]?.optionLabel ?? (isGradeMode ? "Configuration" : "Variant");
+  // A variant selector is a frame-finish picker (open the swatch dialog) when
+  // its option label reads like a finish — e.g. "Finish", "Base Finish",
+  // "Frame Finish". Size/Configuration selectors keep their inline rendering.
+  const variantIsFinish = /^(finish|base finish|frame finish)$/i.test(
+    variantOptionLabel.trim(),
+  );
 
   // A product can only be purchased online when ALL of these are true:
   //   1. it isn't flagged as quote-only,
@@ -827,6 +838,60 @@ export default function Product() {
 
               {/* Variant selector (Configuration in grade mode, else Frame Finish) */}
               {!isWindVentMode && !finishVariantMode && requiresVariant ? (
+                variantIsFinish ? (
+                  <div className="mb-5">
+                    <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">
+                      {variantOptionLabel}
+                      <span className="text-destructive ml-1">*</span>
+                    </p>
+                    {variants.length === 1 ? (
+                      <div className="flex items-center gap-3">
+                        {variants[0]!.swatchImageUrl ? (
+                          <img
+                            src={variants[0]!.swatchImageUrl}
+                            alt={variants[0]!.name}
+                            className="h-12 w-12 shrink-0 object-cover border border-border"
+                          />
+                        ) : null}
+                        <span className="text-sm font-medium">
+                          {variants[0]!.name}
+                        </span>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setVariantPickerOpen(true)}
+                        className="w-full sm:max-w-[460px] inline-flex items-center gap-2 border border-primary bg-primary text-primary-foreground px-4 py-2.5 text-sm hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary"
+                      >
+                        <Palette className="h-4 w-4" />
+                        Browse swatches
+                      </button>
+                    )}
+                    {variants.length > 1 ? (
+                      <FabricSwatchDialog
+                        open={variantPickerOpen}
+                        onOpenChange={setVariantPickerOpen}
+                        fabrics={variants.map((v) => ({
+                          id: v.id,
+                          name: v.name,
+                          itemNumber: "",
+                          swatchImageUrl: v.swatchImageUrl ?? null,
+                          grade: null,
+                          colorFamily: null,
+                        }))}
+                        selectedFabricId={variantId}
+                        onConfirm={(id) => setVariantId(id)}
+                        isGradeMode={false}
+                        linePriceForGrade={() => null}
+                        formatPrice={(n) => formatMoney(n)}
+                        title={`Choose a ${variantOptionLabel.toLowerCase()}`}
+                        noun="finish"
+                        nounPlural="finishes"
+                        searchPlaceholder="Search finishes by name…"
+                      />
+                    ) : null}
+                  </div>
+                ) : (
                 <div className="mb-5">
                   <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">
                     {variantOptionLabel}
@@ -935,21 +1000,17 @@ export default function Product() {
                     );
                   })()}
                 </div>
+                )
               ) : null}
 
               {/* Frame Finish selector (grade-priced products only). A single
-                  finish renders read-only; multiple finishes render as a
-                  swatch picker. */}
+                  finish renders read-only; multiple finishes open the swatch
+                  dialog (matching the fabric picker). */}
               {isGradeMode && finishes.length > 0 ? (
                 <div className="mb-5">
                   <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">
                     Frame Finish
                     <span className="text-destructive ml-1">*</span>
-                    {selectedFinish ? (
-                      <span className="ml-2 normal-case tracking-normal text-foreground">
-                        {selectedFinish.name}
-                      </span>
-                    ) : null}
                   </p>
                   {finishes.length === 1 ? (
                     <div className="flex items-center gap-3">
@@ -963,29 +1024,37 @@ export default function Product() {
                       <span className="text-sm font-medium">{finishes[0].name}</span>
                     </div>
                   ) : (
-                    <div className="flex flex-wrap gap-2">
-                      {finishes.map((f) => (
-                        <button
-                          key={f.id}
-                          type="button"
-                          onClick={() => setFinishId(f.id)}
-                          className={`flex items-center gap-2 px-3 py-2 border text-sm transition-colors ${
-                            finishId === f.id
-                              ? "border-primary bg-primary text-primary-foreground"
-                              : "border-input hover:border-foreground"
-                          }`}
-                        >
-                          {f.swatchImageUrl ? (
-                            <img
-                              src={f.swatchImageUrl}
-                              alt={f.name}
-                              className="h-6 w-6 shrink-0 object-cover border border-border/50"
-                            />
-                          ) : null}
-                          {f.name}
-                        </button>
-                      ))}
-                    </div>
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setFinishPickerOpen(true)}
+                        className="w-full sm:max-w-[460px] inline-flex items-center gap-2 border border-primary bg-primary text-primary-foreground px-4 py-2.5 text-sm hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary"
+                      >
+                        <Palette className="h-4 w-4" />
+                        Browse swatches
+                      </button>
+                      <FabricSwatchDialog
+                        open={finishPickerOpen}
+                        onOpenChange={setFinishPickerOpen}
+                        fabrics={finishes.map((f) => ({
+                          id: f.id,
+                          name: f.name,
+                          itemNumber: "",
+                          swatchImageUrl: f.swatchImageUrl ?? null,
+                          grade: null,
+                          colorFamily: null,
+                        }))}
+                        selectedFabricId={finishId}
+                        onConfirm={(id) => setFinishId(id)}
+                        isGradeMode={false}
+                        linePriceForGrade={() => null}
+                        formatPrice={(n) => formatMoney(n)}
+                        title="Choose a frame finish"
+                        noun="finish"
+                        nounPlural="finishes"
+                        searchPlaceholder="Search finishes by name…"
+                      />
+                    </>
                   )}
                 </div>
               ) : null}
