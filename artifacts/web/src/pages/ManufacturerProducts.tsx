@@ -34,9 +34,64 @@ const COLLECTION_NAME_ALLOWLIST: Record<string, ReadonlySet<string>> = {
 };
 
 /**
- * Collection = the product name's FIRST WORD, but only when at least 2 products
- * in this manufacturer share that first word. Products whose first word is
- * unique get no collection.
+ * Per-manufacturer list of collection names that span MORE than one word, which
+ * the default first-word heuristic would otherwise truncate (e.g. "San
+ * Cristobal" → "San") or collapse together (e.g. "Standard Aluminum" and
+ * "Standard Iron" both → "Standard"). Keyed by manufacturer slug. A product
+ * whose name begins with one of these phrases is assigned that full phrase as
+ * its collection.
+ */
+const COLLECTION_MULTIWORD: Record<string, readonly string[]> = {
+  "o-w-lee": [
+    "San Cristobal",
+    "Modern Aluminum",
+    "Standard Aluminum",
+    "Standard Iron",
+  ],
+};
+
+/**
+ * Resolve a single product name to its collection KEY (the candidate collection
+ * name), or null when the name has no usable collection. Curated multi-word
+ * collection names take priority; otherwise the collection is the first word,
+ * unless that word looks like a product code.
+ */
+function collectionKeyFor(
+  name: string,
+  multiword: readonly string[],
+  allowlist: ReadonlySet<string>,
+): string | null {
+  const trimmed = name.trim();
+  const lower = trimmed.toLowerCase();
+  // Curated multi-word collection names win (already sorted longest-first).
+  for (const phrase of multiword) {
+    const p = phrase.toLowerCase();
+    if (lower === p || lower.startsWith(p + " ")) return phrase;
+  }
+  const first = trimmed.split(/\s+/)[0];
+  // Skip first words that look like product codes, not collection names:
+  //   - starts with a digit  (42", 36", 2PC)
+  //   - contains any digit   (NGU550, CB87)
+  //   - contains a hyphen    (DP-ST, IG-ST, SS-DB)
+  //   - has no lowercase     (IG, LED, DP — all-caps abbreviations)
+  // Manufacturer-specific allowlist entries bypass these checks.
+  if (
+    first &&
+    (allowlist.has(first) ||
+      (!/^\d/.test(first) &&
+        !/\d/.test(first) &&
+        !first.includes("-") &&
+        /[a-z]/.test(first)))
+  ) {
+    return first;
+  }
+  return null;
+}
+
+/**
+ * Collection = the product name's FIRST WORD (or a curated multi-word phrase),
+ * but only when at least 2 products in this manufacturer share that key.
+ * Products whose key is unique get no collection.
  */
 function buildCollectionMap(
   names: string[],
@@ -44,30 +99,21 @@ function buildCollectionMap(
 ): Map<string, string> {
   const allowlist =
     COLLECTION_NAME_ALLOWLIST[manufacturerSlug] ?? new Set<string>();
-  const firstWordCount = new Map<string, number>();
+  // Longest phrases first so the most specific collection matches.
+  const multiword = [...(COLLECTION_MULTIWORD[manufacturerSlug] ?? [])].sort(
+    (a, b) => b.length - a.length,
+  );
+
+  const keyCount = new Map<string, number>();
   for (const name of names) {
-    const first = name.trim().split(/\s+/)[0];
-    // Skip first words that look like product codes, not collection names:
-    //   - starts with a digit  (42", 36", 2PC)
-    //   - contains any digit   (NGU550, CB87)
-    //   - contains a hyphen    (DP-ST, IG-ST, SS-DB)
-    //   - has no lowercase     (IG, LED, DP — all-caps abbreviations)
-    // Manufacturer-specific allowlist entries bypass these checks.
-    if (
-      first &&
-      (allowlist.has(first) ||
-        (!/^\d/.test(first) &&
-          !/\d/.test(first) &&
-          !first.includes("-") &&
-          /[a-z]/.test(first)))
-    )
-      firstWordCount.set(first, (firstWordCount.get(first) ?? 0) + 1);
+    const key = collectionKeyFor(name, multiword, allowlist);
+    if (key) keyCount.set(key, (keyCount.get(key) ?? 0) + 1);
   }
 
   const result = new Map<string, string>();
   for (const name of names) {
-    const first = name.trim().split(/\s+/)[0] ?? "";
-    result.set(name, (firstWordCount.get(first) ?? 0) >= 2 ? first : "");
+    const key = collectionKeyFor(name, multiword, allowlist);
+    result.set(name, key && (keyCount.get(key) ?? 0) >= 2 ? key : "");
   }
   return result;
 }
