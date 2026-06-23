@@ -4,7 +4,10 @@ import type {
   CatalogFinishOption,
   CatalogFabricOption,
 } from "@workspace/api-client-react";
-import { FabricSwatchDialog } from "@/components/FabricSwatchDialog";
+import {
+  FabricSwatchDialog,
+  type FabricSwatchOption,
+} from "@/components/FabricSwatchDialog";
 
 /**
  * Configuration pickers shown on the PDP for products that cannot be bought
@@ -13,10 +16,14 @@ import { FabricSwatchDialog } from "@/components/FabricSwatchDialog";
  * knows which finish/fabric/tile the customer was interested in. No pricing is
  * computed here.
  *
- * Pickers render only when the product actually offers that option:
- * - Frame Finish: finishes whose category is "Frame Finish"
- * - Fabric: any fabric options (reuses the swatch dialog in non-grade mode)
- * - Tile Color: finishes whose category is "Table Top Tile"
+ * Every option type (Frame Finish, Fabric, Tile Color) uses the SAME pattern:
+ * a labeled "Browse swatches" button that opens the shared FabricSwatchDialog
+ * modal. Confirmed selections appear in a single recap block below the buttons,
+ * matching the umbrella PDP recap. Pickers render only when the product offers
+ * that option:
+ * - Frame Finish: finishes whose description is "Frame Finish"
+ * - Fabric: any fabric options
+ * - Tile Color: finishes whose description is "Table Top Tile"
  */
 export function ProductOptionPickers({
   finishes,
@@ -37,7 +44,9 @@ export function ProductOptionPickers({
   onFabricChange: (id: number | null) => void;
   onTableTopTileChange: (id: number | null) => void;
 }) {
+  const [frameOpen, setFrameOpen] = useState(false);
   const [fabricOpen, setFabricOpen] = useState(false);
+  const [tileOpen, setTileOpen] = useState(false);
 
   const frameFinishes = useMemo(
     () =>
@@ -54,6 +63,23 @@ export function ProductOptionPickers({
     [finishes],
   );
 
+  const frameSwatches = useMemo(
+    () => frameFinishes.map(finishToSwatch),
+    [frameFinishes],
+  );
+  const tileSwatches = useMemo(
+    () => tileFinishes.map(finishToSwatch),
+    [tileFinishes],
+  );
+
+  const selectedFrame = useMemo(
+    () => frameFinishes.find((f) => f.id === selectedFinishId) ?? null,
+    [frameFinishes, selectedFinishId],
+  );
+  const selectedTile = useMemo(
+    () => tileFinishes.find((f) => f.id === selectedTableTopTileId) ?? null,
+    [tileFinishes, selectedTableTopTileId],
+  );
   const selectedFabric = useMemo(
     () => fabrics.find((f) => f.id === selectedFabricId) ?? null,
     [fabrics, selectedFabricId],
@@ -63,117 +89,156 @@ export function ProductOptionPickers({
     frameFinishes.length > 0 || fabrics.length > 0 || tileFinishes.length > 0;
   if (!hasAny) return null;
 
+  const hasSelection = Boolean(selectedFrame || selectedTile || selectedFabric);
+
   return (
     <div className="space-y-5 mb-6">
       {frameFinishes.length > 0 ? (
-        <SwatchPicker
-          label="Frame Finish"
-          options={frameFinishes}
-          selectedId={selectedFinishId}
-          onChange={onFinishChange}
+        <BrowseButton label="Frame Finish" onClick={() => setFrameOpen(true)} />
+      ) : null}
+
+      {tileFinishes.length > 0 ? (
+        <BrowseButton label="Tile Color" onClick={() => setTileOpen(true)} />
+      ) : null}
+
+      {fabrics.length > 0 ? (
+        <BrowseButton label="Fabric" onClick={() => setFabricOpen(true)} />
+      ) : null}
+
+      {hasSelection ? (
+        <div className="flex flex-col gap-3 border border-border bg-muted/30 px-4 py-3">
+          {selectedFrame ? (
+            <RecapRow
+              label="Frame Finish"
+              value={selectedFrame.name}
+              swatchImageUrl={selectedFrame.swatchImageUrl ?? null}
+            />
+          ) : null}
+          {selectedTile ? (
+            <RecapRow
+              label="Tile Color"
+              value={selectedTile.name}
+              swatchImageUrl={selectedTile.swatchImageUrl ?? null}
+            />
+          ) : null}
+          {selectedFabric ? (
+            <RecapRow
+              label="Fabric"
+              value={`${selectedFabric.manufacturerName} · ${selectedFabric.name} (${selectedFabric.itemNumber})`}
+              swatchImageUrl={selectedFabric.swatchImageUrl ?? null}
+            />
+          ) : null}
+        </div>
+      ) : null}
+
+      {frameFinishes.length > 0 ? (
+        <FabricSwatchDialog
+          open={frameOpen}
+          onOpenChange={setFrameOpen}
+          fabrics={frameSwatches}
+          selectedFabricId={selectedFinishId}
+          onConfirm={(id) => onFinishChange(id)}
+          isGradeMode={false}
+          linePriceForGrade={() => null}
+          formatPrice={(v) => `$${v.toFixed(2)}`}
+          title="Choose a frame finish"
+          noun="finish"
+          nounPlural="finishes"
+          searchPlaceholder="Search finishes by name…"
+        />
+      ) : null}
+
+      {tileFinishes.length > 0 ? (
+        <FabricSwatchDialog
+          open={tileOpen}
+          onOpenChange={setTileOpen}
+          fabrics={tileSwatches}
+          selectedFabricId={selectedTableTopTileId}
+          onConfirm={(id) => onTableTopTileChange(id)}
+          isGradeMode={false}
+          linePriceForGrade={() => null}
+          formatPrice={(v) => `$${v.toFixed(2)}`}
+          title="Choose a tile color"
+          noun="tile"
+          nounPlural="tiles"
+          searchPlaceholder="Search tiles by name…"
         />
       ) : null}
 
       {fabrics.length > 0 ? (
-        <div>
-          <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">
-            Fabric
-            {selectedFabric ? (
-              <span className="ml-2 normal-case tracking-normal text-foreground">
-                {selectedFabric.name}
-              </span>
-            ) : null}
-          </p>
-          <button
-            type="button"
-            onClick={() => setFabricOpen(true)}
-            className="inline-flex items-center gap-3 border border-input bg-background px-3 py-2.5 text-sm hover:border-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            {selectedFabric?.swatchImageUrl ? (
-              <img
-                src={selectedFabric.swatchImageUrl}
-                alt={selectedFabric.name}
-                className="h-8 w-8 shrink-0 object-cover border border-border/50"
-              />
-            ) : (
-              <Palette className="h-5 w-5 text-muted-foreground" />
-            )}
-            <span>
-              {selectedFabric ? "Change fabric" : "Choose a fabric"}
-            </span>
-          </button>
-          <FabricSwatchDialog
-            open={fabricOpen}
-            onOpenChange={setFabricOpen}
-            fabrics={fabrics}
-            selectedFabricId={selectedFabricId}
-            onConfirm={(id) => onFabricChange(id)}
-            isGradeMode={false}
-            linePriceForGrade={() => null}
-            formatPrice={(v) => `$${v.toFixed(2)}`}
-          />
-        </div>
-      ) : null}
-
-      {tileFinishes.length > 0 ? (
-        <SwatchPicker
-          label="Tile Color"
-          options={tileFinishes}
-          selectedId={selectedTableTopTileId}
-          onChange={onTableTopTileChange}
+        <FabricSwatchDialog
+          open={fabricOpen}
+          onOpenChange={setFabricOpen}
+          fabrics={fabrics}
+          selectedFabricId={selectedFabricId}
+          onConfirm={(id) => onFabricChange(id)}
+          isGradeMode={false}
+          linePriceForGrade={() => null}
+          formatPrice={(v) => `$${v.toFixed(2)}`}
         />
       ) : null}
     </div>
   );
 }
 
-function SwatchPicker({
+function finishToSwatch(f: CatalogFinishOption): FabricSwatchOption {
+  return {
+    id: f.id,
+    name: f.name,
+    itemNumber: "",
+    swatchImageUrl: f.swatchImageUrl ?? null,
+    grade: null,
+    colorFamily: null,
+  };
+}
+
+function BrowseButton({
   label,
-  options,
-  selectedId,
-  onChange,
+  onClick,
 }: {
   label: string;
-  options: CatalogFinishOption[];
-  selectedId: number | null;
-  onChange: (id: number | null) => void;
+  onClick: () => void;
 }) {
-  const selected = options.find((o) => o.id === selectedId) ?? null;
   return (
     <div>
-      <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">
+      <p className="block text-sm uppercase tracking-widest text-muted-foreground mb-2">
         {label}
-        {selected ? (
-          <span className="ml-2 normal-case tracking-normal text-foreground">
-            {selected.name}
-          </span>
-        ) : null}
       </p>
-      <div className="flex flex-wrap gap-2">
-        {options.map((o) => {
-          const isSel = selectedId === o.id;
-          return (
-            <button
-              key={o.id}
-              type="button"
-              onClick={() => onChange(isSel ? null : o.id)}
-              className={`flex items-center gap-2 px-3 py-2 border text-sm transition-colors ${
-                isSel
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-input hover:border-foreground"
-              }`}
-            >
-              {o.swatchImageUrl ? (
-                <img
-                  src={o.swatchImageUrl}
-                  alt={o.name}
-                  className="h-6 w-6 shrink-0 object-cover border border-border/50"
-                />
-              ) : null}
-              {o.name}
-            </button>
-          );
-        })}
+      <button
+        type="button"
+        onClick={onClick}
+        className="w-full sm:max-w-[460px] inline-flex items-center gap-2 border border-primary bg-primary text-primary-foreground px-4 py-2.5 text-sm hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary"
+      >
+        <Palette className="h-4 w-4" />
+        Browse swatches
+      </button>
+    </div>
+  );
+}
+
+function RecapRow({
+  label,
+  value,
+  swatchImageUrl,
+}: {
+  label: string;
+  value: string;
+  swatchImageUrl: string | null;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      {swatchImageUrl ? (
+        <img
+          src={swatchImageUrl}
+          alt={value}
+          className="h-14 w-14 shrink-0 object-cover border border-border"
+        />
+      ) : (
+        <div className="h-14 w-14 shrink-0" aria-hidden="true" />
+      )}
+      <div className="text-sm">
+        <p className="text-muted-foreground">{label}</p>
+        <p className="font-medium">{value}</p>
       </div>
     </div>
   );

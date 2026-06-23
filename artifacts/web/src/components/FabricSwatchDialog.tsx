@@ -34,6 +34,16 @@ interface FabricSwatchDialogProps {
   formatPrice: (value: number) => string;
   /** Optional message to show when no fabrics are available yet. */
   emptyPrompt?: string | null;
+  /** Dialog heading. Defaults to "Choose a fabric". */
+  title?: string;
+  /** Singular noun used in the footer count. Defaults to "fabric". */
+  noun?: string;
+  /** Plural noun used in the count and empty states. Defaults to "fabrics". */
+  nounPlural?: string;
+  /** Confirm button label. Defaults to "Select this {noun}". */
+  confirmLabel?: string;
+  /** Search input placeholder. */
+  searchPlaceholder?: string;
 }
 
 const ALL = "__ALL__";
@@ -81,6 +91,11 @@ export function FabricSwatchDialog({
   linePriceForGrade,
   formatPrice,
   emptyPrompt,
+  title = "Choose a fabric",
+  noun = "fabric",
+  nounPlural = "fabrics",
+  confirmLabel,
+  searchPlaceholder = "Search by name or item number…",
 }: FabricSwatchDialogProps) {
   const [gradeFilter, setGradeFilter] = useState<string>(ALL);
   const [colorFilter, setColorFilter] = useState<string>(ALL);
@@ -136,7 +151,7 @@ export function FabricSwatchDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl w-[calc(100vw-2rem)] p-0 gap-0 max-h-[90vh] flex flex-col overflow-hidden">
         <DialogHeader className="px-6 pt-6 pb-4 border-b border-border">
-          <DialogTitle className="font-serif text-xl">Choose a fabric</DialogTitle>
+          <DialogTitle className="font-serif text-xl">{title}</DialogTitle>
         </DialogHeader>
 
         <div className="px-6 py-4 space-y-4 border-b border-border">
@@ -207,8 +222,8 @@ export function FabricSwatchDialog({
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by name or item number…"
-              aria-label="Search fabrics by name or item number"
+              placeholder={searchPlaceholder}
+              aria-label={searchPlaceholder}
               className="w-full border border-input bg-background pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
@@ -219,8 +234,8 @@ export function FabricSwatchDialog({
           {filtered.length === 0 ? (
             <p className="text-sm text-muted-foreground py-10 text-center">
               {fabrics.length === 0
-                ? (emptyPrompt ?? "No fabrics available.")
-                : "No fabrics match your filters."}
+                ? (emptyPrompt ?? `No ${nounPlural} available.`)
+                : `No ${nounPlural} match your filters.`}
             </p>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
@@ -278,7 +293,7 @@ export function FabricSwatchDialog({
         {/* Footer */}
         <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 px-6 py-4 border-t border-border">
           <span className="text-sm text-muted-foreground">
-            {filtered.length} {filtered.length === 1 ? "fabric" : "fabrics"}
+            {filtered.length} {filtered.length === 1 ? noun : nounPlural}
           </span>
           <div className="flex items-center gap-2">
             <button
@@ -299,7 +314,7 @@ export function FabricSwatchDialog({
               }}
               className="bg-primary text-primary-foreground px-4 py-2.5 text-sm hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
             >
-              Select this fabric
+              {confirmLabel ?? `Select this ${noun}`}
             </button>
           </div>
         </div>

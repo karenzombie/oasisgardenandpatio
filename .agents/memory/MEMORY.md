@@ -18,6 +18,7 @@
 - [Publish readiness check](publish-readiness-check.md) — before any publish: audit every task since last deploy, cross-check dev/prod counts, typecheck + check-image-urls clean, report mismatches first.
 - [CatalogProduct/FeaturedProduct schema reuse](catalog-product-schema-reuse.md) — required field on these breaks by-slug (allOf) + popular (FeaturedProduct); populate ALL producers (list/featured/popular/by-slug).
 - [Telescope finish seeding](telescope-finish-seeding.md) — two scripts (frame vs fabric), Powdercoat/MGP owned by seedTelescopeFinishes.ts with differentiated names; Rustic Polymer uses name as item_number fallback (no SKU).
+- [PDP option picker pattern](pdp-option-picker-pattern.md) — all PDP pickers (frame finish/fabric/tile) use the shared FabricSwatchDialog modal + recap; never inline grids; extend the dialog, don't fork it.
 - [Wishlist identity cache key](wishlist-identity-cache-key.md) — wishlist RQ key MUST be scoped by identity (user:id / guest:token) or stale cache leaks prior user's list; guest add race → map PG 23505 to 409.
 - [OW Lee fabric/finish wiring](owlee-fabric-finish-wiring.md) — explicit options (not pools); cushion vs sling by item_number SL%; classify by word-bounded name nouns (collection name ≠ table; "…Top" = table top; "adjusTABLE" trap).
 - [Recovering a dev mutation's row-set](recovering-dev-mutation-set.md) — prod is NOT a clean pre-mutation snapshot (dev/prod drift); recover via SKU + untouched-text-equality join, gate on the known row count.
