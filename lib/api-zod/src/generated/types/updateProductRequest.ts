@@ -30,6 +30,10 @@ export interface UpdateProductRequest {
   /** @nullable */
   collection?: string | null;
   /** @nullable */
+  subCategory?: string | null;
+  /** @nullable */
+  subMaterial?: string | null;
+  /** @nullable */
   seatType?: string | null;
   /** @nullable */
   umbrellaType?: string | null;

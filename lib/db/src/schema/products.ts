@@ -43,6 +43,11 @@ export const productsTable = pgTable(
     // derived server-side from `collection` on save — staff never type it.
     collection: text("collection"),
     collectionSlug: text("collection_slug"),
+    // Free-text sub-classifications below category/material level. Admin/data
+    // fields only (not shown on storefront). E.g. subCategory "Dining Chair",
+    // subMaterial "Teak". Optional, no enum constraint.
+    subCategory: text("sub_category"),
+    subMaterial: text("sub_material"),
     // Seating surface type (furniture only; NULL for tables/umbrellas/accessories).
     seatType: text("seat_type"),
     // Umbrella-specific filter fields (NULL for all non-umbrella products).

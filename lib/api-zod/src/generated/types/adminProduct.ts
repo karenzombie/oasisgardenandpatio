@@ -34,6 +34,16 @@ export interface AdminProduct {
    * @nullable
    */
   collectionSlug: string | null;
+  /**
+   * Free-text sub-classification below category level (admin/data field, not shown on storefront).
+   * @nullable
+   */
+  subCategory: string | null;
+  /**
+   * Free-text sub-classification below material level (admin/data field, not shown on storefront).
+   * @nullable
+   */
+  subMaterial: string | null;
   /** @nullable */
   seatType: string | null;
   /** @nullable */

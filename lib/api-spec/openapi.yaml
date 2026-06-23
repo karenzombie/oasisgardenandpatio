@@ -5905,6 +5905,12 @@ components:
         collectionSlug:
           type: ["string", "null"]
           description: Server-derived from collection on save. Read-only.
+        subCategory:
+          type: ["string", "null"]
+          description: Free-text sub-classification below category level (admin/data field, not shown on storefront).
+        subMaterial:
+          type: ["string", "null"]
+          description: Free-text sub-classification below material level (admin/data field, not shown on storefront).
         seatType:
           type: ["string", "null"]
         umbrellaType:
@@ -5988,6 +5994,8 @@ components:
         - materials
         - collection
         - collectionSlug
+        - subCategory
+        - subMaterial
         - seatType
         - umbrellaType
         - umbrellaShape
@@ -6142,6 +6150,10 @@ components:
           description: Material IDs to associate via the product_materials junction. Replaces the former single materialId.
         collection:
           type: ["string", "null"]
+        subCategory:
+          type: ["string", "null"]
+        subMaterial:
+          type: ["string", "null"]
         seatType:
           type: ["string", "null"]
         umbrellaType:
@@ -6239,6 +6251,10 @@ components:
             type: integer
           description: Material IDs to associate via the product_materials junction. When provided, replaces the product's material set. Omit to leave materials unchanged.
         collection:
+          type: ["string", "null"]
+        subCategory:
+          type: ["string", "null"]
+        subMaterial:
           type: ["string", "null"]
         seatType:
           type: ["string", "null"]

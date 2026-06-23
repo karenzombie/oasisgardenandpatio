@@ -141,6 +141,8 @@ interface FormState {
   categoryId: string;
   materialIds: number[];
   collection: string;
+  subCategory: string;
+  subMaterial: string;
   seatType: string;
   umbrellaType: string;
   umbrellaShape: string;
@@ -184,6 +186,8 @@ function emptyForm(): FormState {
     categoryId: "none",
     materialIds: [],
     collection: "",
+    subCategory: "",
+    subMaterial: "",
     seatType: "none",
     umbrellaType: "none",
     umbrellaShape: "none",
@@ -431,6 +435,8 @@ export default function ProductEdit() {
         categoryId: d.categoryId != null ? String(d.categoryId) : "none",
         materialIds: d.materials.map((m) => m.id),
         collection: d.collection ?? "",
+        subCategory: d.subCategory ?? "",
+        subMaterial: d.subMaterial ?? "",
         seatType: d.seatType ?? "none",
         umbrellaType: d.umbrellaType ?? "none",
         umbrellaShape: d.umbrellaShape ?? "none",
@@ -620,6 +626,8 @@ export default function ProductEdit() {
       categoryId: form.categoryId === "none" ? null : Number(form.categoryId),
       materialIds: form.materialIds,
       collection: form.collection.trim() || null,
+      subCategory: form.subCategory.trim() || null,
+      subMaterial: form.subMaterial.trim() || null,
       seatType: form.seatType === "none" ? null : form.seatType,
       umbrellaType: form.umbrellaType === "none" ? null : form.umbrellaType,
       umbrellaShape: form.umbrellaShape === "none" ? null : form.umbrellaShape,
@@ -1193,6 +1201,28 @@ export default function ProductEdit() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+              <div>
+                <Label htmlFor="p-subcategory">Sub Category</Label>
+                <Input
+                  id="p-subcategory"
+                  value={form.subCategory}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, subCategory: e.target.value }))
+                  }
+                  placeholder="e.g. Dining Chair, Bar & Counter Stools"
+                />
+              </div>
+              <div>
+                <Label htmlFor="p-submaterial">Sub Material</Label>
+                <Input
+                  id="p-submaterial"
+                  value={form.subMaterial}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, subMaterial: e.target.value }))
+                  }
+                  placeholder="e.g. Teak, Cast Aluminum"
+                />
               </div>
               <div className="md:col-span-2">
                 <Label>Materials</Label>

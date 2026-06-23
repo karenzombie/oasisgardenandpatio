@@ -2221,6 +2221,18 @@ export const AdminListProductsResponse = zod.object({
         .string()
         .nullable()
         .describe("Server-derived from collection on save. Read-only."),
+      subCategory: zod
+        .string()
+        .nullable()
+        .describe(
+          "Free-text sub-classification below category level (admin\/data field, not shown on storefront).",
+        ),
+      subMaterial: zod
+        .string()
+        .nullable()
+        .describe(
+          "Free-text sub-classification below material level (admin\/data field, not shown on storefront).",
+        ),
       seatType: zod.string().nullable(),
       umbrellaType: zod.string().nullable(),
       umbrellaShape: zod.string().nullable(),
@@ -2316,6 +2328,8 @@ export const AdminCreateProductBody = zod.object({
       "Material IDs to associate via the product_materials junction. Replaces the former single materialId.",
     ),
   collection: zod.string().nullish(),
+  subCategory: zod.string().nullish(),
+  subMaterial: zod.string().nullish(),
   seatType: zod.string().nullish(),
   umbrellaType: zod.string().nullish(),
   umbrellaShape: zod.string().nullish(),
@@ -2404,6 +2418,18 @@ export const AdminGetProductResponse = zod
       .string()
       .nullable()
       .describe("Server-derived from collection on save. Read-only."),
+    subCategory: zod
+      .string()
+      .nullable()
+      .describe(
+        "Free-text sub-classification below category level (admin\/data field, not shown on storefront).",
+      ),
+    subMaterial: zod
+      .string()
+      .nullable()
+      .describe(
+        "Free-text sub-classification below material level (admin\/data field, not shown on storefront).",
+      ),
     seatType: zod.string().nullable(),
     umbrellaType: zod.string().nullable(),
     umbrellaShape: zod.string().nullable(),
@@ -2505,6 +2531,8 @@ export const AdminUpdateProductBody = zod.object({
       "Material IDs to associate via the product_materials junction. When provided, replaces the product's material set. Omit to leave materials unchanged.",
     ),
   collection: zod.string().nullish(),
+  subCategory: zod.string().nullish(),
+  subMaterial: zod.string().nullish(),
   seatType: zod.string().nullish(),
   umbrellaType: zod.string().nullish(),
   umbrellaShape: zod.string().nullish(),
@@ -2575,6 +2603,18 @@ export const AdminUpdateProductResponse = zod.object({
     .string()
     .nullable()
     .describe("Server-derived from collection on save. Read-only."),
+  subCategory: zod
+    .string()
+    .nullable()
+    .describe(
+      "Free-text sub-classification below category level (admin\/data field, not shown on storefront).",
+    ),
+  subMaterial: zod
+    .string()
+    .nullable()
+    .describe(
+      "Free-text sub-classification below material level (admin\/data field, not shown on storefront).",
+    ),
   seatType: zod.string().nullable(),
   umbrellaType: zod.string().nullable(),
   umbrellaShape: zod.string().nullable(),
@@ -2671,6 +2711,18 @@ export const AdminSetProductActiveResponse = zod.object({
     .string()
     .nullable()
     .describe("Server-derived from collection on save. Read-only."),
+  subCategory: zod
+    .string()
+    .nullable()
+    .describe(
+      "Free-text sub-classification below category level (admin\/data field, not shown on storefront).",
+    ),
+  subMaterial: zod
+    .string()
+    .nullable()
+    .describe(
+      "Free-text sub-classification below material level (admin\/data field, not shown on storefront).",
+    ),
   seatType: zod.string().nullable(),
   umbrellaType: zod.string().nullable(),
   umbrellaShape: zod.string().nullable(),

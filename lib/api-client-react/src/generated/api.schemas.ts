@@ -923,6 +923,16 @@ export interface AdminProduct {
    * @nullable
    */
   collectionSlug: string | null;
+  /**
+   * Free-text sub-classification below category level (admin/data field, not shown on storefront).
+   * @nullable
+   */
+  subCategory: string | null;
+  /**
+   * Free-text sub-classification below material level (admin/data field, not shown on storefront).
+   * @nullable
+   */
+  subMaterial: string | null;
   /** @nullable */
   seatType: string | null;
   /** @nullable */
@@ -1057,6 +1067,10 @@ export interface CreateProductRequest {
   /** @nullable */
   collection?: string | null;
   /** @nullable */
+  subCategory?: string | null;
+  /** @nullable */
+  subMaterial?: string | null;
+  /** @nullable */
   seatType?: string | null;
   /** @nullable */
   umbrellaType?: string | null;
@@ -1136,6 +1150,10 @@ export interface UpdateProductRequest {
   materialIds?: number[];
   /** @nullable */
   collection?: string | null;
+  /** @nullable */
+  subCategory?: string | null;
+  /** @nullable */
+  subMaterial?: string | null;
   /** @nullable */
   seatType?: string | null;
   /** @nullable */
