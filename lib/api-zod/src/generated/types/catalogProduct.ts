@@ -21,6 +21,11 @@ export interface CatalogProduct {
   categoryName: string | null;
   /** @nullable */
   categorySlug: string | null;
+  /**
+   * Product collection name, read directly from the products.collection DB field. Used to build the storefront Collection filter.
+   * @nullable
+   */
+  collection: string | null;
   /** @nullable */
   price: string | null;
   /** @nullable */

@@ -217,6 +217,12 @@ export const ListCatalogProductsResponse = zod.object({
       manufacturerSlug: zod.string().nullable(),
       categoryName: zod.string().nullable(),
       categorySlug: zod.string().nullable(),
+      collection: zod
+        .string()
+        .nullable()
+        .describe(
+          "Product collection name, read directly from the products.collection DB field. Used to build the storefront Collection filter.",
+        ),
       price: zod.string().nullable(),
       salePrice: zod.string().nullable(),
       showPriceOnline: zod.boolean(),
@@ -459,6 +465,12 @@ export const GetCatalogProductBySlugResponse = zod
     manufacturerSlug: zod.string().nullable(),
     categoryName: zod.string().nullable(),
     categorySlug: zod.string().nullable(),
+    collection: zod
+      .string()
+      .nullable()
+      .describe(
+        "Product collection name, read directly from the products.collection DB field. Used to build the storefront Collection filter.",
+      ),
     price: zod.string().nullable(),
     salePrice: zod.string().nullable(),
     showPriceOnline: zod.boolean(),

@@ -22,127 +22,6 @@ import { CheckboxGroup, type FilterOption } from "@/components/FilterCheckboxGro
 const PAGE_SIZE_API = 60;
 const PAGE_SIZE_DISPLAY = 24;
 
-/**
- * Per-manufacturer allowlist of first words that ARE real collection names even
- * though they look like product codes (e.g. they're numeric). Keyed by
- * manufacturer slug. Only affects the listed manufacturer — all others keep the
- * default product-code skipping rules below.
- */
-const COLLECTION_NAME_ALLOWLIST: Record<string, ReadonlySet<string>> = {
-  // NorthCape's "6510" series is an actual collection name, not a part number.
-  northcape: new Set(["6510"]),
-};
-
-/**
- * Per-manufacturer list of collection names that span MORE than one word, which
- * the default first-word heuristic would otherwise truncate (e.g. "San
- * Cristobal" → "San") or collapse together (e.g. "Standard Aluminum" and
- * "Standard Iron" both → "Standard"). Keyed by manufacturer slug. A product
- * whose name begins with one of these phrases is assigned that full phrase as
- * its collection.
- */
-const COLLECTION_MULTIWORD: Record<string, readonly string[]> = {
-  "o-w-lee": [
-    "San Cristobal",
-    "Modern Aluminum",
-    "Standard Aluminum",
-    "Standard Iron",
-  ],
-};
-
-/**
- * Per-manufacturer leading phrases to strip from a product name before deriving
- * its collection. Some products carry a redundant category-like prefix (e.g. OW
- * Lee "Table Bases <Collection> ...") that would otherwise bucket every such
- * product under a bogus first-word collection ("Table") instead of its real one
- * (Marin, Modern Aluminum, Standard Iron, …). Keyed by manufacturer slug;
- * matched case-insensitively against the start of the name.
- */
-const COLLECTION_PREFIX_STRIP: Record<string, readonly string[]> = {
-  "o-w-lee": ["Table Bases"],
-};
-
-/**
- * Resolve a single product name to its collection KEY (the candidate collection
- * name), or null when the name has no usable collection. Curated multi-word
- * collection names take priority; otherwise the collection is the first word,
- * unless that word looks like a product code.
- */
-function collectionKeyFor(
-  name: string,
-  multiword: readonly string[],
-  allowlist: ReadonlySet<string>,
-  stripPrefixes: readonly string[] = [],
-): string | null {
-  let trimmed = name.trim();
-  // Remove a redundant leading phrase (e.g. "Table Bases ") so the real
-  // collection that follows it drives the key instead of the prefix.
-  for (const prefix of stripPrefixes) {
-    if (trimmed.toLowerCase().startsWith(prefix.toLowerCase() + " ")) {
-      trimmed = trimmed.slice(prefix.length).trim();
-      break;
-    }
-  }
-  const lower = trimmed.toLowerCase();
-  // Curated multi-word collection names win (already sorted longest-first).
-  for (const phrase of multiword) {
-    const p = phrase.toLowerCase();
-    if (lower === p || lower.startsWith(p + " ")) return phrase;
-  }
-  const first = trimmed.split(/\s+/)[0];
-  // Skip first words that look like product codes, not collection names:
-  //   - starts with a digit  (42", 36", 2PC)
-  //   - contains any digit   (NGU550, CB87)
-  //   - contains a hyphen    (DP-ST, IG-ST, SS-DB)
-  //   - has no lowercase     (IG, LED, DP — all-caps abbreviations)
-  // Manufacturer-specific allowlist entries bypass these checks.
-  if (
-    first &&
-    (allowlist.has(first) ||
-      (!/^\d/.test(first) &&
-        !/\d/.test(first) &&
-        !first.includes("-") &&
-        /[a-z]/.test(first)))
-  ) {
-    return first;
-  }
-  return null;
-}
-
-/**
- * Collection = the product name's FIRST WORD (or a curated multi-word phrase),
- * but only when at least 2 products in this manufacturer share that key.
- * Products whose key is unique get no collection.
- */
-function buildCollectionMap(
-  names: string[],
-  manufacturerSlug: string,
-): Map<string, string> {
-  const allowlist =
-    COLLECTION_NAME_ALLOWLIST[manufacturerSlug] ?? new Set<string>();
-  // Longest phrases first so the most specific collection matches.
-  const multiword = [...(COLLECTION_MULTIWORD[manufacturerSlug] ?? [])].sort(
-    (a, b) => b.length - a.length,
-  );
-  // Longest prefixes first so the most specific redundant prefix is stripped.
-  const stripPrefixes = [
-    ...(COLLECTION_PREFIX_STRIP[manufacturerSlug] ?? []),
-  ].sort((a, b) => b.length - a.length);
-
-  const keyCount = new Map<string, number>();
-  for (const name of names) {
-    const key = collectionKeyFor(name, multiword, allowlist, stripPrefixes);
-    if (key) keyCount.set(key, (keyCount.get(key) ?? 0) + 1);
-  }
-
-  const result = new Map<string, string>();
-  for (const name of names) {
-    const key = collectionKeyFor(name, multiword, allowlist, stripPrefixes);
-    result.set(name, key && (keyCount.get(key) ?? 0) >= 2 ? key : "");
-  }
-  return result;
-}
-
 function formatMoney(v: string | null | undefined): string {
   if (v == null || v === "") return "";
   const n = Number(v);
@@ -226,24 +105,21 @@ export default function ManufacturerProducts() {
     ];
   }, [page1Data, restQueries]);
 
-  const collectionMap = useMemo(
-    () => buildCollectionMap(allProducts.map((p) => p.name), slug),
-    [allProducts, slug],
-  );
-
   // Collection options are narrowed to the active Type (faceted): only
   // collections that have products of the selected type are shown. The
   // collection facet ignores its own selection so the user can still switch
-  // between collections.
+  // between collections. The collection value comes straight from the DB
+  // products.collection field — no name inference — so the filter auto-corrects
+  // as the underlying catalog data is cleaned up.
   const collections = useMemo(() => {
     const set = new Set<string>();
     for (const p of allProducts) {
       if (activeType && p.categorySlug !== activeType) continue;
-      const col = collectionMap.get(p.name) ?? "";
+      const col = p.collection ?? "";
       if (col) set.add(col);
     }
     return [...set].sort();
-  }, [allProducts, collectionMap, activeType]);
+  }, [allProducts, activeType]);
 
   // Types are the real product categories present in this manufacturer's
   // catalog, narrowed to the active Collection (faceted) so a type that has no
@@ -251,7 +127,7 @@ export default function ManufacturerProducts() {
   const types = useMemo(() => {
     const seen = new Map<string, { category: Category; count: number }>();
     for (const p of allProducts) {
-      if (activeCollection && (collectionMap.get(p.name) ?? "") !== activeCollection)
+      if (activeCollection && (p.collection ?? "") !== activeCollection)
         continue;
       if (!p.categorySlug) continue;
       const cat =
@@ -273,13 +149,13 @@ export default function ManufacturerProducts() {
         ? a.category.displayOrder - b.category.displayOrder
         : a.category.name.localeCompare(b.category.name),
     );
-  }, [allProducts, categoryBySlug, activeCollection, collectionMap]);
+  }, [allProducts, categoryBySlug, activeCollection]);
 
   const filtered = useMemo(() => {
     return allProducts
       .filter((p) => {
         if (activeCollection) {
-          if ((collectionMap.get(p.name) ?? "") !== activeCollection) return false;
+          if ((p.collection ?? "") !== activeCollection) return false;
         }
         if (activeType) {
           if (p.categorySlug !== activeType) return false;
@@ -293,7 +169,7 @@ export default function ManufacturerProducts() {
         if (catCmp !== 0) return catCmp;
         return a.name.localeCompare(b.name);
       });
-  }, [allProducts, activeCollection, activeType, collectionMap]);
+  }, [allProducts, activeCollection, activeType]);
 
   const totalFiltered = filtered.length;
   const totalPages = Math.max(1, Math.ceil(totalFiltered / PAGE_SIZE_DISPLAY));

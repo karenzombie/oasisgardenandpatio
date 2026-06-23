@@ -6536,6 +6536,9 @@ components:
           type: ["string", "null"]
         categorySlug:
           type: ["string", "null"]
+        collection:
+          type: ["string", "null"]
+          description: Product collection name, read directly from the products.collection DB field. Used to build the storefront Collection filter.
         price:
           type: ["string", "null"]
         salePrice:
@@ -6569,6 +6572,7 @@ components:
         - manufacturerSlug
         - categoryName
         - categorySlug
+        - collection
         - price
         - salePrice
         - showPriceOnline

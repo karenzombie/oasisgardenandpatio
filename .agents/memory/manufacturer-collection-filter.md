@@ -1,28 +1,32 @@
 ---
 name: Manufacturer page collection filter
-description: How the storefront manufacturer-page COLLECTION filter is derived and why the DB column can't be used directly.
+description: How the storefront manufacturer-page COLLECTION filter is sourced (DB field, never inferred).
 ---
 
 # Manufacturer page COLLECTION filter
 
-The COLLECTION filter on the manufacturer products page (artifacts/web `ManufacturerProducts.tsx`,
-`buildCollectionMap`) is derived from each product **name's first word**, kept only when ≥2 products
-share it. It is NOT read from `products.collection`.
+The COLLECTION filter on the manufacturer products page (artifacts/web `ManufacturerProducts.tsx`)
+reads **directly from the DB `products.collection` column**, surfaced as `CatalogProduct.collection`
+in the API. It is NOT inferred from the product name.
 
-**Why not the DB `collection` column:** coverage is wildly inconsistent. It's clean for some
-manufacturers (o-w-lee, hanamint, homecrest, northcape, sunset-west partial) but for
-telescope-casual and sunset-west it holds full product-description strings (e.g. "30 Round Bar
-Table W Hole MGP Slat Top Tables"), so wiring the filter to that column would wreck those
-manufacturers. The name heuristic is intentional.
+**Why:** user principle — every filter must map to a real product DB field and ALWAYS use that over
+inferred data (same rule the Type filter already follows via `categorySlug`). An earlier name
+first-word heuristic (`buildCollectionMap`/`collectionKeyFor` + per-manufacturer override maps
+`COLLECTION_NAME_ALLOWLIST`/`COLLECTION_MULTIWORD`/`COLLECTION_PREFIX_STRIP`) was deleted entirely.
 
-**Multi-word collections** (e.g. OW Lee "San Cristobal", "Standard Aluminum", "Standard Iron",
-"Modern Aluminum") break the first-word heuristic — "San Cristobal" → "San", and
-"Standard Aluminum"/"Standard Iron" collapse into one "Standard". Fix pattern: the per-manufacturer
-`COLLECTION_MULTIWORD` map (keyed by manufacturer slug), matched longest-phrase-first in
-`collectionKeyFor()`. Mirrors the older `COLLECTION_NAME_ALLOWLIST` (which whitelists numeric-looking
-first words like NorthCape "6510").
+**Data quality is the manufacturer's responsibility, by design.** `products.collection` is clean for
+some manufacturers (o-w-lee, hanamint, homecrest, northcape) but holds garbage (full descriptions)
+for telescope-casual & sunset-west, and is empty for others. Per explicit user decision (Option 1:
+switch everywhere, no per-manufacturer suppression), dirty manufacturers show messy collection chips
+until the user cleans their own data — do NOT reintroduce inference or suppression logic.
 
-**How to apply:** when a manufacturer's collection name spans >1 word and shows up truncated/merged
-in the filter, add the full phrase(s) to `COLLECTION_MULTIWORD[<slug>]`. Verify against the DB
-`collection` column for that one manufacturer (when clean) to get the authoritative phrase list, and
-confirm no unrelated product names share the leading word.
+**API wiring (the gotcha):** `collection` is a *required* field on the `CatalogProduct` schema, which
+is reused via `allOf` by `CatalogProductDetail` (the by-slug PDP response). So EVERY producer of
+`CatalogProduct`/`CatalogProductDetail` must SELECT `productsTable.collection` and include it in the
+payload, or that endpoint 500s at `.parse()`. Currently both the list route (`/products`,
+listCatalogProducts) and the PDP route (`/products/by-slug/:slug`) populate it. The featured/popular
+routes use the separate `FeaturedProduct` schema and are unaffected.
+
+**How to apply:** if you ever add another endpoint returning `CatalogProduct`/`CatalogProductDetail`,
+add `collection: productsTable.collection` to its select AND the response payload. The
+manufacturer-page Collection facet, Type faceting, and product filtering all key on `p.collection`.
