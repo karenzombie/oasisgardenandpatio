@@ -12,7 +12,24 @@ Wiring uses explicit **options** rows (product_finish_options / product_fabric_o
 - **Cushion fabrics** (active, item_number NOT like 'SL%') → all seats that are NOT sling: deep seating (lounge chairs, sofas, love seats, ottomans, sectionals), dining/bar/counter chairs, non-sling chaises.
 - **Sling fabrics** (active, item_number ILIKE 'SL%') → products with "Sling" in the name (incl. sling chaise lounges).
 - **No fabric** (finishes only): table bases, table tops, accent/coffee/side tables, Kensington/Quadra/Horizon tables, fire pits.
-- Fire-pit hearth-top tile color and table-top porcelain fabric/grade are a SEPARATE follow-on task — not wired here.
+- Table-top porcelain fabric/grade are a SEPARATE follow-on task — not wired here.
+
+## Fire-pit top tile options (DONE — wired via product_finish_options)
+Top tiles attach as explicit options (same as frame finishes), keyed by the fire
+pit's **collection → top material**. The 19 `description='Table Top Tile'`
+finishes split into: 2 **Dekton** (Soke id 27, Trillium id 28), 1 **Micro Mesh**
+(id 29, a steel-mesh cover — NOT porcelain), and 16 **porcelain** (everything
+else).
+- **Porcelain-top collections** (Santorini, Capri, Elba, Anello, + the Compass
+  *surround* 5160-54RDC) → the **16 porcelain** tiles (exclude Dekton AND Micro
+  Mesh). Keep their 10 frame finishes too.
+- **Dekton-top collections** (Phoenix, Nova, Volante, Moda) → **only Soke +
+  Trillium**. Keep frame finishes.
+- **No-top collections** (Basso, Haven, Forma) → no tiles; frame finishes only.
+- **`5360-` SKUs** = Breeo inserts/accessories (ship in fixed material) → **zero**
+  options (strip frame + tile). Identify by SKU prefix, not category. Only
+  5360-X24P/X24S exist in catalog; the other 7 accessory SKUs in the spec are not
+  loaded. The surround 5160-54RDC is the deliberate exception (keeps everything).
 
 ## Classification gotchas (cost real debugging)
 - `fabrics` SKU column is **item_number**, not `sku`.
