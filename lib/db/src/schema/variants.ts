@@ -33,6 +33,10 @@ export const fabricsTable = pgTable(
       .references(() => manufacturersTable.id, { onDelete: "restrict" }),
     itemNumber: text("item_number").notNull(),
     name: text("name").notNull(),
+    // Optional sub-grouping within a manufacturer (e.g. NorthCape splits its
+    // fabric library into "Sunbrella", "Belenos", "Wicker"). Used to render
+    // collection subsections on the public Fabrics page. Null = ungrouped.
+    collection: text("collection"),
     swatchImageUrl: text("swatch_image_url"),
     grade: text("grade"),
     // Free-text vendor note for this fabric (e.g. "Non-stock. Allow additional

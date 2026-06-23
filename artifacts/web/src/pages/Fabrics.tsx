@@ -30,10 +30,61 @@ type FabricItem = {
   itemNumber: string;
   manufacturerName: string;
   manufacturerLogoUrl: string | null;
+  collection?: string | null;
   swatchImageUrl: string | null;
   grade: string | null;
   colorFamily: string | null;
 };
+
+function FabricGrid({ list }: { list: FabricItem[] }) {
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5">
+      {list.map((f) => (
+        <FabricSwatch key={f.id} fabric={f} />
+      ))}
+    </div>
+  );
+}
+
+function FabricGroupContent({ list }: { list: FabricItem[] }) {
+  // Sub-group by `collection` when any fabric in this manufacturer carries one
+  // (e.g. NorthCape → Sunbrella / Belenos / Wicker). Fabrics without a
+  // collection fall into an "Other" bucket rendered last.
+  const subgroups = useMemo(() => {
+    const hasCollection = list.some((f) => f.collection);
+    if (!hasCollection) return null;
+    const m = new Map<string, FabricItem[]>();
+    for (const f of list) {
+      const key = f.collection || "Other";
+      const arr = m.get(key) ?? [];
+      arr.push(f);
+      m.set(key, arr);
+    }
+    return Array.from(m.entries()).sort((a, b) => {
+      if (a[0] === "Other") return 1;
+      if (b[0] === "Other") return -1;
+      return a[0].localeCompare(b[0]);
+    });
+  }, [list]);
+
+  if (!subgroups) return <FabricGrid list={list} />;
+
+  return (
+    <div className="space-y-8">
+      {subgroups.map(([collection, items]) => (
+        <div key={collection}>
+          <div className="flex items-baseline gap-3 mb-4">
+            <h3 className="font-serif text-lg text-foreground">{collection}</h3>
+            <span className="text-xs uppercase tracking-widest text-muted-foreground">
+              {items.length} {items.length === 1 ? "fabric" : "fabrics"}
+            </span>
+          </div>
+          <FabricGrid list={items} />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function FabricSwatch({ fabric }: { fabric: FabricItem }) {
   return (
@@ -238,11 +289,7 @@ export default function Fabrics() {
                 </div>
               </AccordionTrigger>
               <AccordionContent className="pb-8">
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5">
-                  {list.map((f) => (
-                    <FabricSwatch key={f.id} fabric={f} />
-                  ))}
-                </div>
+                <FabricGroupContent list={list} />
               </AccordionContent>
             </AccordionItem>
           ))}

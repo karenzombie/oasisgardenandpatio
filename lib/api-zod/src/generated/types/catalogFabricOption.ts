@@ -13,6 +13,11 @@ export interface CatalogFabricOption {
   manufacturerName: string;
   /** @nullable */
   manufacturerLogoUrl: string | null;
+  /**
+   * Optional sub-grouping within a manufacturer (e.g. "Sunbrella", "Belenos"). Used to render collection subsections on the Fabrics page. Optional — only populated by the public fabrics catalog.
+   * @nullable
+   */
+  collection?: string | null;
   /** @nullable */
   swatchImageUrl: string | null;
   /**

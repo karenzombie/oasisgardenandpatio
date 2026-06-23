@@ -6781,6 +6781,9 @@ components:
           type: string
         manufacturerLogoUrl:
           type: ["string", "null"]
+        collection:
+          type: ["string", "null"]
+          description: Optional sub-grouping within a manufacturer (e.g. "Sunbrella", "Belenos"). Used to render collection subsections on the Fabrics page. Optional — only populated by the public fabrics catalog.
         swatchImageUrl:
           type: ["string", "null"]
         grade:

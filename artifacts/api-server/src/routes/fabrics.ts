@@ -42,6 +42,7 @@ router.get(
         itemNumber: fabricsTable.itemNumber,
         manufacturerName: manufacturersTable.name,
         manufacturerLogoUrl: manufacturersTable.logoUrl,
+        collection: fabricsTable.collection,
         swatchImageUrl: fabricsTable.swatchImageUrl,
         grade: fabricsTable.grade,
         colorFamily: fabricsTable.colorFamily,

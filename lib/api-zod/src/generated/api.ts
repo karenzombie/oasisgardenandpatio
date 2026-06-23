@@ -332,6 +332,12 @@ export const ListCatalogFabricsResponse = zod.object({
       itemNumber: zod.string(),
       manufacturerName: zod.string(),
       manufacturerLogoUrl: zod.string().nullable(),
+      collection: zod
+        .string()
+        .nullish()
+        .describe(
+          'Optional sub-grouping within a manufacturer (e.g. \"Sunbrella\", \"Belenos\"). Used to render collection subsections on the Fabrics page. Optional — only populated by the public fabrics catalog.',
+        ),
       swatchImageUrl: zod.string().nullable(),
       grade: zod
         .string()
@@ -641,6 +647,12 @@ export const GetCatalogProductBySlugResponse = zod
             itemNumber: zod.string(),
             manufacturerName: zod.string(),
             manufacturerLogoUrl: zod.string().nullable(),
+            collection: zod
+              .string()
+              .nullish()
+              .describe(
+                'Optional sub-grouping within a manufacturer (e.g. \"Sunbrella\", \"Belenos\"). Used to render collection subsections on the Fabrics page. Optional — only populated by the public fabrics catalog.',
+              ),
             swatchImageUrl: zod.string().nullable(),
             grade: zod
               .string()
@@ -2953,6 +2965,12 @@ export const AdminGetProductPickerResponse = zod
         itemNumber: zod.string(),
         manufacturerName: zod.string(),
         manufacturerLogoUrl: zod.string().nullable(),
+        collection: zod
+          .string()
+          .nullish()
+          .describe(
+            'Optional sub-grouping within a manufacturer (e.g. \"Sunbrella\", \"Belenos\"). Used to render collection subsections on the Fabrics page. Optional — only populated by the public fabrics catalog.',
+          ),
         swatchImageUrl: zod.string().nullable(),
         grade: zod
           .string()

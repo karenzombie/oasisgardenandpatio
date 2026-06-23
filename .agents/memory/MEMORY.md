@@ -32,3 +32,4 @@
 - [Compatible Recommendations feature](compatible-recommendations.md) — data-driven product_recommendations map; join keys on real products.sku (TG AKZ bases carry a `-_` suffix, e.g. BASE-13-_); only active+availableOnline render.
 - [Featured/curated homepage online filter](featured-homepage-online-filter.md) — homepage lists linking to /shop/:slug must filter availableOnline=true (PDP by-slug 404s for non-online); featured toggle has no online gate.
 - [No-image placeholder text](no-image-placeholder.md) — every no-image fallback div must say exactly "No image available"; never "No image" or "Image not available".
+- [Fabric collection subsections](fabric-collections-subsections.md) — fabrics.collection drives Fabrics-page sub-groups (keep CatalogFabricOption.collection OPTIONAL); NorthCape has no SKUs (name=item_number); Belenos/Wicker are finishes with 1344 product links, moving is destructive.
