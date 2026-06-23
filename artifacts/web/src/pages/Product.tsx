@@ -1356,12 +1356,30 @@ export default function Product() {
             <div>
               {data.specs && Object.keys(data.specs).length > 0 ? (
                 <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-sm">
-                  {Object.entries(data.specs).map(([k, v]) => (
-                    <div key={k} className="flex gap-2 border-b border-border py-2">
-                      <dt className="text-muted-foreground min-w-[140px] capitalize">{k.replace(/_/g, " ")}</dt>
-                      <dd className="text-foreground">{String(v)}</dd>
-                    </div>
-                  ))}
+                  {Object.entries(data.specs).map(([k, v]) => {
+                    const val = String(v).trim();
+                    const isUrl = /^https?:\/\//i.test(val);
+                    const isPdf = /pdf/i.test(k) || /\.pdf($|\?)/i.test(val);
+                    return (
+                      <div key={k} className="flex gap-2 border-b border-border py-2">
+                        <dt className="text-muted-foreground min-w-[140px] capitalize">{k.replace(/_/g, " ")}</dt>
+                        <dd className="text-foreground">
+                          {isUrl ? (
+                            <a
+                              href={val}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary underline underline-offset-2 hover:text-primary/80 break-all"
+                            >
+                              {isPdf ? "View PDF" : "View document"}
+                            </a>
+                          ) : (
+                            String(v)
+                          )}
+                        </dd>
+                      </div>
+                    );
+                  })}
                 </dl>
               ) : null}
               {data.materials.length > 0 || data.dimensions || effectiveWeight ? (
