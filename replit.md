@@ -42,6 +42,7 @@ A full-stack e-commerce platform for a luxury outdoor furniture retailer, suppor
 - **Image Handling**: Differentiates between static assets (bundled), public directory files (served directly), and admin-uploaded images (Replit Object Storage via API proxy). Public-facing API routes must wrap image URLs with `toPublicImageUrl()`.
 - **Order Numbering**: Follows `OG-YYYY-XXXXX` for customer orders and `VO-YYYY-NNNNN` for vendor orders.
 - **Payment & Tax**: Authorize.net for online payments, with TaxJar for online order tax calculations. In-store orders may bypass payment steps and use a flat local tax rate.
+- **Product visibility vs. purchasability**: `available_online` controls whether a product is *visible* on the storefront — every customer route (search, listings, facets, PDP) requires `available_online = true`. Purchasability is separate: a visible product shows **Add to Cart** only when it has a price and `show_price_online` is on (and not quote-only); otherwise it shows **Call for Price** but stays visible. **New products ALWAYS default to visible** (`available_online = true`) on every creation path — DB column default, admin "Add Product" form, create API route, and CSV import. Staff can later hide a product or enable Add-to-Cart-with-price through the admin UI.
 
 ## Product
 
