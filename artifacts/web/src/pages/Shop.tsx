@@ -45,6 +45,7 @@ export default function Shop() {
   const activeManufacturer = q.get("manufacturer") ?? "";
   const activeMaterial = q.get("material") ?? "";
   const activeCollection = q.get("collection") ?? "";
+  const activeSubCategory = q.get("subcategory") ?? "";
   const activeName = q.get("q") ?? "";
 
   const queryParams = useMemo(() => {
@@ -58,6 +59,7 @@ export default function Shop() {
     if (activeMaterial) out.materialSlug = activeMaterial;
     if (activeManufacturer && activeCollection) out.collection = activeCollection;
     if (activeCategory) out.categorySlug = activeCategory;
+    if (activeCategory && activeSubCategory) out.subCategory = activeSubCategory;
     if (isOnlineOnly) out.onlineOnly = true;
     return out;
   }, [
@@ -66,6 +68,7 @@ export default function Shop() {
     activeManufacturer,
     activeMaterial,
     activeCollection,
+    activeSubCategory,
     activeName,
     isOnlineOnly,
   ]);
@@ -82,6 +85,7 @@ export default function Shop() {
     if (activeManufacturer) out.manufacturerSlug = activeManufacturer;
     if (activeMaterial) out.materialSlug = activeMaterial;
     if (activeManufacturer && activeCollection) out.collection = activeCollection;
+    if (activeCategory && activeSubCategory) out.subCategory = activeSubCategory;
     if (isOnlineOnly) out.onlineOnly = true;
     return out;
   }, [
@@ -90,6 +94,7 @@ export default function Shop() {
     activeManufacturer,
     activeMaterial,
     activeCollection,
+    activeSubCategory,
     isOnlineOnly,
   ]);
   const { data: facets } = useListCatalogFacets(facetParams);
@@ -129,6 +134,9 @@ export default function Shop() {
     const next = new URLSearchParams(search);
     next.delete("category");
     next.delete("page");
+    // Sub-category values are specific to a category, so clear the selection
+    // whenever the category changes.
+    next.delete("subcategory");
     const qs = next.toString();
     const base = v ? `/shop/category/${v}` : "/shop";
     setLocation(qs ? `${base}?${qs}` : base);
@@ -142,6 +150,7 @@ export default function Shop() {
   const activeFilterCount =
     (isOnlineOnly ? 1 : 0) +
     (!isCategoryFixed && activeCategory ? 1 : 0) +
+    (activeCategory && activeSubCategory ? 1 : 0) +
     (activeManufacturer ? 1 : 0) +
     (activeManufacturer && activeCollection ? 1 : 0) +
     (activeMaterial ? 1 : 0) +
@@ -161,6 +170,10 @@ export default function Shop() {
   );
   const collectionOptions = useMemo<FilterOption[]>(
     () => (facets?.collections ?? []).map((c) => ({ value: c, label: c })),
+    [facets],
+  );
+  const subCategoryOptions = useMemo<FilterOption[]>(
+    () => (facets?.subCategories ?? []).map((c) => ({ value: c, label: c })),
     [facets],
   );
 
@@ -224,6 +237,14 @@ export default function Shop() {
         selected={activeCategory}
         onChange={setCategory}
       />
+      {activeCategory && subCategoryOptions.length > 0 && (
+        <CheckboxGroup
+          label="Sub Category"
+          options={subCategoryOptions}
+          selected={activeSubCategory}
+          onChange={(v) => updateSearch({ subcategory: v || null, page: "1" })}
+        />
+      )}
       <CheckboxGroup
         label="Brand"
         options={manufacturerOptions}
@@ -331,6 +352,14 @@ export default function Shop() {
             <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
               {categoryOptions.find((c) => c.value === activeCategory)?.label ?? activeCategory}
               <button type="button" onClick={() => setCategory("")}>
+                <X className="size-3" />
+              </button>
+            </span>
+          )}
+          {activeCategory && activeSubCategory && (
+            <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
+              {activeSubCategory}
+              <button type="button" onClick={() => updateSearch({ subcategory: null, page: "1" })}>
                 <X className="size-3" />
               </button>
             </span>

@@ -174,6 +174,7 @@ router.get(
       manufacturerSlug,
       materialSlug,
       collection,
+      subCategory,
       onlineOnly,
       sort,
       page,
@@ -225,6 +226,9 @@ router.get(
     }
     if (collection && collection.trim()) {
       conditions.push(eq(productsTable.collection, collection.trim()));
+    }
+    if (subCategory && subCategory.trim()) {
+      conditions.push(eq(productsTable.subCategory, subCategory.trim()));
     }
     const whereClause = and(...conditions);
 
@@ -384,13 +388,25 @@ router.get(
         .json({ error: parsed.error.issues[0]?.message ?? "Invalid query" });
       return;
     }
-    const { q, categorySlug, manufacturerSlug, materialSlug, collection, onlineOnly } =
-      parsed.data;
+    const {
+      q,
+      categorySlug,
+      manufacturerSlug,
+      materialSlug,
+      collection,
+      subCategory,
+      onlineOnly,
+    } = parsed.data;
 
     // Build the product-match conditions for a given subset of active filters.
     // `exclude` names the facet whose own selection must be ignored so that
     // facet's available options aren't collapsed to the single chosen value.
-    type Facet = "category" | "manufacturer" | "material" | "collection";
+    type Facet =
+      | "category"
+      | "manufacturer"
+      | "material"
+      | "collection"
+      | "subCategory";
     const buildConditions = (exclude: Facet | null) => {
       const conds = [
         eq(productsTable.isActive, true),
@@ -439,6 +455,9 @@ router.get(
       if (collection && collection.trim() && exclude !== "collection") {
         conds.push(eq(productsTable.collection, collection.trim()));
       }
+      if (subCategory && subCategory.trim() && exclude !== "subCategory") {
+        conds.push(eq(productsTable.subCategory, subCategory.trim()));
+      }
       return conds;
     };
 
@@ -454,8 +473,13 @@ router.get(
           eq(categoriesTable.id, productsTable.categoryId),
         );
 
-    const [categoryRows, manufacturerRows, materialRows, collectionRows] =
-      await Promise.all([
+    const [
+      categoryRows,
+      manufacturerRows,
+      materialRows,
+      collectionRows,
+      subCategoryRows,
+    ] = await Promise.all([
         withJoins(
           db.selectDistinct({
             slug: categoriesTable.slug,
@@ -522,6 +546,20 @@ router.get(
             ),
           )
           .orderBy(productsTable.collection),
+        // Sub-categories of products matching the other facets. Scoped to the
+        // selected category (buildConditions keeps categorySlug), so the
+        // storefront only surfaces values relevant to the chosen category.
+        withJoins(
+          db.selectDistinct({ subCategory: productsTable.subCategory }),
+        )
+          .where(
+            and(
+              ...buildConditions("subCategory"),
+              sql`${productsTable.subCategory} is not null`,
+              sql`${productsTable.subCategory} <> ''`,
+            ),
+          )
+          .orderBy(productsTable.subCategory),
       ]);
 
     res.json(
@@ -535,6 +573,9 @@ router.get(
         materials: materialRows.map((r) => ({ slug: r.slug, name: r.name })),
         collections: collectionRows
           .map((r) => r.collection)
+          .filter((c): c is string => !!c),
+        subCategories: subCategoryRows
+          .map((r) => r.subCategory)
           .filter((c): c is string => !!c),
       }),
     );

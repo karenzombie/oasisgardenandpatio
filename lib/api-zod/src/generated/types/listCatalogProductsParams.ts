@@ -17,6 +17,10 @@ export type ListCatalogProductsParams = {
    */
   collection?: string;
   /**
+   * Filter by product sub-category name (exact match). Typically used together with categorySlug.
+   */
+  subCategory?: string;
+  /**
    * When true, exclude quote-only products (show only items purchasable online)
    */
   onlineOnly?: boolean;

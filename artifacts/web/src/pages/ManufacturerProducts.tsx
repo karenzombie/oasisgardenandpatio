@@ -1,15 +1,15 @@
 import { Link, useRoute, useLocation, useSearch } from "wouter";
 import { useMemo, useState, useEffect } from "react";
-import { useQueries } from "@tanstack/react-query";
 import { X, SlidersHorizontal } from "lucide-react";
 import {
   useListCatalogProducts,
+  useListCatalogFacets,
   useListManufacturers,
-  useListCategories,
-  listCatalogProducts,
-  getListCatalogProductsQueryKey,
 } from "@workspace/api-client-react";
-import type { CatalogProduct, Category } from "@workspace/api-client-react";
+import type {
+  ListCatalogProductsParams,
+  ListCatalogFacetsParams,
+} from "@workspace/api-client-react";
 import { getBrandLogo } from "@/lib/brandLogos";
 import { getManufacturerAbout } from "@/lib/manufacturerAbout";
 import { ManufacturerAbout } from "@/components/ManufacturerAbout";
@@ -19,7 +19,6 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { CheckboxGroup, type FilterOption } from "@/components/FilterCheckboxGroup";
 
-const PAGE_SIZE_API = 60;
 const PAGE_SIZE_DISPLAY = 24;
 
 function formatMoney(v: string | null | undefined): string {
@@ -37,153 +36,19 @@ export default function ManufacturerProducts() {
   const search = useSearch();
   const q = useMemo(() => new URLSearchParams(search), [search]);
 
+  // Manufacturer is fixed by the route; category/sub-category/collection/material
+  // are query-param filters. Sub-category is gated behind a selected category
+  // and collection is always available (the brand is already fixed).
+  const activeCategory = q.get("category") ?? "";
+  const activeSubCategory = q.get("subcategory") ?? "";
   const activeCollection = q.get("collection") ?? "";
-  const activeType = q.get("type") ?? "";
+  const activeMaterial = q.get("material") ?? "";
   const displayPage = Math.max(1, Number(q.get("page") ?? "1") || 1);
 
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   const { data: manufacturers } = useListManufacturers();
   const manufacturer = manufacturers?.find((m) => m.slug === slug);
-
-  const { data: categories } = useListCategories();
-  const categoryBySlug = useMemo(() => {
-    const m = new Map<string, Category>();
-    for (const c of categories ?? []) m.set(c.slug, c);
-    return m;
-  }, [categories]);
-
-  // Page 1 determines how many total pages exist for this manufacturer.
-  const {
-    data: page1Data,
-    isLoading: loading1,
-    error: page1Error,
-  } = useListCatalogProducts({
-    manufacturerSlug: slug,
-    sort: "name_asc",
-    page: 1,
-    pageSize: PAGE_SIZE_API,
-  });
-
-  const total = page1Data?.total ?? 0;
-  const pageCount = Math.ceil(total / PAGE_SIZE_API);
-
-  // Fetch every remaining page (2..N) so collection/type filters are built from
-  // the manufacturer's full catalog, not just the first page.
-  const restPages = useMemo(
-    () => (pageCount > 1 ? Array.from({ length: pageCount - 1 }, (_, i) => i + 2) : []),
-    [pageCount],
-  );
-
-  const restQueries = useQueries({
-    queries: restPages.map((page) => {
-      const p = {
-        manufacturerSlug: slug,
-        sort: "name_asc" as const,
-        page,
-        pageSize: PAGE_SIZE_API,
-      };
-      return {
-        queryKey: getListCatalogProductsQueryKey(p),
-        queryFn: () => listCatalogProducts(p),
-        enabled: slug.length > 0 && total > 0,
-      };
-    }),
-  });
-
-  const restLoading = restQueries.some((r) => r.isLoading && r.fetchStatus !== "idle");
-  const isLoading = loading1 || restLoading;
-  // If any catalog page fails, the manufacturer's collections/types would be
-  // built from a partial catalog. Surface that as a hard error instead of
-  // silently rendering incomplete filters.
-  const loadError = page1Error != null || restQueries.some((r) => r.isError);
-
-  const allProducts = useMemo<CatalogProduct[]>(() => {
-    return [
-      ...(page1Data?.products ?? []),
-      ...restQueries.flatMap((r) => r.data?.products ?? []),
-    ];
-  }, [page1Data, restQueries]);
-
-  // Collection options are narrowed to the active Type (faceted): only
-  // collections that have products of the selected type are shown. The
-  // collection facet ignores its own selection so the user can still switch
-  // between collections. The collection value comes straight from the DB
-  // products.collection field — no name inference — so the filter auto-corrects
-  // as the underlying catalog data is cleaned up.
-  const collections = useMemo(() => {
-    const set = new Set<string>();
-    for (const p of allProducts) {
-      if (activeType && p.categorySlug !== activeType) continue;
-      const col = p.collection ?? "";
-      if (col) set.add(col);
-    }
-    return [...set].sort();
-  }, [allProducts, activeType]);
-
-  // Types are the real product categories present in this manufacturer's
-  // catalog, narrowed to the active Collection (faceted) so a type that has no
-  // products in the selected collection is hidden.
-  const types = useMemo(() => {
-    const seen = new Map<string, { category: Category; count: number }>();
-    for (const p of allProducts) {
-      if (activeCollection && (p.collection ?? "") !== activeCollection)
-        continue;
-      if (!p.categorySlug) continue;
-      const cat =
-        categoryBySlug.get(p.categorySlug) ??
-        ({
-          id: -1,
-          name: p.categoryName ?? p.categorySlug,
-          slug: p.categorySlug,
-          parentId: null,
-          imageUrl: null,
-          displayOrder: 0,
-        } as Category);
-      const entry = seen.get(cat.slug);
-      if (entry) entry.count += 1;
-      else seen.set(cat.slug, { category: cat, count: 1 });
-    }
-    return [...seen.values()].sort((a, b) =>
-      a.category.displayOrder !== b.category.displayOrder
-        ? a.category.displayOrder - b.category.displayOrder
-        : a.category.name.localeCompare(b.category.name),
-    );
-  }, [allProducts, categoryBySlug, activeCollection]);
-
-  const filtered = useMemo(() => {
-    return allProducts
-      .filter((p) => {
-        if (activeCollection) {
-          if ((p.collection ?? "") !== activeCollection) return false;
-        }
-        if (activeType) {
-          if (p.categorySlug !== activeType) return false;
-        }
-        return true;
-      })
-      .sort((a, b) => {
-        const catA = a.categoryName ?? a.categorySlug ?? "";
-        const catB = b.categoryName ?? b.categorySlug ?? "";
-        const catCmp = catA.localeCompare(catB);
-        if (catCmp !== 0) return catCmp;
-        return a.name.localeCompare(b.name);
-      });
-  }, [allProducts, activeCollection, activeType]);
-
-  const totalFiltered = filtered.length;
-  const totalPages = Math.max(1, Math.ceil(totalFiltered / PAGE_SIZE_DISPLAY));
-  const safePage = Math.min(displayPage, totalPages);
-  const pageStart = (safePage - 1) * PAGE_SIZE_DISPLAY;
-  const pageProducts = filtered.slice(pageStart, pageStart + PAGE_SIZE_DISPLAY);
-
-  // Normalize a stale/out-of-range page in the URL back to the last valid page.
-  useEffect(() => {
-    if (totalFiltered > 0 && displayPage > totalPages) {
-      updateSearch({ page: String(totalPages) });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [totalFiltered, totalPages, displayPage]);
 
   function updateSearch(patch: Record<string, string | null>) {
     const next = new URLSearchParams(search);
@@ -195,23 +60,82 @@ export default function ManufacturerProducts() {
     setLocation(qs ? `/manufacturers/${slug}?${qs}` : `/manufacturers/${slug}`);
   }
 
-  const typeOptions = useMemo<FilterOption[]>(
-    () =>
-      types.map(({ category, count }) => ({
-        value: category.slug,
-        label: `${category.name} (${count})`,
-      })),
-    [types],
+  // Server-side, paginated product list scoped to this manufacturer.
+  const queryParams = useMemo<ListCatalogProductsParams>(() => {
+    const out: ListCatalogProductsParams = {
+      manufacturerSlug: slug,
+      sort: "name_asc",
+      page: displayPage,
+      pageSize: PAGE_SIZE_DISPLAY,
+    };
+    if (activeCategory) out.categorySlug = activeCategory;
+    if (activeCategory && activeSubCategory) out.subCategory = activeSubCategory;
+    if (activeCollection) out.collection = activeCollection;
+    if (activeMaterial) out.materialSlug = activeMaterial;
+    return out;
+  }, [
+    slug,
+    displayPage,
+    activeCategory,
+    activeSubCategory,
+    activeCollection,
+    activeMaterial,
+  ]);
+
+  const { data, isLoading, error } = useListCatalogProducts(queryParams);
+  const loadError = error != null;
+
+  // Filter options come from the live catalog, narrowed to the OTHER active
+  // selections (and to this manufacturer) so zero-result options stay hidden.
+  const facetParams = useMemo<ListCatalogFacetsParams>(() => {
+    const out: ListCatalogFacetsParams = { manufacturerSlug: slug };
+    if (activeCategory) out.categorySlug = activeCategory;
+    if (activeCategory && activeSubCategory) out.subCategory = activeSubCategory;
+    if (activeCollection) out.collection = activeCollection;
+    if (activeMaterial) out.materialSlug = activeMaterial;
+    return out;
+  }, [slug, activeCategory, activeSubCategory, activeCollection, activeMaterial]);
+
+  const { data: facets } = useListCatalogFacets(facetParams);
+
+  const total = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE_DISPLAY));
+  const safePage = Math.min(displayPage, totalPages);
+  const pageProducts = data?.products ?? [];
+
+  // Normalize a stale/out-of-range page in the URL back to the last valid page.
+  useEffect(() => {
+    if (total > 0 && displayPage > totalPages) {
+      updateSearch({ page: String(totalPages) });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [total, totalPages, displayPage]);
+
+  const categoryOptions = useMemo<FilterOption[]>(
+    () => (facets?.categories ?? []).map((c) => ({ value: c.slug, label: c.name })),
+    [facets],
+  );
+  const subCategoryOptions = useMemo<FilterOption[]>(
+    () => (facets?.subCategories ?? []).map((c) => ({ value: c, label: c })),
+    [facets],
   );
   const collectionOptions = useMemo<FilterOption[]>(
-    () => collections.map((c) => ({ value: c, label: c })),
-    [collections],
+    () => (facets?.collections ?? []).map((c) => ({ value: c, label: c })),
+    [facets],
+  );
+  const materialOptions = useMemo<FilterOption[]>(
+    () => (facets?.materials ?? []).map((m) => ({ value: m.slug, label: m.name })),
+    [facets],
   );
 
-  const activeTypeName =
-    types.find((t) => t.category.slug === activeType)?.category.name ?? activeType;
+  const activeCategoryName =
+    categoryOptions.find((c) => c.value === activeCategory)?.label ?? activeCategory;
 
-  const activeFilterCount = (activeCollection ? 1 : 0) + (activeType ? 1 : 0);
+  const activeFilterCount =
+    (activeCategory ? 1 : 0) +
+    (activeCategory && activeSubCategory ? 1 : 0) +
+    (activeCollection ? 1 : 0) +
+    (activeMaterial ? 1 : 0);
   const brandLogo = getBrandLogo(manufacturer?.name ?? "");
   const displayName = manufacturer?.name ?? slug.replace(/-/g, " ");
   const aboutInfo = getManufacturerAbout(slug);
@@ -219,10 +143,16 @@ export default function ManufacturerProducts() {
     ? ""
     : isLoading
       ? "Loading…"
-      : `${totalFiltered} ${totalFiltered === 1 ? "product" : "products"}`;
+      : `${total} ${total === 1 ? "product" : "products"}`;
 
   function clearAll() {
-    updateSearch({ collection: null, type: null, page: "1" });
+    updateSearch({
+      category: null,
+      subcategory: null,
+      collection: null,
+      material: null,
+      page: "1",
+    });
   }
 
   const sidebar = (
@@ -243,21 +173,38 @@ export default function ManufacturerProducts() {
       </div>
 
       <CheckboxGroup
-        label="Type"
-        options={typeOptions}
-        selected={activeType}
-        onChange={(v) => updateSearch({ type: v || null, page: "1" })}
+        label="Category"
+        options={categoryOptions}
+        selected={activeCategory}
+        onChange={(v) => updateSearch({ category: v || null, subcategory: null, page: "1" })}
       />
+      {activeCategory && subCategoryOptions.length > 0 && (
+        <CheckboxGroup
+          label="Sub Category"
+          options={subCategoryOptions}
+          selected={activeSubCategory}
+          onChange={(v) => updateSearch({ subcategory: v || null, page: "1" })}
+        />
+      )}
       <CheckboxGroup
         label="Collection"
         options={collectionOptions}
         selected={activeCollection}
         onChange={(v) => updateSearch({ collection: v || null, page: "1" })}
       />
+      <CheckboxGroup
+        label="Material"
+        options={materialOptions}
+        selected={activeMaterial}
+        onChange={(v) => updateSearch({ material: v || null, page: "1" })}
+      />
     </aside>
   );
 
-  const hasFacets = typeOptions.length > 0 || collectionOptions.length > 0;
+  const hasFacets =
+    categoryOptions.length > 0 ||
+    collectionOptions.length > 0 ||
+    materialOptions.length > 0;
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-7xl">
@@ -341,18 +288,34 @@ export default function ManufacturerProducts() {
           {/* Active filter chips */}
           {activeFilterCount > 0 && (
             <div className="flex flex-wrap gap-2 mb-6">
-              {activeType && (
+              {activeCategory && (
                 <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
-                  Type: {activeTypeName}
-                  <button type="button" onClick={() => updateSearch({ type: null, page: "1" })}>
+                  {activeCategoryName}
+                  <button type="button" onClick={() => updateSearch({ category: null, subcategory: null, page: "1" })}>
+                    <X className="size-3" />
+                  </button>
+                </span>
+              )}
+              {activeCategory && activeSubCategory && (
+                <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
+                  {activeSubCategory}
+                  <button type="button" onClick={() => updateSearch({ subcategory: null, page: "1" })}>
                     <X className="size-3" />
                   </button>
                 </span>
               )}
               {activeCollection && (
                 <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
-                  Collection: {activeCollection}
+                  {activeCollection}
                   <button type="button" onClick={() => updateSearch({ collection: null, page: "1" })}>
+                    <X className="size-3" />
+                  </button>
+                </span>
+              )}
+              {activeMaterial && (
+                <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
+                  {materialOptions.find((m) => m.value === activeMaterial)?.label ?? activeMaterial}
+                  <button type="button" onClick={() => updateSearch({ material: null, page: "1" })}>
                     <X className="size-3" />
                   </button>
                 </span>

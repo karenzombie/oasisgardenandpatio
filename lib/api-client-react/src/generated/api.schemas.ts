@@ -1381,6 +1381,7 @@ export interface CatalogFacets {
   manufacturers: FacetOption[];
   materials: FacetOption[];
   collections: string[];
+  subCategories: string[];
 }
 
 export type CatalogProductImageImageKind =
@@ -4232,6 +4233,10 @@ export type ListCatalogProductsParams = {
    */
   collection?: string;
   /**
+   * Filter by product sub-category name (exact match). Typically used together with categorySlug.
+   */
+  subCategory?: string;
+  /**
    * When true, exclude quote-only products (show only items purchasable online)
    */
   onlineOnly?: boolean;
@@ -4271,6 +4276,7 @@ export type ListCatalogFacetsParams = {
   manufacturerSlug?: string;
   materialSlug?: string;
   collection?: string;
+  subCategory?: string;
   onlineOnly?: boolean;
 };
 

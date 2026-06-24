@@ -188,6 +188,12 @@ export const ListCatalogProductsQueryParams = zod.object({
     .describe(
       "Filter by product collection name (exact match). Typically used together with manufacturerSlug.",
     ),
+  subCategory: zod.coerce
+    .string()
+    .optional()
+    .describe(
+      "Filter by product sub-category name (exact match). Typically used together with categorySlug.",
+    ),
   onlineOnly: zod.coerce
     .boolean()
     .optional()
@@ -273,7 +279,7 @@ export const ListCatalogCollectionsResponse = zod.array(
 
 /**
  * Returns the set of filter options that yield at least one product given the OTHER active filters. Each facet is computed by applying every active filter EXCEPT its own selection, so the user can still switch between values within a facet while zero-result options stay hidden. Options are derived live from catalog data, so they adapt automatically as products change.
- * @summary Available filter facets (category, brand, material, collection) for the current filter combination
+ * @summary Available filter facets (category, sub-category, brand, material, collection) for the current filter combination
  */
 export const ListCatalogFacetsQueryParams = zod.object({
   q: zod.coerce.string().optional(),
@@ -281,6 +287,7 @@ export const ListCatalogFacetsQueryParams = zod.object({
   manufacturerSlug: zod.coerce.string().optional(),
   materialSlug: zod.coerce.string().optional(),
   collection: zod.coerce.string().optional(),
+  subCategory: zod.coerce.string().optional(),
   onlineOnly: zod.coerce.boolean().optional(),
 });
 
@@ -304,6 +311,7 @@ export const ListCatalogFacetsResponse = zod.object({
     }),
   ),
   collections: zod.array(zod.string()),
+  subCategories: zod.array(zod.string()),
 });
 
 /**

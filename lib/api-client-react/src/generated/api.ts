@@ -1140,7 +1140,7 @@ export function useListCatalogCollections<
 
 /**
  * Returns the set of filter options that yield at least one product given the OTHER active filters. Each facet is computed by applying every active filter EXCEPT its own selection, so the user can still switch between values within a facet while zero-result options stay hidden. Options are derived live from catalog data, so they adapt automatically as products change.
- * @summary Available filter facets (category, brand, material, collection) for the current filter combination
+ * @summary Available filter facets (category, sub-category, brand, material, collection) for the current filter combination
  */
 export const getListCatalogFacetsUrl = (params?: ListCatalogFacetsParams) => {
   const normalizedParams = new URLSearchParams();
@@ -1210,7 +1210,7 @@ export type ListCatalogFacetsQueryResult = NonNullable<
 export type ListCatalogFacetsQueryError = ErrorType<unknown>;
 
 /**
- * @summary Available filter facets (category, brand, material, collection) for the current filter combination
+ * @summary Available filter facets (category, sub-category, brand, material, collection) for the current filter combination
  */
 
 export function useListCatalogFacets<

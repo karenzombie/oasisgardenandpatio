@@ -48,14 +48,18 @@ export default function SearchPage() {
 
   const activeQ = q.get("q") ?? "";
   const activeCategory = q.get("category") ?? "";
+  const activeSubCategory = q.get("subcategory") ?? "";
   const activeManufacturer = q.get("manufacturer") ?? "";
+  const activeCollection = q.get("collection") ?? "";
   const activeMaterial = q.get("material") ?? "";
   const activeSort = (q.get("sort") ?? "featured") as ListCatalogProductsParams["sort"];
   const activePage = Math.max(1, Number(q.get("page") ?? "1") || 1);
 
   const activeFilterCount =
     (activeCategory ? 1 : 0) +
+    (activeCategory && activeSubCategory ? 1 : 0) +
     (activeManufacturer ? 1 : 0) +
+    (activeManufacturer && activeCollection ? 1 : 0) +
     (activeMaterial ? 1 : 0);
 
   function updateSearch(patch: Record<string, string | null>) {
@@ -90,10 +94,21 @@ export default function SearchPage() {
     };
     if (activeQ) out.q = activeQ;
     if (activeCategory) out.categorySlug = activeCategory;
+    if (activeCategory && activeSubCategory) out.subCategory = activeSubCategory;
     if (activeManufacturer) out.manufacturerSlug = activeManufacturer;
+    if (activeManufacturer && activeCollection) out.collection = activeCollection;
     if (activeMaterial) out.materialSlug = activeMaterial;
     return out;
-  }, [activeQ, activeCategory, activeManufacturer, activeMaterial, activeSort, activePage]);
+  }, [
+    activeQ,
+    activeCategory,
+    activeSubCategory,
+    activeManufacturer,
+    activeCollection,
+    activeMaterial,
+    activeSort,
+    activePage,
+  ]);
 
   const { data, isLoading } = useListCatalogProducts(queryParams);
   const fabricParams = activeQ ? { q: activeQ } : undefined;
@@ -120,10 +135,19 @@ export default function SearchPage() {
     const out: ListCatalogFacetsParams = {};
     if (activeQ) out.q = activeQ;
     if (activeCategory) out.categorySlug = activeCategory;
+    if (activeCategory && activeSubCategory) out.subCategory = activeSubCategory;
     if (activeManufacturer) out.manufacturerSlug = activeManufacturer;
+    if (activeManufacturer && activeCollection) out.collection = activeCollection;
     if (activeMaterial) out.materialSlug = activeMaterial;
     return out;
-  }, [activeQ, activeCategory, activeManufacturer, activeMaterial]);
+  }, [
+    activeQ,
+    activeCategory,
+    activeSubCategory,
+    activeManufacturer,
+    activeCollection,
+    activeMaterial,
+  ]);
   const { data: facets } = useListCatalogFacets(facetParams);
 
   const total = data?.total ?? 0;
@@ -153,6 +177,14 @@ export default function SearchPage() {
     () => (facets?.materials ?? []).map((m) => ({ value: m.slug, label: m.name })),
     [facets],
   );
+  const subCategoryOptions = useMemo(
+    () => (facets?.subCategories ?? []).map((c) => ({ value: c, label: c })),
+    [facets],
+  );
+  const collectionOptions = useMemo(
+    () => (facets?.collections ?? []).map((c) => ({ value: c, label: c })),
+    [facets],
+  );
 
   const sidebar = (
     <aside className="space-y-0">
@@ -175,14 +207,30 @@ export default function SearchPage() {
         label="Category"
         options={categoryOptions}
         selected={activeCategory}
-        onChange={(v) => updateSearch({ category: v || null, page: "1" })}
+        onChange={(v) => updateSearch({ category: v || null, subcategory: null, page: "1" })}
       />
+      {activeCategory && subCategoryOptions.length > 0 && (
+        <CheckboxGroup
+          label="Sub Category"
+          options={subCategoryOptions}
+          selected={activeSubCategory}
+          onChange={(v) => updateSearch({ subcategory: v || null, page: "1" })}
+        />
+      )}
       <CheckboxGroup
         label="Manufacturer"
         options={manufacturerOptions}
         selected={activeManufacturer}
-        onChange={(v) => updateSearch({ manufacturer: v || null, page: "1" })}
+        onChange={(v) => updateSearch({ manufacturer: v || null, collection: null, page: "1" })}
       />
+      {activeManufacturer && collectionOptions.length > 0 && (
+        <CheckboxGroup
+          label="Collection"
+          options={collectionOptions}
+          selected={activeCollection}
+          onChange={(v) => updateSearch({ collection: v || null, page: "1" })}
+        />
+      )}
       <CheckboxGroup
         label="Material"
         options={materialOptions}
@@ -273,7 +321,15 @@ export default function SearchPage() {
           {activeCategory && (
             <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
               {categoryOptions.find((c) => c.value === activeCategory)?.label ?? activeCategory}
-              <button type="button" onClick={() => updateSearch({ category: null, page: "1" })}>
+              <button type="button" onClick={() => updateSearch({ category: null, subcategory: null, page: "1" })}>
+                <X className="size-3" />
+              </button>
+            </span>
+          )}
+          {activeCategory && activeSubCategory && (
+            <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
+              {activeSubCategory}
+              <button type="button" onClick={() => updateSearch({ subcategory: null, page: "1" })}>
                 <X className="size-3" />
               </button>
             </span>
@@ -281,7 +337,15 @@ export default function SearchPage() {
           {activeManufacturer && (
             <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
               {manufacturerOptions.find((m) => m.value === activeManufacturer)?.label ?? activeManufacturer}
-              <button type="button" onClick={() => updateSearch({ manufacturer: null, page: "1" })}>
+              <button type="button" onClick={() => updateSearch({ manufacturer: null, collection: null, page: "1" })}>
+                <X className="size-3" />
+              </button>
+            </span>
+          )}
+          {activeManufacturer && activeCollection && (
+            <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
+              {activeCollection}
+              <button type="button" onClick={() => updateSearch({ collection: null, page: "1" })}>
                 <X className="size-3" />
               </button>
             </span>

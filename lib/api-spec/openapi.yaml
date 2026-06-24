@@ -211,6 +211,12 @@ paths:
           description: Filter by product collection name (exact match). Typically used together with manufacturerSlug.
           schema:
             type: string
+        - name: subCategory
+          in: query
+          required: false
+          description: Filter by product sub-category name (exact match). Typically used together with categorySlug.
+          schema:
+            type: string
         - name: onlineOnly
           in: query
           required: false
@@ -271,7 +277,7 @@ paths:
     get:
       operationId: listCatalogFacets
       tags: [products]
-      summary: Available filter facets (category, brand, material, collection) for the current filter combination
+      summary: Available filter facets (category, sub-category, brand, material, collection) for the current filter combination
       description: >-
         Returns the set of filter options that yield at least one product given the OTHER active
         filters. Each facet is computed by applying every active filter EXCEPT its own selection, so
@@ -299,6 +305,11 @@ paths:
           schema:
             type: string
         - name: collection
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: subCategory
           in: query
           required: false
           schema:
@@ -6630,11 +6641,16 @@ components:
           type: array
           items:
             type: string
+        subCategories:
+          type: array
+          items:
+            type: string
       required:
         - categories
         - manufacturers
         - materials
         - collections
+        - subCategories
     CatalogProductImage:
       type: object
       properties:

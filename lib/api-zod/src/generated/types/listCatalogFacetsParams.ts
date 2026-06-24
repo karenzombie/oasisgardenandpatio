@@ -12,5 +12,6 @@ export type ListCatalogFacetsParams = {
   manufacturerSlug?: string;
   materialSlug?: string;
   collection?: string;
+  subCategory?: string;
   onlineOnly?: boolean;
 };
