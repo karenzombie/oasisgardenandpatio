@@ -1,0 +1,15 @@
+pproved and confirmed on all three:
+1. Directory access: Approved. Go ahead and edit lib/db (the two product_finish_options columns plus the new manufacturer rate field from #2) and lib/api-spec, then run codegen to regenerate api-zod/api-client. Those generated packages are expected to regenerate, not be hand-edited.
+2. Discount rate: Your analysis is correct. Do not reuse dealer_rate; it's a cost figure (what we pay), not a customer markdown. Add a new manufacturer-level field sale_discount_rate, editable in the manufacturer admin screen, used only to derive upcharge_sale. Store it as a percent in the same units as dealer_rate (so 10, not 0.10), and label it in admin as "Customer sale discount % off MSRP" so it's never confused with dealer_rate. Set Frankford's to 10. So upcharge_sale = round(upcharge_msrp × (1 − sale_discount_rate/100)).
+3. Pooled vs explicit finishes: Correct that upcharges can't live on a pool, since the upcharge differs per umbrella line and is inherently per-(product, finish) data. The resolution:
+
+Build upcharge support on explicit product_finish_options rows only. Do NOT build upcharge support on the pool.
+Do NOT bulk-convert the pooled products yourself. The finish set and explicit/pool state for each umbrella will be set through a separate reviewed data load, not by you.
+The admin should show the upcharge field only on explicitly-assigned finishes. Pooled products simply won't show upcharge fields until their finishes are assigned explicitly. That's expected.
+
+Two things to confirm back to me before you build:
+
+When a product has explicit product_finish_options rows, do those fully drive the finish picker (i.e. the pool link is ignored)? I need to know that dropping a pool link and inserting explicit rows is a safe, equivalent swap.
+Confirm the admin showing upcharge fields only on explicitly-assigned finishes works with how the finish-management screen is currently built.
+
+Everything else in the brief stands. Flag anything else that conflicts with my rules before building.
