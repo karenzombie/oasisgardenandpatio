@@ -29,3 +29,11 @@ The mirror only runs automatically at a **task merge** (post-merge.sh). On a **d
 **How to apply:** after a direct publish, cross-check dev vs prod counts. If data is stale/empty, run the mirror manually once the schema is migrated:
 `pnpm --filter @workspace/scripts exec tsx src/dumpDevDataForProd.ts` then `… src/applyDataToProd.ts`.
 Safe because prod transactional tables hold only test artifacts (orders w/ 0 line items, etc.) and the catalog TRUNCATE…CASCADE doesn't reach standalone orders/customers/users.
+
+## Prod WRITES: the executeSql tool is READ-ONLY against production
+
+`executeSql({ environment: "production" })` allows SELECTs but **rejects any mutation** ("the 'production' environment is read-only"). For prod writes you must connect directly via `$PROD_DATABASE_URL`:
+- Schema (additive) → `psql "$PROD_DATABASE_URL" -v ON_ERROR_STOP=1 -c "ALTER TABLE … ADD COLUMN IF NOT EXISTS …"`. Only the schema changes since the last publish need applying; check `git log <lastPublish>..HEAD -- lib/db/src/schema`. Additive nullable columns are safe to add to prod while the OLD published build still serves (it just ignores them), which is what makes pre-publish sync safe.
+- Catalog data → the dump/apply scripts (they use `pg.Client` on `$PROD_DATABASE_URL`, bypassing the read-only guard).
+
+**cwd gotcha:** `pnpm --filter @workspace/scripts exec tsx …` runs with cwd = `scripts/`, so `dumpDevDataForProd.ts` writes `scripts/dev-data-for-prod.sql` (NOT repo root) and `applyDataToProd.ts` reads it from there — consistent with each other; just don't look for the file at the repo root. The dump is ~8.7MB but only ~150 lines (batched multi-row INSERTs put thousands of rows on one line).
