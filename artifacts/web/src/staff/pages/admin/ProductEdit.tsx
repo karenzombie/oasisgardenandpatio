@@ -328,6 +328,7 @@ export default function ProductEdit() {
     salePrice: string;
     shippingSurcharge: string;
     weight: string;
+    dimensions: string;
     notes: string;
     minOrderQty: string;
     excludeStripeFabrics: boolean;
@@ -407,6 +408,7 @@ export default function ProductEdit() {
             salePrice: v.salePrice ?? "",
             shippingSurcharge: v.shippingSurcharge ?? "0",
             weight: v.weight ?? "",
+            dimensions: v.dimensions ?? "",
             notes: v.notes ?? "",
             minOrderQty: v.minOrderQty != null ? String(v.minOrderQty) : "",
             excludeStripeFabrics: v.excludeStripeFabrics,
@@ -824,6 +826,8 @@ export default function ProductEdit() {
                 salePrice: v.salePrice.trim() === "" ? null : v.salePrice.trim(),
                 shippingSurcharge: v.shippingSurcharge.trim() || "0",
                 weight: v.weight.trim() === "" ? null : v.weight.trim(),
+                dimensions:
+                  v.dimensions.trim() === "" ? null : v.dimensions.trim(),
                 notes: v.notes.trim() === "" ? null : v.notes.trim(),
                 minOrderQty:
                   v.minOrderQty.trim() === ""
@@ -2035,6 +2039,22 @@ export default function ProductEdit() {
                             }
                           />
                         </div>
+                        <div className="sm:col-span-2">
+                          <Label>Dimensions</Label>
+                          <Input
+                            placeholder="Defaults to product dimensions"
+                            value={v.dimensions}
+                            onChange={(e) =>
+                              setVariants((cur) =>
+                                cur.map((x, i) =>
+                                  i === vi
+                                    ? { ...x, dimensions: e.target.value }
+                                    : x,
+                                ),
+                              )
+                            }
+                          />
+                        </div>
                         <div>
                           <Label>Min order qty</Label>
                           <Input
@@ -2271,6 +2291,7 @@ export default function ProductEdit() {
                       salePrice: "",
                       shippingSurcharge: "0",
                       weight: "",
+                      dimensions: "",
                       notes: "",
                       minOrderQty: "",
                       excludeStripeFabrics: false,

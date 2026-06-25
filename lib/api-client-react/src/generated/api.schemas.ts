@@ -1445,6 +1445,11 @@ export interface CatalogProductVariant {
    * @nullable
    */
   weight: string | null;
+  /**
+   * Per-variant dimensions/spec string (e.g. per-size umbrella clearances). Null falls back to the product-level dimensions.
+   * @nullable
+   */
+  dimensions: string | null;
   displayOrder: number;
   /**
    * Public URL of the matching finish swatch image, if one exists for this finish name.
@@ -3815,6 +3820,11 @@ export interface AdminProductVariant {
    * @nullable
    */
   weight: string | null;
+  /**
+   * Per-variant dimensions/spec string (e.g. per-size umbrella clearances). Null falls back to the product-level dimensions.
+   * @nullable
+   */
+  dimensions: string | null;
   /** @nullable */
   notes: string | null;
   /** @nullable */
@@ -3854,6 +3864,11 @@ export interface AdminProductVariantInput {
    * @nullable
    */
   weight?: string | null;
+  /**
+   * Per-variant dimensions/spec string (e.g. per-size umbrella clearances). Omit/null/"" to fall back to the product-level dimensions.
+   * @nullable
+   */
+  dimensions?: string | null;
   /** @nullable */
   notes?: string | null;
   /** @nullable */

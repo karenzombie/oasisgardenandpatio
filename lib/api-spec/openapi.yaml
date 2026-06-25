@@ -6709,6 +6709,9 @@ components:
         weight:
           type: ["string", "null"]
           description: Per-variant shipping weight in lbs (e.g. per-size rug weight). Null falls back to the product-level weight.
+        dimensions:
+          type: ["string", "null"]
+          description: Per-variant dimensions/spec string (e.g. per-size umbrella clearances). Null falls back to the product-level dimensions.
         displayOrder:
           type: integer
         swatchImageUrl:
@@ -6741,6 +6744,7 @@ components:
         - salePrice
         - shippingSurcharge
         - weight
+        - dimensions
         - displayOrder
         - swatchImageUrl
         - collection
@@ -8958,6 +8962,9 @@ components:
         weight:
           type: ["string", "null"]
           description: Per-variant shipping weight in lbs (e.g. per-size rug weight). Null falls back to the product-level weight.
+        dimensions:
+          type: ["string", "null"]
+          description: Per-variant dimensions/spec string (e.g. per-size umbrella clearances). Null falls back to the product-level dimensions.
         notes:
           type: ["string", "null"]
         minOrderQty:
@@ -8982,6 +8989,7 @@ components:
         - salePrice
         - shippingSurcharge
         - weight
+        - dimensions
         - notes
         - minOrderQty
         - excludeStripeFabrics
@@ -9020,6 +9028,9 @@ components:
         weight:
           type: ["string", "null"]
           description: Per-variant shipping weight in lbs (e.g. per-size rug weight). Omit/null/"" to fall back to the product-level weight.
+        dimensions:
+          type: ["string", "null"]
+          description: Per-variant dimensions/spec string (e.g. per-size umbrella clearances). Omit/null/"" to fall back to the product-level dimensions.
         notes:
           type: ["string", "null"]
         minOrderQty:

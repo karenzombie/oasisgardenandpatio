@@ -30,6 +30,11 @@ export interface AdminProductVariant {
    * @nullable
    */
   weight: string | null;
+  /**
+   * Per-variant dimensions/spec string (e.g. per-size umbrella clearances). Null falls back to the product-level dimensions.
+   * @nullable
+   */
+  dimensions: string | null;
   /** @nullable */
   notes: string | null;
   /** @nullable */

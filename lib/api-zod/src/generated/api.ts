@@ -589,6 +589,12 @@ export const GetCatalogProductBySlugResponse = zod
               .describe(
                 "Per-variant shipping weight in lbs (e.g. per-size rug weight). Null falls back to the product-level weight.",
               ),
+            dimensions: zod
+              .string()
+              .nullable()
+              .describe(
+                "Per-variant dimensions\/spec string (e.g. per-size umbrella clearances). Null falls back to the product-level dimensions.",
+              ),
             displayOrder: zod.number(),
             swatchImageUrl: zod
               .string()
@@ -2943,6 +2949,12 @@ export const AdminGetProductPickerResponse = zod
           .describe(
             "Per-variant shipping weight in lbs (e.g. per-size rug weight). Null falls back to the product-level weight.",
           ),
+        dimensions: zod
+          .string()
+          .nullable()
+          .describe(
+            "Per-variant dimensions\/spec string (e.g. per-size umbrella clearances). Null falls back to the product-level dimensions.",
+          ),
         displayOrder: zod.number(),
         swatchImageUrl: zod
           .string()
@@ -3320,6 +3332,12 @@ export const AdminGetProductVariantsResponse = zod.object({
         .describe(
           "Per-variant shipping weight in lbs (e.g. per-size rug weight). Null falls back to the product-level weight.",
         ),
+      dimensions: zod
+        .string()
+        .nullable()
+        .describe(
+          "Per-variant dimensions\/spec string (e.g. per-size umbrella clearances). Null falls back to the product-level dimensions.",
+        ),
       notes: zod.string().nullable(),
       minOrderQty: zod.number().nullable(),
       excludeStripeFabrics: zod.boolean(),
@@ -3383,6 +3401,12 @@ export const AdminUpdateProductVariantsBody = zod.object({
           .describe(
             'Per-variant shipping weight in lbs (e.g. per-size rug weight). Omit\/null\/\"\" to fall back to the product-level weight.',
           ),
+        dimensions: zod
+          .string()
+          .nullish()
+          .describe(
+            'Per-variant dimensions\/spec string (e.g. per-size umbrella clearances). Omit\/null\/\"\" to fall back to the product-level dimensions.',
+          ),
         notes: zod.string().nullish(),
         minOrderQty: zod.number().nullish(),
         excludeStripeFabrics: zod.boolean().optional(),
@@ -3440,6 +3464,12 @@ export const AdminUpdateProductVariantsResponse = zod.object({
         .nullable()
         .describe(
           "Per-variant shipping weight in lbs (e.g. per-size rug weight). Null falls back to the product-level weight.",
+        ),
+      dimensions: zod
+        .string()
+        .nullable()
+        .describe(
+          "Per-variant dimensions\/spec string (e.g. per-size umbrella clearances). Null falls back to the product-level dimensions.",
         ),
       notes: zod.string().nullable(),
       minOrderQty: zod.number().nullable(),

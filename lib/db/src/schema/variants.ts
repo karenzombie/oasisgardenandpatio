@@ -117,6 +117,10 @@ export const productVariantsTable = pgTable(
     // parent product weight. Surfaced on the PDP spec sheet (per selected
     // size) and snapshotted onto order lines for the vendor PO.
     weight: numeric("weight", { precision: 10, scale: 2 }),
+    // Per-variant dimensions/spec string (e.g. per-size umbrella clearances and
+    // mast measurements). Free-text, formatted to match the product-level
+    // style. Null falls back to the parent product's dimensions on the PDP.
+    dimensions: text("dimensions"),
     // Free-text vendor note for this specific SKU (e.g. lead-time warnings).
     // Surfaced as an inline callout on the product page.
     notes: text("notes"),

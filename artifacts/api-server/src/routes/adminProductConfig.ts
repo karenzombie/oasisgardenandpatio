@@ -1396,6 +1396,7 @@ async function loadVariantsConfig(productId: number) {
       salePrice: productVariantsTable.salePrice,
       shippingSurcharge: productVariantsTable.shippingSurcharge,
       weight: productVariantsTable.weight,
+      dimensions: productVariantsTable.dimensions,
       notes: productVariantsTable.notes,
       minOrderQty: productVariantsTable.minOrderQty,
       excludeStripeFabrics: productVariantsTable.excludeStripeFabrics,
@@ -1650,6 +1651,10 @@ router.put(
             weight:
               v.weight != null && v.weight.trim() !== ""
                 ? v.weight.trim()
+                : null,
+            dimensions:
+              v.dimensions != null && v.dimensions.trim() !== ""
+                ? v.dimensions.trim()
                 : null,
             notes: v.notes?.trim() || null,
             minOrderQty: v.minOrderQty ?? null,

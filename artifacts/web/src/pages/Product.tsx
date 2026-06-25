@@ -556,10 +556,17 @@ export default function Product() {
           : data.sku)
       : (selectedVariant?.sku ?? data.sku);
 
-  // Effective weight: size-priced products (e.g. rugs) carry a per-variant
-  // weight that differs by size, so prefer the selected variant's weight and
-  // fall back to the product-level weight.
-  const effectiveWeight = selectedVariant?.weight ?? data.weight;
+  // Spec-sheet display variant: prefer the selected configuration, otherwise
+  // default to the lead variant (lowest display_order, i.e. variants[0] since
+  // the API returns them ordered) so dimensions/weight reflect a real size on
+  // page load rather than only after the customer picks one.
+  const displayVariant = selectedVariant ?? variants[0] ?? null;
+
+  // Effective weight/dimensions: size-priced products (e.g. rugs, umbrellas)
+  // carry per-variant values that differ by size, so prefer the display
+  // variant's value and fall back to the product-level value when null.
+  const effectiveWeight = displayVariant?.weight ?? data.weight;
+  const effectiveDimensions = displayVariant?.dimensions ?? data.dimensions;
 
   const variantOptionLabel =
     variants[0]?.optionLabel ?? (isGradeMode ? "Configuration" : "Variant");
@@ -1408,13 +1415,13 @@ export default function Product() {
                   })}
                 </dl>
               ) : null}
-              {data.materials.length > 0 || data.dimensions || effectiveWeight ? (
+              {data.materials.length > 0 || effectiveDimensions || effectiveWeight ? (
                 <div className="mt-4 space-y-1">
                   {data.materials.length > 0 ? (
                     <p className="text-sm"><span className="text-muted-foreground mr-2">{data.materials.length > 1 ? "Materials:" : "Material:"}</span>{data.materials.map((m) => m.name).join(", ")}</p>
                   ) : null}
-                  {data.dimensions ? (
-                    <p className="text-sm"><span className="text-muted-foreground mr-2">Dimensions:</span>{data.dimensions}</p>
+                  {effectiveDimensions ? (
+                    <p className="text-sm"><span className="text-muted-foreground mr-2">Dimensions:</span>{effectiveDimensions}</p>
                   ) : null}
                   {effectiveWeight ? (
                     <p className="text-sm"><span className="text-muted-foreground mr-2">Weight:</span>{effectiveWeight} lbs</p>
@@ -1440,7 +1447,7 @@ export default function Product() {
                   />
                 </div>
               ) : null}
-              {!data.specs && !data.dimensions && !data.weight && data.materials.length === 0 && specImages.length === 0 && !offersWindVentChoice ? (
+              {!data.specs && !effectiveDimensions && !effectiveWeight && data.materials.length === 0 && specImages.length === 0 && !offersWindVentChoice ? (
                 <p className="text-muted-foreground">No specifications available.</p>
               ) : null}
             </div>
