@@ -734,7 +734,11 @@ async function loadFinishesConfig(productId: number) {
     .orderBy(asc(manufacturersTable.name));
 
   const opts = await db
-    .select({ finishId: productFinishOptionsTable.finishId })
+    .select({
+      finishId: productFinishOptionsTable.finishId,
+      upchargeMsrp: productFinishOptionsTable.upchargeMsrp,
+      upchargeSale: productFinishOptionsTable.upchargeSale,
+    })
     .from(productFinishOptionsTable)
     .where(eq(productFinishOptionsTable.productId, productId))
     .orderBy(asc(productFinishOptionsTable.displayOrder));
@@ -742,7 +746,28 @@ async function loadFinishesConfig(productId: number) {
   return {
     pools,
     finishIds: opts.map((o) => o.finishId),
+    upcharges: opts.map((o) => ({
+      finishId: o.finishId,
+      upchargeMsrp: String(o.upchargeMsrp ?? "0"),
+      upchargeSale: String(o.upchargeSale ?? "0"),
+    })),
   };
+}
+
+// Customer-facing sale upcharge derived from the MSRP upcharge and the
+// manufacturer's sale discount rate (percent units, e.g. 10 = 10% off).
+// Rounds UP to the nearest cent. A null/zero rate yields the MSRP upcharge.
+// Uses integer (cents × basis-points) math so binary floating-point artifacts
+// can never push a result up by a stray cent (e.g. 0.07 @ 0% must stay 0.07).
+function computeUpchargeSale(
+  upchargeMsrp: number,
+  saleDiscountRate: number | null,
+): string {
+  const cents = Math.round(upchargeMsrp * 100);
+  const rateBp = Math.round((saleDiscountRate ?? 0) * 100); // basis points
+  const keptBp = 10000 - rateBp;
+  const saleCents = Math.ceil((cents * keptBp) / 10000);
+  return (saleCents / 100).toFixed(2);
 }
 
 router.get(
@@ -781,15 +806,49 @@ router.put(
     }
     const productId = params.data.id;
     const { manufacturerIds, finishIds } = body.data;
+    const upchargeInput = body.data.upcharges ?? [];
 
     const product = await db
-      .select({ id: productsTable.id })
+      .select({
+        id: productsTable.id,
+        manufacturerId: productsTable.manufacturerId,
+      })
       .from(productsTable)
       .where(eq(productsTable.id, productId))
       .limit(1);
     if (product.length === 0) {
       res.status(404).json({ error: "Product not found" });
       return;
+    }
+
+    // The product's manufacturer drives the sale-upcharge discount. A null
+    // rate means no discount (sale upcharge equals the MSRP upcharge).
+    const [mfr] = product[0]!.manufacturerId
+      ? await db
+          .select({ saleDiscountRate: manufacturersTable.saleDiscountRate })
+          .from(manufacturersTable)
+          .where(eq(manufacturersTable.id, product[0]!.manufacturerId))
+          .limit(1)
+      : [];
+    const saleDiscountRate =
+      mfr?.saleDiscountRate != null ? Number(mfr.saleDiscountRate) : null;
+
+    // MSRP upcharge per finish, keyed by finishId. Finishes without an entry
+    // (or with a non-positive value) default to 0.
+    const upchargeByFinishId = new Map<number, number>();
+    for (const u of upchargeInput) {
+      const msrp = Number(u.upchargeMsrp);
+      if (Number.isFinite(msrp) && msrp > 0) {
+        upchargeByFinishId.set(u.finishId, msrp);
+      }
+    }
+    // Per spec, a non-zero upcharge with no manufacturer discount rate set is
+    // allowed (sale upcharge = MSRP upcharge) but worth surfacing.
+    if (saleDiscountRate == null && upchargeByFinishId.size > 0) {
+      req.log.warn(
+        { productId, manufacturerId: product[0]!.manufacturerId },
+        "Saving non-zero finish upcharge(s) while the manufacturer has no sale discount rate; sale upcharge equals MSRP upcharge.",
+      );
     }
 
     if (manufacturerIds.length > 0) {
@@ -835,11 +894,19 @@ router.put(
         if (finishIds.length > 0) {
           const dedup = Array.from(new Set(finishIds));
           await tx.insert(productFinishOptionsTable).values(
-            dedup.map((fid, i) => ({
-              productId,
-              finishId: fid,
-              displayOrder: i,
-            })),
+            dedup.map((fid, i) => {
+              const upchargeMsrp = upchargeByFinishId.get(fid) ?? 0;
+              return {
+                productId,
+                finishId: fid,
+                displayOrder: i,
+                upchargeMsrp: upchargeMsrp.toFixed(2),
+                upchargeSale: computeUpchargeSale(
+                  upchargeMsrp,
+                  saleDiscountRate,
+                ),
+              };
+            }),
           );
         }
       });

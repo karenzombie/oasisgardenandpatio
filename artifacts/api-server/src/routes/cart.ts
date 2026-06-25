@@ -522,7 +522,24 @@ router.post(
     if (gradeLinePrice !== null) {
       // Grade-priced line: price is the full per-grade price (already includes
       // the configuration). No base price or variant adjustment is added.
-      snapshotPrice = Number(gradeLinePrice).toFixed(2);
+      // Explicitly-picked frame finishes may carry a per-product upcharge; add
+      // the customer-facing (sale) upcharge so the cart matches the PDP price.
+      // Pooled finishes have no option row, so this resolves to 0.
+      let finishUpchargeSale = 0;
+      if (finishId) {
+        const [opt] = await db
+          .select({ upchargeSale: productFinishOptionsTable.upchargeSale })
+          .from(productFinishOptionsTable)
+          .where(
+            and(
+              eq(productFinishOptionsTable.productId, productId),
+              eq(productFinishOptionsTable.finishId, finishId),
+            ),
+          )
+          .limit(1);
+        if (opt) finishUpchargeSale = Number(opt.upchargeSale);
+      }
+      snapshotPrice = (Number(gradeLinePrice) + finishUpchargeSale).toFixed(2);
     } else if (variantAbsoluteBase !== null) {
       // Absolute per-variant line (e.g. per-size rug): use the variant's own
       // sale/MSRP price. Base price + variant adjustment are not applied.

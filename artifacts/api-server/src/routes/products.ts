@@ -828,6 +828,8 @@ router.get(
         imageUrl: finishesTable.imageUrl,
         description: finishesTable.description,
         displayOrder: productFinishOptionsTable.displayOrder,
+        upchargeMsrp: productFinishOptionsTable.upchargeMsrp,
+        upchargeSale: productFinishOptionsTable.upchargeSale,
       })
       .from(productFinishOptionsTable)
       .innerJoin(
@@ -850,10 +852,23 @@ router.get(
         imageUrl: string | null;
         description: string | null;
         displayOrder: number;
+        upchargeMsrp: string;
+        upchargeSale: string;
       }
     >();
-    for (const f of [...pooledFinishRows, ...optionFinishRows]) {
+    // Explicitly-picked options carry per-product frame upcharges and win over
+    // pooled finishes (which never carry an upcharge) when a finish appears in
+    // both sets.
+    for (const f of optionFinishRows) {
       if (!finishByIdMap.has(f.id)) finishByIdMap.set(f.id, f);
+    }
+    for (const f of pooledFinishRows) {
+      if (!finishByIdMap.has(f.id))
+        finishByIdMap.set(f.id, {
+          ...f,
+          upchargeMsrp: "0",
+          upchargeSale: "0",
+        });
     }
     const discreteFinishes = [...finishByIdMap.values()].sort(
       (a, b) => a.displayOrder - b.displayOrder || a.name.localeCompare(b.name),
@@ -968,6 +983,8 @@ router.get(
         description: f.description ?? null,
         swatchImageUrl: toPublicImageUrl(f.imageUrl),
         displayOrder: f.displayOrder,
+        upchargeMsrp: String(f.upchargeMsrp ?? "0"),
+        upchargeSale: String(f.upchargeSale ?? "0"),
       })),
       finishCollections: finishCollectionRows.map((fc) => ({
         ...fc,

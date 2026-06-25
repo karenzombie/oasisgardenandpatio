@@ -728,6 +728,16 @@ export const GetCatalogProductBySlugResponse = zod
                 ),
               swatchImageUrl: zod.string().nullable(),
               displayOrder: zod.number(),
+              upchargeMsrp: zod
+                .string()
+                .describe(
+                  'Decimal MSRP frame upcharge added when this finish is selected (\"0\" for no upcharge).',
+                ),
+              upchargeSale: zod
+                .string()
+                .describe(
+                  'Decimal customer-facing (discounted) frame upcharge for this finish (\"0\" for no upcharge).',
+                ),
             })
             .describe(
               "A discrete frame-finish choice for a grade-priced product (resolved from the product's finish pool\/options).",
@@ -1923,6 +1933,12 @@ export const AdminListManufacturersResponseItem = zod.object({
     .describe(
       "Default dealer discount % off MSRP (numeric, 0-100). Used when a product priced via msrp_minus_dealer_rate.",
     ),
+  saleDiscountRate: zod
+    .string()
+    .nullable()
+    .describe(
+      "Customer sale discount % off MSRP (numeric, 0-100). Used to derive per-finish sale upcharges from their MSRP upcharge.",
+    ),
   addressLine1: zod.string().nullable(),
   addressLine2: zod.string().nullable(),
   city: zod.string().nullable(),
@@ -1965,6 +1981,7 @@ export const AdminCreateManufacturerBody = zod.object({
     .number()
     .default(adminCreateManufacturerBodyDisplayOrderDefault),
   dealerRate: zod.string().nullish(),
+  saleDiscountRate: zod.string().nullish(),
   addressLine1: zod.string().nullish(),
   addressLine2: zod.string().nullish(),
   city: zod.string().nullish(),
@@ -2000,6 +2017,7 @@ export const AdminUpdateManufacturerBody = zod.object({
   website: zod.string().nullish(),
   displayOrder: zod.number().optional(),
   dealerRate: zod.string().nullish(),
+  saleDiscountRate: zod.string().nullish(),
   addressLine1: zod.string().nullish(),
   addressLine2: zod.string().nullish(),
   city: zod.string().nullish(),
@@ -2027,6 +2045,12 @@ export const AdminUpdateManufacturerResponse = zod.object({
     .nullable()
     .describe(
       "Default dealer discount % off MSRP (numeric, 0-100). Used when a product priced via msrp_minus_dealer_rate.",
+    ),
+  saleDiscountRate: zod
+    .string()
+    .nullable()
+    .describe(
+      "Customer sale discount % off MSRP (numeric, 0-100). Used to derive per-finish sale upcharges from their MSRP upcharge.",
     ),
   addressLine1: zod.string().nullable(),
   addressLine2: zod.string().nullable(),
@@ -2070,6 +2094,12 @@ export const AdminSetManufacturerActiveResponse = zod.object({
     .nullable()
     .describe(
       "Default dealer discount % off MSRP (numeric, 0-100). Used when a product priced via msrp_minus_dealer_rate.",
+    ),
+  saleDiscountRate: zod
+    .string()
+    .nullable()
+    .describe(
+      "Customer sale discount % off MSRP (numeric, 0-100). Used to derive per-finish sale upcharges from their MSRP upcharge.",
     ),
   addressLine1: zod.string().nullable(),
   addressLine2: zod.string().nullable(),
@@ -3027,6 +3057,16 @@ export const AdminGetProductPickerResponse = zod
               ),
             swatchImageUrl: zod.string().nullable(),
             displayOrder: zod.number(),
+            upchargeMsrp: zod
+              .string()
+              .describe(
+                'Decimal MSRP frame upcharge added when this finish is selected (\"0\" for no upcharge).',
+              ),
+            upchargeSale: zod
+              .string()
+              .describe(
+                'Decimal customer-facing (discounted) frame upcharge for this finish (\"0\" for no upcharge).',
+              ),
           })
           .describe(
             "A discrete frame-finish choice for a grade-priced product (resolved from the product's finish pool\/options).",
@@ -3519,6 +3559,23 @@ export const AdminGetProductFinishesResponse = zod.object({
     .describe(
       "Individually-picked finish IDs (extra finishes on top of any pools).",
     ),
+  upcharges: zod
+    .array(
+      zod.object({
+        finishId: zod.number(),
+        upchargeMsrp: zod
+          .string()
+          .describe(
+            'Decimal MSRP frame upcharge for this finish (\"0\" for none).',
+          ),
+        upchargeSale: zod
+          .string()
+          .describe('Server-derived discounted upcharge (\"0\" for none).'),
+      }),
+    )
+    .describe(
+      "Per-(picked finish) frame upcharge values. Only individually-picked finishes carry an upcharge; pooled finishes are always 0.",
+    ),
 });
 
 /**
@@ -3535,6 +3592,17 @@ export const AdminUpdateProductFinishesBody = zod.object({
   finishIds: zod
     .array(zod.number())
     .describe("Replace individual finish picks with these finish IDs."),
+  upcharges: zod
+    .array(
+      zod.object({
+        finishId: zod.number(),
+        upchargeMsrp: zod.string(),
+      }),
+    )
+    .optional()
+    .describe(
+      "MSRP upcharge per individually-picked finish. The sale upcharge is derived server-side from the manufacturer's sale discount rate. Finishes omitted here default to a 0 upcharge.",
+    ),
 });
 
 export const AdminUpdateProductFinishesResponse = zod.object({
@@ -3551,6 +3619,23 @@ export const AdminUpdateProductFinishesResponse = zod.object({
     .array(zod.number())
     .describe(
       "Individually-picked finish IDs (extra finishes on top of any pools).",
+    ),
+  upcharges: zod
+    .array(
+      zod.object({
+        finishId: zod.number(),
+        upchargeMsrp: zod
+          .string()
+          .describe(
+            'Decimal MSRP frame upcharge for this finish (\"0\" for none).',
+          ),
+        upchargeSale: zod
+          .string()
+          .describe('Server-derived discounted upcharge (\"0\" for none).'),
+      }),
+    )
+    .describe(
+      "Per-(picked finish) frame upcharge values. Only individually-picked finishes carry an upcharge; pooled finishes are always 0.",
     ),
 });
 

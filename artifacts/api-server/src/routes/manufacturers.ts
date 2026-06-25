@@ -75,6 +75,7 @@ function toAdminPayload(row: Manufacturer) {
     website: row.website,
     displayOrder: row.displayOrder,
     dealerRate: row.dealerRate,
+    saleDiscountRate: row.saleDiscountRate,
     addressLine1: row.addressLine1,
     addressLine2: row.addressLine2,
     city: row.city,
@@ -144,6 +145,7 @@ router.post(
           website: parsed.data.website ?? null,
           displayOrder: parsed.data.displayOrder ?? 0,
           dealerRate: parsed.data.dealerRate ?? null,
+          saleDiscountRate: parsed.data.saleDiscountRate ?? null,
           addressLine1: parsed.data.addressLine1 ?? null,
           addressLine2: parsed.data.addressLine2 ?? null,
           city: parsed.data.city ?? null,
@@ -231,6 +233,9 @@ router.put(
             : {}),
           ...(body.data.dealerRate !== undefined
             ? { dealerRate: body.data.dealerRate }
+            : {}),
+          ...(body.data.saleDiscountRate !== undefined
+            ? { saleDiscountRate: body.data.saleDiscountRate }
             : {}),
           ...(body.data.addressLine1 !== undefined
             ? { addressLine1: body.data.addressLine1 }

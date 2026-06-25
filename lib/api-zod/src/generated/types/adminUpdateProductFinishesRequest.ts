@@ -5,10 +5,13 @@
  * Oasis Garden & Patio API
  * OpenAPI spec version: 0.1.0
  */
+import type { AdminUpdateProductFinishesRequestUpchargesItem } from "./adminUpdateProductFinishesRequestUpchargesItem";
 
 export interface AdminUpdateProductFinishesRequest {
   /** Replace pools with these manufacturer IDs. */
   manufacturerIds: number[];
   /** Replace individual finish picks with these finish IDs. */
   finishIds: number[];
+  /** MSRP upcharge per individually-picked finish. The sale upcharge is derived server-side from the manufacturer's sale discount rate. Finishes omitted here default to a 0 upcharge. */
+  upcharges?: AdminUpdateProductFinishesRequestUpchargesItem[];
 }

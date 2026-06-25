@@ -44,6 +44,11 @@ interface FabricSwatchDialogProps {
   confirmLabel?: string;
   /** Search input placeholder. */
   searchPlaceholder?: string;
+  /**
+   * Optional per-option badge (e.g. a frame upcharge). Return a short string to
+   * render on the swatch, or null for none.
+   */
+  optionBadge?: (id: number) => string | null;
 }
 
 const ALL = "__ALL__";
@@ -96,6 +101,7 @@ export function FabricSwatchDialog({
   nounPlural = "fabrics",
   confirmLabel,
   searchPlaceholder = "Search by name or item number…",
+  optionBadge,
 }: FabricSwatchDialogProps) {
   const [gradeFilter, setGradeFilter] = useState<string>(ALL);
   const [colorFilter, setColorFilter] = useState<string>(ALL);
@@ -242,6 +248,7 @@ export function FabricSwatchDialog({
               {filtered.map((f) => {
                 const price = fabricPrice(f);
                 const isSel = tempId === f.id;
+                const badge = optionBadge?.(f.id) ?? null;
                 return (
                   <button
                     key={f.id}
@@ -253,21 +260,28 @@ export function FabricSwatchDialog({
                         : "border-border hover:border-foreground/40"
                     }`}
                   >
-                    {f.swatchImageUrl ? (
-                      <img
-                        src={f.swatchImageUrl}
-                        alt={f.name}
-                        loading="lazy"
-                        decoding="async"
-                        className="aspect-square w-full object-cover"
-                      />
-                    ) : (
-                      <div
-                        className="aspect-square w-full"
-                        style={colorDotStyle(f.colorFamily)}
-                        aria-hidden="true"
-                      />
-                    )}
+                    <div className="relative">
+                      {f.swatchImageUrl ? (
+                        <img
+                          src={f.swatchImageUrl}
+                          alt={f.name}
+                          loading="lazy"
+                          decoding="async"
+                          className="aspect-square w-full object-cover"
+                        />
+                      ) : (
+                        <div
+                          className="aspect-square w-full"
+                          style={colorDotStyle(f.colorFamily)}
+                          aria-hidden="true"
+                        />
+                      )}
+                      {badge ? (
+                        <span className="absolute right-1 top-1 rounded bg-foreground/85 px-1.5 py-0.5 text-[10px] font-medium text-background">
+                          {badge}
+                        </span>
+                      ) : null}
+                    </div>
                     <div className="p-2">
                       <p className="text-sm font-medium leading-tight line-clamp-2">
                         {f.name}

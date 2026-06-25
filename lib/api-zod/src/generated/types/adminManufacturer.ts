@@ -23,6 +23,11 @@ export interface AdminManufacturer {
    * @nullable
    */
   dealerRate: string | null;
+  /**
+   * Customer sale discount % off MSRP (numeric, 0-100). Used to derive per-finish sale upcharges from their MSRP upcharge.
+   * @nullable
+   */
+  saleDiscountRate: string | null;
   /** @nullable */
   addressLine1: string | null;
   /** @nullable */

@@ -25,6 +25,8 @@ export interface CreateManufacturerRequest {
   /** @nullable */
   dealerRate?: string | null;
   /** @nullable */
+  saleDiscountRate?: string | null;
+  /** @nullable */
   addressLine1?: string | null;
   /** @nullable */
   addressLine2?: string | null;

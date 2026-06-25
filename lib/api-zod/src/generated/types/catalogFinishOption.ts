@@ -23,4 +23,8 @@ export interface CatalogFinishOption {
   /** @nullable */
   swatchImageUrl: string | null;
   displayOrder: number;
+  /** Decimal MSRP frame upcharge added when this finish is selected ("0" for no upcharge). */
+  upchargeMsrp: string;
+  /** Decimal customer-facing (discounted) frame upcharge for this finish ("0" for no upcharge). */
+  upchargeSale: string;
 }

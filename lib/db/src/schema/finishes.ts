@@ -5,6 +5,7 @@ import {
   boolean,
   timestamp,
   integer,
+  numeric,
   index,
   unique,
 } from "drizzle-orm/pg-core";
@@ -151,6 +152,18 @@ export const productFinishOptionsTable = pgTable(
       .notNull()
       .references(() => finishesTable.id, { onDelete: "cascade" }),
     displayOrder: integer("display_order").notNull().default(0),
+    // Per-(product, finish) frame upcharge. upchargeMsrp is the list-price
+    // surcharge for picking this finish on this product; upchargeSale is the
+    // customer-facing discounted surcharge, derived server-side as
+    // ceil(upchargeMsrp * (1 - manufacturer.saleDiscountRate/100)). Both default
+    // to 0 (no upcharge). Only explicitly-picked finishes carry an upcharge —
+    // pooled finishes have no row here, so they are always 0.
+    upchargeMsrp: numeric("upcharge_msrp", { precision: 10, scale: 2 })
+      .notNull()
+      .default("0"),
+    upchargeSale: numeric("upcharge_sale", { precision: 10, scale: 2 })
+      .notNull()
+      .default("0"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

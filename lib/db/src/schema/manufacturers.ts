@@ -23,6 +23,12 @@ export const manufacturersTable = pgTable("manufacturers", {
   // pricingMode = 'msrp_minus_dealer_rate'. Optional — products may also
   // override or use a different mode.
   dealerRate: numeric("dealer_rate", { precision: 5, scale: 2 }),
+  // Customer-facing sale discount % off MSRP (e.g. 10.00 = customer pays 90%
+  // of MSRP). Stored in the same percent units as dealerRate (10, not 0.10).
+  // This is DISTINCT from dealerRate (a cost figure for what the dealer pays);
+  // saleDiscountRate is only used to derive product_finish_options.upchargeSale
+  // from upchargeMsrp. Null means no discount (sale upcharge = MSRP upcharge).
+  saleDiscountRate: numeric("sale_discount_rate", { precision: 5, scale: 2 }),
   // Contact / order routing
   addressLine1: text("address_line1"),
   addressLine2: text("address_line2"),

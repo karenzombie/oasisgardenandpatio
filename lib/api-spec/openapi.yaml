@@ -5722,6 +5722,9 @@ components:
         dealerRate:
           type: ["string", "null"]
           description: Default dealer discount % off MSRP (numeric, 0-100). Used when a product priced via msrp_minus_dealer_rate.
+        saleDiscountRate:
+          type: ["string", "null"]
+          description: Customer sale discount % off MSRP (numeric, 0-100). Used to derive per-finish sale upcharges from their MSRP upcharge.
         addressLine1:
           type: ["string", "null"]
         addressLine2:
@@ -5763,6 +5766,7 @@ components:
         - website
         - displayOrder
         - dealerRate
+        - saleDiscountRate
         - addressLine1
         - addressLine2
         - city
@@ -5797,6 +5801,8 @@ components:
           type: integer
           default: 0
         dealerRate:
+          type: ["string", "null"]
+        saleDiscountRate:
           type: ["string", "null"]
         addressLine1:
           type: ["string", "null"]
@@ -5847,6 +5853,8 @@ components:
         displayOrder:
           type: integer
         dealerRate:
+          type: ["string", "null"]
+        saleDiscountRate:
           type: ["string", "null"]
         addressLine1:
           type: ["string", "null"]
@@ -6777,6 +6785,12 @@ components:
           type: ["string", "null"]
         displayOrder:
           type: integer
+        upchargeMsrp:
+          type: string
+          description: Decimal MSRP frame upcharge added when this finish is selected ("0" for no upcharge).
+        upchargeSale:
+          type: string
+          description: Decimal customer-facing (discounted) frame upcharge for this finish ("0" for no upcharge).
       required:
         - id
         - code
@@ -6784,6 +6798,8 @@ components:
         - description
         - swatchImageUrl
         - displayOrder
+        - upchargeMsrp
+        - upchargeSale
     CatalogFabricOption:
       type: object
       properties:
@@ -9269,9 +9285,30 @@ components:
           type: array
           items: { type: integer }
           description: Individually-picked finish IDs (extra finishes on top of any pools).
+        upcharges:
+          type: array
+          description: Per-(picked finish) frame upcharge values. Only individually-picked finishes carry an upcharge; pooled finishes are always 0.
+          items:
+            $ref: "#/components/schemas/AdminProductFinishUpcharge"
       required:
         - pools
         - finishIds
+        - upcharges
+    AdminProductFinishUpcharge:
+      type: object
+      properties:
+        finishId:
+          type: integer
+        upchargeMsrp:
+          type: string
+          description: Decimal MSRP frame upcharge for this finish ("0" for none).
+        upchargeSale:
+          type: string
+          description: Server-derived discounted upcharge ("0" for none).
+      required:
+        - finishId
+        - upchargeMsrp
+        - upchargeSale
     AdminUpdateProductFinishesRequest:
       type: object
       properties:
@@ -9283,6 +9320,22 @@ components:
           type: array
           items: { type: integer }
           description: Replace individual finish picks with these finish IDs.
+        upcharges:
+          type: array
+          description: >-
+            MSRP upcharge per individually-picked finish. The sale upcharge is
+            derived server-side from the manufacturer's sale discount rate.
+            Finishes omitted here default to a 0 upcharge.
+          items:
+            type: object
+            properties:
+              finishId:
+                type: integer
+              upchargeMsrp:
+                type: string
+            required:
+              - finishId
+              - upchargeMsrp
       required:
         - manufacturerIds
         - finishIds

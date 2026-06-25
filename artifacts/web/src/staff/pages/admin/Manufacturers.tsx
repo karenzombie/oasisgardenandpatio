@@ -75,6 +75,7 @@ interface FormState {
   website: string;
   displayOrder: string;
   dealerRate: string;
+  saleDiscountRate: string;
   addressLine1: string;
   addressLine2: string;
   city: string;
@@ -99,6 +100,7 @@ function emptyForm(): FormState {
     website: "",
     displayOrder: "0",
     dealerRate: "",
+    saleDiscountRate: "",
     addressLine1: "",
     addressLine2: "",
     city: "",
@@ -124,6 +126,7 @@ function formFromRow(row: AdminManufacturer): FormState {
     website: row.website ?? "",
     displayOrder: String(row.displayOrder),
     dealerRate: row.dealerRate ?? "",
+    saleDiscountRate: row.saleDiscountRate ?? "",
     addressLine1: row.addressLine1 ?? "",
     addressLine2: row.addressLine2 ?? "",
     city: row.city ?? "",
@@ -263,6 +266,23 @@ export default function Manufacturers() {
       dealerRate = dealerRateTrim;
     }
 
+    const saleDiscountRateTrim = form.saleDiscountRate.trim();
+    let saleDiscountRate: string | null = null;
+    if (saleDiscountRateTrim) {
+      if (!/^\d+(\.\d{1,2})?$/.test(saleDiscountRateTrim)) {
+        setError(
+          "Customer sale discount must be a number with up to 2 decimals",
+        );
+        return;
+      }
+      const n = Number(saleDiscountRateTrim);
+      if (n < 0 || n > 100) {
+        setError("Customer sale discount must be between 0 and 100");
+        return;
+      }
+      saleDiscountRate = saleDiscountRateTrim;
+    }
+
     const orderMethod = form.orderMethod;
     if (orderMethod === "email" && !form.orderEmail.trim()) {
       setError("Order email is required when orders are sent by email.");
@@ -281,6 +301,7 @@ export default function Manufacturers() {
       logoUrl: form.logoUrl,
       displayOrder,
       dealerRate,
+      saleDiscountRate,
       addressLine1: form.addressLine1.trim() || null,
       addressLine2: form.addressLine2.trim() || null,
       city: form.city.trim() || null,
@@ -608,6 +629,29 @@ export default function Manufacturers() {
                   % off MSRP for dealer (us). Used when a product is priced via
                   &ldquo;MSRP &minus; dealer rate&rdquo;. Leave blank if this
                   brand isn&rsquo;t priced that way.
+                </p>
+              </div>
+
+              <div>
+                <Label htmlFor="m-sale-discount-rate">
+                  Customer sale discount % off MSRP
+                </Label>
+                <Input
+                  id="m-sale-discount-rate"
+                  value={form.saleDiscountRate}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      saleDiscountRate: e.target.value,
+                    }))
+                  }
+                  placeholder="e.g. 10.00"
+                  inputMode="decimal"
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  % discount customers get off MSRP, used to derive the sale
+                  price of per-finish frame upcharges. Leave blank for no
+                  discount (sale upcharge equals MSRP upcharge).
                 </p>
               </div>
 

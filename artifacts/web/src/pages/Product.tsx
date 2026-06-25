@@ -516,6 +516,21 @@ export default function Product() {
       }
       if (minLine !== Infinity) gradeFromPrice = minLine;
     }
+    // Per-finish frame upcharge: explicitly-picked finishes may add a fixed
+    // amount on top of the grade price. MSRP and sale upcharges are tracked
+    // separately so the strikethrough MSRP and sale price stay consistent.
+    // Pooled finishes carry 0 and the server is the source of truth.
+    const finishUpchargeMsrp = selectedFinish
+      ? Number(selectedFinish.upchargeMsrp)
+      : 0;
+    const finishUpchargeSale = selectedFinish
+      ? Number(selectedFinish.upchargeSale)
+      : 0;
+    if (finishUpchargeMsrp > 0 || finishUpchargeSale > 0) {
+      if (gradeMsrp != null) gradeMsrp += finishUpchargeMsrp;
+      if (gradeLinePrice != null) gradeLinePrice += finishUpchargeSale;
+      if (gradeFromPrice != null) gradeFromPrice += finishUpchargeSale;
+    }
   }
   const gradeOnSale =
     gradeLinePrice != null && gradeMsrp != null && gradeMsrp > gradeLinePrice;
@@ -1053,6 +1068,11 @@ export default function Product() {
                         noun="finish"
                         nounPlural="finishes"
                         searchPlaceholder="Search finishes by name…"
+                        optionBadge={(id) => {
+                          const f = finishes.find((x) => x.id === id);
+                          const up = f ? Number(f.upchargeSale) : 0;
+                          return up > 0 ? `+${formatMoney(up)}` : null;
+                        }}
                       />
                     </>
                   )}
@@ -1206,6 +1226,12 @@ export default function Product() {
                       <div className="text-sm">
                         <p className="text-muted-foreground">Frame Finish</p>
                         <p className="font-medium">{selectedFinish.name}</p>
+                        {Number(selectedFinish.upchargeSale) > 0 ? (
+                          <p className="text-muted-foreground">
+                            +{formatMoney(Number(selectedFinish.upchargeSale))}{" "}
+                            frame upcharge
+                          </p>
+                        ) : null}
                       </div>
                     </div>
                   ) : null}

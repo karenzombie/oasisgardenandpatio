@@ -296,6 +296,11 @@ export default function ProductEdit() {
   // Finish pool (manufacturer-wide) selections + individual finish picks.
   const [finishPoolMfgIds, setFinishPoolMfgIds] = useState<number[]>([]);
   const [pickedFinishIds, setPickedFinishIds] = useState<number[]>([]);
+  // MSRP frame upcharge per individually-picked finish, keyed by finishId.
+  // Only explicit picks carry an upcharge; pooled finishes are always 0.
+  const [finishUpcharges, setFinishUpcharges] = useState<
+    Record<number, string>
+  >({});
   const [expandedFinishMfgs, setExpandedFinishMfgs] = useState<Set<number>>(
     () => new Set(),
   );
@@ -345,6 +350,7 @@ export default function ProductEdit() {
     setPickedFabricIds([]);
     setFinishPoolMfgIds([]);
     setPickedFinishIds([]);
+    setFinishUpcharges({});
     setAttrs([]);
     setVariants([]);
     setVariantsHydrated(false);
@@ -367,6 +373,13 @@ export default function ProductEdit() {
         finishesConfigQuery.data.pools.map((p) => p.manufacturerId),
       );
       setPickedFinishIds(finishesConfigQuery.data.finishIds);
+      setFinishUpcharges(
+        Object.fromEntries(
+          finishesConfigQuery.data.upcharges
+            .filter((u) => Number(u.upchargeMsrp) > 0)
+            .map((u) => [u.finishId, String(Number(u.upchargeMsrp))]),
+        ),
+      );
       setAttrs(
         attributesQuery.data.map((a: AdminProductAttribute, i: number) => ({
           key: `${a.id}-${i}`,
@@ -756,6 +769,13 @@ export default function ProductEdit() {
             data: {
               manufacturerIds: finishPoolMfgIds,
               finishIds: pickedFinishIds,
+              upcharges: pickedFinishIds.map((fid) => ({
+                finishId: fid,
+                upchargeMsrp:
+                  (finishUpcharges[fid] ?? "").trim() === ""
+                    ? "0"
+                    : finishUpcharges[fid]!.trim(),
+              })),
             },
           });
         } catch (fErr) {
@@ -2509,6 +2529,33 @@ export default function ProductEdit() {
                                     {!f.isActive && (
                                       <span className="ml-auto text-xs text-amber-700">
                                         inactive
+                                      </span>
+                                    )}
+                                    {!poolOn && checked && (
+                                      <span
+                                        className="ml-auto flex items-center gap-1"
+                                        onClick={(e) => e.preventDefault()}
+                                      >
+                                        <span className="text-xs text-slate-400">
+                                          + $
+                                        </span>
+                                        <input
+                                          type="number"
+                                          min="0"
+                                          step="0.01"
+                                          inputMode="decimal"
+                                          placeholder="0.00"
+                                          value={finishUpcharges[f.id] ?? ""}
+                                          onChange={(e) =>
+                                            setFinishUpcharges((cur) => ({
+                                              ...cur,
+                                              [f.id]: e.target.value,
+                                            }))
+                                          }
+                                          className="w-20 rounded border border-slate-300 px-1.5 py-0.5 text-xs text-right"
+                                          aria-label={`Frame upcharge for ${f.name}`}
+                                          title="Frame MSRP upcharge for this finish"
+                                        />
                                       </span>
                                     )}
                                   </label>

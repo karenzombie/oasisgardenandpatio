@@ -757,6 +757,11 @@ export interface AdminManufacturer {
    * @nullable
    */
   dealerRate: string | null;
+  /**
+   * Customer sale discount % off MSRP (numeric, 0-100). Used to derive per-finish sale upcharges from their MSRP upcharge.
+   * @nullable
+   */
+  saleDiscountRate: string | null;
   /** @nullable */
   addressLine1: string | null;
   /** @nullable */
@@ -811,6 +816,8 @@ export interface CreateManufacturerRequest {
   /** @nullable */
   dealerRate?: string | null;
   /** @nullable */
+  saleDiscountRate?: string | null;
+  /** @nullable */
   addressLine1?: string | null;
   /** @nullable */
   addressLine2?: string | null;
@@ -860,6 +867,8 @@ export interface UpdateManufacturerRequest {
   displayOrder?: number;
   /** @nullable */
   dealerRate?: string | null;
+  /** @nullable */
+  saleDiscountRate?: string | null;
   /** @nullable */
   addressLine1?: string | null;
   /** @nullable */
@@ -1480,6 +1489,10 @@ export interface CatalogFinishOption {
   /** @nullable */
   swatchImageUrl: string | null;
   displayOrder: number;
+  /** Decimal MSRP frame upcharge added when this finish is selected ("0" for no upcharge). */
+  upchargeMsrp: string;
+  /** Decimal customer-facing (discounted) frame upcharge for this finish ("0" for no upcharge). */
+  upchargeSale: string;
 }
 
 export interface CatalogFabricOption {
@@ -4011,17 +4024,34 @@ export interface AdminProductFinishPool {
   finishCount: number;
 }
 
+export interface AdminProductFinishUpcharge {
+  finishId: number;
+  /** Decimal MSRP frame upcharge for this finish ("0" for none). */
+  upchargeMsrp: string;
+  /** Server-derived discounted upcharge ("0" for none). */
+  upchargeSale: string;
+}
+
 export interface AdminProductFinishesConfig {
   pools: AdminProductFinishPool[];
   /** Individually-picked finish IDs (extra finishes on top of any pools). */
   finishIds: number[];
+  /** Per-(picked finish) frame upcharge values. Only individually-picked finishes carry an upcharge; pooled finishes are always 0. */
+  upcharges: AdminProductFinishUpcharge[];
 }
+
+export type AdminUpdateProductFinishesRequestUpchargesItem = {
+  finishId: number;
+  upchargeMsrp: string;
+};
 
 export interface AdminUpdateProductFinishesRequest {
   /** Replace pools with these manufacturer IDs. */
   manufacturerIds: number[];
   /** Replace individual finish picks with these finish IDs. */
   finishIds: number[];
+  /** MSRP upcharge per individually-picked finish. The sale upcharge is derived server-side from the manufacturer's sale discount rate. Finishes omitted here default to a 0 upcharge. */
+  upcharges?: AdminUpdateProductFinishesRequestUpchargesItem[];
 }
 
 export type AdminProductAttributeAttributeType =

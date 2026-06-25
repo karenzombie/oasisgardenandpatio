@@ -6,9 +6,12 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { AdminProductFinishPool } from "./adminProductFinishPool";
+import type { AdminProductFinishUpcharge } from "./adminProductFinishUpcharge";
 
 export interface AdminProductFinishesConfig {
   pools: AdminProductFinishPool[];
   /** Individually-picked finish IDs (extra finishes on top of any pools). */
   finishIds: number[];
+  /** Per-(picked finish) frame upcharge values. Only individually-picked finishes carry an upcharge; pooled finishes are always 0. */
+  upcharges: AdminProductFinishUpcharge[];
 }
