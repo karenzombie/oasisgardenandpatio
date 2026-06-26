@@ -1,0 +1,13 @@
+Phase 1 verified on the storefront, pricing ties out to spec. Proceed with Phase 2: the Marella wall add-on subsystem. All data and rules are in frankford_marella_spec.md; load values verbatim from there and do not infer or invent anything. If something is missing, stop and ask.
+Risk framing: this is the highest-risk piece because the selected add-ons and their additive prices must persist from the cart line item through checkout into the order, so it touches the money and fulfillment path, not just the PDP. Build it deliberately and treat the price math with the same care as Phase 1.
+What to build:
+
+Three wall add-ons on the Marella PDP, stored as data (not hardcoded): MLA-FW "Full Privacy Tension Wall," MLA-SW "Full Curtain Split Wall," MLA-HC "Entrance Half Curtains" (pair). Use the confirmed image mapping (the three FULL-* images already excluded from the gallery in Phase 1: FULL-WALL → MLA-FW, FULL-BACK → MLA-SW, FULL-BREEZE → MLA-HC).
+Selector behavior: default none (none is valid); multi-select (none, any, or all three); additive pricing. Each wall's upcharge is pulled from the column matching the fabric grade the customer chose for the main canopy (walls use the same fabric and grade as the canopy). Each option shows its image in the selector.
+Enforced pairing: if the customer selects MLA-FW or MLA-SW, MLA-HC is automatically required and added.
+Flat replacement stem MLA-8ST2 (MSRP 216 / sale 195) available as a flat-priced add-on.
+Minimum-quantity rule: mirror the existing striped-fabric min-qty logic and extend it. Striped fabric OR any frame finish other than SR Platinum forces a minimum quantity of 5; the customer can increase but not go below 5 while either holds; if both conditions hold at once, minimum 5 plus a display note that the quantity cannot be reduced due to the selected finish.
+Everything admin-editable, including pricing: the wall add-ons (names, images, enabled state, per-grade pricing), the stem price, and the min-quantity threshold and note text.
+
+Display rule: no thousands separators in any price (no commas), anywhere this work touches price display.
+When the subsystem is built, produce a preview and verification before committing anything: show the add-on options and their grade pricing, demonstrate the additive math and enforced pairing on the Marella PDP, and confirm the selected add-ons and prices persist correctly onto the cart line and into the order. Get my sign-off before it commits to the money path. Then run typecheck, check-image-urls, and by-slug checks and report back.
