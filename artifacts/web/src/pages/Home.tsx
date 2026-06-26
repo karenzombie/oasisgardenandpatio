@@ -224,7 +224,7 @@ export default function Home() {
 
               <div
                 ref={carouselRef}
-                className="flex gap-6 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-4 -mx-4 px-4 md:mx-0 md:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                className="flex gap-6 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-4 -mx-4 px-4 md:mx-0 md:px-0 [justify-content:safe_center] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
               >
                 {featured.map((p) => {
                   const varies = p.priceVaries && p.showPriceOnline;
