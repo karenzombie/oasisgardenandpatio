@@ -46,7 +46,8 @@ interface FabricSwatchDialogProps {
   searchPlaceholder?: string;
   /**
    * Optional per-option badge (e.g. a frame upcharge). Return a short string to
-   * render on the swatch, or null for none.
+   * render as a price line below the option name (matching the fabric price
+   * placement), or null for none.
    */
   optionBadge?: (id: number) => string | null;
 }
@@ -276,11 +277,6 @@ export function FabricSwatchDialog({
                           aria-hidden="true"
                         />
                       )}
-                      {badge ? (
-                        <span className="absolute right-1 top-1 rounded bg-foreground/85 px-1.5 py-0.5 text-[10px] font-medium text-background">
-                          {badge}
-                        </span>
-                      ) : null}
                     </div>
                     <div className="p-2">
                       <p className="text-sm font-medium leading-tight line-clamp-2">
@@ -295,6 +291,9 @@ export function FabricSwatchDialog({
                         <p className="text-xs font-medium mt-0.5">
                           {formatPrice(price)}
                         </p>
+                      ) : null}
+                      {badge ? (
+                        <p className="text-xs font-medium mt-0.5">{badge}</p>
                       ) : null}
                     </div>
                   </button>
