@@ -138,6 +138,7 @@ export default function Cart() {
                           <span>
                             <span className="text-muted-foreground">Add-on:</span>{" "}
                             {a.name}
+                            {a.quantity > 1 ? ` × ${a.quantity}` : ""}
                           </span>
                           <span className="text-muted-foreground">
                             +{formatMoney(a.unitPrice)} each

@@ -1734,7 +1734,9 @@ export interface CartItemAddon {
   name: string;
   /** Per-unit add-on price snapshotted at add time. */
   unitPrice: string;
-  /** unitPrice multiplied by the cart line quantity. */
+  /** How many of this add-on per parent-line unit (e.g. 2 half-curtain pairs when two walls are selected). */
+  quantity: number;
+  /** unitPrice multiplied by the add-on quantity and the cart line quantity. */
   lineAmount: string;
 }
 

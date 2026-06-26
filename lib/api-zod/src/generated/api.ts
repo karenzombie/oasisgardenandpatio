@@ -1386,9 +1386,16 @@ export const GetCartResponse = zod.object({
               unitPrice: zod
                 .string()
                 .describe("Per-unit add-on price snapshotted at add time."),
+              quantity: zod
+                .number()
+                .describe(
+                  "How many of this add-on per parent-line unit (e.g. 2 half-curtain pairs when two walls are selected).",
+                ),
               lineAmount: zod
                 .string()
-                .describe("unitPrice multiplied by the cart line quantity."),
+                .describe(
+                  "unitPrice multiplied by the add-on quantity and the cart line quantity.",
+                ),
             })
             .describe("A snapshot of one add-on attached to a cart line item."),
         )
@@ -1443,9 +1450,16 @@ export const ClearCartResponse = zod.object({
               unitPrice: zod
                 .string()
                 .describe("Per-unit add-on price snapshotted at add time."),
+              quantity: zod
+                .number()
+                .describe(
+                  "How many of this add-on per parent-line unit (e.g. 2 half-curtain pairs when two walls are selected).",
+                ),
               lineAmount: zod
                 .string()
-                .describe("unitPrice multiplied by the cart line quantity."),
+                .describe(
+                  "unitPrice multiplied by the add-on quantity and the cart line quantity.",
+                ),
             })
             .describe("A snapshot of one add-on attached to a cart line item."),
         )
@@ -1524,9 +1538,16 @@ export const AddCartItemResponse = zod.object({
               unitPrice: zod
                 .string()
                 .describe("Per-unit add-on price snapshotted at add time."),
+              quantity: zod
+                .number()
+                .describe(
+                  "How many of this add-on per parent-line unit (e.g. 2 half-curtain pairs when two walls are selected).",
+                ),
               lineAmount: zod
                 .string()
-                .describe("unitPrice multiplied by the cart line quantity."),
+                .describe(
+                  "unitPrice multiplied by the add-on quantity and the cart line quantity.",
+                ),
             })
             .describe("A snapshot of one add-on attached to a cart line item."),
         )
@@ -1588,9 +1609,16 @@ export const UpdateCartItemResponse = zod.object({
               unitPrice: zod
                 .string()
                 .describe("Per-unit add-on price snapshotted at add time."),
+              quantity: zod
+                .number()
+                .describe(
+                  "How many of this add-on per parent-line unit (e.g. 2 half-curtain pairs when two walls are selected).",
+                ),
               lineAmount: zod
                 .string()
-                .describe("unitPrice multiplied by the cart line quantity."),
+                .describe(
+                  "unitPrice multiplied by the add-on quantity and the cart line quantity.",
+                ),
             })
             .describe("A snapshot of one add-on attached to a cart line item."),
         )
@@ -1648,9 +1676,16 @@ export const RemoveCartItemResponse = zod.object({
               unitPrice: zod
                 .string()
                 .describe("Per-unit add-on price snapshotted at add time."),
+              quantity: zod
+                .number()
+                .describe(
+                  "How many of this add-on per parent-line unit (e.g. 2 half-curtain pairs when two walls are selected).",
+                ),
               lineAmount: zod
                 .string()
-                .describe("unitPrice multiplied by the cart line quantity."),
+                .describe(
+                  "unitPrice multiplied by the add-on quantity and the cart line quantity.",
+                ),
             })
             .describe("A snapshot of one add-on attached to a cart line item."),
         )

@@ -359,6 +359,7 @@ router.post(
                 cartItemId: cartItemAddonsTable.cartItemId,
                 addonOptionId: cartItemAddonsTable.addonOptionId,
                 unitPrice: cartItemAddonsTable.unitPrice,
+                quantity: cartItemAddonsTable.quantity,
                 sku: productAddonOptionsTable.sku,
                 name: productAddonOptionsTable.name,
                 pricingMode: productAddonOptionsTable.pricingMode,
@@ -391,7 +392,7 @@ router.post(
           subtotalCents += c;
           const lineAddons = addonsByCartItem.get(l.cartItemId) ?? [];
           for (const a of lineAddons) {
-            subtotalCents += toCents(a.unitPrice) * l.quantity;
+            subtotalCents += toCents(a.unitPrice) * a.quantity * l.quantity;
           }
           return c;
         });
@@ -476,24 +477,29 @@ router.post(
             })
             .returning();
 
-          // Persist immutable add-on snapshots for this line. Amount = per-unit
-          // price * parent-line quantity; gradeSnapshot records the canopy grade
+          // Persist immutable add-on snapshots for this line. The total count =
+          // the add-on's per-parent-unit quantity (e.g. 2 half-curtain pairs
+          // when two walls are chosen) times the parent-line quantity. Amount =
+          // unitPrice * that total count; gradeSnapshot records the canopy grade
           // used for per_grade add-ons (null for flat-priced add-ons).
           const lineAddons = addonsByCartItem.get(l.cartItemId) ?? [];
           if (lineAddons.length > 0) {
             await tx.insert(orderItemAddonsTable).values(
-              lineAddons.map((a) => ({
-                orderItemId: orderItem.id,
-                addonOptionId: a.addonOptionId,
-                addonSkuSnapshot: a.sku,
-                addonNameSnapshot: a.name,
-                gradeSnapshot:
-                  a.pricingMode === "per_grade" ? l.fabricGrade : null,
-                unitMsrpSnapshot: null,
-                unitPriceSnapshot: String(a.unitPrice),
-                quantity: l.quantity,
-                amount: moneyFromCents(toCents(a.unitPrice) * l.quantity),
-              })),
+              lineAddons.map((a) => {
+                const totalQty = a.quantity * l.quantity;
+                return {
+                  orderItemId: orderItem.id,
+                  addonOptionId: a.addonOptionId,
+                  addonSkuSnapshot: a.sku,
+                  addonNameSnapshot: a.name,
+                  gradeSnapshot:
+                    a.pricingMode === "per_grade" ? l.fabricGrade : null,
+                  unitMsrpSnapshot: null,
+                  unitPriceSnapshot: String(a.unitPrice),
+                  quantity: totalQty,
+                  amount: moneyFromCents(toCents(a.unitPrice) * totalQty),
+                };
+              }),
             );
           }
         }
@@ -593,6 +599,7 @@ router.post(
             .select({
               cartItemId: cartItemAddonsTable.cartItemId,
               unitPrice: cartItemAddonsTable.unitPrice,
+              quantity: cartItemAddonsTable.quantity,
             })
             .from(cartItemAddonsTable)
             .where(inArray(cartItemAddonsTable.cartItemId, quoteItemIds))
@@ -601,7 +608,8 @@ router.post(
       for (const a of quoteAddonRows) {
         quoteAddonUnitByItem.set(
           a.cartItemId,
-          (quoteAddonUnitByItem.get(a.cartItemId) ?? 0) + toCents(a.unitPrice),
+          (quoteAddonUnitByItem.get(a.cartItemId) ?? 0) +
+            toCents(a.unitPrice) * a.quantity,
         );
       }
       for (const l of lines) {

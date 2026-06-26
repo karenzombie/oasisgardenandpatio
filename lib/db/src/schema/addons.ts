@@ -149,6 +149,10 @@ export const cartItemAddonsTable = pgTable(
       .references(() => productAddonOptionsTable.id, { onDelete: "restrict" }),
     // Per-unit (per parent-line-unit) charged price for this add-on.
     unitPrice: numeric("unit_price", { precision: 10, scale: 2 }).notNull(),
+    // How many of this add-on are attached per parent-line unit. Usually 1, but
+    // a pairing target (Marella half curtains) requires one pair PER triggering
+    // wall, so two walls (FW + SW) yield quantity = 2 for the HC row.
+    quantity: integer("quantity").notNull().default(1),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

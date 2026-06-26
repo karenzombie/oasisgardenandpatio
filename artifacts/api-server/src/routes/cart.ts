@@ -149,6 +149,7 @@ async function loadCart(owner: CartOwner) {
           cartItemId: cartItemAddonsTable.cartItemId,
           addonOptionId: cartItemAddonsTable.addonOptionId,
           unitPrice: cartItemAddonsTable.unitPrice,
+          quantity: cartItemAddonsTable.quantity,
           sku: productAddonOptionsTable.sku,
           name: productAddonOptionsTable.name,
           displayOrder: productAddonOptionsTable.displayOrder,
@@ -166,13 +167,20 @@ async function loadCart(owner: CartOwner) {
     : [];
   const addonsByItem = new Map<
     number,
-    { addonOptionId: number; unitPrice: string; sku: string; name: string }[]
+    {
+      addonOptionId: number;
+      unitPrice: string;
+      quantity: number;
+      sku: string;
+      name: string;
+    }[]
   >();
   for (const a of addonRows) {
     const list = addonsByItem.get(a.cartItemId) ?? [];
     list.push({
       addonOptionId: a.addonOptionId,
       unitPrice: String(a.unitPrice),
+      quantity: a.quantity,
       sku: a.sku,
       name: a.name,
     });
@@ -185,7 +193,7 @@ async function loadCart(owner: CartOwner) {
     itemCount += r.quantity;
     const lineAddons = addonsByItem.get(r.id) ?? [];
     const addonUnitSum = lineAddons.reduce(
-      (sum, a) => sum + Number(a.unitPrice),
+      (sum, a) => sum + Number(a.unitPrice) * a.quantity,
       0,
     );
     const line = (Number(r.unitPrice) + addonUnitSum) * r.quantity;
@@ -200,7 +208,8 @@ async function loadCart(owner: CartOwner) {
         sku: a.sku,
         name: a.name,
         unitPrice: a.unitPrice,
-        lineAmount: (Number(a.unitPrice) * r.quantity).toFixed(2),
+        quantity: a.quantity,
+        lineAmount: (Number(a.unitPrice) * a.quantity * r.quantity).toFixed(2),
       })),
     };
   });
@@ -656,7 +665,11 @@ router.post(
     // Resolve add-ons (e.g. Marella privacy walls). Build the final set of
     // add-on option ids (with enforced pairing) and a per-unit price for each.
     // -----------------------------------------------------------------------
-    const resolvedAddons: { addonOptionId: number; unitPrice: string }[] = [];
+    const resolvedAddons: {
+      addonOptionId: number;
+      unitPrice: string;
+      quantity: number;
+    }[] = [];
     if (requestedAddonIds.length > 0) {
       // Load every enabled add-on option for this product so we can validate
       // the request and apply pairing entirely from server-side data.
@@ -689,12 +702,15 @@ router.post(
       }
 
       // Enforced pairing: if any selected add-on triggers pairing, every
-      // pairing-target add-on is auto-required and added to the line.
+      // pairing-target add-on is auto-required and added to the line. The
+      // catalog requires ONE pairing-target unit (a half-curtain pair) PER
+      // triggering wall, so pairCount drives the target add-on's quantity —
+      // two walls (FW + SW) yield two HC pairs, not one.
       const finalIds = new Set(requestedAddonIds);
-      const anyTriggers = requestedAddonIds.some(
+      const pairCount = requestedAddonIds.filter(
         (id) => addonById.get(id)?.triggersPairing,
-      );
-      if (anyTriggers) {
+      ).length;
+      if (pairCount > 0) {
         for (const a of productAddons) {
           if (a.isPairingTarget) finalIds.add(a.id);
         }
@@ -767,7 +783,14 @@ router.post(
             return;
           }
         }
-        resolvedAddons.push({ addonOptionId: id, unitPrice: unit });
+        // A pairing target gets one unit per triggering wall; everything else
+        // is a single unit per parent-line unit.
+        const addonQty = a.isPairingTarget ? Math.max(pairCount, 1) : 1;
+        resolvedAddons.push({
+          addonOptionId: id,
+          unitPrice: unit,
+          quantity: addonQty,
+        });
       }
     }
 
@@ -809,6 +832,7 @@ router.post(
               cartItemId,
               addonOptionId: a.addonOptionId,
               unitPrice: a.unitPrice,
+              quantity: a.quantity,
             })),
           )
           .onConflictDoNothing();

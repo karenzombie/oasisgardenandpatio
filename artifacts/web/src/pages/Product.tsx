@@ -414,6 +414,23 @@ export default function Product() {
     [pairingActive],
   );
 
+  // Number of selected walls (triggersPairing). The catalog requires one
+  // half-curtain pair (the pairing target) PER wall, so this drives the
+  // target's displayed quantity — two walls => two HC pairs.
+  const pairCount = useMemo(
+    () =>
+      addonOptions.filter((a) => a.triggersPairing && addonIds.includes(a.id))
+        .length,
+    [addonOptions, addonIds],
+  );
+  // How many of a given add-on apply per cabana: a pairing target scales with
+  // the number of walls; everything else is a single unit.
+  const addonQtyFor = useCallback(
+    (a: (typeof addonOptions)[number]): number =>
+      a.isPairingTarget && pairingActive ? Math.max(pairCount, 1) : 1,
+    [pairingActive, pairCount],
+  );
+
   // Sum of per-unit add-on prices for the effective selection. Null when a
   // selected per_grade add-on can't be priced yet (no canopy grade chosen) so
   // the UI can show a "select fabric" prompt instead of a wrong total.
@@ -427,10 +444,10 @@ export default function Product() {
         priced = false;
         continue;
       }
-      total += u;
+      total += u * addonQtyFor(a);
     }
     return priced ? total : null;
-  }, [addonOptions, effectiveAddonIds, addonUnitPrice]);
+  }, [addonOptions, effectiveAddonIds, addonUnitPrice, addonQtyFor]);
 
   // Minimum order quantity — the larger of the variant's minimum and the
   // selected finish's minimum (special non-Platinum finishes require 5). The
@@ -1463,10 +1480,16 @@ export default function Product() {
                     .filter((a) => effectiveAddonIds.has(a.id))
                     .map((a) => {
                       const u = addonUnitPrice(a);
+                      const aq = addonQtyFor(a);
                       return (
                         <div key={a.id} className="flex justify-between gap-3">
-                          <span className="text-muted-foreground">{a.name}</span>
-                          <span>{u != null ? `+${formatMoney(u)}` : "—"}</span>
+                          <span className="text-muted-foreground">
+                            {a.name}
+                            {aq > 1 ? ` × ${aq}` : ""}
+                          </span>
+                          <span>
+                            {u != null ? `+${formatMoney(u * aq)}` : "—"}
+                          </span>
                         </div>
                       );
                     })}
