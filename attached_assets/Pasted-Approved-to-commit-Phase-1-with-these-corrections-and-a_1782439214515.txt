@@ -1,0 +1,17 @@
+Approved to commit Phase 1 with these corrections and answers.
+Important standing rule: do not add, draft, or infer any data we did not explicitly provide. If a value is missing, stop and ask. Do not write your own product copy. This applies to the Nova description below and anywhere else. Load all descriptions and short_descriptions verbatim from the specs, no embellishment.
+
+Nova naming and copy:
+
+
+Name is "The Nova" (not "Nova Giant Telescoping Market"). Set slug to "the-nova" to match The Avalon and The Emerald Coast.
+short_description: "Giant telescoping umbrella"
+description: do NOT use your drafted copy. Load this exact catalog text verbatim: "The Nova offers maximum shade and weather protection for commercial and residential environments. Its 9 oz. marine-grade acrylic canopy is supported by reinforced extruded aluminum ribs that connect to a 4-inch mast. The commercial-grade telescoping mechanism allows for effortless opening and closing of the umbrellas without having to move any furniture underneath. The Nova is one of the only large shade structures in the industry with semi-permanent and non-permanent mounts available. This umbrella not only looks spectacular, but is a practical shade solution in a number of applications."
+
+
+Marella slug: change to "marella-resort-cabana" (drop "luxury"); the product name is "Marella Resort Cabana."
+Nova weight: confirm Nova commits at 205. Your preview showed "285 to 205" for Nova; 285 is Marella's weight. Nova must be 205, Marella 285.
+Marella gallery: keep all four gallery images including the two nanobananas files. Those are Frankford's own image titles and are intentional. Correct as previewed.
+Emerald folder: the folder name misspelling has been corrected on disk; read from the corrected path.
+
+Everything else in the preview is approved: grade tables, finishes, recommendations, vinyl omitted on Emerald, inches-only heights, and the three Marella wall images routed out of the gallery. Proceed with the commit, then run typecheck, check-image-urls, and a by-slug spot check and report back per product.
