@@ -13,9 +13,25 @@ import { sanitizeHtml } from "@/lib/sanitize";
 import { WishlistButton } from "@/components/WishlistButton";
 import { CompatibleRecommendations } from "@/components/CompatibleRecommendations";
 import { useToast } from "@/hooks/use-toast";
-import { Palette } from "lucide-react";
+import { Palette, Check } from "lucide-react";
 import { FabricSwatchDialog } from "@/components/FabricSwatchDialog";
 import { ProductOptionPickers } from "@/components/ProductOptionPickers";
+
+/**
+ * Green checkmark shown adjacent to a selector label once the customer has
+ * completed that selection. Rendered only when the selection is done — an
+ * incomplete selection shows no mark. Uses the site's standard green (primary).
+ */
+function SelectionCheck() {
+  return (
+    <Check
+      className="inline-block h-4 w-4 text-primary ml-1.5 align-middle"
+      strokeWidth={3}
+      aria-label="Selection complete"
+      data-testid="selection-complete"
+    />
+  );
+}
 
 function formatMoney(v: string | number | null | undefined): string {
   if (v == null || v === "") return "";
@@ -918,6 +934,7 @@ export default function Product() {
                           {windFinishOptions.find((f) => f.key === windFinishKey)?.label}
                         </span>
                       ) : null}
+                      {windFinishKey ? <SelectionCheck /> : null}
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {windFinishOptions.map((f) => (
@@ -953,6 +970,7 @@ export default function Product() {
                             {windVent === "SWV" ? "Single Wind Vent" : "Double Wind Vent"}
                           </span>
                         ) : null}
+                        {windVent ? <SelectionCheck /> : null}
                       </p>
                       <div className="flex flex-wrap gap-2">
                         {windVentOptions.map((vent) => (
@@ -982,6 +1000,7 @@ export default function Product() {
                     <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">
                       {variantOptionLabel}
                       <span className="text-destructive ml-1">*</span>
+                      {selectedVariant ? <SelectionCheck /> : null}
                     </p>
                     {variants.length === 1 ? (
                       <div className="flex items-center gap-3">
@@ -1040,6 +1059,7 @@ export default function Product() {
                         {selectedVariant.name}
                       </span>
                     ) : null}
+                    {selectedVariant ? <SelectionCheck /> : null}
                   </p>
                   {(() => {
                     const finishCollections = data?.finishCollections ?? [];
@@ -1150,6 +1170,7 @@ export default function Product() {
                   <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">
                     Frame Finish
                     <span className="text-destructive ml-1">*</span>
+                    {selectedFinish ? <SelectionCheck /> : null}
                   </p>
                   {finishes.length === 1 ? (
                     <div className="flex items-center gap-3">
@@ -1255,6 +1276,7 @@ export default function Product() {
                   <p className="block text-sm uppercase tracking-widest text-muted-foreground mb-2">
                     Fabric
                     <span className="text-destructive ml-1">*</span>
+                    {selectedFabric && !frameOnly ? <SelectionCheck /> : null}
                   </p>
                   <button
                     type="button"

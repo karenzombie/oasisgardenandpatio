@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Palette } from "lucide-react";
+import { Palette, Check } from "lucide-react";
 import type {
   CatalogFinishOption,
   CatalogFabricOption,
@@ -94,15 +94,27 @@ export function ProductOptionPickers({
   return (
     <div className="space-y-5 mb-6">
       {frameFinishes.length > 0 ? (
-        <BrowseButton label="Frame Finish" onClick={() => setFrameOpen(true)} />
+        <BrowseButton
+          label="Frame Finish"
+          complete={Boolean(selectedFrame)}
+          onClick={() => setFrameOpen(true)}
+        />
       ) : null}
 
       {tileFinishes.length > 0 ? (
-        <BrowseButton label="Tile Color" onClick={() => setTileOpen(true)} />
+        <BrowseButton
+          label="Tile Color"
+          complete={Boolean(selectedTile)}
+          onClick={() => setTileOpen(true)}
+        />
       ) : null}
 
       {fabrics.length > 0 ? (
-        <BrowseButton label="Fabric" onClick={() => setFabricOpen(true)} />
+        <BrowseButton
+          label="Fabric"
+          complete={Boolean(selectedFabric)}
+          onClick={() => setFabricOpen(true)}
+        />
       ) : null}
 
       {hasSelection ? (
@@ -194,15 +206,25 @@ function finishToSwatch(f: CatalogFinishOption): FabricSwatchOption {
 
 function BrowseButton({
   label,
+  complete = false,
   onClick,
 }: {
   label: string;
+  complete?: boolean;
   onClick: () => void;
 }) {
   return (
     <div>
       <p className="block text-sm uppercase tracking-widest text-muted-foreground mb-2">
         {label}
+        {complete ? (
+          <Check
+            className="inline-block h-4 w-4 text-primary ml-1.5 align-middle"
+            strokeWidth={3}
+            aria-label="Selection complete"
+            data-testid="selection-complete"
+          />
+        ) : null}
       </p>
       <button
         type="button"
