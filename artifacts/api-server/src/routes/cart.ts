@@ -872,6 +872,8 @@ router.patch(
     // minimum order quantity to keep the grade-mode floor enforced on edits.
     const [existing] = await db
       .select({
+        productId: cartItemsTable.productId,
+        finishId: cartItemsTable.finishId,
         isStripe: fabricsTable.isStripe,
         minOrderQty: productVariantsTable.minOrderQty,
       })
@@ -899,12 +901,31 @@ router.patch(
       });
       return;
     }
-    if (
-      existing.minOrderQty != null &&
-      parsed.data.quantity < existing.minOrderQty
-    ) {
+    // Effective minimum floor mirrors add-to-cart: the larger of the variant's
+    // minimum and the selected frame finish's minimum (special finishes carry
+    // their own floor). Enforced on edits too so quantity can't drop below it.
+    let editMinQty: number | null = existing.minOrderQty ?? null;
+    if (existing.finishId != null) {
+      const [finishOpt] = await db
+        .select({ minOrderQty: productFinishOptionsTable.minOrderQty })
+        .from(productFinishOptionsTable)
+        .where(
+          and(
+            eq(productFinishOptionsTable.productId, existing.productId),
+            eq(productFinishOptionsTable.finishId, existing.finishId),
+          ),
+        )
+        .limit(1);
+      if (finishOpt?.minOrderQty != null) {
+        editMinQty =
+          editMinQty == null
+            ? finishOpt.minOrderQty
+            : Math.max(editMinQty, finishOpt.minOrderQty);
+      }
+    }
+    if (editMinQty != null && parsed.data.quantity < editMinQty) {
       res.status(400).json({
-        error: `This configuration has a minimum order quantity of ${existing.minOrderQty}.`,
+        error: `This configuration has a minimum order quantity of ${editMinQty}.`,
       });
       return;
     }

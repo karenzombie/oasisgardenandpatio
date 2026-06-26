@@ -140,6 +140,22 @@ export default function AccountOrderDetail() {
                       {item.productSku ? `SKU ${item.productSku} · ` : ""}
                       {formatMoney(item.unitPrice)} × {item.quantity}
                     </p>
+                    {item.addons && item.addons.length > 0 ? (
+                      <ul className="mt-2 space-y-0.5">
+                        {item.addons.map((a, idx) => (
+                          <li
+                            key={`${a.sku ?? a.name}-${idx}`}
+                            className="text-xs text-muted-foreground flex justify-between gap-3"
+                          >
+                            <span>
+                              Add-on: {a.name}
+                              {a.quantity > 1 ? ` × ${a.quantity}` : ""}
+                            </span>
+                            <span>{formatMoney(a.amount)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
                   </div>
                 </div>
                 <span className="shrink-0 font-serif">
