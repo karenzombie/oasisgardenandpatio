@@ -12,6 +12,9 @@ import categoryBarImg from "@/assets/category-bar.png";
 import categoryCoffeeSideTablesImg from "@/assets/category-coffee-side-tables.png";
 import categoryDaybedsImg from "@/assets/category-daybeds.png";
 import categoryAccentPiecesImg from "@/assets/category-accessories.png";
+import categoryAccessoriesImg from "@assets/accessories_category_image_1782496844450.png";
+import categoryAdirondackImg from "@assets/Adirondack_category_image_1782496844450.png";
+import categoryTablesImg from "@assets/tables_category_image_1782496844450.png";
 
 export const CATEGORY_IMAGES: Record<string, string> = {
   "cat-umbrellas": categoryShadeImg,
@@ -27,6 +30,9 @@ export const CATEGORY_IMAGES: Record<string, string> = {
   "cat-coffee-side-tables": categoryCoffeeSideTablesImg,
   "cat-daybeds": categoryDaybedsImg,
   "cat-accent-pieces": categoryAccentPiecesImg,
+  accessories: categoryAccessoriesImg,
+  adirondack: categoryAdirondackImg,
+  tables: categoryTablesImg,
   shade: categoryShadeImg,
   lounge: categoryLoungeImg,
   dining: categoryDiningImg,
