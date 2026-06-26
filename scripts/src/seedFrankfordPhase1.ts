@@ -86,6 +86,67 @@ async function uploadImage(absPath: string, storageName: string): Promise<string
   return `/objects/${STORAGE_SUBDIR}/${storageName}`;
 }
 
+// Upload an arbitrary asset to a given storage subdir; returns the /objects URL.
+async function uploadAsset(
+  absPath: string,
+  subdir: string,
+  name: string,
+): Promise<string> {
+  const privateDir = process.env.PRIVATE_OBJECT_DIR;
+  if (!privateDir) throw new Error("PRIVATE_OBJECT_DIR not set");
+  const fullPath = `${privateDir.replace(/\/$/, "")}/${subdir}/${name}`;
+  const parts = fullPath.replace(/^\//, "").split("/");
+  const file = storage.bucket(parts[0]).file(parts.slice(1).join("/"));
+  await file.save(await readFile(absPath), {
+    contentType: contentType(absPath),
+    resumable: false,
+  });
+  return `/objects/${subdir}/${name}`;
+}
+
+// Ensure the "Ash Wood" (code AW) frame finish exists for Frankford (mfr 28),
+// with its swatch uploaded to Materials > Finishes > Frankford. Idempotent.
+async function ensureAshWoodFinish() {
+  const swatchPath = join(
+    WORKSPACE_ROOT,
+    "attached_assets/ashwood_frankford_1782440510520.png",
+  );
+  if (!existsSync(swatchPath)) throw new Error(`Ash Wood swatch not found: ${swatchPath}`);
+  const imageUrl = await uploadAsset(swatchPath, "finishes/frankford", "AW-Ash-Wood.png");
+
+  const [existing] = await db
+    .select({ id: finishesTable.id })
+    .from(finishesTable)
+    .where(
+      and(
+        eq(finishesTable.manufacturerId, MANUFACTURER_ID),
+        eq(finishesTable.name, "Ash Wood"),
+      ),
+    )
+    .limit(1);
+
+  if (existing) {
+    await db
+      .update(finishesTable)
+      .set({ itemNumber: "AW", imageUrl, isActive: true, updatedAt: new Date() })
+      .where(eq(finishesTable.id, existing.id));
+    console.log(`Ash Wood finish updated (id=${existing.id})\n`);
+  } else {
+    const [ins] = await db
+      .insert(finishesTable)
+      .values({
+        manufacturerId: MANUFACTURER_ID,
+        itemNumber: "AW",
+        name: "Ash Wood",
+        imageUrl,
+        isActive: true,
+        displayOrder: 0,
+      })
+      .returning({ id: finishesTable.id });
+    console.log(`Ash Wood finish created (id=${ins.id})\n`);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Spec data (verbatim)
 // ---------------------------------------------------------------------------
@@ -201,7 +262,7 @@ const PRODUCTS: ProductDef[] = [
     umbrellaShape: null, // varies by variant (Hexagonal / Octagon)
     liftMechanism: "Manual",
     tiltMechanism: null,
-    poleMaterial: "Ash Wood",
+    poleMaterial: "Wood",
     subCategory: null,
     weight: "14",
     dimensions:
@@ -260,7 +321,7 @@ const PRODUCTS: ProductDef[] = [
         ],
       },
     ],
-    finishes: [],
+    finishes: [{ name: "Ash Wood", upMsrp: 0, upSale: 0 }],
     recommendations: [
       { sku: "30-SA", recommended: true },
       { sku: "CB01", recommended: false },
@@ -279,7 +340,7 @@ const PRODUCTS: ProductDef[] = [
     umbrellaShape: null, // varies by variant (Hexagonal / Octagon)
     liftMechanism: "Manual",
     tiltMechanism: null,
-    poleMaterial: "Ash Wood",
+    poleMaterial: "Wood",
     subCategory: null,
     weight: "15",
     dimensions:
@@ -312,7 +373,7 @@ const PRODUCTS: ProductDef[] = [
         ],
       },
     ],
-    finishes: [],
+    finishes: [{ name: "Ash Wood", upMsrp: 0, upSale: 0 }],
     recommendations: [
       { sku: "30-SA", recommended: true },
       { sku: "CB01", recommended: false },
@@ -327,7 +388,7 @@ const PRODUCTS: ProductDef[] = [
     description:
       'The Marella is a 10ft x 10ft square luxury pool, beach, and resort cabana. Complete marine-grade extruded aluminum frame with Type II, Class I performance marine anodizing and 316L stainless steel hardware and couplings throughout. 2" diameter (.125" thick) corner mounting posts, 1.5" diameter (.125" thick) 45-degree corner structure supports, and 2mm thick canopy ribs for added strength against the wind. Easy drop-in canopy attachment with barrel bolt connections, engineered for simplified assembly.\nIncluded: four (4) MLA-8ST2 8" stainless steel stems, four (4) full-corner accent curtains, and the VF-SS stainless steel vertex finial.\nWind rating: engineered to withstand sustained 35 mph winds. The wind rating is null and void when full or split walls are in use.',
     shortDescription: "Custom Lead Times, Call for Details",
-    umbrellaType: "Cabana",
+    umbrellaType: "Specialty",
     umbrellaShape: "Square",
     liftMechanism: null,
     tiltMechanism: null,
@@ -415,6 +476,9 @@ async function ensureInventory(productId: number, variantId: number | null) {
 // ---------------------------------------------------------------------------
 
 async function main() {
+  // Create the new "Ash Wood" (AW) finish + swatch before mapping finishes.
+  await ensureAshWoodFinish();
+
   // Finish name -> id (manufacturer 28)
   const finishRows = await db
     .select({ id: finishesTable.id, name: finishesTable.name })

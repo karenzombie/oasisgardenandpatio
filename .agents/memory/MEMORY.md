@@ -4,6 +4,7 @@
 - [Finish swatch ↔ variant linkage](finish-variant-swatch-link.md) — no FK; recover finish swatch by manufacturerId+name via JS map (never leftJoin — dup names multiply rows); fabrics have a real FK.
 - [TG wind-vent variants](tg-wind-vent-variants.md) — SWV/DWV folded into one Finish×Vent variant (sku -SWV/-DWV, absolute price); PDP splits into 2 selectors; absolute-variant products still need product-level price.
 - [Per-manufacturer price storage](per-manufacturer-price-storage.md) — prices stored differently per mfr (TG=flat products.*, Galtech/Frankford=grade engine); audit BOTH columns; watch SKU drift breaking SKU-matched imports.
+- [products CHECK constraint enums](products-check-constraints.md) — pole_material/umbrella_type/shape/lift_mechanism are constrained enums; spec values outside the set fail the INSERT — ask user, map to nearest + preserve granular value elsewhere (sub_category/finish), never silent-remap.
 - [Telescope item_number not a SKU](telescope-item-number-not-sku.md) — it's a shared price code (42 distinct over 254 rows); keep generated TC- SKUs; products.sku is globally unique. Also notes Shoreline/OW Lee generated-SKU audit results.
 - [Variant PUT cart cascade](variant-put-cart-cascade.md) — admin variant replace-all must keyed-upsert by variantSku (not delete+reinsert) or cart_items cascade-delete; gate Save on variantsHydrated.
 - [Product short_description teaser](product-short-description.md) — PDP top blurb = short_description (first paragraph of description, NOT char-clamp+"…"); description is the full copy in the tab.
