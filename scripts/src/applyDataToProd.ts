@@ -40,7 +40,9 @@ TRUNCATE
   product_finish_options,
   variant_grade_prices,
   product_sets,
-  product_set_items
+  product_set_items,
+  product_addon_options,
+  product_addon_grade_prices
 RESTART IDENTITY CASCADE;
 `;
 

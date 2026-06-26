@@ -39,6 +39,12 @@ const TABLES_IN_ORDER = [
   "variant_grade_prices",
   "product_sets",
   "product_set_items",
+  // Catalog add-on definitions (Marella wall add-ons). Children of products.
+  // product_addon_options must precede product_addon_grade_prices (FK). The
+  // transactional snapshot tables (cart_item_addons, order_item_addons) are
+  // intentionally excluded — they're wiped by TRUNCATE CASCADE like cart/orders.
+  "product_addon_options",
+  "product_addon_grade_prices",
 ];
 
 const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
