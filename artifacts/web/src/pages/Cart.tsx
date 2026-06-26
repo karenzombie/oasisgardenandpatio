@@ -128,6 +128,24 @@ export default function Cart() {
                       ) : null}
                     </p>
                   ) : null}
+                  {item.addons.length > 0 ? (
+                    <div className="mt-1.5 border-l-2 border-border pl-2 space-y-0.5">
+                      {item.addons.map((a) => (
+                        <p
+                          key={a.addonOptionId}
+                          className="text-xs text-foreground/80 flex justify-between gap-3"
+                        >
+                          <span>
+                            <span className="text-muted-foreground">Add-on:</span>{" "}
+                            {a.name}
+                          </span>
+                          <span className="text-muted-foreground">
+                            +{formatMoney(a.unitPrice)} each
+                          </span>
+                        </p>
+                      ))}
+                    </div>
+                  ) : null}
                   <p className="text-sm mt-1">{formatMoney(item.unitPrice)} each</p>
                   <div className="mt-3 flex items-center gap-3">
                     <div className="inline-flex items-center border border-input">

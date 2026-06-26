@@ -1,5 +1,5 @@
 import { Link, useRoute } from "wouter";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useGetCatalogProductBySlug,
@@ -81,6 +81,9 @@ export default function Product() {
   const [wlFinishId, setWlFinishId] = useState<number | null>(null);
   const [wlFabricId, setWlFabricId] = useState<number | null>(null);
   const [wlTileId, setWlTileId] = useState<number | null>(null);
+  // Selected add-on option ids (multi-select, default none). Pairing targets are
+  // auto-included via effectiveAddonIds — they are not stored here directly.
+  const [addonIds, setAddonIds] = useState<number[]>([]);
 
   const { toast } = useToast();
   const qc = useQueryClient();
@@ -125,6 +128,7 @@ export default function Product() {
     setWlFinishId(null);
     setWlFabricId(null);
     setWlTileId(null);
+    setAddonIds([]);
   }, [data?.id]);
 
   // Discrete frame finishes for grade-priced (Frankford) products. Empty for
@@ -351,12 +355,95 @@ export default function Product() {
   // fabric is selected we lock the quantity stepper to even values >= 2.
   const isStripeSelected = selectedFabric?.isStripe === true;
 
-  // Minimum order quantity — applies whenever the selected variant carries one,
-  // regardless of whether the product is in grade mode.
-  const minOrderQty =
+  // ---- Add-on options (net-new admin-editable subsystem) ----------------
+  // Enabled add-on options for this product. The selector renders only for
+  // grade-priced products that actually have add-ons (the Marella cabana walls
+  // today). Add-ons are priced by the canopy fabric grade (per_grade) or a flat
+  // price (the replacement stem).
+  const addonOptions = useMemo(
+    () => (data?.addonOptions ?? []).filter((a) => a.enabled),
+    [data?.addonOptions],
+  );
+  const addonsAvailable = isGradeMode && addonOptions.length > 0;
+  // The canopy grade drives per_grade add-on pricing; walls share the canopy's
+  // fabric + grade.
+  const canopyGrade = selectedFabric?.grade ?? null;
+
+  const addonUnitPrice = useCallback(
+    (a: (typeof addonOptions)[number]): number | null => {
+      if (a.pricingMode === "flat") {
+        const sale = Number(a.flatSalePrice ?? 0);
+        const msrp = Number(a.flatMsrp ?? 0);
+        return sale > 0 ? sale : msrp > 0 ? msrp : null;
+      }
+      if (!canopyGrade) return null;
+      const gp = a.gradePrices.find((g) => g.grade === canopyGrade);
+      if (!gp) return null;
+      const sale = Number(gp.salePrice);
+      const msrp = Number(gp.msrp);
+      return sale > 0 ? sale : msrp > 0 ? msrp : null;
+    },
+    [canopyGrade],
+  );
+
+  // Enforced pairing: selecting any triggersPairing option (a wall) forces every
+  // isPairingTarget option (the half curtains) to be added and locked.
+  const pairingActive = useMemo(
+    () =>
+      addonOptions.some((a) => a.triggersPairing && addonIds.includes(a.id)),
+    [addonOptions, addonIds],
+  );
+  const effectiveAddonIds = useMemo(() => {
+    const s = new Set(addonIds);
+    if (pairingActive) {
+      for (const a of addonOptions) if (a.isPairingTarget) s.add(a.id);
+    }
+    return s;
+  }, [addonIds, pairingActive, addonOptions]);
+
+  const toggleAddon = useCallback(
+    (a: (typeof addonOptions)[number]) => {
+      // Pairing targets can't be toggled off while a wall keeps them required.
+      if (a.isPairingTarget && pairingActive) return;
+      setAddonIds((prev) =>
+        prev.includes(a.id)
+          ? prev.filter((x) => x !== a.id)
+          : [...prev, a.id],
+      );
+    },
+    [pairingActive],
+  );
+
+  // Sum of per-unit add-on prices for the effective selection. Null when a
+  // selected per_grade add-on can't be priced yet (no canopy grade chosen) so
+  // the UI can show a "select fabric" prompt instead of a wrong total.
+  const addonUnitTotal = useMemo(() => {
+    let total = 0;
+    let priced = true;
+    for (const a of addonOptions) {
+      if (!effectiveAddonIds.has(a.id)) continue;
+      const u = addonUnitPrice(a);
+      if (u == null) {
+        priced = false;
+        continue;
+      }
+      total += u;
+    }
+    return priced ? total : null;
+  }, [addonOptions, effectiveAddonIds, addonUnitPrice]);
+
+  // Minimum order quantity — the larger of the variant's minimum and the
+  // selected finish's minimum (special non-Platinum finishes require 5). The
+  // existing striped-fabric pair rule is folded into qtyFloor below.
+  const variantMinQty =
     selectedVariant?.minOrderQty != null && selectedVariant.minOrderQty > 1
       ? selectedVariant.minOrderQty
       : 1;
+  const finishMinQty =
+    selectedFinish?.minOrderQty != null && selectedFinish.minOrderQty > 1
+      ? selectedFinish.minOrderQty
+      : 1;
+  const minOrderQty = Math.max(variantMinQty, finishMinQty);
   // Combined quantity floor: config minimum, raised to an even number when a
   // stripe fabric (sold in pairs) is selected.
   let qtyFloor = Math.max(minOrderQty, isStripeSelected ? 2 : 1);
@@ -430,6 +517,9 @@ export default function Product() {
         ...(selectedVariant ? { variantId: selectedVariant.id } : {}),
         ...(selectedFinish ? { finishId: selectedFinish.id } : {}),
         ...(selectedFabric ? { fabricId: selectedFabric.id } : {}),
+        ...(effectiveAddonIds.size > 0
+          ? { addonOptionIds: Array.from(effectiveAddonIds) }
+          : {}),
       },
     });
   }
@@ -534,6 +624,16 @@ export default function Product() {
   }
   const gradeOnSale =
     gradeLinePrice != null && gradeMsrp != null && gradeMsrp > gradeLinePrice;
+
+  // Additive add-on pricing: the per-unit price the customer pays is the canopy
+  // unit price plus every selected add-on's per-unit price; the line total
+  // multiplies by quantity. Null until the canopy unit price is known.
+  const canopyUnit: number | null = isGradeMode ? gradeLinePrice : effectivePrice;
+  const comboUnit =
+    canopyUnit != null && addonUnitTotal != null
+      ? canopyUnit + addonUnitTotal
+      : null;
+  const comboLineTotal = comboUnit != null ? comboUnit * qty : null;
 
   // Dynamic SKU: combine the configuration SKU with the chosen finish code and
   // fabric item number so each unique selection has a traceable code. For
@@ -1197,6 +1297,89 @@ export default function Product() {
                 </div>
               ) : null}
 
+              {/* Add-on selector (multi-select). Default none; selecting a wall
+                  (triggersPairing) auto-includes and locks the half curtains
+                  (isPairingTarget). Per-grade prices track the canopy fabric. */}
+              {addonsAvailable ? (
+                <div className="mb-5">
+                  <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">
+                    Privacy Walls &amp; Add-Ons
+                  </p>
+                  {!canopyGrade ? (
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Choose a fabric to see add-on pricing.
+                    </p>
+                  ) : null}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {addonOptions.map((a) => {
+                      const checked = effectiveAddonIds.has(a.id);
+                      const locked = a.isPairingTarget && pairingActive;
+                      const unit = addonUnitPrice(a);
+                      const needsFabric =
+                        a.pricingMode === "per_grade" && !canopyGrade;
+                      return (
+                        <button
+                          type="button"
+                          key={a.id}
+                          onClick={() => toggleAddon(a)}
+                          disabled={locked}
+                          aria-pressed={checked}
+                          className={`flex gap-3 items-start text-left border p-3 transition-colors ${
+                            checked
+                              ? "border-primary bg-primary/5"
+                              : "border-input hover:border-foreground"
+                          } ${locked ? "cursor-not-allowed" : ""}`}
+                        >
+                          {a.imageUrl ? (
+                            <img
+                              src={a.imageUrl}
+                              alt={a.name}
+                              className="h-16 w-16 shrink-0 object-cover border border-border"
+                            />
+                          ) : (
+                            <div className="h-16 w-16 shrink-0 bg-muted flex items-center justify-center text-[10px] text-muted-foreground text-center px-1">
+                              No image available
+                            </div>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`h-4 w-4 shrink-0 border flex items-center justify-center text-[10px] leading-none ${
+                                  checked
+                                    ? "bg-primary border-primary text-primary-foreground"
+                                    : "border-input"
+                                }`}
+                                aria-hidden="true"
+                              >
+                                {checked ? "✓" : ""}
+                              </span>
+                              <span className="text-sm font-medium">{a.name}</span>
+                            </div>
+                            {a.description ? (
+                              <p className="text-xs text-muted-foreground mt-1 line-clamp-3">
+                                {a.description}
+                              </p>
+                            ) : null}
+                            <p className="text-sm font-semibold mt-1">
+                              {needsFabric
+                                ? "Select fabric for price"
+                                : unit != null
+                                  ? `+${formatMoney(unit)}`
+                                  : "—"}
+                            </p>
+                            {locked ? (
+                              <p className="text-[11px] text-primary mt-0.5">
+                                Included with your wall selection
+                              </p>
+                            ) : null}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
+
               {/* Selection summary: each row is swatch mini-box (left) + label/value
                   (right), stacked vertically so all swatches and descriptions
                   align in consistent columns. */}
@@ -1264,6 +1447,48 @@ export default function Product() {
                 </div>
               ) : null}
 
+              {/* Additive configuration total — shows the canopy unit price, each
+                  selected add-on's per-unit price, the combined per-unit price,
+                  and the line total at the chosen quantity. */}
+              {addonsAvailable && effectiveAddonIds.size > 0 ? (
+                <div className="mb-5 border border-border bg-muted/30 px-4 py-3 text-sm">
+                  <p className="font-medium mb-2">Your configuration</p>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-muted-foreground">Cabana</span>
+                    <span>
+                      {canopyUnit != null ? formatMoney(canopyUnit) : "—"}
+                    </span>
+                  </div>
+                  {addonOptions
+                    .filter((a) => effectiveAddonIds.has(a.id))
+                    .map((a) => {
+                      const u = addonUnitPrice(a);
+                      return (
+                        <div key={a.id} className="flex justify-between gap-3">
+                          <span className="text-muted-foreground">{a.name}</span>
+                          <span>{u != null ? `+${formatMoney(u)}` : "—"}</span>
+                        </div>
+                      );
+                    })}
+                  <div className="flex justify-between gap-3 border-t border-border mt-2 pt-2 font-semibold">
+                    <span>Per unit</span>
+                    <span>{comboUnit != null ? formatMoney(comboUnit) : "—"}</span>
+                  </div>
+                  {qty > 1 ? (
+                    <div className="flex justify-between gap-3">
+                      <span className="text-muted-foreground">
+                        Line total ({qty} ×)
+                      </span>
+                      <span>
+                        {comboLineTotal != null
+                          ? formatMoney(comboLineTotal)
+                          : "—"}
+                      </span>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
               <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
                 <div className="flex flex-col gap-1 self-start">
                   <div className="inline-flex items-center border border-input">
@@ -1293,6 +1518,11 @@ export default function Product() {
                   {minOrderQty > 1 ? (
                     <p className="text-xs text-destructive">
                       Minimum order quantity: {minOrderQty}
+                    </p>
+                  ) : null}
+                  {finishMinQty > 1 && data.finishMinQtyNote ? (
+                    <p className="text-xs text-muted-foreground">
+                      {data.finishMinQtyNote}
                     </p>
                   ) : null}
                 </div>

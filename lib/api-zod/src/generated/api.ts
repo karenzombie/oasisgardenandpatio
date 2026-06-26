@@ -744,6 +744,12 @@ export const GetCatalogProductBySlugResponse = zod
                 .describe(
                   'Decimal customer-facing (discounted) frame upcharge for this finish (\"0\" for no upcharge).',
                 ),
+              minOrderQty: zod
+                .number()
+                .nullable()
+                .describe(
+                  "Minimum order quantity enforced when this finish is selected (e.g. special-order finishes). Null means no finish-driven minimum.",
+                ),
             })
             .describe(
               "A discrete frame-finish choice for a grade-priced product (resolved from the product's finish pool\/options).",
@@ -751,6 +757,80 @@ export const GetCatalogProductBySlugResponse = zod
         )
         .describe(
           "Discrete frame-finish choices for grade-priced products (3-step mode). Empty for legacy (variant-as-finish) products.",
+        ),
+      addonOptions: zod
+        .array(
+          zod
+            .object({
+              id: zod.number(),
+              sku: zod.string(),
+              name: zod.string(),
+              description: zod.string().nullable(),
+              imageUrl: zod
+                .string()
+                .nullable()
+                .describe("Public URL of the add-on selector image, if any."),
+              pricingMode: zod.enum(["per_grade", "flat"]),
+              flatMsrp: zod
+                .string()
+                .nullable()
+                .describe(
+                  "Decimal MSRP for flat-priced add-ons. Null for per_grade add-ons.",
+                ),
+              flatSalePrice: zod
+                .string()
+                .nullable()
+                .describe(
+                  "Decimal sale price for flat-priced add-ons. Null for per_grade add-ons.",
+                ),
+              triggersPairing: zod
+                .boolean()
+                .describe(
+                  "When true, selecting this add-on forces the pairing-target add-on to be added too (e.g. a wall requires the half curtains).",
+                ),
+              isPairingTarget: zod
+                .boolean()
+                .describe(
+                  "When true, this add-on is auto-added and required whenever any triggersPairing add-on is selected.",
+                ),
+              enabled: zod.boolean(),
+              displayOrder: zod.number(),
+              gradePrices: zod
+                .array(
+                  zod.object({
+                    grade: zod
+                      .string()
+                      .describe(
+                        'Fabric grade (e.g. \"A\", \"A+\", \"B\", \"C\", \"D\", \"E\", \"F\").',
+                      ),
+                    msrp: zod
+                      .string()
+                      .describe(
+                        "Decimal MSRP for this configuration at this grade.",
+                      ),
+                    salePrice: zod
+                      .string()
+                      .describe(
+                        "Decimal sale price for this configuration at this grade.",
+                      ),
+                  }),
+                )
+                .describe(
+                  "Per-fabric-grade MSRP + sale price. Non-empty only when pricingMode is per_grade; the selected canopy fabric's grade picks the row.",
+                ),
+            })
+            .describe(
+              "An optional add-on (e.g. privacy walls, replacement stem) for a configurable product. Priced additively on top of the base product. per_grade add-ons resolve their price from the selected canopy fabric's grade; flat add-ons use flatMsrp\/flatSalePrice.",
+            ),
+        )
+        .describe(
+          "Optional add-ons for this product (e.g. privacy walls, replacement stem). Priced additively on top of the base product. Empty when the product has no add-ons.",
+        ),
+      finishMinQtyNote: zod
+        .string()
+        .nullable()
+        .describe(
+          "Admin-editable note shown when a special (non-default) finish triggers a minimum order quantity.",
         ),
     }),
   );
@@ -1001,6 +1081,31 @@ export const GetAccountOrderResponse = zod.object({
         .string()
         .nullable()
         .describe("Public URL of the chosen finish's swatch image, if any."),
+      addons: zod
+        .array(
+          zod
+            .object({
+              sku: zod.string().nullable(),
+              name: zod.string(),
+              grade: zod
+                .string()
+                .nullable()
+                .describe(
+                  "Fabric grade used to price a per_grade add-on at purchase time, if applicable.",
+                ),
+              unitPrice: zod.string(),
+              quantity: zod.number(),
+              amount: zod
+                .string()
+                .describe("unitPrice multiplied by quantity."),
+            })
+            .describe(
+              "A snapshot of one add-on attached to an order line item (immutable).",
+            ),
+        )
+        .describe(
+          "Add-on lines attached to this order line (snapshot at purchase). Empty when none.",
+        ),
     }),
   ),
 });
@@ -1271,6 +1376,25 @@ export const GetCartResponse = zod.object({
         .describe(
           "True when the selected fabric is a stripe pattern (quantity must be ordered in even pairs).",
         ),
+      addons: zod
+        .array(
+          zod
+            .object({
+              addonOptionId: zod.number(),
+              sku: zod.string(),
+              name: zod.string(),
+              unitPrice: zod
+                .string()
+                .describe("Per-unit add-on price snapshotted at add time."),
+              lineAmount: zod
+                .string()
+                .describe("unitPrice multiplied by the cart line quantity."),
+            })
+            .describe("A snapshot of one add-on attached to a cart line item."),
+        )
+        .describe(
+          "Selected add-on lines for this cart item (e.g. privacy walls). Each carries its own per-unit price; lineTotal already includes them.",
+        ),
     }),
   ),
   itemCount: zod.number().describe("Sum of quantities across all line items."),
@@ -1309,6 +1433,25 @@ export const ClearCartResponse = zod.object({
         .describe(
           "True when the selected fabric is a stripe pattern (quantity must be ordered in even pairs).",
         ),
+      addons: zod
+        .array(
+          zod
+            .object({
+              addonOptionId: zod.number(),
+              sku: zod.string(),
+              name: zod.string(),
+              unitPrice: zod
+                .string()
+                .describe("Per-unit add-on price snapshotted at add time."),
+              lineAmount: zod
+                .string()
+                .describe("unitPrice multiplied by the cart line quantity."),
+            })
+            .describe("A snapshot of one add-on attached to a cart line item."),
+        )
+        .describe(
+          "Selected add-on lines for this cart item (e.g. privacy walls). Each carries its own per-unit price; lineTotal already includes them.",
+        ),
     }),
   ),
   itemCount: zod.number().describe("Sum of quantities across all line items."),
@@ -1335,6 +1478,12 @@ export const AddCartItemBody = zod.object({
     .number()
     .nullish()
     .describe("Selected frame-finish id for grade-priced (3-step) products."),
+  addonOptionIds: zod
+    .array(zod.number())
+    .optional()
+    .describe(
+      "Selected add-on option IDs (e.g. privacy walls) to attach to this line. Pairing-required add-ons are auto-enforced server-side.",
+    ),
 });
 
 export const AddCartItemResponse = zod.object({
@@ -1364,6 +1513,25 @@ export const AddCartItemResponse = zod.object({
         .boolean()
         .describe(
           "True when the selected fabric is a stripe pattern (quantity must be ordered in even pairs).",
+        ),
+      addons: zod
+        .array(
+          zod
+            .object({
+              addonOptionId: zod.number(),
+              sku: zod.string(),
+              name: zod.string(),
+              unitPrice: zod
+                .string()
+                .describe("Per-unit add-on price snapshotted at add time."),
+              lineAmount: zod
+                .string()
+                .describe("unitPrice multiplied by the cart line quantity."),
+            })
+            .describe("A snapshot of one add-on attached to a cart line item."),
+        )
+        .describe(
+          "Selected add-on lines for this cart item (e.g. privacy walls). Each carries its own per-unit price; lineTotal already includes them.",
         ),
     }),
   ),
@@ -1410,6 +1578,25 @@ export const UpdateCartItemResponse = zod.object({
         .describe(
           "True when the selected fabric is a stripe pattern (quantity must be ordered in even pairs).",
         ),
+      addons: zod
+        .array(
+          zod
+            .object({
+              addonOptionId: zod.number(),
+              sku: zod.string(),
+              name: zod.string(),
+              unitPrice: zod
+                .string()
+                .describe("Per-unit add-on price snapshotted at add time."),
+              lineAmount: zod
+                .string()
+                .describe("unitPrice multiplied by the cart line quantity."),
+            })
+            .describe("A snapshot of one add-on attached to a cart line item."),
+        )
+        .describe(
+          "Selected add-on lines for this cart item (e.g. privacy walls). Each carries its own per-unit price; lineTotal already includes them.",
+        ),
     }),
   ),
   itemCount: zod.number().describe("Sum of quantities across all line items."),
@@ -1450,6 +1637,25 @@ export const RemoveCartItemResponse = zod.object({
         .boolean()
         .describe(
           "True when the selected fabric is a stripe pattern (quantity must be ordered in even pairs).",
+        ),
+      addons: zod
+        .array(
+          zod
+            .object({
+              addonOptionId: zod.number(),
+              sku: zod.string(),
+              name: zod.string(),
+              unitPrice: zod
+                .string()
+                .describe("Per-unit add-on price snapshotted at add time."),
+              lineAmount: zod
+                .string()
+                .describe("unitPrice multiplied by the cart line quantity."),
+            })
+            .describe("A snapshot of one add-on attached to a cart line item."),
+        )
+        .describe(
+          "Selected add-on lines for this cart item (e.g. privacy walls). Each carries its own per-unit price; lineTotal already includes them.",
         ),
     }),
   ),
@@ -2349,6 +2555,12 @@ export const AdminListProductsResponse = zod.object({
       displayOrder: zod.number(),
       lowStockThreshold: zod.number(),
       isActive: zod.boolean(),
+      finishMinQtyNote: zod
+        .string()
+        .nullable()
+        .describe(
+          "Admin-editable note shown when a special (non-default) finish triggers a minimum order quantity.",
+        ),
       primaryImageUrl: zod.string().nullable(),
       imageCount: zod.number(),
       onHand: zod.number(),
@@ -2546,6 +2758,12 @@ export const AdminGetProductResponse = zod
     displayOrder: zod.number(),
     lowStockThreshold: zod.number(),
     isActive: zod.boolean(),
+    finishMinQtyNote: zod
+      .string()
+      .nullable()
+      .describe(
+        "Admin-editable note shown when a special (non-default) finish triggers a minimum order quantity.",
+      ),
     primaryImageUrl: zod.string().nullable(),
     imageCount: zod.number(),
     onHand: zod.number(),
@@ -2639,6 +2857,12 @@ export const AdminUpdateProductBody = zod.object({
   displayOrder: zod.number().optional(),
   lowStockThreshold: zod.number().optional(),
   isActive: zod.boolean().optional(),
+  finishMinQtyNote: zod
+    .string()
+    .nullish()
+    .describe(
+      "Admin-editable note shown when a special (non-default) finish triggers a minimum order quantity.",
+    ),
 });
 
 export const AdminUpdateProductResponse = zod.object({
@@ -2731,6 +2955,12 @@ export const AdminUpdateProductResponse = zod.object({
   displayOrder: zod.number(),
   lowStockThreshold: zod.number(),
   isActive: zod.boolean(),
+  finishMinQtyNote: zod
+    .string()
+    .nullable()
+    .describe(
+      "Admin-editable note shown when a special (non-default) finish triggers a minimum order quantity.",
+    ),
   primaryImageUrl: zod.string().nullable(),
   imageCount: zod.number(),
   onHand: zod.number(),
@@ -2839,6 +3069,12 @@ export const AdminSetProductActiveResponse = zod.object({
   displayOrder: zod.number(),
   lowStockThreshold: zod.number(),
   isActive: zod.boolean(),
+  finishMinQtyNote: zod
+    .string()
+    .nullable()
+    .describe(
+      "Admin-editable note shown when a special (non-default) finish triggers a minimum order quantity.",
+    ),
   primaryImageUrl: zod.string().nullable(),
   imageCount: zod.number(),
   onHand: zod.number(),
@@ -3078,6 +3314,12 @@ export const AdminGetProductPickerResponse = zod
               .string()
               .describe(
                 'Decimal customer-facing (discounted) frame upcharge for this finish (\"0\" for no upcharge).',
+              ),
+            minOrderQty: zod
+              .number()
+              .nullable()
+              .describe(
+                "Minimum order quantity enforced when this finish is selected (e.g. special-order finishes). Null means no finish-driven minimum.",
               ),
           })
           .describe(
@@ -3601,6 +3843,12 @@ export const AdminGetProductFinishesResponse = zod.object({
         upchargeSale: zod
           .string()
           .describe('Server-derived discounted upcharge (\"0\" for none).'),
+        minOrderQty: zod
+          .number()
+          .nullable()
+          .describe(
+            "Minimum order quantity enforced when this finish is selected. Null means no finish-driven minimum.",
+          ),
       }),
     )
     .describe(
@@ -3627,6 +3875,12 @@ export const AdminUpdateProductFinishesBody = zod.object({
       zod.object({
         finishId: zod.number(),
         upchargeMsrp: zod.string(),
+        minOrderQty: zod
+          .number()
+          .nullish()
+          .describe(
+            "Minimum order quantity enforced when this finish is selected. Null clears the finish-driven minimum.",
+          ),
       }),
     )
     .optional()
@@ -3662,11 +3916,128 @@ export const AdminUpdateProductFinishesResponse = zod.object({
         upchargeSale: zod
           .string()
           .describe('Server-derived discounted upcharge (\"0\" for none).'),
+        minOrderQty: zod
+          .number()
+          .nullable()
+          .describe(
+            "Minimum order quantity enforced when this finish is selected. Null means no finish-driven minimum.",
+          ),
       }),
     )
     .describe(
       "Per-(picked finish) frame upcharge values. Only individually-picked finishes carry an upcharge; pooled finishes are always 0.",
     ),
+});
+
+/**
+ * @summary Get a product's add-on options and per-grade prices
+ */
+export const AdminGetProductAddonsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminGetProductAddonsResponse = zod.object({
+  addons: zod.array(
+    zod
+      .object({
+        id: zod.number(),
+        sku: zod.string(),
+        name: zod.string(),
+        description: zod.string().nullable(),
+        imageUrl: zod
+          .string()
+          .nullable()
+          .describe("Public URL of the add-on selector image, if any."),
+        pricingMode: zod.enum(["per_grade", "flat"]),
+        flatMsrp: zod.string().nullable(),
+        flatSalePrice: zod.string().nullable(),
+        triggersPairing: zod.boolean(),
+        isPairingTarget: zod.boolean(),
+        enabled: zod.boolean(),
+        displayOrder: zod.number(),
+        gradePrices: zod.array(
+          zod.object({
+            grade: zod.string(),
+            msrp: zod.string(),
+            salePrice: zod.string(),
+          }),
+        ),
+      })
+      .describe("An add-on option configured on a product (admin view)."),
+  ),
+});
+
+/**
+ * @summary Replace a product's add-on options and per-grade prices
+ */
+export const AdminUpdateProductAddonsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminUpdateProductAddonsBody = zod.object({
+  addons: zod.array(
+    zod
+      .object({
+        id: zod.number().nullish(),
+        sku: zod.string().min(1),
+        name: zod.string().min(1),
+        description: zod.string().nullish(),
+        imageUrl: zod
+          .string()
+          .nullish()
+          .describe(
+            "Raw object-storage path or null. Public URLs are normalized server-side.",
+          ),
+        pricingMode: zod.enum(["per_grade", "flat"]),
+        flatMsrp: zod.string().nullish(),
+        flatSalePrice: zod.string().nullish(),
+        triggersPairing: zod.boolean().optional(),
+        isPairingTarget: zod.boolean().optional(),
+        enabled: zod.boolean().optional(),
+        displayOrder: zod.number().optional(),
+        gradePrices: zod.array(
+          zod.object({
+            grade: zod.string(),
+            msrp: zod.string(),
+            salePrice: zod.string(),
+          }),
+        ),
+      })
+      .describe(
+        "One add-on to upsert on a product. Omit id to create; provide id to update in place.",
+      ),
+  ),
+});
+
+export const AdminUpdateProductAddonsResponse = zod.object({
+  addons: zod.array(
+    zod
+      .object({
+        id: zod.number(),
+        sku: zod.string(),
+        name: zod.string(),
+        description: zod.string().nullable(),
+        imageUrl: zod
+          .string()
+          .nullable()
+          .describe("Public URL of the add-on selector image, if any."),
+        pricingMode: zod.enum(["per_grade", "flat"]),
+        flatMsrp: zod.string().nullable(),
+        flatSalePrice: zod.string().nullable(),
+        triggersPairing: zod.boolean(),
+        isPairingTarget: zod.boolean(),
+        enabled: zod.boolean(),
+        displayOrder: zod.number(),
+        gradePrices: zod.array(
+          zod.object({
+            grade: zod.string(),
+            msrp: zod.string(),
+            salePrice: zod.string(),
+          }),
+        ),
+      })
+      .describe("An add-on option configured on a product (admin view)."),
+  ),
 });
 
 /**

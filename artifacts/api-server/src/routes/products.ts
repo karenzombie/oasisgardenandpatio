@@ -17,6 +17,8 @@ import {
   productFinishPoolsTable,
   productFinishOptionsTable,
   productRecommendationsTable,
+  productAddonOptionsTable,
+  productAddonGradePricesTable,
 } from "@workspace/db";
 import {
   ListFeaturedProductsResponse,
@@ -618,6 +620,7 @@ router.get(
         availableOnline: productsTable.availableOnline,
         quoteOnly: productsTable.quoteOnly,
         featured: productsTable.featured,
+        finishMinQtyNote: productsTable.finishMinQtyNote,
         isActive: productsTable.isActive,
       })
       .from(productsTable)
@@ -831,6 +834,7 @@ router.get(
         displayOrder: productFinishOptionsTable.displayOrder,
         upchargeMsrp: productFinishOptionsTable.upchargeMsrp,
         upchargeSale: productFinishOptionsTable.upchargeSale,
+        minOrderQty: productFinishOptionsTable.minOrderQty,
       })
       .from(productFinishOptionsTable)
       .innerJoin(
@@ -855,6 +859,7 @@ router.get(
         displayOrder: number;
         upchargeMsrp: string;
         upchargeSale: string;
+        minOrderQty: number | null;
       }
     >();
     // Explicitly-picked options carry per-product frame upcharges and win over
@@ -869,6 +874,7 @@ router.get(
           ...f,
           upchargeMsrp: "0",
           upchargeSale: "0",
+          minOrderQty: null,
         });
     }
     const discreteFinishes = [...finishByIdMap.values()].sort(
@@ -909,6 +915,64 @@ router.get(
         asc(manufacturersTable.name),
         asc(fabricsTable.name),
       );
+
+    // Add-ons (e.g. Marella privacy walls + replacement stem). Optional extras
+    // priced additively on top of the base product. per_grade add-ons carry
+    // per-fabric-grade rows; flat add-ons use flatMsrp/flatSalePrice.
+    const addonRows = await db
+      .select({
+        id: productAddonOptionsTable.id,
+        sku: productAddonOptionsTable.sku,
+        name: productAddonOptionsTable.name,
+        description: productAddonOptionsTable.description,
+        imageUrl: productAddonOptionsTable.imageUrl,
+        pricingMode: productAddonOptionsTable.pricingMode,
+        flatMsrp: productAddonOptionsTable.flatMsrp,
+        flatSalePrice: productAddonOptionsTable.flatSalePrice,
+        triggersPairing: productAddonOptionsTable.triggersPairing,
+        isPairingTarget: productAddonOptionsTable.isPairingTarget,
+        enabled: productAddonOptionsTable.enabled,
+        displayOrder: productAddonOptionsTable.displayOrder,
+      })
+      .from(productAddonOptionsTable)
+      .where(
+        and(
+          eq(productAddonOptionsTable.productId, row.id),
+          eq(productAddonOptionsTable.enabled, true),
+        ),
+      )
+      .orderBy(
+        asc(productAddonOptionsTable.displayOrder),
+        asc(productAddonOptionsTable.id),
+      );
+
+    const addonIds = addonRows.map((a) => a.id);
+    const addonGradeRows = addonIds.length
+      ? await db
+          .select({
+            addonOptionId: productAddonGradePricesTable.addonOptionId,
+            grade: productAddonGradePricesTable.grade,
+            msrp: productAddonGradePricesTable.msrp,
+            salePrice: productAddonGradePricesTable.salePrice,
+          })
+          .from(productAddonGradePricesTable)
+          .where(inArray(productAddonGradePricesTable.addonOptionId, addonIds))
+          .orderBy(asc(productAddonGradePricesTable.grade))
+      : [];
+
+    const gradePricesByAddon = new Map<
+      number,
+      { grade: string; msrp: string; salePrice: string }[]
+    >();
+    for (const gp of addonGradeRows) {
+      const list = gradePricesByAddon.get(gp.addonOptionId) ?? [];
+      list.push({
+        grade: gp.grade,
+        msrp: String(gp.msrp),
+        salePrice: String(gp.salePrice),
+      });
+      gradePricesByAddon.set(gp.addonOptionId, list);
+    }
 
     const tagsArray: string[] = Array.isArray(row.tags) ? (row.tags as string[]) : [];
     const specsObj: Record<string, unknown> | null =
@@ -987,6 +1051,7 @@ router.get(
         displayOrder: f.displayOrder,
         upchargeMsrp: String(f.upchargeMsrp ?? "0"),
         upchargeSale: String(f.upchargeSale ?? "0"),
+        minOrderQty: f.minOrderQty ?? null,
       })),
       finishCollections: finishCollectionRows.map((fc) => ({
         ...fc,
@@ -1005,6 +1070,22 @@ router.get(
         isStripe: f.isStripe,
         displayOrder: f.displayOrder,
       })),
+      addonOptions: addonRows.map((a) => ({
+        id: a.id,
+        sku: a.sku,
+        name: a.name,
+        description: a.description ?? null,
+        imageUrl: toPublicImageUrl(a.imageUrl),
+        pricingMode: a.pricingMode,
+        flatMsrp: a.flatMsrp == null ? null : String(a.flatMsrp),
+        flatSalePrice: a.flatSalePrice == null ? null : String(a.flatSalePrice),
+        triggersPairing: a.triggersPairing,
+        isPairingTarget: a.isPairingTarget,
+        enabled: a.enabled,
+        displayOrder: a.displayOrder,
+        gradePrices: gradePricesByAddon.get(a.id) ?? [],
+      })),
+      finishMinQtyNote: row.finishMinQtyNote ?? null,
     };
 
     res.json(GetCatalogProductBySlugResponse.parse(payload));

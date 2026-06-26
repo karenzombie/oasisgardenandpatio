@@ -5,6 +5,7 @@
  * Oasis Garden & Patio API
  * OpenAPI spec version: 0.1.0
  */
+import type { CatalogAddonOption } from "./catalogAddonOption";
 import type { CatalogFabricOption } from "./catalogFabricOption";
 import type { CatalogFinishCollection } from "./catalogFinishCollection";
 import type { CatalogFinishOption } from "./catalogFinishOption";
@@ -43,4 +44,11 @@ export type CatalogProductDetail = CatalogProduct & {
   finishCollections: CatalogFinishCollection[];
   /** Discrete frame-finish choices for grade-priced products (3-step mode). Empty for legacy (variant-as-finish) products. */
   finishes: CatalogFinishOption[];
+  /** Optional add-ons for this product (e.g. privacy walls, replacement stem). Priced additively on top of the base product. Empty when the product has no add-ons. */
+  addonOptions: CatalogAddonOption[];
+  /**
+   * Admin-editable note shown when a special (non-default) finish triggers a minimum order quantity.
+   * @nullable
+   */
+  finishMinQtyNote: string | null;
 };

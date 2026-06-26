@@ -27,4 +27,9 @@ export interface CatalogFinishOption {
   upchargeMsrp: string;
   /** Decimal customer-facing (discounted) frame upcharge for this finish ("0" for no upcharge). */
   upchargeSale: string;
+  /**
+   * Minimum order quantity enforced when this finish is selected (e.g. special-order finishes). Null means no finish-driven minimum.
+   * @nullable
+   */
+  minOrderQty: number | null;
 }

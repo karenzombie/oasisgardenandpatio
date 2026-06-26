@@ -32,6 +32,10 @@ export const productsTable = pgTable(
     sku: text("sku").notNull().unique(),
     description: text("description"),
     shortDescription: text("short_description"),
+    // Customer-facing note shown when a minimum-order-quantity rule is in
+    // effect for this product (e.g. Marella's non-Platinum frame finishes).
+    // Admin-editable; defaults to the striped-fabric/special-finish wording.
+    finishMinQtyNote: text("finish_min_qty_note"),
     manufacturerId: integer("manufacturer_id").references(
       () => manufacturersTable.id,
       { onDelete: "set null" },

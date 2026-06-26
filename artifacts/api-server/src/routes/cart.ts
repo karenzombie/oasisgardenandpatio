@@ -1,9 +1,10 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { and, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import {
   db,
   cartsTable,
   cartItemsTable,
+  cartItemAddonsTable,
   productsTable,
   productImagesTable,
   manufacturersTable,
@@ -14,6 +15,8 @@ import {
   variantGradePricesTable,
   productFinishPoolsTable,
   productFinishOptionsTable,
+  productAddonOptionsTable,
+  productAddonGradePricesTable,
 } from "@workspace/db";
 import {
   GetCartResponse,
@@ -137,17 +140,68 @@ async function loadCart(owner: CartOwner) {
     .where(eq(cartItemsTable.cartId, cart.id))
     .orderBy(cartItemsTable.id);
 
+  // Fold in add-on lines (e.g. Marella privacy walls). Each add-on carries its
+  // own per-unit price snapshot; the line total = (base + sum(addon units)) * qty.
+  const itemIds = rows.map((r) => r.id);
+  const addonRows = itemIds.length
+    ? await db
+        .select({
+          cartItemId: cartItemAddonsTable.cartItemId,
+          addonOptionId: cartItemAddonsTable.addonOptionId,
+          unitPrice: cartItemAddonsTable.unitPrice,
+          sku: productAddonOptionsTable.sku,
+          name: productAddonOptionsTable.name,
+          displayOrder: productAddonOptionsTable.displayOrder,
+        })
+        .from(cartItemAddonsTable)
+        .innerJoin(
+          productAddonOptionsTable,
+          eq(productAddonOptionsTable.id, cartItemAddonsTable.addonOptionId),
+        )
+        .where(inArray(cartItemAddonsTable.cartItemId, itemIds))
+        .orderBy(
+          asc(productAddonOptionsTable.displayOrder),
+          asc(cartItemAddonsTable.id),
+        )
+    : [];
+  const addonsByItem = new Map<
+    number,
+    { addonOptionId: number; unitPrice: string; sku: string; name: string }[]
+  >();
+  for (const a of addonRows) {
+    const list = addonsByItem.get(a.cartItemId) ?? [];
+    list.push({
+      addonOptionId: a.addonOptionId,
+      unitPrice: String(a.unitPrice),
+      sku: a.sku,
+      name: a.name,
+    });
+    addonsByItem.set(a.cartItemId, list);
+  }
+
   let itemCount = 0;
   let subtotal = 0;
   const items = rows.map((r) => {
     itemCount += r.quantity;
-    const line = Number(r.unitPrice) * r.quantity;
+    const lineAddons = addonsByItem.get(r.id) ?? [];
+    const addonUnitSum = lineAddons.reduce(
+      (sum, a) => sum + Number(a.unitPrice),
+      0,
+    );
+    const line = (Number(r.unitPrice) + addonUnitSum) * r.quantity;
     subtotal += line;
     return {
       ...r,
       primaryImageUrl: toPublicImageUrl(r.primaryImageUrl),
       unitPrice: String(r.unitPrice),
       lineTotal: line.toFixed(2),
+      addons: lineAddons.map((a) => ({
+        addonOptionId: a.addonOptionId,
+        sku: a.sku,
+        name: a.name,
+        unitPrice: a.unitPrice,
+        lineAmount: (Number(a.unitPrice) * r.quantity).toFixed(2),
+      })),
     };
   });
 
@@ -192,6 +246,15 @@ router.post(
     const variantId = parsed.data.variantId ?? null;
     const fabricId = parsed.data.fabricId ?? null;
     const finishId = parsed.data.finishId ?? null;
+    // Requested add-on option ids (e.g. Marella privacy walls). Dedup + drop any
+    // non-positive ids; validated against the product below.
+    const requestedAddonIds = Array.from(
+      new Set(
+        (parsed.data.addonOptionIds ?? []).filter(
+          (id) => Number.isInteger(id) && id > 0,
+        ),
+      ),
+    );
     if (!Number.isInteger(productId) || productId <= 0) {
       res.status(400).json({ error: "Invalid productId" });
       return;
@@ -440,6 +503,8 @@ router.post(
     // Grade-mode line price (set when the selected fabric's grade maps to a
     // variant grade price). Falls back to base-price math when null.
     let gradeLinePrice: string | null = null;
+    // Canopy fabric grade (drives per_grade add-on pricing, e.g. Marella walls).
+    let canopyGrade: string | null = null;
     if (fabricId) {
       const [option] = await db
         .select({
@@ -482,6 +547,7 @@ router.post(
         return;
       }
 
+      canopyGrade = option.grade ?? null;
       if (isGradeMode) {
         // Frankford grade pricing: the selected fabric's grade picks the price
         // row. Stripe exclusion and min-order-qty come from the variant.
@@ -505,15 +571,36 @@ router.post(
       }
     }
 
-    // Minimum order quantity floor (grade-mode configurations only). The upsert
-    // sums quantities, so we only enforce that this single add meets the floor.
-    if (
-      isGradeMode &&
-      variantNotes?.minOrderQty != null &&
-      quantity < variantNotes.minOrderQty
-    ) {
+    // Minimum order quantity floor. Two independent sources can raise the floor:
+    //   1. the variant (grade-mode configurations, e.g. striped fabric), and
+    //   2. the selected frame finish (special finishes carry their own minimum).
+    // The effective floor is the larger of the two. The upsert sums quantities,
+    // so we only enforce that this single add meets the floor.
+    let effectiveMinQty: number | null =
+      isGradeMode && variantNotes?.minOrderQty != null
+        ? variantNotes.minOrderQty
+        : null;
+    if (finishId) {
+      const [finishOpt] = await db
+        .select({ minOrderQty: productFinishOptionsTable.minOrderQty })
+        .from(productFinishOptionsTable)
+        .where(
+          and(
+            eq(productFinishOptionsTable.productId, productId),
+            eq(productFinishOptionsTable.finishId, finishId),
+          ),
+        )
+        .limit(1);
+      if (finishOpt?.minOrderQty != null) {
+        effectiveMinQty =
+          effectiveMinQty == null
+            ? finishOpt.minOrderQty
+            : Math.max(effectiveMinQty, finishOpt.minOrderQty);
+      }
+    }
+    if (effectiveMinQty != null && quantity < effectiveMinQty) {
       res.status(400).json({
-        error: `This configuration has a minimum order quantity of ${variantNotes.minOrderQty}.`,
+        error: `This configuration has a minimum order quantity of ${effectiveMinQty}.`,
       });
       return;
     }
@@ -565,23 +652,168 @@ router.post(
       snapshotPrice = (Number(basePriceStr) + variantPriceAdj).toFixed(2);
     }
 
+    // -----------------------------------------------------------------------
+    // Resolve add-ons (e.g. Marella privacy walls). Build the final set of
+    // add-on option ids (with enforced pairing) and a per-unit price for each.
+    // -----------------------------------------------------------------------
+    const resolvedAddons: { addonOptionId: number; unitPrice: string }[] = [];
+    if (requestedAddonIds.length > 0) {
+      // Load every enabled add-on option for this product so we can validate
+      // the request and apply pairing entirely from server-side data.
+      const productAddons = await db
+        .select({
+          id: productAddonOptionsTable.id,
+          pricingMode: productAddonOptionsTable.pricingMode,
+          flatMsrp: productAddonOptionsTable.flatMsrp,
+          flatSalePrice: productAddonOptionsTable.flatSalePrice,
+          triggersPairing: productAddonOptionsTable.triggersPairing,
+          isPairingTarget: productAddonOptionsTable.isPairingTarget,
+        })
+        .from(productAddonOptionsTable)
+        .where(
+          and(
+            eq(productAddonOptionsTable.productId, productId),
+            eq(productAddonOptionsTable.enabled, true),
+          ),
+        );
+      const addonById = new Map(productAddons.map((a) => [a.id, a]));
+
+      // Every requested id must be an enabled add-on of this product.
+      for (const id of requestedAddonIds) {
+        if (!addonById.has(id)) {
+          res.status(400).json({
+            error: "Selected add-on is not offered for this product.",
+          });
+          return;
+        }
+      }
+
+      // Enforced pairing: if any selected add-on triggers pairing, every
+      // pairing-target add-on is auto-required and added to the line.
+      const finalIds = new Set(requestedAddonIds);
+      const anyTriggers = requestedAddonIds.some(
+        (id) => addonById.get(id)?.triggersPairing,
+      );
+      if (anyTriggers) {
+        for (const a of productAddons) {
+          if (a.isPairingTarget) finalIds.add(a.id);
+        }
+      }
+
+      // Resolve a per-unit price for each add-on. per_grade tracks the canopy
+      // fabric grade; flat uses the flat columns. sale>0 ? sale : msrp.
+      let gradePriceByAddon: Map<
+        number,
+        { msrp: string; salePrice: string }
+      > | null = null;
+      const perGradeIds = [...finalIds].filter(
+        (id) => addonById.get(id)?.pricingMode === "per_grade",
+      );
+      if (perGradeIds.length > 0) {
+        if (!canopyGrade) {
+          res.status(400).json({
+            error:
+              "Please choose a fabric before adding these add-ons; their price depends on the canopy fabric grade.",
+          });
+          return;
+        }
+        const gpRows = await db
+          .select({
+            addonOptionId: productAddonGradePricesTable.addonOptionId,
+            grade: productAddonGradePricesTable.grade,
+            msrp: productAddonGradePricesTable.msrp,
+            salePrice: productAddonGradePricesTable.salePrice,
+          })
+          .from(productAddonGradePricesTable)
+          .where(
+            and(
+              inArray(productAddonGradePricesTable.addonOptionId, perGradeIds),
+              eq(productAddonGradePricesTable.grade, canopyGrade),
+            ),
+          );
+        gradePriceByAddon = new Map(
+          gpRows.map((r) => [
+            r.addonOptionId,
+            { msrp: String(r.msrp), salePrice: String(r.salePrice) },
+          ]),
+        );
+      }
+
+      for (const id of finalIds) {
+        const a = addonById.get(id)!;
+        let unit: string | null = null;
+        if (a.pricingMode === "per_grade") {
+          const gp = gradePriceByAddon?.get(id);
+          if (!gp) {
+            res.status(400).json({
+              error:
+                "The selected add-on is not available for this fabric grade.",
+            });
+            return;
+          }
+          unit = Number(gp.salePrice) > 0 ? gp.salePrice : gp.msrp;
+        } else {
+          const flatSale = a.flatSalePrice;
+          const flatMsrp = a.flatMsrp;
+          if (flatSale != null && Number(flatSale) > 0) {
+            unit = String(flatSale);
+          } else if (flatMsrp != null && Number(flatMsrp) > 0) {
+            unit = String(flatMsrp);
+          }
+          if (unit == null) {
+            res
+              .status(400)
+              .json({ error: "The selected add-on has no price set." });
+            return;
+          }
+        }
+        resolvedAddons.push({ addonOptionId: id, unitPrice: unit });
+      }
+    }
+
+    // Signature dedups cart lines that differ only by their add-on set: two
+    // otherwise-identical Marella lines (same fabric/finish) with different
+    // walls remain separate rows.
+    const addonSignature = resolvedAddons
+      .map((a) => a.addonOptionId)
+      .sort((x, y) => x - y)
+      .join(",");
+
     await ensureSessionPersisted(req);
     const owner = ownerFor(req);
     const cart = await getOrCreateCart(owner);
 
-    // Atomic upsert against the partial unique index on
+    // Atomic upsert against the unique index on
     // (cart_id, product_id, COALESCE(variant_id,0), COALESCE(finish_id,0),
-    // COALESCE(fabric_id,0)) so concurrent adds of the same tuple merge into a
-    // single row instead of racing into duplicates.
-    await db.execute(sql`
-      INSERT INTO cart_items (cart_id, product_id, variant_id, finish_id, fabric_id, quantity, price)
-      VALUES (
-        ${cart.id}, ${productId}, ${variantId}, ${finishId}, ${fabricId},
-        ${quantity}, ${snapshotPrice}
-      )
-      ON CONFLICT (cart_id, product_id, (COALESCE(variant_id, 0)), (COALESCE(finish_id, 0)), (COALESCE(fabric_id, 0)))
-      DO UPDATE SET quantity = cart_items.quantity + EXCLUDED.quantity
-    `);
+    // COALESCE(fabric_id,0), addon_signature) so concurrent adds of the same
+    // tuple merge into a single row instead of racing into duplicates. The
+    // add-on rows are inserted in the same transaction so the line + its
+    // add-ons are always consistent.
+    await db.transaction(async (tx) => {
+      const result = await tx.execute<{ id: number }>(sql`
+        INSERT INTO cart_items (cart_id, product_id, variant_id, finish_id, fabric_id, quantity, price, addon_signature)
+        VALUES (
+          ${cart.id}, ${productId}, ${variantId}, ${finishId}, ${fabricId},
+          ${quantity}, ${snapshotPrice}, ${addonSignature}
+        )
+        ON CONFLICT (cart_id, product_id, (COALESCE(variant_id, 0)), (COALESCE(finish_id, 0)), (COALESCE(fabric_id, 0)), addon_signature)
+        DO UPDATE SET quantity = cart_items.quantity + EXCLUDED.quantity
+        RETURNING id
+      `);
+      const cartItemId = result.rows[0]?.id;
+      if (cartItemId && resolvedAddons.length > 0) {
+        await tx
+          .insert(cartItemAddonsTable)
+          .values(
+            resolvedAddons.map((a) => ({
+              cartItemId,
+              addonOptionId: a.addonOptionId,
+              unitPrice: a.unitPrice,
+            })),
+          )
+          .onConflictDoNothing();
+      }
+    });
 
     res.json(await loadCart(owner));
   },

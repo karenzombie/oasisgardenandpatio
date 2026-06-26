@@ -9,4 +9,9 @@
 export type AdminUpdateProductFinishesRequestUpchargesItem = {
   finishId: number;
   upchargeMsrp: string;
+  /**
+   * Minimum order quantity enforced when this finish is selected. Null clears the finish-driven minimum.
+   * @nullable
+   */
+  minOrderQty?: number | null;
 };

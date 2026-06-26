@@ -2422,6 +2422,60 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
+  /admin/products/{id}/addons:
+    get:
+      operationId: adminGetProductAddons
+      tags: [admin-products]
+      summary: Get a product's add-on options and per-grade prices
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Add-on configuration for the product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminProductAddonsConfig"
+        "404":
+          description: Product not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+    put:
+      operationId: adminUpdateProductAddons
+      tags: [admin-products]
+      summary: Replace a product's add-on options and per-grade prices
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUpdateProductAddonsRequest"
+      responses:
+        "200":
+          description: Updated configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminProductAddonsConfig"
+        "404":
+          description: Product not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
   /admin/finishes/{id}/products:
     get:
       operationId: adminListFinishProducts
@@ -5987,6 +6041,9 @@ components:
           type: integer
         isActive:
           type: boolean
+        finishMinQtyNote:
+          type: ["string", "null"]
+          description: Admin-editable note shown when a special (non-default) finish triggers a minimum order quantity.
         primaryImageUrl:
           type: ["string", "null"]
         imageCount:
@@ -6041,6 +6098,7 @@ components:
         - displayOrder
         - lowStockThreshold
         - isActive
+        - finishMinQtyNote
         - primaryImageUrl
         - imageCount
         - onHand
@@ -6330,6 +6388,9 @@ components:
           type: integer
         isActive:
           type: boolean
+        finishMinQtyNote:
+          type: ["string", "null"]
+          description: Admin-editable note shown when a special (non-default) finish triggers a minimum order quantity.
       required:
         - name
         - slug
@@ -6768,6 +6829,63 @@ components:
         - grade
         - msrp
         - salePrice
+    CatalogAddonOption:
+      type: object
+      description: >-
+        An optional add-on (e.g. privacy walls, replacement stem) for a
+        configurable product. Priced additively on top of the base product.
+        per_grade add-ons resolve their price from the selected canopy fabric's
+        grade; flat add-ons use flatMsrp/flatSalePrice.
+      properties:
+        id:
+          type: integer
+        sku:
+          type: string
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        imageUrl:
+          type: ["string", "null"]
+          description: Public URL of the add-on selector image, if any.
+        pricingMode:
+          type: string
+          enum: [per_grade, flat]
+        flatMsrp:
+          type: ["string", "null"]
+          description: Decimal MSRP for flat-priced add-ons. Null for per_grade add-ons.
+        flatSalePrice:
+          type: ["string", "null"]
+          description: Decimal sale price for flat-priced add-ons. Null for per_grade add-ons.
+        triggersPairing:
+          type: boolean
+          description: When true, selecting this add-on forces the pairing-target add-on to be added too (e.g. a wall requires the half curtains).
+        isPairingTarget:
+          type: boolean
+          description: When true, this add-on is auto-added and required whenever any triggersPairing add-on is selected.
+        enabled:
+          type: boolean
+        displayOrder:
+          type: integer
+        gradePrices:
+          type: array
+          description: Per-fabric-grade MSRP + sale price. Non-empty only when pricingMode is per_grade; the selected canopy fabric's grade picks the row.
+          items:
+            $ref: "#/components/schemas/CatalogVariantGradePrice"
+      required:
+        - id
+        - sku
+        - name
+        - description
+        - imageUrl
+        - pricingMode
+        - flatMsrp
+        - flatSalePrice
+        - triggersPairing
+        - isPairingTarget
+        - enabled
+        - displayOrder
+        - gradePrices
     CatalogFinishOption:
       type: object
       description: A discrete frame-finish choice for a grade-priced product (resolved from the product's finish pool/options).
@@ -6795,6 +6913,9 @@ components:
         upchargeSale:
           type: string
           description: Decimal customer-facing (discounted) frame upcharge for this finish ("0" for no upcharge).
+        minOrderQty:
+          type: ["integer", "null"]
+          description: Minimum order quantity enforced when this finish is selected (e.g. special-order finishes). Null means no finish-driven minimum.
       required:
         - id
         - code
@@ -6804,6 +6925,7 @@ components:
         - displayOrder
         - upchargeMsrp
         - upchargeSale
+        - minOrderQty
     CatalogFabricOption:
       type: object
       properties:
@@ -6936,6 +7058,14 @@ components:
               description: Discrete frame-finish choices for grade-priced products (3-step mode). Empty for legacy (variant-as-finish) products.
               items:
                 $ref: "#/components/schemas/CatalogFinishOption"
+            addonOptions:
+              type: array
+              description: Optional add-ons for this product (e.g. privacy walls, replacement stem). Priced additively on top of the base product. Empty when the product has no add-ons.
+              items:
+                $ref: "#/components/schemas/CatalogAddonOption"
+            finishMinQtyNote:
+              type: ["string", "null"]
+              description: Admin-editable note shown when a special (non-default) finish triggers a minimum order quantity.
           required:
             - description
             - materials
@@ -6949,6 +7079,8 @@ components:
             - fabricOptions
             - finishCollections
             - finishes
+            - addonOptions
+            - finishMinQtyNote
     WishlistItem:
       type: object
       properties:
@@ -7091,6 +7223,11 @@ components:
         fabricIsStripe:
           type: boolean
           description: True when the selected fabric is a stripe pattern (quantity must be ordered in even pairs).
+        addons:
+          type: array
+          description: Selected add-on lines for this cart item (e.g. privacy walls). Each carries its own per-unit price; lineTotal already includes them.
+          items:
+            $ref: "#/components/schemas/CartItemAddon"
       required:
         - id
         - productId
@@ -7111,6 +7248,29 @@ components:
         - fabricName
         - fabricItemNumber
         - fabricIsStripe
+        - addons
+    CartItemAddon:
+      type: object
+      description: A snapshot of one add-on attached to a cart line item.
+      properties:
+        addonOptionId:
+          type: integer
+        sku:
+          type: string
+        name:
+          type: string
+        unitPrice:
+          type: string
+          description: Per-unit add-on price snapshotted at add time.
+        lineAmount:
+          type: string
+          description: unitPrice multiplied by the cart line quantity.
+      required:
+        - addonOptionId
+        - sku
+        - name
+        - unitPrice
+        - lineAmount
     CartResponse:
       type: object
       properties:
@@ -7145,6 +7305,11 @@ components:
         finishId:
           type: ["integer", "null"]
           description: Selected frame-finish id for grade-priced (3-step) products.
+        addonOptionIds:
+          type: array
+          items:
+            type: integer
+          description: Selected add-on option IDs (e.g. privacy walls) to attach to this line. Pairing-required add-ons are auto-enforced server-side.
       required:
         - productId
     UpdateCartItemRequest:
@@ -7301,6 +7466,11 @@ components:
         finishSwatchImageUrl:
           type: ["string", "null"]
           description: Public URL of the chosen finish's swatch image, if any.
+        addons:
+          type: array
+          description: Add-on lines attached to this order line (snapshot at purchase). Empty when none.
+          items:
+            $ref: "#/components/schemas/AccountOrderLineAddon"
       required:
         - id
         - productId
@@ -7315,6 +7485,32 @@ components:
         - fabricItemNumber
         - swatchImageUrl
         - finishSwatchImageUrl
+        - addons
+    AccountOrderLineAddon:
+      type: object
+      description: A snapshot of one add-on attached to an order line item (immutable).
+      properties:
+        sku:
+          type: ["string", "null"]
+        name:
+          type: string
+        grade:
+          type: ["string", "null"]
+          description: Fabric grade used to price a per_grade add-on at purchase time, if applicable.
+        unitPrice:
+          type: string
+        quantity:
+          type: integer
+        amount:
+          type: string
+          description: unitPrice multiplied by quantity.
+      required:
+        - sku
+        - name
+        - grade
+        - unitPrice
+        - quantity
+        - amount
     AccountOrderDetail:
       type: object
       properties:
@@ -9316,10 +9512,14 @@ components:
         upchargeSale:
           type: string
           description: Server-derived discounted upcharge ("0" for none).
+        minOrderQty:
+          type: ["integer", "null"]
+          description: Minimum order quantity enforced when this finish is selected. Null means no finish-driven minimum.
       required:
         - finishId
         - upchargeMsrp
         - upchargeSale
+        - minOrderQty
     AdminUpdateProductFinishesRequest:
       type: object
       properties:
@@ -9344,12 +9544,135 @@ components:
                 type: integer
               upchargeMsrp:
                 type: string
+              minOrderQty:
+                type: ["integer", "null"]
+                description: Minimum order quantity enforced when this finish is selected. Null clears the finish-driven minimum.
             required:
               - finishId
               - upchargeMsrp
       required:
         - manufacturerIds
         - finishIds
+    AdminAddonGradePrice:
+      type: object
+      properties:
+        grade:
+          type: string
+        msrp:
+          type: string
+        salePrice:
+          type: string
+      required:
+        - grade
+        - msrp
+        - salePrice
+    AdminProductAddon:
+      type: object
+      description: An add-on option configured on a product (admin view).
+      properties:
+        id:
+          type: integer
+        sku:
+          type: string
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        imageUrl:
+          type: ["string", "null"]
+          description: Public URL of the add-on selector image, if any.
+        pricingMode:
+          type: string
+          enum: [per_grade, flat]
+        flatMsrp:
+          type: ["string", "null"]
+        flatSalePrice:
+          type: ["string", "null"]
+        triggersPairing:
+          type: boolean
+        isPairingTarget:
+          type: boolean
+        enabled:
+          type: boolean
+        displayOrder:
+          type: integer
+        gradePrices:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminAddonGradePrice"
+      required:
+        - id
+        - sku
+        - name
+        - description
+        - imageUrl
+        - pricingMode
+        - flatMsrp
+        - flatSalePrice
+        - triggersPairing
+        - isPairingTarget
+        - enabled
+        - displayOrder
+        - gradePrices
+    AdminProductAddonsConfig:
+      type: object
+      properties:
+        addons:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminProductAddon"
+      required:
+        - addons
+    AdminProductAddonInput:
+      type: object
+      description: One add-on to upsert on a product. Omit id to create; provide id to update in place.
+      properties:
+        id:
+          type: ["integer", "null"]
+        sku:
+          type: string
+          minLength: 1
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: ["string", "null"]
+        imageUrl:
+          type: ["string", "null"]
+          description: Raw object-storage path or null. Public URLs are normalized server-side.
+        pricingMode:
+          type: string
+          enum: [per_grade, flat]
+        flatMsrp:
+          type: ["string", "null"]
+        flatSalePrice:
+          type: ["string", "null"]
+        triggersPairing:
+          type: boolean
+        isPairingTarget:
+          type: boolean
+        enabled:
+          type: boolean
+        displayOrder:
+          type: integer
+        gradePrices:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminAddonGradePrice"
+      required:
+        - sku
+        - name
+        - pricingMode
+        - gradePrices
+    AdminUpdateProductAddonsRequest:
+      type: object
+      properties:
+        addons:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminProductAddonInput"
+      required:
+        - addons
     AdminProductAttribute:
       type: object
       properties:

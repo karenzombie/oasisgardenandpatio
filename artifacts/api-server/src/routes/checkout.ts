@@ -1,12 +1,14 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull } from "drizzle-orm";
 import {
   db,
   cartsTable,
   cartItemsTable,
+  cartItemAddonsTable,
   customersTable,
   ordersTable,
   orderItemsTable,
+  orderItemAddonsTable,
   orderStatusHistoryTable,
   addressesTable,
   productsTable,
@@ -14,6 +16,7 @@ import {
   productVariantsTable,
   finishesTable,
   variantGradePricesTable,
+  productAddonOptionsTable,
   manufacturersTable,
   type Customer,
 } from "@workspace/db";
@@ -269,6 +272,7 @@ router.post(
 
         const lines = await tx
           .select({
+            cartItemId: cartItemsTable.id,
             productId: productsTable.id,
             sku: productsTable.sku,
             name: productsTable.name,
@@ -343,10 +347,52 @@ router.post(
           };
         }
 
+        // Load add-on lines for each cart item (e.g. Marella privacy walls).
+        // Each add-on carries a per-unit price snapshot; its line amount is
+        // unitPrice * parent-line quantity. Add-on amounts are part of the
+        // order subtotal but are stored on order_item_addons, NOT folded into
+        // the parent order_items.amount (which stays base * qty).
+        const cartItemIds = lines.map((l) => l.cartItemId);
+        const addonLines = cartItemIds.length
+          ? await tx
+              .select({
+                cartItemId: cartItemAddonsTable.cartItemId,
+                addonOptionId: cartItemAddonsTable.addonOptionId,
+                unitPrice: cartItemAddonsTable.unitPrice,
+                sku: productAddonOptionsTable.sku,
+                name: productAddonOptionsTable.name,
+                pricingMode: productAddonOptionsTable.pricingMode,
+                displayOrder: productAddonOptionsTable.displayOrder,
+              })
+              .from(cartItemAddonsTable)
+              .innerJoin(
+                productAddonOptionsTable,
+                eq(
+                  productAddonOptionsTable.id,
+                  cartItemAddonsTable.addonOptionId,
+                ),
+              )
+              .where(inArray(cartItemAddonsTable.cartItemId, cartItemIds))
+              .orderBy(
+                asc(productAddonOptionsTable.displayOrder),
+                asc(cartItemAddonsTable.id),
+              )
+          : [];
+        const addonsByCartItem = new Map<number, typeof addonLines>();
+        for (const a of addonLines) {
+          const list = addonsByCartItem.get(a.cartItemId) ?? [];
+          list.push(a);
+          addonsByCartItem.set(a.cartItemId, list);
+        }
+
         let subtotalCents = 0;
         const lineCents = lines.map((l) => {
           const c = toCents(l.unitPrice) * l.quantity;
           subtotalCents += c;
+          const lineAddons = addonsByCartItem.get(l.cartItemId) ?? [];
+          for (const a of lineAddons) {
+            subtotalCents += toCents(a.unitPrice) * l.quantity;
+          }
           return c;
         });
         const shipping = computeShipping(
@@ -395,7 +441,9 @@ router.post(
 
         for (let i = 0; i < lines.length; i++) {
           const l = lines[i];
-          await tx.insert(orderItemsTable).values({
+          const [orderItem] = await tx
+            .insert(orderItemsTable)
+            .values({
             orderId: order.id,
             productId: l.productId,
             productSkuSnapshot: l.sku,
@@ -425,7 +473,29 @@ router.post(
                 : l.weight != null
                   ? String(l.weight)
                   : null,
-          });
+            })
+            .returning();
+
+          // Persist immutable add-on snapshots for this line. Amount = per-unit
+          // price * parent-line quantity; gradeSnapshot records the canopy grade
+          // used for per_grade add-ons (null for flat-priced add-ons).
+          const lineAddons = addonsByCartItem.get(l.cartItemId) ?? [];
+          if (lineAddons.length > 0) {
+            await tx.insert(orderItemAddonsTable).values(
+              lineAddons.map((a) => ({
+                orderItemId: orderItem.id,
+                addonOptionId: a.addonOptionId,
+                addonSkuSnapshot: a.sku,
+                addonNameSnapshot: a.name,
+                gradeSnapshot:
+                  a.pricingMode === "per_grade" ? l.fabricGrade : null,
+                unitMsrpSnapshot: null,
+                unitPriceSnapshot: String(a.unitPrice),
+                quantity: l.quantity,
+                amount: moneyFromCents(toCents(a.unitPrice) * l.quantity),
+              })),
+            );
+          }
         }
 
         await tx.insert(orderStatusHistoryTable).values({
@@ -499,6 +569,7 @@ router.post(
     if (cart) {
       const lines = await db
         .select({
+          cartItemId: cartItemsTable.id,
           quantity: cartItemsTable.quantity,
           unitPrice: cartItemsTable.price,
           weight: productsTable.weight,
@@ -514,8 +585,28 @@ router.post(
           eq(productVariantsTable.id, cartItemsTable.variantId),
         )
         .where(eq(cartItemsTable.cartId, cart.id));
+      // Fold add-on per-unit prices into the quoted subtotal so the estimate
+      // matches what checkout will charge.
+      const quoteItemIds = lines.map((l) => l.cartItemId);
+      const quoteAddonRows = quoteItemIds.length
+        ? await db
+            .select({
+              cartItemId: cartItemAddonsTable.cartItemId,
+              unitPrice: cartItemAddonsTable.unitPrice,
+            })
+            .from(cartItemAddonsTable)
+            .where(inArray(cartItemAddonsTable.cartItemId, quoteItemIds))
+        : [];
+      const quoteAddonUnitByItem = new Map<number, number>();
+      for (const a of quoteAddonRows) {
+        quoteAddonUnitByItem.set(
+          a.cartItemId,
+          (quoteAddonUnitByItem.get(a.cartItemId) ?? 0) + toCents(a.unitPrice),
+        );
+      }
       for (const l of lines) {
-        subtotalCents += toCents(l.unitPrice) * l.quantity;
+        const addonUnitCents = quoteAddonUnitByItem.get(l.cartItemId) ?? 0;
+        subtotalCents += (toCents(l.unitPrice) + addonUnitCents) * l.quantity;
       }
       lineInputs = lines.map((l) => ({
         weightLbs: l.weight == null ? null : Number(l.weight),

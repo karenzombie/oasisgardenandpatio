@@ -9,6 +9,7 @@ export * from "./productRecommendations";
 export * from "./productAttributes";
 export * from "./variants";
 export * from "./finishes";
+export * from "./addons";
 export * from "./sets";
 export * from "./inventoryAdjustments";
 export * from "./cart";

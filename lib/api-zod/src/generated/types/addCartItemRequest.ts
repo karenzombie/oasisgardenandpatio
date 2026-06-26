@@ -25,4 +25,6 @@ export interface AddCartItemRequest {
    * @nullable
    */
   finishId?: number | null;
+  /** Selected add-on option IDs (e.g. privacy walls) to attach to this line. Pairing-required add-ons are auto-enforced server-side. */
+  addonOptionIds?: number[];
 }

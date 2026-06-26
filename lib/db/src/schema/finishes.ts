@@ -164,6 +164,11 @@ export const productFinishOptionsTable = pgTable(
     upchargeSale: numeric("upcharge_sale", { precision: 10, scale: 2 })
       .notNull()
       .default("0"),
+    // Per-(product, finish) minimum order quantity. When set, picking this
+    // finish forces the line quantity to at least this value (e.g. Marella's
+    // non-Platinum frame finishes carry a "Minimum Order Quantity 5"). Null =
+    // no finish-driven minimum.
+    minOrderQty: integer("min_order_qty"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

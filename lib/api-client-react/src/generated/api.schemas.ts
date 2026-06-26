@@ -995,6 +995,11 @@ export interface AdminProduct {
   displayOrder: number;
   lowStockThreshold: number;
   isActive: boolean;
+  /**
+   * Admin-editable note shown when a special (non-default) finish triggers a minimum order quantity.
+   * @nullable
+   */
+  finishMinQtyNote: string | null;
   /** @nullable */
   primaryImageUrl: string | null;
   imageCount: number;
@@ -1210,6 +1215,11 @@ export interface UpdateProductRequest {
   displayOrder?: number;
   lowStockThreshold?: number;
   isActive?: boolean;
+  /**
+   * Admin-editable note shown when a special (non-default) finish triggers a minimum order quantity.
+   * @nullable
+   */
+  finishMinQtyNote?: string | null;
 }
 
 export interface AddProductImageRequest {
@@ -1477,6 +1487,49 @@ export interface CatalogProductVariant {
   excludeStripeFabrics: boolean;
 }
 
+export type CatalogAddonOptionPricingMode =
+  (typeof CatalogAddonOptionPricingMode)[keyof typeof CatalogAddonOptionPricingMode];
+
+export const CatalogAddonOptionPricingMode = {
+  per_grade: "per_grade",
+  flat: "flat",
+} as const;
+
+/**
+ * An optional add-on (e.g. privacy walls, replacement stem) for a configurable product. Priced additively on top of the base product. per_grade add-ons resolve their price from the selected canopy fabric's grade; flat add-ons use flatMsrp/flatSalePrice.
+ */
+export interface CatalogAddonOption {
+  id: number;
+  sku: string;
+  name: string;
+  /** @nullable */
+  description: string | null;
+  /**
+   * Public URL of the add-on selector image, if any.
+   * @nullable
+   */
+  imageUrl: string | null;
+  pricingMode: CatalogAddonOptionPricingMode;
+  /**
+   * Decimal MSRP for flat-priced add-ons. Null for per_grade add-ons.
+   * @nullable
+   */
+  flatMsrp: string | null;
+  /**
+   * Decimal sale price for flat-priced add-ons. Null for per_grade add-ons.
+   * @nullable
+   */
+  flatSalePrice: string | null;
+  /** When true, selecting this add-on forces the pairing-target add-on to be added too (e.g. a wall requires the half curtains). */
+  triggersPairing: boolean;
+  /** When true, this add-on is auto-added and required whenever any triggersPairing add-on is selected. */
+  isPairingTarget: boolean;
+  enabled: boolean;
+  displayOrder: number;
+  /** Per-fabric-grade MSRP + sale price. Non-empty only when pricingMode is per_grade; the selected canopy fabric's grade picks the row. */
+  gradePrices: CatalogVariantGradePrice[];
+}
+
 /**
  * A discrete frame-finish choice for a grade-priced product (resolved from the product's finish pool/options).
  */
@@ -1498,6 +1551,11 @@ export interface CatalogFinishOption {
   upchargeMsrp: string;
   /** Decimal customer-facing (discounted) frame upcharge for this finish ("0" for no upcharge). */
   upchargeSale: string;
+  /**
+   * Minimum order quantity enforced when this finish is selected (e.g. special-order finishes). Null means no finish-driven minimum.
+   * @nullable
+   */
+  minOrderQty: number | null;
 }
 
 export interface CatalogFabricOption {
@@ -1603,6 +1661,13 @@ export type CatalogProductDetail = CatalogProduct & {
   finishCollections: CatalogFinishCollection[];
   /** Discrete frame-finish choices for grade-priced products (3-step mode). Empty for legacy (variant-as-finish) products. */
   finishes: CatalogFinishOption[];
+  /** Optional add-ons for this product (e.g. privacy walls, replacement stem). Priced additively on top of the base product. Empty when the product has no add-ons. */
+  addonOptions: CatalogAddonOption[];
+  /**
+   * Admin-editable note shown when a special (non-default) finish triggers a minimum order quantity.
+   * @nullable
+   */
+  finishMinQtyNote: string | null;
 };
 
 export interface WishlistItem {
@@ -1660,6 +1725,19 @@ export interface RemoveWishlistItemRequest {
   deviceToken?: string | null;
 }
 
+/**
+ * A snapshot of one add-on attached to a cart line item.
+ */
+export interface CartItemAddon {
+  addonOptionId: number;
+  sku: string;
+  name: string;
+  /** Per-unit add-on price snapshotted at add time. */
+  unitPrice: string;
+  /** unitPrice multiplied by the cart line quantity. */
+  lineAmount: string;
+}
+
 export interface CartItem {
   id: number;
   productId: number;
@@ -1692,6 +1770,8 @@ export interface CartItem {
   fabricItemNumber: string | null;
   /** True when the selected fabric is a stripe pattern (quantity must be ordered in even pairs). */
   fabricIsStripe: boolean;
+  /** Selected add-on lines for this cart item (e.g. privacy walls). Each carries its own per-unit price; lineTotal already includes them. */
+  addons: CartItemAddon[];
 }
 
 export interface CartResponse {
@@ -1720,6 +1800,8 @@ export interface AddCartItemRequest {
    * @nullable
    */
   finishId?: number | null;
+  /** Selected add-on option IDs (e.g. privacy walls) to attach to this line. Pairing-required add-ons are auto-enforced server-side. */
+  addonOptionIds?: number[];
 }
 
 export interface UpdateCartItemRequest {
@@ -1786,6 +1868,24 @@ export interface AccountOrdersResponse {
   orders: AccountOrderSummary[];
 }
 
+/**
+ * A snapshot of one add-on attached to an order line item (immutable).
+ */
+export interface AccountOrderLineAddon {
+  /** @nullable */
+  sku: string | null;
+  name: string;
+  /**
+   * Fabric grade used to price a per_grade add-on at purchase time, if applicable.
+   * @nullable
+   */
+  grade: string | null;
+  unitPrice: string;
+  quantity: number;
+  /** unitPrice multiplied by quantity. */
+  amount: string;
+}
+
 export interface AccountOrderLine {
   id: number;
   /** @nullable */
@@ -1823,6 +1923,8 @@ export interface AccountOrderLine {
    * @nullable
    */
   finishSwatchImageUrl: string | null;
+  /** Add-on lines attached to this order line (snapshot at purchase). Empty when none. */
+  addons: AccountOrderLineAddon[];
 }
 
 export interface AccountOrderDetail {
@@ -4045,6 +4147,11 @@ export interface AdminProductFinishUpcharge {
   upchargeMsrp: string;
   /** Server-derived discounted upcharge ("0" for none). */
   upchargeSale: string;
+  /**
+   * Minimum order quantity enforced when this finish is selected. Null means no finish-driven minimum.
+   * @nullable
+   */
+  minOrderQty: number | null;
 }
 
 export interface AdminProductFinishesConfig {
@@ -4058,6 +4165,11 @@ export interface AdminProductFinishesConfig {
 export type AdminUpdateProductFinishesRequestUpchargesItem = {
   finishId: number;
   upchargeMsrp: string;
+  /**
+   * Minimum order quantity enforced when this finish is selected. Null clears the finish-driven minimum.
+   * @nullable
+   */
+  minOrderQty?: number | null;
 };
 
 export interface AdminUpdateProductFinishesRequest {
@@ -4067,6 +4179,91 @@ export interface AdminUpdateProductFinishesRequest {
   finishIds: number[];
   /** MSRP upcharge per individually-picked finish. The sale upcharge is derived server-side from the manufacturer's sale discount rate. Finishes omitted here default to a 0 upcharge. */
   upcharges?: AdminUpdateProductFinishesRequestUpchargesItem[];
+}
+
+export interface AdminAddonGradePrice {
+  grade: string;
+  msrp: string;
+  salePrice: string;
+}
+
+export type AdminProductAddonPricingMode =
+  (typeof AdminProductAddonPricingMode)[keyof typeof AdminProductAddonPricingMode];
+
+export const AdminProductAddonPricingMode = {
+  per_grade: "per_grade",
+  flat: "flat",
+} as const;
+
+/**
+ * An add-on option configured on a product (admin view).
+ */
+export interface AdminProductAddon {
+  id: number;
+  sku: string;
+  name: string;
+  /** @nullable */
+  description: string | null;
+  /**
+   * Public URL of the add-on selector image, if any.
+   * @nullable
+   */
+  imageUrl: string | null;
+  pricingMode: AdminProductAddonPricingMode;
+  /** @nullable */
+  flatMsrp: string | null;
+  /** @nullable */
+  flatSalePrice: string | null;
+  triggersPairing: boolean;
+  isPairingTarget: boolean;
+  enabled: boolean;
+  displayOrder: number;
+  gradePrices: AdminAddonGradePrice[];
+}
+
+export interface AdminProductAddonsConfig {
+  addons: AdminProductAddon[];
+}
+
+export type AdminProductAddonInputPricingMode =
+  (typeof AdminProductAddonInputPricingMode)[keyof typeof AdminProductAddonInputPricingMode];
+
+export const AdminProductAddonInputPricingMode = {
+  per_grade: "per_grade",
+  flat: "flat",
+} as const;
+
+/**
+ * One add-on to upsert on a product. Omit id to create; provide id to update in place.
+ */
+export interface AdminProductAddonInput {
+  /** @nullable */
+  id?: number | null;
+  /** @minLength 1 */
+  sku: string;
+  /** @minLength 1 */
+  name: string;
+  /** @nullable */
+  description?: string | null;
+  /**
+   * Raw object-storage path or null. Public URLs are normalized server-side.
+   * @nullable
+   */
+  imageUrl?: string | null;
+  pricingMode: AdminProductAddonInputPricingMode;
+  /** @nullable */
+  flatMsrp?: string | null;
+  /** @nullable */
+  flatSalePrice?: string | null;
+  triggersPairing?: boolean;
+  isPairingTarget?: boolean;
+  enabled?: boolean;
+  displayOrder?: number;
+  gradePrices: AdminAddonGradePrice[];
+}
+
+export interface AdminUpdateProductAddonsRequest {
+  addons: AdminProductAddonInput[];
 }
 
 export type AdminProductAttributeAttributeType =

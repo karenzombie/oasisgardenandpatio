@@ -74,6 +74,7 @@ import type {
   AdminOrderPayment,
   AdminOrderShipment,
   AdminProduct,
+  AdminProductAddonsConfig,
   AdminProductAttribute,
   AdminProductDetail,
   AdminProductFabricsConfig,
@@ -106,6 +107,7 @@ import type {
   AdminUpdateOrderShippingMethodRequest,
   AdminUpdateOrderTotalsRequest,
   AdminUpdatePaymentRequest,
+  AdminUpdateProductAddonsRequest,
   AdminUpdateProductAttributesRequest,
   AdminUpdateProductFabricsRequest,
   AdminUpdateProductFinishesRequest,
@@ -7786,6 +7788,188 @@ export const useAdminUpdateProductFinishes = <
   TContext
 > => {
   return useMutation(getAdminUpdateProductFinishesMutationOptions(options));
+};
+
+/**
+ * @summary Get a product's add-on options and per-grade prices
+ */
+export const getAdminGetProductAddonsUrl = (id: number) => {
+  return `/api/admin/products/${id}/addons`;
+};
+
+export const adminGetProductAddons = async (
+  id: number,
+  options?: RequestInit,
+): Promise<AdminProductAddonsConfig> => {
+  return customFetch<AdminProductAddonsConfig>(
+    getAdminGetProductAddonsUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getAdminGetProductAddonsQueryKey = (id: number) => {
+  return [`/api/admin/products/${id}/addons`] as const;
+};
+
+export const getAdminGetProductAddonsQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminGetProductAddons>>,
+  TError = ErrorType<Error>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminGetProductAddons>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getAdminGetProductAddonsQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminGetProductAddons>>
+  > = ({ signal }) => adminGetProductAddons(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetProductAddons>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminGetProductAddonsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminGetProductAddons>>
+>;
+export type AdminGetProductAddonsQueryError = ErrorType<Error>;
+
+/**
+ * @summary Get a product's add-on options and per-grade prices
+ */
+
+export function useAdminGetProductAddons<
+  TData = Awaited<ReturnType<typeof adminGetProductAddons>>,
+  TError = ErrorType<Error>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminGetProductAddons>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminGetProductAddonsQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Replace a product's add-on options and per-grade prices
+ */
+export const getAdminUpdateProductAddonsUrl = (id: number) => {
+  return `/api/admin/products/${id}/addons`;
+};
+
+export const adminUpdateProductAddons = async (
+  id: number,
+  adminUpdateProductAddonsRequest: AdminUpdateProductAddonsRequest,
+  options?: RequestInit,
+): Promise<AdminProductAddonsConfig> => {
+  return customFetch<AdminProductAddonsConfig>(
+    getAdminUpdateProductAddonsUrl(id),
+    {
+      ...options,
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(adminUpdateProductAddonsRequest),
+    },
+  );
+};
+
+export const getAdminUpdateProductAddonsMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateProductAddons>>,
+    TError,
+    { id: number; data: BodyType<AdminUpdateProductAddonsRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUpdateProductAddons>>,
+  TError,
+  { id: number; data: BodyType<AdminUpdateProductAddonsRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminUpdateProductAddons"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUpdateProductAddons>>,
+    { id: number; data: BodyType<AdminUpdateProductAddonsRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminUpdateProductAddons(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminUpdateProductAddonsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUpdateProductAddons>>
+>;
+export type AdminUpdateProductAddonsMutationBody =
+  BodyType<AdminUpdateProductAddonsRequest>;
+export type AdminUpdateProductAddonsMutationError = ErrorType<Error>;
+
+/**
+ * @summary Replace a product's add-on options and per-grade prices
+ */
+export const useAdminUpdateProductAddons = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateProductAddons>>,
+    TError,
+    { id: number; data: BodyType<AdminUpdateProductAddonsRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUpdateProductAddons>>,
+  TError,
+  { id: number; data: BodyType<AdminUpdateProductAddonsRequest> },
+  TContext
+> => {
+  return useMutation(getAdminUpdateProductAddonsMutationOptions(options));
 };
 
 /**

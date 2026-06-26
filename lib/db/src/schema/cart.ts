@@ -84,7 +84,15 @@ export const cartItemsTable = pgTable(
       onDelete: "set null",
     }),
     quantity: integer("quantity").notNull(),
+    // BASE per-unit price of the parent product line only (add-ons are priced
+    // separately in cart_item_addons). Line total = (price + sum(addon
+    // unitPrice)) * quantity.
     price: numeric("price", { precision: 10, scale: 2 }).notNull(),
+    // Stable signature of the attached add-on set: the selected add-on option
+    // ids sorted ascending and joined with "-" ("" = no add-ons). Part of the
+    // unique index so two otherwise-identical lines that differ only by their
+    // add-on selection don't collapse into one row on upsert.
+    addonSignature: text("addon_signature").notNull().default(""),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -101,6 +109,7 @@ export const cartItemsTable = pgTable(
       sql`COALESCE(${t.variantId}, 0)`,
       sql`COALESCE(${t.finishId}, 0)`,
       sql`COALESCE(${t.fabricId}, 0)`,
+      t.addonSignature,
     ),
     // Composite FKs mirror order_items: a cart can't hold a (product, variant)
     // pair where variant doesn't belong to product, or a fabric that isn't a

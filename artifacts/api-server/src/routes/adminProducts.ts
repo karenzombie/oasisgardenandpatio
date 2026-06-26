@@ -161,6 +161,7 @@ function toAdminPayload(r: ProductRow, materials: MaterialPayload[]) {
     displayOrder: r.displayOrder,
     lowStockThreshold: r.lowStockThreshold,
     isActive: r.isActive,
+    finishMinQtyNote: r.finishMinQtyNote,
     primaryImageUrl: toPublicImageUrl(r.primaryImageUrl),
     imageCount: r.imageCount,
     onHand: r.onHand,
@@ -245,6 +246,7 @@ function baseSelect() {
       featuredAt: productsTable.featuredAt,
       displayOrder: productsTable.displayOrder,
       lowStockThreshold: productsTable.lowStockThreshold,
+      finishMinQtyNote: productsTable.finishMinQtyNote,
       isActive: productsTable.isActive,
       createdAt: productsTable.createdAt,
       updatedAt: productsTable.updatedAt,
@@ -660,6 +662,9 @@ router.put(
               : {}),
             ...(body.data.isActive !== undefined
               ? { isActive: body.data.isActive }
+              : {}),
+            ...(body.data.finishMinQtyNote !== undefined
+              ? { finishMinQtyNote: body.data.finishMinQtyNote }
               : {}),
           })
           .where(eq(productsTable.id, params.data.id))

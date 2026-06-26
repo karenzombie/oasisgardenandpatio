@@ -36,6 +36,8 @@ import {
   useAdminUpdateProductAttributes,
   useAdminGetProductVariants,
   useAdminUpdateProductVariants,
+  useAdminGetProductAddons,
+  useAdminUpdateProductAddons,
   useAdminListHistory,
   getAdminGetProductQueryKey,
   getAdminListProductsQueryKey,
@@ -43,11 +45,13 @@ import {
   getAdminGetProductFinishesQueryKey,
   getAdminGetProductAttributesQueryKey,
   getAdminGetProductVariantsQueryKey,
+  getAdminGetProductAddonsQueryKey,
   type AdminProductImage,
   type AdminFabric,
   type AdminFinish,
   type AdminProductAttribute,
   type AdminProductVariant,
+  type AdminProductAddon,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -169,6 +173,8 @@ interface FormState {
   displayOrder: string;
   lowStockThreshold: string;
   isActive: boolean;
+  // Admin-editable note shown on the PDP when a finish-driven minimum applies.
+  finishMinQtyNote: string;
   // Inventory
   onHand: string;
   reorderThreshold: string;
@@ -214,6 +220,7 @@ function emptyForm(): FormState {
     displayOrder: "0",
     lowStockThreshold: "0",
     isActive: true,
+    finishMinQtyNote: "",
     onHand: "0",
     reorderThreshold: "0",
   };
@@ -268,6 +275,12 @@ export default function ProductEdit() {
       queryKey: getAdminGetProductVariantsQueryKey(productId ?? 0),
     },
   });
+  const addonsConfigQuery = useAdminGetProductAddons(productId ?? 0, {
+    query: {
+      enabled: !isNew && Number.isFinite(productId) && (productId ?? 0) > 0,
+      queryKey: getAdminGetProductAddonsQueryKey(productId ?? 0),
+    },
+  });
   const createMut = useAdminCreateProduct();
   const updateMut = useAdminUpdateProduct();
   const addImageMut = useAdminAddProductImage();
@@ -278,6 +291,7 @@ export default function ProductEdit() {
   const finishesMut = useAdminUpdateProductFinishes();
   const attributesMut = useAdminUpdateProductAttributes();
   const variantsMut = useAdminUpdateProductVariants();
+  const addonsMut = useAdminUpdateProductAddons();
 
   const [form, setForm] = useState<FormState>(emptyForm);
   const [error, setError] = useState<string | null>(null);
@@ -301,6 +315,11 @@ export default function ProductEdit() {
   const [finishUpcharges, setFinishUpcharges] = useState<
     Record<number, string>
   >({});
+  // Minimum order quantity enforced per individually-picked finish, keyed by
+  // finishId. Empty string means no finish-driven minimum.
+  const [finishMinQtys, setFinishMinQtys] = useState<Record<number, string>>(
+    {},
+  );
   const [expandedFinishMfgs, setExpandedFinishMfgs] = useState<Set<number>>(
     () => new Set(),
   );
@@ -338,6 +357,28 @@ export default function ProductEdit() {
   const [variants, setVariants] = useState<VariantDraft[]>([]);
   const [variantsHydrated, setVariantsHydrated] = useState(false);
 
+  // Add-on options (e.g. privacy walls, replacement stems). Each is either
+  // per-grade (priced off the canopy fabric grade) or flat. The full set is
+  // replaced on save. Stored as draft strings for controlled inputs.
+  type AddonGradePriceDraft = { grade: string; msrp: string; salePrice: string };
+  type AddonDraft = {
+    key: string;
+    id: number | null;
+    sku: string;
+    name: string;
+    description: string;
+    imageUrl: string | null;
+    pricingMode: "per_grade" | "flat";
+    flatMsrp: string;
+    flatSalePrice: string;
+    triggersPairing: boolean;
+    isPairingTarget: boolean;
+    enabled: boolean;
+    gradePrices: AddonGradePriceDraft[];
+  };
+  const [addons, setAddons] = useState<AddonDraft[]>([]);
+  const [addonsHydrated, setAddonsHydrated] = useState(false);
+
   // Reset hydration when the route param changes (router may reuse the
   // component when navigating between /products/A and /products/B), so the
   // form re-hydrates from the new product's data.
@@ -352,9 +393,12 @@ export default function ProductEdit() {
     setFinishPoolMfgIds([]);
     setPickedFinishIds([]);
     setFinishUpcharges({});
+    setFinishMinQtys({});
     setAttrs([]);
     setVariants([]);
     setVariantsHydrated(false);
+    setAddons([]);
+    setAddonsHydrated(false);
   }, [productId]);
 
   // Hydrate fabric + attribute state from server data once both queries land.
@@ -379,6 +423,13 @@ export default function ProductEdit() {
           finishesConfigQuery.data.upcharges
             .filter((u) => Number(u.upchargeMsrp) > 0)
             .map((u) => [u.finishId, String(Number(u.upchargeMsrp))]),
+        ),
+      );
+      setFinishMinQtys(
+        Object.fromEntries(
+          finishesConfigQuery.data.upcharges
+            .filter((u) => u.minOrderQty != null && u.minOrderQty > 1)
+            .map((u) => [u.finishId, String(u.minOrderQty)]),
         ),
       );
       setAttrs(
@@ -424,6 +475,36 @@ export default function ProductEdit() {
       setVariantsHydrated(true);
     }
   }, [variantsConfigQuery.data, isNew, variantsHydrated]);
+
+  // Hydrate add-on drafts from server data.
+  useEffect(() => {
+    if (!isNew && addonsConfigQuery.data && !addonsHydrated) {
+      setAddons(
+        addonsConfigQuery.data.addons.map(
+          (a: AdminProductAddon, i: number) => ({
+            key: `${a.id}-${i}`,
+            id: a.id,
+            sku: a.sku,
+            name: a.name,
+            description: a.description ?? "",
+            imageUrl: a.imageUrl,
+            pricingMode: a.pricingMode,
+            flatMsrp: a.flatMsrp ?? "",
+            flatSalePrice: a.flatSalePrice ?? "",
+            triggersPairing: a.triggersPairing,
+            isPairingTarget: a.isPairingTarget,
+            enabled: a.enabled,
+            gradePrices: a.gradePrices.map((g) => ({
+              grade: g.grade,
+              msrp: g.msrp,
+              salePrice: g.salePrice,
+            })),
+          }),
+        ),
+      );
+      setAddonsHydrated(true);
+    }
+  }, [addonsConfigQuery.data, isNew, addonsHydrated]);
 
   useEffect(() => {
     // Wait for all three queries to land before hydrating so the
@@ -478,6 +559,7 @@ export default function ProductEdit() {
         displayOrder: String(d.displayOrder),
         lowStockThreshold: String(d.lowStockThreshold),
         isActive: d.isActive,
+        finishMinQtyNote: d.finishMinQtyNote ?? "",
         onHand: String(d.inventory.onHand),
         reorderThreshold: String(d.inventory.reorderThreshold),
       });
@@ -669,6 +751,7 @@ export default function ProductEdit() {
       displayOrder,
       lowStockThreshold,
       isActive: form.isActive,
+      finishMinQtyNote: form.finishMinQtyNote.trim() || null,
     };
   }
 
@@ -777,6 +860,10 @@ export default function ProductEdit() {
                   (finishUpcharges[fid] ?? "").trim() === ""
                     ? "0"
                     : finishUpcharges[fid]!.trim(),
+                minOrderQty:
+                  (finishMinQtys[fid] ?? "").trim() === ""
+                    ? null
+                    : Number(finishMinQtys[fid]),
               })),
             },
           });
@@ -857,6 +944,53 @@ export default function ProductEdit() {
           );
         }
 
+        try {
+          await addonsMut.mutateAsync({
+            id: productId,
+            data: {
+              addons: addons.map((a, i) => ({
+                id: a.id,
+                sku: a.sku.trim(),
+                name: a.name.trim(),
+                description: a.description.trim() === "" ? null : a.description.trim(),
+                imageUrl: a.imageUrl,
+                pricingMode: a.pricingMode,
+                flatMsrp:
+                  a.pricingMode === "flat" && a.flatMsrp.trim() !== ""
+                    ? a.flatMsrp.trim()
+                    : null,
+                flatSalePrice:
+                  a.pricingMode === "flat" && a.flatSalePrice.trim() !== ""
+                    ? a.flatSalePrice.trim()
+                    : null,
+                triggersPairing: a.triggersPairing,
+                isPairingTarget: a.isPairingTarget,
+                enabled: a.enabled,
+                displayOrder: i,
+                gradePrices:
+                  a.pricingMode === "per_grade"
+                    ? a.gradePrices
+                        .filter(
+                          (g) =>
+                            g.grade.trim() !== "" &&
+                            g.msrp.trim() !== "" &&
+                            g.salePrice.trim() !== "",
+                        )
+                        .map((g) => ({
+                          grade: g.grade.trim(),
+                          msrp: g.msrp.trim(),
+                          salePrice: g.salePrice.trim(),
+                        }))
+                    : [],
+              })),
+            },
+          });
+        } catch (aErr) {
+          followUpFailures.push(
+            `Add-ons: ${aErr instanceof Error ? aErr.message : "failed"}`,
+          );
+        }
+
         if (followUpFailures.length === 0) {
           toast.toast({ title: "Product saved" });
         } else {
@@ -880,6 +1014,9 @@ export default function ProductEdit() {
         });
         await qc.invalidateQueries({
           queryKey: getAdminGetProductVariantsQueryKey(productId),
+        });
+        await qc.invalidateQueries({
+          queryKey: getAdminGetProductAddonsQueryKey(productId),
         });
       }
     } catch (err: unknown) {
@@ -2577,6 +2714,26 @@ export default function ProductEdit() {
                                           aria-label={`Frame upcharge for ${f.name}`}
                                           title="Frame MSRP upcharge for this finish"
                                         />
+                                        <span className="text-xs text-slate-400">
+                                          min
+                                        </span>
+                                        <input
+                                          type="number"
+                                          min="1"
+                                          step="1"
+                                          inputMode="numeric"
+                                          placeholder="—"
+                                          value={finishMinQtys[f.id] ?? ""}
+                                          onChange={(e) =>
+                                            setFinishMinQtys((cur) => ({
+                                              ...cur,
+                                              [f.id]: e.target.value,
+                                            }))
+                                          }
+                                          className="w-14 rounded border border-slate-300 px-1.5 py-0.5 text-xs text-right"
+                                          aria-label={`Minimum order quantity for ${f.name}`}
+                                          title="Minimum order quantity enforced when this finish is selected"
+                                        />
                                       </span>
                                     )}
                                   </label>
@@ -2588,6 +2745,403 @@ export default function ProductEdit() {
                       </div>
                     );
                   })}
+                </div>
+              )}
+              <div className="mt-6 border-t border-slate-200 pt-4">
+                <Label
+                  htmlFor="finishMinQtyNote"
+                  className="text-xs font-medium text-slate-700"
+                >
+                  Finish minimum-order note
+                </Label>
+                <p className="text-xs text-slate-500 mb-2">
+                  Shown on the product page when a finish-driven minimum applies.
+                </p>
+                <Input
+                  id="finishMinQtyNote"
+                  value={form.finishMinQtyNote}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, finishMinQtyNote: e.target.value }))
+                  }
+                  placeholder="Minimum order quantity of 5 for special finishes"
+                />
+              </div>
+            </section>
+          )}
+
+          {/* Add-on options (privacy walls, replacement stems, etc.) */}
+          {!isNew && (
+            <section className="bg-white border border-slate-200 rounded-md p-6">
+              <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-2">
+                Add-on options
+              </h3>
+              <p className="text-xs text-slate-500 mb-4">
+                Optional extras shown on the product page (e.g. privacy walls,
+                replacement parts). Per-grade add-ons price off the customer's
+                selected canopy fabric grade; flat add-ons use a fixed price.
+                Pairing: mark a wall as &ldquo;triggers pairing&rdquo; and the
+                half-curtains as the &ldquo;pairing target&rdquo; so selecting
+                the wall auto-includes the curtains.
+              </p>
+              {addonsConfigQuery.isLoading ? (
+                <p className="text-sm text-slate-500">Loading add-ons…</p>
+              ) : (
+                <div className="space-y-4">
+                  {addons.map((a, ai) => (
+                    <div
+                      key={a.key}
+                      className="border border-slate-200 rounded-md p-4"
+                    >
+                      <div className="flex items-start gap-3 mb-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1">
+                          <div>
+                            <Label className="text-xs">SKU</Label>
+                            <Input
+                              value={a.sku}
+                              onChange={(e) =>
+                                setAddons((cur) =>
+                                  cur.map((x, i) =>
+                                    i === ai ? { ...x, sku: e.target.value } : x,
+                                  ),
+                                )
+                              }
+                              placeholder="MLA-FW"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs">Name</Label>
+                            <Input
+                              value={a.name}
+                              onChange={(e) =>
+                                setAddons((cur) =>
+                                  cur.map((x, i) =>
+                                    i === ai ? { ...x, name: e.target.value } : x,
+                                  ),
+                                )
+                              }
+                              placeholder="Full Privacy Tension Wall"
+                            />
+                          </div>
+                          <div className="sm:col-span-2">
+                            <Label className="text-xs">Description</Label>
+                            <Textarea
+                              rows={2}
+                              value={a.description}
+                              onChange={(e) =>
+                                setAddons((cur) =>
+                                  cur.map((x, i) =>
+                                    i === ai
+                                      ? { ...x, description: e.target.value }
+                                      : x,
+                                  ),
+                                )
+                              }
+                            />
+                          </div>
+                          <div className="sm:col-span-2">
+                            <Label className="text-xs">
+                              Selector image URL (object-storage path)
+                            </Label>
+                            <Input
+                              value={a.imageUrl ?? ""}
+                              onChange={(e) =>
+                                setAddons((cur) =>
+                                  cur.map((x, i) =>
+                                    i === ai
+                                      ? {
+                                          ...x,
+                                          imageUrl:
+                                            e.target.value.trim() === ""
+                                              ? null
+                                              : e.target.value,
+                                        }
+                                      : x,
+                                  ),
+                                )
+                              }
+                              placeholder="/objects/addons/..."
+                            />
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setAddons((cur) => cur.filter((_, i) => i !== ai))
+                          }
+                          className="text-slate-400 hover:text-red-600 shrink-0"
+                          aria-label="Remove add-on"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-4 mb-3 text-sm">
+                        <label className="flex items-center gap-2">
+                          <span className="text-xs text-slate-600">
+                            Pricing mode
+                          </span>
+                          <Select
+                            value={a.pricingMode}
+                            onValueChange={(v) =>
+                              setAddons((cur) =>
+                                cur.map((x, i) =>
+                                  i === ai
+                                    ? {
+                                        ...x,
+                                        pricingMode: v as "per_grade" | "flat",
+                                      }
+                                    : x,
+                                ),
+                              )
+                            }
+                          >
+                            <SelectTrigger className="h-8 w-36">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="per_grade">Per grade</SelectItem>
+                              <SelectItem value="flat">Flat</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </label>
+                        <label className="flex items-center gap-2">
+                          <Switch
+                            checked={a.enabled}
+                            onCheckedChange={(v) =>
+                              setAddons((cur) =>
+                                cur.map((x, i) =>
+                                  i === ai ? { ...x, enabled: v } : x,
+                                ),
+                              )
+                            }
+                          />
+                          <span className="text-xs text-slate-600">Enabled</span>
+                        </label>
+                        <label className="flex items-center gap-2">
+                          <Switch
+                            checked={a.triggersPairing}
+                            onCheckedChange={(v) =>
+                              setAddons((cur) =>
+                                cur.map((x, i) =>
+                                  i === ai ? { ...x, triggersPairing: v } : x,
+                                ),
+                              )
+                            }
+                          />
+                          <span className="text-xs text-slate-600">
+                            Triggers pairing
+                          </span>
+                        </label>
+                        <label className="flex items-center gap-2">
+                          <Switch
+                            checked={a.isPairingTarget}
+                            onCheckedChange={(v) =>
+                              setAddons((cur) =>
+                                cur.map((x, i) =>
+                                  i === ai ? { ...x, isPairingTarget: v } : x,
+                                ),
+                              )
+                            }
+                          />
+                          <span className="text-xs text-slate-600">
+                            Pairing target
+                          </span>
+                        </label>
+                      </div>
+
+                      {a.pricingMode === "flat" ? (
+                        <div className="grid grid-cols-2 gap-3 max-w-xs">
+                          <div>
+                            <Label className="text-xs">Flat MSRP</Label>
+                            <Input
+                              value={a.flatMsrp}
+                              onChange={(e) =>
+                                setAddons((cur) =>
+                                  cur.map((x, i) =>
+                                    i === ai
+                                      ? { ...x, flatMsrp: e.target.value }
+                                      : x,
+                                  ),
+                                )
+                              }
+                              placeholder="216"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs">Flat sale price</Label>
+                            <Input
+                              value={a.flatSalePrice}
+                              onChange={(e) =>
+                                setAddons((cur) =>
+                                  cur.map((x, i) =>
+                                    i === ai
+                                      ? { ...x, flatSalePrice: e.target.value }
+                                      : x,
+                                  ),
+                                )
+                              }
+                              placeholder="195"
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <Label className="text-xs">Per-grade prices</Label>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setAddons((cur) =>
+                                  cur.map((x, i) =>
+                                    i === ai
+                                      ? {
+                                          ...x,
+                                          gradePrices: [
+                                            ...x.gradePrices,
+                                            { grade: "", msrp: "", salePrice: "" },
+                                          ],
+                                        }
+                                      : x,
+                                  ),
+                                )
+                              }
+                              className="text-xs text-primary hover:underline"
+                            >
+                              + Add grade
+                            </button>
+                          </div>
+                          <div className="space-y-2">
+                            {a.gradePrices.map((g, gi) => (
+                              <div
+                                key={gi}
+                                className="flex items-center gap-2 text-sm"
+                              >
+                                <input
+                                  value={g.grade}
+                                  onChange={(e) =>
+                                    setAddons((cur) =>
+                                      cur.map((x, i) =>
+                                        i === ai
+                                          ? {
+                                              ...x,
+                                              gradePrices: x.gradePrices.map(
+                                                (gg, j) =>
+                                                  j === gi
+                                                    ? { ...gg, grade: e.target.value }
+                                                    : gg,
+                                              ),
+                                            }
+                                          : x,
+                                      ),
+                                    )
+                                  }
+                                  placeholder="Grade"
+                                  className="w-20 rounded border border-slate-300 px-2 py-1 text-xs"
+                                  aria-label="Grade"
+                                />
+                                <input
+                                  value={g.msrp}
+                                  onChange={(e) =>
+                                    setAddons((cur) =>
+                                      cur.map((x, i) =>
+                                        i === ai
+                                          ? {
+                                              ...x,
+                                              gradePrices: x.gradePrices.map(
+                                                (gg, j) =>
+                                                  j === gi
+                                                    ? { ...gg, msrp: e.target.value }
+                                                    : gg,
+                                              ),
+                                            }
+                                          : x,
+                                      ),
+                                    )
+                                  }
+                                  placeholder="MSRP"
+                                  className="w-24 rounded border border-slate-300 px-2 py-1 text-xs text-right"
+                                  aria-label="Grade MSRP"
+                                />
+                                <input
+                                  value={g.salePrice}
+                                  onChange={(e) =>
+                                    setAddons((cur) =>
+                                      cur.map((x, i) =>
+                                        i === ai
+                                          ? {
+                                              ...x,
+                                              gradePrices: x.gradePrices.map(
+                                                (gg, j) =>
+                                                  j === gi
+                                                    ? {
+                                                        ...gg,
+                                                        salePrice: e.target.value,
+                                                      }
+                                                    : gg,
+                                              ),
+                                            }
+                                          : x,
+                                      ),
+                                    )
+                                  }
+                                  placeholder="Sale"
+                                  className="w-24 rounded border border-slate-300 px-2 py-1 text-xs text-right"
+                                  aria-label="Grade sale price"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setAddons((cur) =>
+                                      cur.map((x, i) =>
+                                        i === ai
+                                          ? {
+                                              ...x,
+                                              gradePrices: x.gradePrices.filter(
+                                                (_, j) => j !== gi,
+                                              ),
+                                            }
+                                          : x,
+                                      ),
+                                    )
+                                  }
+                                  className="text-slate-400 hover:text-red-600"
+                                  aria-label="Remove grade price"
+                                >
+                                  <X className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setAddons((cur) => [
+                        ...cur,
+                        {
+                          key: `new-${Date.now()}`,
+                          id: null,
+                          sku: "",
+                          name: "",
+                          description: "",
+                          imageUrl: null,
+                          pricingMode: "per_grade",
+                          flatMsrp: "",
+                          flatSalePrice: "",
+                          triggersPairing: false,
+                          isPairingTarget: false,
+                          enabled: true,
+                          gradePrices: [],
+                        },
+                      ])
+                    }
+                    className="text-sm text-primary hover:underline"
+                  >
+                    + Add add-on option
+                  </button>
                 </div>
               )}
             </section>

@@ -5,6 +5,7 @@
  * Oasis Garden & Patio API
  * OpenAPI spec version: 0.1.0
  */
+import type { AccountOrderLineAddon } from "./accountOrderLineAddon";
 
 export interface AccountOrderLine {
   id: number;
@@ -43,4 +44,6 @@ export interface AccountOrderLine {
    * @nullable
    */
   finishSwatchImageUrl: string | null;
+  /** Add-on lines attached to this order line (snapshot at purchase). Empty when none. */
+  addons: AccountOrderLineAddon[];
 }

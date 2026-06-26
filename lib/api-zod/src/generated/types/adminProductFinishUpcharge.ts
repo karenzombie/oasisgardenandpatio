@@ -12,4 +12,9 @@ export interface AdminProductFinishUpcharge {
   upchargeMsrp: string;
   /** Server-derived discounted upcharge ("0" for none). */
   upchargeSale: string;
+  /**
+   * Minimum order quantity enforced when this finish is selected. Null means no finish-driven minimum.
+   * @nullable
+   */
+  minOrderQty: number | null;
 }

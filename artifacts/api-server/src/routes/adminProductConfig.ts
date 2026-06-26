@@ -14,6 +14,8 @@ import {
   productAttributesTable,
   productVariantsTable,
   variantGradePricesTable,
+  productAddonOptionsTable,
+  productAddonGradePricesTable,
 } from "@workspace/db";
 import {
   AdminCreateFabricBody,
@@ -41,6 +43,9 @@ import {
   AdminGetProductVariantsParams,
   AdminUpdateProductVariantsParams,
   AdminUpdateProductVariantsBody,
+  AdminGetProductAddonsParams,
+  AdminUpdateProductAddonsParams,
+  AdminUpdateProductAddonsBody,
 } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import { recordHistory } from "../lib/history";
@@ -738,6 +743,7 @@ async function loadFinishesConfig(productId: number) {
       finishId: productFinishOptionsTable.finishId,
       upchargeMsrp: productFinishOptionsTable.upchargeMsrp,
       upchargeSale: productFinishOptionsTable.upchargeSale,
+      minOrderQty: productFinishOptionsTable.minOrderQty,
     })
     .from(productFinishOptionsTable)
     .where(eq(productFinishOptionsTable.productId, productId))
@@ -750,6 +756,7 @@ async function loadFinishesConfig(productId: number) {
       finishId: o.finishId,
       upchargeMsrp: String(o.upchargeMsrp ?? "0"),
       upchargeSale: String(o.upchargeSale ?? "0"),
+      minOrderQty: o.minOrderQty ?? null,
     })),
   };
 }
@@ -836,10 +843,20 @@ router.put(
     // MSRP upcharge per finish, keyed by finishId. Finishes without an entry
     // (or with a non-positive value) default to 0.
     const upchargeByFinishId = new Map<number, number>();
+    // Per-finish minimum order quantity (e.g. special finishes requiring a
+    // min-5 buy). Null/<=0 clears the floor for that finish.
+    const minOrderQtyByFinishId = new Map<number, number>();
     for (const u of upchargeInput) {
       const msrp = Number(u.upchargeMsrp);
       if (Number.isFinite(msrp) && msrp > 0) {
         upchargeByFinishId.set(u.finishId, msrp);
+      }
+      if (
+        u.minOrderQty != null &&
+        Number.isInteger(u.minOrderQty) &&
+        u.minOrderQty > 0
+      ) {
+        minOrderQtyByFinishId.set(u.finishId, u.minOrderQty);
       }
     }
     // Per spec, a non-zero upcharge with no manufacturer discount rate set is
@@ -905,6 +922,7 @@ router.put(
                   upchargeMsrp,
                   saleDiscountRate,
                 ),
+                minOrderQty: minOrderQtyByFinishId.get(fid) ?? null,
               };
             }),
           );
@@ -1709,6 +1727,271 @@ router.put(
     const newConfig = await loadVariantsConfig(productId);
     await recordHistory(req, {
       entityType: "product_variants",
+      entityId: productId,
+      changeType: "replace",
+      snapshot: newConfig,
+      previousSnapshot: previousConfig,
+    });
+    res.json(newConfig);
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Admin: product add-on options (e.g. Marella privacy walls). Fully editable —
+// option existence, names, images, pricing mode, per-grade prices, flat price,
+// pairing flags, enabled, and display order.
+// ---------------------------------------------------------------------------
+
+// Reverse of toPublicImageUrl: store the canonical /objects/... path even when
+// the client echoes back a /api/storage/objects/... public URL.
+function toRawImagePath(url: string | null | undefined): string | null {
+  if (!url) return null;
+  if (url.startsWith("/api/storage/objects/")) {
+    return url.slice("/api/storage".length);
+  }
+  return url;
+}
+
+async function loadAddonsConfig(productId: number) {
+  const addons = await db
+    .select({
+      id: productAddonOptionsTable.id,
+      sku: productAddonOptionsTable.sku,
+      name: productAddonOptionsTable.name,
+      description: productAddonOptionsTable.description,
+      imageUrl: productAddonOptionsTable.imageUrl,
+      pricingMode: productAddonOptionsTable.pricingMode,
+      flatMsrp: productAddonOptionsTable.flatMsrp,
+      flatSalePrice: productAddonOptionsTable.flatSalePrice,
+      triggersPairing: productAddonOptionsTable.triggersPairing,
+      isPairingTarget: productAddonOptionsTable.isPairingTarget,
+      enabled: productAddonOptionsTable.enabled,
+      displayOrder: productAddonOptionsTable.displayOrder,
+    })
+    .from(productAddonOptionsTable)
+    .where(eq(productAddonOptionsTable.productId, productId))
+    .orderBy(asc(productAddonOptionsTable.displayOrder));
+
+  const addonIds = addons.map((a) => a.id);
+  const gradeRows = addonIds.length
+    ? await db
+        .select({
+          addonOptionId: productAddonGradePricesTable.addonOptionId,
+          grade: productAddonGradePricesTable.grade,
+          msrp: productAddonGradePricesTable.msrp,
+          salePrice: productAddonGradePricesTable.salePrice,
+        })
+        .from(productAddonGradePricesTable)
+        .where(inArray(productAddonGradePricesTable.addonOptionId, addonIds))
+        .orderBy(asc(productAddonGradePricesTable.id))
+    : [];
+  const gradesByAddon = new Map<
+    number,
+    { grade: string; msrp: string; salePrice: string }[]
+  >();
+  for (const g of gradeRows) {
+    const list = gradesByAddon.get(g.addonOptionId) ?? [];
+    list.push({
+      grade: g.grade,
+      msrp: String(g.msrp),
+      salePrice: String(g.salePrice),
+    });
+    gradesByAddon.set(g.addonOptionId, list);
+  }
+
+  return {
+    addons: addons.map((a) => ({
+      id: a.id,
+      sku: a.sku,
+      name: a.name,
+      description: a.description ?? null,
+      imageUrl: toPublicImageUrl(a.imageUrl),
+      pricingMode: a.pricingMode,
+      flatMsrp: a.flatMsrp != null ? String(a.flatMsrp) : null,
+      flatSalePrice: a.flatSalePrice != null ? String(a.flatSalePrice) : null,
+      triggersPairing: a.triggersPairing,
+      isPairingTarget: a.isPairingTarget,
+      enabled: a.enabled,
+      displayOrder: a.displayOrder,
+      gradePrices: gradesByAddon.get(a.id) ?? [],
+    })),
+  };
+}
+
+router.get(
+  "/admin/products/:id/addons",
+  requireAuth,
+  requireRole("admin"),
+  async (req: Request, res: Response): Promise<void> => {
+    const params = AdminGetProductAddonsParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: "Invalid product id" });
+      return;
+    }
+    const product = await db
+      .select({ id: productsTable.id })
+      .from(productsTable)
+      .where(eq(productsTable.id, params.data.id))
+      .limit(1);
+    if (product.length === 0) {
+      res.status(404).json({ error: "Product not found" });
+      return;
+    }
+    res.json(await loadAddonsConfig(params.data.id));
+  },
+);
+
+router.put(
+  "/admin/products/:id/addons",
+  requireAuth,
+  requireRole("admin"),
+  async (req: Request, res: Response): Promise<void> => {
+    const params = AdminUpdateProductAddonsParams.safeParse(req.params);
+    const body = AdminUpdateProductAddonsBody.safeParse(req.body);
+    if (!params.success || !body.success) {
+      res.status(400).json({ error: "Invalid input" });
+      return;
+    }
+    const productId = params.data.id;
+    const inputs = body.data.addons;
+
+    const product = await db
+      .select({ id: productsTable.id })
+      .from(productsTable)
+      .where(eq(productsTable.id, productId))
+      .limit(1);
+    if (product.length === 0) {
+      res.status(404).json({ error: "Product not found" });
+      return;
+    }
+
+    // SKUs must be unique within the product (mirrors the DB unique index).
+    const skuSet = new Set<string>();
+    for (const a of inputs) {
+      const sku = a.sku.trim();
+      if (skuSet.has(sku)) {
+        res
+          .status(400)
+          .json({ error: `Duplicate add-on SKU in request: ${sku}` });
+        return;
+      }
+      skuSet.add(sku);
+      // per_grade add-ons price off grade rows; flat add-ons need a flat price.
+      if (a.pricingMode === "flat") {
+        const hasFlat =
+          (a.flatMsrp != null && a.flatMsrp.trim() !== "") ||
+          (a.flatSalePrice != null && a.flatSalePrice.trim() !== "");
+        if (!hasFlat) {
+          res.status(400).json({
+            error: `Flat add-on "${sku}" requires a flat price.`,
+          });
+          return;
+        }
+      }
+    }
+
+    const previousConfig = await loadAddonsConfig(productId);
+    try {
+      await db.transaction(async (tx) => {
+        const existing = await tx
+          .select({ id: productAddonOptionsTable.id })
+          .from(productAddonOptionsTable)
+          .where(eq(productAddonOptionsTable.productId, productId));
+        const existingIds = new Set(existing.map((e) => e.id));
+        const keptIds = new Set(
+          inputs
+            .map((a) => a.id)
+            .filter((id): id is number => id != null && existingIds.has(id)),
+        );
+
+        // Delete add-ons removed from the list. The cart FK is ON DELETE
+        // RESTRICT, so a delete fails if the option is still in a cart — the
+        // transaction rolls back rather than silently mutating a cart.
+        const toDelete = [...existingIds].filter((id) => !keptIds.has(id));
+        if (toDelete.length > 0) {
+          await tx
+            .delete(productAddonOptionsTable)
+            .where(inArray(productAddonOptionsTable.id, toDelete));
+        }
+
+        // Upsert each add-on in place (keyed on id) so existing cart references
+        // survive; create new ones when id is omitted.
+        for (let i = 0; i < inputs.length; i++) {
+          const a = inputs[i];
+          const values = {
+            sku: a.sku.trim(),
+            name: a.name.trim(),
+            description: a.description?.trim() ? a.description.trim() : null,
+            imageUrl: toRawImagePath(a.imageUrl),
+            pricingMode: a.pricingMode,
+            flatMsrp:
+              a.flatMsrp != null && a.flatMsrp.trim() !== ""
+                ? a.flatMsrp.trim()
+                : null,
+            flatSalePrice:
+              a.flatSalePrice != null && a.flatSalePrice.trim() !== ""
+                ? a.flatSalePrice.trim()
+                : null,
+            triggersPairing: a.triggersPairing ?? false,
+            isPairingTarget: a.isPairingTarget ?? false,
+            enabled: a.enabled ?? true,
+            displayOrder: a.displayOrder ?? i,
+          };
+
+          let addonId: number;
+          if (a.id != null && existingIds.has(a.id)) {
+            await tx
+              .update(productAddonOptionsTable)
+              .set(values)
+              .where(eq(productAddonOptionsTable.id, a.id));
+            addonId = a.id;
+            // Grade prices have no inbound cart FK, so replace them wholesale.
+            await tx
+              .delete(productAddonGradePricesTable)
+              .where(eq(productAddonGradePricesTable.addonOptionId, addonId));
+          } else {
+            const [row] = await tx
+              .insert(productAddonOptionsTable)
+              .values({ productId, ...values })
+              .returning({ id: productAddonOptionsTable.id });
+            addonId = row!.id;
+          }
+
+          if (a.pricingMode === "per_grade" && a.gradePrices.length > 0) {
+            await tx.insert(productAddonGradePricesTable).values(
+              a.gradePrices.map((g) => ({
+                addonOptionId: addonId,
+                grade: g.grade.trim(),
+                msrp: g.msrp,
+                salePrice: g.salePrice,
+              })),
+            );
+          }
+        }
+      });
+    } catch (err: unknown) {
+      const pgErr = err as { code?: string };
+      if (pgErr.code === "23505") {
+        res
+          .status(409)
+          .json({ error: "An add-on SKU is already in use for this product" });
+        return;
+      }
+      if (pgErr.code === "23503") {
+        res.status(409).json({
+          error:
+            "Cannot remove an add-on that is still in a customer's cart. Clear it from carts first.",
+        });
+        return;
+      }
+      req.log.error({ err }, "Failed to save product add-ons");
+      res.status(500).json({ error: "Failed to save product add-ons" });
+      return;
+    }
+
+    const newConfig = await loadAddonsConfig(productId);
+    await recordHistory(req, {
+      entityType: "product_addons",
       entityId: productId,
       changeType: "replace",
       snapshot: newConfig,

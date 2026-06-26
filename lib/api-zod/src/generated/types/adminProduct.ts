@@ -97,6 +97,11 @@ export interface AdminProduct {
   displayOrder: number;
   lowStockThreshold: number;
   isActive: boolean;
+  /**
+   * Admin-editable note shown when a special (non-default) finish triggers a minimum order quantity.
+   * @nullable
+   */
+  finishMinQtyNote: string | null;
   /** @nullable */
   primaryImageUrl: string | null;
   imageCount: number;

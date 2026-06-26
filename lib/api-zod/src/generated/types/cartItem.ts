@@ -5,6 +5,7 @@
  * Oasis Garden & Patio API
  * OpenAPI spec version: 0.1.0
  */
+import type { CartItemAddon } from "./cartItemAddon";
 
 export interface CartItem {
   id: number;
@@ -38,4 +39,6 @@ export interface CartItem {
   fabricItemNumber: string | null;
   /** True when the selected fabric is a stripe pattern (quantity must be ordered in even pairs). */
   fabricIsStripe: boolean;
+  /** Selected add-on lines for this cart item (e.g. privacy walls). Each carries its own per-unit price; lineTotal already includes them. */
+  addons: CartItemAddon[];
 }

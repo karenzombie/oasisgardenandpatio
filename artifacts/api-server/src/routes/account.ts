@@ -6,6 +6,7 @@ import {
   addressesTable,
   ordersTable,
   orderItemsTable,
+  orderItemAddonsTable,
   productsTable,
   fabricsTable,
   finishesTable,
@@ -370,6 +371,47 @@ router.get(
       .where(eq(orderItemsTable.orderId, order.id))
       .orderBy(orderItemsTable.id);
 
+    // Add-on snapshots attached to each order line (immutable at purchase time).
+    const orderItemIds = items.map((i) => i.id);
+    const addonRows = orderItemIds.length
+      ? await db
+          .select({
+            orderItemId: orderItemAddonsTable.orderItemId,
+            sku: orderItemAddonsTable.addonSkuSnapshot,
+            name: orderItemAddonsTable.addonNameSnapshot,
+            grade: orderItemAddonsTable.gradeSnapshot,
+            unitPrice: orderItemAddonsTable.unitPriceSnapshot,
+            quantity: orderItemAddonsTable.quantity,
+            amount: orderItemAddonsTable.amount,
+          })
+          .from(orderItemAddonsTable)
+          .where(inArray(orderItemAddonsTable.orderItemId, orderItemIds))
+          .orderBy(asc(orderItemAddonsTable.id))
+      : [];
+    const addonsByOrderItem = new Map<
+      number,
+      {
+        sku: string;
+        name: string;
+        grade: string | null;
+        unitPrice: string;
+        quantity: number;
+        amount: string;
+      }[]
+    >();
+    for (const a of addonRows) {
+      const list = addonsByOrderItem.get(a.orderItemId) ?? [];
+      list.push({
+        sku: a.sku,
+        name: a.name,
+        grade: a.grade ?? null,
+        unitPrice: String(a.unitPrice),
+        quantity: a.quantity,
+        amount: String(a.amount),
+      });
+      addonsByOrderItem.set(a.orderItemId, list);
+    }
+
     // Resolve finish swatch images. Finishes are a separate catalog entity; the
     // order item only snapshots the finish name, so match by manufacturer + name
     // (case-insensitive). Build one lookup keyed by "manufacturerId::lowername".
@@ -458,6 +500,7 @@ router.get(
           finishSwatchImageUrl: toPublicImageUrl(
             finishSwatchFor(i.manufacturerId, i.finishName),
           ),
+          addons: addonsByOrderItem.get(i.id) ?? [],
         })),
       }),
     );
