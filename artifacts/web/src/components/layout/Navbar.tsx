@@ -187,11 +187,16 @@ export function Navbar() {
           <div className="flex items-stretch gap-4 md:gap-6">
 
             {/* Logo — large on desktop, fills the full header height */}
-            <Link href="/" className="flex items-center shrink-0 z-50 py-3">
+            <Link
+              href="/"
+              aria-label="Oasis Garden & Patio — home"
+              className="flex items-center shrink-0 z-50 py-3 cursor-pointer select-none"
+            >
               <img
                 src={logoImg}
                 alt="Oasis Garden & Patio"
-                className={`w-auto object-contain transition-all duration-300 ${
+                draggable={false}
+                className={`w-auto object-contain select-none pointer-events-none transition-all duration-300 ${
                   isScrolled
                     ? "h-12 sm:h-14 md:h-16 lg:h-20"
                     : "h-14 sm:h-16 md:h-20 lg:h-24 xl:h-28"
