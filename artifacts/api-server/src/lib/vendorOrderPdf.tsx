@@ -56,6 +56,20 @@ const s = StyleSheet.create({
     textAlign: "center",
   },
 
+  /* ── Note to Vendor banner (top of doc, bold all-caps) ────────── */
+  noteToVendorBanner: {
+    border: `1.5px solid ${HEADER_BG}`,
+    backgroundColor: "#fff8e1",
+    padding: "6px 8px",
+    marginBottom: 8,
+  },
+  noteToVendorText: {
+    fontSize: 10,
+    fontFamily: "Helvetica-Bold",
+    letterSpacing: 0.5,
+    lineHeight: 1.3,
+  },
+
   /* ── PO meta grid ─────────────────────────────────────────────── */
   // Two-row meta: left half = PO Number / Date Ordered / Customer Order # /
   // Customer Name; right half = Freight / Terms. The long values
@@ -243,6 +257,9 @@ export interface VendorOrderPdfArgs {
   customerOrderNumber: string | null;
   customerName: string | null;
   notes: string | null;
+  // Staff-authored note to the vendor. Rendered in bold, ALL CAPS at the very
+  // top of the PO (above the header) so the manufacturer sees it first.
+  noteToVendor?: string | null;
   items: PdfVendorOrderItem[];
   manufacturerName: string | null;
   manufacturerAddressLine1: string | null;
@@ -449,6 +466,15 @@ function VendorOrderDocument(args: VendorOrderPdfArgs) {
   return (
     <Document>
       <Page size="LETTER" orientation="landscape" style={s.page}>
+        {/* ── Note to Vendor (bold, ALL CAPS, top of doc) ──────── */}
+        {args.noteToVendor && args.noteToVendor.trim() ? (
+          <View style={s.noteToVendorBanner}>
+            <Text style={s.noteToVendorText}>
+              {args.noteToVendor.toUpperCase()}
+            </Text>
+          </View>
+        ) : null}
+
         {/* ── Header ───────────────────────────────────────────── */}
         <View style={s.row}>
           {/* Left: branding + vendor + ship-to */}

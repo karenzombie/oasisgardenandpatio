@@ -62,6 +62,7 @@ export default function VendorOrderNew() {
 
   const [manufacturerId, setManufacturerId] = useState<string>("");
   const [notes, setNotes] = useState("");
+  const [noteToVendor, setNoteToVendor] = useState("");
   const [eta, setEta] = useState(""); // yyyy-mm-dd
   const [shipMode, setShipMode] = useState<"store" | "drop">("store");
   const [shipToName, setShipToName] = useState("");
@@ -143,6 +144,7 @@ export default function VendorOrderNew() {
         data: {
           manufacturerId: Number(manufacturerId),
           notes: notes.trim() || null,
+          noteToVendor: noteToVendor.trim() || null,
           vendorEstimatedDeliveryDate: eta
             ? new Date(eta).toISOString()
             : null,
@@ -229,6 +231,15 @@ export default function VendorOrderNew() {
                   onChange={(e) => setEta(e.target.value)}
                 />
               </div>
+            </div>
+            <div>
+              <Label className="text-xs">Note to Vendor</Label>
+              <Textarea
+                value={noteToVendor}
+                onChange={(e) => setNoteToVendor(e.target.value)}
+                rows={2}
+                placeholder="Message to the vendor — printed in bold, ALL CAPS at the top of the PO"
+              />
             </div>
             <div>
               <Label className="text-xs">Notes</Label>

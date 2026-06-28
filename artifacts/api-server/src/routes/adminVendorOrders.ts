@@ -235,6 +235,7 @@ router.post(
           manufacturerId: body.manufacturerId,
           status: "pending",
           notes: body.notes ?? null,
+          noteToVendor: body.noteToVendor ?? null,
           vendorEstimatedDeliveryDate: body.vendorEstimatedDeliveryDate
             ? new Date(body.vendorEstimatedDeliveryDate)
             : null,
@@ -471,6 +472,7 @@ async function loadVendorOrderDetail(id: number) {
     vendorOrderNumber: vo.vendorOrderNumber,
     status: vo.status,
     notes: vo.notes,
+    noteToVendor: vo.noteToVendor,
     vendorEstimatedDeliveryDate: vo.vendorEstimatedDeliveryDate
       ? vo.vendorEstimatedDeliveryDate.toISOString()
       : null,
@@ -622,6 +624,7 @@ router.get(
         customerOrderNumber: detail.customerOrderNumber,
         customerName: detail.customerName,
         notes: detail.notes,
+        noteToVendor: detail.noteToVendor,
         items: detail.items,
         manufacturerName: detail.manufacturerName,
         manufacturerAddressLine1: detail.manufacturerAddressLine1,
@@ -674,6 +677,8 @@ router.patch(
     const updates: Partial<VendorOrder> = {};
     if (body.data.notes !== undefined)
       updates.notes = body.data.notes ?? null;
+    if (body.data.noteToVendor !== undefined)
+      updates.noteToVendor = body.data.noteToVendor ?? null;
     if (body.data.vendorEstimatedDeliveryDate !== undefined) {
       updates.vendorEstimatedDeliveryDate = body.data.vendorEstimatedDeliveryDate
         ? new Date(body.data.vendorEstimatedDeliveryDate)
@@ -1091,6 +1096,7 @@ router.post(
           customerOrderNumber: detail.customerOrderNumber,
           customerName: detail.customerName,
           notes: detail.notes,
+          noteToVendor: detail.noteToVendor,
           items: detail.items,
           manufacturerName: detail.manufacturerName,
           manufacturerAddressLine1: detail.manufacturerAddressLine1,

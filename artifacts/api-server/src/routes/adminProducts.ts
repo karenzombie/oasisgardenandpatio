@@ -1082,6 +1082,7 @@ router.get(
             code: finishesTable.itemNumber,
             name: finishesTable.name,
             imageUrl: finishesTable.imageUrl,
+            description: finishesTable.description,
             displayOrder: finishesTable.displayOrder,
           })
           .from(finishesTable)
@@ -1098,7 +1099,11 @@ router.get(
         code: finishesTable.itemNumber,
         name: finishesTable.name,
         imageUrl: finishesTable.imageUrl,
+        description: finishesTable.description,
         displayOrder: productFinishOptionsTable.displayOrder,
+        upchargeMsrp: productFinishOptionsTable.upchargeMsrp,
+        upchargeSale: productFinishOptionsTable.upchargeSale,
+        minOrderQty: productFinishOptionsTable.minOrderQty,
       })
       .from(productFinishOptionsTable)
       .innerJoin(
@@ -1113,10 +1118,32 @@ router.get(
       );
     const finishByIdMap = new Map<
       number,
-      { id: number; code: string | null; name: string; imageUrl: string | null; displayOrder: number }
+      {
+        id: number;
+        code: string | null;
+        name: string;
+        imageUrl: string | null;
+        description: string | null;
+        displayOrder: number;
+        upchargeMsrp: string;
+        upchargeSale: string;
+        minOrderQty: number | null;
+      }
     >();
-    for (const f of [...pooledFinishRows, ...optionFinishRows]) {
+    // Explicitly-picked options carry per-product frame upcharges and win over
+    // pooled finishes (which never carry an upcharge) when a finish appears in
+    // both sets. Mirrors the customer by-slug route.
+    for (const f of optionFinishRows) {
       if (!finishByIdMap.has(f.id)) finishByIdMap.set(f.id, f);
+    }
+    for (const f of pooledFinishRows) {
+      if (!finishByIdMap.has(f.id))
+        finishByIdMap.set(f.id, {
+          ...f,
+          upchargeMsrp: "0",
+          upchargeSale: "0",
+          minOrderQty: null,
+        });
     }
     const discreteFinishes = [...finishByIdMap.values()].sort(
       (a, b) => a.displayOrder - b.displayOrder || a.name.localeCompare(b.name),
@@ -1137,8 +1164,12 @@ router.get(
         id: f.id,
         code: f.code ?? "",
         name: f.name,
+        description: f.description ?? null,
         swatchImageUrl: toPublicImageUrl(f.imageUrl),
         displayOrder: f.displayOrder,
+        upchargeMsrp: String(f.upchargeMsrp ?? "0"),
+        upchargeSale: String(f.upchargeSale ?? "0"),
+        minOrderQty: f.minOrderQty ?? null,
       })),
       fabricOptions: fabricRows.map((f) => ({
         id: f.id,

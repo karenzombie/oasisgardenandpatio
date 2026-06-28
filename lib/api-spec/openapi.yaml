@@ -5206,6 +5206,7 @@ components:
         vendorOrderNumber: { type: string }
         status: { type: string }
         notes: { type: string, nullable: true }
+        noteToVendor: { type: string, nullable: true }
         vendorEstimatedDeliveryDate: { type: string, format: date-time, nullable: true }
         sentAt: { type: string, format: date-time, nullable: true }
         acknowledgedAt: { type: string, format: date-time, nullable: true }
@@ -5250,7 +5251,7 @@ components:
           type: array
           items: { $ref: "#/components/schemas/AdminVendorOrderCancellation" }
       required:
-        [id, vendorOrderNumber, status, notes, vendorEstimatedDeliveryDate, sentAt, acknowledgedAt, fulfilledAt, receivedAt, receivedByUserId, receivedByEmail, itemsReceived, createdByUserId, createdByEmail, createdAt, updatedAt, manufacturerId, manufacturerName, manufacturerOrderEmail, manufacturerAddressLine1, manufacturerAddressLine2, manufacturerCity, manufacturerState, manufacturerPostalCode, manufacturerPhone, manufacturerFax, customerOrderId, customerOrderNumber, customerOrderStatus, customerName, shipToStore, shipToName, shipToLine1, shipToLine2, shipToCity, shipToState, shipToPostalCode, shipToPhone, items, sends, cancellations]
+        [id, vendorOrderNumber, status, notes, noteToVendor, vendorEstimatedDeliveryDate, sentAt, acknowledgedAt, fulfilledAt, receivedAt, receivedByUserId, receivedByEmail, itemsReceived, createdByUserId, createdByEmail, createdAt, updatedAt, manufacturerId, manufacturerName, manufacturerOrderEmail, manufacturerAddressLine1, manufacturerAddressLine2, manufacturerCity, manufacturerState, manufacturerPostalCode, manufacturerPhone, manufacturerFax, customerOrderId, customerOrderNumber, customerOrderStatus, customerName, shipToStore, shipToName, shipToLine1, shipToLine2, shipToCity, shipToState, shipToPostalCode, shipToPhone, items, sends, cancellations]
     CreateStandaloneVendorOrderItem:
       type: object
       properties:
@@ -5266,6 +5267,7 @@ components:
       properties:
         manufacturerId: { type: integer }
         notes: { type: string, nullable: true }
+        noteToVendor: { type: string, nullable: true }
         vendorEstimatedDeliveryDate: { type: string, format: date-time, nullable: true }
         shipToStore:
           type: boolean
@@ -5357,6 +5359,7 @@ components:
       type: object
       properties:
         notes: { type: string, nullable: true }
+        noteToVendor: { type: string, nullable: true }
         vendorEstimatedDeliveryDate: { type: string, format: date-time, nullable: true }
     AdminReportsRange:
       type: object

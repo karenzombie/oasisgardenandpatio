@@ -7784,6 +7784,7 @@ export const AdminCreateStandaloneVendorOrderBody = zod
   .object({
     manufacturerId: zod.number(),
     notes: zod.string().nullish(),
+    noteToVendor: zod.string().nullish(),
     vendorEstimatedDeliveryDate: zod.coerce.date().nullish(),
     shipToStore: zod
       .boolean()
@@ -7879,6 +7880,7 @@ export const AdminGetVendorOrderResponse = zod.object({
   vendorOrderNumber: zod.string(),
   status: zod.string(),
   notes: zod.string().nullable(),
+  noteToVendor: zod.string().nullable(),
   vendorEstimatedDeliveryDate: zod.coerce.date().nullable(),
   sentAt: zod.coerce.date().nullable(),
   acknowledgedAt: zod.coerce.date().nullable(),
@@ -7971,6 +7973,7 @@ export const AdminUpdateVendorOrderParams = zod.object({
 
 export const AdminUpdateVendorOrderBody = zod.object({
   notes: zod.string().nullish(),
+  noteToVendor: zod.string().nullish(),
   vendorEstimatedDeliveryDate: zod.coerce.date().nullish(),
 });
 
@@ -7979,6 +7982,7 @@ export const AdminUpdateVendorOrderResponse = zod.object({
   vendorOrderNumber: zod.string(),
   status: zod.string(),
   notes: zod.string().nullable(),
+  noteToVendor: zod.string().nullable(),
   vendorEstimatedDeliveryDate: zod.coerce.date().nullable(),
   sentAt: zod.coerce.date().nullable(),
   acknowledgedAt: zod.coerce.date().nullable(),
@@ -8174,6 +8178,7 @@ export const AdminSendVendorOrderResponse = zod.object({
   vendorOrderNumber: zod.string(),
   status: zod.string(),
   notes: zod.string().nullable(),
+  noteToVendor: zod.string().nullable(),
   vendorEstimatedDeliveryDate: zod.coerce.date().nullable(),
   sentAt: zod.coerce.date().nullable(),
   acknowledgedAt: zod.coerce.date().nullable(),
@@ -8274,6 +8279,7 @@ export const AdminUpdateVendorOrderStatusResponse = zod.object({
   vendorOrderNumber: zod.string(),
   status: zod.string(),
   notes: zod.string().nullable(),
+  noteToVendor: zod.string().nullable(),
   vendorEstimatedDeliveryDate: zod.coerce.date().nullable(),
   sentAt: zod.coerce.date().nullable(),
   acknowledgedAt: zod.coerce.date().nullable(),
@@ -8373,6 +8379,7 @@ export const AdminReceiveVendorOrderResponse = zod.object({
   vendorOrderNumber: zod.string(),
   status: zod.string(),
   notes: zod.string().nullable(),
+  noteToVendor: zod.string().nullable(),
   vendorEstimatedDeliveryDate: zod.coerce.date().nullable(),
   sentAt: zod.coerce.date().nullable(),
   acknowledgedAt: zod.coerce.date().nullable(),
@@ -8495,6 +8502,7 @@ export const AdminCancelVendorOrderResponse = zod.object({
   vendorOrderNumber: zod.string(),
   status: zod.string(),
   notes: zod.string().nullable(),
+  noteToVendor: zod.string().nullable(),
   vendorEstimatedDeliveryDate: zod.coerce.date().nullable(),
   sentAt: zod.coerce.date().nullable(),
   acknowledgedAt: zod.coerce.date().nullable(),

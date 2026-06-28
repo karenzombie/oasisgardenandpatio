@@ -14,6 +14,7 @@ export interface AdminVendorOrderDetail {
   vendorOrderNumber: string;
   status: string;
   notes: string | null;
+  noteToVendor: string | null;
   vendorEstimatedDeliveryDate: Date | null;
   sentAt: Date | null;
   acknowledgedAt: Date | null;

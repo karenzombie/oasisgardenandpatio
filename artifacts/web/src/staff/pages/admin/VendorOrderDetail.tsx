@@ -80,6 +80,7 @@ export default function VendorOrderDetail() {
   const vo: AdminVendorOrderDetail | undefined = detail.data;
 
   const [notesDraft, setNotesDraft] = useState("");
+  const [noteToVendorDraft, setNoteToVendorDraft] = useState("");
   const [etaDraft, setEtaDraft] = useState("");
   const [sendOpen, setSendOpen] = useState(false);
   const [sendEmail, setSendEmail] = useState("");
@@ -97,6 +98,7 @@ export default function VendorOrderDetail() {
   useEffect(() => {
     if (vo) {
       setNotesDraft(vo.notes ?? "");
+      setNoteToVendorDraft(vo.noteToVendor ?? "");
       setEtaDraft(isoToDateInput(vo.vendorEstimatedDeliveryDate));
     }
   }, [vo]);
@@ -137,7 +139,11 @@ export default function VendorOrderDetail() {
     update.mutate(
       {
         id,
-        data: { notes: notesDraft || null, vendorEstimatedDeliveryDate: etaIso },
+        data: {
+          notes: notesDraft || null,
+          noteToVendor: noteToVendorDraft || null,
+          vendorEstimatedDeliveryDate: etaIso,
+        },
       },
       {
         onSuccess: () => {
@@ -423,6 +429,19 @@ export default function VendorOrderDetail() {
                     disabled={isTerminal}
                   />
                 </div>
+              </div>
+              <div>
+                <Label htmlFor="vo-note-to-vendor" className="text-xs uppercase">
+                  Note to Vendor
+                </Label>
+                <Textarea
+                  id="vo-note-to-vendor"
+                  value={noteToVendorDraft}
+                  onChange={(e) => setNoteToVendorDraft(e.target.value)}
+                  placeholder="Message to the vendor — printed in bold, ALL CAPS at the top of the PO"
+                  disabled={isTerminal}
+                  rows={2}
+                />
               </div>
               <div>
                 <Label htmlFor="vo-notes" className="text-xs uppercase">

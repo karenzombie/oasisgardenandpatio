@@ -252,6 +252,7 @@ export interface AdminVendorOrderDetail {
   vendorOrderNumber: string;
   status: string;
   notes: string | null;
+  noteToVendor: string | null;
   vendorEstimatedDeliveryDate: string | null;
   sentAt: string | null;
   acknowledgedAt: string | null;
@@ -307,6 +308,7 @@ export interface CreateStandaloneVendorOrderItem {
 export interface CreateStandaloneVendorOrderRequest {
   manufacturerId: number;
   notes?: string | null;
+  noteToVendor?: string | null;
   vendorEstimatedDeliveryDate?: string | null;
   /** true = deliver to Oasis warehouse (receive will bump inventory). false = drop-ship to the supplied address. */
   shipToStore: boolean;
@@ -384,6 +386,7 @@ export interface CancelVendorOrderRequest {
 
 export interface UpdateVendorOrderRequest {
   notes?: string | null;
+  noteToVendor?: string | null;
   vendorEstimatedDeliveryDate?: string | null;
 }
 

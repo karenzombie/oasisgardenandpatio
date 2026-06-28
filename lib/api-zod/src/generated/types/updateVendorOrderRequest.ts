@@ -8,5 +8,6 @@
 
 export interface UpdateVendorOrderRequest {
   notes?: string | null;
+  noteToVendor?: string | null;
   vendorEstimatedDeliveryDate?: Date | null;
 }

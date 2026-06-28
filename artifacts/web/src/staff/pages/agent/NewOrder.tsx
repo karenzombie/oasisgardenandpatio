@@ -356,13 +356,14 @@ export default function AgentNewOrder() {
     fabric: CatalogFabricOption | null,
     finish: CatalogFinishOption | null,
     gradeUnitPrice: number | null,
+    unitPrice: number,
   ) {
-    // Grade-priced (3-step Frankford) products carry a precomputed unit price
-    // derived from the variant's per-grade MSRP/sale price. Legacy products
-    // fall back to base price + variant adjustment.
+    // The picker dialog computes the canonical per-unit price (grade price, or
+    // frame-only price, or base + variant adjustment, plus any frame-finish
+    // upcharge) and passes it in so the saved line always matches what staff
+    // saw. `gradeUnitPrice` is still used to flag grade mode for the grade
+    // snapshot and the manufacturer minimum order quantity.
     const isGradeMode = gradeUnitPrice != null;
-    const basePrice = Number(p.price) || 0;
-    const variantAdj = variant ? Number(variant.priceAdjustment) || 0 : 0;
     const description = [
       p.name,
       variant ? variant.name : null,
@@ -390,7 +391,7 @@ export default function AgentNewOrder() {
       fabricVendorId: null,
       description,
       quantity: minQty,
-      unitPrice: isGradeMode ? gradeUnitPrice : basePrice + variantAdj,
+      unitPrice,
       unitPriceOverridden: false,
     });
     setPickProductFor(null);
@@ -1260,9 +1261,17 @@ export default function AgentNewOrder() {
           open={pickProductFor !== null}
           initialProduct={pickProductFor?.preselect ?? null}
           onOpenChange={(v) => !v && setPickProductFor(null)}
-          onApply={(p, variant, fabric, finish, gradeUnitPrice) =>
+          onApply={(p, variant, fabric, finish, gradeUnitPrice, unitPrice) =>
             pickProductFor !== null &&
-            applyPickedProduct(pickProductFor.idx, p, variant, fabric, finish, gradeUnitPrice)
+            applyPickedProduct(
+              pickProductFor.idx,
+              p,
+              variant,
+              fabric,
+              finish,
+              gradeUnitPrice,
+              unitPrice,
+            )
           }
         />
         <SetPickerDialog
@@ -1331,6 +1340,7 @@ function ProductPickerDialog({
     fabric: CatalogFabricOption | null,
     finish: CatalogFinishOption | null,
     gradeUnitPrice: number | null,
+    unitPrice: number,
   ) => void;
 }) {
   const [searchInput, setSearchInput] = useState("");
@@ -1445,10 +1455,10 @@ function ProductPickerDialog({
   // Auto-select the single finish so staff aren't forced to click through a
   // one-option selector.
   useEffect(() => {
-    if (isGradeMode && finishes.length === 1 && !finishId) {
+    if (finishes.length === 1 && !finishId) {
       setFinishId(String(finishes[0].id));
     }
-  }, [isGradeMode, finishes, finishId]);
+  }, [finishes, finishId]);
 
   // Clear an invalid fabric whenever the configuration changes (the new
   // variant may not price the previously selected fabric's grade).
@@ -1467,7 +1477,10 @@ function ProductPickerDialog({
   const needsFabric = isGradeMode
     ? true
     : hasFabrics && (!supportsFrameOnly || includeFabric);
-  const needsFinish = isGradeMode && finishes.length > 0;
+  // Discrete frame finishes are surfaced whenever the product has them —
+  // grade-priced (Frankford) AND legacy products (e.g. OW Lee), matching the
+  // customer PDP, which never gates the finish picker on grade mode.
+  const needsFinish = finishes.length > 0;
 
   // Grade-mode unit price = selected fabric grade's sale price (if any) else MSRP.
   const gradeUnitPrice = useMemo(() => {
@@ -1507,16 +1520,26 @@ function ProductPickerDialog({
     const v = needsVariant ? variants.find((x) => String(x.id) === variantId) ?? null : null;
     const f = needsFabric ? fabricOptions.find((x) => String(x.id) === fabricId) ?? null : null;
     const fn = needsFinish ? finishes.find((x) => String(x.id) === finishId) ?? null : null;
-    onApply(picked, v, f, fn, isGradeMode ? gradeUnitPrice : null);
+    onApply(picked, v, f, fn, isGradeMode ? gradeUnitPrice : null, effectivePrice ?? 0);
   }
 
-  // For frame-only orders the unit price is frameOnlyPrice; otherwise normal.
-  // Grade mode shows the computed per-grade unit price once a fabric is picked.
-  const effectivePrice = isGradeMode
+  // Per-finish frame upcharge applies in both grade and legacy modes.
+  const finishUpcharge = selectedFinish
+    ? Number(selectedFinish.upchargeSale) || 0
+    : 0;
+
+  // Canonical per-unit price — shown in the dialog AND persisted to the order
+  // line so the two never disagree. Mirrors the customer PDP: grade price when
+  // grade-priced, else the frame-only price when frame-only is chosen, else the
+  // base price + variant adjustment — plus any frame-finish upcharge.
+  const baseEffectivePrice = isGradeMode
     ? gradeUnitPrice
     : supportsFrameOnly && !includeFabric && detail.data?.frameOnlyPrice
       ? Number(detail.data.frameOnlyPrice)
-      : picked?.price != null ? Number(picked.price) : null;
+      : (picked?.price != null ? Number(picked.price) : 0) +
+        (selectedVariant ? Number(selectedVariant.priceAdjustment) || 0 : 0);
+  const effectivePrice =
+    baseEffectivePrice != null ? baseEffectivePrice + finishUpcharge : null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -1623,7 +1646,8 @@ function ProductPickerDialog({
               </div>
             )}
 
-            {/* Frame finish — grade mode only. Single finish is read-only. */}
+            {/* Frame finish — shown whenever the product has discrete finishes
+                (grade and legacy). Single finish is read-only. */}
             {needsFinish && (
               <div>
                 <Label className="text-xs">Frame finish <span className="text-red-600">*</span></Label>
@@ -1637,16 +1661,25 @@ function ProductPickerDialog({
                       />
                     )}
                     <span>{finishes[0].name}</span>
+                    {Number(finishes[0].upchargeSale) > 0 && (
+                      <span className="text-xs text-slate-500">
+                        (+{fmtMoney(Number(finishes[0].upchargeSale))})
+                      </span>
+                    )}
                   </div>
                 ) : (
                   <Select value={finishId} onValueChange={setFinishId}>
                     <SelectTrigger><SelectValue placeholder="Pick a finish" /></SelectTrigger>
                     <SelectContent className="max-h-72">
-                      {finishes.map((fn) => (
-                        <SelectItem key={fn.id} value={String(fn.id)}>
-                          {fn.name}
-                        </SelectItem>
-                      ))}
+                      {finishes.map((fn) => {
+                        const up = Number(fn.upchargeSale) || 0;
+                        return (
+                          <SelectItem key={fn.id} value={String(fn.id)}>
+                            {fn.name}
+                            {up > 0 ? ` (+${fmtMoney(up)})` : ""}
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 )}

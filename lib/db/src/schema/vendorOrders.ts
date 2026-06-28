@@ -32,6 +32,11 @@ export const vendorOrdersTable = pgTable(
     ),
     status: text("status").notNull().default("pending"),
     notes: text("notes"),
+    // Staff-authored note addressed to the vendor. Distinct from `notes`
+    // (internal/PO-wide). Rendered in bold, ALL CAPS at the top of the
+    // vendor PO PDF so the manufacturer sees it first. Editable on any
+    // pending PO (incl. auto-generated) before it is printed/emailed.
+    noteToVendor: text("note_to_vendor"),
     // Ship-to override for standalone POs (and as an explicit override even
     // when a customer order is present). When customerOrderId IS NOT NULL,
     // null values here mean "inherit from the customer order". When it IS

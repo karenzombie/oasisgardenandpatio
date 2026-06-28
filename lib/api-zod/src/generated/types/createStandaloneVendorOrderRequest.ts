@@ -13,6 +13,7 @@ import type { CreateStandaloneVendorOrderItem } from "./createStandaloneVendorOr
 export interface CreateStandaloneVendorOrderRequest {
   manufacturerId: number;
   notes?: string | null;
+  noteToVendor?: string | null;
   vendorEstimatedDeliveryDate?: Date | null;
   /** true = deliver to Oasis warehouse (receive will bump inventory). false = drop-ship to the supplied address. */
   shipToStore: boolean;
