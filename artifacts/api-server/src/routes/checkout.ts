@@ -29,11 +29,12 @@ import {
 import { getOrCreateCustomer } from "./account";
 import { autoGenerateVendorOrders } from "../lib/autoGenerateVendorOrders";
 import { stripVentSuffix } from "../lib/variantSku";
+import { loadPricingSettings, computeTax } from "../lib/checkoutPricing";
 import {
-  loadPricingSettings,
-  computeShipping,
-  computeTax,
-} from "../lib/checkoutPricing";
+  loadShippingConfig,
+  computeShippingForLines,
+  type ShippableRuleLine,
+} from "../lib/shippingRules";
 
 const router: IRouter = Router();
 
@@ -247,6 +248,7 @@ router.post(
     }
 
     const pricingSettings = await loadPricingSettings();
+    const shippingConfig = await loadShippingConfig();
     const orderNumber = generateOrderNumber();
     const cartLookup = cartLookupFor(req);
 
@@ -276,6 +278,9 @@ router.post(
             productId: productsTable.id,
             sku: productsTable.sku,
             name: productsTable.name,
+            categoryId: productsTable.categoryId,
+            manufacturerId: productsTable.manufacturerId,
+            subCategory: productsTable.subCategory,
             quantity: cartItemsTable.quantity,
             unitPrice: cartItemsTable.price,
             weight: productsTable.weight,
@@ -396,19 +401,19 @@ router.post(
           }
           return c;
         });
-        const shipping = computeShipping(
-          subtotalCents,
-          shippingState,
-          lines.map((l) => ({
-            weightLbs: l.weight == null ? null : Number(l.weight),
-            quantity: l.quantity,
-            shippingSurchargeCents:
-              l.variantShippingSurcharge == null
-                ? 0
-                : Math.round(Number(l.variantShippingSurcharge) * 100),
-          })),
-          pricingSettings,
-          false,
+        const shippingEngineLines: ShippableRuleLine[] = lines.map((l) => ({
+          key: l.cartItemId,
+          productId: l.productId,
+          categoryId: l.categoryId,
+          subCategory: l.subCategory,
+          manufacturerId: l.manufacturerId,
+          unitPriceCents: toCents(l.unitPrice),
+          quantity: l.quantity,
+          weightLbs: l.weight == null ? null : Number(l.weight),
+        }));
+        const shipping = computeShippingForLines(
+          shippingConfig,
+          shippingEngineLines,
         );
         const tax = computeTax(
           subtotalCents,
@@ -416,7 +421,7 @@ router.post(
           shippingZip,
           pricingSettings,
         );
-        const shippingCents = shipping.cents;
+        const shippingCents = shipping.totalCents;
         const taxCents = tax.cents;
         const totalCents = subtotalCents + shippingCents + taxCents;
 
@@ -567,19 +572,18 @@ router.post(
     const cart = await loadCartForCheckout(cartLookupFor(req));
 
     let subtotalCents = 0;
-    let lineInputs: {
-      weightLbs: number | null;
-      quantity: number;
-      shippingSurchargeCents: number;
-    }[] = [];
+    let shippingEngineLines: ShippableRuleLine[] = [];
     if (cart) {
       const lines = await db
         .select({
           cartItemId: cartItemsTable.id,
+          productId: productsTable.id,
+          categoryId: productsTable.categoryId,
+          manufacturerId: productsTable.manufacturerId,
+          subCategory: productsTable.subCategory,
           quantity: cartItemsTable.quantity,
           unitPrice: cartItemsTable.price,
           weight: productsTable.weight,
-          variantShippingSurcharge: productVariantsTable.shippingSurcharge,
         })
         .from(cartItemsTable)
         .innerJoin(
@@ -616,40 +620,45 @@ router.post(
         const addonUnitCents = quoteAddonUnitByItem.get(l.cartItemId) ?? 0;
         subtotalCents += (toCents(l.unitPrice) + addonUnitCents) * l.quantity;
       }
-      lineInputs = lines.map((l) => ({
-        weightLbs: l.weight == null ? null : Number(l.weight),
+      shippingEngineLines = lines.map((l) => ({
+        key: l.cartItemId,
+        productId: l.productId,
+        categoryId: l.categoryId,
+        subCategory: l.subCategory,
+        manufacturerId: l.manufacturerId,
+        unitPriceCents: toCents(l.unitPrice),
         quantity: l.quantity,
-        shippingSurchargeCents:
-          l.variantShippingSurcharge == null
-            ? 0
-            : Math.round(Number(l.variantShippingSurcharge) * 100),
+        weightLbs: l.weight == null ? null : Number(l.weight),
       }));
     }
 
     const settings = await loadPricingSettings();
+    const shippingConfig = await loadShippingConfig();
     const state =
       parsed.data.state && parsed.data.state.trim()
         ? parsed.data.state.trim().toUpperCase()
         : null;
     const zip =
       parsed.data.zip && parsed.data.zip.trim() ? parsed.data.zip.trim() : null;
-    const shipping = computeShipping(subtotalCents, state, lineInputs, settings, false);
+    const shipping = computeShippingForLines(shippingConfig, shippingEngineLines);
     const tax = computeTax(subtotalCents, state, zip, settings);
-    const totalCents = subtotalCents + shipping.cents + tax.cents;
+    const totalCents = subtotalCents + shipping.totalCents + tax.cents;
+
+    const totalWeightLbs = shippingEngineLines.reduce(
+      (sum, l) => sum + (l.weightLbs == null ? 0 : l.weightLbs * l.quantity),
+      0,
+    );
 
     res.json(
       QuoteCheckoutResponse.parse({
         subtotal: moneyFromCents(subtotalCents),
-        shipping: moneyFromCents(shipping.cents),
+        shipping: moneyFromCents(shipping.totalCents),
+        shippingWeightAmount: moneyFromCents(shipping.weightCents),
         tax: moneyFromCents(tax.cents),
         total: moneyFromCents(totalCents),
-        shippingMode: settings.shippingMode,
-        freeShippingThresholdMet: shipping.freeShippingApplied,
         taxRate: tax.rate,
         taxJurisdiction: tax.jurisdiction,
-        shippingWeightLbs: shipping.weightLbs,
-        shippingZone: shipping.zone.zone,
-        shippingZoneLabel: shipping.zone.label,
+        shippingWeightLbs: totalWeightLbs,
       }),
     );
   },

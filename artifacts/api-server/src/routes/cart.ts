@@ -24,6 +24,11 @@ import {
   UpdateCartItemBody,
 } from "@workspace/api-zod";
 import { toPublicImageUrl } from "../lib/imageUrl";
+import {
+  loadShippingConfig,
+  computeShippingForLines,
+  type ShippableRuleLine,
+} from "../lib/shippingRules";
 
 const router: IRouter = Router();
 
@@ -103,6 +108,10 @@ async function loadCart(owner: CartOwner) {
       sku: productsTable.sku,
       manufacturerName: manufacturersTable.name,
       availableOnline: productsTable.availableOnline,
+      categoryId: productsTable.categoryId,
+      manufacturerId: productsTable.manufacturerId,
+      subCategory: productsTable.subCategory,
+      weight: productsTable.weight,
       unitPrice: cartItemsTable.price,
       quantity: cartItemsTable.quantity,
       variantId: cartItemsTable.variantId,
@@ -187,6 +196,22 @@ async function loadCart(owner: CartOwner) {
     addonsByItem.set(a.cartItemId, list);
   }
 
+  // Shipping is computed from the staff-managed Shipping rules (the single
+  // source of truth). Percentage rules apply to the base unit price × qty
+  // (add-ons excluded). Per-line amounts stack; the weight tier adds once.
+  const shippingConfig = await loadShippingConfig();
+  const shippingLines: ShippableRuleLine[] = rows.map((r) => ({
+    key: r.id,
+    productId: r.productId,
+    categoryId: r.categoryId,
+    subCategory: r.subCategory,
+    manufacturerId: r.manufacturerId,
+    unitPriceCents: Math.round(Number(r.unitPrice) * 100),
+    quantity: r.quantity,
+    weightLbs: r.weight == null ? null : Number(r.weight),
+  }));
+  const shippingResult = computeShippingForLines(shippingConfig, shippingLines);
+
   let itemCount = 0;
   let subtotal = 0;
   const items = rows.map((r) => {
@@ -198,11 +223,13 @@ async function loadCart(owner: CartOwner) {
     );
     const line = (Number(r.unitPrice) + addonUnitSum) * r.quantity;
     subtotal += line;
+    const shipCents = shippingResult.perLineCents.get(r.id) ?? 0;
     return {
       ...r,
       primaryImageUrl: toPublicImageUrl(r.primaryImageUrl),
       unitPrice: String(r.unitPrice),
       lineTotal: line.toFixed(2),
+      shippingAmount: (shipCents / 100).toFixed(2),
       addons: lineAddons.map((a) => ({
         addonOptionId: a.addonOptionId,
         sku: a.sku,
@@ -218,6 +245,8 @@ async function loadCart(owner: CartOwner) {
     items,
     itemCount,
     subtotal: subtotal.toFixed(2),
+    shipping: (shippingResult.totalCents / 100).toFixed(2),
+    shippingWeightAmount: (shippingResult.weightCents / 100).toFixed(2),
   });
 }
 

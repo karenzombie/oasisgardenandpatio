@@ -708,6 +708,143 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /admin/shipping/rules:
+    get:
+      operationId: adminListShippingRules
+      tags: [admin-shipping]
+      summary: List all shipping rate rules (areas A–D)
+      responses:
+        "200":
+          description: Shipping rules
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShippingRuleListResponse"
+    post:
+      operationId: adminCreateShippingRule
+      tags: [admin-shipping]
+      summary: Create a shipping rate rule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateShippingRuleRequest"
+      responses:
+        "201":
+          description: Created rule, with any SKUs that already had a rule (overlap)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateShippingRuleResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /admin/shipping/rules/{id}:
+    patch:
+      operationId: adminUpdateShippingRule
+      tags: [admin-shipping]
+      summary: Update a shipping rate rule
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateShippingRuleRequest"
+      responses:
+        "200":
+          description: Updated rule
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateShippingRuleResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: adminDeleteShippingRule
+      tags: [admin-shipping]
+      summary: Delete a shipping rate rule (also used for Undo)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /admin/shipping/weight-tiers:
+    get:
+      operationId: adminGetShippingWeightTiers
+      tags: [admin-shipping]
+      summary: Get the by-weight shipping tiers (area E)
+      responses:
+        "200":
+          description: Weight tiers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShippingWeightTiersResponse"
+    put:
+      operationId: adminUpdateShippingWeightTiers
+      tags: [admin-shipping]
+      summary: Update the by-weight shipping tier amounts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateShippingWeightTiersRequest"
+      responses:
+        "200":
+          description: Updated weight tiers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShippingWeightTiersResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /admin/shipping/subcategories:
+    get:
+      operationId: adminGetShippingSubcategories
+      tags: [admin-shipping]
+      summary: Distinct product sub-categories for a category (for the category-rule picker)
+      parameters:
+        - name: categoryId
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Sub-category names
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShippingSubcategoriesResponse"
   /cart:
     get:
       operationId: getCart
@@ -7207,6 +7344,9 @@ components:
           minimum: 1
         lineTotal:
           type: string
+        shippingAmount:
+          type: string
+          description: Per-item shipping for this line — the sum of all stacked shipping rules that match the product (flat × qty and/or % of line total). "0.00" when no rule matches.
         availableOnline:
           type: boolean
         variantId:
@@ -7242,6 +7382,7 @@ components:
         - unitPrice
         - quantity
         - lineTotal
+        - shippingAmount
         - availableOnline
         - variantId
         - variantName
@@ -7290,10 +7431,18 @@ components:
           description: Sum of quantities across all line items.
         subtotal:
           type: string
+        shipping:
+          type: string
+          description: Total shipping for the cart — sum of every line's stacked rules plus the matching by-weight tier. "0.00" when nothing matches. Replaces "Calculated at checkout".
+        shippingWeightAmount:
+          type: string
+          description: The order-level by-weight shipping tier amount included in shipping (Area E), in dollars.
       required:
         - items
         - itemCount
         - subtotal
+        - shipping
+        - shippingWeightAmount
     AddCartItemRequest:
       type: object
       properties:
@@ -7643,42 +7792,232 @@ components:
       type: object
       properties:
         subtotal: { type: string }
-        shipping: { type: string }
+        shipping:
+          type: string
+          description: Total shipping from the Shipping rules (stacked per-line rules + by-weight tier). Does not depend on the destination address.
+        shippingWeightAmount:
+          type: string
+          description: The by-weight tier amount included in shipping (Area E), in dollars.
         tax: { type: string }
         total: { type: string }
-        shippingMode:
-          type: string
-          enum: [flat, flat_per_item, percentage, free]
-        freeShippingThresholdMet: { type: boolean }
         taxRate:
           type: number
           minimum: 0
-          description: Decimal combined state+local tax rate applied (0 if shipping outside CA).
+          description: Decimal combined state+local tax rate applied (0 if shipping outside CA). Tax is on the merchandise subtotal only — shipping is never taxed.
         taxJurisdiction:
           type: string
           description: Human-readable label for the jurisdiction whose rate was applied.
         shippingWeightLbs:
           type: number
           minimum: 0
-          description: Total billable cart weight used to pick the shipping tier.
-        shippingZone:
-          type: string
-          description: Carrier zone code (Z1–Z6) derived from destination state.
-        shippingZoneLabel:
-          type: string
-          description: Human-readable name for the destination zone.
+          description: Total billable cart weight used to pick the by-weight tier.
       required:
         - subtotal
         - shipping
+        - shippingWeightAmount
         - tax
         - total
-        - shippingMode
-        - freeShippingThresholdMet
         - taxRate
         - taxJurisdiction
         - shippingWeightLbs
-        - shippingZone
-        - shippingZoneLabel
+    ShippingRuleProductRef:
+      type: object
+      properties:
+        productId:
+          type: integer
+        sku:
+          type: string
+        name:
+          type: string
+      required:
+        - productId
+        - sku
+        - name
+    ShippingRule:
+      type: object
+      properties:
+        id:
+          type: integer
+        scope:
+          type: string
+          enum: [site_wide, category, manufacturer, product]
+        rateType:
+          type: string
+          enum: [flat, percentage]
+        rateValue:
+          type: string
+          description: Dollars (flat) or percent (percentage), e.g. "50.00" or "10.00".
+        categoryId:
+          type: ["integer", "null"]
+        categoryName:
+          type: ["string", "null"]
+        subCategory:
+          type: ["string", "null"]
+        manufacturerId:
+          type: ["integer", "null"]
+        manufacturerName:
+          type: ["string", "null"]
+        label:
+          type: ["string", "null"]
+        isActive:
+          type: boolean
+        products:
+          type: array
+          description: Products covered by a scope=product rule.
+          items:
+            $ref: "#/components/schemas/ShippingRuleProductRef"
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - scope
+        - rateType
+        - rateValue
+        - categoryId
+        - categoryName
+        - subCategory
+        - manufacturerId
+        - manufacturerName
+        - label
+        - isActive
+        - products
+        - createdAt
+        - updatedAt
+    ShippingRuleListResponse:
+      type: object
+      properties:
+        rules:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShippingRule"
+      required:
+        - rules
+    CreateShippingRuleRequest:
+      type: object
+      properties:
+        scope:
+          type: string
+          enum: [site_wide, category, manufacturer, product]
+        rateType:
+          type: string
+          enum: [flat, percentage]
+        rateValue:
+          type: number
+          minimum: 0
+        categoryId:
+          type: ["integer", "null"]
+        subCategory:
+          type: ["string", "null"]
+        manufacturerId:
+          type: ["integer", "null"]
+        productIds:
+          type: array
+          items:
+            type: integer
+        label:
+          type: ["string", "null"]
+        isActive:
+          type: boolean
+          default: true
+      required:
+        - scope
+        - rateType
+        - rateValue
+    UpdateShippingRuleRequest:
+      type: object
+      properties:
+        rateType:
+          type: string
+          enum: [flat, percentage]
+        rateValue:
+          type: number
+          minimum: 0
+        categoryId:
+          type: ["integer", "null"]
+        subCategory:
+          type: ["string", "null"]
+        manufacturerId:
+          type: ["integer", "null"]
+        productIds:
+          type: array
+          items:
+            type: integer
+        label:
+          type: ["string", "null"]
+        isActive:
+          type: boolean
+    CreateShippingRuleResponse:
+      type: object
+      properties:
+        rule:
+          $ref: "#/components/schemas/ShippingRule"
+        conflictSkus:
+          type: array
+          description: SKUs covered by this rule that ALSO have at least one other active rule (shipping will stack). Drives the staff overlap toast.
+          items:
+            type: string
+      required:
+        - rule
+        - conflictSkus
+    ShippingWeightTier:
+      type: object
+      properties:
+        id:
+          type: integer
+        minWeight:
+          type: integer
+        maxWeight:
+          type: ["integer", "null"]
+          description: Null means no upper bound (the 501+ block).
+        amount:
+          type: string
+          description: Staff-set shipping charge in dollars for this weight block.
+        displayOrder:
+          type: integer
+      required:
+        - id
+        - minWeight
+        - maxWeight
+        - amount
+        - displayOrder
+    ShippingWeightTiersResponse:
+      type: object
+      properties:
+        tiers:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShippingWeightTier"
+      required:
+        - tiers
+    UpdateShippingWeightTiersRequest:
+      type: object
+      properties:
+        tiers:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              amount:
+                type: number
+                minimum: 0
+            required:
+              - id
+              - amount
+      required:
+        - tiers
+    ShippingSubcategoriesResponse:
+      type: object
+      properties:
+        subCategories:
+          type: array
+          items:
+            type: string
+      required:
+        - subCategories
     AdminUpdateOrderTotalsRequest:
       type: object
       description: At least one of deliveryAmount or taxAmount must be provided.

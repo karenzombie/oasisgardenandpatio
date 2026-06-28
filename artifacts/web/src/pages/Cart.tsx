@@ -52,9 +52,8 @@ export default function Cart() {
 
   const items = data?.items ?? [];
   const subtotal = Number(data?.subtotal ?? 0);
-  const shipping = 0;
-  const tax = 0;
-  const total = subtotal + shipping + tax;
+  const shipping = Number(data?.shipping ?? 0);
+  const total = subtotal + shipping;
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-6xl">
@@ -148,6 +147,9 @@ export default function Cart() {
                     </div>
                   ) : null}
                   <p className="text-sm mt-1">{formatMoney(item.unitPrice)} each</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Shipping: {formatMoney(item.shippingAmount)}
+                  </p>
                   <div className="mt-3 flex items-center gap-3">
                     <div className="inline-flex items-center border border-input">
                       <button
@@ -222,7 +224,7 @@ export default function Cart() {
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Shipping</dt>
-                  <dd className="text-muted-foreground">Calculated at checkout</dd>
+                  <dd>{formatMoney(String(shipping))}</dd>
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Tax</dt>

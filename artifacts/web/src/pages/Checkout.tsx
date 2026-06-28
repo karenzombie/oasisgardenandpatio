@@ -219,7 +219,11 @@ export default function Checkout() {
     confirmedQuote.key.zip === shippingZip &&
     confirmedQuote.key.subtotal === String(cart?.subtotal ?? "");
   const quote = quoteFresh ? confirmedQuote!.data : null;
-  const shippingNum = quote ? Number(quote.shipping) : 0;
+  // Shipping comes from the staff-managed Shipping rules and does NOT depend on
+  // the destination address, so it's available straight from the cart even
+  // before a tax quote resolves.
+  const cartShipping = Number(cart?.shipping ?? 0);
+  const shippingNum = quote ? Number(quote.shipping) : cartShipping;
   const taxNum = quote ? Number(quote.tax) : 0;
   const totalNum = quote
     ? Number(quote.total)
@@ -516,8 +520,8 @@ export default function Checkout() {
                 <p className="font-medium">Standard Delivery</p>
                 <p className="text-muted-foreground">
                   White-glove scheduling provided after order placement.
-                  {quote?.freeShippingThresholdMet
-                    ? " Your order qualifies for complimentary shipping."
+                  {shippingNum === 0
+                    ? " Your order ships free."
                     : ""}
                 </p>
               </div>
@@ -579,6 +583,9 @@ export default function Checkout() {
                     <p className="text-xs text-muted-foreground">
                       Qty {item.quantity}
                     </p>
+                    <p className="text-xs text-muted-foreground">
+                      Shipping: {formatMoney(item.shippingAmount)}
+                    </p>
                   </div>
                   <span className="shrink-0">{formatMoney(item.lineTotal)}</span>
                 </li>
@@ -591,15 +598,7 @@ export default function Checkout() {
               </div>
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">Shipping</dt>
-                <dd>
-                  {!shippingState
-                    ? "Enter address"
-                    : !quoteFresh
-                      ? "Calculating…"
-                      : shippingNum === 0
-                        ? "Free"
-                        : formatMoney(shippingNum)}
-                </dd>
+                <dd>{shippingNum === 0 ? "Free" : formatMoney(shippingNum)}</dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">
@@ -618,9 +617,9 @@ export default function Checkout() {
               </div>
               {quote && shippingState ? (
                 <p className="text-[11px] text-muted-foreground">
-                  {quote.taxJurisdiction} · ships {quote.shippingZoneLabel}
+                  {quote.taxJurisdiction}
                   {quote.shippingWeightLbs > 0
-                    ? ` (${quote.shippingWeightLbs.toFixed(1)} lb)`
+                    ? ` · ${quote.shippingWeightLbs.toFixed(1)} lb`
                     : ""}
                 </p>
               ) : null}

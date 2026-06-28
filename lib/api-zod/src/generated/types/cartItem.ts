@@ -22,6 +22,8 @@ export interface CartItem {
   /** @minimum 1 */
   quantity: number;
   lineTotal: string;
+  /** Per-item shipping for this line — the sum of all stacked shipping rules that match the product (flat × qty and/or % of line total). "0.00" when no rule matches. */
+  shippingAmount: string;
   availableOnline: boolean;
   /** @nullable */
   variantId: number | null;

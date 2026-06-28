@@ -5,29 +5,25 @@
  * Oasis Garden & Patio API
  * OpenAPI spec version: 0.1.0
  */
-import type { CheckoutQuoteResponseShippingMode } from "./checkoutQuoteResponseShippingMode";
 
 export interface CheckoutQuoteResponse {
   subtotal: string;
+  /** Total shipping from the Shipping rules (stacked per-line rules + by-weight tier). Does not depend on the destination address. */
   shipping: string;
+  /** The by-weight tier amount included in shipping (Area E), in dollars. */
+  shippingWeightAmount: string;
   tax: string;
   total: string;
-  shippingMode: CheckoutQuoteResponseShippingMode;
-  freeShippingThresholdMet: boolean;
   /**
-   * Decimal combined state+local tax rate applied (0 if shipping outside CA).
+   * Decimal combined state+local tax rate applied (0 if shipping outside CA). Tax is on the merchandise subtotal only — shipping is never taxed.
    * @minimum 0
    */
   taxRate: number;
   /** Human-readable label for the jurisdiction whose rate was applied. */
   taxJurisdiction: string;
   /**
-   * Total billable cart weight used to pick the shipping tier.
+   * Total billable cart weight used to pick the by-weight tier.
    * @minimum 0
    */
   shippingWeightLbs: number;
-  /** Carrier zone code (Z1–Z6) derived from destination state. */
-  shippingZone: string;
-  /** Human-readable name for the destination zone. */
-  shippingZoneLabel: string;
 }

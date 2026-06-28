@@ -1758,6 +1758,8 @@ export interface CartItem {
   /** @minimum 1 */
   quantity: number;
   lineTotal: string;
+  /** Per-item shipping for this line — the sum of all stacked shipping rules that match the product (flat × qty and/or % of line total). "0.00" when no rule matches. */
+  shippingAmount: string;
   availableOnline: boolean;
   /** @nullable */
   variantId: number | null;
@@ -1784,6 +1786,10 @@ export interface CartResponse {
   /** Sum of quantities across all line items. */
   itemCount: number;
   subtotal: string;
+  /** Total shipping for the cart — sum of every line's stacked rules plus the matching by-weight tier. "0.00" when nothing matches. Replaces "Calculated at checkout". */
+  shipping: string;
+  /** The order-level by-weight shipping tier amount included in shipping (Area E), in dollars. */
+  shippingWeightAmount: string;
 }
 
 export interface AddCartItemRequest {
@@ -1995,39 +2001,175 @@ export interface CheckoutQuoteRequest {
   zip?: string | null;
 }
 
-export type CheckoutQuoteResponseShippingMode =
-  (typeof CheckoutQuoteResponseShippingMode)[keyof typeof CheckoutQuoteResponseShippingMode];
-
-export const CheckoutQuoteResponseShippingMode = {
-  flat: "flat",
-  flat_per_item: "flat_per_item",
-  percentage: "percentage",
-  free: "free",
-} as const;
-
 export interface CheckoutQuoteResponse {
   subtotal: string;
+  /** Total shipping from the Shipping rules (stacked per-line rules + by-weight tier). Does not depend on the destination address. */
   shipping: string;
+  /** The by-weight tier amount included in shipping (Area E), in dollars. */
+  shippingWeightAmount: string;
   tax: string;
   total: string;
-  shippingMode: CheckoutQuoteResponseShippingMode;
-  freeShippingThresholdMet: boolean;
   /**
-   * Decimal combined state+local tax rate applied (0 if shipping outside CA).
+   * Decimal combined state+local tax rate applied (0 if shipping outside CA). Tax is on the merchandise subtotal only — shipping is never taxed.
    * @minimum 0
    */
   taxRate: number;
   /** Human-readable label for the jurisdiction whose rate was applied. */
   taxJurisdiction: string;
   /**
-   * Total billable cart weight used to pick the shipping tier.
+   * Total billable cart weight used to pick the by-weight tier.
    * @minimum 0
    */
   shippingWeightLbs: number;
-  /** Carrier zone code (Z1–Z6) derived from destination state. */
-  shippingZone: string;
-  /** Human-readable name for the destination zone. */
-  shippingZoneLabel: string;
+}
+
+export interface ShippingRuleProductRef {
+  productId: number;
+  sku: string;
+  name: string;
+}
+
+export type ShippingRuleScope =
+  (typeof ShippingRuleScope)[keyof typeof ShippingRuleScope];
+
+export const ShippingRuleScope = {
+  site_wide: "site_wide",
+  category: "category",
+  manufacturer: "manufacturer",
+  product: "product",
+} as const;
+
+export type ShippingRuleRateType =
+  (typeof ShippingRuleRateType)[keyof typeof ShippingRuleRateType];
+
+export const ShippingRuleRateType = {
+  flat: "flat",
+  percentage: "percentage",
+} as const;
+
+export interface ShippingRule {
+  id: number;
+  scope: ShippingRuleScope;
+  rateType: ShippingRuleRateType;
+  /** Dollars (flat) or percent (percentage), e.g. "50.00" or "10.00". */
+  rateValue: string;
+  /** @nullable */
+  categoryId: number | null;
+  /** @nullable */
+  categoryName: string | null;
+  /** @nullable */
+  subCategory: string | null;
+  /** @nullable */
+  manufacturerId: number | null;
+  /** @nullable */
+  manufacturerName: string | null;
+  /** @nullable */
+  label: string | null;
+  isActive: boolean;
+  /** Products covered by a scope=product rule. */
+  products: ShippingRuleProductRef[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ShippingRuleListResponse {
+  rules: ShippingRule[];
+}
+
+export type CreateShippingRuleRequestScope =
+  (typeof CreateShippingRuleRequestScope)[keyof typeof CreateShippingRuleRequestScope];
+
+export const CreateShippingRuleRequestScope = {
+  site_wide: "site_wide",
+  category: "category",
+  manufacturer: "manufacturer",
+  product: "product",
+} as const;
+
+export type CreateShippingRuleRequestRateType =
+  (typeof CreateShippingRuleRequestRateType)[keyof typeof CreateShippingRuleRequestRateType];
+
+export const CreateShippingRuleRequestRateType = {
+  flat: "flat",
+  percentage: "percentage",
+} as const;
+
+export interface CreateShippingRuleRequest {
+  scope: CreateShippingRuleRequestScope;
+  rateType: CreateShippingRuleRequestRateType;
+  /** @minimum 0 */
+  rateValue: number;
+  /** @nullable */
+  categoryId?: number | null;
+  /** @nullable */
+  subCategory?: string | null;
+  /** @nullable */
+  manufacturerId?: number | null;
+  productIds?: number[];
+  /** @nullable */
+  label?: string | null;
+  isActive?: boolean;
+}
+
+export type UpdateShippingRuleRequestRateType =
+  (typeof UpdateShippingRuleRequestRateType)[keyof typeof UpdateShippingRuleRequestRateType];
+
+export const UpdateShippingRuleRequestRateType = {
+  flat: "flat",
+  percentage: "percentage",
+} as const;
+
+export interface UpdateShippingRuleRequest {
+  rateType?: UpdateShippingRuleRequestRateType;
+  /** @minimum 0 */
+  rateValue?: number;
+  /** @nullable */
+  categoryId?: number | null;
+  /** @nullable */
+  subCategory?: string | null;
+  /** @nullable */
+  manufacturerId?: number | null;
+  productIds?: number[];
+  /** @nullable */
+  label?: string | null;
+  isActive?: boolean;
+}
+
+export interface CreateShippingRuleResponse {
+  rule: ShippingRule;
+  /** SKUs covered by this rule that ALSO have at least one other active rule (shipping will stack). Drives the staff overlap toast. */
+  conflictSkus: string[];
+}
+
+export interface ShippingWeightTier {
+  id: number;
+  minWeight: number;
+  /**
+   * Null means no upper bound (the 501+ block).
+   * @nullable
+   */
+  maxWeight: number | null;
+  /** Staff-set shipping charge in dollars for this weight block. */
+  amount: string;
+  displayOrder: number;
+}
+
+export interface ShippingWeightTiersResponse {
+  tiers: ShippingWeightTier[];
+}
+
+export type UpdateShippingWeightTiersRequestTiersItem = {
+  id: number;
+  /** @minimum 0 */
+  amount: number;
+};
+
+export interface UpdateShippingWeightTiersRequest {
+  tiers: UpdateShippingWeightTiersRequestTiersItem[];
+}
+
+export interface ShippingSubcategoriesResponse {
+  subCategories: string[];
 }
 
 /**
@@ -4547,6 +4689,10 @@ export type ListCatalogManufacturerFinishesParams = {
 
 export type GetWishlistParams = {
   deviceToken?: string;
+};
+
+export type AdminGetShippingSubcategoriesParams = {
+  categoryId: number;
 };
 
 export type StaffDisableTotp200 = {

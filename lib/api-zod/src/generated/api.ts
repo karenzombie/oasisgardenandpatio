@@ -1135,16 +1135,23 @@ export const quoteCheckoutResponseShippingWeightLbsMin = 0;
 
 export const QuoteCheckoutResponse = zod.object({
   subtotal: zod.string(),
-  shipping: zod.string(),
+  shipping: zod
+    .string()
+    .describe(
+      "Total shipping from the Shipping rules (stacked per-line rules + by-weight tier). Does not depend on the destination address.",
+    ),
+  shippingWeightAmount: zod
+    .string()
+    .describe(
+      "The by-weight tier amount included in shipping (Area E), in dollars.",
+    ),
   tax: zod.string(),
   total: zod.string(),
-  shippingMode: zod.enum(["flat", "flat_per_item", "percentage", "free"]),
-  freeShippingThresholdMet: zod.boolean(),
   taxRate: zod
     .number()
     .min(quoteCheckoutResponseTaxRateMin)
     .describe(
-      "Decimal combined state+local tax rate applied (0 if shipping outside CA).",
+      "Decimal combined state+local tax rate applied (0 if shipping outside CA). Tax is on the merchandise subtotal only — shipping is never taxed.",
     ),
   taxJurisdiction: zod
     .string()
@@ -1154,13 +1161,7 @@ export const QuoteCheckoutResponse = zod.object({
   shippingWeightLbs: zod
     .number()
     .min(quoteCheckoutResponseShippingWeightLbsMin)
-    .describe("Total billable cart weight used to pick the shipping tier."),
-  shippingZone: zod
-    .string()
-    .describe("Carrier zone code (Z1–Z6) derived from destination state."),
-  shippingZoneLabel: zod
-    .string()
-    .describe("Human-readable name for the destination zone."),
+    .describe("Total billable cart weight used to pick the by-weight tier."),
 });
 
 /**
@@ -1345,6 +1346,195 @@ export const AddWishlistItemResponse = zod.object({
 });
 
 /**
+ * @summary List all shipping rate rules (areas A–D)
+ */
+export const AdminListShippingRulesResponse = zod.object({
+  rules: zod.array(
+    zod.object({
+      id: zod.number(),
+      scope: zod.enum(["site_wide", "category", "manufacturer", "product"]),
+      rateType: zod.enum(["flat", "percentage"]),
+      rateValue: zod
+        .string()
+        .describe(
+          'Dollars (flat) or percent (percentage), e.g. \"50.00\" or \"10.00\".',
+        ),
+      categoryId: zod.number().nullable(),
+      categoryName: zod.string().nullable(),
+      subCategory: zod.string().nullable(),
+      manufacturerId: zod.number().nullable(),
+      manufacturerName: zod.string().nullable(),
+      label: zod.string().nullable(),
+      isActive: zod.boolean(),
+      products: zod
+        .array(
+          zod.object({
+            productId: zod.number(),
+            sku: zod.string(),
+            name: zod.string(),
+          }),
+        )
+        .describe("Products covered by a scope=product rule."),
+      createdAt: zod.string(),
+      updatedAt: zod.string(),
+    }),
+  ),
+});
+
+/**
+ * @summary Create a shipping rate rule
+ */
+export const adminCreateShippingRuleBodyRateValueMin = 0;
+
+export const adminCreateShippingRuleBodyIsActiveDefault = true;
+
+export const AdminCreateShippingRuleBody = zod.object({
+  scope: zod.enum(["site_wide", "category", "manufacturer", "product"]),
+  rateType: zod.enum(["flat", "percentage"]),
+  rateValue: zod.number().min(adminCreateShippingRuleBodyRateValueMin),
+  categoryId: zod.number().nullish(),
+  subCategory: zod.string().nullish(),
+  manufacturerId: zod.number().nullish(),
+  productIds: zod.array(zod.number()).optional(),
+  label: zod.string().nullish(),
+  isActive: zod.boolean().default(adminCreateShippingRuleBodyIsActiveDefault),
+});
+
+/**
+ * @summary Update a shipping rate rule
+ */
+export const AdminUpdateShippingRuleParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const adminUpdateShippingRuleBodyRateValueMin = 0;
+
+export const AdminUpdateShippingRuleBody = zod.object({
+  rateType: zod.enum(["flat", "percentage"]).optional(),
+  rateValue: zod
+    .number()
+    .min(adminUpdateShippingRuleBodyRateValueMin)
+    .optional(),
+  categoryId: zod.number().nullish(),
+  subCategory: zod.string().nullish(),
+  manufacturerId: zod.number().nullish(),
+  productIds: zod.array(zod.number()).optional(),
+  label: zod.string().nullish(),
+  isActive: zod.boolean().optional(),
+});
+
+export const AdminUpdateShippingRuleResponse = zod.object({
+  rule: zod.object({
+    id: zod.number(),
+    scope: zod.enum(["site_wide", "category", "manufacturer", "product"]),
+    rateType: zod.enum(["flat", "percentage"]),
+    rateValue: zod
+      .string()
+      .describe(
+        'Dollars (flat) or percent (percentage), e.g. \"50.00\" or \"10.00\".',
+      ),
+    categoryId: zod.number().nullable(),
+    categoryName: zod.string().nullable(),
+    subCategory: zod.string().nullable(),
+    manufacturerId: zod.number().nullable(),
+    manufacturerName: zod.string().nullable(),
+    label: zod.string().nullable(),
+    isActive: zod.boolean(),
+    products: zod
+      .array(
+        zod.object({
+          productId: zod.number(),
+          sku: zod.string(),
+          name: zod.string(),
+        }),
+      )
+      .describe("Products covered by a scope=product rule."),
+    createdAt: zod.string(),
+    updatedAt: zod.string(),
+  }),
+  conflictSkus: zod
+    .array(zod.string())
+    .describe(
+      "SKUs covered by this rule that ALSO have at least one other active rule (shipping will stack). Drives the staff overlap toast.",
+    ),
+});
+
+/**
+ * @summary Delete a shipping rate rule (also used for Undo)
+ */
+export const AdminDeleteShippingRuleParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
+ * @summary Get the by-weight shipping tiers (area E)
+ */
+export const AdminGetShippingWeightTiersResponse = zod.object({
+  tiers: zod.array(
+    zod.object({
+      id: zod.number(),
+      minWeight: zod.number(),
+      maxWeight: zod
+        .number()
+        .nullable()
+        .describe("Null means no upper bound (the 501+ block)."),
+      amount: zod
+        .string()
+        .describe(
+          "Staff-set shipping charge in dollars for this weight block.",
+        ),
+      displayOrder: zod.number(),
+    }),
+  ),
+});
+
+/**
+ * @summary Update the by-weight shipping tier amounts
+ */
+export const adminUpdateShippingWeightTiersBodyTiersItemAmountMin = 0;
+
+export const AdminUpdateShippingWeightTiersBody = zod.object({
+  tiers: zod.array(
+    zod.object({
+      id: zod.number(),
+      amount: zod
+        .number()
+        .min(adminUpdateShippingWeightTiersBodyTiersItemAmountMin),
+    }),
+  ),
+});
+
+export const AdminUpdateShippingWeightTiersResponse = zod.object({
+  tiers: zod.array(
+    zod.object({
+      id: zod.number(),
+      minWeight: zod.number(),
+      maxWeight: zod
+        .number()
+        .nullable()
+        .describe("Null means no upper bound (the 501+ block)."),
+      amount: zod
+        .string()
+        .describe(
+          "Staff-set shipping charge in dollars for this weight block.",
+        ),
+      displayOrder: zod.number(),
+    }),
+  ),
+});
+
+/**
+ * @summary Distinct product sub-categories for a category (for the category-rule picker)
+ */
+export const AdminGetShippingSubcategoriesQueryParams = zod.object({
+  categoryId: zod.coerce.number(),
+});
+
+export const AdminGetShippingSubcategoriesResponse = zod.object({
+  subCategories: zod.array(zod.string()),
+});
+
+/**
  * @summary Get the signed-in user's cart
  */
 
@@ -1363,6 +1553,11 @@ export const GetCartResponse = zod.object({
         .describe("Price snapshotted at the time the item was added."),
       quantity: zod.number().min(1),
       lineTotal: zod.string(),
+      shippingAmount: zod
+        .string()
+        .describe(
+          'Per-item shipping for this line — the sum of all stacked shipping rules that match the product (flat × qty and\/or % of line total). \"0.00\" when no rule matches.',
+        ),
       availableOnline: zod.boolean(),
       variantId: zod.number().nullable(),
       variantName: zod.string().nullable(),
@@ -1406,6 +1601,16 @@ export const GetCartResponse = zod.object({
   ),
   itemCount: zod.number().describe("Sum of quantities across all line items."),
   subtotal: zod.string(),
+  shipping: zod
+    .string()
+    .describe(
+      'Total shipping for the cart — sum of every line\'s stacked rules plus the matching by-weight tier. \"0.00\" when nothing matches. Replaces \"Calculated at checkout\".',
+    ),
+  shippingWeightAmount: zod
+    .string()
+    .describe(
+      "The order-level by-weight shipping tier amount included in shipping (Area E), in dollars.",
+    ),
 });
 
 /**
@@ -1427,6 +1632,11 @@ export const ClearCartResponse = zod.object({
         .describe("Price snapshotted at the time the item was added."),
       quantity: zod.number().min(1),
       lineTotal: zod.string(),
+      shippingAmount: zod
+        .string()
+        .describe(
+          'Per-item shipping for this line — the sum of all stacked shipping rules that match the product (flat × qty and\/or % of line total). \"0.00\" when no rule matches.',
+        ),
       availableOnline: zod.boolean(),
       variantId: zod.number().nullable(),
       variantName: zod.string().nullable(),
@@ -1470,6 +1680,16 @@ export const ClearCartResponse = zod.object({
   ),
   itemCount: zod.number().describe("Sum of quantities across all line items."),
   subtotal: zod.string(),
+  shipping: zod
+    .string()
+    .describe(
+      'Total shipping for the cart — sum of every line\'s stacked rules plus the matching by-weight tier. \"0.00\" when nothing matches. Replaces \"Calculated at checkout\".',
+    ),
+  shippingWeightAmount: zod
+    .string()
+    .describe(
+      "The order-level by-weight shipping tier amount included in shipping (Area E), in dollars.",
+    ),
 });
 
 /**
@@ -1515,6 +1735,11 @@ export const AddCartItemResponse = zod.object({
         .describe("Price snapshotted at the time the item was added."),
       quantity: zod.number().min(1),
       lineTotal: zod.string(),
+      shippingAmount: zod
+        .string()
+        .describe(
+          'Per-item shipping for this line — the sum of all stacked shipping rules that match the product (flat × qty and\/or % of line total). \"0.00\" when no rule matches.',
+        ),
       availableOnline: zod.boolean(),
       variantId: zod.number().nullable(),
       variantName: zod.string().nullable(),
@@ -1558,6 +1783,16 @@ export const AddCartItemResponse = zod.object({
   ),
   itemCount: zod.number().describe("Sum of quantities across all line items."),
   subtotal: zod.string(),
+  shipping: zod
+    .string()
+    .describe(
+      'Total shipping for the cart — sum of every line\'s stacked rules plus the matching by-weight tier. \"0.00\" when nothing matches. Replaces \"Calculated at checkout\".',
+    ),
+  shippingWeightAmount: zod
+    .string()
+    .describe(
+      "The order-level by-weight shipping tier amount included in shipping (Area E), in dollars.",
+    ),
 });
 
 /**
@@ -1586,6 +1821,11 @@ export const UpdateCartItemResponse = zod.object({
         .describe("Price snapshotted at the time the item was added."),
       quantity: zod.number().min(1),
       lineTotal: zod.string(),
+      shippingAmount: zod
+        .string()
+        .describe(
+          'Per-item shipping for this line — the sum of all stacked shipping rules that match the product (flat × qty and\/or % of line total). \"0.00\" when no rule matches.',
+        ),
       availableOnline: zod.boolean(),
       variantId: zod.number().nullable(),
       variantName: zod.string().nullable(),
@@ -1629,6 +1869,16 @@ export const UpdateCartItemResponse = zod.object({
   ),
   itemCount: zod.number().describe("Sum of quantities across all line items."),
   subtotal: zod.string(),
+  shipping: zod
+    .string()
+    .describe(
+      'Total shipping for the cart — sum of every line\'s stacked rules plus the matching by-weight tier. \"0.00\" when nothing matches. Replaces \"Calculated at checkout\".',
+    ),
+  shippingWeightAmount: zod
+    .string()
+    .describe(
+      "The order-level by-weight shipping tier amount included in shipping (Area E), in dollars.",
+    ),
 });
 
 /**
@@ -1653,6 +1903,11 @@ export const RemoveCartItemResponse = zod.object({
         .describe("Price snapshotted at the time the item was added."),
       quantity: zod.number().min(1),
       lineTotal: zod.string(),
+      shippingAmount: zod
+        .string()
+        .describe(
+          'Per-item shipping for this line — the sum of all stacked shipping rules that match the product (flat × qty and\/or % of line total). \"0.00\" when no rule matches.',
+        ),
       availableOnline: zod.boolean(),
       variantId: zod.number().nullable(),
       variantName: zod.string().nullable(),
@@ -1696,6 +1951,16 @@ export const RemoveCartItemResponse = zod.object({
   ),
   itemCount: zod.number().describe("Sum of quantities across all line items."),
   subtotal: zod.string(),
+  shipping: zod
+    .string()
+    .describe(
+      'Total shipping for the cart — sum of every line\'s stacked rules plus the matching by-weight tier. \"0.00\" when nothing matches. Replaces \"Calculated at checkout\".',
+    ),
+  shippingWeightAmount: zod
+    .string()
+    .describe(
+      "The order-level by-weight shipping tier amount included in shipping (Area E), in dollars.",
+    ),
 });
 
 /**

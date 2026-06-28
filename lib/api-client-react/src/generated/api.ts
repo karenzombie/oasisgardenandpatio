@@ -52,6 +52,7 @@ import type {
   AdminFinishCollection,
   AdminFinishCollectionsResponse,
   AdminFinishProductsResponse,
+  AdminGetShippingSubcategoriesParams,
   AdminInventoryAdjustmentsPage,
   AdminInventoryPage,
   AdminLegalDocument,
@@ -148,6 +149,8 @@ import type {
   CreateOrderRequest,
   CreateProductRequest,
   CreateSetRequest,
+  CreateShippingRuleRequest,
+  CreateShippingRuleResponse,
   CreateStaffUserRequest,
   CreateStandaloneVendorOrderRequest,
   CurrentUser,
@@ -197,6 +200,9 @@ import type {
   SendCushionEmailResponse,
   SendVendorOrderRequest,
   SetActiveRequest,
+  ShippingRuleListResponse,
+  ShippingSubcategoriesResponse,
+  ShippingWeightTiersResponse,
   SignupRequest,
   StaffDisableTotp200,
   StaffListNotificationsParams,
@@ -228,6 +234,8 @@ import type {
   UpdateOrderStatusRequest,
   UpdateProductRequest,
   UpdateSetRequest,
+  UpdateShippingRuleRequest,
+  UpdateShippingWeightTiersRequest,
   UpdateUserRequest,
   UpdateVendorOrderRequest,
   UpdateVendorOrderStatusRequest,
@@ -2484,6 +2492,626 @@ export const useAddWishlistItem = <
 > => {
   return useMutation(getAddWishlistItemMutationOptions(options));
 };
+
+/**
+ * @summary List all shipping rate rules (areas A–D)
+ */
+export const getAdminListShippingRulesUrl = () => {
+  return `/api/admin/shipping/rules`;
+};
+
+export const adminListShippingRules = async (
+  options?: RequestInit,
+): Promise<ShippingRuleListResponse> => {
+  return customFetch<ShippingRuleListResponse>(getAdminListShippingRulesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAdminListShippingRulesQueryKey = () => {
+  return [`/api/admin/shipping/rules`] as const;
+};
+
+export const getAdminListShippingRulesQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminListShippingRules>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminListShippingRules>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getAdminListShippingRulesQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminListShippingRules>>
+  > = ({ signal }) => adminListShippingRules({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminListShippingRules>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminListShippingRulesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminListShippingRules>>
+>;
+export type AdminListShippingRulesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all shipping rate rules (areas A–D)
+ */
+
+export function useAdminListShippingRules<
+  TData = Awaited<ReturnType<typeof adminListShippingRules>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminListShippingRules>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminListShippingRulesQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a shipping rate rule
+ */
+export const getAdminCreateShippingRuleUrl = () => {
+  return `/api/admin/shipping/rules`;
+};
+
+export const adminCreateShippingRule = async (
+  createShippingRuleRequest: CreateShippingRuleRequest,
+  options?: RequestInit,
+): Promise<CreateShippingRuleResponse> => {
+  return customFetch<CreateShippingRuleResponse>(
+    getAdminCreateShippingRuleUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(createShippingRuleRequest),
+    },
+  );
+};
+
+export const getAdminCreateShippingRuleMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCreateShippingRule>>,
+    TError,
+    { data: BodyType<CreateShippingRuleRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminCreateShippingRule>>,
+  TError,
+  { data: BodyType<CreateShippingRuleRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminCreateShippingRule"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminCreateShippingRule>>,
+    { data: BodyType<CreateShippingRuleRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return adminCreateShippingRule(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminCreateShippingRuleMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminCreateShippingRule>>
+>;
+export type AdminCreateShippingRuleMutationBody =
+  BodyType<CreateShippingRuleRequest>;
+export type AdminCreateShippingRuleMutationError = ErrorType<Error>;
+
+/**
+ * @summary Create a shipping rate rule
+ */
+export const useAdminCreateShippingRule = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCreateShippingRule>>,
+    TError,
+    { data: BodyType<CreateShippingRuleRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminCreateShippingRule>>,
+  TError,
+  { data: BodyType<CreateShippingRuleRequest> },
+  TContext
+> => {
+  return useMutation(getAdminCreateShippingRuleMutationOptions(options));
+};
+
+/**
+ * @summary Update a shipping rate rule
+ */
+export const getAdminUpdateShippingRuleUrl = (id: number) => {
+  return `/api/admin/shipping/rules/${id}`;
+};
+
+export const adminUpdateShippingRule = async (
+  id: number,
+  updateShippingRuleRequest: UpdateShippingRuleRequest,
+  options?: RequestInit,
+): Promise<CreateShippingRuleResponse> => {
+  return customFetch<CreateShippingRuleResponse>(
+    getAdminUpdateShippingRuleUrl(id),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateShippingRuleRequest),
+    },
+  );
+};
+
+export const getAdminUpdateShippingRuleMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateShippingRule>>,
+    TError,
+    { id: number; data: BodyType<UpdateShippingRuleRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUpdateShippingRule>>,
+  TError,
+  { id: number; data: BodyType<UpdateShippingRuleRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminUpdateShippingRule"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUpdateShippingRule>>,
+    { id: number; data: BodyType<UpdateShippingRuleRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminUpdateShippingRule(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminUpdateShippingRuleMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUpdateShippingRule>>
+>;
+export type AdminUpdateShippingRuleMutationBody =
+  BodyType<UpdateShippingRuleRequest>;
+export type AdminUpdateShippingRuleMutationError = ErrorType<Error>;
+
+/**
+ * @summary Update a shipping rate rule
+ */
+export const useAdminUpdateShippingRule = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateShippingRule>>,
+    TError,
+    { id: number; data: BodyType<UpdateShippingRuleRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUpdateShippingRule>>,
+  TError,
+  { id: number; data: BodyType<UpdateShippingRuleRequest> },
+  TContext
+> => {
+  return useMutation(getAdminUpdateShippingRuleMutationOptions(options));
+};
+
+/**
+ * @summary Delete a shipping rate rule (also used for Undo)
+ */
+export const getAdminDeleteShippingRuleUrl = (id: number) => {
+  return `/api/admin/shipping/rules/${id}`;
+};
+
+export const adminDeleteShippingRule = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getAdminDeleteShippingRuleUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getAdminDeleteShippingRuleMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeleteShippingRule>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminDeleteShippingRule>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["adminDeleteShippingRule"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminDeleteShippingRule>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return adminDeleteShippingRule(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminDeleteShippingRuleMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminDeleteShippingRule>>
+>;
+
+export type AdminDeleteShippingRuleMutationError = ErrorType<Error>;
+
+/**
+ * @summary Delete a shipping rate rule (also used for Undo)
+ */
+export const useAdminDeleteShippingRule = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeleteShippingRule>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminDeleteShippingRule>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getAdminDeleteShippingRuleMutationOptions(options));
+};
+
+/**
+ * @summary Get the by-weight shipping tiers (area E)
+ */
+export const getAdminGetShippingWeightTiersUrl = () => {
+  return `/api/admin/shipping/weight-tiers`;
+};
+
+export const adminGetShippingWeightTiers = async (
+  options?: RequestInit,
+): Promise<ShippingWeightTiersResponse> => {
+  return customFetch<ShippingWeightTiersResponse>(
+    getAdminGetShippingWeightTiersUrl(),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getAdminGetShippingWeightTiersQueryKey = () => {
+  return [`/api/admin/shipping/weight-tiers`] as const;
+};
+
+export const getAdminGetShippingWeightTiersQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminGetShippingWeightTiers>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetShippingWeightTiers>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getAdminGetShippingWeightTiersQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminGetShippingWeightTiers>>
+  > = ({ signal }) =>
+    adminGetShippingWeightTiers({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetShippingWeightTiers>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminGetShippingWeightTiersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminGetShippingWeightTiers>>
+>;
+export type AdminGetShippingWeightTiersQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get the by-weight shipping tiers (area E)
+ */
+
+export function useAdminGetShippingWeightTiers<
+  TData = Awaited<ReturnType<typeof adminGetShippingWeightTiers>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetShippingWeightTiers>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminGetShippingWeightTiersQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update the by-weight shipping tier amounts
+ */
+export const getAdminUpdateShippingWeightTiersUrl = () => {
+  return `/api/admin/shipping/weight-tiers`;
+};
+
+export const adminUpdateShippingWeightTiers = async (
+  updateShippingWeightTiersRequest: UpdateShippingWeightTiersRequest,
+  options?: RequestInit,
+): Promise<ShippingWeightTiersResponse> => {
+  return customFetch<ShippingWeightTiersResponse>(
+    getAdminUpdateShippingWeightTiersUrl(),
+    {
+      ...options,
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateShippingWeightTiersRequest),
+    },
+  );
+};
+
+export const getAdminUpdateShippingWeightTiersMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateShippingWeightTiers>>,
+    TError,
+    { data: BodyType<UpdateShippingWeightTiersRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUpdateShippingWeightTiers>>,
+  TError,
+  { data: BodyType<UpdateShippingWeightTiersRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminUpdateShippingWeightTiers"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUpdateShippingWeightTiers>>,
+    { data: BodyType<UpdateShippingWeightTiersRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return adminUpdateShippingWeightTiers(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminUpdateShippingWeightTiersMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUpdateShippingWeightTiers>>
+>;
+export type AdminUpdateShippingWeightTiersMutationBody =
+  BodyType<UpdateShippingWeightTiersRequest>;
+export type AdminUpdateShippingWeightTiersMutationError = ErrorType<Error>;
+
+/**
+ * @summary Update the by-weight shipping tier amounts
+ */
+export const useAdminUpdateShippingWeightTiers = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateShippingWeightTiers>>,
+    TError,
+    { data: BodyType<UpdateShippingWeightTiersRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUpdateShippingWeightTiers>>,
+  TError,
+  { data: BodyType<UpdateShippingWeightTiersRequest> },
+  TContext
+> => {
+  return useMutation(getAdminUpdateShippingWeightTiersMutationOptions(options));
+};
+
+/**
+ * @summary Distinct product sub-categories for a category (for the category-rule picker)
+ */
+export const getAdminGetShippingSubcategoriesUrl = (
+  params: AdminGetShippingSubcategoriesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/admin/shipping/subcategories?${stringifiedParams}`
+    : `/api/admin/shipping/subcategories`;
+};
+
+export const adminGetShippingSubcategories = async (
+  params: AdminGetShippingSubcategoriesParams,
+  options?: RequestInit,
+): Promise<ShippingSubcategoriesResponse> => {
+  return customFetch<ShippingSubcategoriesResponse>(
+    getAdminGetShippingSubcategoriesUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getAdminGetShippingSubcategoriesQueryKey = (
+  params?: AdminGetShippingSubcategoriesParams,
+) => {
+  return [
+    `/api/admin/shipping/subcategories`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getAdminGetShippingSubcategoriesQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminGetShippingSubcategories>>,
+  TError = ErrorType<unknown>,
+>(
+  params: AdminGetShippingSubcategoriesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminGetShippingSubcategories>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getAdminGetShippingSubcategoriesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminGetShippingSubcategories>>
+  > = ({ signal }) =>
+    adminGetShippingSubcategories(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetShippingSubcategories>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminGetShippingSubcategoriesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminGetShippingSubcategories>>
+>;
+export type AdminGetShippingSubcategoriesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Distinct product sub-categories for a category (for the category-rule picker)
+ */
+
+export function useAdminGetShippingSubcategories<
+  TData = Awaited<ReturnType<typeof adminGetShippingSubcategories>>,
+  TError = ErrorType<unknown>,
+>(
+  params: AdminGetShippingSubcategoriesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminGetShippingSubcategories>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminGetShippingSubcategoriesQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Get the signed-in user's cart

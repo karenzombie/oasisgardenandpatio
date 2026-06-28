@@ -12,4 +12,8 @@ export interface CartResponse {
   /** Sum of quantities across all line items. */
   itemCount: number;
   subtotal: string;
+  /** Total shipping for the cart — sum of every line's stacked rules plus the matching by-weight tier. "0.00" when nothing matches. Replaces "Calculated at checkout". */
+  shipping: string;
+  /** The order-level by-weight shipping tier amount included in shipping (Area E), in dollars. */
+  shippingWeightAmount: string;
 }

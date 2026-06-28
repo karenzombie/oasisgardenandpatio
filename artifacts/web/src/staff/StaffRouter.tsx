@@ -39,6 +39,7 @@ import OrderDetail from "./pages/admin/OrderDetail";
 import VendorOrders from "./pages/admin/VendorOrders";
 import VendorOrderNew from "./pages/admin/VendorOrderNew";
 import VendorOrderDetail from "./pages/admin/VendorOrderDetail";
+import Shipping from "./pages/admin/Shipping";
 import CushionOrders from "./pages/admin/CushionOrders";
 import CushionOrderDetail from "./pages/admin/CushionOrderDetail";
 import CushionOrderNew from "./pages/admin/CushionOrderNew";
@@ -100,6 +101,7 @@ export default function StaffRouter() {
                 <Route path="/admin/vendor-orders" component={VendorOrders} />
                 <Route path="/admin/vendor-orders/new" component={VendorOrderNew} />
                 <Route path="/admin/vendor-orders/:id" component={VendorOrderDetail} />
+                <Route path="/admin/shipping" component={Shipping} />
                 <Route path="/admin/cushion-orders" component={CushionOrders} />
                 <Route path="/admin/cushion-orders/new" component={CushionOrderNew} />
                 <Route path="/admin/cushion-orders/:id" component={CushionOrderDetail} />
