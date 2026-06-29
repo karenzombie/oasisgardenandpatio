@@ -23,7 +23,7 @@ export function Footer() {
 
           {/* Contact Col */}
           <div>
-            <h3 className="font-serif text-xl font-medium mb-3">Experience the difference in person.</h3>
+            <h3 className="font-bodoni italic text-xl mb-3">Experience the difference in person.</h3>
             <p className="text-secondary-foreground/80 text-sm leading-relaxed mb-6">
               Serving Santa Clarita for over 20 years. Step into our showroom to feel the quality, test the comfort, and let our experts help you design your perfect outdoor oasis.
             </p>
@@ -50,7 +50,7 @@ export function Footer() {
 
           {/* Links Col */}
           <div>
-            <h3 className="font-serif text-xl font-medium mb-6">Hours & Links</h3>
+            <h3 className="font-bodoni italic text-xl mb-6">Hours & Links</h3>
             <div className="text-secondary-foreground/80 text-sm mb-6 space-y-1">
               {(() => {
                 const isDST = new Intl.DateTimeFormat("en-US", {
