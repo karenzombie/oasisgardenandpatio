@@ -38,6 +38,17 @@ const FINISH_TYPE_LABELS: Record<string, string> = {
   "Table Top Tile": "Table Top Tiles",
 };
 
+// Explicit sub-group ordering, scoped per manufacturer so it never disturbs
+// other brands (whose sub-groups stay alphabetical). Keys are the raw
+// sub-group key (collection ?? description).
+const SUBGROUP_ORDER: Record<string, Record<string, number>> = {
+  "Frankford Umbrellas": {
+    "Frame Finish": 0,
+    Valances: 1,
+    "Base Plate Top Colors": 2,
+  },
+};
+
 function FinishSwatch({
   finish,
   onClick,
@@ -283,11 +294,17 @@ export default function Finishes() {
             const subGroups: { label: string; items: FinishItem[] }[] =
               hasSubGroups
                 ? typeKeys
-                    .sort((a, b) =>
-                      (FINISH_TYPE_LABELS[a] ?? a).localeCompare(
+                    .sort((a, b) => {
+                      const order = SUBGROUP_ORDER[brand];
+                      if (order) {
+                        const d =
+                          (order[a] ?? 999) - (order[b] ?? 999);
+                        if (d !== 0) return d;
+                      }
+                      return (FINISH_TYPE_LABELS[a] ?? a).localeCompare(
                         FINISH_TYPE_LABELS[b] ?? b,
-                      ),
-                    )
+                      );
+                    })
                     .map((key) => ({
                       label: FINISH_TYPE_LABELS[key] ?? key,
                       items: list.filter((f) => (f.collection ?? f.description) === key),

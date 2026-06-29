@@ -22,6 +22,7 @@
     "upload-frankford-missing-swatches": "tsx ./src/uploadFrankfordMissingSwatches.ts",
     "seed-frankford-finishes": "tsx ./src/seedFrankfordFinishes.ts",
     "seed-frankford-valances": "tsx ./src/seedFrankfordValances.ts",
+    "seed-frankford-base-plates": "tsx ./src/seedFrankfordBasePlates.ts",
     "seed-couture-jardin-products": "tsx ./src/seedCoutureJardinProducts.ts",
     "seed-couture-jardin-finishes": "tsx ./src/seedCoutureJardinFinishes.ts",
     "seed-summerset-products": "tsx ./src/seedSummersetProducts.ts",
