@@ -119,7 +119,7 @@ function FinishProductsDialog({
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-start gap-4">
-            {finish?.imageUrl && (
+            {finish?.imageUrl && !finish.collection && (
               <img
                 src={finish.imageUrl}
                 alt={finish.name}
@@ -196,6 +196,21 @@ function FinishProductsDialog({
             </>
           )}
         </div>
+
+        {finish?.collection && finish.imageUrl && (
+          <div className="mt-4 border-t border-border pt-4">
+            {finish.itemNumber && (
+              <p className="text-xs uppercase tracking-widest text-muted-foreground mb-3">
+                <span className="text-primary font-medium">{finish.itemNumber}</span>
+              </p>
+            )}
+            <img
+              src={finish.imageUrl}
+              alt={finish.name}
+              className="w-full h-auto object-contain rounded-sm"
+            />
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
