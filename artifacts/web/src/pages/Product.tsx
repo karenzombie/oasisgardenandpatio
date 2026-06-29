@@ -700,6 +700,21 @@ export default function Product() {
       : null;
   const comboLineTotal = comboUnit != null ? comboUnit * qty : null;
 
+  // Running cart preview shown above "Add to Cart" so the customer sees the full
+  // dollar amount and item count they're adding. Mirrors exactly what the server
+  // creates: the base line (canopy + add-ons), plus the independent stem line and
+  // the tied top-cover line — each accessory's quantity tracks the base quantity.
+  // Item count sums those line quantities, matching the cart's item count.
+  const stemUnitPrice = selectedStem ? Number(selectedStem.unitPrice) : 0;
+  const coverUnitPrice = selectedCoverFinish
+    ? Number(selectedCoverFinish.unitPrice)
+    : 0;
+  const accessoryUnitTotal = stemUnitPrice + coverUnitPrice;
+  const runningTotal =
+    comboLineTotal != null ? comboLineTotal + accessoryUnitTotal * qty : null;
+  const runningItemCount =
+    qty * (1 + (selectedStem ? 1 : 0) + (selectedCoverFinish ? 1 : 0));
+
   // Dynamic SKU: combine the configuration SKU with the chosen finish code and
   // fabric item number so each unique selection has a traceable code. For
   // simple (non-grade) variant products like rugs, the variant IS the SKU
@@ -1747,6 +1762,18 @@ export default function Product() {
                       </span>
                     </div>
                   ) : null}
+                </div>
+              ) : null}
+
+              {runningTotal != null ? (
+                <div className="mb-4 border-t border-border pt-4">
+                  <p className="text-lg font-semibold">
+                    Total ({runningItemCount}{" "}
+                    {runningItemCount === 1 ? "item" : "items"}):{" "}
+                    <span className="text-primary">
+                      {formatMoney(runningTotal)}
+                    </span>
+                  </p>
                 </div>
               ) : null}
 
