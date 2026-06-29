@@ -19,6 +19,9 @@ import {
   productRecommendationsTable,
   productAddonOptionsTable,
   productAddonGradePricesTable,
+  productStemOptionsTable,
+  productCoverOptionsTable,
+  productCoverFinishPricesTable,
 } from "@workspace/db";
 import {
   ListFeaturedProductsResponse,
@@ -974,6 +977,144 @@ router.get(
       gradePricesByAddon.set(gp.addonOptionId, list);
     }
 
+    // Optional galvanized-base accessories: a Stem picker (independent standalone
+    // products) and an Aluminum Top Cover picker (a hidden cover product whose
+    // price varies by chosen finish). Only the 7 galvanized plate bases have any
+    // rows here; every other product resolves to [] / null.
+    const stemOptionRows = await db
+      .select({
+        stemProductId: productStemOptionsTable.stemProductId,
+        displayOrder: productStemOptionsTable.displayOrder,
+        sku: productsTable.sku,
+        name: productsTable.name,
+        slug: productsTable.slug,
+        price: productsTable.price,
+        salePrice: productsTable.salePrice,
+        primaryImageUrl: sql<string | null>`(
+          select ${productImagesTable.url}
+          from ${productImagesTable}
+          where ${productImagesTable.productId} = ${productStemOptionsTable.stemProductId}
+            and ${productImagesTable.imageKind} = 'gallery'
+          order by ${productImagesTable.isPrimary} desc, ${productImagesTable.displayOrder} asc, ${productImagesTable.id} asc
+          limit 1
+        )`,
+      })
+      .from(productStemOptionsTable)
+      .innerJoin(
+        productsTable,
+        eq(productsTable.id, productStemOptionsTable.stemProductId),
+      )
+      .where(
+        and(
+          eq(productStemOptionsTable.baseProductId, row.id),
+          eq(productsTable.isActive, true),
+        ),
+      )
+      .orderBy(
+        asc(productStemOptionsTable.displayOrder),
+        asc(productsTable.name),
+      );
+
+    const stemOptions = stemOptionRows.map((s) => {
+      const sale =
+        s.salePrice != null && Number(s.salePrice) > 0 ? s.salePrice : null;
+      const unitPrice = sale ?? (s.price != null ? s.price : "0");
+      return {
+        stemProductId: s.stemProductId,
+        sku: s.sku,
+        name: s.name,
+        slug: s.slug,
+        imageUrl: toPublicImageUrl(s.primaryImageUrl),
+        msrp: s.price == null ? null : String(s.price),
+        salePrice: sale == null ? null : String(sale),
+        unitPrice: String(unitPrice),
+      };
+    });
+
+    const [coverOptionRow] = await db
+      .select({
+        coverProductId: productCoverOptionsTable.coverProductId,
+        sku: productsTable.sku,
+        name: productsTable.name,
+        primaryImageUrl: sql<string | null>`(
+          select ${productImagesTable.url}
+          from ${productImagesTable}
+          where ${productImagesTable.productId} = ${productCoverOptionsTable.coverProductId}
+            and ${productImagesTable.imageKind} = 'gallery'
+          order by ${productImagesTable.isPrimary} desc, ${productImagesTable.displayOrder} asc, ${productImagesTable.id} asc
+          limit 1
+        )`,
+      })
+      .from(productCoverOptionsTable)
+      .innerJoin(
+        productsTable,
+        eq(productsTable.id, productCoverOptionsTable.coverProductId),
+      )
+      .where(eq(productCoverOptionsTable.baseProductId, row.id))
+      .limit(1);
+
+    let coverOptions: {
+      coverProductId: number;
+      sku: string;
+      label: string;
+      imageUrl: string | null;
+      finishes: {
+        finishId: number;
+        finishCode: string | null;
+        finishName: string;
+        swatchImageUrl: string | null;
+        msrp: string;
+        salePrice: string;
+        unitPrice: string;
+      }[];
+    } | null = null;
+    if (coverOptionRow) {
+      const coverFinishRows = await db
+        .select({
+          finishId: productCoverFinishPricesTable.finishId,
+          finishCode: finishesTable.itemNumber,
+          finishName: finishesTable.name,
+          swatchImageUrl: finishesTable.imageUrl,
+          msrp: productCoverFinishPricesTable.msrp,
+          salePrice: productCoverFinishPricesTable.salePrice,
+          displayOrder: productCoverFinishPricesTable.displayOrder,
+        })
+        .from(productCoverFinishPricesTable)
+        .innerJoin(
+          finishesTable,
+          eq(finishesTable.id, productCoverFinishPricesTable.finishId),
+        )
+        .where(
+          eq(
+            productCoverFinishPricesTable.coverProductId,
+            coverOptionRow.coverProductId,
+          ),
+        )
+        .orderBy(
+          asc(productCoverFinishPricesTable.displayOrder),
+          asc(finishesTable.name),
+        );
+      coverOptions = {
+        coverProductId: coverOptionRow.coverProductId,
+        sku: coverOptionRow.sku,
+        label: coverOptionRow.name,
+        imageUrl: toPublicImageUrl(coverOptionRow.primaryImageUrl),
+        finishes: coverFinishRows.map((f) => {
+          const sale = Number(f.salePrice) > 0 ? String(f.salePrice) : null;
+          const unitPrice = sale ?? String(f.msrp);
+          return {
+            finishId: f.finishId,
+            finishCode: f.finishCode ?? null,
+            finishName: f.finishName,
+            swatchImageUrl: toPublicImageUrl(f.swatchImageUrl),
+            msrp: String(f.msrp),
+            salePrice: String(f.salePrice),
+            unitPrice,
+          };
+        }),
+      };
+    }
+
     const tagsArray: string[] = Array.isArray(row.tags) ? (row.tags as string[]) : [];
     const specsObj: Record<string, unknown> | null =
       row.specs && typeof row.specs === "object" && !Array.isArray(row.specs)
@@ -1085,6 +1226,8 @@ router.get(
         displayOrder: a.displayOrder,
         gradePrices: gradePricesByAddon.get(a.id) ?? [],
       })),
+      stemOptions,
+      coverOptions,
       finishMinQtyNote: row.finishMinQtyNote ?? null,
     };
 

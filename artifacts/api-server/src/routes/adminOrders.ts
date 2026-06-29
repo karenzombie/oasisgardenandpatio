@@ -1454,6 +1454,10 @@ router.post(
         }
 
         let subtotal = 0;
+        // Parallel to `prepared`: for accessory lines (Aluminum Top Cover),
+        // the zero-based index of the base line they tie to. Resolved into
+        // parent_order_item_id after the bulk insert returns real ids.
+        const parentRefs: Array<number | null> = [];
         const prepared: Array<{
           productId: number | null;
           variantId: number | null;
@@ -1663,6 +1667,18 @@ router.post(
             useInventory: wantsInventory,
             inventoryQtyUsed,
           });
+          // Track the base-line index for accessory (cover) lines so we can
+          // wire parent_order_item_id after the items are inserted.
+          const pIdx = it.parentItemIndex ?? null;
+          parentRefs.push(
+            pIdx != null &&
+              Number.isInteger(pIdx) &&
+              pIdx >= 0 &&
+              pIdx < data.items.length &&
+              pIdx !== prepared.length - 1
+              ? pIdx
+              : null,
+          );
         }
 
         // Restock orders are zero-priced internal records — pricing/tax/
@@ -1721,6 +1737,21 @@ router.post(
           .insert(orderItemsTable)
           .values(itemValues)
           .returning();
+
+        // Wire accessory (cover) lines to their base line. The bulk insert
+        // returns rows in the same order they were supplied, so index i in
+        // `insertedItems` corresponds to index i in `prepared`/`parentRefs`.
+        for (let i = 0; i < insertedItems.length; i++) {
+          const parentIdx = parentRefs[i];
+          if (parentIdx == null) continue;
+          const parent = insertedItems[parentIdx];
+          const child = insertedItems[i];
+          if (!parent || !child) continue;
+          await tx
+            .update(orderItemsTable)
+            .set({ parentOrderItemId: parent.id })
+            .where(eq(orderItemsTable.id, child.id));
+        }
 
         await tx.insert(orderStatusHistoryTable).values({
           orderId: order.id,

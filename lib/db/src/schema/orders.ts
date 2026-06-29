@@ -10,6 +10,7 @@ import {
   index,
   foreignKey,
   check,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
@@ -198,6 +199,14 @@ export const orderItemsTable = pgTable(
     notes: text("notes"),
     useInventory: boolean("use_inventory").notNull().default(false),
     inventoryQtyUsed: integer("inventory_qty_used").notNull().default(0),
+    // When set, this order line is an ACCESSORY tied 1:1 to a parent line — the
+    // immutable snapshot counterpart of cart_items.parent_cart_item_id (used by
+    // the galvanized-base Aluminum Top Cover). Lets order/PDF views group a
+    // cover under its base. NULL = a normal, independent line (incl. stems).
+    parentOrderItemId: integer("parent_order_item_id").references(
+      (): AnyPgColumn => orderItemsTable.id,
+      { onDelete: "cascade" },
+    ),
   },
   (t) => [
     index("order_items_order_id_idx").on(t.orderId),

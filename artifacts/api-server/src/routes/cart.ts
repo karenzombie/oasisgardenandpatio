@@ -17,6 +17,9 @@ import {
   productFinishOptionsTable,
   productAddonOptionsTable,
   productAddonGradePricesTable,
+  productStemOptionsTable,
+  productCoverOptionsTable,
+  productCoverFinishPricesTable,
 } from "@workspace/db";
 import {
   GetCartResponse,
@@ -114,6 +117,7 @@ async function loadCart(owner: CartOwner) {
       weight: productsTable.weight,
       unitPrice: cartItemsTable.price,
       quantity: cartItemsTable.quantity,
+      parentCartItemId: cartItemsTable.parentCartItemId,
       variantId: cartItemsTable.variantId,
       variantName: productVariantsTable.variantName,
       finishId: cartItemsTable.finishId,
@@ -230,6 +234,11 @@ async function loadCart(owner: CartOwner) {
       unitPrice: String(r.unitPrice),
       lineTotal: line.toFixed(2),
       shippingAmount: (shipCents / 100).toFixed(2),
+      parentCartItemId: r.parentCartItemId ?? null,
+      // Tied accessory lines (top covers) are grouped under their parent and
+      // have their quantity driven by the base, so the customer can't edit it.
+      isAccessory: r.parentCartItemId != null,
+      quantityLocked: r.parentCartItemId != null,
       addons: lineAddons.map((a) => ({
         addonOptionId: a.addonOptionId,
         sku: a.sku,
@@ -284,6 +293,9 @@ router.post(
     const variantId = parsed.data.variantId ?? null;
     const fabricId = parsed.data.fabricId ?? null;
     const finishId = parsed.data.finishId ?? null;
+    // Optional galvanized-base accessories (resolved + validated below).
+    const stemProductId = parsed.data.stemProductId ?? null;
+    const coverFinishId = parsed.data.coverFinishId ?? null;
     // Requested add-on option ids (e.g. Marella privacy walls). Dedup + drop any
     // non-positive ids; validated against the product below.
     const requestedAddonIds = Array.from(
@@ -831,6 +843,118 @@ router.post(
       .sort((x, y) => x - y)
       .join(",");
 
+    // -----------------------------------------------------------------------
+    // Optional galvanized-base accessories. Each adds a SEPARATE cart line:
+    //   - Stem: an independent standalone product line (qty editable).
+    //   - Top Cover: a hidden cover product tied 1:1 to the base line (qty
+    //     locked, cascade-removed). Price varies by chosen finish.
+    // Both are validated against the base product's configured options. The
+    // cover finish is folded into the base line's signature so that two bases
+    // with different cover finishes stay as distinct base lines (each with its
+    // own cover child).
+    // -----------------------------------------------------------------------
+    let stemLine: { productId: number; price: string } | null = null;
+    if (stemProductId != null) {
+      if (!Number.isInteger(stemProductId) || stemProductId <= 0) {
+        res.status(400).json({ error: "Invalid stemProductId" });
+        return;
+      }
+      const [stem] = await db
+        .select({
+          id: productsTable.id,
+          price: productsTable.price,
+          salePrice: productsTable.salePrice,
+        })
+        .from(productStemOptionsTable)
+        .innerJoin(
+          productsTable,
+          eq(productsTable.id, productStemOptionsTable.stemProductId),
+        )
+        .where(
+          and(
+            eq(productStemOptionsTable.baseProductId, productId),
+            eq(productStemOptionsTable.stemProductId, stemProductId),
+            eq(productsTable.isActive, true),
+          ),
+        )
+        .limit(1);
+      if (!stem) {
+        res
+          .status(400)
+          .json({ error: "The selected stem is not offered for this product." });
+        return;
+      }
+      const stemSale =
+        stem.salePrice != null && Number(stem.salePrice) > 0
+          ? Number(stem.salePrice)
+          : null;
+      const stemPrice = stemSale ?? (stem.price != null ? Number(stem.price) : null);
+      if (stemPrice == null) {
+        res.status(400).json({ error: "The selected stem has no price set." });
+        return;
+      }
+      stemLine = { productId: stemProductId, price: stemPrice.toFixed(2) };
+    }
+
+    let coverLine: { productId: number; finishId: number; price: string } | null =
+      null;
+    if (coverFinishId != null) {
+      if (!Number.isInteger(coverFinishId) || coverFinishId <= 0) {
+        res.status(400).json({ error: "Invalid coverFinishId" });
+        return;
+      }
+      const [cover] = await db
+        .select({ coverProductId: productCoverOptionsTable.coverProductId })
+        .from(productCoverOptionsTable)
+        .where(eq(productCoverOptionsTable.baseProductId, productId))
+        .limit(1);
+      if (!cover) {
+        res
+          .status(400)
+          .json({ error: "This product does not offer a top cover." });
+        return;
+      }
+      const [coverPrice] = await db
+        .select({
+          msrp: productCoverFinishPricesTable.msrp,
+          salePrice: productCoverFinishPricesTable.salePrice,
+        })
+        .from(productCoverFinishPricesTable)
+        .where(
+          and(
+            eq(
+              productCoverFinishPricesTable.coverProductId,
+              cover.coverProductId,
+            ),
+            eq(productCoverFinishPricesTable.finishId, coverFinishId),
+          ),
+        )
+        .limit(1);
+      if (!coverPrice) {
+        res
+          .status(400)
+          .json({ error: "The selected top cover finish is not offered." });
+        return;
+      }
+      const coverSale =
+        Number(coverPrice.salePrice) > 0 ? Number(coverPrice.salePrice) : null;
+      const price = coverSale ?? Number(coverPrice.msrp);
+      coverLine = {
+        productId: cover.coverProductId,
+        finishId: coverFinishId,
+        price: price.toFixed(2),
+      };
+    }
+
+    // The base line's signature folds in the chosen cover finish so two adds of
+    // the same base with different cover colors remain distinct base lines.
+    const baseSignature = [
+      addonSignature,
+      coverFinishId != null ? `cover:${coverFinishId}` : "",
+    ]
+      .filter(Boolean)
+      .join("|");
+
     await ensureSessionPersisted(req);
     const owner = ownerFor(req);
     const cart = await getOrCreateCart(owner);
@@ -846,7 +970,7 @@ router.post(
         INSERT INTO cart_items (cart_id, product_id, variant_id, finish_id, fabric_id, quantity, price, addon_signature)
         VALUES (
           ${cart.id}, ${productId}, ${variantId}, ${finishId}, ${fabricId},
-          ${quantity}, ${snapshotPrice}, ${addonSignature}
+          ${quantity}, ${snapshotPrice}, ${baseSignature}
         )
         ON CONFLICT (cart_id, product_id, (COALESCE(variant_id, 0)), (COALESCE(finish_id, 0)), (COALESCE(fabric_id, 0)), addon_signature)
         DO UPDATE SET quantity = cart_items.quantity + EXCLUDED.quantity
@@ -865,6 +989,36 @@ router.post(
             })),
           )
           .onConflictDoNothing();
+      }
+
+      // Independent stem line — a normal standalone product line. Its quantity
+      // matches this base add and can be edited/removed on its own afterwards.
+      if (stemLine) {
+        await tx.execute(sql`
+          INSERT INTO cart_items (cart_id, product_id, variant_id, finish_id, fabric_id, quantity, price, addon_signature)
+          VALUES (
+            ${cart.id}, ${stemLine.productId}, NULL, NULL, NULL,
+            ${quantity}, ${stemLine.price}, ''
+          )
+          ON CONFLICT (cart_id, product_id, (COALESCE(variant_id, 0)), (COALESCE(finish_id, 0)), (COALESCE(fabric_id, 0)), addon_signature)
+          DO UPDATE SET quantity = cart_items.quantity + EXCLUDED.quantity
+        `);
+      }
+
+      // Top cover line — tied 1:1 to the base line (parent_cart_item_id). Its
+      // quantity tracks the base add; it cascade-deletes with the base. Because
+      // the base signature folds in the cover finish, this cover row maps to
+      // exactly one base line, so the conflict-increment keeps them in lockstep.
+      if (coverLine && cartItemId) {
+        await tx.execute(sql`
+          INSERT INTO cart_items (cart_id, product_id, variant_id, finish_id, fabric_id, quantity, price, addon_signature, parent_cart_item_id)
+          VALUES (
+            ${cart.id}, ${coverLine.productId}, NULL, ${coverLine.finishId}, NULL,
+            ${quantity}, ${coverLine.price}, '', ${cartItemId}
+          )
+          ON CONFLICT (cart_id, product_id, (COALESCE(variant_id, 0)), (COALESCE(finish_id, 0)), (COALESCE(fabric_id, 0)), addon_signature)
+          DO UPDATE SET quantity = cart_items.quantity + EXCLUDED.quantity, parent_cart_item_id = EXCLUDED.parent_cart_item_id
+        `);
       }
     });
 
@@ -903,6 +1057,7 @@ router.patch(
       .select({
         productId: cartItemsTable.productId,
         finishId: cartItemsTable.finishId,
+        parentCartItemId: cartItemsTable.parentCartItemId,
         isStripe: fabricsTable.isStripe,
         minOrderQty: productVariantsTable.minOrderQty,
       })
@@ -918,6 +1073,15 @@ router.patch(
       .limit(1);
     if (!existing) {
       res.status(404).json({ error: "Cart item not found" });
+      return;
+    }
+    // Tied accessory lines (top covers) have their quantity driven by the base
+    // product, so they can't be edited directly.
+    if (existing.parentCartItemId != null) {
+      res.status(400).json({
+        error:
+          "This item's quantity is managed by its base product. Update the base item instead.",
+      });
       return;
     }
     if (
@@ -975,6 +1139,17 @@ router.patch(
       return;
     }
 
+    // Keep any tied accessory lines (top covers) in lockstep with the base.
+    await db
+      .update(cartItemsTable)
+      .set({ quantity: parsed.data.quantity })
+      .where(
+        and(
+          eq(cartItemsTable.parentCartItemId, itemId),
+          eq(cartItemsTable.cartId, cart.id),
+        ),
+      );
+
     res.json(await loadCart(owner));
   },
 );
@@ -990,6 +1165,23 @@ router.delete(
     await ensureSessionPersisted(req);
     const owner = ownerFor(req);
     const cart = await getOrCreateCart(owner);
+    // Tied accessory lines (top covers) can't be removed on their own — they
+    // are removed when the base product is removed (FK cascade). Reject a direct
+    // delete so the base/cover quantities can't drift out of lockstep.
+    const [target] = await db
+      .select({ parentCartItemId: cartItemsTable.parentCartItemId })
+      .from(cartItemsTable)
+      .where(
+        and(eq(cartItemsTable.id, itemId), eq(cartItemsTable.cartId, cart.id)),
+      )
+      .limit(1);
+    if (target?.parentCartItemId != null) {
+      res.status(400).json({
+        error:
+          "This top cover is removed together with its base product. Remove the base item to remove it.",
+      });
+      return;
+    }
     await db
       .delete(cartItemsTable)
       .where(

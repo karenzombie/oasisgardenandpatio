@@ -826,6 +826,71 @@ export const GetCatalogProductBySlugResponse = zod
         .describe(
           "Optional add-ons for this product (e.g. privacy walls, replacement stem). Priced additively on top of the base product. Empty when the product has no add-ons.",
         ),
+      stemOptions: zod
+        .array(
+          zod
+            .object({
+              stemProductId: zod.number(),
+              sku: zod.string(),
+              name: zod.string(),
+              slug: zod.string(),
+              imageUrl: zod.string().nullable(),
+              msrp: zod.string().nullable(),
+              salePrice: zod.string().nullable(),
+              unitPrice: zod
+                .string()
+                .describe(
+                  "The price charged if selected (sale price when set, else MSRP).",
+                ),
+            })
+            .describe(
+              "One standalone stem product offered as an optional accessory for a galvanized plate base.",
+            ),
+        )
+        .describe(
+          "Optional stem accessories the customer may add alongside this base (galvanized plate bases only). Each selection adds a SEPARATE, independent cart line. Empty for products with no stem picker.",
+        ),
+      coverOptions: zod
+        .union([
+          zod
+            .object({
+              coverProductId: zod.number(),
+              sku: zod.string(),
+              label: zod.string(),
+              imageUrl: zod
+                .string()
+                .nullable()
+                .describe(
+                  "Single shared cover image, used for all finish colors.",
+                ),
+              finishes: zod.array(
+                zod
+                  .object({
+                    finishId: zod.number(),
+                    finishCode: zod.string().nullable(),
+                    finishName: zod.string(),
+                    swatchImageUrl: zod.string().nullable(),
+                    msrp: zod.string(),
+                    salePrice: zod.string(),
+                    unitPrice: zod
+                      .string()
+                      .describe(
+                        "The price charged for this finish (sale price when set, else MSRP).",
+                      ),
+                  })
+                  .describe(
+                    "One finish color choice for an Aluminum Top Cover, with its finish-specific price.",
+                  ),
+              ),
+            })
+            .describe(
+              "The Aluminum Top Cover picker for a galvanized plate base. The shared image is used for every finish; the chosen finish drives the price.",
+            ),
+          zod.null(),
+        ])
+        .describe(
+          "Optional Aluminum Top Cover picker (galvanized plate bases only). The chosen finish color adds a SEPARATE cart line tied 1:1 to the base. Null when the product has no cover picker.",
+        ),
       finishMinQtyNote: zod
         .string()
         .nullable()
@@ -1597,6 +1662,22 @@ export const GetCartResponse = zod.object({
         .describe(
           "Selected add-on lines for this cart item (e.g. privacy walls). Each carries its own per-unit price; lineTotal already includes them.",
         ),
+      parentCartItemId: zod
+        .number()
+        .nullable()
+        .describe(
+          "When set, this line is an accessory tied 1:1 to the referenced parent line (the Aluminum Top Cover -> its galvanized base). Removed with the parent; quantity is kept in lockstep.",
+        ),
+      isAccessory: zod
+        .boolean()
+        .describe(
+          "True when this line is a tied accessory (a top cover) that should be rendered grouped under its parent line.",
+        ),
+      quantityLocked: zod
+        .boolean()
+        .describe(
+          "True when the customer cannot edit this line's quantity directly (it is driven by its parent line).",
+        ),
     }),
   ),
   itemCount: zod.number().describe("Sum of quantities across all line items."),
@@ -1676,6 +1757,22 @@ export const ClearCartResponse = zod.object({
         .describe(
           "Selected add-on lines for this cart item (e.g. privacy walls). Each carries its own per-unit price; lineTotal already includes them.",
         ),
+      parentCartItemId: zod
+        .number()
+        .nullable()
+        .describe(
+          "When set, this line is an accessory tied 1:1 to the referenced parent line (the Aluminum Top Cover -> its galvanized base). Removed with the parent; quantity is kept in lockstep.",
+        ),
+      isAccessory: zod
+        .boolean()
+        .describe(
+          "True when this line is a tied accessory (a top cover) that should be rendered grouped under its parent line.",
+        ),
+      quantityLocked: zod
+        .boolean()
+        .describe(
+          "True when the customer cannot edit this line's quantity directly (it is driven by its parent line).",
+        ),
     }),
   ),
   itemCount: zod.number().describe("Sum of quantities across all line items."),
@@ -1717,6 +1814,18 @@ export const AddCartItemBody = zod.object({
     .optional()
     .describe(
       "Selected add-on option IDs (e.g. privacy walls) to attach to this line. Pairing-required add-ons are auto-enforced server-side.",
+    ),
+  stemProductId: zod
+    .number()
+    .nullish()
+    .describe(
+      "Optional galvanized-base stem accessory. When set, the stem is added as a SEPARATE, independent cart line (quantity matches the base add).",
+    ),
+  coverFinishId: zod
+    .number()
+    .nullish()
+    .describe(
+      "Optional Aluminum Top Cover finish id. When set, the cover is added as a SEPARATE cart line tied 1:1 to the base line (locked quantity).",
     ),
 });
 
@@ -1778,6 +1887,22 @@ export const AddCartItemResponse = zod.object({
         )
         .describe(
           "Selected add-on lines for this cart item (e.g. privacy walls). Each carries its own per-unit price; lineTotal already includes them.",
+        ),
+      parentCartItemId: zod
+        .number()
+        .nullable()
+        .describe(
+          "When set, this line is an accessory tied 1:1 to the referenced parent line (the Aluminum Top Cover -> its galvanized base). Removed with the parent; quantity is kept in lockstep.",
+        ),
+      isAccessory: zod
+        .boolean()
+        .describe(
+          "True when this line is a tied accessory (a top cover) that should be rendered grouped under its parent line.",
+        ),
+      quantityLocked: zod
+        .boolean()
+        .describe(
+          "True when the customer cannot edit this line's quantity directly (it is driven by its parent line).",
         ),
     }),
   ),
@@ -1865,6 +1990,22 @@ export const UpdateCartItemResponse = zod.object({
         .describe(
           "Selected add-on lines for this cart item (e.g. privacy walls). Each carries its own per-unit price; lineTotal already includes them.",
         ),
+      parentCartItemId: zod
+        .number()
+        .nullable()
+        .describe(
+          "When set, this line is an accessory tied 1:1 to the referenced parent line (the Aluminum Top Cover -> its galvanized base). Removed with the parent; quantity is kept in lockstep.",
+        ),
+      isAccessory: zod
+        .boolean()
+        .describe(
+          "True when this line is a tied accessory (a top cover) that should be rendered grouped under its parent line.",
+        ),
+      quantityLocked: zod
+        .boolean()
+        .describe(
+          "True when the customer cannot edit this line's quantity directly (it is driven by its parent line).",
+        ),
     }),
   ),
   itemCount: zod.number().describe("Sum of quantities across all line items."),
@@ -1946,6 +2087,22 @@ export const RemoveCartItemResponse = zod.object({
         )
         .describe(
           "Selected add-on lines for this cart item (e.g. privacy walls). Each carries its own per-unit price; lineTotal already includes them.",
+        ),
+      parentCartItemId: zod
+        .number()
+        .nullable()
+        .describe(
+          "When set, this line is an accessory tied 1:1 to the referenced parent line (the Aluminum Top Cover -> its galvanized base). Removed with the parent; quantity is kept in lockstep.",
+        ),
+      isAccessory: zod
+        .boolean()
+        .describe(
+          "True when this line is a tied accessory (a top cover) that should be rendered grouped under its parent line.",
+        ),
+      quantityLocked: zod
+        .boolean()
+        .describe(
+          "True when the customer cannot edit this line's quantity directly (it is driven by its parent line).",
         ),
     }),
   ),
@@ -3628,6 +3785,71 @@ export const AdminGetProductPickerResponse = zod
       )
       .describe(
         "Discrete frame-finish choices for grade-priced products. Empty for legacy (variant-as-finish) products.",
+      ),
+    stemOptions: zod
+      .array(
+        zod
+          .object({
+            stemProductId: zod.number(),
+            sku: zod.string(),
+            name: zod.string(),
+            slug: zod.string(),
+            imageUrl: zod.string().nullable(),
+            msrp: zod.string().nullable(),
+            salePrice: zod.string().nullable(),
+            unitPrice: zod
+              .string()
+              .describe(
+                "The price charged if selected (sale price when set, else MSRP).",
+              ),
+          })
+          .describe(
+            "One standalone stem product offered as an optional accessory for a galvanized plate base.",
+          ),
+      )
+      .describe(
+        "Optional stem accessories for galvanized plate bases. Each selection adds a SEPARATE, independent order line. Empty for products with no stem picker.",
+      ),
+    coverOptions: zod
+      .union([
+        zod
+          .object({
+            coverProductId: zod.number(),
+            sku: zod.string(),
+            label: zod.string(),
+            imageUrl: zod
+              .string()
+              .nullable()
+              .describe(
+                "Single shared cover image, used for all finish colors.",
+              ),
+            finishes: zod.array(
+              zod
+                .object({
+                  finishId: zod.number(),
+                  finishCode: zod.string().nullable(),
+                  finishName: zod.string(),
+                  swatchImageUrl: zod.string().nullable(),
+                  msrp: zod.string(),
+                  salePrice: zod.string(),
+                  unitPrice: zod
+                    .string()
+                    .describe(
+                      "The price charged for this finish (sale price when set, else MSRP).",
+                    ),
+                })
+                .describe(
+                  "One finish color choice for an Aluminum Top Cover, with its finish-specific price.",
+                ),
+            ),
+          })
+          .describe(
+            "The Aluminum Top Cover picker for a galvanized plate base. The shared image is used for every finish; the chosen finish drives the price.",
+          ),
+        zod.null(),
+      ])
+      .describe(
+        "Optional Aluminum Top Cover picker for galvanized plate bases. The chosen finish adds a SEPARATE order line tied 1:1 to the base. Null when the product has no cover picker.",
       ),
   })
   .describe("Variants and fabric options for the staff order picker.");
@@ -6651,6 +6873,12 @@ export const AdminCreateOrderBody = zod.object({
           .default(adminCreateOrderBodyItemsItemUseInventoryDefault)
           .describe(
             "When true, units are sourced from store inventory at order creation. Vendor order only covers the balance beyond what is on hand.",
+          ),
+        parentItemIndex: zod
+          .number()
+          .nullish()
+          .describe(
+            "Zero-based index (within this request's items array) of the base line this accessory line is tied to. Used to set parent_order_item_id on Aluminum Top Cover lines so they group under their base. Null for independent lines (including stems).",
           ),
       }),
     )

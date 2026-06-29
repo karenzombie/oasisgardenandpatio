@@ -27,4 +27,14 @@ export interface AddCartItemRequest {
   finishId?: number | null;
   /** Selected add-on option IDs (e.g. privacy walls) to attach to this line. Pairing-required add-ons are auto-enforced server-side. */
   addonOptionIds?: number[];
+  /**
+   * Optional galvanized-base stem accessory. When set, the stem is added as a SEPARATE, independent cart line (quantity matches the base add).
+   * @nullable
+   */
+  stemProductId?: number | null;
+  /**
+   * Optional Aluminum Top Cover finish id. When set, the cover is added as a SEPARATE cart line tied 1:1 to the base line (locked quantity).
+   * @nullable
+   */
+  coverFinishId?: number | null;
 }

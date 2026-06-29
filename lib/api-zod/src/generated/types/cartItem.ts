@@ -43,4 +43,13 @@ export interface CartItem {
   fabricIsStripe: boolean;
   /** Selected add-on lines for this cart item (e.g. privacy walls). Each carries its own per-unit price; lineTotal already includes them. */
   addons: CartItemAddon[];
+  /**
+   * When set, this line is an accessory tied 1:1 to the referenced parent line (the Aluminum Top Cover -> its galvanized base). Removed with the parent; quantity is kept in lockstep.
+   * @nullable
+   */
+  parentCartItemId: number | null;
+  /** True when this line is a tied accessory (a top cover) that should be rendered grouped under its parent line. */
+  isAccessory: boolean;
+  /** True when the customer cannot edit this line's quantity directly (it is driven by its parent line). */
+  quantityLocked: boolean;
 }

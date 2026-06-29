@@ -1596,6 +1596,55 @@ export interface CatalogFabricOption {
 }
 
 /**
+ * One standalone stem product offered as an optional accessory for a galvanized plate base.
+ */
+export interface CatalogStemOption {
+  stemProductId: number;
+  sku: string;
+  name: string;
+  slug: string;
+  /** @nullable */
+  imageUrl: string | null;
+  /** @nullable */
+  msrp: string | null;
+  /** @nullable */
+  salePrice: string | null;
+  /** The price charged if selected (sale price when set, else MSRP). */
+  unitPrice: string;
+}
+
+/**
+ * One finish color choice for an Aluminum Top Cover, with its finish-specific price.
+ */
+export interface CatalogCoverFinish {
+  finishId: number;
+  /** @nullable */
+  finishCode: string | null;
+  finishName: string;
+  /** @nullable */
+  swatchImageUrl: string | null;
+  msrp: string;
+  salePrice: string;
+  /** The price charged for this finish (sale price when set, else MSRP). */
+  unitPrice: string;
+}
+
+/**
+ * The Aluminum Top Cover picker for a galvanized plate base. The shared image is used for every finish; the chosen finish drives the price.
+ */
+export interface CatalogCoverPicker {
+  coverProductId: number;
+  sku: string;
+  label: string;
+  /**
+   * Single shared cover image, used for all finish colors.
+   * @nullable
+   */
+  imageUrl: string | null;
+  finishes: CatalogCoverFinish[];
+}
+
+/**
  * Variants and fabric options for the staff order picker.
  */
 export interface AdminProductPickerDetail {
@@ -1609,6 +1658,10 @@ export interface AdminProductPickerDetail {
   fabricOptions: CatalogFabricOption[];
   /** Discrete frame-finish choices for grade-priced products. Empty for legacy (variant-as-finish) products. */
   finishes: CatalogFinishOption[];
+  /** Optional stem accessories for galvanized plate bases. Each selection adds a SEPARATE, independent order line. Empty for products with no stem picker. */
+  stemOptions: CatalogStemOption[];
+  /** Optional Aluminum Top Cover picker for galvanized plate bases. The chosen finish adds a SEPARATE order line tied 1:1 to the base. Null when the product has no cover picker. */
+  coverOptions: CatalogCoverPicker | null;
 }
 
 export interface CatalogFabricsResponse {
@@ -1666,6 +1719,10 @@ export type CatalogProductDetail = CatalogProduct & {
   finishes: CatalogFinishOption[];
   /** Optional add-ons for this product (e.g. privacy walls, replacement stem). Priced additively on top of the base product. Empty when the product has no add-ons. */
   addonOptions: CatalogAddonOption[];
+  /** Optional stem accessories the customer may add alongside this base (galvanized plate bases only). Each selection adds a SEPARATE, independent cart line. Empty for products with no stem picker. */
+  stemOptions: CatalogStemOption[];
+  /** Optional Aluminum Top Cover picker (galvanized plate bases only). The chosen finish color adds a SEPARATE cart line tied 1:1 to the base. Null when the product has no cover picker. */
+  coverOptions: CatalogCoverPicker | null;
   /**
    * Admin-editable note shown when a special (non-default) finish triggers a minimum order quantity.
    * @nullable
@@ -1779,6 +1836,15 @@ export interface CartItem {
   fabricIsStripe: boolean;
   /** Selected add-on lines for this cart item (e.g. privacy walls). Each carries its own per-unit price; lineTotal already includes them. */
   addons: CartItemAddon[];
+  /**
+   * When set, this line is an accessory tied 1:1 to the referenced parent line (the Aluminum Top Cover -> its galvanized base). Removed with the parent; quantity is kept in lockstep.
+   * @nullable
+   */
+  parentCartItemId: number | null;
+  /** True when this line is a tied accessory (a top cover) that should be rendered grouped under its parent line. */
+  isAccessory: boolean;
+  /** True when the customer cannot edit this line's quantity directly (it is driven by its parent line). */
+  quantityLocked: boolean;
 }
 
 export interface CartResponse {
@@ -1813,6 +1879,16 @@ export interface AddCartItemRequest {
   finishId?: number | null;
   /** Selected add-on option IDs (e.g. privacy walls) to attach to this line. Pairing-required add-ons are auto-enforced server-side. */
   addonOptionIds?: number[];
+  /**
+   * Optional galvanized-base stem accessory. When set, the stem is added as a SEPARATE, independent cart line (quantity matches the base add).
+   * @nullable
+   */
+  stemProductId?: number | null;
+  /**
+   * Optional Aluminum Top Cover finish id. When set, the cover is added as a SEPARATE cart line tied 1:1 to the base line (locked quantity).
+   * @nullable
+   */
+  coverFinishId?: number | null;
 }
 
 export interface UpdateCartItemRequest {
@@ -3404,6 +3480,11 @@ export interface CreateOrderItemRequest {
   notes?: string | null;
   /** When true, units are sourced from store inventory at order creation. Vendor order only covers the balance beyond what is on hand. */
   useInventory?: boolean;
+  /**
+   * Zero-based index (within this request's items array) of the base line this accessory line is tied to. Used to set parent_order_item_id on Aluminum Top Cover lines so they group under their base. Null for independent lines (including stems).
+   * @nullable
+   */
+  parentItemIndex?: number | null;
 }
 
 /**

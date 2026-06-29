@@ -21,6 +21,9 @@ import {
   type CatalogProductVariant,
   type CatalogFabricOption,
   type CatalogFinishOption,
+  type CatalogStemOption,
+  type CatalogCoverPicker,
+  type CatalogCoverFinish,
   type AdminSetSummary,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
@@ -63,6 +66,22 @@ interface LineItem {
   unitPrice: number;
   unitPriceOverridden: boolean;
   useInventory: boolean;
+  // Stable client-side id used to tie an accessory line (Aluminum Top Cover)
+  // back to its base line. Only base lines that carry accessories and the
+  // accessories themselves need one; other lines may leave it undefined.
+  lineKey?: string;
+  // "cover" marks an Aluminum Top Cover line that is tied 1:1 to a base line
+  // (quantity locked to the base, removed with the base). Stems are added as
+  // ordinary independent lines, so they carry no accessory marker.
+  accessoryKind?: "cover" | null;
+  // For cover lines: the `lineKey` of the base line they belong to.
+  accessoryParentKey?: string | null;
+}
+
+function makeLineKey(): string {
+  return typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `lk_${Math.random().toString(36).slice(2)}_${Date.now()}`;
 }
 
 interface NewCustomerForm {
@@ -329,11 +348,42 @@ export default function AgentNewOrder() {
   const balanceDue = total - deposit;
 
   function updateItem(idx: number, patch: Partial<LineItem>) {
-    setItems((curr) => curr.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
+    setItems((curr) => {
+      const target = curr[idx];
+      const next = curr.map((it, i) => (i === idx ? { ...it, ...patch } : it));
+      // When a base line's quantity changes, keep its 1:1 Aluminum Top Cover
+      // line locked to the same quantity.
+      if (
+        patch.quantity != null &&
+        target?.lineKey &&
+        target.accessoryKind == null
+      ) {
+        return next.map((it) =>
+          it.accessoryKind === "cover" &&
+          it.accessoryParentKey === target.lineKey
+            ? { ...it, quantity: patch.quantity as number }
+            : it,
+        );
+      }
+      return next;
+    });
   }
   function removeItem(idx: number) {
     setItems((curr) => {
-      const next = curr.filter((_, i) => i !== idx);
+      const target = curr[idx];
+      // Removing a base line also removes its tied Aluminum Top Cover line.
+      const next = curr.filter((it, i) => {
+        if (i === idx) return false;
+        if (
+          target?.lineKey &&
+          target.accessoryKind == null &&
+          it.accessoryKind === "cover" &&
+          it.accessoryParentKey === target.lineKey
+        ) {
+          return false;
+        }
+        return true;
+      });
       return next.length > 0 ? next : [emptyLine()];
     });
   }
@@ -357,6 +407,11 @@ export default function AgentNewOrder() {
     finish: CatalogFinishOption | null,
     gradeUnitPrice: number | null,
     unitPrice: number,
+    // Optional galvanized-base accessories chosen in the picker. The stem (if
+    // any) becomes an independent line; the cover (if any) becomes a line tied
+    // 1:1 to the base with its quantity locked to the base.
+    stem: CatalogStemOption | null,
+    cover: { picker: CatalogCoverPicker; finish: CatalogCoverFinish } | null,
   ) {
     // The picker dialog computes the canonical per-unit price (grade price, or
     // frame-only price, or base + variant adjustment, plus any frame-finish
@@ -377,7 +432,12 @@ export default function AgentNewOrder() {
     // (they can still adjust it afterward).
     const minQty =
       isGradeMode && variant?.minOrderQty != null ? variant.minOrderQty : 1;
-    updateItem(idx, {
+
+    // Fresh key for the base line so any previously-attached accessory
+    // children (from an earlier pick on this same row) are orphaned and
+    // pruned below before the new accessories are attached.
+    const baseKey = makeLineKey();
+    const baseLine: LineItem = {
       productId: p.id,
       productSlug: p.slug,
       variantId: variant?.id ?? null,
@@ -393,7 +453,72 @@ export default function AgentNewOrder() {
       quantity: minQty,
       unitPrice,
       unitPriceOverridden: false,
+      useInventory: false,
+      lineKey: baseKey,
+      accessoryKind: null,
+      accessoryParentKey: null,
+    };
+
+    const extras: LineItem[] = [];
+    if (stem) {
+      extras.push({
+        productId: stem.stemProductId,
+        productSlug: stem.slug,
+        variantId: null,
+        variantName: null,
+        finishId: null,
+        grade: null,
+        fabricId: null,
+        fabricName: null,
+        fabricVendorId: null,
+        description: stem.name,
+        quantity: minQty,
+        unitPrice: Number(stem.unitPrice) || 0,
+        unitPriceOverridden: false,
+        useInventory: false,
+        lineKey: makeLineKey(),
+        accessoryKind: null,
+        accessoryParentKey: null,
+      });
+    }
+    if (cover) {
+      extras.push({
+        productId: cover.picker.coverProductId,
+        productSlug: null,
+        variantId: null,
+        variantName: null,
+        finishId: cover.finish.finishId,
+        grade: null,
+        fabricId: null,
+        fabricName: null,
+        fabricVendorId: null,
+        description: `${cover.picker.label} — ${cover.finish.finishName}`,
+        quantity: minQty,
+        unitPrice: Number(cover.finish.unitPrice) || 0,
+        unitPriceOverridden: false,
+        useInventory: false,
+        lineKey: makeLineKey(),
+        accessoryKind: "cover",
+        accessoryParentKey: baseKey,
+      });
+    }
+
+    setItems((curr) => {
+      const target = curr[idx];
+      const oldKey = target?.lineKey;
+      // Drop any stale accessory children tied to this row's previous key.
+      const pruned = curr.filter(
+        (it, i) =>
+          i === idx ||
+          it.accessoryParentKey == null ||
+          it.accessoryParentKey !== oldKey,
+      );
+      // `idx` is unaffected by pruning since children always sit after it.
+      const next = pruned.map((it, i) => (i === idx ? baseLine : it));
+      next.splice(idx + 1, 0, ...extras);
+      return next;
     });
+
     setPickProductFor(null);
     setTypeaheadIdx(null);
     setTypeaheadQuery("");
@@ -559,21 +684,34 @@ export default function AgentNewOrder() {
           orderType: "in_store",
           salespersonName: isRestockOrder ? null : salespersonName.trim() || null,
           specialInstructions: specialInstructions.trim() || null,
-          items: cleanItems.map((it) => ({
-            productId: it.productId,
-            variantId: it.variantId,
-            finishId: it.finishId,
-            grade: it.grade,
-            fabricId: it.fabricId,
-            fabricVendorId: it.fabricId != null ? it.fabricVendorId : null,
-            description: it.description.trim(),
-            quantity: it.quantity,
-            unitPrice: isRestockOrder ? 0 : it.unitPrice,
-            discountAmount: 0,
-            discountReason: null,
-            notes: null,
-            useInventory: !isRestockOrder && it.useInventory,
-          })),
+          items: cleanItems.map((it) => {
+            // Resolve an Aluminum Top Cover line back to its base line's
+            // position within the submitted items array so the server can
+            // persist the parent/child link.
+            let parentItemIndex: number | null = null;
+            if (it.accessoryKind === "cover" && it.accessoryParentKey) {
+              const pIdx = cleanItems.findIndex(
+                (c) => c.lineKey === it.accessoryParentKey,
+              );
+              if (pIdx >= 0) parentItemIndex = pIdx;
+            }
+            return {
+              productId: it.productId,
+              variantId: it.variantId,
+              finishId: it.finishId,
+              grade: it.grade,
+              fabricId: it.fabricId,
+              fabricVendorId: it.fabricId != null ? it.fabricVendorId : null,
+              description: it.description.trim(),
+              quantity: it.quantity,
+              unitPrice: isRestockOrder ? 0 : it.unitPrice,
+              discountAmount: 0,
+              discountReason: null,
+              notes: null,
+              useInventory: !isRestockOrder && it.useInventory,
+              parentItemIndex,
+            };
+          }),
         },
       });
       if (isRestockOrder) {
@@ -962,7 +1100,14 @@ export default function AgentNewOrder() {
                       <div className="flex gap-1">
                         <Input
                           value={it.description}
+                          // Aluminum Top Cover lines are tied 1:1 to their base
+                          // line. The description (and product link) are locked
+                          // so the accessory can never be detached/retargeted
+                          // into an orphan line.
+                          readOnly={it.accessoryKind === "cover"}
+                          disabled={it.accessoryKind === "cover"}
                           onChange={(e) => {
+                            if (it.accessoryKind === "cover") return;
                             const v = e.target.value;
                             // Clear linked product whenever the user manually
                             // edits the description so we never silently keep
@@ -982,6 +1127,7 @@ export default function AgentNewOrder() {
                             setTypeaheadQuery(v);
                           }}
                           onFocus={() => {
+                            if (it.accessoryKind === "cover") return;
                             setTypeaheadIdx(idx);
                             setTypeaheadQuery(it.description);
                           }}
@@ -994,11 +1140,13 @@ export default function AgentNewOrder() {
                           }}
                           placeholder="Type a name, SKU, or vendor to search…"
                         />
-                        <Button type="button" variant="outline" size="sm"
-                          onClick={() => setPickProductFor({ idx, preselect: null })}
-                          title="Browse all products">
-                          <Search className="size-4" />
-                        </Button>
+                        {it.accessoryKind !== "cover" && (
+                          <Button type="button" variant="outline" size="sm"
+                            onClick={() => setPickProductFor({ idx, preselect: null })}
+                            title="Browse all products">
+                            <Search className="size-4" />
+                          </Button>
+                        )}
                       </div>
                       {typeaheadIdx === idx &&
                         typeaheadDebounced.length >= 2 && (
@@ -1113,6 +1261,8 @@ export default function AgentNewOrder() {
                     <div className="col-span-2">
                       <Label className="text-xs">Qty</Label>
                       <Input type="number" min={1} value={it.quantity}
+                        disabled={it.accessoryKind === "cover"}
+                        title={it.accessoryKind === "cover" ? "Quantity is locked to the base item" : undefined}
                         onChange={(e) => updateItem(idx, { quantity: Number(e.target.value) || 0 })} />
                     </div>
                     <div className="col-span-2">
@@ -1136,9 +1286,11 @@ export default function AgentNewOrder() {
                         : fmtMoney((Number(it.quantity) || 0) * (Number(it.unitPrice) || 0))}
                     </div>
                     <div className="col-span-1">
-                      <Button type="button" variant="ghost" size="sm" onClick={() => removeItem(idx)}>
-                        <Trash2 className="size-4 text-red-600" />
-                      </Button>
+                      {it.accessoryKind !== "cover" && (
+                        <Button type="button" variant="ghost" size="sm" onClick={() => removeItem(idx)}>
+                          <Trash2 className="size-4 text-red-600" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -1261,7 +1413,7 @@ export default function AgentNewOrder() {
           open={pickProductFor !== null}
           initialProduct={pickProductFor?.preselect ?? null}
           onOpenChange={(v) => !v && setPickProductFor(null)}
-          onApply={(p, variant, fabric, finish, gradeUnitPrice, unitPrice) =>
+          onApply={(p, variant, fabric, finish, gradeUnitPrice, unitPrice, stem, cover) =>
             pickProductFor !== null &&
             applyPickedProduct(
               pickProductFor.idx,
@@ -1271,6 +1423,8 @@ export default function AgentNewOrder() {
               finish,
               gradeUnitPrice,
               unitPrice,
+              stem,
+              cover,
             )
           }
         />
@@ -1341,6 +1495,8 @@ function ProductPickerDialog({
     finish: CatalogFinishOption | null,
     gradeUnitPrice: number | null,
     unitPrice: number,
+    stem: CatalogStemOption | null,
+    cover: { picker: CatalogCoverPicker; finish: CatalogCoverFinish } | null,
   ) => void;
 }) {
   const [searchInput, setSearchInput] = useState("");
@@ -1350,6 +1506,10 @@ function ProductPickerDialog({
   const [fabricId, setFabricId] = useState<string>("");
   const [finishId, setFinishId] = useState<string>("");
   const [includeFabric, setIncludeFabric] = useState(false);
+  // Galvanized-base accessory pickers. Empty string = the default
+  // "No Stem" / "No Top Cover" choice.
+  const [stemProductId, setStemProductId] = useState<string>("");
+  const [coverFinishId, setCoverFinishId] = useState<string>("");
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput.trim()), 250);
@@ -1366,6 +1526,8 @@ function ProductPickerDialog({
       setVariantId("");
       setFabricId("");
       setFinishId("");
+      setStemProductId("");
+      setCoverFinishId("");
       setSearchInput("");
       setSearch("");
     } else if (initialProduct) {
@@ -1381,6 +1543,8 @@ function ProductPickerDialog({
     setVariantId("");
     setFabricId("");
     setFinishId("");
+    setStemProductId("");
+    setCoverFinishId("");
     setIncludeFabric(false);
   }, [picked?.id]);
 
@@ -1404,6 +1568,8 @@ function ProductPickerDialog({
   const variants = detail.data?.variants ?? [];
   const fabricOptions = detail.data?.fabricOptions ?? [];
   const finishes = detail.data?.finishes ?? [];
+  const stemOptions = detail.data?.stemOptions ?? [];
+  const coverPicker = detail.data?.coverOptions ?? null;
   const detailReady = !!picked && !detail.isLoading && !!detail.data;
 
   // Grade mode (3-step Frankford): any variant carries per-grade prices. In
@@ -1520,7 +1686,30 @@ function ProductPickerDialog({
     const v = needsVariant ? variants.find((x) => String(x.id) === variantId) ?? null : null;
     const f = needsFabric ? fabricOptions.find((x) => String(x.id) === fabricId) ?? null : null;
     const fn = needsFinish ? finishes.find((x) => String(x.id) === finishId) ?? null : null;
-    onApply(picked, v, f, fn, isGradeMode ? gradeUnitPrice : null, effectivePrice ?? 0);
+    const stem =
+      stemProductId !== ""
+        ? stemOptions.find((s) => String(s.stemProductId) === stemProductId) ?? null
+        : null;
+    const coverFinish =
+      coverPicker && coverFinishId !== ""
+        ? coverPicker.finishes.find(
+            (cf) => String(cf.finishId) === coverFinishId,
+          ) ?? null
+        : null;
+    const cover =
+      coverPicker && coverFinish
+        ? { picker: coverPicker, finish: coverFinish }
+        : null;
+    onApply(
+      picked,
+      v,
+      f,
+      fn,
+      isGradeMode ? gradeUnitPrice : null,
+      effectivePrice ?? 0,
+      stem,
+      cover,
+    );
   }
 
   // Per-finish frame upcharge applies in both grade and legacy modes.
@@ -1725,6 +1914,59 @@ function ProductPickerDialog({
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+            )}
+
+            {/* Optional Stem accessory (galvanized bases). Adds a separate,
+                independent order line. Defaults to "No Stem". */}
+            {stemOptions.length > 0 && (
+              <div>
+                <Label className="text-xs">Stem (optional)</Label>
+                <Select value={stemProductId} onValueChange={setStemProductId}>
+                  <SelectTrigger><SelectValue placeholder="No Stem" /></SelectTrigger>
+                  <SelectContent className="max-h-72">
+                    <SelectItem value="">No Stem</SelectItem>
+                    {stemOptions.map((s) => {
+                      const price = Number(s.unitPrice) || 0;
+                      return (
+                        <SelectItem key={s.stemProductId} value={String(s.stemProductId)}>
+                          {s.name}
+                          {price > 0 ? ` — ${fmtMoney(price)}` : ""}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+                <p className="mt-1 text-xs text-slate-500">
+                  Adds a separate line (quantity matches the base; editable after).
+                </p>
+              </div>
+            )}
+
+            {/* Optional Aluminum Top Cover accessory (galvanized bases). Adds a
+                line tied 1:1 to the base; price varies by finish. Defaults to
+                "No Top Cover". */}
+            {coverPicker && coverPicker.finishes.length > 0 && (
+              <div>
+                <Label className="text-xs">{coverPicker.label} (optional)</Label>
+                <Select value={coverFinishId} onValueChange={setCoverFinishId}>
+                  <SelectTrigger><SelectValue placeholder="No Top Cover" /></SelectTrigger>
+                  <SelectContent className="max-h-72">
+                    <SelectItem value="">No Top Cover</SelectItem>
+                    {coverPicker.finishes.map((cf) => {
+                      const price = Number(cf.unitPrice) || 0;
+                      return (
+                        <SelectItem key={cf.finishId} value={String(cf.finishId)}>
+                          {cf.finishName}
+                          {price > 0 ? ` — ${fmtMoney(price)}` : ""}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+                <p className="mt-1 text-xs text-slate-500">
+                  Adds a separate line tied to this base (quantity locked to the base).
+                </p>
               </div>
             )}
 

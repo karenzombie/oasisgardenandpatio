@@ -10,6 +10,7 @@ export * from "./productAttributes";
 export * from "./variants";
 export * from "./finishes";
 export * from "./addons";
+export * from "./baseAccessories";
 export * from "./sets";
 export * from "./inventoryAdjustments";
 export * from "./cart";

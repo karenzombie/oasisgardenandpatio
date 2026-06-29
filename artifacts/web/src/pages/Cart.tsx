@@ -55,6 +55,19 @@ export default function Cart() {
   const shipping = Number(data?.shipping ?? 0);
   const total = subtotal + shipping;
 
+  // Group tied accessory lines (Aluminum Top Covers) beneath their parent base
+  // line. Top-level lines (bases and independent stems) render normally; covers
+  // render indented under their base with a locked quantity.
+  const accessoriesByParent = new Map<number, typeof items>();
+  for (const it of items) {
+    if (it.parentCartItemId != null) {
+      const list = accessoriesByParent.get(it.parentCartItemId) ?? [];
+      list.push(it);
+      accessoriesByParent.set(it.parentCartItemId, list);
+    }
+  }
+  const topLevelItems = items.filter((it) => it.parentCartItemId == null);
+
   return (
     <div className="container mx-auto px-4 py-12 max-w-6xl">
       <nav className="text-xs uppercase tracking-widest text-muted-foreground mb-6 flex items-center gap-2">
@@ -92,8 +105,9 @@ export default function Cart() {
             </div>
           ) : null}
           <ul className="lg:col-span-2 divide-y divide-border border-y border-border">
-            {items.map((item) => (
-              <li key={item.id} className="py-5 flex gap-5">
+            {topLevelItems.map((item) => (
+              <li key={item.id} className="py-5 flex flex-col gap-4">
+              <div className="flex gap-5">
                 <Link href={`/shop/${item.slug}`} className="shrink-0 w-24 h-24 bg-card overflow-hidden">
                   {item.primaryImageUrl ? (
                     <img src={item.primaryImageUrl} alt={item.name} className="w-full h-full object-cover mix-blend-multiply" />
@@ -210,6 +224,51 @@ export default function Cart() {
                 <div className="font-serif text-lg shrink-0 text-right">
                   {formatMoney(item.lineTotal)}
                 </div>
+              </div>
+              {(accessoriesByParent.get(item.id) ?? []).map((cover) => (
+                <div
+                  key={cover.id}
+                  className="ml-10 sm:ml-14 border-l-2 border-border pl-4 flex gap-4"
+                >
+                  <div className="shrink-0 w-16 h-16 bg-card overflow-hidden">
+                    {cover.primaryImageUrl ? (
+                      <img
+                        src={cover.primaryImageUrl}
+                        alt={cover.name}
+                        className="w-full h-full object-cover mix-blend-multiply"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-muted flex items-center justify-center text-[9px] text-muted-foreground text-center px-1">
+                        No image available
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs uppercase tracking-widest text-muted-foreground mb-0.5">
+                      Aluminum Top Cover
+                    </p>
+                    <p className="font-serif text-base">{cover.name}</p>
+                    {cover.finishName ? (
+                      <p className="text-xs text-foreground/80 mt-0.5">
+                        <span className="text-muted-foreground">Finish:</span>{" "}
+                        {cover.finishName}
+                      </p>
+                    ) : null}
+                    <p className="text-sm mt-1">
+                      {formatMoney(cover.unitPrice)} each
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Shipping: {formatMoney(cover.shippingAmount)}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Qty {cover.quantity} — matches the base; removed with it.
+                    </p>
+                  </div>
+                  <div className="font-serif text-base shrink-0 text-right">
+                    {formatMoney(cover.lineTotal)}
+                  </div>
+                </div>
+              ))}
               </li>
             ))}
           </ul>

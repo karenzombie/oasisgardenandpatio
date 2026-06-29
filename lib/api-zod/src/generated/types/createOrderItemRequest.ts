@@ -42,4 +42,9 @@ export interface CreateOrderItemRequest {
   notes?: string | null;
   /** When true, units are sourced from store inventory at order creation. Vendor order only covers the balance beyond what is on hand. */
   useInventory?: boolean;
+  /**
+   * Zero-based index (within this request's items array) of the base line this accessory line is tied to. Used to set parent_order_item_id on Aluminum Top Cover lines so they group under their base. Null for independent lines (including stems).
+   * @nullable
+   */
+  parentItemIndex?: number | null;
 }

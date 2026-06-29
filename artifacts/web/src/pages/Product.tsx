@@ -100,6 +100,13 @@ export default function Product() {
   // Selected add-on option ids (multi-select, default none). Pairing targets are
   // auto-included via effectiveAddonIds — they are not stored here directly.
   const [addonIds, setAddonIds] = useState<number[]>([]);
+  // Optional galvanized-base accessories (only the 7 Frankford plate bases offer
+  // these). Both default to "none". The stem becomes an independent cart line;
+  // the cover becomes a hidden line tied 1:1 to the base.
+  const [stemProductId, setStemProductId] = useState<number | null>(null);
+  const [stemPickerOpen, setStemPickerOpen] = useState(false);
+  const [coverFinishId, setCoverFinishId] = useState<number | null>(null);
+  const [coverPickerOpen, setCoverPickerOpen] = useState(false);
 
   const { toast } = useToast();
   const qc = useQueryClient();
@@ -145,7 +152,28 @@ export default function Product() {
     setWlFabricId(null);
     setWlTileId(null);
     setAddonIds([]);
+    setStemProductId(null);
+    setStemPickerOpen(false);
+    setCoverFinishId(null);
+    setCoverPickerOpen(false);
   }, [data?.id]);
+
+  // Optional accessories offered by the galvanized plate bases (empty/null for
+  // every other product).
+  const stemOptions = useMemo(() => data?.stemOptions ?? [], [data?.stemOptions]);
+  const coverOption = data?.coverOptions ?? null;
+  const coverFinishes = useMemo(
+    () => coverOption?.finishes ?? [],
+    [coverOption],
+  );
+  const selectedStem = useMemo(
+    () => stemOptions.find((s) => s.stemProductId === stemProductId) ?? null,
+    [stemOptions, stemProductId],
+  );
+  const selectedCoverFinish = useMemo(
+    () => coverFinishes.find((f) => f.finishId === coverFinishId) ?? null,
+    [coverFinishes, coverFinishId],
+  );
 
   // Discrete frame finishes for grade-priced (Frankford) products. Empty for
   // legacy products where variants double as finishes.
@@ -552,6 +580,10 @@ export default function Product() {
         ...(selectedFabric ? { fabricId: selectedFabric.id } : {}),
         ...(effectiveAddonIds.size > 0
           ? { addonOptionIds: Array.from(effectiveAddonIds) }
+          : {}),
+        ...(selectedStem ? { stemProductId: selectedStem.stemProductId } : {}),
+        ...(selectedCoverFinish
+          ? { coverFinishId: selectedCoverFinish.finishId }
           : {}),
       },
     });
@@ -1416,6 +1448,189 @@ export default function Product() {
                       );
                     })}
                   </div>
+                </div>
+              ) : null}
+
+              {/* Optional Stem selector (galvanized plate bases only). Default
+                  "No Stem"; choosing one adds a separate, independently editable
+                  cart line. */}
+              {stemOptions.length > 0 ? (
+                <div className="mb-5">
+                  <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">
+                    Stem
+                    {selectedStem ? <SelectionCheck /> : null}
+                  </p>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Optional. Adds a separate line item; the base price is
+                    unchanged.
+                  </p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setStemPickerOpen(true)}
+                      className="inline-flex items-center gap-2 border border-primary bg-primary text-primary-foreground px-4 py-2.5 text-sm hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary"
+                    >
+                      <Palette className="h-4 w-4" />
+                      {selectedStem ? "Change stem" : "Choose a stem"}
+                    </button>
+                    {selectedStem ? (
+                      <button
+                        type="button"
+                        onClick={() => setStemProductId(null)}
+                        className="text-sm text-muted-foreground underline hover:text-foreground"
+                      >
+                        Remove stem
+                      </button>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">
+                        No stem selected
+                      </span>
+                    )}
+                  </div>
+                  <FabricSwatchDialog
+                    open={stemPickerOpen}
+                    onOpenChange={setStemPickerOpen}
+                    fabrics={stemOptions.map((s) => ({
+                      id: s.stemProductId,
+                      name: s.name,
+                      itemNumber: s.sku,
+                      swatchImageUrl: s.imageUrl ?? null,
+                      grade: null,
+                      colorFamily: null,
+                    }))}
+                    selectedFabricId={stemProductId}
+                    onConfirm={(id) => setStemProductId(id)}
+                    isGradeMode={false}
+                    linePriceForGrade={() => null}
+                    formatPrice={(n) => formatMoney(n)}
+                    title="Choose a stem"
+                    noun="stem"
+                    nounPlural="stems"
+                    confirmLabel="Select this stem"
+                    searchPlaceholder="Search stems by name…"
+                    optionBadge={(id) => {
+                      const s = stemOptions.find((x) => x.stemProductId === id);
+                      return s ? formatMoney(Number(s.unitPrice)) : null;
+                    }}
+                  />
+                </div>
+              ) : null}
+
+              {/* Optional Aluminum Top Cover selector (galvanized plate bases
+                  only). Default "No Top Cover"; choosing a finish adds a hidden
+                  cover line tied 1:1 to the base (qty locked, removed with the
+                  base). Price varies by finish. */}
+              {coverOption && coverFinishes.length > 0 ? (
+                <div className="mb-5">
+                  <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">
+                    Aluminum Top Cover
+                    {selectedCoverFinish ? <SelectionCheck /> : null}
+                  </p>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Optional. Adds a separate line item tied to this base; the
+                    base price is unchanged.
+                  </p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setCoverPickerOpen(true)}
+                      className="inline-flex items-center gap-2 border border-primary bg-primary text-primary-foreground px-4 py-2.5 text-sm hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary"
+                    >
+                      <Palette className="h-4 w-4" />
+                      {selectedCoverFinish
+                        ? "Change top cover"
+                        : "Choose a top cover"}
+                    </button>
+                    {selectedCoverFinish ? (
+                      <button
+                        type="button"
+                        onClick={() => setCoverFinishId(null)}
+                        className="text-sm text-muted-foreground underline hover:text-foreground"
+                      >
+                        Remove top cover
+                      </button>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">
+                        No top cover selected
+                      </span>
+                    )}
+                  </div>
+                  <FabricSwatchDialog
+                    open={coverPickerOpen}
+                    onOpenChange={setCoverPickerOpen}
+                    fabrics={coverFinishes.map((f) => ({
+                      id: f.finishId,
+                      name: f.finishName,
+                      itemNumber: f.finishCode ?? "",
+                      swatchImageUrl: f.swatchImageUrl ?? null,
+                      grade: null,
+                      colorFamily: null,
+                    }))}
+                    selectedFabricId={coverFinishId}
+                    onConfirm={(id) => setCoverFinishId(id)}
+                    isGradeMode={false}
+                    linePriceForGrade={() => null}
+                    formatPrice={(n) => formatMoney(n)}
+                    title="Choose a top cover finish"
+                    noun="finish"
+                    nounPlural="finishes"
+                    confirmLabel="Select this finish"
+                    searchPlaceholder="Search finishes by name…"
+                    optionBadge={(id) => {
+                      const f = coverFinishes.find((x) => x.finishId === id);
+                      return f ? formatMoney(Number(f.unitPrice)) : null;
+                    }}
+                  />
+                </div>
+              ) : null}
+
+              {/* Accessory selection summary (stem / top cover). */}
+              {selectedStem || selectedCoverFinish ? (
+                <div className="mb-5 flex flex-col gap-3 border border-border bg-muted/30 px-4 py-3">
+                  {selectedStem ? (
+                    <div className="flex items-center gap-3">
+                      {selectedStem.imageUrl ? (
+                        <img
+                          src={selectedStem.imageUrl}
+                          alt={selectedStem.name}
+                          className="h-14 w-14 shrink-0 object-cover border border-border"
+                        />
+                      ) : (
+                        <div className="h-14 w-14 shrink-0" aria-hidden="true" />
+                      )}
+                      <div className="text-sm">
+                        <p className="text-muted-foreground">Stem</p>
+                        <p className="font-medium">{selectedStem.name}</p>
+                        <p className="text-muted-foreground">
+                          {formatMoney(Number(selectedStem.unitPrice))} · added as
+                          a separate line
+                        </p>
+                      </div>
+                    </div>
+                  ) : null}
+                  {selectedCoverFinish ? (
+                    <div className="flex items-center gap-3">
+                      {selectedCoverFinish.swatchImageUrl ? (
+                        <img
+                          src={selectedCoverFinish.swatchImageUrl}
+                          alt={selectedCoverFinish.finishName}
+                          className="h-14 w-14 shrink-0 object-cover border border-border"
+                        />
+                      ) : (
+                        <div className="h-14 w-14 shrink-0" aria-hidden="true" />
+                      )}
+                      <div className="text-sm">
+                        <p className="text-muted-foreground">Aluminum Top Cover</p>
+                        <p className="font-medium">
+                          {selectedCoverFinish.finishName}
+                        </p>
+                        <p className="text-muted-foreground">
+                          {formatMoney(Number(selectedCoverFinish.unitPrice))} ·
+                          quantity matches the base
+                        </p>
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
 

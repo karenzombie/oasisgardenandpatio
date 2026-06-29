@@ -8,6 +8,7 @@ import {
   index,
   uniqueIndex,
   foreignKey,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
@@ -93,6 +94,17 @@ export const cartItemsTable = pgTable(
     // unique index so two otherwise-identical lines that differ only by their
     // add-on selection don't collapse into one row on upsert.
     addonSignature: text("addon_signature").notNull().default(""),
+    // When set, this line is an ACCESSORY tied 1:1 to a parent line — used by
+    // the galvanized-base "Aluminum Top Cover": the cover line points at its
+    // base line. ON DELETE CASCADE removes the cover when the base line is
+    // removed; the cover's quantity is kept in lockstep with the parent and is
+    // NOT independently editable. NULL = a normal, independent line (this
+    // includes stem accessories, which are standalone products added as their
+    // own freely-editable line).
+    parentCartItemId: integer("parent_cart_item_id").references(
+      (): AnyPgColumn => cartItemsTable.id,
+      { onDelete: "cascade" },
+    ),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

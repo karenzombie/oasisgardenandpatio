@@ -5,9 +5,11 @@
  * Oasis Garden & Patio API
  * OpenAPI spec version: 0.1.0
  */
+import type { CatalogCoverPicker } from "./catalogCoverPicker";
 import type { CatalogFabricOption } from "./catalogFabricOption";
 import type { CatalogFinishOption } from "./catalogFinishOption";
 import type { CatalogProductVariant } from "./catalogProductVariant";
+import type { CatalogStemOption } from "./catalogStemOption";
 
 /**
  * Variants and fabric options for the staff order picker.
@@ -23,4 +25,8 @@ export interface AdminProductPickerDetail {
   fabricOptions: CatalogFabricOption[];
   /** Discrete frame-finish choices for grade-priced products. Empty for legacy (variant-as-finish) products. */
   finishes: CatalogFinishOption[];
+  /** Optional stem accessories for galvanized plate bases. Each selection adds a SEPARATE, independent order line. Empty for products with no stem picker. */
+  stemOptions: CatalogStemOption[];
+  /** Optional Aluminum Top Cover picker for galvanized plate bases. The chosen finish adds a SEPARATE order line tied 1:1 to the base. Null when the product has no cover picker. */
+  coverOptions: CatalogCoverPicker | null;
 }

@@ -287,6 +287,7 @@ router.post(
             availableOnline: productsTable.availableOnline,
             isActive: productsTable.isActive,
             quoteOnly: productsTable.quoteOnly,
+            parentCartItemId: cartItemsTable.parentCartItemId,
             fabricIsStripe: fabricsTable.isStripe,
             variantId: cartItemsTable.variantId,
             fabricId: cartItemsTable.fabricId,
@@ -332,7 +333,17 @@ router.post(
 
         if (lines.length === 0)
           return { error: "Cart is empty", status: 400 };
-        if (lines.some((l) => !l.isActive || !l.availableOnline || l.quoteOnly)) {
+        // Tied accessory lines (top covers) are intentionally hidden products
+        // (available_online=false); they're valid only as a child of a base
+        // line, so exempt them from the storefront-availability guard.
+        if (
+          lines.some(
+            (l) =>
+              !l.isActive ||
+              (!l.availableOnline && l.parentCartItemId == null) ||
+              l.quoteOnly,
+          )
+        ) {
           return {
             error:
               "One or more items in your cart are no longer available. Please update your cart and try again.",
@@ -445,8 +456,24 @@ router.post(
           })
           .returning();
 
-        for (let i = 0; i < lines.length; i++) {
+        // Insert base lines before their tied accessory lines (top covers) so a
+        // cover's parent order_item already exists when we link it. cartItemId →
+        // orderItemId lets the cover record point at its base via
+        // parent_order_item_id (mirrors the cart's parent_cart_item_id tie).
+        const insertOrder = lines
+          .map((_, i) => i)
+          .sort(
+            (a, b) =>
+              (lines[a].parentCartItemId == null ? 0 : 1) -
+              (lines[b].parentCartItemId == null ? 0 : 1),
+          );
+        const orderItemIdByCartItemId = new Map<number, number>();
+        for (const i of insertOrder) {
           const l = lines[i];
+          const parentOrderItemId =
+            l.parentCartItemId != null
+              ? (orderItemIdByCartItemId.get(l.parentCartItemId) ?? null)
+              : null;
           const [orderItem] = await tx
             .insert(orderItemsTable)
             .values({
@@ -454,6 +481,7 @@ router.post(
             productId: l.productId,
             productSkuSnapshot: l.sku,
             description: l.name,
+            parentOrderItemId,
             quantity: l.quantity,
             unitPrice: String(l.unitPrice),
             amount: moneyFromCents(lineCents[i]),
@@ -507,6 +535,10 @@ router.post(
               }),
             );
           }
+
+          // Record this line's order_item id so any tied accessory line (top
+          // cover) inserted later can link to it via parent_order_item_id.
+          orderItemIdByCartItemId.set(l.cartItemId, orderItem.id);
         }
 
         await tx.insert(orderStatusHistoryTable).values({

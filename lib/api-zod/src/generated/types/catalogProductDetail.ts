@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { CatalogAddonOption } from "./catalogAddonOption";
+import type { CatalogCoverPicker } from "./catalogCoverPicker";
 import type { CatalogFabricOption } from "./catalogFabricOption";
 import type { CatalogFinishCollection } from "./catalogFinishCollection";
 import type { CatalogFinishOption } from "./catalogFinishOption";
@@ -13,6 +14,7 @@ import type { CatalogProduct } from "./catalogProduct";
 import type { CatalogProductDetailSpecs } from "./catalogProductDetailSpecs";
 import type { CatalogProductImage } from "./catalogProductImage";
 import type { CatalogProductVariant } from "./catalogProductVariant";
+import type { CatalogStemOption } from "./catalogStemOption";
 import type { Material } from "./material";
 
 export type CatalogProductDetail = CatalogProduct & {
@@ -46,6 +48,10 @@ export type CatalogProductDetail = CatalogProduct & {
   finishes: CatalogFinishOption[];
   /** Optional add-ons for this product (e.g. privacy walls, replacement stem). Priced additively on top of the base product. Empty when the product has no add-ons. */
   addonOptions: CatalogAddonOption[];
+  /** Optional stem accessories the customer may add alongside this base (galvanized plate bases only). Each selection adds a SEPARATE, independent cart line. Empty for products with no stem picker. */
+  stemOptions: CatalogStemOption[];
+  /** Optional Aluminum Top Cover picker (galvanized plate bases only). The chosen finish color adds a SEPARATE cart line tied 1:1 to the base. Null when the product has no cover picker. */
+  coverOptions: CatalogCoverPicker | null;
   /**
    * Admin-editable note shown when a special (non-default) finish triggers a minimum order quantity.
    * @nullable

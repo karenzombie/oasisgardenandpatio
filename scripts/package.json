@@ -17,6 +17,7 @@
     "seed-sunbrella-fabric-meta": "tsx ./src/seedSunbrellaFabricMeta.ts",
     "seed-tropitone-fabrics": "tsx ./src/seedTropitoneFabrics.ts",
     "seed-frankford-fabrics": "tsx ./src/seedFrankfordFabrics.ts",
+    "seed-galvanized-base-accessories": "tsx ./src/seedGalvanizedBaseAccessories.ts",
     "seed-frankford-products": "tsx ./src/seedFrankfordProducts.ts",
     "seed-frankford-pricing": "tsx ./src/seedFrankfordPricing.ts",
     "upload-frankford-missing-swatches": "tsx ./src/uploadFrankfordMissingSwatches.ts",
