@@ -88,7 +88,7 @@ function FinishSwatch({
       {finish.itemNumber && (
         <p className="text-xs text-muted-foreground">{finish.itemNumber}</p>
       )}
-      {finish.description && !FINISH_TYPE_LABELS[finish.description] && (
+      {finish.description && !FINISH_TYPE_LABELS[finish.description] && !finish.collection && (
         <p className="text-xs text-muted-foreground/80 line-clamp-2 mt-0.5">
           {finish.description}
         </p>
@@ -134,6 +134,11 @@ function FinishProductsDialog({
                 {finish?.manufacturerName}
                 {finish?.itemNumber ? ` · ${finish.itemNumber}` : ""}
               </DialogDescription>
+              {finish?.description && !FINISH_TYPE_LABELS[finish.description] && (
+                <p className="text-sm text-foreground/80 mt-2 leading-relaxed">
+                  {finish.description}
+                </p>
+              )}
             </div>
           </div>
         </DialogHeader>
@@ -253,9 +258,11 @@ export default function Finishes() {
               .slice()
               .sort((a, b) => (a.displayOrder ?? 999) - (b.displayOrder ?? 999));
 
-            // Description-based sub-groups for manufacturers without collections
+            // Sub-groups: use collection field when set, otherwise description.
+            // This lets "Valances" (collection) appear alongside "Frame Finishes"
+            // (description-keyed) without collapsing into separate per-item groups.
             const typeKeys = Array.from(
-              new Set(list.map((f) => f.description).filter(Boolean)),
+              new Set(list.map((f) => f.collection ?? f.description).filter(Boolean)),
             ) as string[];
             const hasSubGroups = typeKeys.length > 1;
             const subGroups: { label: string; items: FinishItem[] }[] =
@@ -268,7 +275,7 @@ export default function Finishes() {
                     )
                     .map((key) => ({
                       label: FINISH_TYPE_LABELS[key] ?? key,
-                      items: list.filter((f) => f.description === key),
+                      items: list.filter((f) => (f.collection ?? f.description) === key),
                     }))
                 : [{ label: "", items: list }];
 
