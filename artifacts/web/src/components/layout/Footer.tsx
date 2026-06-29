@@ -86,7 +86,7 @@ export function Footer() {
         </div>
 
         <div className="border-t border-secondary-foreground/10 pt-8 flex flex-col items-center md:items-start gap-2 text-xs text-secondary-foreground/60">
-          <p>© {new Date().getFullYear()} Oasis Garden & Patio. All rights reserved.</p>
+          <p className="text-sm font-bold">© {new Date().getFullYear()} Oasis Garden & Patio. All rights reserved.</p>
           <p>
             Built by Zombie Platforms LLC.{" "}
             <a
