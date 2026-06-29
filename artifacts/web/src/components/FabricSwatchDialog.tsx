@@ -45,6 +45,13 @@ interface FabricSwatchDialogProps {
   /** Search input placeholder. */
   searchPlaceholder?: string;
   /**
+   * Optional static, non-interactive thumbnail shown above the search bar
+   * (e.g. an "assorted" reference image of the Aluminum Top Covers so the
+   * customer can see what they look like). Purely decorative — it is not
+   * selectable and does not affect the chosen option.
+   */
+  headerImageUrl?: string | null;
+  /**
    * Optional per-option badge (e.g. a frame upcharge). Return a short string to
    * render as a price line below the option name (matching the fabric price
    * placement), or null for none.
@@ -102,6 +109,7 @@ export function FabricSwatchDialog({
   nounPlural = "fabrics",
   confirmLabel,
   searchPlaceholder = "Search by name or item number…",
+  headerImageUrl,
   optionBadge,
 }: FabricSwatchDialogProps) {
   const [gradeFilter, setGradeFilter] = useState<string>(ALL);
@@ -220,6 +228,18 @@ export function FabricSwatchDialog({
                 ))}
               </div>
             </div>
+          ) : null}
+
+          {/* Static reference thumbnail (decorative only, e.g. assorted
+              Aluminum Top Cover colors). Not selectable or interactive. */}
+          {headerImageUrl ? (
+            <img
+              src={headerImageUrl}
+              alt=""
+              aria-hidden="true"
+              draggable={false}
+              className="h-20 w-20 shrink-0 rounded-md border border-border object-cover pointer-events-none select-none"
+            />
           ) : null}
 
           {/* Search */}

@@ -1576,6 +1576,7 @@ export default function Product() {
                     nounPlural="finishes"
                     confirmLabel="Select this finish"
                     searchPlaceholder="Search finishes by name…"
+                    headerImageUrl={coverOption.imageUrl}
                     optionBadge={(id) => {
                       const f = coverFinishes.find((x) => x.finishId === id);
                       return f ? formatMoney(Number(f.unitPrice)) : null;
