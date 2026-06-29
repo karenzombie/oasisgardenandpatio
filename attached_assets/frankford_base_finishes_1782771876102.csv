@@ -1,0 +1,55 @@
+product_id,sku,name,finish_code,finish_name,upcharge_msrp,upcharge_sale
+5085,50C,Resin Coated Concrete Base 50 lbs,MS,Brushed Silver,0,0
+5085,50C,Resin Coated Concrete Base 50 lbs,BK,Onyx,0,0
+5085,50C,Resin Coated Concrete Base 50 lbs,WH,Alpine,0,0
+5085,50C,Resin Coated Concrete Base 50 lbs,BZ,Desert Bronze,0,0
+5075,23,Resin Coated Concrete Base 80 lbs,MS,Brushed Silver,0,0
+5075,23,Resin Coated Concrete Base 80 lbs,BK,Onyx,0,0
+5075,23,Resin Coated Concrete Base 80 lbs,WH,Alpine,0,0
+5075,23,Resin Coated Concrete Base 80 lbs,BZ,Desert Bronze,0,0
+5072,100A,Premium Aluminum Shell Wheel Base 100 lbs,SM,Silver Mist,0,0
+5072,100A,Premium Aluminum Shell Wheel Base 100 lbs,WG,Golden Oak,320,288
+5072,100A,Premium Aluminum Shell Wheel Base 100 lbs,HW,Heather Willow,320,288
+5072,100A,Premium Aluminum Shell Wheel Base 100 lbs,BK,Onyx,120,108
+5072,100A,Premium Aluminum Shell Wheel Base 100 lbs,WH,Alpine,120,108
+5072,100A,Premium Aluminum Shell Wheel Base 100 lbs,BZ,Desert Bronze,120,108
+5072,100A,Premium Aluminum Shell Wheel Base 100 lbs,CB,Carbon,120,108
+5074,150A,Premium Aluminum Shell Wheel Base 150 lbs,SM,Silver Mist,0,0
+5074,150A,Premium Aluminum Shell Wheel Base 150 lbs,WG,Golden Oak,320,288
+5074,150A,Premium Aluminum Shell Wheel Base 150 lbs,HW,Heather Willow,320,288
+5074,150A,Premium Aluminum Shell Wheel Base 150 lbs,BK,Onyx,120,108
+5074,150A,Premium Aluminum Shell Wheel Base 150 lbs,WH,Alpine,120,108
+5074,150A,Premium Aluminum Shell Wheel Base 150 lbs,BZ,Desert Bronze,120,108
+5074,150A,Premium Aluminum Shell Wheel Base 150 lbs,CB,Carbon,120,108
+5086,50S,Steel Plate Base 50 lbs,SM,Silver Mist,0,0
+5086,50S,Steel Plate Base 50 lbs,BK,Onyx,0,0
+5086,50S,Steel Plate Base 50 lbs,WH,Alpine,0,0
+5086,50S,Steel Plate Base 50 lbs,BZ,Desert Bronze,0,0
+5086,50S,Steel Plate Base 50 lbs,CB,Carbon,0,0
+5082,75S,Steel Plate Base 75 lbs,SM,Silver Mist,0,0
+5082,75S,Steel Plate Base 75 lbs,BK,Onyx,0,0
+5082,75S,Steel Plate Base 75 lbs,WH,Alpine,0,0
+5082,75S,Steel Plate Base 75 lbs,BZ,Desert Bronze,0,0
+5082,75S,Steel Plate Base 75 lbs,CB,Carbon,0,0
+5073,100S,Steel Plate Base 100 lbs,SM,Silver Mist,0,0
+5073,100S,Steel Plate Base 100 lbs,BK,Onyx,0,0
+5073,100S,Steel Plate Base 100 lbs,WH,Alpine,0,0
+5073,100S,Steel Plate Base 100 lbs,BZ,Desert Bronze,0,0
+5073,100S,Steel Plate Base 100 lbs,CB,Carbon,0,0
+5081,480,Galvanized Wheel Base w/ Aluminum Cover,MS,Brushed Silver,0,0
+5081,480,Galvanized Wheel Base w/ Aluminum Cover,WG,Golden Oak,420,378
+5081,480,Galvanized Wheel Base w/ Aluminum Cover,HW,Heather Willow,420,378
+5081,480,Galvanized Wheel Base w/ Aluminum Cover,BK,Onyx,420,378
+5081,480,Galvanized Wheel Base w/ Aluminum Cover,WH,Alpine,420,378
+5081,480,Galvanized Wheel Base w/ Aluminum Cover,BZ,Desert Bronze,420,378
+5081,480,Galvanized Wheel Base w/ Aluminum Cover,CB,Carbon,420,378
+5110,NGU550-L,Nova Replacement Top Cover,MS,Brushed Silver,0,0
+5110,NGU550-L,Nova Replacement Top Cover,WG,Golden Oak,520,468
+5110,NGU550-L,Nova Replacement Top Cover,HW,Heather Willow,520,468
+5110,NGU550-L,Nova Replacement Top Cover,BK,Onyx,420,378
+5110,NGU550-L,Nova Replacement Top Cover,WH,Alpine,420,378
+5110,NGU550-L,Nova Replacement Top Cover,BZ,Desert Bronze,420,378
+5110,NGU550-L,Nova Replacement Top Cover,CB,Carbon,420,378
+5563,BZ-SM,Bazooka In-Ground Anchored Stem (1.5"),SM,Silver Mist,0,0
+5111,BZ2-SM,Bazooka In-Ground Anchored Stem (2"),SM,Silver Mist,0,0
+5113,CMLK-SM,Camlock Surface Mounted Stem,SM,Silver Mist,0,0

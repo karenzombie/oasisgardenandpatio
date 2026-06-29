@@ -364,12 +364,12 @@ export default function Product() {
     ? tab
     : (visibleTabs[0]?.id ?? "specs");
 
-  // Auto-select the only finish for single-finish grade-priced products.
+  // Auto-select the only finish for single-finish products (grade or flat-priced).
   useEffect(() => {
-    if (isGradeMode && finishes.length === 1) {
+    if (finishes.length === 1) {
       setFinishId(finishes[0].id);
     }
-  }, [isGradeMode, finishes]);
+  }, [finishes]);
 
   // Auto-select the only configuration when a product has a single variant
   // (replacement covers, single-vent umbrellas, single-finish bases/frames).
@@ -539,7 +539,7 @@ export default function Product() {
       variants[0]?.optionLabel ?? (isGradeMode ? "Configuration" : "Variant"),
     );
   }
-  if (isGradeMode && finishes.length > 0 && !selectedFinish) {
+  if (finishes.length > 0 && !selectedFinish) {
     missingSelections.push("Frame Finish");
   }
   if (requiresFabric && !selectedFabric) missingSelections.push("Fabric");
@@ -671,29 +671,35 @@ export default function Product() {
       }
       if (minLine !== Infinity) gradeFromPrice = minLine;
     }
-    // Per-finish frame upcharge: explicitly-picked finishes may add a fixed
-    // amount on top of the grade price. MSRP and sale upcharges are tracked
-    // separately so the strikethrough MSRP and sale price stay consistent.
-    // Pooled finishes carry 0 and the server is the source of truth.
-    const finishUpchargeMsrp = selectedFinish
-      ? Number(selectedFinish.upchargeMsrp)
-      : 0;
-    const finishUpchargeSale = selectedFinish
-      ? Number(selectedFinish.upchargeSale)
-      : 0;
-    if (finishUpchargeMsrp > 0 || finishUpchargeSale > 0) {
-      if (gradeMsrp != null) gradeMsrp += finishUpchargeMsrp;
-      if (gradeLinePrice != null) gradeLinePrice += finishUpchargeSale;
-      if (gradeFromPrice != null) gradeFromPrice += finishUpchargeSale;
-    }
+  }
+  // Per-finish frame upcharge. Hoisted outside the isGradeMode gate so it
+  // applies to both grade-priced and flat-priced products with discrete finishes.
+  const finishUpchargeMsrp = selectedFinish ? Number(selectedFinish.upchargeMsrp) : 0;
+  const finishUpchargeSale = selectedFinish ? Number(selectedFinish.upchargeSale) : 0;
+  if (isGradeMode && (finishUpchargeMsrp > 0 || finishUpchargeSale > 0)) {
+    if (gradeMsrp != null) gradeMsrp += finishUpchargeMsrp;
+    if (gradeLinePrice != null) gradeLinePrice += finishUpchargeSale;
+    if (gradeFromPrice != null) gradeFromPrice += finishUpchargeSale;
   }
   const gradeOnSale =
     gradeLinePrice != null && gradeMsrp != null && gradeMsrp > gradeLinePrice;
+  // Flat-price display with finish upcharge (non-grade products with discrete
+  // finishes). Adjusted values drive the visible price block and running total.
+  const flatDisplayPrice =
+    !isGradeMode && finishUpchargeSale > 0
+      ? effectivePrice + finishUpchargeSale
+      : effectivePrice;
+  const flatDisplayMsrp = !isGradeMode
+    ? strikePrice + finishUpchargeMsrp
+    : strikePrice;
+  const flatShowStrikethrough = !isGradeMode
+    ? flatDisplayMsrp > flatDisplayPrice
+    : showStrikethrough;
 
   // Additive add-on pricing: the per-unit price the customer pays is the canopy
   // unit price plus every selected add-on's per-unit price; the line total
   // multiplies by quantity. Null until the canopy unit price is known.
-  const canopyUnit: number | null = isGradeMode ? gradeLinePrice : effectivePrice;
+  const canopyUnit: number | null = isGradeMode ? gradeLinePrice : flatDisplayPrice;
   const comboUnit =
     canopyUnit != null && addonUnitTotal != null
       ? canopyUnit + addonUnitTotal
@@ -875,16 +881,16 @@ export default function Product() {
               </div>
             ) : (
               <div className="mb-6">
-                {showStrikethrough ? (
+                {flatShowStrikethrough ? (
                   <div className="flex items-baseline gap-3 flex-wrap">
                     <span className="text-muted-foreground">
                       <span className="text-xs uppercase tracking-widest mr-1.5">MSRP</span>
-                      <span className="line-through text-lg">{formatMoney(strikePrice)}</span>
+                      <span className="line-through text-lg">{formatMoney(flatDisplayMsrp)}</span>
                     </span>
-                    <span className="text-primary font-bold text-3xl md:text-4xl">{formatMoney(effectivePrice)}</span>
+                    <span className="text-primary font-bold text-3xl md:text-4xl">{formatMoney(flatDisplayPrice)}</span>
                   </div>
                 ) : (
-                  <span className="text-2xl font-semibold">{formatMoney(effectivePrice)}</span>
+                  <span className="text-2xl font-semibold">{formatMoney(flatDisplayPrice)}</span>
                 )}
                 {variantAdj !== 0 ? (
                   <span className="text-sm text-muted-foreground mt-1 block">
@@ -1209,10 +1215,11 @@ export default function Product() {
                 )
               ) : null}
 
-              {/* Frame Finish selector (grade-priced products only). A single
-                  finish renders read-only; multiple finishes open the swatch
-                  dialog (matching the fabric picker). */}
-              {isGradeMode && finishes.length > 0 ? (
+              {/* Frame Finish selector. A single finish renders read-only;
+                  multiple finishes open the swatch dialog (matching the fabric
+                  picker). Applies to both grade-priced and flat-priced products
+                  with discrete finish options. */}
+              {finishes.length > 0 ? (
                 <div className="mb-5">
                   <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">
                     Frame Finish
