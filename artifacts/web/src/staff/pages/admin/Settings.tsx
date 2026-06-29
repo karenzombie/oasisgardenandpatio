@@ -7,30 +7,16 @@ import {
   getAdminGetSettingsQueryKey,
   type SystemSettings,
   type SystemSettingsUpdate,
-  SystemSettingsShippingMode,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { PageBody, PageHeader } from "../../StaffShell";
 
-type ShippingMode = (typeof SystemSettingsShippingMode)[keyof typeof SystemSettingsShippingMode];
-
 type FormState = {
   defaultTaxRate: string;
-  shippingMode: ShippingMode;
-  flatShippingRate: string;
-  shippingPercentage: string;
-  freeShippingThreshold: string;
   overdueVendorOrderThresholdDays: string;
   lowStockThreshold: string;
   defaultAgentDiscountCap: string;
@@ -41,10 +27,6 @@ type FormState = {
 function settingsToForm(s: SystemSettings): FormState {
   return {
     defaultTaxRate: (s.defaultTaxRate * 100).toFixed(4),
-    shippingMode: s.shippingMode,
-    flatShippingRate: String(s.flatShippingRate),
-    shippingPercentage: (s.shippingPercentage * 100).toFixed(4),
-    freeShippingThreshold: String(s.freeShippingThreshold),
     overdueVendorOrderThresholdDays: String(s.overdueVendorOrderThresholdDays),
     lowStockThreshold: String(s.lowStockThreshold),
     defaultAgentDiscountCap: (s.defaultAgentDiscountCap * 100).toFixed(4),
@@ -74,28 +56,6 @@ function buildUpdate(
     return { update, error: "Tax rate must be between 0% and 100%." };
   if (Math.abs(taxFrac - original.defaultTaxRate) > 1e-9)
     update.defaultTaxRate = taxFrac;
-
-  if (form.shippingMode !== original.shippingMode)
-    update.shippingMode = form.shippingMode;
-
-  const flat = num(form.flatShippingRate);
-  if (flat === null || flat < 0)
-    return { update, error: "Flat shipping rate must be ≥ 0." };
-  if (flat !== original.flatShippingRate) update.flatShippingRate = flat;
-
-  const shipPct = num(form.shippingPercentage);
-  if (shipPct === null) return { update, error: "Shipping percentage is invalid." };
-  const shipPctFrac = shipPct / 100;
-  if (shipPctFrac < 0 || shipPctFrac > 1)
-    return { update, error: "Shipping percentage must be between 0% and 100%." };
-  if (Math.abs(shipPctFrac - original.shippingPercentage) > 1e-9)
-    update.shippingPercentage = shipPctFrac;
-
-  const fst = num(form.freeShippingThreshold);
-  if (fst === null || fst < 0)
-    return { update, error: "Free shipping threshold must be ≥ 0." };
-  if (fst !== original.freeShippingThreshold)
-    update.freeShippingThreshold = fst;
 
   const overdue = int(form.overdueVendorOrderThresholdDays);
   if (overdue === null || overdue < 1)
@@ -229,86 +189,6 @@ export default function Settings() {
                 max="100"
                 value={form.defaultTaxRate}
                 onChange={(e) => update("defaultTaxRate", e.target.value)}
-              />
-            </Field>
-          </Panel>
-
-          <Panel
-            title="Shipping"
-            description="How shipping fees are calculated at checkout. Applies to direct-ship online orders only — ship-to-store orders are always free."
-          >
-            <Field id="shipMode" label="Shipping mode">
-              <Select
-                value={form.shippingMode}
-                onValueChange={(v) =>
-                  update("shippingMode", v as ShippingMode)
-                }
-              >
-                <SelectTrigger id="shipMode">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="flat_per_item">Flat fee per item</SelectItem>
-                  <SelectItem value="flat">Flat fee (carrier weight tiers)</SelectItem>
-                  <SelectItem value="percentage">
-                    Percentage of subtotal
-                  </SelectItem>
-                  <SelectItem value="free">Free shipping</SelectItem>
-                </SelectContent>
-              </Select>
-            </Field>
-            <Field
-              id="flatRate"
-              label="Rate"
-              suffix="USD"
-              hint={
-                form.shippingMode === "flat_per_item"
-                  ? "Charged per item when mode = Flat fee per item (e.g. $20 per unit)"
-                  : "Handling surcharge added on top of carrier weight-tier rate when mode = Flat fee (carrier)"
-              }
-            >
-              <Input
-                id="flatRate"
-                type="number"
-                step="0.01"
-                min="0"
-                value={form.flatShippingRate}
-                onChange={(e) => update("flatShippingRate", e.target.value)}
-                disabled={form.shippingMode !== "flat" && form.shippingMode !== "flat_per_item"}
-              />
-            </Field>
-            <Field
-              id="shipPct"
-              label="Shipping percentage"
-              suffix="%"
-              hint="Used when mode = Percentage of subtotal"
-            >
-              <Input
-                id="shipPct"
-                type="number"
-                step="0.01"
-                min="0"
-                max="100"
-                value={form.shippingPercentage}
-                onChange={(e) => update("shippingPercentage", e.target.value)}
-                disabled={form.shippingMode !== "percentage"}
-              />
-            </Field>
-            <Field
-              id="fst"
-              label="Free shipping threshold"
-              suffix="USD"
-              hint="Order subtotal at or above which shipping is waived"
-            >
-              <Input
-                id="fst"
-                type="number"
-                step="0.01"
-                min="0"
-                value={form.freeShippingThreshold}
-                onChange={(e) =>
-                  update("freeShippingThreshold", e.target.value)
-                }
               />
             </Field>
           </Panel>

@@ -5,7 +5,6 @@
  * Oasis Garden & Patio API
  * OpenAPI spec version: 0.1.0
  */
-import type { SystemSettingsUpdateShippingMode } from "./systemSettingsUpdateShippingMode";
 
 export interface SystemSettingsUpdate {
   /**
@@ -13,16 +12,6 @@ export interface SystemSettingsUpdate {
    * @maximum 1
    */
   defaultTaxRate?: number;
-  shippingMode?: SystemSettingsUpdateShippingMode;
-  /** @minimum 0 */
-  flatShippingRate?: number;
-  /**
-   * @minimum 0
-   * @maximum 1
-   */
-  shippingPercentage?: number;
-  /** @minimum 0 */
-  freeShippingThreshold?: number;
   /** @minimum 1 */
   overdueVendorOrderThresholdDays?: number;
   /** @minimum 0 */

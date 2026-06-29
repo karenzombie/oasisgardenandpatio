@@ -20,11 +20,6 @@ export type SystemSetting = typeof systemSettingsTable.$inferSelect;
 
 export const SETTING_KEYS = {
   defaultTaxRate: "default_tax_rate",
-  shippingMode: "shipping_mode",
-  flatShippingRate: "flat_shipping_rate",
-  shippingPercentage: "shipping_percentage",
-  freeShippingThreshold: "free_shipping_threshold",
-  shippingTiers: "shipping_tiers",
   overdueVendorOrderThresholdDays: "overdue_vendor_order_threshold_days",
   lowStockThreshold: "low_stock_threshold",
   defaultAgentDiscountCap: "default_agent_discount_cap",

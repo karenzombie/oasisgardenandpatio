@@ -16,10 +16,6 @@ type Settings = ReturnType<typeof AdminGetSettingsResponse.parse>;
 
 const KEY_MAP: Record<keyof Settings, string> = {
   defaultTaxRate: SETTING_KEYS.defaultTaxRate,
-  shippingMode: SETTING_KEYS.shippingMode,
-  flatShippingRate: SETTING_KEYS.flatShippingRate,
-  shippingPercentage: SETTING_KEYS.shippingPercentage,
-  freeShippingThreshold: SETTING_KEYS.freeShippingThreshold,
   overdueVendorOrderThresholdDays:
     SETTING_KEYS.overdueVendorOrderThresholdDays,
   lowStockThreshold: SETTING_KEYS.lowStockThreshold,

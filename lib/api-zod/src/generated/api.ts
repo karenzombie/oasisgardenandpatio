@@ -9351,13 +9351,6 @@ export const AdminListCouponCodeUsesResponse = zod.array(
 export const adminGetSettingsResponseDefaultTaxRateMin = 0;
 export const adminGetSettingsResponseDefaultTaxRateMax = 1;
 
-export const adminGetSettingsResponseFlatShippingRateMin = 0;
-
-export const adminGetSettingsResponseShippingPercentageMin = 0;
-export const adminGetSettingsResponseShippingPercentageMax = 1;
-
-export const adminGetSettingsResponseFreeShippingThresholdMin = 0;
-
 export const adminGetSettingsResponseLowStockThresholdMin = 0;
 
 export const adminGetSettingsResponseDefaultAgentDiscountCapMin = 0;
@@ -9373,17 +9366,6 @@ export const AdminGetSettingsResponse = zod.object({
     .number()
     .min(adminGetSettingsResponseDefaultTaxRateMin)
     .max(adminGetSettingsResponseDefaultTaxRateMax),
-  shippingMode: zod.enum(["flat", "flat_per_item", "percentage", "free"]),
-  flatShippingRate: zod
-    .number()
-    .min(adminGetSettingsResponseFlatShippingRateMin),
-  shippingPercentage: zod
-    .number()
-    .min(adminGetSettingsResponseShippingPercentageMin)
-    .max(adminGetSettingsResponseShippingPercentageMax),
-  freeShippingThreshold: zod
-    .number()
-    .min(adminGetSettingsResponseFreeShippingThresholdMin),
   overdueVendorOrderThresholdDays: zod.number().min(1),
   lowStockThreshold: zod
     .number()
@@ -9407,13 +9389,6 @@ export const AdminGetSettingsResponse = zod.object({
 export const adminUpdateSettingsBodyDefaultTaxRateMin = 0;
 export const adminUpdateSettingsBodyDefaultTaxRateMax = 1;
 
-export const adminUpdateSettingsBodyFlatShippingRateMin = 0;
-
-export const adminUpdateSettingsBodyShippingPercentageMin = 0;
-export const adminUpdateSettingsBodyShippingPercentageMax = 1;
-
-export const adminUpdateSettingsBodyFreeShippingThresholdMin = 0;
-
 export const adminUpdateSettingsBodyLowStockThresholdMin = 0;
 
 export const adminUpdateSettingsBodyDefaultAgentDiscountCapMin = 0;
@@ -9429,22 +9404,6 @@ export const AdminUpdateSettingsBody = zod.object({
     .number()
     .min(adminUpdateSettingsBodyDefaultTaxRateMin)
     .max(adminUpdateSettingsBodyDefaultTaxRateMax)
-    .optional(),
-  shippingMode: zod
-    .enum(["flat", "flat_per_item", "percentage", "free"])
-    .optional(),
-  flatShippingRate: zod
-    .number()
-    .min(adminUpdateSettingsBodyFlatShippingRateMin)
-    .optional(),
-  shippingPercentage: zod
-    .number()
-    .min(adminUpdateSettingsBodyShippingPercentageMin)
-    .max(adminUpdateSettingsBodyShippingPercentageMax)
-    .optional(),
-  freeShippingThreshold: zod
-    .number()
-    .min(adminUpdateSettingsBodyFreeShippingThresholdMin)
     .optional(),
   overdueVendorOrderThresholdDays: zod.number().min(1).optional(),
   lowStockThreshold: zod
@@ -9470,13 +9429,6 @@ export const AdminUpdateSettingsBody = zod.object({
 export const adminUpdateSettingsResponseDefaultTaxRateMin = 0;
 export const adminUpdateSettingsResponseDefaultTaxRateMax = 1;
 
-export const adminUpdateSettingsResponseFlatShippingRateMin = 0;
-
-export const adminUpdateSettingsResponseShippingPercentageMin = 0;
-export const adminUpdateSettingsResponseShippingPercentageMax = 1;
-
-export const adminUpdateSettingsResponseFreeShippingThresholdMin = 0;
-
 export const adminUpdateSettingsResponseLowStockThresholdMin = 0;
 
 export const adminUpdateSettingsResponseDefaultAgentDiscountCapMin = 0;
@@ -9492,17 +9444,6 @@ export const AdminUpdateSettingsResponse = zod.object({
     .number()
     .min(adminUpdateSettingsResponseDefaultTaxRateMin)
     .max(adminUpdateSettingsResponseDefaultTaxRateMax),
-  shippingMode: zod.enum(["flat", "flat_per_item", "percentage", "free"]),
-  flatShippingRate: zod
-    .number()
-    .min(adminUpdateSettingsResponseFlatShippingRateMin),
-  shippingPercentage: zod
-    .number()
-    .min(adminUpdateSettingsResponseShippingPercentageMin)
-    .max(adminUpdateSettingsResponseShippingPercentageMax),
-  freeShippingThreshold: zod
-    .number()
-    .min(adminUpdateSettingsResponseFreeShippingThresholdMin),
   overdueVendorOrderThresholdDays: zod.number().min(1),
   lowStockThreshold: zod
     .number()

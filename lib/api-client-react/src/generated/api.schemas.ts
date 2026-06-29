@@ -2857,32 +2857,12 @@ export interface CreateLegalVersionRequest {
   version?: string;
 }
 
-export type SystemSettingsShippingMode =
-  (typeof SystemSettingsShippingMode)[keyof typeof SystemSettingsShippingMode];
-
-export const SystemSettingsShippingMode = {
-  flat: "flat",
-  flat_per_item: "flat_per_item",
-  percentage: "percentage",
-  free: "free",
-} as const;
-
 export interface SystemSettings {
   /**
    * @minimum 0
    * @maximum 1
    */
   defaultTaxRate: number;
-  shippingMode: SystemSettingsShippingMode;
-  /** @minimum 0 */
-  flatShippingRate: number;
-  /**
-   * @minimum 0
-   * @maximum 1
-   */
-  shippingPercentage: number;
-  /** @minimum 0 */
-  freeShippingThreshold: number;
   /** @minimum 1 */
   overdueVendorOrderThresholdDays: number;
   /** @minimum 0 */
@@ -2901,32 +2881,12 @@ export interface SystemSettings {
   currentYearOrderSequence: number;
 }
 
-export type SystemSettingsUpdateShippingMode =
-  (typeof SystemSettingsUpdateShippingMode)[keyof typeof SystemSettingsUpdateShippingMode];
-
-export const SystemSettingsUpdateShippingMode = {
-  flat: "flat",
-  flat_per_item: "flat_per_item",
-  percentage: "percentage",
-  free: "free",
-} as const;
-
 export interface SystemSettingsUpdate {
   /**
    * @minimum 0
    * @maximum 1
    */
   defaultTaxRate?: number;
-  shippingMode?: SystemSettingsUpdateShippingMode;
-  /** @minimum 0 */
-  flatShippingRate?: number;
-  /**
-   * @minimum 0
-   * @maximum 1
-   */
-  shippingPercentage?: number;
-  /** @minimum 0 */
-  freeShippingThreshold?: number;
   /** @minimum 1 */
   overdueVendorOrderThresholdDays?: number;
   /** @minimum 0 */
