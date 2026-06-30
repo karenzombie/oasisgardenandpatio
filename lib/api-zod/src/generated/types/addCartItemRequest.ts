@@ -25,6 +25,11 @@ export interface AddCartItemRequest {
    * @nullable
    */
   finishId?: number | null;
+  /**
+   * Selected finial (umbrella pole-cap) id. Required when the product has finial options.
+   * @nullable
+   */
+  finialId?: number | null;
   /** Selected add-on option IDs (e.g. privacy walls) to attach to this line. Pairing-required add-ons are auto-enforced server-side. */
   addonOptionIds?: number[];
   /**

@@ -15,6 +15,9 @@ export interface AdminOrderItem {
   finishId: number | null;
   finishCodeSnapshot: string | null;
   finishNameSnapshot: string | null;
+  finialId: number | null;
+  finialCodeSnapshot: string | null;
+  finialNameSnapshot: string | null;
   fabricId: number | null;
   fabricNameSnapshot: string | null;
   fabricItemNumberSnapshot: string | null;

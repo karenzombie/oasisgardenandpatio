@@ -16,6 +16,7 @@ import {
   finishesTable,
   productFinishPoolsTable,
   productFinishOptionsTable,
+  productFinialOptionsTable,
   productStemOptionsTable,
   productCoverOptionsTable,
   productCoverFinishPricesTable,
@@ -1289,11 +1290,42 @@ router.get(
       };
     }
 
+    const finialRows = await db
+      .select({
+        id: productFinialOptionsTable.id,
+        code: productFinialOptionsTable.code,
+        name: productFinialOptionsTable.name,
+        isDefault: productFinialOptionsTable.isDefault,
+        upchargeMsrp: productFinialOptionsTable.upchargeMsrp,
+        upchargeSale: productFinialOptionsTable.upchargeSale,
+        displayOrder: productFinialOptionsTable.displayOrder,
+      })
+      .from(productFinialOptionsTable)
+      .where(
+        and(
+          eq(productFinialOptionsTable.productId, product.id),
+          eq(productFinialOptionsTable.isActive, true),
+        ),
+      )
+      .orderBy(
+        asc(productFinialOptionsTable.displayOrder),
+        asc(productFinialOptionsTable.name),
+      );
+
     res.json({
       productId: product.id,
       frameOnlyPrice: product.frameOnlyPrice ?? null,
       stemOptions,
       coverOptions,
+      finialOptions: finialRows.map((f) => ({
+        id: f.id,
+        code: f.code,
+        name: f.name,
+        isDefault: f.isDefault,
+        upchargeMsrp: String(f.upchargeMsrp ?? "0"),
+        upchargeSale: String(f.upchargeSale ?? "0"),
+        displayOrder: f.displayOrder,
+      })),
       variants: variantRows.map((v) => ({
         ...v,
         priceAdjustment: String(v.priceAdjustment ?? "0"),

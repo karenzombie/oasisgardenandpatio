@@ -15,6 +15,7 @@ import {
   fabricsTable,
   productVariantsTable,
   finishesTable,
+  productFinialOptionsTable,
   variantGradePricesTable,
   productAddonOptionsTable,
   manufacturersTable,
@@ -292,10 +293,13 @@ router.post(
             variantId: cartItemsTable.variantId,
             fabricId: cartItemsTable.fabricId,
             finishId: cartItemsTable.finishId,
+            finialId: cartItemsTable.finialId,
             variantSku: productVariantsTable.variantSku,
             variantName: productVariantsTable.variantName,
             finishCode: finishesTable.itemNumber,
             finishName: finishesTable.name,
+            finialCode: productFinialOptionsTable.code,
+            finialName: productFinialOptionsTable.name,
             fabricItemNumber: fabricsTable.itemNumber,
             fabricName: fabricsTable.name,
             fabricGrade: fabricsTable.grade,
@@ -321,6 +325,10 @@ router.post(
           .leftJoin(
             finishesTable,
             eq(finishesTable.id, cartItemsTable.finishId),
+          )
+          .leftJoin(
+            productFinialOptionsTable,
+            eq(productFinialOptionsTable.id, cartItemsTable.finialId),
           )
           .leftJoin(
             variantGradePricesTable,
@@ -490,12 +498,15 @@ router.post(
             variantId: l.variantId,
             fabricId: l.fabricId,
             finishId: l.finishId,
+            finialId: l.finialId,
             // Order/PO SKU = base + finish only; the wind vent (kept in the
             // variant name snapshot) is not part of the orderable SKU.
             variantSkuSnapshot: stripVentSuffix(l.variantSku),
             variantNameSnapshot: l.variantName,
             finishCodeSnapshot: l.finishCode,
             finishNameSnapshot: l.finishName,
+            finialCodeSnapshot: l.finialCode,
+            finialNameSnapshot: l.finialName,
             fabricItemNumberSnapshot: l.fabricItemNumber,
             fabricNameSnapshot: l.fabricName,
             fabricBrandSnapshot: l.fabricBrand,

@@ -21,6 +21,7 @@ import {
   type CatalogProductVariant,
   type CatalogFabricOption,
   type CatalogFinishOption,
+  type CatalogFinialOption,
   type CatalogStemOption,
   type CatalogCoverPicker,
   type CatalogCoverFinish,
@@ -53,6 +54,8 @@ interface LineItem {
   // Frame-finish choice for grade-priced (3-step) products. Null for legacy
   // (variant-as-finish) products.
   finishId: number | null;
+  // Finial (umbrella pole-cap) choice. Null for products with no finial picker.
+  finialId: number | null;
   // Fabric grade snapshot for grade-priced products (e.g. "A", "B").
   grade: string | null;
   fabricId: number | null;
@@ -137,6 +140,7 @@ function emptyLine(): LineItem {
     variantId: null,
     variantName: null,
     finishId: null,
+    finialId: null,
     grade: null,
     fabricId: null,
     fabricName: null,
@@ -405,6 +409,7 @@ export default function AgentNewOrder() {
     variant: CatalogProductVariant | null,
     fabric: CatalogFabricOption | null,
     finish: CatalogFinishOption | null,
+    finial: CatalogFinialOption | null,
     gradeUnitPrice: number | null,
     unitPrice: number,
     // Optional galvanized-base accessories chosen in the picker. The stem (if
@@ -423,6 +428,7 @@ export default function AgentNewOrder() {
       p.name,
       variant ? variant.name : null,
       finish ? finish.name : null,
+      finial ? finial.name : null,
       fabric ? `${fabric.name} (${fabric.itemNumber})` : null,
     ]
       .filter(Boolean)
@@ -443,6 +449,7 @@ export default function AgentNewOrder() {
       variantId: variant?.id ?? null,
       variantName: variant?.name ?? null,
       finishId: finish?.id ?? null,
+      finialId: finial?.id ?? null,
       grade: isGradeMode ? fabric?.grade ?? null : null,
       fabricId: fabric?.id ?? null,
       fabricName: fabric?.name ?? null,
@@ -467,6 +474,7 @@ export default function AgentNewOrder() {
         variantId: null,
         variantName: null,
         finishId: null,
+        finialId: null,
         grade: null,
         fabricId: null,
         fabricName: null,
@@ -488,6 +496,7 @@ export default function AgentNewOrder() {
         variantId: null,
         variantName: null,
         finishId: cover.finish.finishId,
+        finialId: null,
         grade: null,
         fabricId: null,
         fabricName: null,
@@ -699,6 +708,7 @@ export default function AgentNewOrder() {
               productId: it.productId,
               variantId: it.variantId,
               finishId: it.finishId,
+              finialId: it.finialId,
               grade: it.grade,
               fabricId: it.fabricId,
               fabricVendorId: it.fabricId != null ? it.fabricVendorId : null,
@@ -1413,7 +1423,7 @@ export default function AgentNewOrder() {
           open={pickProductFor !== null}
           initialProduct={pickProductFor?.preselect ?? null}
           onOpenChange={(v) => !v && setPickProductFor(null)}
-          onApply={(p, variant, fabric, finish, gradeUnitPrice, unitPrice, stem, cover) =>
+          onApply={(p, variant, fabric, finish, finial, gradeUnitPrice, unitPrice, stem, cover) =>
             pickProductFor !== null &&
             applyPickedProduct(
               pickProductFor.idx,
@@ -1421,6 +1431,7 @@ export default function AgentNewOrder() {
               variant,
               fabric,
               finish,
+              finial,
               gradeUnitPrice,
               unitPrice,
               stem,
@@ -1493,6 +1504,7 @@ function ProductPickerDialog({
     variant: CatalogProductVariant | null,
     fabric: CatalogFabricOption | null,
     finish: CatalogFinishOption | null,
+    finial: CatalogFinialOption | null,
     gradeUnitPrice: number | null,
     unitPrice: number,
     stem: CatalogStemOption | null,
@@ -1505,6 +1517,7 @@ function ProductPickerDialog({
   const [variantId, setVariantId] = useState<string>("");
   const [fabricId, setFabricId] = useState<string>("");
   const [finishId, setFinishId] = useState<string>("");
+  const [finialId, setFinialId] = useState<string>("");
   const [includeFabric, setIncludeFabric] = useState(false);
   // Galvanized-base accessory pickers. Empty string = the default
   // "No Stem" / "No Top Cover" choice.
@@ -1526,6 +1539,7 @@ function ProductPickerDialog({
       setVariantId("");
       setFabricId("");
       setFinishId("");
+      setFinialId("");
       setStemProductId("");
       setCoverFinishId("");
       setSearchInput("");
@@ -1543,6 +1557,7 @@ function ProductPickerDialog({
     setVariantId("");
     setFabricId("");
     setFinishId("");
+    setFinialId("");
     setStemProductId("");
     setCoverFinishId("");
     setIncludeFabric(false);
@@ -1613,6 +1628,12 @@ function ProductPickerDialog({
     [finishes, finishId],
   );
 
+  const finialOptions = detail.data?.finialOptions ?? [];
+  const selectedFinial = useMemo(
+    () => finialOptions.find((fn) => String(fn.id) === finialId) ?? null,
+    [finialOptions, finialId],
+  );
+
   const selectedFabric = useMemo(
     () => fabricOptions.find((f) => String(f.id) === fabricId) ?? null,
     [fabricOptions, fabricId],
@@ -1625,6 +1646,13 @@ function ProductPickerDialog({
       setFinishId(String(finishes[0].id));
     }
   }, [finishes, finishId]);
+
+  // Pre-select the default finial (default-or-required, like the customer PDP).
+  useEffect(() => {
+    if (finialOptions.length === 0 || finialId) return;
+    const def = finialOptions.find((f) => f.isDefault) ?? finialOptions[0];
+    setFinialId(String(def.id));
+  }, [finialOptions, finialId]);
 
   // Clear an invalid fabric whenever the configuration changes (the new
   // variant may not price the previously selected fabric's grade).
@@ -1647,6 +1675,8 @@ function ProductPickerDialog({
   // grade-priced (Frankford) AND legacy products (e.g. OW Lee), matching the
   // customer PDP, which never gates the finish picker on grade mode.
   const needsFinish = finishes.length > 0;
+  // Finial picker is required whenever the product carries options (mirrors PDP).
+  const needsFinial = finialOptions.length > 0;
 
   // Grade-mode unit price = selected fabric grade's sale price (if any) else MSRP.
   const gradeUnitPrice = useMemo(() => {
@@ -1662,6 +1692,7 @@ function ProductPickerDialog({
     detailReady &&
     (!needsVariant || !!variantId) &&
     (!needsFinish || !!finishId) &&
+    (!needsFinial || !!selectedFinial) &&
     (!needsFabric || !!fabricId) &&
     (!isGradeMode || gradeUnitPrice != null);
 
@@ -1682,10 +1713,12 @@ function ProductPickerDialog({
     if (!picked || !detailReady) return;
     if (needsVariant && !variantId) return;
     if (needsFinish && !finishId) return;
+    if (needsFinial && !selectedFinial) return;
     if (needsFabric && !fabricId) return;
     const v = needsVariant ? variants.find((x) => String(x.id) === variantId) ?? null : null;
     const f = needsFabric ? fabricOptions.find((x) => String(x.id) === fabricId) ?? null : null;
     const fn = needsFinish ? finishes.find((x) => String(x.id) === finishId) ?? null : null;
+    const fnl = needsFinial ? selectedFinial : null;
     const stem =
       stemProductId !== ""
         ? stemOptions.find((s) => String(s.stemProductId) === stemProductId) ?? null
@@ -1705,6 +1738,7 @@ function ProductPickerDialog({
       v,
       f,
       fn,
+      fnl,
       isGradeMode ? gradeUnitPrice : null,
       effectivePrice ?? 0,
       stem,
@@ -1712,10 +1746,11 @@ function ProductPickerDialog({
     );
   }
 
-  // Per-finish frame upcharge applies in both grade and legacy modes.
-  const finishUpcharge = selectedFinish
-    ? Number(selectedFinish.upchargeSale) || 0
-    : 0;
+  // Per-finish frame upcharge applies in both grade and legacy modes. The finial
+  // upcharge stacks on top, mirroring the customer PDP.
+  const finishUpcharge =
+    (selectedFinish ? Number(selectedFinish.upchargeSale) || 0 : 0) +
+    (selectedFinial ? Number(selectedFinial.upchargeSale) || 0 : 0);
 
   // Canonical per-unit price — shown in the dialog AND persisted to the order
   // line so the two never disagree. Mirrors the customer PDP: grade price when
@@ -1875,6 +1910,26 @@ function ProductPickerDialog({
               </div>
             )}
 
+            {needsFinial && (
+              <div>
+                <Label className="text-xs">Finial <span className="text-red-600">*</span></Label>
+                <Select value={finialId} onValueChange={setFinialId}>
+                  <SelectTrigger><SelectValue placeholder="Pick a finial" /></SelectTrigger>
+                  <SelectContent className="max-h-72">
+                    {finialOptions.map((fn) => {
+                      const up = Number(fn.upchargeSale) || 0;
+                      return (
+                        <SelectItem key={fn.id} value={String(fn.id)}>
+                          {fn.name}
+                          {up > 0 ? ` (+${fmtMoney(up)})` : ""}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             {needsFabric && (
               <div>
                 <Label className="text-xs">Fabric <span className="text-red-600">*</span></Label>
@@ -2024,6 +2079,7 @@ function SetPickerDialog({
         variantId: null,
         variantName: null,
         finishId: null,
+        finialId: null,
         grade: null,
         fabricId: null,
         fabricName: null,

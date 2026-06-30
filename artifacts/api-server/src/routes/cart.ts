@@ -15,6 +15,7 @@ import {
   variantGradePricesTable,
   productFinishPoolsTable,
   productFinishOptionsTable,
+  productFinialOptionsTable,
   productAddonOptionsTable,
   productAddonGradePricesTable,
   productStemOptionsTable,
@@ -122,6 +123,8 @@ async function loadCart(owner: CartOwner) {
       variantName: productVariantsTable.variantName,
       finishId: cartItemsTable.finishId,
       finishName: finishesTable.name,
+      finialId: cartItemsTable.finialId,
+      finialName: productFinialOptionsTable.name,
       fabricId: cartItemsTable.fabricId,
       fabricName: fabricsTable.name,
       fabricItemNumber: fabricsTable.itemNumber,
@@ -150,6 +153,10 @@ async function loadCart(owner: CartOwner) {
     )
     .leftJoin(fabricsTable, eq(fabricsTable.id, cartItemsTable.fabricId))
     .leftJoin(finishesTable, eq(finishesTable.id, cartItemsTable.finishId))
+    .leftJoin(
+      productFinialOptionsTable,
+      eq(productFinialOptionsTable.id, cartItemsTable.finialId),
+    )
     .where(eq(cartItemsTable.cartId, cart.id))
     .orderBy(cartItemsTable.id);
 
@@ -293,6 +300,7 @@ router.post(
     const variantId = parsed.data.variantId ?? null;
     const fabricId = parsed.data.fabricId ?? null;
     const finishId = parsed.data.finishId ?? null;
+    const finialId = parsed.data.finialId ?? null;
     // Optional galvanized-base accessories (resolved + validated below).
     const stemProductId = parsed.data.stemProductId ?? null;
     const coverFinishId = parsed.data.coverFinishId ?? null;
@@ -550,6 +558,49 @@ router.post(
       return;
     }
 
+    // Finial (umbrella pole-cap) selection. Required when the product exposes
+    // finial options; rejected when it does not. The selected finial's sale
+    // upcharge is folded into the line price below.
+    let finialUpchargeSale = 0;
+    {
+      const finialOptionRows = await db
+        .select({
+          id: productFinialOptionsTable.id,
+          upchargeSale: productFinialOptionsTable.upchargeSale,
+        })
+        .from(productFinialOptionsTable)
+        .where(
+          and(
+            eq(productFinialOptionsTable.productId, productId),
+            eq(productFinialOptionsTable.isActive, true),
+          ),
+        );
+      const allowedFinial = new Map(
+        finialOptionRows.map((f) => [f.id, Number(f.upchargeSale)]),
+      );
+      const hasFinialOptions = allowedFinial.size > 0;
+      if (hasFinialOptions) {
+        if (!finialId) {
+          res
+            .status(400)
+            .json({ error: "Please choose a finial before adding this item." });
+          return;
+        }
+        if (!allowedFinial.has(finialId)) {
+          res
+            .status(400)
+            .json({ error: "Selected finial is not offered for this product." });
+          return;
+        }
+        finialUpchargeSale = allowedFinial.get(finialId) ?? 0;
+      } else if (finialId) {
+        res
+          .status(400)
+          .json({ error: "This product does not have finial options." });
+        return;
+      }
+    }
+
     // Grade-mode line price (set when the selected fabric's grade maps to a
     // variant grade price). Falls back to base-price math when null.
     let gradeLinePrice: string | null = null;
@@ -700,6 +751,12 @@ router.post(
         return;
       }
       snapshotPrice = (Number(basePriceStr) + variantPriceAdj).toFixed(2);
+    }
+
+    // Fold the selected finial's sale upcharge into every pricing branch so the
+    // cart line matches the PDP price.
+    if (finialUpchargeSale > 0) {
+      snapshotPrice = (Number(snapshotPrice) + finialUpchargeSale).toFixed(2);
     }
 
     // -----------------------------------------------------------------------
@@ -967,12 +1024,12 @@ router.post(
     // add-ons are always consistent.
     await db.transaction(async (tx) => {
       const result = await tx.execute<{ id: number }>(sql`
-        INSERT INTO cart_items (cart_id, product_id, variant_id, finish_id, fabric_id, quantity, price, addon_signature)
+        INSERT INTO cart_items (cart_id, product_id, variant_id, finish_id, finial_id, fabric_id, quantity, price, addon_signature)
         VALUES (
-          ${cart.id}, ${productId}, ${variantId}, ${finishId}, ${fabricId},
+          ${cart.id}, ${productId}, ${variantId}, ${finishId}, ${finialId}, ${fabricId},
           ${quantity}, ${snapshotPrice}, ${baseSignature}
         )
-        ON CONFLICT (cart_id, product_id, (COALESCE(variant_id, 0)), (COALESCE(finish_id, 0)), (COALESCE(fabric_id, 0)), addon_signature)
+        ON CONFLICT (cart_id, product_id, (COALESCE(variant_id, 0)), (COALESCE(finish_id, 0)), (COALESCE(fabric_id, 0)), (COALESCE(finial_id, 0)), addon_signature)
         DO UPDATE SET quantity = cart_items.quantity + EXCLUDED.quantity
         RETURNING id
       `);
@@ -995,12 +1052,12 @@ router.post(
       // matches this base add and can be edited/removed on its own afterwards.
       if (stemLine) {
         await tx.execute(sql`
-          INSERT INTO cart_items (cart_id, product_id, variant_id, finish_id, fabric_id, quantity, price, addon_signature)
+          INSERT INTO cart_items (cart_id, product_id, variant_id, finish_id, finial_id, fabric_id, quantity, price, addon_signature)
           VALUES (
-            ${cart.id}, ${stemLine.productId}, NULL, NULL, NULL,
+            ${cart.id}, ${stemLine.productId}, NULL, NULL, NULL, NULL,
             ${quantity}, ${stemLine.price}, ''
           )
-          ON CONFLICT (cart_id, product_id, (COALESCE(variant_id, 0)), (COALESCE(finish_id, 0)), (COALESCE(fabric_id, 0)), addon_signature)
+          ON CONFLICT (cart_id, product_id, (COALESCE(variant_id, 0)), (COALESCE(finish_id, 0)), (COALESCE(fabric_id, 0)), (COALESCE(finial_id, 0)), addon_signature)
           DO UPDATE SET quantity = cart_items.quantity + EXCLUDED.quantity
         `);
       }
@@ -1011,12 +1068,12 @@ router.post(
       // exactly one base line, so the conflict-increment keeps them in lockstep.
       if (coverLine && cartItemId) {
         await tx.execute(sql`
-          INSERT INTO cart_items (cart_id, product_id, variant_id, finish_id, fabric_id, quantity, price, addon_signature, parent_cart_item_id)
+          INSERT INTO cart_items (cart_id, product_id, variant_id, finish_id, finial_id, fabric_id, quantity, price, addon_signature, parent_cart_item_id)
           VALUES (
-            ${cart.id}, ${coverLine.productId}, NULL, ${coverLine.finishId}, NULL,
+            ${cart.id}, ${coverLine.productId}, NULL, ${coverLine.finishId}, NULL, NULL,
             ${quantity}, ${coverLine.price}, '', ${cartItemId}
           )
-          ON CONFLICT (cart_id, product_id, (COALESCE(variant_id, 0)), (COALESCE(finish_id, 0)), (COALESCE(fabric_id, 0)), addon_signature)
+          ON CONFLICT (cart_id, product_id, (COALESCE(variant_id, 0)), (COALESCE(finish_id, 0)), (COALESCE(fabric_id, 0)), (COALESCE(finial_id, 0)), addon_signature)
           DO UPDATE SET quantity = cart_items.quantity + EXCLUDED.quantity, parent_cart_item_id = EXCLUDED.parent_cart_item_id
         `);
       }

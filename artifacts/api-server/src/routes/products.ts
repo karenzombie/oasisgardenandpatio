@@ -16,6 +16,7 @@ import {
   variantGradePricesTable,
   productFinishPoolsTable,
   productFinishOptionsTable,
+  productFinialOptionsTable,
   productRecommendationsTable,
   productAddonOptionsTable,
   productAddonGradePricesTable,
@@ -884,6 +885,30 @@ router.get(
       (a, b) => a.displayOrder - b.displayOrder || a.name.localeCompare(b.name),
     );
 
+    // Finial (umbrella pole-cap) options for applicable products. Text-only
+    // (no swatch images). Returned sorted so the default appears first.
+    const finialRows = await db
+      .select({
+        id: productFinialOptionsTable.id,
+        code: productFinialOptionsTable.code,
+        name: productFinialOptionsTable.name,
+        isDefault: productFinialOptionsTable.isDefault,
+        upchargeMsrp: productFinialOptionsTable.upchargeMsrp,
+        upchargeSale: productFinialOptionsTable.upchargeSale,
+        displayOrder: productFinialOptionsTable.displayOrder,
+      })
+      .from(productFinialOptionsTable)
+      .where(
+        and(
+          eq(productFinialOptionsTable.productId, row.id),
+          eq(productFinialOptionsTable.isActive, true),
+        ),
+      )
+      .orderBy(
+        asc(productFinialOptionsTable.displayOrder),
+        asc(productFinialOptionsTable.name),
+      );
+
     const fabricRows = await db
       .select({
         id: fabricsTable.id,
@@ -1197,6 +1222,15 @@ router.get(
       finishCollections: finishCollectionRows.map((fc) => ({
         ...fc,
         panelImageUrl: toPublicImageUrl(fc.panelImageUrl),
+      })),
+      finialOptions: finialRows.map((f) => ({
+        id: f.id,
+        code: f.code,
+        name: f.name,
+        isDefault: f.isDefault,
+        upchargeMsrp: String(f.upchargeMsrp ?? "0"),
+        upchargeSale: String(f.upchargeSale ?? "0"),
+        displayOrder: f.displayOrder,
       })),
       fabricOptions: fabricRows.map((f) => ({
         id: f.id,

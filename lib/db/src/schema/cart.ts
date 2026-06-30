@@ -16,6 +16,7 @@ import { z } from "zod/v4";
 import { usersTable } from "./users";
 import { productsTable } from "./products";
 import { finishesTable } from "./finishes";
+import { productFinialOptionsTable } from "./finials";
 import {
   productVariantsTable,
   fabricsTable,
@@ -84,6 +85,14 @@ export const cartItemsTable = pgTable(
     finishId: integer("finish_id").references(() => finishesTable.id, {
       onDelete: "set null",
     }),
+    // Finial (umbrella pole cap) selection for applicable products (e.g.
+    // certain Frankford umbrella series). Null for products without finial
+    // options. Validated against the product's product_finial_options at the
+    // application layer (no composite FK).
+    finialId: integer("finial_id").references(
+      () => productFinialOptionsTable.id,
+      { onDelete: "set null" },
+    ),
     quantity: integer("quantity").notNull(),
     // BASE per-unit price of the parent product line only (add-ons are priced
     // separately in cart_item_addons). Line total = (price + sum(addon
@@ -121,6 +130,7 @@ export const cartItemsTable = pgTable(
       sql`COALESCE(${t.variantId}, 0)`,
       sql`COALESCE(${t.finishId}, 0)`,
       sql`COALESCE(${t.fabricId}, 0)`,
+      sql`COALESCE(${t.finialId}, 0)`,
       t.addonSignature,
     ),
     // Composite FKs mirror order_items: a cart can't hold a (product, variant)

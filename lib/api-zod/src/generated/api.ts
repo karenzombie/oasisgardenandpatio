@@ -758,6 +758,41 @@ export const GetCatalogProductBySlugResponse = zod
         .describe(
           "Discrete frame-finish choices for grade-priced products (3-step mode). Empty for legacy (variant-as-finish) products.",
         ),
+      finialOptions: zod
+        .array(
+          zod
+            .object({
+              id: zod.number(),
+              code: zod
+                .string()
+                .describe(
+                  'Short finial code (e.g. \"VF\", \"BF\", \"SS-VF\").',
+                ),
+              name: zod
+                .string()
+                .describe('Display name (e.g. \"Chrome Vertex Finial\").'),
+              isDefault: zod
+                .boolean()
+                .describe("When true, this option is pre-selected on load."),
+              upchargeMsrp: zod
+                .string()
+                .describe(
+                  'Decimal MSRP upcharge added when this finial is selected (\"0\" for no upcharge).',
+                ),
+              upchargeSale: zod
+                .string()
+                .describe(
+                  'Decimal customer-facing (discounted) upcharge for this finial (\"0\" for no upcharge).',
+                ),
+              displayOrder: zod.number(),
+            })
+            .describe(
+              "A discrete finial (umbrella pole-cap) choice. Default-or-required selection like a finish; upcharge options add to the line price. Text-only (no swatch image).",
+            ),
+        )
+        .describe(
+          "Discrete finial (umbrella pole-cap) choices. Default-or-required selection like a finish; upcharge options add to the price. Empty for products with no finial picker.",
+        ),
       addonOptions: zod
         .array(
           zod
@@ -1129,6 +1164,12 @@ export const GetAccountOrderResponse = zod.object({
         .nullable()
         .describe(
           "Snapshot of the chosen frame finish (variant) name, if any.",
+        ),
+      finialName: zod
+        .string()
+        .nullable()
+        .describe(
+          "Snapshot of the chosen finial (umbrella pole-cap) name, if any.",
         ),
       fabricName: zod
         .string()
@@ -1628,6 +1669,8 @@ export const GetCartResponse = zod.object({
       variantName: zod.string().nullable(),
       finishId: zod.number().nullable(),
       finishName: zod.string().nullable(),
+      finialId: zod.number().nullable(),
+      finialName: zod.string().nullable(),
       fabricId: zod.number().nullable(),
       fabricName: zod.string().nullable(),
       fabricItemNumber: zod.string().nullable(),
@@ -1723,6 +1766,8 @@ export const ClearCartResponse = zod.object({
       variantName: zod.string().nullable(),
       finishId: zod.number().nullable(),
       finishName: zod.string().nullable(),
+      finialId: zod.number().nullable(),
+      finialName: zod.string().nullable(),
       fabricId: zod.number().nullable(),
       fabricName: zod.string().nullable(),
       fabricItemNumber: zod.string().nullable(),
@@ -1809,6 +1854,12 @@ export const AddCartItemBody = zod.object({
     .number()
     .nullish()
     .describe("Selected frame-finish id for grade-priced (3-step) products."),
+  finialId: zod
+    .number()
+    .nullish()
+    .describe(
+      "Selected finial (umbrella pole-cap) id. Required when the product has finial options.",
+    ),
   addonOptionIds: zod
     .array(zod.number())
     .optional()
@@ -1854,6 +1905,8 @@ export const AddCartItemResponse = zod.object({
       variantName: zod.string().nullable(),
       finishId: zod.number().nullable(),
       finishName: zod.string().nullable(),
+      finialId: zod.number().nullable(),
+      finialName: zod.string().nullable(),
       fabricId: zod.number().nullable(),
       fabricName: zod.string().nullable(),
       fabricItemNumber: zod.string().nullable(),
@@ -1956,6 +2009,8 @@ export const UpdateCartItemResponse = zod.object({
       variantName: zod.string().nullable(),
       finishId: zod.number().nullable(),
       finishName: zod.string().nullable(),
+      finialId: zod.number().nullable(),
+      finialName: zod.string().nullable(),
       fabricId: zod.number().nullable(),
       fabricName: zod.string().nullable(),
       fabricItemNumber: zod.string().nullable(),
@@ -2054,6 +2109,8 @@ export const RemoveCartItemResponse = zod.object({
       variantName: zod.string().nullable(),
       finishId: zod.number().nullable(),
       finishName: zod.string().nullable(),
+      finialId: zod.number().nullable(),
+      finialName: zod.string().nullable(),
       fabricId: zod.number().nullable(),
       fabricName: zod.string().nullable(),
       fabricItemNumber: zod.string().nullable(),
@@ -3785,6 +3842,39 @@ export const AdminGetProductPickerResponse = zod
       )
       .describe(
         "Discrete frame-finish choices for grade-priced products. Empty for legacy (variant-as-finish) products.",
+      ),
+    finialOptions: zod
+      .array(
+        zod
+          .object({
+            id: zod.number(),
+            code: zod
+              .string()
+              .describe('Short finial code (e.g. \"VF\", \"BF\", \"SS-VF\").'),
+            name: zod
+              .string()
+              .describe('Display name (e.g. \"Chrome Vertex Finial\").'),
+            isDefault: zod
+              .boolean()
+              .describe("When true, this option is pre-selected on load."),
+            upchargeMsrp: zod
+              .string()
+              .describe(
+                'Decimal MSRP upcharge added when this finial is selected (\"0\" for no upcharge).',
+              ),
+            upchargeSale: zod
+              .string()
+              .describe(
+                'Decimal customer-facing (discounted) upcharge for this finial (\"0\" for no upcharge).',
+              ),
+            displayOrder: zod.number(),
+          })
+          .describe(
+            "A discrete finial (umbrella pole-cap) choice. Default-or-required selection like a finish; upcharge options add to the line price. Text-only (no swatch image).",
+          ),
+      )
+      .describe(
+        "Discrete finial (umbrella pole-cap) choices. Empty for products with no finial picker.",
       ),
     stemOptions: zod
       .array(
@@ -5658,6 +5748,9 @@ export const AdminUpdateOrderShippingMethodResponse = zod.object({
       finishId: zod.number().nullable(),
       finishCodeSnapshot: zod.string().nullable(),
       finishNameSnapshot: zod.string().nullable(),
+      finialId: zod.number().nullable(),
+      finialCodeSnapshot: zod.string().nullable(),
+      finialNameSnapshot: zod.string().nullable(),
       fabricId: zod.number().nullable(),
       fabricNameSnapshot: zod.string().nullable(),
       fabricItemNumberSnapshot: zod.string().nullable(),
@@ -5980,6 +6073,9 @@ export const AdminMarkOrderPaidInFullResponse = zod.object({
       finishId: zod.number().nullable(),
       finishCodeSnapshot: zod.string().nullable(),
       finishNameSnapshot: zod.string().nullable(),
+      finialId: zod.number().nullable(),
+      finialCodeSnapshot: zod.string().nullable(),
+      finialNameSnapshot: zod.string().nullable(),
       fabricId: zod.number().nullable(),
       fabricNameSnapshot: zod.string().nullable(),
       fabricItemNumberSnapshot: zod.string().nullable(),
@@ -6184,6 +6280,9 @@ export const AdminUpdateOrderPaymentResponse = zod.object({
       finishId: zod.number().nullable(),
       finishCodeSnapshot: zod.string().nullable(),
       finishNameSnapshot: zod.string().nullable(),
+      finialId: zod.number().nullable(),
+      finialCodeSnapshot: zod.string().nullable(),
+      finialNameSnapshot: zod.string().nullable(),
       fabricId: zod.number().nullable(),
       fabricNameSnapshot: zod.string().nullable(),
       fabricItemNumberSnapshot: zod.string().nullable(),
@@ -6377,6 +6476,9 @@ export const AdminDeleteOrderPaymentResponse = zod.object({
       finishId: zod.number().nullable(),
       finishCodeSnapshot: zod.string().nullable(),
       finishNameSnapshot: zod.string().nullable(),
+      finialId: zod.number().nullable(),
+      finialCodeSnapshot: zod.string().nullable(),
+      finialNameSnapshot: zod.string().nullable(),
       fabricId: zod.number().nullable(),
       fabricNameSnapshot: zod.string().nullable(),
       fabricItemNumberSnapshot: zod.string().nullable(),
@@ -6846,6 +6948,12 @@ export const AdminCreateOrderBody = zod.object({
           .describe(
             "Frame-finish choice for grade-priced (3-step) products. Recovers the finish code\/name snapshots for the order line and vendor PO.",
           ),
+        finialId: zod
+          .number()
+          .nullish()
+          .describe(
+            "Finial (umbrella pole-cap) choice. Recovers the finial code\/name snapshots for the order line and vendor PO.",
+          ),
         grade: zod
           .string()
           .nullish()
@@ -7078,6 +7186,9 @@ export const AdminGetOrderResponse = zod.object({
       finishId: zod.number().nullable(),
       finishCodeSnapshot: zod.string().nullable(),
       finishNameSnapshot: zod.string().nullable(),
+      finialId: zod.number().nullable(),
+      finialCodeSnapshot: zod.string().nullable(),
+      finialNameSnapshot: zod.string().nullable(),
       fabricId: zod.number().nullable(),
       fabricNameSnapshot: zod.string().nullable(),
       fabricItemNumberSnapshot: zod.string().nullable(),
@@ -7275,6 +7386,9 @@ export const AdminUpdateOrderStatusResponse = zod.object({
       finishId: zod.number().nullable(),
       finishCodeSnapshot: zod.string().nullable(),
       finishNameSnapshot: zod.string().nullable(),
+      finialId: zod.number().nullable(),
+      finialCodeSnapshot: zod.string().nullable(),
+      finialNameSnapshot: zod.string().nullable(),
       fabricId: zod.number().nullable(),
       fabricNameSnapshot: zod.string().nullable(),
       fabricItemNumberSnapshot: zod.string().nullable(),
@@ -7480,6 +7594,9 @@ export const AdminRefundOrderResponse = zod.object({
       finishId: zod.number().nullable(),
       finishCodeSnapshot: zod.string().nullable(),
       finishNameSnapshot: zod.string().nullable(),
+      finialId: zod.number().nullable(),
+      finialCodeSnapshot: zod.string().nullable(),
+      finialNameSnapshot: zod.string().nullable(),
       fabricId: zod.number().nullable(),
       fabricNameSnapshot: zod.string().nullable(),
       fabricItemNumberSnapshot: zod.string().nullable(),
@@ -7694,6 +7811,9 @@ export const AdminUpdateOrderTotalsResponse = zod.object({
       finishId: zod.number().nullable(),
       finishCodeSnapshot: zod.string().nullable(),
       finishNameSnapshot: zod.string().nullable(),
+      finialId: zod.number().nullable(),
+      finialCodeSnapshot: zod.string().nullable(),
+      finialNameSnapshot: zod.string().nullable(),
       fabricId: zod.number().nullable(),
       fabricNameSnapshot: zod.string().nullable(),
       fabricItemNumberSnapshot: zod.string().nullable(),
@@ -7892,6 +8012,9 @@ export const AdminUpdateOrderItemFabricVendorResponse = zod.object({
       finishId: zod.number().nullable(),
       finishCodeSnapshot: zod.string().nullable(),
       finishNameSnapshot: zod.string().nullable(),
+      finialId: zod.number().nullable(),
+      finialCodeSnapshot: zod.string().nullable(),
+      finialNameSnapshot: zod.string().nullable(),
       fabricId: zod.number().nullable(),
       fabricNameSnapshot: zod.string().nullable(),
       fabricItemNumberSnapshot: zod.string().nullable(),
@@ -8088,6 +8211,9 @@ export const AdminUpdateOrderNotesResponse = zod.object({
       finishId: zod.number().nullable(),
       finishCodeSnapshot: zod.string().nullable(),
       finishNameSnapshot: zod.string().nullable(),
+      finialId: zod.number().nullable(),
+      finialCodeSnapshot: zod.string().nullable(),
+      finialNameSnapshot: zod.string().nullable(),
       fabricId: zod.number().nullable(),
       fabricNameSnapshot: zod.string().nullable(),
       fabricItemNumberSnapshot: zod.string().nullable(),

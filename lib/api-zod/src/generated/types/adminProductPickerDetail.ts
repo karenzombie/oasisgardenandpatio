@@ -7,6 +7,7 @@
  */
 import type { CatalogCoverPicker } from "./catalogCoverPicker";
 import type { CatalogFabricOption } from "./catalogFabricOption";
+import type { CatalogFinialOption } from "./catalogFinialOption";
 import type { CatalogFinishOption } from "./catalogFinishOption";
 import type { CatalogProductVariant } from "./catalogProductVariant";
 import type { CatalogStemOption } from "./catalogStemOption";
@@ -25,6 +26,8 @@ export interface AdminProductPickerDetail {
   fabricOptions: CatalogFabricOption[];
   /** Discrete frame-finish choices for grade-priced products. Empty for legacy (variant-as-finish) products. */
   finishes: CatalogFinishOption[];
+  /** Discrete finial (umbrella pole-cap) choices. Empty for products with no finial picker. */
+  finialOptions: CatalogFinialOption[];
   /** Optional stem accessories for galvanized plate bases. Each selection adds a SEPARATE, independent order line. Empty for products with no stem picker. */
   stemOptions: CatalogStemOption[];
   /** Optional Aluminum Top Cover picker for galvanized plate bases. The chosen finish adds a SEPARATE order line tied 1:1 to the base. Null when the product has no cover picker. */

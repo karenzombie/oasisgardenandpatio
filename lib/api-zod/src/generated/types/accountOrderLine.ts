@@ -25,6 +25,11 @@ export interface AccountOrderLine {
    */
   finishName: string | null;
   /**
+   * Snapshot of the chosen finial (umbrella pole-cap) name, if any.
+   * @nullable
+   */
+  finialName: string | null;
+  /**
    * Snapshot of the chosen fabric name, if any.
    * @nullable
    */

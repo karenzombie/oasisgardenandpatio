@@ -103,6 +103,9 @@ export interface AdminOrderItem {
   finishId: number | null;
   finishCodeSnapshot: string | null;
   finishNameSnapshot: string | null;
+  finialId: number | null;
+  finialCodeSnapshot: string | null;
+  finialNameSnapshot: string | null;
   fabricId: number | null;
   fabricNameSnapshot: string | null;
   fabricItemNumberSnapshot: string | null;
@@ -1561,6 +1564,24 @@ export interface CatalogFinishOption {
   minOrderQty: number | null;
 }
 
+/**
+ * A discrete finial (umbrella pole-cap) choice. Default-or-required selection like a finish; upcharge options add to the line price. Text-only (no swatch image).
+ */
+export interface CatalogFinialOption {
+  id: number;
+  /** Short finial code (e.g. "VF", "BF", "SS-VF"). */
+  code: string;
+  /** Display name (e.g. "Chrome Vertex Finial"). */
+  name: string;
+  /** When true, this option is pre-selected on load. */
+  isDefault: boolean;
+  /** Decimal MSRP upcharge added when this finial is selected ("0" for no upcharge). */
+  upchargeMsrp: string;
+  /** Decimal customer-facing (discounted) upcharge for this finial ("0" for no upcharge). */
+  upchargeSale: string;
+  displayOrder: number;
+}
+
 export interface CatalogFabricOption {
   id: number;
   name: string;
@@ -1658,6 +1679,8 @@ export interface AdminProductPickerDetail {
   fabricOptions: CatalogFabricOption[];
   /** Discrete frame-finish choices for grade-priced products. Empty for legacy (variant-as-finish) products. */
   finishes: CatalogFinishOption[];
+  /** Discrete finial (umbrella pole-cap) choices. Empty for products with no finial picker. */
+  finialOptions: CatalogFinialOption[];
   /** Optional stem accessories for galvanized plate bases. Each selection adds a SEPARATE, independent order line. Empty for products with no stem picker. */
   stemOptions: CatalogStemOption[];
   /** Optional Aluminum Top Cover picker for galvanized plate bases. The chosen finish adds a SEPARATE order line tied 1:1 to the base. Null when the product has no cover picker. */
@@ -1717,6 +1740,8 @@ export type CatalogProductDetail = CatalogProduct & {
   finishCollections: CatalogFinishCollection[];
   /** Discrete frame-finish choices for grade-priced products (3-step mode). Empty for legacy (variant-as-finish) products. */
   finishes: CatalogFinishOption[];
+  /** Discrete finial (umbrella pole-cap) choices. Default-or-required selection like a finish; upcharge options add to the price. Empty for products with no finial picker. */
+  finialOptions: CatalogFinialOption[];
   /** Optional add-ons for this product (e.g. privacy walls, replacement stem). Priced additively on top of the base product. Empty when the product has no add-ons. */
   addonOptions: CatalogAddonOption[];
   /** Optional stem accessories the customer may add alongside this base (galvanized plate bases only). Each selection adds a SEPARATE, independent cart line. Empty for products with no stem picker. */
@@ -1827,6 +1852,10 @@ export interface CartItem {
   /** @nullable */
   finishName: string | null;
   /** @nullable */
+  finialId: number | null;
+  /** @nullable */
+  finialName: string | null;
+  /** @nullable */
   fabricId: number | null;
   /** @nullable */
   fabricName: string | null;
@@ -1877,6 +1906,11 @@ export interface AddCartItemRequest {
    * @nullable
    */
   finishId?: number | null;
+  /**
+   * Selected finial (umbrella pole-cap) id. Required when the product has finial options.
+   * @nullable
+   */
+  finialId?: number | null;
   /** Selected add-on option IDs (e.g. privacy walls) to attach to this line. Pairing-required add-ons are auto-enforced server-side. */
   addonOptionIds?: number[];
   /**
@@ -1990,6 +2024,11 @@ export interface AccountOrderLine {
    * @nullable
    */
   finishName: string | null;
+  /**
+   * Snapshot of the chosen finial (umbrella pole-cap) name, if any.
+   * @nullable
+   */
+  finialName: string | null;
   /**
    * Snapshot of the chosen fabric name, if any.
    * @nullable
@@ -3454,6 +3493,11 @@ export interface CreateOrderItemRequest {
    * @nullable
    */
   finishId?: number | null;
+  /**
+   * Finial (umbrella pole-cap) choice. Recovers the finial code/name snapshots for the order line and vendor PO.
+   * @nullable
+   */
+  finialId?: number | null;
   /**
    * Fabric grade for grade-priced products (e.g. A, B, C). Used to snapshot the fabric grade + unit MSRP from variant_grade_prices.
    * @nullable

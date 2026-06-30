@@ -234,6 +234,8 @@ export interface PdfVendorOrderItem {
   weightSnapshot: string | null;
   finishCodeSnapshot: string | null;
   finishNameSnapshot: string | null;
+  finialCodeSnapshot: string | null;
+  finialNameSnapshot: string | null;
   fabricItemNumberSnapshot: string | null;
   fabricNameSnapshot: string | null;
   fabricBrandSnapshot: string | null;
@@ -372,6 +374,7 @@ function itemOptions(it: PdfVendorOrderItem): string[] {
   return [
     optionWithSku(it.variantNameSnapshot, it.variantSkuSnapshot),
     optionWithSku(it.finishNameSnapshot, it.finishCodeSnapshot),
+    optionWithSku(it.finialNameSnapshot, it.finialCodeSnapshot),
     fabricOption(it),
     weightOption(it),
   ].filter((v): v is string => Boolean(v));

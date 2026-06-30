@@ -195,6 +195,7 @@ export * from "./catalogCoverPicker";
 export * from "./catalogFabricOption";
 export * from "./catalogFabricsResponse";
 export * from "./catalogFacets";
+export * from "./catalogFinialOption";
 export * from "./catalogFinish";
 export * from "./catalogFinishCollection";
 export * from "./catalogFinishesResponse";

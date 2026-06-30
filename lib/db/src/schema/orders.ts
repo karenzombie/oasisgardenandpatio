@@ -25,6 +25,7 @@ import {
   productFabricOptionsTable,
 } from "./variants";
 import { finishesTable } from "./finishes";
+import { productFinialOptionsTable } from "./finials";
 
 export const ordersTable = pgTable(
   "orders",
@@ -158,11 +159,20 @@ export const orderItemsTable = pgTable(
     finishId: integer("finish_id").references(() => finishesTable.id, {
       onDelete: "set null",
     }),
+    // Finial (umbrella pole cap) selection for applicable products. Null for
+    // products without finial options. Snapshots capture the finial identity
+    // at order time so vendor PDFs survive catalog renames/deletions.
+    finialId: integer("finial_id").references(
+      () => productFinialOptionsTable.id,
+      { onDelete: "set null" },
+    ),
     productSkuSnapshot: text("product_sku_snapshot"),
     variantSkuSnapshot: text("variant_sku_snapshot"),
     variantNameSnapshot: text("variant_name_snapshot"),
     finishCodeSnapshot: text("finish_code_snapshot"),
     finishNameSnapshot: text("finish_name_snapshot"),
+    finialCodeSnapshot: text("finial_code_snapshot"),
+    finialNameSnapshot: text("finial_name_snapshot"),
     fabricItemNumberSnapshot: text("fabric_item_number_snapshot"),
     fabricNameSnapshot: text("fabric_name_snapshot"),
     // Fabric brand (manufacturer) and grade at order time — both needed on the

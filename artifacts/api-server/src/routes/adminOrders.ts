@@ -16,6 +16,7 @@ import {
   productVariantsTable,
   fabricsTable,
   finishesTable,
+  productFinialOptionsTable,
   variantGradePricesTable,
   inventoryTable,
   inventoryAdjustmentsTable,
@@ -112,6 +113,9 @@ function itemToPayload(
     finishId: it.finishId,
     finishCodeSnapshot: it.finishCodeSnapshot,
     finishNameSnapshot: it.finishNameSnapshot,
+    finialId: it.finialId,
+    finialCodeSnapshot: it.finialCodeSnapshot,
+    finialNameSnapshot: it.finialNameSnapshot,
     fabricId: it.fabricId,
     fabricNameSnapshot: it.fabricNameSnapshot,
     fabricItemNumberSnapshot: it.fabricItemNumberSnapshot,
@@ -1464,11 +1468,14 @@ router.post(
           fabricId: number | null;
           fabricVendorId: number | null;
           finishId: number | null;
+          finialId: number | null;
           productSkuSnapshot: string | null;
           variantSkuSnapshot: string | null;
           variantNameSnapshot: string | null;
           finishCodeSnapshot: string | null;
           finishNameSnapshot: string | null;
+          finialCodeSnapshot: string | null;
+          finialNameSnapshot: string | null;
           fabricItemNumberSnapshot: string | null;
           fabricNameSnapshot: string | null;
           fabricBrandSnapshot: string | null;
@@ -1496,6 +1503,8 @@ router.post(
           let fabricGrade: string | null = null;
           let finishCode: string | null = null;
           let finishName: string | null = null;
+          let finialCode: string | null = null;
+          let finialName: string | null = null;
           let unitMsrp: string | null = null;
           let productWeight: string | null = null;
           let variantWeight: string | null = null;
@@ -1544,6 +1553,21 @@ router.post(
             if (!fin) throw new Error(`Finish ${it.finishId} not found`);
             finishCode = fin.code;
             finishName = fin.name;
+          }
+          // Finial (umbrella pole-cap). Recover the code/name snapshots so the
+          // order line + vendor PO show the exact finial the staff member picked.
+          if (it.finialId != null) {
+            const [fnl] = await tx
+              .select({
+                code: productFinialOptionsTable.code,
+                name: productFinialOptionsTable.name,
+              })
+              .from(productFinialOptionsTable)
+              .where(eq(productFinialOptionsTable.id, it.finialId))
+              .limit(1);
+            if (!fnl) throw new Error(`Finial ${it.finialId} not found`);
+            finialCode = fnl.code;
+            finialName = fnl.name;
           }
           if (it.fabricId != null) {
             const [f] = await tx
@@ -1644,6 +1668,7 @@ router.post(
             fabricId: it.fabricId ?? null,
             fabricVendorId: it.fabricVendorId ?? null,
             finishId: it.finishId ?? null,
+            finialId: it.finialId ?? null,
             productSkuSnapshot: productSku,
             // Order/PO SKU = base + finish only; the wind vent (kept in the
             // variant name snapshot) is not part of the orderable SKU.
@@ -1651,6 +1676,8 @@ router.post(
             variantNameSnapshot: variantName,
             finishCodeSnapshot: finishCode,
             finishNameSnapshot: finishName,
+            finialCodeSnapshot: finialCode,
+            finialNameSnapshot: finialName,
             fabricItemNumberSnapshot: fabricItem,
             fabricNameSnapshot: fabricName,
             fabricBrandSnapshot: fabricBrand,

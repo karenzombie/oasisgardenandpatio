@@ -129,6 +129,12 @@ export default function Cart() {
                       {item.variantName}
                     </p>
                   ) : null}
+                  {item.finialName ? (
+                    <p className="text-xs text-foreground/80 mt-0.5">
+                      <span className="text-muted-foreground">Finial:</span>{" "}
+                      {item.finialName}
+                    </p>
+                  ) : null}
                   {item.fabricName ? (
                     <p className="text-xs text-foreground/80 mt-0.5">
                       <span className="text-muted-foreground">Fabric:</span>{" "}

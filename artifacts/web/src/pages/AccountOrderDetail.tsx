@@ -130,6 +130,11 @@ export default function AccountOrderDetail() {
                         Finish: {item.finishName}
                       </p>
                     ) : null}
+                    {item.finialName ? (
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Finial: {item.finialName}
+                      </p>
+                    ) : null}
                     {item.fabricName ? (
                       <p className="text-xs text-muted-foreground mt-0.5">
                         Fabric: {item.fabricName}

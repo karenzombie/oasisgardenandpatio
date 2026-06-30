@@ -8,6 +8,7 @@
 import type { CatalogAddonOption } from "./catalogAddonOption";
 import type { CatalogCoverPicker } from "./catalogCoverPicker";
 import type { CatalogFabricOption } from "./catalogFabricOption";
+import type { CatalogFinialOption } from "./catalogFinialOption";
 import type { CatalogFinishCollection } from "./catalogFinishCollection";
 import type { CatalogFinishOption } from "./catalogFinishOption";
 import type { CatalogProduct } from "./catalogProduct";
@@ -46,6 +47,8 @@ export type CatalogProductDetail = CatalogProduct & {
   finishCollections: CatalogFinishCollection[];
   /** Discrete frame-finish choices for grade-priced products (3-step mode). Empty for legacy (variant-as-finish) products. */
   finishes: CatalogFinishOption[];
+  /** Discrete finial (umbrella pole-cap) choices. Default-or-required selection like a finish; upcharge options add to the price. Empty for products with no finial picker. */
+  finialOptions: CatalogFinialOption[];
   /** Optional add-ons for this product (e.g. privacy walls, replacement stem). Priced additively on top of the base product. Empty when the product has no add-ons. */
   addonOptions: CatalogAddonOption[];
   /** Optional stem accessories the customer may add alongside this base (galvanized plate bases only). Each selection adds a SEPARATE, independent cart line. Empty for products with no stem picker. */

@@ -78,6 +78,7 @@ export default function Product() {
   const [qty, setQty] = useState(1);
   const [variantId, setVariantId] = useState<number | null>(null);
   const [finishId, setFinishId] = useState<number | null>(null);
+  const [finialId, setFinialId] = useState<number | null>(null);
   const [fabricId, setFabricId] = useState<number | null>(null);
   const [fabricOpen, setFabricOpen] = useState(false);
   // Frame-finish pickers (online): the variant-as-finish selector and the
@@ -186,6 +187,16 @@ export default function Product() {
   const selectedFinish = useMemo(
     () => finishes.find((f) => f.id === finishId) ?? null,
     [finishes, finishId],
+  );
+  // Discrete finial (umbrella pole-cap) choices. Default-or-required selection
+  // like a finish; text-only (no swatch images). Empty for non-finial products.
+  const finialOptions = useMemo(
+    () => data?.finialOptions ?? [],
+    [data?.finialOptions],
+  );
+  const selectedFinial = useMemo(
+    () => finialOptions.find((f) => f.id === finialId) ?? null,
+    [finialOptions, finialId],
   );
   const selectedFabric = useMemo(
     () => fabricOptions.find((f) => f.id === fabricId) ?? null,
@@ -371,6 +382,14 @@ export default function Product() {
     }
   }, [finishes]);
 
+  // Pre-select the default finial on load (default-or-required, like a finish).
+  // Falls back to the first option when none is flagged default.
+  useEffect(() => {
+    if (finialOptions.length === 0) return;
+    const def = finialOptions.find((f) => f.isDefault) ?? finialOptions[0];
+    setFinialId((cur) => cur ?? def.id);
+  }, [finialOptions]);
+
   // Auto-select the only configuration when a product has a single variant
   // (replacement covers, single-vent umbrellas, single-finish bases/frames).
   useEffect(() => {
@@ -542,6 +561,9 @@ export default function Product() {
   if (finishes.length > 0 && !selectedFinish) {
     missingSelections.push("Frame Finish");
   }
+  if (finialOptions.length > 0 && !selectedFinial) {
+    missingSelections.push("Finial");
+  }
   if (requiresFabric && !selectedFabric) missingSelections.push("Fabric");
   const optionsMissingMsg =
     missingSelections.length > 0
@@ -577,6 +599,7 @@ export default function Product() {
         quantity: qty,
         ...(selectedVariant ? { variantId: selectedVariant.id } : {}),
         ...(selectedFinish ? { finishId: selectedFinish.id } : {}),
+        ...(selectedFinial ? { finialId: selectedFinial.id } : {}),
         ...(selectedFabric ? { fabricId: selectedFabric.id } : {}),
         ...(effectiveAddonIds.size > 0
           ? { addonOptionIds: Array.from(effectiveAddonIds) }
@@ -674,8 +697,13 @@ export default function Product() {
   }
   // Per-finish frame upcharge. Hoisted outside the isGradeMode gate so it
   // applies to both grade-priced and flat-priced products with discrete finishes.
-  const finishUpchargeMsrp = selectedFinish ? Number(selectedFinish.upchargeMsrp) : 0;
-  const finishUpchargeSale = selectedFinish ? Number(selectedFinish.upchargeSale) : 0;
+  // The finial upcharge stacks on top, mirroring the finish upcharge exactly.
+  const finishUpchargeMsrp =
+    (selectedFinish ? Number(selectedFinish.upchargeMsrp) : 0) +
+    (selectedFinial ? Number(selectedFinial.upchargeMsrp) : 0);
+  const finishUpchargeSale =
+    (selectedFinish ? Number(selectedFinish.upchargeSale) : 0) +
+    (selectedFinial ? Number(selectedFinial.upchargeSale) : 0);
   if (isGradeMode && (finishUpchargeMsrp > 0 || finishUpchargeSale > 0)) {
     if (gradeMsrp != null) gradeMsrp += finishUpchargeMsrp;
     if (gradeLinePrice != null) gradeLinePrice += finishUpchargeSale;
@@ -1311,6 +1339,54 @@ export default function Product() {
                           ? `/finishes?brand=${encodeURIComponent(data.manufacturerName)}`
                           : "/finishes"
                       }
+                      className="text-primary underline"
+                    >
+                      Finishes page
+                    </Link>
+                    .
+                  </p>
+                </div>
+              ) : null}
+
+              {/* Finial (umbrella pole-cap) selector. Default-or-required choice
+                  like the finish, but text-only (no swatch images). Upcharge
+                  options add to the running total. */}
+              {finialOptions.length > 0 ? (
+                <div className="mb-5">
+                  <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">
+                    Finial
+                    <span className="text-destructive ml-1">*</span>
+                    {selectedFinial ? <SelectionCheck /> : null}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {finialOptions.map((f) => {
+                      const up = Number(f.upchargeSale);
+                      const isSel = finialId === f.id;
+                      return (
+                        <button
+                          key={f.id}
+                          type="button"
+                          onClick={() => setFinialId(f.id)}
+                          className={`px-3 py-2 border text-sm transition-colors text-left ${
+                            isSel
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-input hover:border-foreground"
+                          }`}
+                        >
+                          {f.name}
+                          {up > 0 ? (
+                            <span className="ml-1 opacity-75">
+                              (+{formatMoney(up)})
+                            </span>
+                          ) : null}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Browse the full finish library on our{" "}
+                    <Link
+                      href="/finishes?brand=Frankford"
                       className="text-primary underline"
                     >
                       Finishes page

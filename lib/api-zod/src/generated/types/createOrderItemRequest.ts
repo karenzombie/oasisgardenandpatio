@@ -17,6 +17,11 @@ export interface CreateOrderItemRequest {
    */
   finishId?: number | null;
   /**
+   * Finial (umbrella pole-cap) choice. Recovers the finial code/name snapshots for the order line and vendor PO.
+   * @nullable
+   */
+  finialId?: number | null;
+  /**
    * Fabric grade for grade-priced products (e.g. A, B, C). Used to snapshot the fabric grade + unit MSRP from variant_grade_prices.
    * @nullable
    */
