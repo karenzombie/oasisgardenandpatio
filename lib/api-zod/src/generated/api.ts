@@ -1086,6 +1086,302 @@ export const DeleteAccountAddressResponse = zod.object({
 });
 
 /**
+ * @summary Get the signed-in customer's profile, email status, and role addresses
+ */
+export const GetAccountProfileResponse = zod.object({
+  firstName: zod.string().nullable(),
+  lastName: zod.string().nullable(),
+  email: zod.string(),
+  emailVerified: zod.boolean(),
+  phone: zod.string().nullable(),
+  pendingEmail: zod
+    .string()
+    .nullable()
+    .describe("New email awaiting code verification, if any."),
+  billingAddress: zod.union([
+    zod.object({
+      id: zod.number(),
+      type: zod.string(),
+      recipientName: zod.string().nullable(),
+      street1: zod.string(),
+      street2: zod.string().nullable(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullable(),
+      isDefault: zod.boolean(),
+    }),
+    zod.null(),
+  ]),
+  shippingAddress: zod.union([
+    zod.object({
+      id: zod.number(),
+      type: zod.string(),
+      recipientName: zod.string().nullable(),
+      street1: zod.string(),
+      street2: zod.string().nullable(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullable(),
+      isDefault: zod.boolean(),
+    }),
+    zod.null(),
+  ]),
+});
+
+/**
+ * @summary Update the signed-in customer's name and phone
+ */
+
+export const UpdateAccountProfileBody = zod.object({
+  firstName: zod.string().min(1),
+  lastName: zod.string().min(1),
+  phone: zod.string().nullish(),
+});
+
+export const UpdateAccountProfileResponse = zod.object({
+  firstName: zod.string().nullable(),
+  lastName: zod.string().nullable(),
+  email: zod.string(),
+  emailVerified: zod.boolean(),
+  phone: zod.string().nullable(),
+  pendingEmail: zod
+    .string()
+    .nullable()
+    .describe("New email awaiting code verification, if any."),
+  billingAddress: zod.union([
+    zod.object({
+      id: zod.number(),
+      type: zod.string(),
+      recipientName: zod.string().nullable(),
+      street1: zod.string(),
+      street2: zod.string().nullable(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullable(),
+      isDefault: zod.boolean(),
+    }),
+    zod.null(),
+  ]),
+  shippingAddress: zod.union([
+    zod.object({
+      id: zod.number(),
+      type: zod.string(),
+      recipientName: zod.string().nullable(),
+      street1: zod.string(),
+      street2: zod.string().nullable(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullable(),
+      isDefault: zod.boolean(),
+    }),
+    zod.null(),
+  ]),
+});
+
+/**
+ * @summary Create or update the signed-in customer's default billing or shipping address
+ */
+export const UpsertAccountRoleAddressParams = zod.object({
+  role: zod.enum(["billing", "shipping"]),
+});
+
+export const upsertAccountRoleAddressBodyTypeDefault = `shipping`;
+
+export const upsertAccountRoleAddressBodyStateMin = 2;
+
+export const upsertAccountRoleAddressBodyZipMin = 3;
+
+export const upsertAccountRoleAddressBodyCountryDefault = `US`;
+export const upsertAccountRoleAddressBodyCountryMin = 2;
+
+export const upsertAccountRoleAddressBodyIsDefaultDefault = false;
+
+export const UpsertAccountRoleAddressBody = zod.object({
+  type: zod
+    .enum(["shipping", "billing"])
+    .default(upsertAccountRoleAddressBodyTypeDefault),
+  recipientName: zod.string().optional(),
+  street1: zod.string().min(1),
+  street2: zod.string().optional(),
+  city: zod.string().min(1),
+  state: zod.string().min(upsertAccountRoleAddressBodyStateMin),
+  zip: zod.string().min(upsertAccountRoleAddressBodyZipMin),
+  country: zod
+    .string()
+    .min(upsertAccountRoleAddressBodyCountryMin)
+    .default(upsertAccountRoleAddressBodyCountryDefault),
+  phone: zod.string().optional(),
+  isDefault: zod
+    .boolean()
+    .default(upsertAccountRoleAddressBodyIsDefaultDefault),
+});
+
+export const UpsertAccountRoleAddressResponse = zod.object({
+  firstName: zod.string().nullable(),
+  lastName: zod.string().nullable(),
+  email: zod.string(),
+  emailVerified: zod.boolean(),
+  phone: zod.string().nullable(),
+  pendingEmail: zod
+    .string()
+    .nullable()
+    .describe("New email awaiting code verification, if any."),
+  billingAddress: zod.union([
+    zod.object({
+      id: zod.number(),
+      type: zod.string(),
+      recipientName: zod.string().nullable(),
+      street1: zod.string(),
+      street2: zod.string().nullable(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullable(),
+      isDefault: zod.boolean(),
+    }),
+    zod.null(),
+  ]),
+  shippingAddress: zod.union([
+    zod.object({
+      id: zod.number(),
+      type: zod.string(),
+      recipientName: zod.string().nullable(),
+      street1: zod.string(),
+      street2: zod.string().nullable(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullable(),
+      isDefault: zod.boolean(),
+    }),
+    zod.null(),
+  ]),
+});
+
+/**
+ * @summary Request an email change; sends a verification code to the new address
+ */
+export const requestAccountEmailChangeBodyNewEmailMin = 3;
+
+export const RequestAccountEmailChangeBody = zod.object({
+  newEmail: zod.string().email().min(requestAccountEmailChangeBodyNewEmailMin),
+});
+
+export const RequestAccountEmailChangeResponse = zod.object({
+  pendingEmail: zod.string(),
+});
+
+/**
+ * @summary Cancel a pending email change
+ */
+export const CancelAccountEmailChangeResponse = zod.object({
+  firstName: zod.string().nullable(),
+  lastName: zod.string().nullable(),
+  email: zod.string(),
+  emailVerified: zod.boolean(),
+  phone: zod.string().nullable(),
+  pendingEmail: zod
+    .string()
+    .nullable()
+    .describe("New email awaiting code verification, if any."),
+  billingAddress: zod.union([
+    zod.object({
+      id: zod.number(),
+      type: zod.string(),
+      recipientName: zod.string().nullable(),
+      street1: zod.string(),
+      street2: zod.string().nullable(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullable(),
+      isDefault: zod.boolean(),
+    }),
+    zod.null(),
+  ]),
+  shippingAddress: zod.union([
+    zod.object({
+      id: zod.number(),
+      type: zod.string(),
+      recipientName: zod.string().nullable(),
+      street1: zod.string(),
+      street2: zod.string().nullable(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullable(),
+      isDefault: zod.boolean(),
+    }),
+    zod.null(),
+  ]),
+});
+
+/**
+ * @summary Verify the email change code and apply the new email
+ */
+export const verifyAccountEmailChangeBodyCodeRegExp = new RegExp("^[0-9]{6}$");
+
+export const VerifyAccountEmailChangeBody = zod.object({
+  code: zod.string().regex(verifyAccountEmailChangeBodyCodeRegExp),
+});
+
+export const VerifyAccountEmailChangeResponse = zod.object({
+  firstName: zod.string().nullable(),
+  lastName: zod.string().nullable(),
+  email: zod.string(),
+  emailVerified: zod.boolean(),
+  phone: zod.string().nullable(),
+  pendingEmail: zod
+    .string()
+    .nullable()
+    .describe("New email awaiting code verification, if any."),
+  billingAddress: zod.union([
+    zod.object({
+      id: zod.number(),
+      type: zod.string(),
+      recipientName: zod.string().nullable(),
+      street1: zod.string(),
+      street2: zod.string().nullable(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullable(),
+      isDefault: zod.boolean(),
+    }),
+    zod.null(),
+  ]),
+  shippingAddress: zod.union([
+    zod.object({
+      id: zod.number(),
+      type: zod.string(),
+      recipientName: zod.string().nullable(),
+      street1: zod.string(),
+      street2: zod.string().nullable(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullable(),
+      isDefault: zod.boolean(),
+    }),
+    zod.null(),
+  ]),
+});
+
+/**
  * @summary List the signed-in customer's orders
  */
 export const ListAccountOrdersResponse = zod.object({

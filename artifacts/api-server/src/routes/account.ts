@@ -1,9 +1,12 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { and, asc, desc, eq, inArray, or, sql } from "drizzle-orm";
+import { randomInt, createHash } from "node:crypto";
+import { and, asc, desc, eq, gt, inArray, isNull, ne, or, sql } from "drizzle-orm";
 import {
   db,
+  usersTable,
   customersTable,
   addressesTable,
+  emailChangeTokensTable,
   ordersTable,
   orderItemsTable,
   orderItemAddonsTable,
@@ -13,12 +16,28 @@ import {
 } from "@workspace/db";
 import {
   CreateAccountAddressBody,
+  UpdateAccountProfileBody,
+  UpsertAccountRoleAddressBody,
+  RequestAccountEmailChangeBody,
+  VerifyAccountEmailChangeBody,
   ListAccountAddressesResponse,
+  GetAccountProfileResponse,
   ListAccountOrdersResponse,
   GetAccountOrderResponse,
 } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/requireAuth";
 import { toPublicImageUrl } from "../lib/imageUrl";
+import { sendEmailChangeCode } from "../lib/email";
+
+const EMAIL_CHANGE_CODE_TTL_MS = 30 * 60 * 1000;
+
+function hashCode(code: string): string {
+  return createHash("sha256").update(code).digest("hex");
+}
+
+function generateEmailChangeCode(): string {
+  return String(randomInt(0, 1_000_000)).padStart(6, "0");
+}
 
 const router: IRouter = Router();
 
@@ -123,17 +142,25 @@ router.post(
     }
     const data = parsed.data;
     const customer = await getOrCreateCustomer(req.user!.id);
+    const newType = data.type ?? "shipping";
 
     await db.transaction(async (tx) => {
       if (data.isDefault) {
+        // Defaults are per address type, so only clear the default flag on
+        // other addresses of the SAME type.
         await tx
           .update(addressesTable)
           .set({ isDefault: false })
-          .where(eq(addressesTable.customerId, customer.id));
+          .where(
+            and(
+              eq(addressesTable.customerId, customer.id),
+              eq(addressesTable.type, newType),
+            ),
+          );
       }
       await tx.insert(addressesTable).values({
         customerId: customer.id,
-        type: data.type ?? "shipping",
+        type: newType,
         recipientName: data.recipientName ?? null,
         street1: data.street1,
         street2: data.street2 ?? null,
@@ -187,9 +214,10 @@ router.patch(
 
     const referenced = await isAddressReferencedByOrders(addressId);
     const nextIsDefault = data.isDefault ?? existing.isDefault;
+    const nextType = data.type ?? existing.type;
     const nextValues = {
       customerId: customer.id,
-      type: data.type ?? existing.type,
+      type: nextType,
       recipientName: data.recipientName ?? null,
       street1: data.street1,
       street2: data.street2 ?? null,
@@ -203,10 +231,17 @@ router.patch(
 
     await db.transaction(async (tx) => {
       if (nextIsDefault) {
+        // Defaults are per address type — only clear the default flag on other
+        // addresses of the same type.
         await tx
           .update(addressesTable)
           .set({ isDefault: false })
-          .where(eq(addressesTable.customerId, customer.id));
+          .where(
+            and(
+              eq(addressesTable.customerId, customer.id),
+              eq(addressesTable.type, nextType),
+            ),
+          );
       }
       if (referenced) {
         // Clone-on-edit: keep the original row intact for order history,
@@ -270,6 +305,335 @@ router.delete(
     }
 
     res.json(await loadAddresses(req.user!.id));
+  },
+);
+
+async function loadRoleAddress(customerId: number, role: "billing" | "shipping") {
+  const [a] = await db
+    .select()
+    .from(addressesTable)
+    .where(
+      and(
+        eq(addressesTable.customerId, customerId),
+        eq(addressesTable.type, role),
+        eq(addressesTable.archived, false),
+      ),
+    )
+    .orderBy(desc(addressesTable.isDefault), desc(addressesTable.id))
+    .limit(1);
+  return a ? serializeAddress(a) : null;
+}
+
+async function loadProfile(userId: number) {
+  const customer = await getOrCreateCustomer(userId);
+  const [user] = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.id, userId))
+    .limit(1);
+  if (!user) throw new Error("User not found");
+
+  const [pending] = await db
+    .select()
+    .from(emailChangeTokensTable)
+    .where(
+      and(
+        eq(emailChangeTokensTable.userId, userId),
+        isNull(emailChangeTokensTable.usedAt),
+        gt(emailChangeTokensTable.expiresAt, new Date()),
+      ),
+    )
+    .orderBy(desc(emailChangeTokensTable.id))
+    .limit(1);
+
+  return GetAccountProfileResponse.parse({
+    firstName: user.firstName,
+    lastName: user.lastName,
+    email: user.email,
+    emailVerified: user.emailVerifiedAt != null,
+    phone: customer.phone,
+    pendingEmail: pending ? pending.newEmail : null,
+    billingAddress: await loadRoleAddress(customer.id, "billing"),
+    shippingAddress: await loadRoleAddress(customer.id, "shipping"),
+  });
+}
+
+router.get(
+  "/account/profile",
+  requireAuth,
+  async (req: Request, res: Response): Promise<void> => {
+    res.json(await loadProfile(req.user!.id));
+  },
+);
+
+router.put(
+  "/account/profile",
+  requireAuth,
+  async (req: Request, res: Response): Promise<void> => {
+    const parsed = UpdateAccountProfileBody.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: parsed.error.issues[0]?.message ?? "Invalid body" });
+      return;
+    }
+    const data = parsed.data;
+    const firstName = data.firstName.trim();
+    const lastName = data.lastName.trim();
+    const phone =
+      data.phone == null || data.phone.trim() === "" ? null : data.phone.trim();
+    const customer = await getOrCreateCustomer(req.user!.id);
+
+    await db.transaction(async (tx) => {
+      await tx
+        .update(usersTable)
+        .set({ firstName, lastName })
+        .where(eq(usersTable.id, req.user!.id));
+      await tx
+        .update(customersTable)
+        .set({ firstName, lastName, phone })
+        .where(eq(customersTable.id, customer.id));
+    });
+
+    res.json(await loadProfile(req.user!.id));
+  },
+);
+
+router.put(
+  "/account/addresses/role/:role",
+  requireAuth,
+  async (req: Request, res: Response): Promise<void> => {
+    const role = String(req.params.role);
+    if (role !== "billing" && role !== "shipping") {
+      res.status(400).json({ error: "Invalid role" });
+      return;
+    }
+    const parsed = UpsertAccountRoleAddressBody.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: parsed.error.issues[0]?.message ?? "Invalid body" });
+      return;
+    }
+    const data = parsed.data;
+    const customer = await getOrCreateCustomer(req.user!.id);
+
+    const nextValues = {
+      customerId: customer.id,
+      type: role,
+      recipientName: data.recipientName ?? null,
+      street1: data.street1,
+      street2: data.street2 ?? null,
+      city: data.city,
+      state: data.state,
+      zip: data.zip,
+      country: data.country ?? "US",
+      phone: data.phone ?? null,
+      isDefault: true,
+    };
+
+    await db.transaction(async (tx) => {
+      // The role card always edits the customer's default address of this
+      // type. Find the current default (if any) for this role.
+      const [existing] = await tx
+        .select()
+        .from(addressesTable)
+        .where(
+          and(
+            eq(addressesTable.customerId, customer.id),
+            eq(addressesTable.type, role),
+            eq(addressesTable.archived, false),
+          ),
+        )
+        .orderBy(desc(addressesTable.isDefault), desc(addressesTable.id))
+        .limit(1);
+
+      // Clear the default flag on other addresses of this role so there is a
+      // single default per type.
+      await tx
+        .update(addressesTable)
+        .set({ isDefault: false })
+        .where(
+          and(
+            eq(addressesTable.customerId, customer.id),
+            eq(addressesTable.type, role),
+          ),
+        );
+
+      if (!existing) {
+        await tx.insert(addressesTable).values(nextValues);
+        return;
+      }
+
+      const referenced = await isAddressReferencedByOrders(existing.id);
+      if (referenced) {
+        // Clone-on-edit: preserve the order-referenced row, archive it from the
+        // address book, and insert a fresh default for this role.
+        await tx
+          .update(addressesTable)
+          .set({ archived: true, isDefault: false })
+          .where(eq(addressesTable.id, existing.id));
+        await tx.insert(addressesTable).values(nextValues);
+      } else {
+        await tx
+          .update(addressesTable)
+          .set(nextValues)
+          .where(eq(addressesTable.id, existing.id));
+      }
+    });
+
+    res.json(await loadProfile(req.user!.id));
+  },
+);
+
+router.post(
+  "/account/email-change",
+  requireAuth,
+  async (req: Request, res: Response): Promise<void> => {
+    const parsed = RequestAccountEmailChangeBody.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: parsed.error.issues[0]?.message ?? "Invalid body" });
+      return;
+    }
+    const newEmail = parsed.data.newEmail.trim().toLowerCase();
+    const user = req.user!;
+    if (newEmail === user.email.trim().toLowerCase()) {
+      res
+        .status(400)
+        .json({ error: "That is already the email on your account." });
+      return;
+    }
+
+    const [taken] = await db
+      .select({ id: usersTable.id })
+      .from(usersTable)
+      .where(and(eq(usersTable.email, newEmail), ne(usersTable.id, user.id)))
+      .limit(1);
+    if (taken) {
+      res
+        .status(409)
+        .json({ error: "That email is already in use by another account." });
+      return;
+    }
+
+    const code = generateEmailChangeCode();
+    const codeHash = hashCode(code);
+    const expiresAt = new Date(Date.now() + EMAIL_CHANGE_CODE_TTL_MS);
+
+    await db.transaction(async (tx) => {
+      // Invalidate any prior pending requests for this user.
+      await tx
+        .update(emailChangeTokensTable)
+        .set({ usedAt: new Date() })
+        .where(
+          and(
+            eq(emailChangeTokensTable.userId, user.id),
+            isNull(emailChangeTokensTable.usedAt),
+          ),
+        );
+      await tx.insert(emailChangeTokensTable).values({
+        userId: user.id,
+        newEmail,
+        codeHash,
+        expiresAt,
+      });
+    });
+
+    await sendEmailChangeCode({
+      to: newEmail,
+      firstName: user.firstName,
+      code,
+    });
+
+    res.json({ pendingEmail: newEmail });
+  },
+);
+
+router.post(
+  "/account/email-change/verify",
+  requireAuth,
+  async (req: Request, res: Response): Promise<void> => {
+    const parsed = VerifyAccountEmailChangeBody.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: parsed.error.issues[0]?.message ?? "Invalid body" });
+      return;
+    }
+    const user = req.user!;
+    const codeHash = hashCode(parsed.data.code.trim());
+
+    const [token] = await db
+      .select()
+      .from(emailChangeTokensTable)
+      .where(
+        and(
+          eq(emailChangeTokensTable.userId, user.id),
+          isNull(emailChangeTokensTable.usedAt),
+          gt(emailChangeTokensTable.expiresAt, new Date()),
+        ),
+      )
+      .orderBy(desc(emailChangeTokensTable.id))
+      .limit(1);
+
+    if (!token || token.codeHash !== codeHash) {
+      res
+        .status(400)
+        .json({ error: "That code is invalid or has expired." });
+      return;
+    }
+
+    // Re-check uniqueness at verify time in case the email was claimed between
+    // request and verification.
+    const newEmail = token.newEmail.trim().toLowerCase();
+    const [taken] = await db
+      .select({ id: usersTable.id })
+      .from(usersTable)
+      .where(and(eq(usersTable.email, newEmail), ne(usersTable.id, user.id)))
+      .limit(1);
+    if (taken) {
+      res
+        .status(409)
+        .json({ error: "That email is already in use by another account." });
+      return;
+    }
+
+    const customer = await getOrCreateCustomer(user.id);
+    await db.transaction(async (tx) => {
+      await tx
+        .update(usersTable)
+        .set({ email: newEmail, emailVerifiedAt: new Date() })
+        .where(eq(usersTable.id, user.id));
+      await tx
+        .update(customersTable)
+        .set({ email: newEmail })
+        .where(eq(customersTable.id, customer.id));
+      await tx
+        .update(emailChangeTokensTable)
+        .set({ usedAt: new Date() })
+        .where(eq(emailChangeTokensTable.id, token.id));
+    });
+
+    res.json(await loadProfile(user.id));
+  },
+);
+
+router.delete(
+  "/account/email-change",
+  requireAuth,
+  async (req: Request, res: Response): Promise<void> => {
+    await db
+      .update(emailChangeTokensTable)
+      .set({ usedAt: new Date() })
+      .where(
+        and(
+          eq(emailChangeTokensTable.userId, req.user!.id),
+          isNull(emailChangeTokensTable.usedAt),
+        ),
+      );
+    res.json(await loadProfile(req.user!.id));
   },
 );
 

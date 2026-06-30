@@ -21,6 +21,8 @@ import type {
   AccountAddressesResponse,
   AccountOrderDetail,
   AccountOrdersResponse,
+  AccountProfileInput,
+  AccountProfileResponse,
   AddCartItemRequest,
   AddProductImageRequest,
   AddWishlistItemRequest,
@@ -190,6 +192,8 @@ import type {
   RemoveWishlistItemRequest,
   ReorderProductImagesRequest,
   ReplaceSetItemsRequest,
+  RequestEmailChangeBody,
+  RequestEmailChangeResponse,
   RequestPasswordResetRequest,
   RequestStaffRecoveryRequest,
   RequestStaffRecoveryResult,
@@ -239,6 +243,7 @@ import type {
   UpdateUserRequest,
   UpdateVendorOrderRequest,
   UpdateVendorOrderStatusRequest,
+  VerifyEmailChangeBody,
   VerifyEmailRequest,
   WishlistResponse,
 } from "./api.schemas";
@@ -1973,6 +1978,518 @@ export const useDeleteAccountAddress = <
   TContext
 > => {
   return useMutation(getDeleteAccountAddressMutationOptions(options));
+};
+
+/**
+ * @summary Get the signed-in customer's profile, email status, and role addresses
+ */
+export const getGetAccountProfileUrl = () => {
+  return `/api/account/profile`;
+};
+
+export const getAccountProfile = async (
+  options?: RequestInit,
+): Promise<AccountProfileResponse> => {
+  return customFetch<AccountProfileResponse>(getGetAccountProfileUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetAccountProfileQueryKey = () => {
+  return [`/api/account/profile`] as const;
+};
+
+export const getGetAccountProfileQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAccountProfile>>,
+  TError = ErrorType<Error>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getAccountProfile>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetAccountProfileQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getAccountProfile>>
+  > = ({ signal }) => getAccountProfile({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAccountProfile>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetAccountProfileQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAccountProfile>>
+>;
+export type GetAccountProfileQueryError = ErrorType<Error>;
+
+/**
+ * @summary Get the signed-in customer's profile, email status, and role addresses
+ */
+
+export function useGetAccountProfile<
+  TData = Awaited<ReturnType<typeof getAccountProfile>>,
+  TError = ErrorType<Error>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getAccountProfile>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetAccountProfileQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update the signed-in customer's name and phone
+ */
+export const getUpdateAccountProfileUrl = () => {
+  return `/api/account/profile`;
+};
+
+export const updateAccountProfile = async (
+  accountProfileInput: AccountProfileInput,
+  options?: RequestInit,
+): Promise<AccountProfileResponse> => {
+  return customFetch<AccountProfileResponse>(getUpdateAccountProfileUrl(), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(accountProfileInput),
+  });
+};
+
+export const getUpdateAccountProfileMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateAccountProfile>>,
+    TError,
+    { data: BodyType<AccountProfileInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateAccountProfile>>,
+  TError,
+  { data: BodyType<AccountProfileInput> },
+  TContext
+> => {
+  const mutationKey = ["updateAccountProfile"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateAccountProfile>>,
+    { data: BodyType<AccountProfileInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return updateAccountProfile(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateAccountProfileMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateAccountProfile>>
+>;
+export type UpdateAccountProfileMutationBody = BodyType<AccountProfileInput>;
+export type UpdateAccountProfileMutationError = ErrorType<Error>;
+
+/**
+ * @summary Update the signed-in customer's name and phone
+ */
+export const useUpdateAccountProfile = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateAccountProfile>>,
+    TError,
+    { data: BodyType<AccountProfileInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateAccountProfile>>,
+  TError,
+  { data: BodyType<AccountProfileInput> },
+  TContext
+> => {
+  return useMutation(getUpdateAccountProfileMutationOptions(options));
+};
+
+/**
+ * @summary Create or update the signed-in customer's default billing or shipping address
+ */
+export const getUpsertAccountRoleAddressUrl = (
+  role: "billing" | "shipping",
+) => {
+  return `/api/account/addresses/role/${role}`;
+};
+
+export const upsertAccountRoleAddress = async (
+  role: "billing" | "shipping",
+  accountAddressInput: AccountAddressInput,
+  options?: RequestInit,
+): Promise<AccountProfileResponse> => {
+  return customFetch<AccountProfileResponse>(
+    getUpsertAccountRoleAddressUrl(role),
+    {
+      ...options,
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(accountAddressInput),
+    },
+  );
+};
+
+export const getUpsertAccountRoleAddressMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof upsertAccountRoleAddress>>,
+    TError,
+    { role: "billing" | "shipping"; data: BodyType<AccountAddressInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof upsertAccountRoleAddress>>,
+  TError,
+  { role: "billing" | "shipping"; data: BodyType<AccountAddressInput> },
+  TContext
+> => {
+  const mutationKey = ["upsertAccountRoleAddress"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof upsertAccountRoleAddress>>,
+    { role: "billing" | "shipping"; data: BodyType<AccountAddressInput> }
+  > = (props) => {
+    const { role, data } = props ?? {};
+
+    return upsertAccountRoleAddress(role, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpsertAccountRoleAddressMutationResult = NonNullable<
+  Awaited<ReturnType<typeof upsertAccountRoleAddress>>
+>;
+export type UpsertAccountRoleAddressMutationBody =
+  BodyType<AccountAddressInput>;
+export type UpsertAccountRoleAddressMutationError = ErrorType<Error>;
+
+/**
+ * @summary Create or update the signed-in customer's default billing or shipping address
+ */
+export const useUpsertAccountRoleAddress = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof upsertAccountRoleAddress>>,
+    TError,
+    { role: "billing" | "shipping"; data: BodyType<AccountAddressInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof upsertAccountRoleAddress>>,
+  TError,
+  { role: "billing" | "shipping"; data: BodyType<AccountAddressInput> },
+  TContext
+> => {
+  return useMutation(getUpsertAccountRoleAddressMutationOptions(options));
+};
+
+/**
+ * @summary Request an email change; sends a verification code to the new address
+ */
+export const getRequestAccountEmailChangeUrl = () => {
+  return `/api/account/email-change`;
+};
+
+export const requestAccountEmailChange = async (
+  requestEmailChangeBody: RequestEmailChangeBody,
+  options?: RequestInit,
+): Promise<RequestEmailChangeResponse> => {
+  return customFetch<RequestEmailChangeResponse>(
+    getRequestAccountEmailChangeUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(requestEmailChangeBody),
+    },
+  );
+};
+
+export const getRequestAccountEmailChangeMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof requestAccountEmailChange>>,
+    TError,
+    { data: BodyType<RequestEmailChangeBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof requestAccountEmailChange>>,
+  TError,
+  { data: BodyType<RequestEmailChangeBody> },
+  TContext
+> => {
+  const mutationKey = ["requestAccountEmailChange"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof requestAccountEmailChange>>,
+    { data: BodyType<RequestEmailChangeBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return requestAccountEmailChange(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RequestAccountEmailChangeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof requestAccountEmailChange>>
+>;
+export type RequestAccountEmailChangeMutationBody =
+  BodyType<RequestEmailChangeBody>;
+export type RequestAccountEmailChangeMutationError = ErrorType<Error>;
+
+/**
+ * @summary Request an email change; sends a verification code to the new address
+ */
+export const useRequestAccountEmailChange = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof requestAccountEmailChange>>,
+    TError,
+    { data: BodyType<RequestEmailChangeBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof requestAccountEmailChange>>,
+  TError,
+  { data: BodyType<RequestEmailChangeBody> },
+  TContext
+> => {
+  return useMutation(getRequestAccountEmailChangeMutationOptions(options));
+};
+
+/**
+ * @summary Cancel a pending email change
+ */
+export const getCancelAccountEmailChangeUrl = () => {
+  return `/api/account/email-change`;
+};
+
+export const cancelAccountEmailChange = async (
+  options?: RequestInit,
+): Promise<AccountProfileResponse> => {
+  return customFetch<AccountProfileResponse>(getCancelAccountEmailChangeUrl(), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getCancelAccountEmailChangeMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof cancelAccountEmailChange>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof cancelAccountEmailChange>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["cancelAccountEmailChange"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof cancelAccountEmailChange>>,
+    void
+  > = () => {
+    return cancelAccountEmailChange(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CancelAccountEmailChangeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof cancelAccountEmailChange>>
+>;
+
+export type CancelAccountEmailChangeMutationError = ErrorType<Error>;
+
+/**
+ * @summary Cancel a pending email change
+ */
+export const useCancelAccountEmailChange = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof cancelAccountEmailChange>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof cancelAccountEmailChange>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getCancelAccountEmailChangeMutationOptions(options));
+};
+
+/**
+ * @summary Verify the email change code and apply the new email
+ */
+export const getVerifyAccountEmailChangeUrl = () => {
+  return `/api/account/email-change/verify`;
+};
+
+export const verifyAccountEmailChange = async (
+  verifyEmailChangeBody: VerifyEmailChangeBody,
+  options?: RequestInit,
+): Promise<AccountProfileResponse> => {
+  return customFetch<AccountProfileResponse>(getVerifyAccountEmailChangeUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(verifyEmailChangeBody),
+  });
+};
+
+export const getVerifyAccountEmailChangeMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof verifyAccountEmailChange>>,
+    TError,
+    { data: BodyType<VerifyEmailChangeBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof verifyAccountEmailChange>>,
+  TError,
+  { data: BodyType<VerifyEmailChangeBody> },
+  TContext
+> => {
+  const mutationKey = ["verifyAccountEmailChange"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof verifyAccountEmailChange>>,
+    { data: BodyType<VerifyEmailChangeBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return verifyAccountEmailChange(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type VerifyAccountEmailChangeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof verifyAccountEmailChange>>
+>;
+export type VerifyAccountEmailChangeMutationBody =
+  BodyType<VerifyEmailChangeBody>;
+export type VerifyAccountEmailChangeMutationError = ErrorType<Error>;
+
+/**
+ * @summary Verify the email change code and apply the new email
+ */
+export const useVerifyAccountEmailChange = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof verifyAccountEmailChange>>,
+    TError,
+    { data: BodyType<VerifyEmailChangeBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof verifyAccountEmailChange>>,
+  TError,
+  { data: BodyType<VerifyEmailChangeBody> },
+  TContext
+> => {
+  return useMutation(getVerifyAccountEmailChangeMutationOptions(options));
 };
 
 /**

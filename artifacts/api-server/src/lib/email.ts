@@ -159,6 +159,39 @@ export async function sendVerificationEmail({
   }
 }
 
+export interface SendEmailChangeCodeArgs {
+  to: string;
+  firstName: string | null;
+  code: string;
+}
+
+export async function sendEmailChangeCode({
+  to,
+  firstName,
+  code,
+}: SendEmailChangeCodeArgs): Promise<void> {
+  const { client, from } = await getResendClient();
+  const greeting = firstName ? `Hi ${firstName},` : "Hello,";
+  const body = `
+    <p>${greeting}</p>
+    <p>We received a request to change the email address on your ${BRAND_NAME} account to this one. Enter the code below to confirm the change.</p>
+    <p style="font-size:32px;font-weight:700;letter-spacing:8px;text-align:center;margin:24px 0;color:#1a3c5e;">${code}</p>
+    <p style="font-size:13px;color:#666;">This code expires in 30 minutes. If you did not request this change, you can safely ignore this email and your account will be unchanged.</p>
+  `;
+
+  const result = await client.emails.send({
+    from,
+    to,
+    subject: `Confirm your new ${BRAND_NAME} email address`,
+    html: emailLayout("Confirm your new email", body),
+  });
+
+  if (result.error) {
+    logger.error({ err: result.error, to }, "Failed to send email change code");
+    throw new Error(`Failed to send email change code: ${result.error.message}`);
+  }
+}
+
 export interface SendPasswordResetEmailArgs {
   to: string;
   firstName: string | null;

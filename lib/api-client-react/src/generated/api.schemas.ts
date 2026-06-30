@@ -1977,6 +1977,47 @@ export interface AccountAddressInput {
   isDefault?: boolean;
 }
 
+export interface AccountProfileResponse {
+  /** @nullable */
+  firstName: string | null;
+  /** @nullable */
+  lastName: string | null;
+  email: string;
+  emailVerified: boolean;
+  /** @nullable */
+  phone: string | null;
+  /**
+   * New email awaiting code verification, if any.
+   * @nullable
+   */
+  pendingEmail: string | null;
+  billingAddress: AccountAddress | null;
+  shippingAddress: AccountAddress | null;
+}
+
+export interface AccountProfileInput {
+  /** @minLength 1 */
+  firstName: string;
+  /** @minLength 1 */
+  lastName: string;
+  /** @nullable */
+  phone?: string | null;
+}
+
+export interface RequestEmailChangeBody {
+  /** @minLength 3 */
+  newEmail: string;
+}
+
+export interface RequestEmailChangeResponse {
+  pendingEmail: string;
+}
+
+export interface VerifyEmailChangeBody {
+  /** @pattern ^[0-9]{6}$ */
+  code: string;
+}
+
 export interface AccountOrderSummary {
   orderNumber: string;
   placedAt: string;

@@ -110,6 +110,24 @@ export const passwordResetTokensTable = pgTable(
   (t) => [index("password_reset_tokens_user_id_idx").on(t.userId)],
 );
 
+export const emailChangeTokensTable = pgTable(
+  "email_change_tokens",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => usersTable.id, { onDelete: "cascade" }),
+    newEmail: text("new_email").notNull(),
+    codeHash: text("code_hash").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    usedAt: timestamp("used_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index("email_change_tokens_user_id_idx").on(t.userId)],
+);
+
 export const adminRecoveryTokensTable = pgTable(
   "admin_recovery_tokens",
   {

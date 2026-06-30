@@ -536,6 +536,179 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /account/profile:
+    get:
+      operationId: getAccountProfile
+      tags: [account]
+      summary: Get the signed-in customer's profile, email status, and role addresses
+      responses:
+        "200":
+          description: Profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountProfileResponse"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    put:
+      operationId: updateAccountProfile
+      tags: [account]
+      summary: Update the signed-in customer's name and phone
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountProfileInput"
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountProfileResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /account/addresses/role/{role}:
+    put:
+      operationId: upsertAccountRoleAddress
+      tags: [account]
+      summary: Create or update the signed-in customer's default billing or shipping address
+      parameters:
+        - name: role
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [billing, shipping]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountAddressInput"
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountProfileResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /account/email-change:
+    post:
+      operationId: requestAccountEmailChange
+      tags: [account]
+      summary: Request an email change; sends a verification code to the new address
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RequestEmailChangeBody"
+      responses:
+        "200":
+          description: Code sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RequestEmailChangeResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Email already in use
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: cancelAccountEmailChange
+      tags: [account]
+      summary: Cancel a pending email change
+      responses:
+        "200":
+          description: Cancelled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountProfileResponse"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /account/email-change/verify:
+    post:
+      operationId: verifyAccountEmailChange
+      tags: [account]
+      summary: Verify the email change code and apply the new email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerifyEmailChangeBody"
+      responses:
+        "200":
+          description: Email updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountProfileResponse"
+        "400":
+          description: Invalid or expired code
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Email already in use
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /account/orders:
     get:
       operationId: listAccountOrders
@@ -7736,6 +7909,77 @@ components:
         - city
         - state
         - zip
+    AccountProfileResponse:
+      type: object
+      properties:
+        firstName:
+          type: ["string", "null"]
+        lastName:
+          type: ["string", "null"]
+        email:
+          type: string
+        emailVerified:
+          type: boolean
+        phone:
+          type: ["string", "null"]
+        pendingEmail:
+          type: ["string", "null"]
+          description: New email awaiting code verification, if any.
+        billingAddress:
+          oneOf:
+            - $ref: "#/components/schemas/AccountAddress"
+            - type: "null"
+        shippingAddress:
+          oneOf:
+            - $ref: "#/components/schemas/AccountAddress"
+            - type: "null"
+      required:
+        - firstName
+        - lastName
+        - email
+        - emailVerified
+        - phone
+        - pendingEmail
+        - billingAddress
+        - shippingAddress
+    AccountProfileInput:
+      type: object
+      properties:
+        firstName:
+          type: string
+          minLength: 1
+        lastName:
+          type: string
+          minLength: 1
+        phone:
+          type: ["string", "null"]
+      required:
+        - firstName
+        - lastName
+    RequestEmailChangeBody:
+      type: object
+      properties:
+        newEmail:
+          type: string
+          format: email
+          minLength: 3
+      required:
+        - newEmail
+    RequestEmailChangeResponse:
+      type: object
+      properties:
+        pendingEmail:
+          type: string
+      required:
+        - pendingEmail
+    VerifyEmailChangeBody:
+      type: object
+      properties:
+        code:
+          type: string
+          pattern: "^[0-9]{6}$"
+      required:
+        - code
     AccountOrderSummary:
       type: object
       properties:

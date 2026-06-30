@@ -4,7 +4,6 @@ import { Search, Plus, Users as UsersIcon } from "lucide-react";
 import {
   useAdminListCustomers,
   useAdminCreateCustomer,
-  useAdminUpdateCustomer,
   useAdminGetCustomer,
   useAdminCreateCustomerAddress,
   getAdminListCustomersQueryKey,
@@ -93,7 +92,7 @@ export default function AgentCustomers() {
                       <td className="px-3 py-2 capitalize">{c.customerType}</td>
                       <td className="px-3 py-2 text-slate-600">{c.companyName ?? "—"}</td>
                       <td className="px-3 py-2 text-right">
-                        <Button size="sm" variant="outline" onClick={() => setEditing(c)}>Edit</Button>
+                        <Button size="sm" variant="outline" onClick={() => setEditing(c)}>View</Button>
                       </td>
                     </tr>
                   ))}
@@ -115,7 +114,7 @@ export default function AgentCustomers() {
         )}
 
         <CreateCustomerDialog open={createOpen} onOpenChange={setCreateOpen} />
-        <EditCustomerDialog customer={editing} onClose={() => setEditing(null)} />
+        <ViewCustomerDialog customer={editing} onClose={() => setEditing(null)} />
       </PageBody>
     </>
   );
@@ -243,12 +242,18 @@ function CreateCustomerDialog({
   );
 }
 
-function EditCustomerDialog({
+function Field({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div className="text-xs font-medium text-slate-500 uppercase mb-0.5">{label}</div>
+      <div className="text-sm text-slate-800">{value || "—"}</div>
+    </div>
+  );
+}
+
+function ViewCustomerDialog({
   customer, onClose,
 }: { customer: AdminCustomer | null; onClose: () => void }) {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const updateMut = useAdminUpdateCustomer();
   const open = customer !== null;
 
   const detail = useAdminGetCustomer(customer?.id ?? 0, {
@@ -258,104 +263,72 @@ function EditCustomerDialog({
     },
   });
 
-  const [form, setForm] = useState({
-    email: "", firstName: "", lastName: "", phone: "",
-    companyName: "", customerType: "residential", notes: "",
-  });
+  const addresses = detail.data?.addresses ?? [];
+  const billing = addresses.filter((a) => a.type === "billing");
+  const shipping = addresses.filter((a) => a.type === "shipping");
+  const other = addresses.filter(
+    (a) => a.type !== "billing" && a.type !== "shipping",
+  );
 
-  useEffect(() => {
-    if (customer) {
-      setForm({
-        email: customer.email,
-        firstName: customer.firstName,
-        lastName: customer.lastName,
-        phone: customer.phone ?? "",
-        companyName: customer.companyName ?? "",
-        customerType: customer.customerType,
-        notes: customer.notes ?? "",
-      });
-    }
-  }, [customer]);
-
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    if (!customer) return;
-    try {
-      await updateMut.mutateAsync({
-        id: customer.id,
-        data: {
-          email: form.email.trim(),
-          firstName: form.firstName.trim(),
-          lastName: form.lastName.trim(),
-          phone: form.phone.trim() || null,
-          companyName: form.companyName.trim() || null,
-          customerType: form.customerType as "residential" | "commercial",
-          notes: form.notes.trim() || null,
-        },
-      });
-      toast({ title: "Customer updated" });
-      queryClient.invalidateQueries({ queryKey: getAdminListCustomersQueryKey() });
-      onClose();
-    } catch (e: unknown) {
-      toast({
-        title: "Update failed",
-        description: e instanceof Error ? e.message : "Unknown error",
-        variant: "destructive",
-      });
-    }
+  function renderGroup(
+    title: string,
+    list: typeof addresses,
+  ) {
+    if (list.length === 0) return null;
+    return (
+      <div>
+        <div className="text-xs font-medium text-slate-500 uppercase mb-2">{title}</div>
+        <ul className="space-y-2 text-sm">
+          {list.map((a) => (
+            <li key={a.id} className="border rounded p-2">
+              {a.isDefault ? (
+                <div className="text-[10px] uppercase text-slate-500">Default</div>
+              ) : null}
+              {a.recipientName ? <div>{a.recipientName}</div> : null}
+              <div>{a.street1}{a.street2 ? `, ${a.street2}` : ""}</div>
+              <div>{a.city}, {a.state} {a.zip}</div>
+              {a.phone ? <div className="text-slate-500">{a.phone}</div> : null}
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
   }
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-2xl">
-        <DialogHeader><DialogTitle>Edit Customer</DialogTitle></DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <div><Label>First name *</Label>
-              <Input required value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} /></div>
-            <div><Label>Last name *</Label>
-              <Input required value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} /></div>
-            <div><Label>Email *</Label>
-              <Input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
-            <div><Label>Phone</Label>
-              <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
-            <div><Label>Type</Label>
-              <Select value={form.customerType} onValueChange={(v) => setForm({ ...form, customerType: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="residential">Residential</SelectItem>
-                  <SelectItem value="commercial">Commercial</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div><Label>Company</Label>
-              <Input value={form.companyName} onChange={(e) => setForm({ ...form, companyName: e.target.value })} /></div>
-          </div>
-          <div><Label>Notes</Label>
-            <Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
-
-          {detail.data && detail.data.addresses.length > 0 && (
-            <div className="border-t pt-3">
-              <div className="text-xs font-medium text-slate-500 uppercase mb-2">Addresses</div>
-              <ul className="space-y-2 text-sm">
-                {detail.data.addresses.map((a) => (
-                  <li key={a.id} className="border rounded p-2">
-                    <div className="text-xs uppercase text-slate-500">{a.type}{a.isDefault ? " · default" : ""}</div>
-                    <div>{a.street1}{a.street2 ? `, ${a.street2}` : ""}</div>
-                    <div>{a.city}, {a.state} {a.zip}</div>
-                  </li>
-                ))}
-              </ul>
+        <DialogHeader><DialogTitle>Customer Details</DialogTitle></DialogHeader>
+        <div className="space-y-4">
+          <p className="text-xs text-slate-500">
+            Customer account details are managed by the customer from their
+            account page and are read-only here.
+          </p>
+          {customer && (
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="First name" value={customer.firstName} />
+              <Field label="Last name" value={customer.lastName} />
+              <Field label="Email" value={customer.email} />
+              <Field label="Phone" value={customer.phone ?? ""} />
+              <Field label="Type" value={customer.customerType} />
+              <Field label="Company" value={customer.companyName ?? ""} />
+              <div className="col-span-2">
+                <Field label="Notes" value={customer.notes ?? ""} />
+              </div>
             </div>
           )}
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-            <Button type="submit" disabled={updateMut.isPending}>
-              {updateMut.isPending ? "Saving…" : "Save"}
-            </Button>
-          </DialogFooter>
-        </form>
+          {addresses.length > 0 && (
+            <div className="border-t pt-3 space-y-4">
+              {renderGroup("Billing Address", billing)}
+              {renderGroup("Shipping Address", shipping)}
+              {renderGroup("Other Addresses", other)}
+            </div>
+          )}
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={onClose}>Close</Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
