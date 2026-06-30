@@ -114,14 +114,35 @@ export async function sendEmail({
   bodyHtml,
 }: SendEmailArgs): Promise<void> {
   const { client, from } = await getResendClient();
+
+  // Test-mode redirect: while Resend is unverified it can only deliver to the
+  // account owner. If EMAIL_TEST_REDIRECT_TO is set, route every email there
+  // so all transactional emails are demonstrable from a single inbox. The
+  // original intended recipient is preserved in the subject + a banner so the
+  // routing stays obvious. Remove this env var once a sender domain is
+  // verified and emails should reach real recipients.
+  const redirectTo = process.env["EMAIL_TEST_REDIRECT_TO"]?.trim();
+  const effectiveTo = redirectTo && redirectTo.length > 0 ? redirectTo : to;
+  const effectiveSubject =
+    effectiveTo === to ? subject : `[→ ${to}] ${subject}`;
+  const redirectBanner =
+    effectiveTo === to
+      ? ""
+      : `<div style="background:#fff8e1;border:1px solid #ffe082;border-radius:4px;padding:10px 14px;font-size:13px;color:#7a5c00;margin-bottom:16px;font-family:Arial,sans-serif;">
+          <strong>Test mode:</strong> This email was intended for <strong>${to}</strong> but was redirected here because the sending domain is not yet verified.
+        </div>`;
+
   const result = await client.emails.send({
     from,
-    to,
-    subject,
-    html: emailLayout(title, bodyHtml),
+    to: effectiveTo,
+    subject: effectiveSubject,
+    html: emailLayout(title, `${redirectBanner}${bodyHtml}`),
   });
   if (result.error) {
-    logger.error({ err: result.error, to, subject }, "Failed to send email");
+    logger.error(
+      { err: result.error, to: effectiveTo, subject: effectiveSubject },
+      "Failed to send email",
+    );
     throw new Error(`Failed to send email: ${result.error.message}`);
   }
 }

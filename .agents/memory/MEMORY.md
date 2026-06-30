@@ -45,3 +45,4 @@
 - [Galvanized base accessories](galvanized-base-accessories.md) — Frankford bases get optional Stem (independent line) + Aluminum Top Cover (hidden product, 1:1 parent-tie, qty-locked, read-only on staff builder); parent_cart/order_item_id; admin picker mirrors by-slug.
 - [Finishes sub-group ordering](finishes-subgroup-ordering.md) — sub-groups sort alphabetically; force per-brand order via SUBGROUP_ORDER map (never global displayOrder sort); collection-set finishes show FULL image in dialog.
 - [Shipping single source of truth](shipping-single-source-of-truth.md) — online orders use shippingRules.ts engine (A–D stack per line + 1 weight tier/order); staff orders default $0 + manual flat; shipping never taxed; old settings-driven shipping fully removed.
+- [Email test-mode redirect](email-test-redirect.md) — EMAIL_TEST_REDIRECT_TO routes ALL emails to one inbox; Resend 403s non-owner recipients until a domain is verified; delete the var for real delivery.
