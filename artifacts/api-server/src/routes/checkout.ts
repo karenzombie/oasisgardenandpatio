@@ -29,6 +29,10 @@ import {
 } from "@workspace/api-zod";
 import { getOrCreateCustomer } from "./account";
 import { autoGenerateVendorOrders } from "../lib/autoGenerateVendorOrders";
+import {
+  sendOrderConfirmationEmail,
+  sendStoreNewOrderNotification,
+} from "../lib/orderConfirmationEmail";
 import { stripVentSuffix } from "../lib/variantSku";
 import { loadPricingSettings, computeTax } from "../lib/checkoutPricing";
 import {
@@ -591,6 +595,12 @@ router.post(
       const existing = req.session.guestOrders ?? [];
       req.session.guestOrders = [orderNumber, ...existing].slice(0, 25);
     }
+
+    // Fire-and-forget transactional emails. Errors are caught and logged
+    // inside each helper — a transient email failure must never fail the
+    // checkout response.
+    void sendOrderConfirmationEmail(customer, orderNumber).catch(() => {});
+    void sendStoreNewOrderNotification(customer, orderNumber).catch(() => {});
 
     res.json(
       PlaceOrderResultSchema.parse({
