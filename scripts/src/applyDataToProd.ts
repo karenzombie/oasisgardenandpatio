@@ -38,6 +38,7 @@ TRUNCATE
   product_fabric_options,
   product_finish_pools,
   product_finish_options,
+  product_finial_options,
   variant_grade_prices,
   product_sets,
   product_set_items,

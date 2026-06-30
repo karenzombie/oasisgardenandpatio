@@ -15,7 +15,9 @@ pnpm --filter db push
 #   manufacturers, materials, categories, fabrics, finish_collections, finishes,
 #   products, product_variants, product_images, product_attributes,
 #   product_fabric_pools, product_fabric_options, product_finish_pools,
-#   product_finish_options, variant_grade_prices, product_sets, product_set_items.
+#   product_finish_options, product_finial_options, variant_grade_prices,
+#   product_sets, product_set_items, product_addon_options,
+#   product_addon_grade_prices.
 #
 # NOT synced (intentionally): transactional / user / inventory tables
 #   (orders, customers, users, carts, inventory, etc.). These hold no real prod
