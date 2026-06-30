@@ -23,6 +23,7 @@ import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import { isUniqueViolation } from "../lib/dbErrors";
 import { recordAudit } from "../lib/audit";
 import { recordHistory } from "../lib/history";
+import { sendStaffWelcomeEmail } from "../lib/staffWelcomeEmail";
 
 function userSafeSnapshot(u: User) {
   // Strip secrets so they never end up in history jsonb.
@@ -198,6 +199,18 @@ router.post(
         changeType: "create",
         snapshot: userSafeSnapshot(row),
       });
+
+      // Fire-and-forget welcome email with login credentials.
+      // Errors are caught inside the helper — a transient email failure
+      // must never fail the user-creation response.
+      void sendStaffWelcomeEmail({
+        email: row.email,
+        firstName: row.firstName,
+        lastName: row.lastName,
+        temporaryPassword: data.password,
+        role: row.role,
+      }).catch(() => {});
+
       res.status(201).json(userToSummary(row));
     } catch (err) {
       if (isUniqueViolation(err)) {
