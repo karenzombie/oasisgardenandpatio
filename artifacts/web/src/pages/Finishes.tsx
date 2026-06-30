@@ -1,5 +1,11 @@
 import { Link } from "wouter";
 import { useMemo, useState } from "react";
+import ssBallAndVertex from "@assets/Stainless_Steel_Ball_and_Vertex_1782777980447.jpg";
+import tpuBallColors from "@assets/TPU_Ball_all_frame_colors_1782777980448.jpg";
+import tpuVertexColors from "@assets/TPU_Vertex_all_frame_colors_1782777980448.jpg";
+import chromeBall from "@assets/Chrome_Ball_1782777980448.png";
+import chromeVertex from "@assets/Chrome_Vertex_1782777980448.png";
+import ssVertex from "@assets/Stainless_Steel_Vertex_1782777980448.jpg";
 import {
   useListCatalogManufacturerFinishes,
   useListCatalogFinishProducts,
@@ -365,24 +371,94 @@ export default function Finishes() {
                       ))}
                     </div>
                   ) : (
-                    subGroups.map(({ label, items }) => (
-                      <div key={label || "all"} className="mb-10 last:mb-0">
-                        {label && (
-                          <h3 className="text-sm font-medium uppercase tracking-widest text-muted-foreground mb-4">
-                            {label}
-                          </h3>
-                        )}
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5">
-                          {items.map((f) => (
-                            <FinishSwatch
-                              key={f.id}
-                              finish={f}
-                              onClick={() => setSelected(f)}
-                            />
-                          ))}
+                    <>
+                      {subGroups.map(({ label, items }) => (
+                        <div key={label || "all"} className="mb-10 last:mb-0">
+                          {label && (
+                            <h3 className="text-sm font-medium uppercase tracking-widest text-muted-foreground mb-4">
+                              {label}
+                            </h3>
+                          )}
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5">
+                            {items.map((f) => (
+                              <FinishSwatch
+                                key={f.id}
+                                finish={f}
+                                onClick={() => setSelected(f)}
+                              />
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    ))
+                      ))}
+                      {brand === "Frankford Umbrellas" && (
+                        <div className="mb-10 last:mb-0">
+                          <h3 className="text-sm font-medium uppercase tracking-widest text-muted-foreground mb-4">
+                            Finials
+                          </h3>
+                          {/* Hero — Stainless Steel Ball & Vertex combined shot */}
+                          <div className="mb-5">
+                            <img
+                              src={ssBallAndVertex}
+                              alt="Stainless Steel Ball and Vertex Finials"
+                              className="w-full h-auto object-cover rounded-sm"
+                            />
+                            <p className="mt-2 text-sm text-foreground font-medium">Stainless Steel Ball &amp; Vertex</p>
+                            <p className="text-xs text-muted-foreground">Mirror-polished stainless steel — sold separately</p>
+                          </div>
+                          {/* TPU in all frame colors — wide landscape panels */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+                            <div>
+                              <img
+                                src={tpuBallColors}
+                                alt="TPU Ball Finial in all frame colors"
+                                className="w-full h-auto object-cover rounded-sm"
+                              />
+                              <p className="mt-2 text-sm text-foreground font-medium">TPU Ball Finial</p>
+                              <p className="text-xs text-muted-foreground">Available in all frame colors</p>
+                            </div>
+                            <div>
+                              <img
+                                src={tpuVertexColors}
+                                alt="TPU Vertex Finial in all frame colors"
+                                className="w-full h-auto object-cover rounded-sm"
+                              />
+                              <p className="mt-2 text-sm text-foreground font-medium">TPU Vertex Finial</p>
+                              <p className="text-xs text-muted-foreground">Available in all frame colors</p>
+                            </div>
+                          </div>
+                          {/* Premium individual finials */}
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                            <div>
+                              <img
+                                src={chromeBall}
+                                alt="Chrome Ball Finial"
+                                className="w-full h-auto object-contain bg-muted rounded-sm p-4"
+                              />
+                              <p className="mt-2 text-sm text-foreground font-medium">Chrome Ball</p>
+                              <p className="text-xs text-muted-foreground">High-gloss chrome finish</p>
+                            </div>
+                            <div>
+                              <img
+                                src={chromeVertex}
+                                alt="Chrome Vertex Finial"
+                                className="w-full h-auto object-contain bg-muted rounded-sm p-4"
+                              />
+                              <p className="mt-2 text-sm text-foreground font-medium">Chrome Vertex</p>
+                              <p className="text-xs text-muted-foreground">High-gloss chrome finish</p>
+                            </div>
+                            <div>
+                              <img
+                                src={ssVertex}
+                                alt="Stainless Steel Vertex Finial"
+                                className="w-full h-auto object-cover rounded-sm"
+                              />
+                              <p className="mt-2 text-sm text-foreground font-medium">Stainless Steel Vertex</p>
+                              <p className="text-xs text-muted-foreground">Mirror-polished stainless steel</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
                 </AccordionContent>
               </AccordionItem>
