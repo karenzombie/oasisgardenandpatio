@@ -18,7 +18,8 @@ pnpm --filter db push
 #   product_finish_options, product_finial_options, product_cover_options,
 #   product_cover_finish_prices, product_stem_options, product_recommendations,
 #   variant_grade_prices, product_sets, product_set_items,
-#   product_addon_options, product_addon_grade_prices.
+#   product_addon_options, product_addon_grade_prices, shipping_rules,
+#   shipping_rule_products, shipping_weight_tiers.
 #
 # NOT synced (intentionally): transactional / user / inventory tables
 #   (orders, customers, users, carts, inventory, etc.). These hold no real prod

@@ -53,6 +53,12 @@ const TABLES_IN_ORDER = [
   // intentionally excluded — they're wiped by TRUNCATE CASCADE like cart/orders.
   "product_addon_options",
   "product_addon_grade_prices",
+  // Shipping config (admin Shipping page is the source of truth for ONLINE
+  // orders). shipping_rules → shipping_rule_products (FK); shipping_weight_tiers
+  // is standalone. These are config, mirrored dev→prod like the catalog.
+  "shipping_rules",
+  "shipping_rule_products",
+  "shipping_weight_tiers",
 ];
 
 const client = new pg.Client({ connectionString: process.env.DATABASE_URL });

@@ -47,7 +47,10 @@ TRUNCATE
   product_sets,
   product_set_items,
   product_addon_options,
-  product_addon_grade_prices
+  product_addon_grade_prices,
+  shipping_rules,
+  shipping_rule_products,
+  shipping_weight_tiers
 RESTART IDENTITY CASCADE;
 `;
 
