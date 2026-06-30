@@ -8,10 +8,13 @@ import {
   useAdminUpdateUser,
   useAdminResetUserPassword,
   useAdminUpdateAgentPrivileges,
+  useAdminListAuditLog,
+  getAdminListAuditLogQueryKey,
   getAdminListUsersQueryKey,
   getAdminGetUserQueryKey,
   type AdminUserSummary,
   type AdminAgentPrivileges,
+  type AuditLogEntry,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -632,6 +635,10 @@ function UserManageDialog({
           )}
         </div>
 
+        {(user.role === "admin" || user.role === "agent") && (
+          <SecurityActivity userId={user.id} />
+        )}
+
         {role === "agent" && (
           <div className="border-t pt-3 space-y-3">
             <div>
@@ -727,6 +734,74 @@ function UserManageDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+const SECURITY_ACTIONS = new Set([
+  "staff_recovery.requested",
+  "staff_recovery.completed",
+  "staff_recovery.complete_rejected",
+  "user.reset_password",
+]);
+
+function describeSecurityAction(action: string): string {
+  switch (action) {
+    case "staff_recovery.requested":
+      return "Requested self-service account recovery (password + authenticator reset)";
+    case "staff_recovery.completed":
+      return "Completed account recovery — password and authenticator were reset";
+    case "staff_recovery.complete_rejected":
+      return "Account recovery attempt rejected";
+    case "user.reset_password":
+      return "Password reset by an administrator";
+    default:
+      return action;
+  }
+}
+
+function SecurityActivity({ userId }: { userId: number }) {
+  const params = { entityType: "user", entityId: userId, limit: 50 };
+  const auditQ = useAdminListAuditLog(params, {
+    query: {
+      queryKey: getAdminListAuditLogQueryKey(params),
+      enabled: userId > 0,
+    },
+  });
+
+  const events: AuditLogEntry[] = (auditQ.data?.rows ?? []).filter((row) =>
+    SECURITY_ACTIONS.has(row.action),
+  );
+
+  return (
+    <div className="border-t pt-3 space-y-2">
+      <div>
+        <div className="text-sm font-semibold">Security activity</div>
+        <div className="text-xs text-slate-500">
+          Password and authenticator (MFA) resets for this user.
+        </div>
+      </div>
+      {auditQ.isLoading ? (
+        <Spinner className="size-4" />
+      ) : events.length === 0 ? (
+        <div className="text-xs text-slate-500">No reset activity recorded.</div>
+      ) : (
+        <ul className="space-y-1.5">
+          {events.map((e) => (
+            <li
+              key={e.id}
+              className="flex items-start justify-between gap-3 rounded border px-3 py-2 text-xs"
+            >
+              <span className="text-slate-700">
+                {describeSecurityAction(e.action)}
+              </span>
+              <span className="shrink-0 text-slate-400">
+                {formatDateTime(e.createdAt)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 

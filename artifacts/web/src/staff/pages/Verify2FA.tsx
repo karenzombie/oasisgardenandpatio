@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { useLocation, Redirect } from "wouter";
+import { useLocation, Redirect, Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useStaffVerifyTotp,
@@ -131,6 +131,18 @@ export default function Verify2FA() {
               ? "Lost your device? Use a recovery code"
               : "Use authenticator app instead"}
           </button>
+        </div>
+
+        <div className="text-center text-xs text-slate-500 pt-2 border-t">
+          <p className="pt-2">
+            No authenticator and no recovery codes?
+          </p>
+          <Link
+            href="/staff/recover"
+            className="underline hover:text-slate-700"
+          >
+            Recover staff access
+          </Link>
         </div>
       </form>
     </StaffAuthShell>

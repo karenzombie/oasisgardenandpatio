@@ -21,7 +21,6 @@ import {
 } from "../middlewares/rateLimit";
 import {
   sendRecoveryRequestedEmail,
-  sendRecoveryAlertEmail,
   sendRecoveryFinalizedEmail,
   maskEmail,
 } from "../lib/recoveryEmail";
@@ -180,9 +179,10 @@ router.post(
         return;
       }
       const recoveryUrl = `${baseUrl}/staff/recover/${rawToken}`;
-      const cancelUrl = `${baseUrl}/admin/recovery-requests`;
 
-      // Fire-and-forget emails — never block response.
+      // Fire-and-forget email — never block response. Other admins are NOT
+      // emailed; recovery activity is visible in the staff portal instead
+      // (admin recovery-requests dashboard + per-user security activity).
       void sendRecoveryRequestedEmail({
         to: user.email,
         recoveryUrl,
@@ -196,33 +196,6 @@ router.post(
           "Failed to send recovery requested email",
         );
       });
-
-      // Notify all OTHER active admins so they have a chance to cancel.
-      const otherAdmins = await db
-        .select({ email: usersTable.email })
-        .from(usersTable)
-        .where(
-          and(
-            eq(usersTable.role, "admin"),
-            eq(usersTable.isActive, true),
-            ne(usersTable.id, user.id),
-          ),
-        );
-      for (const admin of otherAdmins) {
-        void sendRecoveryAlertEmail({
-          to: admin.email,
-          targetEmail: user.email,
-          cancelUrl,
-          availableAt,
-          requestIp: ip,
-          requestUserAgent: userAgent,
-        }).catch((err) => {
-          logger.error(
-            { err, to: admin.email },
-            "Failed to send recovery alert email",
-          );
-        });
-      }
     } catch (err) {
       logger.error({ err }, "staff recovery request failed");
       // Still return ok to avoid leaking errors / existence.
