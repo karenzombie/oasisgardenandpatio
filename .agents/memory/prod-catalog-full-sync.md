@@ -34,3 +34,11 @@ Copying dev's exact catalog state is drift-proof.
   becomes destructive and must be reworked.
 - **Prereq: prod schema must already match dev.** The reload inserts dev's exact columns; a
   schema mismatch makes the apply fail hard (clean rollback, but blocks the sync).
+- **The allowlist + prod schema BOTH silently drift when new tables are added.** A new catalog
+  table is invisible to this pipeline until added to BOTH lists, AND its table must be created in
+  prod first (the apply only inserts rows, never DDL). Whole tables can be missing from prod
+  schema entirely (e.g. cover/stem/finial option tables, shipping_rules/_products/_weight_tiers).
+  **Before any publish, diff the FULL dev vs prod table list (information_schema), not just the
+  allowlist** — a feature can be live in merged code yet query a table that doesn't exist in prod,
+  500ing on republish. shipping_* tables are queried by loadShippingConfig (cart/checkout) and are
+  NOT catalog-synced, so they must be schema-created + data-loaded in prod independently.

@@ -37,6 +37,13 @@ const TABLES_IN_ORDER = [
   "product_finish_pools",
   "product_finish_options",
   "product_finial_options",
+  // Umbrella cover/stem catalog config + cross-product recommendations.
+  // cover/stem options reference products (base + cover/stem); cover finish
+  // prices reference products + finishes; recommendations have no FK (sku-keyed).
+  "product_cover_options",
+  "product_cover_finish_prices",
+  "product_stem_options",
+  "product_recommendations",
   "variant_grade_prices",
   "product_sets",
   "product_set_items",
