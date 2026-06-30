@@ -1,5 +1,5 @@
-import { Link } from "wouter";
-import { useMemo, useState } from "react";
+import { Link, useSearch } from "wouter";
+import { useEffect, useMemo, useState } from "react";
 import { useListCatalogFabrics } from "@workspace/api-client-react";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -106,6 +106,12 @@ function FabricSwatch({ fabric }: { fabric: FabricItem }) {
 export default function Fabrics() {
   const [selectedColors, setSelectedColors] = useState<Set<string>>(new Set());
   const [open, setOpen] = useState(false);
+  const search = useSearch();
+  const brandParam = useMemo(() => {
+    const raw = new URLSearchParams(search).get("brand");
+    return raw ? raw.trim() : null;
+  }, [search]);
+  const [openBrands, setOpenBrands] = useState<string[]>([]);
 
   const { data, isLoading, error } = useListCatalogFabrics();
 
@@ -153,6 +159,24 @@ export default function Fabrics() {
     }
     return Array.from(m.entries()).sort((a, b) => a[0].localeCompare(b[0]));
   }, [data, selectedColors]);
+
+  // Deep-link: when arriving with ?brand=, auto-expand that manufacturer's
+  // accordion (case-insensitive match) and scroll it into view.
+  useEffect(() => {
+    if (!brandParam || grouped.length === 0) return;
+    const match = grouped.find(
+      ([brand]) => brand.toLowerCase() === brandParam.toLowerCase(),
+    );
+    if (!match) return;
+    const brand = match[0];
+    setOpenBrands((prev) => (prev.includes(brand) ? prev : [...prev, brand]));
+    const id = window.setTimeout(() => {
+      document
+        .getElementById(`fabric-brand-${brand}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 150);
+    return () => window.clearTimeout(id);
+  }, [brandParam, grouped]);
 
   const selected = Array.from(selectedColors);
 
@@ -267,9 +291,19 @@ export default function Fabrics() {
             : `No fabrics match the selected color${selectedColors.size > 1 ? "s" : ""}.`}
         </p>
       ) : (
-        <Accordion type="multiple" className="divide-y divide-border border-t border-border">
+        <Accordion
+          type="multiple"
+          value={openBrands}
+          onValueChange={setOpenBrands}
+          className="divide-y divide-border border-t border-border"
+        >
           {grouped.map(([brand, list]) => (
-            <AccordionItem key={brand} value={brand} className="border-b-0">
+            <AccordionItem
+              key={brand}
+              value={brand}
+              id={`fabric-brand-${brand}`}
+              className="border-b-0 scroll-mt-24"
+            >
               <AccordionTrigger className="hover:no-underline py-5">
                 <div className="flex items-center gap-4">
                   {list[0]?.manufacturerLogoUrl && (

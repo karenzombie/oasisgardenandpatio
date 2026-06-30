@@ -1,5 +1,5 @@
-import { Link } from "wouter";
-import { useMemo, useState } from "react";
+import { Link, useSearch } from "wouter";
+import { useEffect, useMemo, useState } from "react";
 import ssBallAndVertex from "@assets/Stainless_Steel_Ball_and_Vertex_1782777980447.jpg";
 import tpuBallColors from "@assets/TPU_Ball_all_frame_colors_1782777980448.jpg";
 import tpuVertexColors from "@assets/TPU_Vertex_all_frame_colors_1782777980448.jpg";
@@ -236,6 +236,12 @@ function FinishProductsDialog({
 export default function Finishes() {
   const { data, isLoading, error } = useListCatalogManufacturerFinishes();
   const [selected, setSelected] = useState<FinishItem | null>(null);
+  const search = useSearch();
+  const brandParam = useMemo(() => {
+    const raw = new URLSearchParams(search).get("brand");
+    return raw ? raw.trim() : null;
+  }, [search]);
+  const [openBrands, setOpenBrands] = useState<string[]>([]);
 
   const finishCollections = data?.finishCollections ?? [];
 
@@ -249,6 +255,24 @@ export default function Finishes() {
     }
     return Array.from(m.entries()).sort((a, b) => a[0].localeCompare(b[0]));
   }, [data]);
+
+  // Deep-link: when arriving with ?brand=, auto-expand that manufacturer's
+  // accordion (case-insensitive match) and scroll it into view.
+  useEffect(() => {
+    if (!brandParam || grouped.length === 0) return;
+    const match = grouped.find(
+      ([brand]) => brand.toLowerCase() === brandParam.toLowerCase(),
+    );
+    if (!match) return;
+    const brand = match[0];
+    setOpenBrands((prev) => (prev.includes(brand) ? prev : [...prev, brand]));
+    const id = window.setTimeout(() => {
+      document
+        .getElementById(`finish-brand-${brand}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 150);
+    return () => window.clearTimeout(id);
+  }, [brandParam, grouped]);
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-6xl">
@@ -282,7 +306,12 @@ export default function Finishes() {
       ) : grouped.length === 0 ? (
         <p className="text-muted-foreground">No finishes available yet.</p>
       ) : (
-        <Accordion type="multiple" className="divide-y divide-border border-t border-border">
+        <Accordion
+          type="multiple"
+          value={openBrands}
+          onValueChange={setOpenBrands}
+          className="divide-y divide-border border-t border-border"
+        >
           {grouped.map(([brand, list]) => {
             // Collections for this specific manufacturer (sorted by displayOrder)
             const brandCollections = finishCollections
@@ -318,7 +347,12 @@ export default function Finishes() {
                 : [{ label: "", items: list }];
 
             return (
-              <AccordionItem key={brand} value={brand} className="border-b-0">
+              <AccordionItem
+                key={brand}
+                value={brand}
+                id={`finish-brand-${brand}`}
+                className="border-b-0 scroll-mt-24"
+              >
                 <AccordionTrigger className="hover:no-underline py-5 group">
                   <div className="flex items-center gap-4">
                     {list[0]?.manufacturerLogoUrl && (

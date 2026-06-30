@@ -1012,6 +1012,20 @@ export default function Product() {
                         </button>
                       ))}
                     </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Browse the full finish library on our{" "}
+                      <Link
+                        href={
+                          data.manufacturerName
+                            ? `/finishes?brand=${encodeURIComponent(data.manufacturerName)}`
+                            : "/finishes"
+                        }
+                        className="text-primary underline"
+                      >
+                        Finishes page
+                      </Link>
+                      .
+                    </p>
                   </div>
                   {windVentOptions.length > 0 ? (
                     <div className="mb-5">
@@ -1101,6 +1115,20 @@ export default function Product() {
                         searchPlaceholder="Search finishes by name…"
                       />
                     ) : null}
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Browse the full finish library on our{" "}
+                      <Link
+                        href={
+                          data.manufacturerName
+                            ? `/finishes?brand=${encodeURIComponent(data.manufacturerName)}`
+                            : "/finishes"
+                        }
+                        className="text-primary underline"
+                      >
+                        Finishes page
+                      </Link>
+                      .
+                    </p>
                   </div>
                 ) : (
                 <div className="mb-5">
@@ -1275,6 +1303,20 @@ export default function Product() {
                       />
                     </>
                   )}
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Browse the full finish library on our{" "}
+                    <Link
+                      href={
+                        data.manufacturerName
+                          ? `/finishes?brand=${encodeURIComponent(data.manufacturerName)}`
+                          : "/finishes"
+                      }
+                      className="text-primary underline"
+                    >
+                      Finishes page
+                    </Link>
+                    .
+                  </p>
                 </div>
               ) : null}
 
@@ -1347,7 +1389,14 @@ export default function Product() {
                   ) : (
                     <p className="text-xs text-muted-foreground mt-1">
                       Browse the full fabric library on our{" "}
-                      <Link href="/fabrics" className="text-primary underline">
+                      <Link
+                        href={
+                          data.manufacturerName
+                            ? `/fabrics?brand=${encodeURIComponent(data.manufacturerName)}`
+                            : "/fabrics"
+                        }
+                        className="text-primary underline"
+                      >
                         Fabrics page
                       </Link>
                       .
