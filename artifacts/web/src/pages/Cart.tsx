@@ -18,13 +18,9 @@ function formatMoney(v: string | null | undefined): string {
   return `$${n.toFixed(2)}`;
 }
 
-const DEMO_CHECKOUT_EMAIL = "info@zombieplatforms.com";
-
 export default function Cart() {
-  const { isAuthenticated, user } = useAuth();
-  const isDemoUser =
-    isAuthenticated &&
-    user?.email?.toLowerCase() === DEMO_CHECKOUT_EMAIL;
+  const { isAuthenticated } = useAuth();
+  const isDemoUser = isAuthenticated;
   const qc = useQueryClient();
 
   // Cart is now anonymous-friendly: the API uses `req.session.id` to track a

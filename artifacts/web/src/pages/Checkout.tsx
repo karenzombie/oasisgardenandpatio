@@ -61,13 +61,9 @@ const EMPTY_GUEST: GuestContactForm = {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const DEMO_CHECKOUT_EMAIL = "info@zombieplatforms.com";
-
 export default function Checkout() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const isDemoUser =
-    isAuthenticated &&
-    user?.email?.toLowerCase() === DEMO_CHECKOUT_EMAIL;
+  const isDemoUser = isAuthenticated;
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const qc = useQueryClient();
