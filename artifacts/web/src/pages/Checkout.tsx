@@ -61,8 +61,13 @@ const EMPTY_GUEST: GuestContactForm = {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+const DEMO_CHECKOUT_EMAIL = "info@zombieplatforms.com";
+
 export default function Checkout() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const isDemoUser =
+    isAuthenticated &&
+    user?.email?.toLowerCase() === DEMO_CHECKOUT_EMAIL;
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const qc = useQueryClient();
@@ -254,7 +259,33 @@ export default function Checkout() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // Online ordering is disabled while the site is under construction.
+    if (!isDemoUser) return;
+
+    // Build the address payload from the selected or entered shipping address
+    const shippingPayload: Parameters<typeof placeOrderM.mutate>[0]["data"] =
+      typeof selectedId === "number"
+        ? {
+            shippingAddressId: selectedId,
+            billingSameAsShipping: true,
+            shippingMethod,
+            specialInstructions: specialInstructions || undefined,
+          }
+        : {
+            shippingAddress: {
+              recipientName: form.recipientName || undefined,
+              street1: form.street1,
+              street2: form.street2 || undefined,
+              city: form.city,
+              state: form.state,
+              zip: form.zip,
+              phone: form.phone || undefined,
+            },
+            billingSameAsShipping: true,
+            shippingMethod,
+            specialInstructions: specialInstructions || undefined,
+          };
+
+    placeOrderM.mutate({ data: shippingPayload });
   }
 
   if (authLoading || cartLoading) {
@@ -544,21 +575,31 @@ export default function Checkout() {
           {/* Payment placeholder */}
           <section>
             <h2 className="font-serif text-xl mb-3">Payment</h2>
-            <div className="border border-dashed border-border p-5 bg-card text-sm text-muted-foreground">
-              <p>
-                This site is still under construction and not available for
-                online purchasing. Please visit{" "}
-                <a
-                  href="https://www.oasispatioumbrellas.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline text-foreground hover:text-primary"
-                >
-                  oasispatioumbrellas.com
-                </a>{" "}
-                if you're looking to make a purchase.
-              </p>
-            </div>
+            {isDemoUser ? (
+              <div className="border border-amber-300 bg-amber-50 p-5 text-sm text-amber-900">
+                <p className="font-medium mb-1">Demo mode — no payment required</p>
+                <p className="text-amber-800">
+                  Your order will be placed without charging a card. This is
+                  enabled for demo purposes only.
+                </p>
+              </div>
+            ) : (
+              <div className="border border-dashed border-border p-5 bg-card text-sm text-muted-foreground">
+                <p>
+                  This site is still under construction and not available for
+                  online purchasing. Please visit{" "}
+                  <a
+                    href="https://www.oasispatioumbrellas.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline text-foreground hover:text-primary"
+                  >
+                    oasispatioumbrellas.com
+                  </a>{" "}
+                  if you're looking to make a purchase.
+                </p>
+              </div>
+            )}
           </section>
         </div>
 
@@ -628,26 +669,38 @@ export default function Checkout() {
               <span>Total</span>
               <span>{formatMoney(totalNum)}</span>
             </div>
-            <Button
-              type="submit"
-              disabled
-              className="w-full rounded-none mt-6 font-serif tracking-widest uppercase opacity-50 cursor-not-allowed"
-            >
-              Place Order
-            </Button>
-            <p className="text-[11px] text-muted-foreground mt-3 text-center">
-              This site is still under construction and not available for
-              online purchasing. Please visit{" "}
-              <a
-                href="https://www.oasispatioumbrellas.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline hover:text-primary"
+            {isDemoUser ? (
+              <Button
+                type="submit"
+                disabled={placeOrderM.isPending}
+                className="w-full rounded-none mt-6 font-serif tracking-widest uppercase"
               >
-                oasispatioumbrellas.com
-              </a>{" "}
-              to make a purchase.
-            </p>
+                {placeOrderM.isPending ? "Placing Order…" : "Place Order"}
+              </Button>
+            ) : (
+              <>
+                <Button
+                  type="submit"
+                  disabled
+                  className="w-full rounded-none mt-6 font-serif tracking-widest uppercase opacity-50 cursor-not-allowed"
+                >
+                  Place Order
+                </Button>
+                <p className="text-[11px] text-muted-foreground mt-3 text-center">
+                  This site is still under construction and not available for
+                  online purchasing. Please visit{" "}
+                  <a
+                    href="https://www.oasispatioumbrellas.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline hover:text-primary"
+                  >
+                    oasispatioumbrellas.com
+                  </a>{" "}
+                  to make a purchase.
+                </p>
+              </>
+            )}
           </div>
         </aside>
       </form>
