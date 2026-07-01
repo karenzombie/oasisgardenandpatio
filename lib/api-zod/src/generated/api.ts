@@ -1975,6 +1975,17 @@ export const GetCartResponse = zod.object({
         .describe(
           "True when the selected fabric is a stripe pattern (quantity must be ordered in even pairs).",
         ),
+      minOrderQty: zod
+        .number()
+        .nullable()
+        .describe(
+          "Effective minimum order quantity for this line — the larger of the variant's and the selected frame finish's minimums. Null when no floor applies.",
+        ),
+      minQtyFromFinish: zod
+        .boolean()
+        .describe(
+          "True when the selected frame finish drives the minimum-quantity floor; the cart shows the finish note (which takes precedence over the stripe note).",
+        ),
       addons: zod
         .array(
           zod
@@ -2071,6 +2082,17 @@ export const ClearCartResponse = zod.object({
         .boolean()
         .describe(
           "True when the selected fabric is a stripe pattern (quantity must be ordered in even pairs).",
+        ),
+      minOrderQty: zod
+        .number()
+        .nullable()
+        .describe(
+          "Effective minimum order quantity for this line — the larger of the variant's and the selected frame finish's minimums. Null when no floor applies.",
+        ),
+      minQtyFromFinish: zod
+        .boolean()
+        .describe(
+          "True when the selected frame finish drives the minimum-quantity floor; the cart shows the finish note (which takes precedence over the stripe note).",
         ),
       addons: zod
         .array(
@@ -2211,6 +2233,17 @@ export const AddCartItemResponse = zod.object({
         .describe(
           "True when the selected fabric is a stripe pattern (quantity must be ordered in even pairs).",
         ),
+      minOrderQty: zod
+        .number()
+        .nullable()
+        .describe(
+          "Effective minimum order quantity for this line — the larger of the variant's and the selected frame finish's minimums. Null when no floor applies.",
+        ),
+      minQtyFromFinish: zod
+        .boolean()
+        .describe(
+          "True when the selected frame finish drives the minimum-quantity floor; the cart shows the finish note (which takes precedence over the stripe note).",
+        ),
       addons: zod
         .array(
           zod
@@ -2315,6 +2348,17 @@ export const UpdateCartItemResponse = zod.object({
         .describe(
           "True when the selected fabric is a stripe pattern (quantity must be ordered in even pairs).",
         ),
+      minOrderQty: zod
+        .number()
+        .nullable()
+        .describe(
+          "Effective minimum order quantity for this line — the larger of the variant's and the selected frame finish's minimums. Null when no floor applies.",
+        ),
+      minQtyFromFinish: zod
+        .boolean()
+        .describe(
+          "True when the selected frame finish drives the minimum-quantity floor; the cart shows the finish note (which takes precedence over the stripe note).",
+        ),
       addons: zod
         .array(
           zod
@@ -2414,6 +2458,17 @@ export const RemoveCartItemResponse = zod.object({
         .boolean()
         .describe(
           "True when the selected fabric is a stripe pattern (quantity must be ordered in even pairs).",
+        ),
+      minOrderQty: zod
+        .number()
+        .nullable()
+        .describe(
+          "Effective minimum order quantity for this line — the larger of the variant's and the selected frame finish's minimums. Null when no floor applies.",
+        ),
+      minQtyFromFinish: zod
+        .boolean()
+        .describe(
+          "True when the selected frame finish drives the minimum-quantity floor; the cart shows the finish note (which takes precedence over the stripe note).",
         ),
       addons: zod
         .array(

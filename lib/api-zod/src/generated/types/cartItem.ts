@@ -45,6 +45,13 @@ export interface CartItem {
   fabricItemNumber: string | null;
   /** True when the selected fabric is a stripe pattern (quantity must be ordered in even pairs). */
   fabricIsStripe: boolean;
+  /**
+   * Effective minimum order quantity for this line — the larger of the variant's and the selected frame finish's minimums. Null when no floor applies.
+   * @nullable
+   */
+  minOrderQty: number | null;
+  /** True when the selected frame finish drives the minimum-quantity floor; the cart shows the finish note (which takes precedence over the stripe note). */
+  minQtyFromFinish: boolean;
   /** Selected add-on lines for this cart item (e.g. privacy walls). Each carries its own per-unit price; lineTotal already includes them. */
   addons: CartItemAddon[];
   /**

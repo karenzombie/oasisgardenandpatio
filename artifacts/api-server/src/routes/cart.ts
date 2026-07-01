@@ -129,6 +129,14 @@ async function loadCart(owner: CartOwner) {
       fabricName: fabricsTable.name,
       fabricItemNumber: fabricsTable.itemNumber,
       fabricIsStripe: sql<boolean>`coalesce(${fabricsTable.isStripe}, false)`,
+      variantMinOrderQty: productVariantsTable.minOrderQty,
+      finishMinOrderQty: sql<number | null>`(
+        select ${productFinishOptionsTable.minOrderQty}
+        from ${productFinishOptionsTable}
+        where ${productFinishOptionsTable.productId} = ${productsTable.id}
+          and ${productFinishOptionsTable.finishId} = ${cartItemsTable.finishId}
+        limit 1
+      )`,
       primaryImageUrl: sql<string | null>`(
         select ${productImagesTable.url}
         from ${productImagesTable}
@@ -235,8 +243,21 @@ async function loadCart(owner: CartOwner) {
     const line = (Number(r.unitPrice) + addonUnitSum) * r.quantity;
     subtotal += line;
     const shipCents = shippingResult.perLineCents.get(r.id) ?? 0;
+    // Effective minimum-quantity floor mirrors the update guard: the larger
+    // of the variant's minimum and the selected frame finish's minimum. The
+    // client stepper uses it so quantities can't be dropped below the floor.
+    const variantMin = r.variantMinOrderQty ?? null;
+    const finishMin = r.finishMinOrderQty ?? null;
+    const minOrderQty =
+      variantMin == null && finishMin == null
+        ? null
+        : Math.max(variantMin ?? 0, finishMin ?? 0);
+    const minQtyFromFinish =
+      finishMin != null && finishMin >= (variantMin ?? 0);
     return {
       ...r,
+      minOrderQty,
+      minQtyFromFinish,
       primaryImageUrl: toPublicImageUrl(r.primaryImageUrl),
       unitPrice: String(r.unitPrice),
       lineTotal: line.toFixed(2),

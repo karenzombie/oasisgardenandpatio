@@ -18,6 +18,20 @@ function formatMoney(v: string | null | undefined): string {
   return `$${n.toFixed(2)}`;
 }
 
+// Effective quantity floor for a cart line. Two sources can raise it: the
+// configuration's minimum order quantity (variant/finish driven, served by the
+// API as `minOrderQty`) and the striped-fabric pairs rule. Striped fabrics must
+// stay even, so an odd floor is rounded up to the next even quantity.
+function minQtyFor(item: {
+  fabricIsStripe: boolean;
+  minOrderQty?: number | null;
+}): number {
+  const floor = Math.max(1, item.minOrderQty ?? 1);
+  if (!item.fabricIsStripe) return floor;
+  const evenFloor = floor % 2 === 0 ? floor : floor + 1;
+  return Math.max(2, evenFloor);
+}
+
 export default function Cart() {
   const { isAuthenticated } = useAuth();
   const isDemoUser = isAuthenticated;
@@ -178,15 +192,14 @@ export default function Cart() {
                         className="px-2 py-1.5 hover:bg-muted disabled:opacity-40"
                         onClick={() => {
                           const step = item.fabricIsStripe ? 2 : 1;
-                          const min = item.fabricIsStripe ? 2 : 1;
+                          const min = minQtyFor(item);
                           updateM.mutate({
                             itemId: item.id,
                             data: { quantity: Math.max(min, item.quantity - step) },
                           });
                         }}
                         disabled={
-                          item.quantity <= (item.fabricIsStripe ? 2 : 1) ||
-                          updateM.isPending
+                          item.quantity <= minQtyFor(item) || updateM.isPending
                         }
                         aria-label="Decrease quantity"
                       >
@@ -220,7 +233,18 @@ export default function Cart() {
                       Remove
                     </button>
                   </div>
-                  {item.fabricIsStripe ? (
+                  {item.minQtyFromFinish && (item.minOrderQty ?? 0) > 1 ? (
+                    <div className="mt-3 border border-border bg-secondary px-4 py-3 text-sm text-secondary-foreground">
+                      <span className="font-semibold">
+                        Minimum order quantity of {item.minOrderQty}.
+                      </span>{" "}
+                      The quantity cannot be reduced below {minQtyFor(item)} due
+                      to the selected finish.
+                      {item.fabricIsStripe
+                        ? " Striped fabrics are also sold in pairs, so the quantity adjusts in multiples of two."
+                        : ""}
+                    </div>
+                  ) : item.fabricIsStripe ? (
                     <div className="mt-3 border border-border bg-secondary px-4 py-3 text-sm text-secondary-foreground">
                       <span className="font-semibold">Striped fabrics are sold in pairs.</span>{" "}
                       This canopy must be ordered in even quantities (2, 4, 6…), so
