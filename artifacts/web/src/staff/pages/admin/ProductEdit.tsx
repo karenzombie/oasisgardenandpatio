@@ -1756,6 +1756,10 @@ export default function ProductEdit() {
             <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-4">
               Visibility &amp; flags
             </h3>
+            {/* Group: Product status */}
+            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
+              Product status
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FlagRow
                 label="Active"
@@ -1763,37 +1767,18 @@ export default function ProductEdit() {
                 checked={form.isActive}
                 onChange={(v) => setForm((f) => ({ ...f, isActive: v }))}
               />
-              <div className="space-y-2">
-                <FlagRow
-                  label="Available online"
-                  description="Customers can add this to cart on the website."
-                  checked={form.availableOnline}
-                  onChange={(v) =>
-                    setForm((f) => ({
-                      ...f,
-                      availableOnline: v,
-                      showPriceOnline: v,
-                      quoteOnly: !v,
-                    }))
-                  }
-                />
-                <div className="ml-6 pl-4 border-l-2 border-slate-200">
-                  <FlagRow
-                    label="Show price in inquiry mode"
-                    description="Only relevant when available online is off."
-                    checked={form.showPriceOnline}
-                    disabled={form.availableOnline}
-                    onChange={(v) =>
-                      setForm((f) => ({ ...f, showPriceOnline: v }))
-                    }
-                  />
-                </div>
-              </div>
               <FlagRow
-                label="Featured"
-                description="Highlighted on the home page and category pages."
-                checked={form.featured}
-                onChange={(v) => setForm((f) => ({ ...f, featured: v }))}
+                label="Available online"
+                description="Customers can add this to cart on the website."
+                checked={form.availableOnline}
+                onChange={(v) =>
+                  setForm((f) => ({
+                    ...f,
+                    availableOnline: v,
+                    showPriceOnline: v,
+                    quoteOnly: !v,
+                  }))
+                }
               />
             </div>
             <div className="mt-4">
@@ -1803,6 +1788,28 @@ export default function ProductEdit() {
                 showPriceOnline={form.showPriceOnline}
               />
             </div>
+            <div className="mt-4 ml-6 pl-4 border-l-2 border-slate-200">
+              <FlagRow
+                label="Show price in inquiry mode"
+                description="Only relevant when available online is off."
+                checked={form.showPriceOnline}
+                disabled={form.availableOnline}
+                onChange={(v) =>
+                  setForm((f) => ({ ...f, showPriceOnline: v }))
+                }
+              />
+            </div>
+
+            {/* Group: Discoverability */}
+            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3 mt-8">
+              Discoverability
+            </div>
+            <FlagRow
+              label="Featured"
+              description="Highlighted on the home page and category pages."
+              checked={form.featured}
+              onChange={(v) => setForm((f) => ({ ...f, featured: v }))}
+            />
           </section>
 
           {/* Images */}
