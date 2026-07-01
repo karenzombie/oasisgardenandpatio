@@ -52,13 +52,6 @@ function escapeHtml(s: string): string {
     .replace(/'/g, "&#39;");
 }
 
-function fmtMoney(n: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(n);
-}
-
 interface VendorOrderItem {
   productSkuSnapshot: string | null;
   variantSkuSnapshot: string | null;
@@ -99,15 +92,11 @@ export async function sendVendorOrderEmail(
           <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:13px;">${escapeHtml(sku)}</td>
           <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:13px;">${escapeHtml(desc || "—")}</td>
           <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:13px;text-align:center;">${it.quantity}</td>
-          <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:13px;text-align:right;">${fmtMoney(it.unitPrice)}</td>
-          <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:13px;text-align:right;">${fmtMoney(it.amount)}</td>
         </tr>
-        ${it.notes ? `<tr><td colspan="5" style="padding:0 10px 8px 10px;font-size:12px;color:#666;border-bottom:1px solid #e8e2d6;font-style:italic;">Note: ${escapeHtml(it.notes)}</td></tr>` : ""}
+        ${it.notes ? `<tr><td colspan="3" style="padding:0 10px 8px 10px;font-size:12px;color:#666;border-bottom:1px solid #e8e2d6;font-style:italic;">Note: ${escapeHtml(it.notes)}</td></tr>` : ""}
       `;
     })
     .join("");
-
-  const total = items.reduce((sum, it) => sum + it.amount, 0);
 
   const vendorLine = manufacturerName
     ? `<p style="margin:0 0 8px 0;"><strong>Vendor:</strong> ${escapeHtml(manufacturerName)}</p>`
@@ -132,16 +121,10 @@ export async function sendVendorOrderEmail(
           <th style="padding:8px 10px;text-align:left;font-size:12px;color:#666;border-bottom:2px solid #e8e2d6;">SKU</th>
           <th style="padding:8px 10px;text-align:left;font-size:12px;color:#666;border-bottom:2px solid #e8e2d6;">Description</th>
           <th style="padding:8px 10px;text-align:center;font-size:12px;color:#666;border-bottom:2px solid #e8e2d6;">Qty</th>
-          <th style="padding:8px 10px;text-align:right;font-size:12px;color:#666;border-bottom:2px solid #e8e2d6;">Unit</th>
-          <th style="padding:8px 10px;text-align:right;font-size:12px;color:#666;border-bottom:2px solid #e8e2d6;">Total</th>
         </tr>
       </thead>
       <tbody>
         ${itemRows}
-        <tr>
-          <td colspan="4" style="padding:10px;text-align:right;font-weight:bold;font-size:13px;">Order total:</td>
-          <td style="padding:10px;text-align:right;font-weight:bold;font-size:13px;">${fmtMoney(total)}</td>
-        </tr>
       </tbody>
     </table>
     ${notesBlock}
@@ -208,8 +191,6 @@ function renderItemRows(items: VendorOrderItem[], struck: boolean): string {
           <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:13px;${cellStyle}">${escapeHtml(sku)}</td>
           <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:13px;${cellStyle}">${escapeHtml(desc || "—")}</td>
           <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:13px;text-align:center;${cellStyle}">${it.quantity}</td>
-          <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:13px;text-align:right;${cellStyle}">${fmtMoney(it.unitPrice)}</td>
-          <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:13px;text-align:right;${cellStyle}">${fmtMoney(it.amount)}</td>
         </tr>
       `;
     })
@@ -256,13 +237,8 @@ export async function sendVendorOrderCancellationEmail(
         <th style="padding:8px 10px;text-align:left;font-size:12px;color:#666;border-bottom:2px solid #e8e2d6;">SKU</th>
         <th style="padding:8px 10px;text-align:left;font-size:12px;color:#666;border-bottom:2px solid #e8e2d6;">Description</th>
         <th style="padding:8px 10px;text-align:center;font-size:12px;color:#666;border-bottom:2px solid #e8e2d6;">Qty</th>
-        <th style="padding:8px 10px;text-align:right;font-size:12px;color:#666;border-bottom:2px solid #e8e2d6;">Unit</th>
-        <th style="padding:8px 10px;text-align:right;font-size:12px;color:#666;border-bottom:2px solid #e8e2d6;">Total</th>
       </tr>
     </thead>`;
-
-  const cancelledTotal = cancelledItems.reduce((s, it) => s + it.amount, 0);
-  const remainingTotal = remainingItems.reduce((s, it) => s + it.amount, 0);
 
   const cancelledTable = `
     <h2 style="font-size:14px;color:#b91c1c;margin:20px 0 8px 0;text-transform:uppercase;letter-spacing:0.5px;">Cancelled items (${cancelledItems.length})</h2>
@@ -270,10 +246,6 @@ export async function sendVendorOrderCancellationEmail(
       ${tableHead}
       <tbody>
         ${renderItemRows(cancelledItems, true)}
-        <tr>
-          <td colspan="4" style="padding:10px;text-align:right;font-weight:bold;font-size:13px;">Cancelled total:</td>
-          <td style="padding:10px;text-align:right;font-weight:bold;font-size:13px;">${fmtMoney(cancelledTotal)}</td>
-        </tr>
       </tbody>
     </table>`;
 
@@ -285,10 +257,6 @@ export async function sendVendorOrderCancellationEmail(
       ${tableHead}
       <tbody>
         ${renderItemRows(remainingItems, false)}
-        <tr>
-          <td colspan="4" style="padding:10px;text-align:right;font-weight:bold;font-size:13px;">Remaining total:</td>
-          <td style="padding:10px;text-align:right;font-weight:bold;font-size:13px;">${fmtMoney(remainingTotal)}</td>
-        </tr>
       </tbody>
     </table>`
       : "";

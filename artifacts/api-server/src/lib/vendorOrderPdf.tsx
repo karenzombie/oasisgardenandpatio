@@ -187,24 +187,6 @@ const s = StyleSheet.create({
   colItem: { width: "10%" },
   colDesc: { width: "50%" },
   colQty: { width: "10%", textAlign: "center" },
-  colUnit: { width: "15%", textAlign: "right" },
-  colTotal: { width: "15%", textAlign: "right" },
-
-  /* ── Total row ────────────────────────────────────────────────── */
-  totalRow: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    borderTop: `1.5px solid ${HEADER_BG}`,
-    paddingTop: 3,
-    paddingHorizontal: 4,
-    paddingBottom: 2,
-  },
-  totalLabel: {
-    fontFamily: "Helvetica-Bold",
-    fontSize: 8,
-    marginRight: 24,
-  },
-  totalValue: { fontFamily: "Helvetica-Bold", fontSize: 8, width: "15%", textAlign: "right" },
 
   /* ── Bottom bar ───────────────────────────────────────────────── */
   bottomRow: {
@@ -231,13 +213,6 @@ const s = StyleSheet.create({
   sigLabel: { fontSize: 6.5, color: SECTION_LABEL, textTransform: "uppercase", marginBottom: 1 },
   sigLine: { borderBottom: `1px solid ${BORDER}`, height: 12 },
 });
-
-function fmtMoney(n: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(n);
-}
 
 function fmtDate(iso: string | null | undefined): string {
   if (!iso) return "";
@@ -766,15 +741,12 @@ function ItemsTable({
   struck: boolean;
 }) {
   if (items.length === 0) return null;
-  const total = items.reduce((sum, it) => sum + it.amount, 0);
   return (
     <View>
       <View style={s.thRow}>
-        <Text style={[s.th, s.colItem]}>Item #</Text>
-        <Text style={[s.th, s.colDesc]}>Item Description</Text>
-        <Text style={[s.th, s.colQty]}>Qty</Text>
-        <Text style={[s.th, s.colUnit, { textAlign: "right" }]}>Unit Price</Text>
-        <Text style={[s.th, s.colTotal, { textAlign: "right" }]}>Total</Text>
+        <Text style={[s.th, s.colItem, { width: "18%" }]}>Item #</Text>
+        <Text style={[s.th, s.colDesc, { width: "60%" }]}>Item Description</Text>
+        <Text style={[s.th, s.colQty, { width: "22%" }]}>Qty</Text>
       </View>
       {items.map((it, idx) => {
         const sku = it.variantSkuSnapshot ?? it.productSkuSnapshot ?? "";
@@ -785,8 +757,8 @@ function ItemsTable({
         return (
           <React.Fragment key={idx}>
             <View style={[s.tdRow, { backgroundColor: rowBg }]}>
-              <Text style={[s.td, s.colItem, cellStyle]}>{sku}</Text>
-              <View style={[s.colDesc, { paddingVertical: 2 }]}>
+              <Text style={[s.td, s.colItem, { width: "18%" }, cellStyle]}>{sku}</Text>
+              <View style={[s.colDesc, { width: "60%", paddingVertical: 2 }]}>
                 <Text style={[s.td, { paddingVertical: 0 }, cellStyle]}>
                   {mainDesc}
                 </Text>
@@ -806,23 +778,11 @@ function ItemsTable({
                   </Text>
                 ))}
               </View>
-              <Text style={[s.td, s.colQty, cellStyle]}>{it.quantity}</Text>
-              <Text style={[s.td, s.colUnit, cellStyle]}>
-                {fmtMoney(it.unitPrice)}
-              </Text>
-              <Text style={[s.td, s.colTotal, cellStyle]}>
-                {fmtMoney(it.amount)}
-              </Text>
+              <Text style={[s.td, s.colQty, { width: "22%" }, cellStyle]}>{it.quantity}</Text>
             </View>
           </React.Fragment>
         );
       })}
-      <View style={s.totalRow}>
-        <Text style={s.totalLabel}>
-          {struck ? "Cancelled total:" : "Remaining total:"}
-        </Text>
-        <Text style={s.totalValue}>{fmtMoney(total)}</Text>
-      </View>
     </View>
   );
 }

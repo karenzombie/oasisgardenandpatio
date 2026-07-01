@@ -1,25 +1,22 @@
 ---
-name: Vendor PDF no-pricing rule
-description: Client hard-rule that vendor-facing PDFs must never show pricing, plus a known gap in the cancellation document.
+name: Vendor documents no-pricing rule
+description: Client hard-rule that NO vendor-facing output (PDF or email) may ever show pricing — SKU/description/qty only.
 ---
 
-# Vendor PDF must never show pricing
+# No pricing on ANY vendor-facing document
 
-**Rule:** The printed/emailed vendor Purchase Order (`VendorOrderDocument` /
-`generateVendorOrderPdf` in `vendorOrderPdf.tsx`) must show **SKU / description /
-quantity only — NEVER any pricing of any kind**. Cost-per-line shows ONLY on the
-staff portal UI.
+**Rule:** Every document that goes to a vendor — the PO PDF, the cancellation
+PDF, and the HTML bodies of the PO / cancellation emails (`vendorOrderPdf.tsx`,
+`vendorOrderEmail.ts`) — must show **SKU / description / quantity only. NEVER
+any pricing, totals, or currency formatting.** Cost-per-line appears ONLY on
+the staff portal UI.
 
-**Why:** Client (Karen) re-confirmed this as a hard rule multiple times. Vendors
-must not see Oasis's line costs on the PO they receive.
+**Why:** Client (Karen) hard rule, re-confirmed: "the vendor knows their cost
+to us, and there may be times when we don't want that validated on a document
+TO them" — applies to emailed, PDF, or any other delivery method.
 
-**How to apply:** When touching vendor PDF code, never add unit price / total /
-`fmtMoney` to `VendorOrderDocument`. The main PO already complies.
-
-## Known gap (pending client decision — do NOT fix unprompted)
-
-`VendorOrderCancellationDocument` still renders pricing via the shared
-`ItemsTable` (Unit Price / Total / `fmtMoney`). This is a *different*,
-pre-existing vendor-facing document. Whether cancellation notices should also be
-price-free is a separate policy call — it may be intentional for credit/refund
-reconciliation. Surface to the client; never strip it silently.
+**How to apply:** When adding or changing any vendor-facing output, never
+introduce `fmtMoney`, unit price, or total columns. Item interfaces still carry
+`unitPrice`/`amount` as data (callers pass them) — that is fine as long as they
+are never rendered. Cushion emails go to customer/admin only, not vendors.
+Grep vendor modules for `fmtMoney|Unit|Total|\$` before shipping.
