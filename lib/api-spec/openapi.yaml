@@ -6314,10 +6314,6 @@ components:
           type: ["string", "null"]
         poleMaterial:
           type: ["string", "null"]
-        hasLedLighting:
-          type: boolean
-        isCommercialGrade:
-          type: boolean
         price:
           type: ["string", "null"]
         salePrice:
@@ -6395,8 +6391,6 @@ components:
         - liftMechanism
         - tiltMechanism
         - poleMaterial
-        - hasLedLighting
-        - isCommercialGrade
         - price
         - salePrice
         - cost
@@ -6561,12 +6555,6 @@ components:
           type: ["string", "null"]
         poleMaterial:
           type: ["string", "null"]
-        hasLedLighting:
-          type: boolean
-          default: false
-        isCommercialGrade:
-          type: boolean
-          default: false
         price:
           type: ["string", "null"]
         salePrice:
@@ -6663,10 +6651,6 @@ components:
           type: ["string", "null"]
         poleMaterial:
           type: ["string", "null"]
-        hasLedLighting:
-          type: boolean
-        isCommercialGrade:
-          type: boolean
         price:
           type: ["string", "null"]
         salePrice:

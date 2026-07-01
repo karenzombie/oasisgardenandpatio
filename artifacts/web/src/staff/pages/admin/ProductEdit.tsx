@@ -155,8 +155,6 @@ interface FormState {
   liftMechanism: string;
   tiltMechanism: string;
   poleMaterial: string;
-  hasLedLighting: boolean;
-  isCommercialGrade: boolean;
   price: string;
   salePrice: string;
   frameOnlyPrice: string;
@@ -202,8 +200,6 @@ function emptyForm(): FormState {
     liftMechanism: "none",
     tiltMechanism: "none",
     poleMaterial: "none",
-    hasLedLighting: false,
-    isCommercialGrade: false,
     price: "",
     salePrice: "",
     frameOnlyPrice: "",
@@ -541,8 +537,6 @@ export default function ProductEdit() {
         liftMechanism: d.liftMechanism ?? "none",
         tiltMechanism: d.tiltMechanism ?? "none",
         poleMaterial: d.poleMaterial ?? "none",
-        hasLedLighting: d.hasLedLighting,
-        isCommercialGrade: d.isCommercialGrade,
         price: d.price ?? "",
         salePrice: d.salePrice ?? "",
         frameOnlyPrice: d.frameOnlyPrice ?? "",
@@ -733,8 +727,6 @@ export default function ProductEdit() {
       liftMechanism: form.liftMechanism === "none" ? null : form.liftMechanism,
       tiltMechanism: form.tiltMechanism === "none" ? null : form.tiltMechanism,
       poleMaterial: form.poleMaterial === "none" ? null : form.poleMaterial,
-      hasLedLighting: form.hasLedLighting,
-      isCommercialGrade: form.isCommercialGrade,
       price,
       salePrice,
       frameOnlyPrice,

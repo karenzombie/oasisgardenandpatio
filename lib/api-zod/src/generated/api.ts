@@ -3324,8 +3324,6 @@ export const AdminListProductsResponse = zod.object({
       liftMechanism: zod.string().nullable(),
       tiltMechanism: zod.string().nullable(),
       poleMaterial: zod.string().nullable(),
-      hasLedLighting: zod.boolean(),
-      isCommercialGrade: zod.boolean(),
       price: zod.string().nullable(),
       salePrice: zod
         .string()
@@ -3391,8 +3389,6 @@ export const adminCreateProductBodySlugRegExp = new RegExp(
   "^[a-z0-9]+(?:-[a-z0-9]+)\*$",
 );
 
-export const adminCreateProductBodyHasLedLightingDefault = false;
-export const adminCreateProductBodyIsCommercialGradeDefault = false;
 export const adminCreateProductBodyPricingModeDefault = `fixed`;
 export const adminCreateProductBodyShowPriceOnlineDefault = true;
 export const adminCreateProductBodyAvailableOnlineDefault = true;
@@ -3427,12 +3423,6 @@ export const AdminCreateProductBody = zod.object({
   liftMechanism: zod.string().nullish(),
   tiltMechanism: zod.string().nullish(),
   poleMaterial: zod.string().nullish(),
-  hasLedLighting: zod
-    .boolean()
-    .default(adminCreateProductBodyHasLedLightingDefault),
-  isCommercialGrade: zod
-    .boolean()
-    .default(adminCreateProductBodyIsCommercialGradeDefault),
   price: zod.string().nullish(),
   salePrice: zod
     .string()
@@ -3527,8 +3517,6 @@ export const AdminGetProductResponse = zod
     liftMechanism: zod.string().nullable(),
     tiltMechanism: zod.string().nullable(),
     poleMaterial: zod.string().nullable(),
-    hasLedLighting: zod.boolean(),
-    isCommercialGrade: zod.boolean(),
     price: zod.string().nullable(),
     salePrice: zod
       .string()
@@ -3636,8 +3624,6 @@ export const AdminUpdateProductBody = zod.object({
   liftMechanism: zod.string().nullish(),
   tiltMechanism: zod.string().nullish(),
   poleMaterial: zod.string().nullish(),
-  hasLedLighting: zod.boolean().optional(),
-  isCommercialGrade: zod.boolean().optional(),
   price: zod.string().nullish(),
   salePrice: zod
     .string()
@@ -3724,8 +3710,6 @@ export const AdminUpdateProductResponse = zod.object({
   liftMechanism: zod.string().nullable(),
   tiltMechanism: zod.string().nullable(),
   poleMaterial: zod.string().nullable(),
-  hasLedLighting: zod.boolean(),
-  isCommercialGrade: zod.boolean(),
   price: zod.string().nullable(),
   salePrice: zod
     .string()
@@ -3838,8 +3822,6 @@ export const AdminSetProductActiveResponse = zod.object({
   liftMechanism: zod.string().nullable(),
   tiltMechanism: zod.string().nullable(),
   poleMaterial: zod.string().nullable(),
-  hasLedLighting: zod.boolean(),
-  isCommercialGrade: zod.boolean(),
   price: zod.string().nullable(),
   salePrice: zod
     .string()

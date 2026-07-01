@@ -962,8 +962,6 @@ export interface AdminProduct {
   tiltMechanism: string | null;
   /** @nullable */
   poleMaterial: string | null;
-  hasLedLighting: boolean;
-  isCommercialGrade: boolean;
   /** @nullable */
   price: string | null;
   /**
@@ -1104,8 +1102,6 @@ export interface CreateProductRequest {
   tiltMechanism?: string | null;
   /** @nullable */
   poleMaterial?: string | null;
-  hasLedLighting?: boolean;
-  isCommercialGrade?: boolean;
   /** @nullable */
   price?: string | null;
   /**
@@ -1188,8 +1184,6 @@ export interface UpdateProductRequest {
   tiltMechanism?: string | null;
   /** @nullable */
   poleMaterial?: string | null;
-  hasLedLighting?: boolean;
-  isCommercialGrade?: boolean;
   /** @nullable */
   price?: string | null;
   /**

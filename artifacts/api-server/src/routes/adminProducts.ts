@@ -146,8 +146,6 @@ function toAdminPayload(r: ProductRow, materials: MaterialPayload[]) {
     liftMechanism: r.liftMechanism,
     tiltMechanism: r.tiltMechanism,
     poleMaterial: r.poleMaterial,
-    hasLedLighting: r.hasLedLighting ?? false,
-    isCommercialGrade: r.isCommercialGrade ?? false,
     price: r.price,
     salePrice: r.salePrice,
     cost: r.cost,
@@ -229,8 +227,6 @@ function baseSelect() {
       liftMechanism: productsTable.liftMechanism,
       tiltMechanism: productsTable.tiltMechanism,
       poleMaterial: productsTable.poleMaterial,
-      hasLedLighting: productsTable.hasLedLighting,
-      isCommercialGrade: productsTable.isCommercialGrade,
       price: productsTable.price,
       salePrice: productsTable.salePrice,
       frameOnlyPrice: productsTable.frameOnlyPrice,
@@ -512,8 +508,6 @@ router.post(
             liftMechanism: parsed.data.liftMechanism ?? null,
             tiltMechanism: parsed.data.tiltMechanism ?? null,
             poleMaterial: parsed.data.poleMaterial ?? null,
-            hasLedLighting: parsed.data.hasLedLighting ?? false,
-            isCommercialGrade: parsed.data.isCommercialGrade ?? false,
             price: parsed.data.price ?? null,
             salePrice: parsed.data.salePrice ?? null,
             cost: parsed.data.cost ?? null,
@@ -621,12 +615,6 @@ router.put(
             liftMechanism: body.data.liftMechanism ?? null,
             tiltMechanism: body.data.tiltMechanism ?? null,
             poleMaterial: body.data.poleMaterial ?? null,
-            ...(body.data.hasLedLighting !== undefined
-              ? { hasLedLighting: body.data.hasLedLighting }
-              : {}),
-            ...(body.data.isCommercialGrade !== undefined
-              ? { isCommercialGrade: body.data.isCommercialGrade }
-              : {}),
             price: body.data.price ?? null,
             salePrice: body.data.salePrice ?? null,
             cost: body.data.cost ?? null,

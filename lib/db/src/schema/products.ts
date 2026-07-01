@@ -61,9 +61,6 @@ export const productsTable = pgTable(
     liftMechanism: text("lift_mechanism"),
     tiltMechanism: text("tilt_mechanism"),
     poleMaterial: text("pole_material"),
-    // Feature flags (nullable, default false).
-    hasLedLighting: boolean("has_led_lighting").default(false),
-    isCommercialGrade: boolean("is_commercial_grade").default(false),
     // Sell price actually shown to customers / used at checkout. Always set
     // (manually or by `pricing_mode` derivation; see below).
     price: numeric("price", { precision: 10, scale: 2 }),
