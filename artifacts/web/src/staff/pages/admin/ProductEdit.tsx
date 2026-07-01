@@ -3,15 +3,19 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useLocation, useParams } from "wouter";
 import {
   AlertTriangle,
+  Archive,
   ArrowLeft,
   ArrowDown,
   ArrowUp,
+  CheckCircle2,
   ChevronDown,
   ChevronRight,
   History as HistoryIcon,
   Image as ImageIcon,
+  MessageCircle,
   Plus,
   Star,
+  Tag,
   Trash2,
   Upload,
   X,
@@ -1792,6 +1796,13 @@ export default function ProductEdit() {
                 onChange={(v) => setForm((f) => ({ ...f, featured: v }))}
               />
             </div>
+            <div className="mt-4">
+              <VisibilityStatusBar
+                isActive={form.isActive}
+                availableOnline={form.availableOnline}
+                showPriceOnline={form.showPriceOnline}
+              />
+            </div>
           </section>
 
           {/* Images */}
@@ -3293,6 +3304,50 @@ export default function ProductEdit() {
         </AlertDialogContent>
       </AlertDialog>
     </>
+  );
+}
+
+function VisibilityStatusBar({
+  isActive,
+  availableOnline,
+  showPriceOnline,
+}: {
+  isActive: boolean;
+  availableOnline: boolean;
+  showPriceOnline: boolean;
+}) {
+  let className: string;
+  let Icon: typeof CheckCircle2;
+  let text: string;
+
+  if (!isActive) {
+    className = "bg-red-50 border-red-200 text-red-800";
+    Icon = Archive;
+    text =
+      "Product is archived. Hidden from all storefront routes and staff order screens.";
+  } else if (availableOnline) {
+    className = "bg-green-50 border-green-200 text-green-800";
+    Icon = CheckCircle2;
+    text = "Live and purchasable online.";
+  } else if (!showPriceOnline) {
+    className = "bg-amber-50 border-amber-200 text-amber-800";
+    Icon = MessageCircle;
+    text =
+      "Inquiry mode — price hidden, customers must call or request a quote.";
+  } else {
+    className = "bg-blue-50 border-blue-200 text-blue-800";
+    Icon = Tag;
+    text =
+      "Inquiry mode — price is visible, but customers must call or request a quote to purchase.";
+  }
+
+  return (
+    <div
+      className={`flex items-center gap-2 border rounded p-3 text-sm ${className}`}
+    >
+      <Icon className="w-4 h-4 flex-shrink-0" />
+      <span>{text}</span>
+    </div>
   );
 }
 
