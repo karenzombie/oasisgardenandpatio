@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronRight,
+  HelpCircle,
   History as HistoryIcon,
   Image as ImageIcon,
   MessageCircle,
@@ -64,6 +65,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Spinner } from "@/components/ui/spinner";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 import {
   Select,
   SelectContent,
@@ -1763,13 +1769,21 @@ export default function ProductEdit() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FlagRow
                 label="Active"
-                description="Inactive products are hidden from the storefront entirely."
+                description="Turn off only to permanently retire this product. Archived products cannot be seen by customers or used in staff orders."
+                tooltip={{
+                  on: "Product exists in the system and is manageable by staff.",
+                  off: "Product is permanently archived. Hidden from the storefront and all staff order screens. Use this only to retire a product for good.",
+                }}
                 checked={form.isActive}
                 onChange={(v) => setForm((f) => ({ ...f, isActive: v }))}
               />
               <FlagRow
                 label="Available online"
-                description="Customers can add this to cart on the website."
+                description="Controls whether customers can purchase this product online or must call or request a quote instead."
+                tooltip={{
+                  on: "Product is shown on the site with a price and can be added to cart and purchased online.",
+                  off: "Product is shown on the site but switches to inquiry mode. Customers must call or request a quote to purchase. No cart or checkout. Toggle back on at any time to make it purchasable again.",
+                }}
                 checked={form.availableOnline}
                 onChange={(v) =>
                   setForm((f) => ({
@@ -1791,7 +1805,12 @@ export default function ProductEdit() {
             <div className="mt-4 ml-6 pl-4 border-l-2 border-slate-200">
               <FlagRow
                 label="Show price in inquiry mode"
-                description="Only relevant when available online is off."
+                description="Rare edge case. Only turn on if you want the price visible even though online purchase is disabled. Only relevant when available online is off."
+                tooltip={{
+                  note: "Only applies when Available Online is off.",
+                  on: "Price is visible on the product page, but customers still cannot buy online. They must call or request a quote.",
+                  off: 'Price is hidden entirely. Customers see "Call for price" and an inquiry form.',
+                }}
                 checked={form.showPriceOnline}
                 disabled={form.availableOnline}
                 onChange={(v) =>
@@ -1806,7 +1825,11 @@ export default function ProductEdit() {
             </div>
             <FlagRow
               label="Featured"
-              description="Highlighted on the home page and category pages."
+              description="Highlights this product on the homepage carousel and at the top of category pages. Use sparingly for products you want to promote."
+              tooltip={{
+                on: "Product appears in the homepage featured carousel and is promoted at the top of category pages.",
+                off: "Product appears in normal catalog and category listings only. No special promotion.",
+              }}
               checked={form.featured}
               onChange={(v) => setForm((f) => ({ ...f, featured: v }))}
             />
@@ -3361,12 +3384,14 @@ function VisibilityStatusBar({
 function FlagRow({
   label,
   description,
+  tooltip,
   checked,
   onChange,
   disabled = false,
 }: {
   label: string;
   description: string;
+  tooltip: { on: string; off: string; note?: string };
   checked: boolean;
   onChange: (v: boolean) => void;
   disabled?: boolean;
@@ -3380,8 +3405,44 @@ function FlagRow({
       }`}
     >
       <div>
-        <div className="text-sm font-medium text-slate-800">{label}</div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-sm font-medium text-slate-800">{label}</span>
+          {/* Desktop tooltip trigger — hidden on mobile */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={(e) => e.preventDefault()}
+                className="hidden sm:inline-flex text-slate-400 hover:text-slate-600"
+                aria-label={`${label} help`}
+              >
+                <HelpCircle className="w-3.5 h-3.5" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="max-w-xs space-y-1">
+              {tooltip.note && (
+                <p className="italic opacity-80">{tooltip.note}</p>
+              )}
+              <p>
+                <span className="font-semibold">On:</span> {tooltip.on}
+              </p>
+              <p>
+                <span className="font-semibold">Off:</span> {tooltip.off}
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
         <div className="text-xs text-slate-500 mt-0.5">{description}</div>
+        {/* Mobile-only always-visible subtext — replaces the hover tooltip */}
+        <div className="sm:hidden text-xs text-slate-500 mt-1 space-y-0.5">
+          {tooltip.note && <div className="italic">{tooltip.note}</div>}
+          <div>
+            <span className="font-medium">On:</span> {tooltip.on}
+          </div>
+          <div>
+            <span className="font-medium">Off:</span> {tooltip.off}
+          </div>
+        </div>
       </div>
       <Switch checked={checked} onCheckedChange={onChange} disabled={disabled} />
     </label>
