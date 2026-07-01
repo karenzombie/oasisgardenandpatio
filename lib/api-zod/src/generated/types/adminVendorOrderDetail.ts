@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { AdminVendorOrderCancellation } from "./adminVendorOrderCancellation";
+import type { AdminVendorOrderEdit } from "./adminVendorOrderEdit";
 import type { AdminVendorOrderItem } from "./adminVendorOrderItem";
 import type { AdminVendorOrderSend } from "./adminVendorOrderSend";
 
@@ -51,5 +52,6 @@ export interface AdminVendorOrderDetail {
   shipToPhone: string | null;
   items: AdminVendorOrderItem[];
   sends: AdminVendorOrderSend[];
+  edits: AdminVendorOrderEdit[];
   cancellations: AdminVendorOrderCancellation[];
 }

@@ -118,6 +118,36 @@ export const vendorOrderSendsTable = pgTable(
 export const insertVendorOrderSendSchema = createInsertSchema(
   vendorOrderSendsTable,
 ).omit({ id: true, sentAt: true });
+
+// Audit trail for staff edits to a vendor order. Every save in the vendor
+// order edit flow inserts one row with the mandatory change note ("why are
+// you making this change?"), the acting staff user, and the timestamp. These
+// entries render in the same detail-screen timeline as vendor_order_sends so
+// edits and sends read as one chronological history.
+export const vendorOrderEditsTable = pgTable(
+  "vendor_order_edits",
+  {
+    id: serial("id").primaryKey(),
+    vendorOrderId: integer("vendor_order_id")
+      .notNull()
+      .references(() => vendorOrdersTable.id, { onDelete: "cascade" }),
+    editedByUserId: integer("edited_by_user_id").references(
+      () => usersTable.id,
+      { onDelete: "set null" },
+    ),
+    editedAt: timestamp("edited_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    note: text("note").notNull(),
+  },
+  (t) => [index("vendor_order_edits_vendor_order_idx").on(t.vendorOrderId)],
+);
+
+export const insertVendorOrderEditSchema = createInsertSchema(
+  vendorOrderEditsTable,
+).omit({ id: true, editedAt: true });
+export type InsertVendorOrderEdit = z.infer<typeof insertVendorOrderEditSchema>;
+export type VendorOrderEdit = typeof vendorOrderEditsTable.$inferSelect;
 export type InsertVendorOrderSend = z.infer<typeof insertVendorOrderSendSchema>;
 export type VendorOrderSend = typeof vendorOrderSendsTable.$inferSelect;
 

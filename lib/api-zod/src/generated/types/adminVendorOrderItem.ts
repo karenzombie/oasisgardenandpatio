@@ -20,6 +20,14 @@ export interface AdminVendorOrderItem {
   unitPrice: number;
   amount: number;
   notes: string | null;
+  /** Effective SKU shown on the PO (PO override if edited, else the variant/product snapshot SKU). */
+  sku: string | null;
+  /** Effective sub-description / variant line (PO override if edited, else the variant/fabric snapshot line). */
+  subDescription: string | null;
+  /** Per-unit cost from the product record (staff-only, never printed on the PO). Null when there is no cost data for the line. */
+  cost: number | null;
+  /** True when this line differs from the customer's original order (drives the staff-only red flag). Never printed on the PO. */
+  edited: boolean;
   /** 'product' = the product line on the product vendor's PO. 'fabric' = a fabric-only line that was split out to an alternate fabric vendor's PO. */
   kind: AdminVendorOrderItemKind;
 }

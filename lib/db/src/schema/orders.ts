@@ -217,6 +217,23 @@ export const orderItemsTable = pgTable(
       (): AnyPgColumn => orderItemsTable.id,
       { onDelete: "cascade" },
     ),
+    // ── Vendor-PO edit overlay ────────────────────────────────────────
+    // When staff edit a vendor purchase order (see vendor_order_edits), the
+    // customer's original order line MUST stay untouched. These po_* columns
+    // hold PO-only overrides layered on top of the shared row: the vendor PO
+    // views/PDF read `po_x ?? x`, while every customer-facing view keeps
+    // reading the original columns. `po_edited` drives the red "changed from
+    // original" flag in the staff UI (never printed). `po_removed` drops the
+    // line from the PO while leaving it on the customer order. Lines ADDED
+    // during a PO edit are fresh order_items rows with order_id NULL,
+    // vendor_order_id set, and po_edited = true.
+    poEdited: boolean("po_edited").notNull().default(false),
+    poRemoved: boolean("po_removed").notNull().default(false),
+    poSku: text("po_sku"),
+    poDescription: text("po_description"),
+    poSubDescription: text("po_sub_description"),
+    poQuantity: integer("po_quantity"),
+    poUnitPrice: numeric("po_unit_price", { precision: 10, scale: 2 }),
   },
   (t) => [
     index("order_items_order_id_idx").on(t.orderId),

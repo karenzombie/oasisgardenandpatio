@@ -245,6 +245,12 @@ export interface PdfVendorOrderItem {
   unitPrice: number;
   amount: number;
   notes: string | null;
+  // Effective (PO-facing) SKU / sub-description after any staff edit. When set
+  // these take precedence over the raw snapshot fields. `edited` is staff-only
+  // and never rendered on the vendor document.
+  sku?: string | null;
+  subDescription?: string | null;
+  edited?: boolean;
   // 'product' = the regular product line on the product vendor's PO.
   // 'fabric'  = a fabric-only line split out to an alternate fabric vendor.
   // When 'fabric', the renderer hides product/variant SKU fields and only
@@ -455,8 +461,6 @@ function VendorOrderDocument(args: VendorOrderPdfArgs) {
     manufacturerEmail,
   } = args;
 
-  const total = items.reduce((sum, it) => sum + it.amount, 0);
-
   const cityStateZip = [
     [manufacturerCity, manufacturerState].filter(Boolean).join(", "),
     manufacturerPostalCode,
@@ -543,11 +547,9 @@ function VendorOrderDocument(args: VendorOrderPdfArgs) {
         <View style={{ marginTop: 6, flex: 1 }}>
           {/* Header */}
           <View style={s.thRow}>
-            <Text style={[s.th, s.colItem]}>Item #</Text>
-            <Text style={[s.th, s.colDesc]}>Item Description</Text>
-            <Text style={[s.th, s.colQty]}>Order Qty</Text>
-            <Text style={[s.th, s.colUnit, { textAlign: "right" }]}>Unit Price</Text>
-            <Text style={[s.th, s.colTotal, { textAlign: "right" }]}>Total</Text>
+            <Text style={[s.th, s.colItem, { width: "18%" }]}>Item #</Text>
+            <Text style={[s.th, s.colDesc, { width: "60%" }]}>Item Description</Text>
+            <Text style={[s.th, s.colQty, { width: "22%" }]}>Order Qty</Text>
           </View>
 
           {/* Rows */}
@@ -560,7 +562,7 @@ function VendorOrderDocument(args: VendorOrderPdfArgs) {
             // knows which Oasis line this fabric is being cut for.
             const sku = isFabric
               ? (it.fabricItemNumberSnapshot ?? "")
-              : (it.variantSkuSnapshot ?? it.productSkuSnapshot ?? "");
+              : (it.sku ?? it.variantSkuSnapshot ?? it.productSkuSnapshot ?? "");
             const mainDesc = isFabric
               ? (it.fabricNameSnapshot || "Fabric")
               : (it.description || "—");
@@ -570,14 +572,19 @@ function VendorOrderDocument(args: VendorOrderPdfArgs) {
                     ? `for ${it.description}${it.variantNameSnapshot ? ` — ${it.variantNameSnapshot}` : ""}`
                     : null,
                 ].filter((v): v is string => Boolean(v))
-              : itemOptions(it);
+              : // A staff-edited line carries a single sub-description override
+                // that stands in for the option lines; unedited lines render
+                // the derived option list.
+                it.edited && it.subDescription
+                ? [it.subDescription]
+                : itemOptions(it);
             const rowBg = idx % 2 === 0 ? "#fff" : LIGHT_BG;
             return (
               <React.Fragment key={idx}>
                 <View style={[s.tdRow, { backgroundColor: rowBg }]}>
-                  <Text style={[s.td, s.colItem]}>{sku}</Text>
+                  <Text style={[s.td, s.colItem, { width: "18%" }]}>{sku}</Text>
                   {/* Description cell: main text + indented option lines */}
-                  <View style={[s.colDesc, { paddingVertical: 2 }]}>
+                  <View style={[s.colDesc, { width: "60%", paddingVertical: 2 }]}>
                     <Text style={[s.td, { paddingVertical: 0 }]}>{mainDesc}</Text>
                     {options.map((opt, oi) => (
                       <Text
@@ -594,9 +601,7 @@ function VendorOrderDocument(args: VendorOrderPdfArgs) {
                       </Text>
                     ))}
                   </View>
-                  <Text style={[s.td, s.colQty]}>{it.quantity}</Text>
-                  <Text style={[s.td, s.colUnit]}>{fmtMoney(it.unitPrice)}</Text>
-                  <Text style={[s.td, s.colTotal]}>{fmtMoney(it.amount)}</Text>
+                  <Text style={[s.td, s.colQty, { width: "22%" }]}>{it.quantity}</Text>
                 </View>
                 {it.notes ? (
                   <View style={{ backgroundColor: "#fffef5", borderBottom: "1px solid #ddd", paddingHorizontal: 4, paddingBottom: 2 }}>
@@ -608,12 +613,6 @@ function VendorOrderDocument(args: VendorOrderPdfArgs) {
               </React.Fragment>
             );
           })}
-
-          {/* Total row */}
-          <View style={s.totalRow}>
-            <Text style={s.totalLabel}>Order Total:</Text>
-            <Text style={s.totalValue}>{fmtMoney(total)}</Text>
-          </View>
         </View>
 
         {/* ── Bottom bar ───────────────────────────────────────── */}

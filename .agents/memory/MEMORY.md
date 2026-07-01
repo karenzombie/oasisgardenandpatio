@@ -46,3 +46,4 @@
 - [Finishes sub-group ordering](finishes-subgroup-ordering.md) — sub-groups sort alphabetically; force per-brand order via SUBGROUP_ORDER map (never global displayOrder sort); collection-set finishes show FULL image in dialog.
 - [Shipping single source of truth](shipping-single-source-of-truth.md) — online orders use shippingRules.ts engine (A–D stack per line + 1 weight tier/order); staff orders default $0 + manual flat; shipping never taxed; old settings-driven shipping fully removed.
 - [Email test-mode redirect](email-test-redirect.md) — EMAIL_TEST_REDIRECT_TO routes ALL emails to one inbox; Resend 403s non-owner recipients until a domain is verified; delete the var for real delivery.
+- [Vendor order edit overlay](vendor-order-edit-overlay.md) — pending-PO edits are po_* overlays on order_items (never mutate customer order) via audited /edit route; no cost/pricing on printed PO; shared product+fabric rows aren't PO-scoped.

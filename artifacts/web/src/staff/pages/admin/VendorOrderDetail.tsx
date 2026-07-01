@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Printer } from "lucide-react";
+import { ArrowLeft, Printer, Pencil, Flag, Trash2, Plus } from "lucide-react";
 import {
   useAdminGetVendorOrder,
   useAdminUpdateVendorOrder,
+  useAdminEditVendorOrder,
   useAdminSendVendorOrder,
   useAdminUpdateVendorOrderStatus,
   useAdminReceiveVendorOrder,
@@ -65,6 +66,50 @@ function isoToDateInput(s: string | null): string {
   return d.toISOString().slice(0, 10);
 }
 
+// An editable line-item row in edit mode. `id` is the existing order_item id,
+// or null for a freshly added line. `removed` strikes an existing line from the
+// PO (kept on the customer order). `cost` is read-only (from the product).
+type EditRow = {
+  key: string;
+  id: number | null;
+  sku: string;
+  description: string;
+  subDescription: string;
+  quantity: string;
+  unitPrice: string;
+  cost: number | null;
+  removed: boolean;
+  kind: string;
+};
+
+// Stable string signature of the whole edit form, used to detect whether the
+// staff user has actually changed anything (drives the change-note box).
+function serializeEdit(
+  rows: EditRow[],
+  notes: string,
+  noteToVendor: string,
+  eta: string,
+): string {
+  return JSON.stringify({
+    rows: rows.map((r) => ({
+      id: r.id,
+      sku: r.sku.trim(),
+      description: r.description.trim(),
+      subDescription: r.subDescription.trim(),
+      quantity: r.quantity.trim(),
+      unitPrice: r.unitPrice.trim(),
+      removed: r.removed,
+    })),
+    notes,
+    noteToVendor,
+    eta,
+  });
+}
+
+// Distinct blue input styling so staff can clearly see active/editable fields.
+const EDIT_INPUT_CLS =
+  "bg-blue-50 border-blue-300 focus-visible:ring-blue-400";
+
 export default function VendorOrderDetail() {
   const params = useParams<{ id?: string }>();
   const id = params.id ? Number(params.id) : NaN;
@@ -95,15 +140,24 @@ export default function VendorOrderDetail() {
   const [cancelEmail, setCancelEmail] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
 
+  // ── Edit mode ──────────────────────────────────────────────────────────
+  const [editMode, setEditMode] = useState(false);
+  const [editRows, setEditRows] = useState<EditRow[]>([]);
+  const [changeNote, setChangeNote] = useState("");
+  const [noteError, setNoteError] = useState(false);
+  const editBaselineRef = useRef<string>("");
+
   useEffect(() => {
-    if (vo) {
+    // Don't clobber in-flight edits when the query refetches.
+    if (vo && !editMode) {
       setNotesDraft(vo.notes ?? "");
       setNoteToVendorDraft(vo.noteToVendor ?? "");
       setEtaDraft(isoToDateInput(vo.vendorEstimatedDeliveryDate));
     }
-  }, [vo]);
+  }, [vo, editMode]);
 
   const update = useAdminUpdateVendorOrder();
+  const editOrder = useAdminEditVendorOrder();
   const send = useAdminSendVendorOrder();
   const updateStatus = useAdminUpdateVendorOrderStatus();
   const receive = useAdminReceiveVendorOrder();
@@ -148,6 +202,131 @@ export default function VendorOrderDetail() {
       {
         onSuccess: () => {
           toast({ title: "Saved" });
+          invalidate();
+        },
+        onError: handleErr("Save failed"),
+      },
+    );
+  }
+
+  function enterEditMode() {
+    if (!vo) return;
+    const rows: EditRow[] = vo.items.map((it) => ({
+      key: `r${it.id}`,
+      id: it.id,
+      sku: it.sku ?? "",
+      description: it.description,
+      subDescription: it.subDescription ?? "",
+      quantity: String(it.quantity),
+      unitPrice: String(it.unitPrice),
+      cost: it.cost,
+      removed: false,
+      kind: it.kind,
+    }));
+    const notes = vo.notes ?? "";
+    const noteToVendor = vo.noteToVendor ?? "";
+    const eta = isoToDateInput(vo.vendorEstimatedDeliveryDate);
+    setEditRows(rows);
+    setNotesDraft(notes);
+    setNoteToVendorDraft(noteToVendor);
+    setEtaDraft(eta);
+    setChangeNote("");
+    setNoteError(false);
+    editBaselineRef.current = serializeEdit(rows, notes, noteToVendor, eta);
+    setEditMode(true);
+  }
+
+  function cancelEditMode() {
+    setEditMode(false);
+    setEditRows([]);
+    setChangeNote("");
+    setNoteError(false);
+    if (vo) {
+      setNotesDraft(vo.notes ?? "");
+      setNoteToVendorDraft(vo.noteToVendor ?? "");
+      setEtaDraft(isoToDateInput(vo.vendorEstimatedDeliveryDate));
+    }
+  }
+
+  function updateRow(key: string, patch: Partial<EditRow>) {
+    setEditRows((rs) => rs.map((r) => (r.key === key ? { ...r, ...patch } : r)));
+  }
+
+  function toggleRemoveRow(key: string) {
+    setEditRows((rs) =>
+      rs.flatMap((r) => {
+        if (r.key !== key) return [r];
+        // A never-persisted (added) row is dropped outright; an existing line
+        // is flagged removed so the backend keeps it on the customer order.
+        if (r.id == null) return [];
+        return [{ ...r, removed: !r.removed }];
+      }),
+    );
+  }
+
+  function addRow() {
+    setEditRows((rs) => [
+      ...rs,
+      {
+        key: `new-${Date.now()}-${rs.length}`,
+        id: null,
+        sku: "",
+        description: "",
+        subDescription: "",
+        quantity: "1",
+        unitPrice: "0",
+        cost: null,
+        removed: false,
+        kind: "product",
+      },
+    ]);
+  }
+
+  function submitEdit() {
+    const note = changeNote.trim();
+    if (!note) {
+      setNoteError(true);
+      return;
+    }
+    // Every kept line needs a description.
+    const missingDesc = editRows.some(
+      (r) => !r.removed && r.description.trim().length === 0,
+    );
+    if (missingDesc) {
+      toast({
+        title: "Each line needs a description",
+        variant: "destructive",
+      });
+      return;
+    }
+    const items = editRows.map((r) => ({
+      ...(r.id != null ? { id: r.id, removed: r.removed } : {}),
+      sku: r.sku.trim() || null,
+      description: r.description.trim(),
+      subDescription: r.subDescription.trim() || null,
+      quantity: Number(r.quantity) || 0,
+      unitPrice: Number(r.unitPrice) || 0,
+    }));
+    editOrder.mutate(
+      {
+        id,
+        data: {
+          changeNote: note,
+          notes: notesDraft || null,
+          noteToVendor: noteToVendorDraft || null,
+          vendorEstimatedDeliveryDate: etaDraft
+            ? new Date(etaDraft).toISOString()
+            : null,
+          items,
+        },
+      },
+      {
+        onSuccess: () => {
+          toast({ title: "Changes saved" });
+          setEditMode(false);
+          setEditRows([]);
+          setChangeNote("");
+          setNoteError(false);
           invalidate();
         },
         onError: handleErr("Save failed"),
@@ -331,6 +510,17 @@ export default function VendorOrderDetail() {
     vo.status === "acknowledged" ||
     vo.status === "fulfilled";
 
+  const editDirty =
+    editMode &&
+    serializeEdit(editRows, notesDraft, noteToVendorDraft, etaDraft) !==
+      editBaselineRef.current;
+
+  // Merge sends + edits into one reverse-chronological activity timeline.
+  const activity = [
+    ...vo.sends.map((s) => ({ type: "send" as const, at: s.sentAt, send: s })),
+    ...vo.edits.map((e) => ({ type: "edit" as const, at: e.editedAt, edit: e })),
+  ].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
+
   return (
     <>
       <PageHeader
@@ -350,66 +540,230 @@ export default function VendorOrderDetail() {
 
         <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
           <div className="space-y-4">
+            {/* Edit-mode banner */}
+            {editMode && (
+              <div className="rounded-md border border-blue-300 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+                <span className="font-medium">Edit mode</span> — all changes
+                require a note before saving.
+              </div>
+            )}
+
             {/* Items */}
             <div className="rounded-md border bg-white overflow-x-auto">
               <div className="px-4 py-3 border-b font-medium">Items</div>
-              {vo.items.length === 0 ? (
+              {editMode ? (
+                <>
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-50 text-left">
+                      <tr>
+                        <th className="px-3 py-2 font-medium">SKU</th>
+                        <th className="px-3 py-2 font-medium">Description</th>
+                        <th className="px-3 py-2 font-medium">Sub-description</th>
+                        <th className="px-3 py-2 font-medium text-right">Qty</th>
+                        <th className="px-3 py-2 font-medium text-right">Unit</th>
+                        <th className="px-3 py-2 font-medium text-right">Cost</th>
+                        <th className="px-3 py-2 font-medium w-10"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {editRows.map((r) => (
+                        <tr
+                          key={r.key}
+                          className={`border-t ${r.removed ? "bg-red-50 opacity-60" : ""}`}
+                        >
+                          <td className="px-2 py-1.5 align-top">
+                            <Input
+                              value={r.sku}
+                              onChange={(e) =>
+                                updateRow(r.key, { sku: e.target.value })
+                              }
+                              disabled={r.removed}
+                              className={`h-8 font-mono text-xs ${EDIT_INPUT_CLS}`}
+                            />
+                          </td>
+                          <td className="px-2 py-1.5 align-top">
+                            <Input
+                              value={r.description}
+                              onChange={(e) =>
+                                updateRow(r.key, { description: e.target.value })
+                              }
+                              disabled={r.removed}
+                              className={`h-8 ${EDIT_INPUT_CLS}`}
+                            />
+                          </td>
+                          <td className="px-2 py-1.5 align-top">
+                            <Input
+                              value={r.subDescription}
+                              onChange={(e) =>
+                                updateRow(r.key, {
+                                  subDescription: e.target.value,
+                                })
+                              }
+                              disabled={r.removed}
+                              className={`h-8 text-xs ${EDIT_INPUT_CLS}`}
+                            />
+                          </td>
+                          <td className="px-2 py-1.5 align-top w-20">
+                            <Input
+                              type="number"
+                              min={0}
+                              value={r.quantity}
+                              onChange={(e) =>
+                                updateRow(r.key, { quantity: e.target.value })
+                              }
+                              disabled={r.removed}
+                              className={`h-8 text-right ${EDIT_INPUT_CLS}`}
+                            />
+                          </td>
+                          <td className="px-2 py-1.5 align-top w-24">
+                            <Input
+                              type="number"
+                              min={0}
+                              step="0.01"
+                              value={r.unitPrice}
+                              onChange={(e) =>
+                                updateRow(r.key, { unitPrice: e.target.value })
+                              }
+                              disabled={r.removed}
+                              className={`h-8 text-right ${EDIT_INPUT_CLS}`}
+                            />
+                          </td>
+                          <td className="px-3 py-1.5 align-middle text-right whitespace-nowrap">
+                            {r.cost != null ? (
+                              fmtMoney(r.cost)
+                            ) : (
+                              <span className="italic text-slate-400">
+                                no data
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-2 py-1.5 align-middle text-center">
+                            <button
+                              type="button"
+                              onClick={() => toggleRemoveRow(r.key)}
+                              className="text-slate-400 hover:text-red-600"
+                              aria-label={
+                                r.removed ? "Restore line" : "Remove line"
+                              }
+                              title={r.removed ? "Restore line" : "Remove line"}
+                            >
+                              <Trash2 className="size-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                      {editRows.length === 0 && (
+                        <tr className="border-t">
+                          <td
+                            colSpan={7}
+                            className="px-3 py-6 text-center text-sm text-slate-500"
+                          >
+                            No line items. Add one below.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                  <div className="border-t px-3 py-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={addRow}
+                    >
+                      <Plus className="size-4 mr-1" />
+                      Add line item
+                    </Button>
+                  </div>
+                </>
+              ) : vo.items.length === 0 ? (
                 <div className="px-4 py-8 text-center text-sm text-slate-500">
                   No items assigned to this vendor order.
                 </div>
               ) : (
-                <table className="w-full text-sm">
-                  <thead className="bg-slate-50 text-left">
-                    <tr>
-                      <th className="px-3 py-2 font-medium">SKU</th>
-                      <th className="px-3 py-2 font-medium">Description</th>
-                      <th className="px-3 py-2 font-medium text-right">Qty</th>
-                      <th className="px-3 py-2 font-medium text-right">
-                        Unit
-                      </th>
-                      <th className="px-3 py-2 font-medium text-right">
-                        Total
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {vo.items.map((it) => (
-                      <tr key={it.id} className="border-t">
-                        <td className="px-3 py-2 font-mono text-xs">
-                          {it.variantSkuSnapshot ??
-                            it.productSkuSnapshot ??
-                            "—"}
-                        </td>
-                        <td className="px-3 py-2">
-                          <div>{it.description}</div>
-                          {(it.variantNameSnapshot ||
-                            it.fabricNameSnapshot) && (
-                            <div className="text-xs text-slate-500">
-                              {[it.variantNameSnapshot, it.fabricNameSnapshot]
-                                .filter(Boolean)
-                                .join(" · ")}
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-3 py-2 text-right">{it.quantity}</td>
-                        <td className="px-3 py-2 text-right">
-                          {fmtMoney(it.unitPrice)}
+                <>
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-50 text-left">
+                      <tr>
+                        <th className="px-3 py-2 font-medium w-8"></th>
+                        <th className="px-3 py-2 font-medium">SKU</th>
+                        <th className="px-3 py-2 font-medium">Description</th>
+                        <th className="px-3 py-2 font-medium text-right">Qty</th>
+                        <th className="px-3 py-2 font-medium text-right">Unit</th>
+                        <th className="px-3 py-2 font-medium text-right">Cost</th>
+                        <th className="px-3 py-2 font-medium text-right">
+                          Total
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {vo.items.map((it) => (
+                        <tr key={it.id} className="border-t">
+                          <td className="px-3 py-2 align-top">
+                            {it.edited && (
+                              <Flag
+                                className="size-4 text-red-600 fill-red-600"
+                                aria-label="Differs from original order"
+                              />
+                            )}
+                          </td>
+                          <td className="px-3 py-2 font-mono text-xs">
+                            {it.sku ??
+                              it.variantSkuSnapshot ??
+                              it.productSkuSnapshot ??
+                              "—"}
+                          </td>
+                          <td className="px-3 py-2">
+                            <div>{it.description}</div>
+                            {(it.subDescription || it.fabricNameSnapshot) && (
+                              <div className="text-xs text-slate-500">
+                                {[it.subDescription, it.fabricNameSnapshot]
+                                  .filter(Boolean)
+                                  .join(" · ")}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-3 py-2 text-right">
+                            {it.quantity}
+                          </td>
+                          <td className="px-3 py-2 text-right">
+                            {fmtMoney(it.unitPrice)}
+                          </td>
+                          <td className="px-3 py-2 text-right whitespace-nowrap">
+                            {it.cost != null ? (
+                              fmtMoney(it.cost)
+                            ) : (
+                              <span className="italic text-slate-400">
+                                no data
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-3 py-2 text-right font-medium">
+                            {fmtMoney(it.amount)}
+                          </td>
+                        </tr>
+                      ))}
+                      <tr className="border-t bg-slate-50">
+                        <td
+                          colSpan={6}
+                          className="px-3 py-2 text-right font-medium"
+                        >
+                          Total
                         </td>
                         <td className="px-3 py-2 text-right font-medium">
-                          {fmtMoney(it.amount)}
+                          {fmtMoney(itemsTotal)}
                         </td>
                       </tr>
-                    ))}
-                    <tr className="border-t bg-slate-50">
-                      <td colSpan={4} className="px-3 py-2 text-right font-medium">
-                        Total
-                      </td>
-                      <td className="px-3 py-2 text-right font-medium">
-                        {fmtMoney(itemsTotal)}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+                    </tbody>
+                  </table>
+                  {vo.items.some((it) => it.edited) && (
+                    <div className="border-t px-4 py-2 text-xs italic text-slate-500">
+                      <Flag className="inline size-3 text-red-600 fill-red-600 mr-1 align-[-1px]" />
+                      Flagged items indicate differences from the original order.
+                      Original order remains unchanged.
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
@@ -426,7 +780,8 @@ export default function VendorOrderDetail() {
                     type="date"
                     value={etaDraft}
                     onChange={(e) => setEtaDraft(e.target.value)}
-                    disabled={isTerminal}
+                    disabled={isTerminal || (isPending && !editMode)}
+                    className={editMode ? EDIT_INPUT_CLS : undefined}
                   />
                 </div>
               </div>
@@ -439,8 +794,9 @@ export default function VendorOrderDetail() {
                   value={noteToVendorDraft}
                   onChange={(e) => setNoteToVendorDraft(e.target.value)}
                   placeholder="Message to the vendor — printed in bold, ALL CAPS at the top of the PO"
-                  disabled={isTerminal}
+                  disabled={isTerminal || (isPending && !editMode)}
                   rows={2}
+                  className={editMode ? EDIT_INPUT_CLS : undefined}
                 />
               </div>
               <div>
@@ -452,11 +808,15 @@ export default function VendorOrderDetail() {
                   value={notesDraft}
                   onChange={(e) => setNotesDraft(e.target.value)}
                   placeholder="Internal notes about this vendor order"
-                  disabled={isTerminal}
+                  disabled={isTerminal || (isPending && !editMode)}
                   rows={3}
+                  className={editMode ? EDIT_INPUT_CLS : undefined}
                 />
               </div>
-              {!isTerminal && (
+
+              {/* Pending orders are edited through the audited edit mode; the
+                  quick "Save details" path stays for non-pending (sent+) POs. */}
+              {!isTerminal && !isPending && !editMode && (
                 <div className="flex justify-end">
                   <Button
                     type="button"
@@ -465,6 +825,57 @@ export default function VendorOrderDetail() {
                     disabled={update.isPending}
                   >
                     Save details
+                  </Button>
+                </div>
+              )}
+
+              {/* Change-note box appears as soon as anything is edited. */}
+              {editMode && editDirty && (
+                <div className="rounded-md border border-blue-200 bg-blue-50/60 p-3 space-y-1.5">
+                  <Label htmlFor="vo-change-note" className="text-sm font-medium">
+                    Why are you making this change? (required)
+                  </Label>
+                  <p className="text-xs text-slate-500">
+                    Logged with your name and a timestamp.
+                  </p>
+                  <Textarea
+                    id="vo-change-note"
+                    value={changeNote}
+                    onChange={(e) => {
+                      setChangeNote(e.target.value);
+                      if (e.target.value.trim()) setNoteError(false);
+                    }}
+                    rows={2}
+                    className="bg-white"
+                  />
+                  {noteError && (
+                    <p className="text-xs text-red-600">
+                      A change note is required before saving.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {editMode && (
+                <div className="flex justify-end gap-2 pt-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={cancelEditMode}
+                    disabled={editOrder.isPending}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={submitEdit}
+                    disabled={
+                      editOrder.isPending ||
+                      !editDirty ||
+                      changeNote.trim().length === 0
+                    }
+                  >
+                    Save changes
                   </Button>
                 </div>
               )}
@@ -524,52 +935,75 @@ export default function VendorOrderDetail() {
               </div>
             )}
 
-            {/* Sends */}
+            {/* Send & edit history (one timeline) */}
             <div className="rounded-md border bg-white">
-              <div className="px-4 py-3 border-b font-medium">Send history</div>
-              {vo.sends.length === 0 ? (
+              <div className="px-4 py-3 border-b font-medium">
+                Send &amp; edit history
+              </div>
+              {activity.length === 0 ? (
                 <div className="px-4 py-6 text-sm text-slate-500">
-                  Not sent to vendor yet.
+                  No sends or edits yet.
                 </div>
               ) : (
                 <ul className="divide-y">
-                  {vo.sends.map((s) => (
-                    <li key={s.id} className="px-4 py-2 text-sm">
-                      <div className="flex items-center gap-2">
-                        <Badge variant={s.isResend ? "outline" : "default"}>
-                          {s.isResend ? "resend" : "sent"}
-                        </Badge>
-                        <span className="text-slate-600">
-                          {s.sentToEmail ?? "(no email recorded)"}
-                        </span>
-                        <span className="ml-auto flex items-center gap-2">
-                          {s.pdfStorageUrl && (
-                            <a
-                              href={`/api/storage${s.pdfStorageUrl}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs text-blue-600 hover:underline"
-                            >
-                              View PO
-                            </a>
-                          )}
-                          <span className="text-xs text-slate-500">
-                            {fmtDateTime(s.sentAt)}
+                  {activity.map((entry) =>
+                    entry.type === "send" ? (
+                      <li key={`s${entry.send.id}`} className="px-4 py-2 text-sm">
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            variant={entry.send.isResend ? "outline" : "default"}
+                          >
+                            {entry.send.isResend ? "resend" : "sent"}
+                          </Badge>
+                          <span className="text-slate-600">
+                            {entry.send.sentToEmail ?? "(no email recorded)"}
                           </span>
-                        </span>
-                      </div>
-                      {s.sentByEmail && (
-                        <div className="text-xs text-slate-500 mt-0.5">
-                          by {s.sentByEmail}
+                          <span className="ml-auto flex items-center gap-2">
+                            {entry.send.pdfStorageUrl && (
+                              <a
+                                href={`/api/storage${entry.send.pdfStorageUrl}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-blue-600 hover:underline"
+                              >
+                                View PO
+                              </a>
+                            )}
+                            <span className="text-xs text-slate-500">
+                              {fmtDateTime(entry.send.sentAt)}
+                            </span>
+                          </span>
                         </div>
-                      )}
-                      {s.resendNote && (
+                        {entry.send.sentByEmail && (
+                          <div className="text-xs text-slate-500 mt-0.5">
+                            by {entry.send.sentByEmail}
+                          </div>
+                        )}
+                        {entry.send.resendNote && (
+                          <div className="text-slate-600 mt-0.5">
+                            Note: {entry.send.resendNote}
+                          </div>
+                        )}
+                      </li>
+                    ) : (
+                      <li key={`e${entry.edit.id}`} className="px-4 py-2 text-sm">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary">edited</Badge>
+                          <span className="ml-auto text-xs text-slate-500">
+                            {fmtDateTime(entry.edit.editedAt)}
+                          </span>
+                        </div>
+                        {entry.edit.editedByEmail && (
+                          <div className="text-xs text-slate-500 mt-0.5">
+                            by {entry.edit.editedByEmail}
+                          </div>
+                        )}
                         <div className="text-slate-600 mt-0.5">
-                          Note: {s.resendNote}
+                          Note: {entry.edit.note}
                         </div>
-                      )}
-                    </li>
-                  ))}
+                      </li>
+                    ),
+                  )}
                 </ul>
               )}
             </div>
@@ -648,12 +1082,24 @@ export default function VendorOrderDetail() {
                 <Button
                   type="button"
                   className="w-full"
+                  disabled={editMode}
                   onClick={() => {
                     setSendEmail(vo.manufacturerOrderEmail ?? "");
                     setSendOpen(true);
                   }}
                 >
                   {vo.sentAt ? "Resend to vendor" : "Send to vendor"}
+                </Button>
+              )}
+              {isPending && !editMode && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="w-full"
+                  onClick={enterEditMode}
+                >
+                  <Pencil className="size-4 mr-2" />
+                  Edit order
                 </Button>
               )}
               {vo.status === "sent" && (

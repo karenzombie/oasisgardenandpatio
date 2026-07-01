@@ -4,6 +4,7 @@ import {
   db,
   vendorOrdersTable,
   vendorOrderSendsTable,
+  vendorOrderEditsTable,
   vendorOrderCancellationsTable,
   ordersTable,
   orderItemsTable,
@@ -35,6 +36,8 @@ import {
   AdminReceiveVendorOrderBody,
   AdminCancelVendorOrderParams,
   AdminCancelVendorOrderBody,
+  AdminEditVendorOrderParams,
+  AdminEditVendorOrderBody,
   AdminCreateStandaloneVendorOrderBody,
 } from "@workspace/api-zod";
 import { productVariantsTable } from "@workspace/db";
@@ -84,7 +87,21 @@ function nameOf(first: string | null, last: string | null): string | null {
 // price/amount are zeroed in the payload (the cost lives on the customer
 // order, not on the fabric PO line) and the fabric snapshot fields are
 // what the vendor renders.
-function itemToPayload(it: OrderItem, kind: "product" | "fabric" = "product") {
+function itemToPayload(
+  it: OrderItem,
+  kind: "product" | "fabric" = "product",
+  cost: number | null = null,
+) {
+  // Effective (PO-facing) values: a PO edit layers po_* overrides on top of
+  // the shared customer row (see the overlay note in the orders schema).
+  // The vendor PO and staff UI read `po_x ?? x`; the customer order keeps
+  // reading the untouched originals.
+  const effQuantity = it.poQuantity ?? it.quantity;
+  const effUnitRaw = it.poUnitPrice ?? it.unitPrice;
+  const effSku =
+    it.poSku ?? it.variantSkuSnapshot ?? it.productSkuSnapshot ?? null;
+  const effDescription = it.poDescription ?? it.description;
+  const effSubDescription = it.poSubDescription ?? it.variantNameSnapshot ?? null;
   return {
     id: it.id,
     productId: it.productId,
@@ -100,11 +117,15 @@ function itemToPayload(it: OrderItem, kind: "product" | "fabric" = "product") {
     fabricNameSnapshot: it.fabricNameSnapshot,
     fabricBrandSnapshot: it.fabricBrandSnapshot,
     fabricGradeSnapshot: it.fabricGradeSnapshot,
-    description: it.description,
-    quantity: it.quantity,
-    unitPrice: kind === "fabric" ? 0 : Number(it.unitPrice),
-    amount: kind === "fabric" ? 0 : Number(it.amount),
+    description: effDescription,
+    quantity: effQuantity,
+    unitPrice: kind === "fabric" ? 0 : Number(effUnitRaw),
+    amount: kind === "fabric" ? 0 : Number(effUnitRaw) * effQuantity,
     notes: it.notes,
+    sku: effSku,
+    subDescription: effSubDescription,
+    cost,
+    edited: it.poEdited,
     kind,
   };
 }
@@ -429,20 +450,94 @@ async function loadVendorOrderDetail(id: number) {
   // product lines) and fabric_vendor_order_id (fabric-only lines split
   // out to an alternate fabric vendor). Tag each row so the payload
   // mapping can render them correctly.
+  // po_removed lines were dropped from this PO during an edit; they remain on
+  // the customer order but must not appear on the vendor PO (UI, PDF, email).
   const productItems = await db
     .select()
     .from(orderItemsTable)
-    .where(eq(orderItemsTable.vendorOrderId, id))
+    .where(
+      and(
+        eq(orderItemsTable.vendorOrderId, id),
+        eq(orderItemsTable.poRemoved, false),
+      ),
+    )
     .orderBy(asc(orderItemsTable.id));
   const fabricItems = await db
     .select()
     .from(orderItemsTable)
-    .where(eq(orderItemsTable.fabricVendorOrderId, id))
+    .where(
+      and(
+        eq(orderItemsTable.fabricVendorOrderId, id),
+        eq(orderItemsTable.poRemoved, false),
+      ),
+    )
     .orderBy(asc(orderItemsTable.id));
   const items: Array<{ row: OrderItem; kind: "product" | "fabric" }> = [
     ...productItems.map((row) => ({ row, kind: "product" as const })),
     ...fabricItems.map((row) => ({ row, kind: "fabric" as const })),
   ];
+
+  // Per-unit cost is pulled LIVE from the product record (products.cost). It is
+  // staff-only (shown in the UI to help hit vendor order minimums) and is never
+  // printed/emailed on the PO. Batch-resolve by productId, falling back to a
+  // SKU match for added lines that have no productId.
+  const costProductIds = Array.from(
+    new Set(
+      items
+        .map((x) => x.row.productId)
+        .filter((v): v is number => v != null),
+    ),
+  );
+  const costSkus = Array.from(
+    new Set(
+      items
+        .filter((x) => x.row.productId == null)
+        .map(
+          (x) =>
+            x.row.poSku ??
+            x.row.variantSkuSnapshot ??
+            x.row.productSkuSnapshot ??
+            null,
+        )
+        .filter((v): v is string => v != null && v.length > 0),
+    ),
+  );
+  const costByProductId = new Map<number, string | null>();
+  if (costProductIds.length) {
+    const rows = await db
+      .select({ id: productsTable.id, cost: productsTable.cost })
+      .from(productsTable)
+      .where(inArray(productsTable.id, costProductIds));
+    rows.forEach((r) => costByProductId.set(r.id, r.cost));
+  }
+  const costBySku = new Map<string, string | null>();
+  if (costSkus.length) {
+    const rows = await db
+      .select({ sku: productsTable.sku, cost: productsTable.cost })
+      .from(productsTable)
+      .where(inArray(productsTable.sku, costSkus));
+    rows.forEach((r) => costBySku.set(r.sku, r.cost));
+  }
+  const resolveCost = (row: OrderItem): number | null => {
+    let raw: string | null | undefined = null;
+    if (row.productId != null) {
+      raw = costByProductId.get(row.productId) ?? null;
+    } else {
+      const sku =
+        row.poSku ?? row.variantSkuSnapshot ?? row.productSkuSnapshot ?? null;
+      if (sku) raw = costBySku.get(sku) ?? null;
+    }
+    if (raw == null) return null;
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : null;
+  };
+
+  const edits = await db
+    .select({ e: vendorOrderEditsTable, editor: usersTable })
+    .from(vendorOrderEditsTable)
+    .leftJoin(usersTable, eq(usersTable.id, vendorOrderEditsTable.editedByUserId))
+    .where(eq(vendorOrderEditsTable.vendorOrderId, id))
+    .orderBy(desc(vendorOrderEditsTable.editedAt));
 
   const sends = await db
     .select({ s: vendorOrderSendsTable, sender: usersTable })
@@ -558,7 +653,7 @@ async function loadVendorOrderDetail(id: number) {
         shipToPhone: shipAddr?.phone ?? null,
       };
     })(),
-    items: items.map((x) => itemToPayload(x.row, x.kind)),
+    items: items.map((x) => itemToPayload(x.row, x.kind, resolveCost(x.row))),
     sends: sends.map((row) => ({
       id: row.s.id,
       sentByUserId: row.s.sentByUserId,
@@ -568,6 +663,13 @@ async function loadVendorOrderDetail(id: number) {
       isResend: row.s.isResend,
       resendNote: row.s.resendNote,
       pdfStorageUrl: toPublicImageUrl(row.s.pdfStorageUrl),
+    })),
+    edits: edits.map((row) => ({
+      id: row.e.id,
+      editedByUserId: row.e.editedByUserId,
+      editedByEmail: row.editor?.email ?? null,
+      editedAt: row.e.editedAt.toISOString(),
+      note: row.e.note,
     })),
     cancellations: cancellations.map((row) => ({
       id: row.c.id,
@@ -674,6 +776,24 @@ router.patch(
       res
         .status(400)
         .json({ error: body.error.issues[0]?.message ?? "Invalid body" });
+      return;
+    }
+    // Pending POs must be edited through the audited edit flow so every change
+    // carries a mandatory change note; block the quick-save path for them.
+    const [current] = await db
+      .select({ status: vendorOrdersTable.status })
+      .from(vendorOrdersTable)
+      .where(eq(vendorOrdersTable.id, params.data.id))
+      .limit(1);
+    if (!current) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+    if (current.status === "pending") {
+      res.status(409).json({
+        error:
+          "Pending vendor orders must be edited through the edit flow so changes are logged with a note.",
+      });
       return;
     }
     const updates: Partial<VendorOrder> = {};
@@ -813,6 +933,194 @@ router.delete(
       },
     });
     res.status(204).end();
+  },
+);
+
+// ---------------------------------------------------------------------------
+// POST /admin/vendor-orders/:id/edit — edit a PENDING vendor PO (line items +
+// details) with a mandatory change note.
+//
+// Isolation: edits NEVER touch the customer's original order. Changes to an
+// existing line are stored as po_* overrides on the shared order_items row
+// (the customer order keeps reading the original columns); a removed line is
+// flagged po_removed=true (still on the customer order, gone from the PO); an
+// added line is a brand-new order_items row with orderId=NULL and
+// vendorOrderId=this PO. Every changed/added row gets po_edited=true so the UI
+// can flag it. The mandatory note is written to vendor_order_edits.
+// ---------------------------------------------------------------------------
+router.post(
+  "/admin/vendor-orders/:id/edit",
+  requireAuth,
+  requireRole("admin"),
+  async (req: Request, res: Response): Promise<void> => {
+    const params = AdminEditVendorOrderParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: "Invalid id" });
+      return;
+    }
+    const body = AdminEditVendorOrderBody.safeParse(req.body);
+    if (!body.success) {
+      res
+        .status(400)
+        .json({ error: body.error.issues[0]?.message ?? "Invalid body" });
+      return;
+    }
+    const changeNote = body.data.changeNote.trim();
+    if (changeNote.length === 0) {
+      res.status(400).json({ error: "A change note is required." });
+      return;
+    }
+    const id = params.data.id;
+    const userId = req.session?.userId ?? null;
+
+    const result = await db.transaction(async (tx) => {
+      const [existing] = await tx
+        .select()
+        .from(vendorOrdersTable)
+        .where(eq(vendorOrdersTable.id, id))
+        .for("update")
+        .limit(1);
+      if (!existing) return { kind: "not_found" as const };
+      if (existing.status !== "pending") {
+        return { kind: "not_pending" as const, status: existing.status };
+      }
+
+      // Load this PO's live (non-removed) lines, keyed by id, so we can apply
+      // per-line overrides and detect which existing lines the payload keeps.
+      const currentRows = await tx
+        .select()
+        .from(orderItemsTable)
+        .where(
+          and(
+            or(
+              eq(orderItemsTable.vendorOrderId, id),
+              eq(orderItemsTable.fabricVendorOrderId, id),
+            ),
+            eq(orderItemsTable.poRemoved, false),
+          ),
+        );
+      const rowById = new Map(currentRows.map((r) => [r.id, r]));
+
+      for (const item of body.data.items) {
+        const sku = item.sku?.trim() || null;
+        const description = item.description.trim();
+        const subDescription = item.subDescription?.trim() || null;
+        const quantity = item.quantity;
+        const unitPrice = item.unitPrice;
+
+        if (item.id != null) {
+          const row = rowById.get(item.id);
+          // Ignore ids that don't belong to this PO (defensive).
+          if (!row) continue;
+
+          if (item.removed === true) {
+            await tx
+              .update(orderItemsTable)
+              .set({ poRemoved: true, poEdited: true })
+              .where(eq(orderItemsTable.id, row.id));
+            continue;
+          }
+
+          // Compare against the current EFFECTIVE values so a no-op save
+          // doesn't spuriously flag the line.
+          const effSku =
+            row.poSku ?? row.variantSkuSnapshot ?? row.productSkuSnapshot ?? null;
+          const effDescription = row.poDescription ?? row.description;
+          const effSubDescription =
+            row.poSubDescription ?? row.variantNameSnapshot ?? null;
+          const effQuantity = row.poQuantity ?? row.quantity;
+          const effUnitPrice = Number(row.poUnitPrice ?? row.unitPrice);
+
+          const changed =
+            sku !== effSku ||
+            description !== effDescription ||
+            subDescription !== effSubDescription ||
+            quantity !== effQuantity ||
+            unitPrice !== effUnitPrice;
+
+          if (changed) {
+            await tx
+              .update(orderItemsTable)
+              .set({
+                poEdited: true,
+                poSku: sku,
+                poDescription: description,
+                poSubDescription: subDescription,
+                poQuantity: quantity,
+                poUnitPrice: unitPrice.toFixed(2),
+              })
+              .where(eq(orderItemsTable.id, row.id));
+          }
+        } else {
+          // Added line: a fresh order_items row owned solely by this PO.
+          await tx.insert(orderItemsTable).values({
+            orderId: null,
+            vendorOrderId: id,
+            productId: null,
+            productSkuSnapshot: sku,
+            description,
+            variantNameSnapshot: subDescription,
+            quantity,
+            unitPrice: unitPrice.toFixed(2),
+            amount: (unitPrice * quantity).toFixed(2),
+            poEdited: true,
+          });
+        }
+      }
+
+      // Detail fields are edited inside the same audited edit flow.
+      const voUpdates: Partial<VendorOrder> = {};
+      if (body.data.notes !== undefined) voUpdates.notes = body.data.notes ?? null;
+      if (body.data.noteToVendor !== undefined)
+        voUpdates.noteToVendor = body.data.noteToVendor ?? null;
+      if (body.data.vendorEstimatedDeliveryDate !== undefined) {
+        voUpdates.vendorEstimatedDeliveryDate =
+          body.data.vendorEstimatedDeliveryDate
+            ? new Date(body.data.vendorEstimatedDeliveryDate)
+            : null;
+      }
+      if (Object.keys(voUpdates).length > 0) {
+        await tx
+          .update(vendorOrdersTable)
+          .set(voUpdates)
+          .where(eq(vendorOrdersTable.id, id));
+      }
+
+      await tx.insert(vendorOrderEditsTable).values({
+        vendorOrderId: id,
+        editedByUserId: userId,
+        note: changeNote,
+      });
+
+      return { kind: "ok" as const, id };
+    });
+
+    if (result.kind === "not_found") {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+    if (result.kind === "not_pending") {
+      res.status(409).json({
+        error: `Only pending vendor orders can be edited (this one is '${result.status}').`,
+      });
+      return;
+    }
+
+    await recordAudit(req, {
+      action: "vendor_order.edit",
+      entityType: "vendor_order",
+      entityId: result.id,
+      changes: { changeNote, itemCount: body.data.items.length },
+    });
+    await recordHistory(req, {
+      entityType: "vendor_order",
+      entityId: result.id,
+      changeType: "update",
+      snapshot: { changeNote, items: body.data.items },
+    });
+
+    const detail = await loadVendorOrderDetail(result.id);
+    res.json(detail);
   },
 );
 

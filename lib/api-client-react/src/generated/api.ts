@@ -159,6 +159,7 @@ import type {
   CushionOrderDetail,
   CushionOrderPage,
   CushionOrderSubmitted,
+  EditVendorOrderRequest,
   Error,
   FeaturedProduct,
   GenerateVendorOrdersRequest,
@@ -14989,6 +14990,93 @@ export const useAdminDeleteVendorOrder = <
   TContext
 > => {
   return useMutation(getAdminDeleteVendorOrderMutationOptions(options));
+};
+
+/**
+ * @summary Edit a pending vendor order (items + details) with a mandatory change note. Isolated from the customer order.
+ */
+export const getAdminEditVendorOrderUrl = (id: number) => {
+  return `/api/admin/vendor-orders/${id}/edit`;
+};
+
+export const adminEditVendorOrder = async (
+  id: number,
+  editVendorOrderRequest: EditVendorOrderRequest,
+  options?: RequestInit,
+): Promise<AdminVendorOrderDetail> => {
+  return customFetch<AdminVendorOrderDetail>(getAdminEditVendorOrderUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(editVendorOrderRequest),
+  });
+};
+
+export const getAdminEditVendorOrderMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminEditVendorOrder>>,
+    TError,
+    { id: number; data: BodyType<EditVendorOrderRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminEditVendorOrder>>,
+  TError,
+  { id: number; data: BodyType<EditVendorOrderRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminEditVendorOrder"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminEditVendorOrder>>,
+    { id: number; data: BodyType<EditVendorOrderRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminEditVendorOrder(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminEditVendorOrderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminEditVendorOrder>>
+>;
+export type AdminEditVendorOrderMutationBody = BodyType<EditVendorOrderRequest>;
+export type AdminEditVendorOrderMutationError = ErrorType<Error>;
+
+/**
+ * @summary Edit a pending vendor order (items + details) with a mandatory change note. Isolated from the customer order.
+ */
+export const useAdminEditVendorOrder = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminEditVendorOrder>>,
+    TError,
+    { id: number; data: BodyType<EditVendorOrderRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminEditVendorOrder>>,
+  TError,
+  { id: number; data: BodyType<EditVendorOrderRequest> },
+  TContext
+> => {
+  return useMutation(getAdminEditVendorOrderMutationOptions(options));
 };
 
 /**

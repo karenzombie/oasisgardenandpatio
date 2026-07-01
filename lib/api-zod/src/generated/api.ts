@@ -8826,6 +8826,29 @@ export const AdminGetVendorOrderResponse = zod.object({
       unitPrice: zod.number(),
       amount: zod.number(),
       notes: zod.string().nullable(),
+      sku: zod
+        .string()
+        .nullable()
+        .describe(
+          "Effective SKU shown on the PO (PO override if edited, else the variant\/product snapshot SKU).",
+        ),
+      subDescription: zod
+        .string()
+        .nullable()
+        .describe(
+          "Effective sub-description \/ variant line (PO override if edited, else the variant\/fabric snapshot line).",
+        ),
+      cost: zod
+        .number()
+        .nullable()
+        .describe(
+          "Per-unit cost from the product record (staff-only, never printed on the PO). Null when there is no cost data for the line.",
+        ),
+      edited: zod
+        .boolean()
+        .describe(
+          "True when this line differs from the customer's original order (drives the staff-only red flag). Never printed on the PO.",
+        ),
       kind: zod
         .enum(["product", "fabric"])
         .describe(
@@ -8843,6 +8866,15 @@ export const AdminGetVendorOrderResponse = zod.object({
       isResend: zod.boolean(),
       resendNote: zod.string().nullable(),
       pdfStorageUrl: zod.string().nullable(),
+    }),
+  ),
+  edits: zod.array(
+    zod.object({
+      id: zod.number(),
+      editedByUserId: zod.number().nullable(),
+      editedByEmail: zod.string().nullable(),
+      editedAt: zod.coerce.date(),
+      note: zod.string(),
     }),
   ),
   cancellations: zod.array(
@@ -8928,6 +8960,29 @@ export const AdminUpdateVendorOrderResponse = zod.object({
       unitPrice: zod.number(),
       amount: zod.number(),
       notes: zod.string().nullable(),
+      sku: zod
+        .string()
+        .nullable()
+        .describe(
+          "Effective SKU shown on the PO (PO override if edited, else the variant\/product snapshot SKU).",
+        ),
+      subDescription: zod
+        .string()
+        .nullable()
+        .describe(
+          "Effective sub-description \/ variant line (PO override if edited, else the variant\/fabric snapshot line).",
+        ),
+      cost: zod
+        .number()
+        .nullable()
+        .describe(
+          "Per-unit cost from the product record (staff-only, never printed on the PO). Null when there is no cost data for the line.",
+        ),
+      edited: zod
+        .boolean()
+        .describe(
+          "True when this line differs from the customer's original order (drives the staff-only red flag). Never printed on the PO.",
+        ),
       kind: zod
         .enum(["product", "fabric"])
         .describe(
@@ -8945,6 +9000,15 @@ export const AdminUpdateVendorOrderResponse = zod.object({
       isResend: zod.boolean(),
       resendNote: zod.string().nullable(),
       pdfStorageUrl: zod.string().nullable(),
+    }),
+  ),
+  edits: zod.array(
+    zod.object({
+      id: zod.number(),
+      editedByUserId: zod.number().nullable(),
+      editedByEmail: zod.string().nullable(),
+      editedAt: zod.coerce.date(),
+      note: zod.string(),
     }),
   ),
   cancellations: zod.array(
@@ -8968,6 +9032,173 @@ export const AdminUpdateVendorOrderResponse = zod.object({
  */
 export const AdminDeleteVendorOrderParams = zod.object({
   id: zod.coerce.number(),
+});
+
+/**
+ * @summary Edit a pending vendor order (items + details) with a mandatory change note. Isolated from the customer order.
+ */
+export const AdminEditVendorOrderParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const adminEditVendorOrderBodyItemsItemQuantityMin = 0;
+
+export const adminEditVendorOrderBodyItemsItemUnitPriceMin = 0;
+
+export const AdminEditVendorOrderBody = zod.object({
+  changeNote: zod
+    .string()
+    .min(1)
+    .describe(
+      "Mandatory 'why are you making this change?' note, logged to the edit history.",
+    ),
+  notes: zod.string().nullish(),
+  noteToVendor: zod.string().nullish(),
+  vendorEstimatedDeliveryDate: zod.coerce.date().nullish(),
+  items: zod.array(
+    zod.object({
+      id: zod
+        .number()
+        .nullish()
+        .describe(
+          "Existing order_item id to edit. Omit \/ null to ADD a new line to this PO.",
+        ),
+      sku: zod.string().nullish(),
+      description: zod.string(),
+      subDescription: zod.string().nullish(),
+      quantity: zod.number().min(adminEditVendorOrderBodyItemsItemQuantityMin),
+      unitPrice: zod
+        .number()
+        .min(adminEditVendorOrderBodyItemsItemUnitPriceMin),
+      removed: zod
+        .boolean()
+        .optional()
+        .describe(
+          "When true, drop this existing line from the PO (kept on the customer order).",
+        ),
+    }),
+  ),
+});
+
+export const AdminEditVendorOrderResponse = zod.object({
+  id: zod.number(),
+  vendorOrderNumber: zod.string(),
+  status: zod.string(),
+  notes: zod.string().nullable(),
+  noteToVendor: zod.string().nullable(),
+  vendorEstimatedDeliveryDate: zod.coerce.date().nullable(),
+  sentAt: zod.coerce.date().nullable(),
+  acknowledgedAt: zod.coerce.date().nullable(),
+  fulfilledAt: zod.coerce.date().nullable(),
+  receivedAt: zod.coerce.date().nullable(),
+  receivedByUserId: zod.number().nullable(),
+  receivedByEmail: zod.string().nullable(),
+  itemsReceived: zod.boolean(),
+  createdByUserId: zod.number().nullable(),
+  createdByEmail: zod.string().nullable(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+  manufacturerId: zod.number().nullable(),
+  manufacturerName: zod.string().nullable(),
+  manufacturerOrderEmail: zod.string().nullable(),
+  manufacturerAddressLine1: zod.string().nullable(),
+  manufacturerAddressLine2: zod.string().nullable(),
+  manufacturerCity: zod.string().nullable(),
+  manufacturerState: zod.string().nullable(),
+  manufacturerPostalCode: zod.string().nullable(),
+  manufacturerPhone: zod.string().nullable(),
+  manufacturerFax: zod.string().nullable(),
+  customerOrderId: zod.number().nullable(),
+  customerOrderNumber: zod.string().nullable(),
+  customerOrderStatus: zod.string().nullable(),
+  customerName: zod.string().nullable(),
+  shipToStore: zod.boolean(),
+  shipToName: zod.string().nullable(),
+  shipToLine1: zod.string().nullable(),
+  shipToLine2: zod.string().nullable(),
+  shipToCity: zod.string().nullable(),
+  shipToState: zod.string().nullable(),
+  shipToPostalCode: zod.string().nullable(),
+  shipToPhone: zod.string().nullable(),
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      productId: zod.number().nullable(),
+      productSkuSnapshot: zod.string().nullable(),
+      variantSkuSnapshot: zod.string().nullable(),
+      variantNameSnapshot: zod.string().nullable(),
+      weightSnapshot: zod.string().nullable(),
+      fabricNameSnapshot: zod.string().nullable(),
+      description: zod.string(),
+      quantity: zod.number(),
+      unitPrice: zod.number(),
+      amount: zod.number(),
+      notes: zod.string().nullable(),
+      sku: zod
+        .string()
+        .nullable()
+        .describe(
+          "Effective SKU shown on the PO (PO override if edited, else the variant\/product snapshot SKU).",
+        ),
+      subDescription: zod
+        .string()
+        .nullable()
+        .describe(
+          "Effective sub-description \/ variant line (PO override if edited, else the variant\/fabric snapshot line).",
+        ),
+      cost: zod
+        .number()
+        .nullable()
+        .describe(
+          "Per-unit cost from the product record (staff-only, never printed on the PO). Null when there is no cost data for the line.",
+        ),
+      edited: zod
+        .boolean()
+        .describe(
+          "True when this line differs from the customer's original order (drives the staff-only red flag). Never printed on the PO.",
+        ),
+      kind: zod
+        .enum(["product", "fabric"])
+        .describe(
+          "'product' = the product line on the product vendor's PO. 'fabric' = a fabric-only line that was split out to an alternate fabric vendor's PO.",
+        ),
+    }),
+  ),
+  sends: zod.array(
+    zod.object({
+      id: zod.number(),
+      sentByUserId: zod.number().nullable(),
+      sentByEmail: zod.string().nullable(),
+      sentAt: zod.coerce.date(),
+      sentToEmail: zod.string().nullable(),
+      isResend: zod.boolean(),
+      resendNote: zod.string().nullable(),
+      pdfStorageUrl: zod.string().nullable(),
+    }),
+  ),
+  edits: zod.array(
+    zod.object({
+      id: zod.number(),
+      editedByUserId: zod.number().nullable(),
+      editedByEmail: zod.string().nullable(),
+      editedAt: zod.coerce.date(),
+      note: zod.string(),
+    }),
+  ),
+  cancellations: zod.array(
+    zod.object({
+      id: zod.number(),
+      scope: zod.enum(["full", "partial"]),
+      reason: zod.string().nullable(),
+      cancelledByUserId: zod.number().nullable(),
+      cancelledByEmail: zod.string().nullable(),
+      cancelledAt: zod.coerce.date(),
+      pdfStorageUrl: zod.string().nullable(),
+      emailedAt: zod.coerce.date().nullable(),
+      emailedTo: zod.string().nullable(),
+      itemCount: zod.number(),
+    }),
+  ),
 });
 
 /**
@@ -9124,6 +9355,29 @@ export const AdminSendVendorOrderResponse = zod.object({
       unitPrice: zod.number(),
       amount: zod.number(),
       notes: zod.string().nullable(),
+      sku: zod
+        .string()
+        .nullable()
+        .describe(
+          "Effective SKU shown on the PO (PO override if edited, else the variant\/product snapshot SKU).",
+        ),
+      subDescription: zod
+        .string()
+        .nullable()
+        .describe(
+          "Effective sub-description \/ variant line (PO override if edited, else the variant\/fabric snapshot line).",
+        ),
+      cost: zod
+        .number()
+        .nullable()
+        .describe(
+          "Per-unit cost from the product record (staff-only, never printed on the PO). Null when there is no cost data for the line.",
+        ),
+      edited: zod
+        .boolean()
+        .describe(
+          "True when this line differs from the customer's original order (drives the staff-only red flag). Never printed on the PO.",
+        ),
       kind: zod
         .enum(["product", "fabric"])
         .describe(
@@ -9141,6 +9395,15 @@ export const AdminSendVendorOrderResponse = zod.object({
       isResend: zod.boolean(),
       resendNote: zod.string().nullable(),
       pdfStorageUrl: zod.string().nullable(),
+    }),
+  ),
+  edits: zod.array(
+    zod.object({
+      id: zod.number(),
+      editedByUserId: zod.number().nullable(),
+      editedByEmail: zod.string().nullable(),
+      editedAt: zod.coerce.date(),
+      note: zod.string(),
     }),
   ),
   cancellations: zod.array(
@@ -9225,6 +9488,29 @@ export const AdminUpdateVendorOrderStatusResponse = zod.object({
       unitPrice: zod.number(),
       amount: zod.number(),
       notes: zod.string().nullable(),
+      sku: zod
+        .string()
+        .nullable()
+        .describe(
+          "Effective SKU shown on the PO (PO override if edited, else the variant\/product snapshot SKU).",
+        ),
+      subDescription: zod
+        .string()
+        .nullable()
+        .describe(
+          "Effective sub-description \/ variant line (PO override if edited, else the variant\/fabric snapshot line).",
+        ),
+      cost: zod
+        .number()
+        .nullable()
+        .describe(
+          "Per-unit cost from the product record (staff-only, never printed on the PO). Null when there is no cost data for the line.",
+        ),
+      edited: zod
+        .boolean()
+        .describe(
+          "True when this line differs from the customer's original order (drives the staff-only red flag). Never printed on the PO.",
+        ),
       kind: zod
         .enum(["product", "fabric"])
         .describe(
@@ -9242,6 +9528,15 @@ export const AdminUpdateVendorOrderStatusResponse = zod.object({
       isResend: zod.boolean(),
       resendNote: zod.string().nullable(),
       pdfStorageUrl: zod.string().nullable(),
+    }),
+  ),
+  edits: zod.array(
+    zod.object({
+      id: zod.number(),
+      editedByUserId: zod.number().nullable(),
+      editedByEmail: zod.string().nullable(),
+      editedAt: zod.coerce.date(),
+      note: zod.string(),
     }),
   ),
   cancellations: zod.array(
@@ -9325,6 +9620,29 @@ export const AdminReceiveVendorOrderResponse = zod.object({
       unitPrice: zod.number(),
       amount: zod.number(),
       notes: zod.string().nullable(),
+      sku: zod
+        .string()
+        .nullable()
+        .describe(
+          "Effective SKU shown on the PO (PO override if edited, else the variant\/product snapshot SKU).",
+        ),
+      subDescription: zod
+        .string()
+        .nullable()
+        .describe(
+          "Effective sub-description \/ variant line (PO override if edited, else the variant\/fabric snapshot line).",
+        ),
+      cost: zod
+        .number()
+        .nullable()
+        .describe(
+          "Per-unit cost from the product record (staff-only, never printed on the PO). Null when there is no cost data for the line.",
+        ),
+      edited: zod
+        .boolean()
+        .describe(
+          "True when this line differs from the customer's original order (drives the staff-only red flag). Never printed on the PO.",
+        ),
       kind: zod
         .enum(["product", "fabric"])
         .describe(
@@ -9342,6 +9660,15 @@ export const AdminReceiveVendorOrderResponse = zod.object({
       isResend: zod.boolean(),
       resendNote: zod.string().nullable(),
       pdfStorageUrl: zod.string().nullable(),
+    }),
+  ),
+  edits: zod.array(
+    zod.object({
+      id: zod.number(),
+      editedByUserId: zod.number().nullable(),
+      editedByEmail: zod.string().nullable(),
+      editedAt: zod.coerce.date(),
+      note: zod.string(),
     }),
   ),
   cancellations: zod.array(
@@ -9448,6 +9775,29 @@ export const AdminCancelVendorOrderResponse = zod.object({
       unitPrice: zod.number(),
       amount: zod.number(),
       notes: zod.string().nullable(),
+      sku: zod
+        .string()
+        .nullable()
+        .describe(
+          "Effective SKU shown on the PO (PO override if edited, else the variant\/product snapshot SKU).",
+        ),
+      subDescription: zod
+        .string()
+        .nullable()
+        .describe(
+          "Effective sub-description \/ variant line (PO override if edited, else the variant\/fabric snapshot line).",
+        ),
+      cost: zod
+        .number()
+        .nullable()
+        .describe(
+          "Per-unit cost from the product record (staff-only, never printed on the PO). Null when there is no cost data for the line.",
+        ),
+      edited: zod
+        .boolean()
+        .describe(
+          "True when this line differs from the customer's original order (drives the staff-only red flag). Never printed on the PO.",
+        ),
       kind: zod
         .enum(["product", "fabric"])
         .describe(
@@ -9465,6 +9815,15 @@ export const AdminCancelVendorOrderResponse = zod.object({
       isResend: zod.boolean(),
       resendNote: zod.string().nullable(),
       pdfStorageUrl: zod.string().nullable(),
+    }),
+  ),
+  edits: zod.array(
+    zod.object({
+      id: zod.number(),
+      editedByUserId: zod.number().nullable(),
+      editedByEmail: zod.string().nullable(),
+      editedAt: zod.coerce.date(),
+      note: zod.string(),
     }),
   ),
   cancellations: zod.array(

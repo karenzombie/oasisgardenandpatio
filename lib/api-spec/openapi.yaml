@@ -4393,6 +4393,30 @@ paths:
         "204": { description: Deleted }
         "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
         "409": { description: Cannot delete after sending, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+  /admin/vendor-orders/{id}/edit:
+    post:
+      operationId: adminEditVendorOrder
+      tags: [admin-vendor-orders]
+      summary: Edit a pending vendor order (items + details) with a mandatory change note. Isolated from the customer order.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EditVendorOrderRequest" }
+      responses:
+        "200":
+          description: Updated vendor order
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminVendorOrderDetail" }
+        "400": { description: Bad request, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+        "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+        "409": { description: Only pending orders can be edited here, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
   /admin/orders/quote-pricing:
     post:
       operationId: adminQuoteOrderPricing
@@ -5494,12 +5518,66 @@ components:
         unitPrice: { type: number }
         amount: { type: number }
         notes: { type: string, nullable: true }
+        sku:
+          type: string
+          nullable: true
+          description: "Effective SKU shown on the PO (PO override if edited, else the variant/product snapshot SKU)."
+        subDescription:
+          type: string
+          nullable: true
+          description: "Effective sub-description / variant line (PO override if edited, else the variant/fabric snapshot line)."
+        cost:
+          type: number
+          nullable: true
+          description: "Per-unit cost from the product record (staff-only, never printed on the PO). Null when there is no cost data for the line."
+        edited:
+          type: boolean
+          description: "True when this line differs from the customer's original order (drives the staff-only red flag). Never printed on the PO."
         kind:
           type: string
           enum: [product, fabric]
           description: "'product' = the product line on the product vendor's PO. 'fabric' = a fabric-only line that was split out to an alternate fabric vendor's PO."
       required:
-        [id, productId, productSkuSnapshot, variantSkuSnapshot, variantNameSnapshot, weightSnapshot, fabricNameSnapshot, description, quantity, unitPrice, amount, notes, kind]
+        [id, productId, productSkuSnapshot, variantSkuSnapshot, variantNameSnapshot, weightSnapshot, fabricNameSnapshot, description, quantity, unitPrice, amount, notes, sku, subDescription, cost, edited, kind]
+    AdminVendorOrderEdit:
+      type: object
+      properties:
+        id: { type: integer }
+        editedByUserId: { type: integer, nullable: true }
+        editedByEmail: { type: string, nullable: true }
+        editedAt: { type: string, format: date-time }
+        note: { type: string }
+      required: [id, editedByUserId, editedByEmail, editedAt, note]
+    EditVendorOrderItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          nullable: true
+          description: "Existing order_item id to edit. Omit / null to ADD a new line to this PO."
+        sku: { type: string, nullable: true }
+        description: { type: string }
+        subDescription: { type: string, nullable: true }
+        quantity: { type: integer, minimum: 0 }
+        unitPrice: { type: number, minimum: 0 }
+        removed:
+          type: boolean
+          description: "When true, drop this existing line from the PO (kept on the customer order)."
+      required: [description, quantity, unitPrice]
+    EditVendorOrderRequest:
+      type: object
+      properties:
+        changeNote:
+          type: string
+          minLength: 1
+          description: "Mandatory 'why are you making this change?' note, logged to the edit history."
+        notes: { type: string, nullable: true }
+        noteToVendor: { type: string, nullable: true }
+        vendorEstimatedDeliveryDate: { type: string, format: date-time, nullable: true }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/EditVendorOrderItem" }
+      required: [changeNote, items]
     AdminVendorOrderSend:
       type: object
       properties:
@@ -5560,11 +5638,14 @@ components:
         sends:
           type: array
           items: { $ref: "#/components/schemas/AdminVendorOrderSend" }
+        edits:
+          type: array
+          items: { $ref: "#/components/schemas/AdminVendorOrderEdit" }
         cancellations:
           type: array
           items: { $ref: "#/components/schemas/AdminVendorOrderCancellation" }
       required:
-        [id, vendorOrderNumber, status, notes, noteToVendor, vendorEstimatedDeliveryDate, sentAt, acknowledgedAt, fulfilledAt, receivedAt, receivedByUserId, receivedByEmail, itemsReceived, createdByUserId, createdByEmail, createdAt, updatedAt, manufacturerId, manufacturerName, manufacturerOrderEmail, manufacturerAddressLine1, manufacturerAddressLine2, manufacturerCity, manufacturerState, manufacturerPostalCode, manufacturerPhone, manufacturerFax, customerOrderId, customerOrderNumber, customerOrderStatus, customerName, shipToStore, shipToName, shipToLine1, shipToLine2, shipToCity, shipToState, shipToPostalCode, shipToPhone, items, sends, cancellations]
+        [id, vendorOrderNumber, status, notes, noteToVendor, vendorEstimatedDeliveryDate, sentAt, acknowledgedAt, fulfilledAt, receivedAt, receivedByUserId, receivedByEmail, itemsReceived, createdByUserId, createdByEmail, createdAt, updatedAt, manufacturerId, manufacturerName, manufacturerOrderEmail, manufacturerAddressLine1, manufacturerAddressLine2, manufacturerCity, manufacturerState, manufacturerPostalCode, manufacturerPhone, manufacturerFax, customerOrderId, customerOrderNumber, customerOrderStatus, customerName, shipToStore, shipToName, shipToLine1, shipToLine2, shipToCity, shipToState, shipToPostalCode, shipToPhone, items, sends, edits, cancellations]
     CreateStandaloneVendorOrderItem:
       type: object
       properties:
