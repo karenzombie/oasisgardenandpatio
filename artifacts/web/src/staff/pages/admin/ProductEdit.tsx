@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronRight,
+  EyeOff,
   HelpCircle,
   History as HistoryIcon,
   Image as ImageIcon,
@@ -1798,6 +1799,7 @@ export default function ProductEdit() {
             <div className="mt-4">
               <VisibilityStatusBar
                 isActive={form.isActive}
+                availableOnline={form.availableOnline}
                 quoteOnly={form.quoteOnly}
                 showPriceOnline={form.showPriceOnline}
               />
@@ -3339,10 +3341,12 @@ export default function ProductEdit() {
 
 function VisibilityStatusBar({
   isActive,
+  availableOnline,
   quoteOnly,
   showPriceOnline,
 }: {
   isActive: boolean;
+  availableOnline: boolean;
   quoteOnly: boolean;
   showPriceOnline: boolean;
 }) {
@@ -3355,6 +3359,11 @@ function VisibilityStatusBar({
     Icon = Archive;
     text =
       "Product is archived. Hidden from all storefront routes and staff order screens.";
+  } else if (!availableOnline) {
+    className = "bg-slate-100 border-slate-300 text-slate-700";
+    Icon = EyeOff;
+    text =
+      "Hidden from storefront. This product is not visible to customers and cannot be purchased online.";
   } else if (!quoteOnly) {
     className = "bg-green-50 border-green-200 text-green-800";
     Icon = CheckCircle2;
