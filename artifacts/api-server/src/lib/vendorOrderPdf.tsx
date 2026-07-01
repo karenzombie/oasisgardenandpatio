@@ -253,6 +253,10 @@ export interface PdfVendorOrderItem {
   // shows the fabric item-number + name, since the alternate vendor only
   // ships the fabric.
   kind?: "product" | "fabric";
+  // Add-on snapshots (e.g. Marella privacy walls) ordered from this vendor
+  // alongside the parent line. Rendered as indented SKU/name/qty sub-rows —
+  // NEVER with pricing (hard client rule: no pricing on vendor documents).
+  addons?: Array<{ sku: string | null; name: string; quantity: number }>;
 }
 
 export interface VendorOrderPdfArgs {
@@ -612,6 +616,23 @@ function VendorOrderDocument(args: VendorOrderPdfArgs) {
                   </View>
                   <Text style={[s.td, s.colQty, { width: "22%" }]}>{it.quantity}</Text>
                 </View>
+                {/* Add-on sub-rows (e.g. privacy walls): SKU / name / qty ONLY. */}
+                {(it.addons ?? []).map((ad, ai) => (
+                  <View
+                    key={`addon-${ai}`}
+                    style={[s.tdRow, { backgroundColor: rowBg }]}
+                  >
+                    <Text style={[s.td, s.colItem, { width: "18%", paddingLeft: 10 }]}>
+                      {ad.sku ?? ""}
+                    </Text>
+                    <View style={[s.colDesc, { width: "60%", paddingVertical: 2 }]}>
+                      <Text style={[s.td, { paddingVertical: 0, paddingLeft: 10 }]}>
+                        {`Add-on: ${ad.name}`}
+                      </Text>
+                    </View>
+                    <Text style={[s.td, s.colQty, { width: "22%" }]}>{ad.quantity}</Text>
+                  </View>
+                ))}
                 {it.notes ? (
                   <View style={{ backgroundColor: "#fffef5", borderBottom: "1px solid #ddd", paddingHorizontal: 4, paddingBottom: 2 }}>
                     <Text style={{ fontSize: 7, color: "#666", fontFamily: "Helvetica-Oblique" }}>
@@ -780,6 +801,25 @@ function ItemsTable({
               </View>
               <Text style={[s.td, s.colQty, { width: "22%" }, cellStyle]}>{it.quantity}</Text>
             </View>
+            {/* Add-on sub-rows (e.g. privacy walls): SKU / name / qty ONLY. */}
+            {(it.addons ?? []).map((ad, ai) => (
+              <View
+                key={`addon-${ai}`}
+                style={[s.tdRow, { backgroundColor: rowBg }]}
+              >
+                <Text style={[s.td, s.colItem, { width: "18%", paddingLeft: 10 }, cellStyle]}>
+                  {ad.sku ?? ""}
+                </Text>
+                <View style={[s.colDesc, { width: "60%", paddingVertical: 2 }]}>
+                  <Text style={[s.td, { paddingVertical: 0, paddingLeft: 10 }, cellStyle]}>
+                    {`Add-on: ${ad.name}`}
+                  </Text>
+                </View>
+                <Text style={[s.td, s.colQty, { width: "22%" }, cellStyle]}>
+                  {ad.quantity}
+                </Text>
+              </View>
+            ))}
           </React.Fragment>
         );
       })}

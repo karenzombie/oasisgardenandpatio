@@ -5537,8 +5537,18 @@ components:
           type: string
           enum: [product, fabric]
           description: "'product' = the product line on the product vendor's PO. 'fabric' = a fabric-only line that was split out to an alternate fabric vendor's PO."
+        addons:
+          type: array
+          description: "Add-on snapshots (e.g. Marella privacy walls) ordered alongside the parent line. Rendered as SKU/name/qty sub-lines on the PO PDF and email — never with pricing."
+          items:
+            type: object
+            properties:
+              sku: { type: string, nullable: true }
+              name: { type: string }
+              quantity: { type: integer }
+            required: [sku, name, quantity]
       required:
-        [id, productId, productSkuSnapshot, variantSkuSnapshot, variantNameSnapshot, weightSnapshot, fabricNameSnapshot, description, quantity, unitPrice, amount, notes, sku, subDescription, cost, edited, kind]
+        [id, productId, productSkuSnapshot, variantSkuSnapshot, variantNameSnapshot, weightSnapshot, fabricNameSnapshot, description, quantity, unitPrice, amount, notes, sku, subDescription, cost, edited, kind, addons]
     AdminVendorOrderEdit:
       type: object
       properties:

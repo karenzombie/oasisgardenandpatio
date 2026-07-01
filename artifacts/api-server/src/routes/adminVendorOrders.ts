@@ -8,6 +8,7 @@ import {
   vendorOrderCancellationsTable,
   ordersTable,
   orderItemsTable,
+  orderItemAddonsTable,
   manufacturersTable,
   productsTable,
   customersTable,
@@ -91,6 +92,7 @@ function itemToPayload(
   it: OrderItem,
   kind: "product" | "fabric" = "product",
   cost: number | null = null,
+  addons: Array<{ sku: string | null; name: string; quantity: number }> = [],
 ) {
   // Effective (PO-facing) values: a PO edit layers po_* overrides on top of
   // the shared customer row (see the overlay note in the orders schema).
@@ -127,6 +129,10 @@ function itemToPayload(
     cost,
     edited: it.poEdited,
     kind,
+    // Add-on snapshots (e.g. Marella privacy walls) ordered from the vendor
+    // alongside the parent line. Rendered as SKU/name/qty sub-lines on the
+    // PO PDF and email — NEVER with pricing (hard client rule).
+    addons,
   };
 }
 
@@ -477,6 +483,37 @@ async function loadVendorOrderDetail(id: number) {
     ...fabricItems.map((row) => ({ row, kind: "fabric" as const })),
   ];
 
+  // Add-on snapshots (e.g. Marella privacy walls) ride along with the parent
+  // product line and must be ordered from the same vendor, so they appear as
+  // sub-lines under the parent on the PO. Fabric-only PO lines never carry
+  // add-ons (the add-on ships with the product vendor's PO).
+  const addonsByOrderItem = new Map<
+    number,
+    Array<{ sku: string | null; name: string; quantity: number }>
+  >();
+  if (productItems.length) {
+    const addonRows = await db
+      .select({
+        orderItemId: orderItemAddonsTable.orderItemId,
+        sku: orderItemAddonsTable.addonSkuSnapshot,
+        name: orderItemAddonsTable.addonNameSnapshot,
+        quantity: orderItemAddonsTable.quantity,
+      })
+      .from(orderItemAddonsTable)
+      .where(
+        inArray(
+          orderItemAddonsTable.orderItemId,
+          productItems.map((r) => r.id),
+        ),
+      )
+      .orderBy(asc(orderItemAddonsTable.id));
+    for (const a of addonRows) {
+      const list = addonsByOrderItem.get(a.orderItemId) ?? [];
+      list.push({ sku: a.sku, name: a.name, quantity: a.quantity });
+      addonsByOrderItem.set(a.orderItemId, list);
+    }
+  }
+
   // Per-unit cost is pulled LIVE from the product record (products.cost). It is
   // staff-only (shown in the UI to help hit vendor order minimums) and is never
   // printed/emailed on the PO. Batch-resolve by productId, falling back to a
@@ -653,7 +690,14 @@ async function loadVendorOrderDetail(id: number) {
         shipToPhone: shipAddr?.phone ?? null,
       };
     })(),
-    items: items.map((x) => itemToPayload(x.row, x.kind, resolveCost(x.row))),
+    items: items.map((x) =>
+      itemToPayload(
+        x.row,
+        x.kind,
+        resolveCost(x.row),
+        x.kind === "product" ? (addonsByOrderItem.get(x.row.id) ?? []) : [],
+      ),
+    ),
     sends: sends.map((row) => ({
       id: row.s.id,
       sentByUserId: row.s.sentByUserId,

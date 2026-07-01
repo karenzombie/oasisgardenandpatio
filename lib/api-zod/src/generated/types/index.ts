@@ -177,6 +177,7 @@ export * from "./adminVendorOrderCancellationScope";
 export * from "./adminVendorOrderDetail";
 export * from "./adminVendorOrderEdit";
 export * from "./adminVendorOrderItem";
+export * from "./adminVendorOrderItemAddonsItem";
 export * from "./adminVendorOrderItemKind";
 export * from "./adminVendorOrderPage";
 export * from "./adminVendorOrderSend";

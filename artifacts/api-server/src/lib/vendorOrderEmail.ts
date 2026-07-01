@@ -62,6 +62,10 @@ interface VendorOrderItem {
   unitPrice: number;
   amount: number;
   notes: string | null;
+  // Add-on snapshots (e.g. Marella privacy walls) ordered alongside the
+  // parent line. Rendered as indented SKU/name/qty sub-rows — NEVER with
+  // pricing (hard client rule: no pricing on vendor documents).
+  addons?: Array<{ sku: string | null; name: string; quantity: number }>;
 }
 
 export interface SendVendorOrderEmailArgs {
@@ -87,12 +91,23 @@ export async function sendVendorOrderEmail(
       const desc = [it.description, it.variantNameSnapshot, it.fabricNameSnapshot]
         .filter(Boolean)
         .join(" — ");
+      const addonRows = (it.addons ?? [])
+        .map(
+          (ad) => `
+        <tr>
+          <td style="padding:8px 10px 8px 24px;border-bottom:1px solid #e8e2d6;font-size:13px;">${escapeHtml(ad.sku ?? "")}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:13px;">Add-on: ${escapeHtml(ad.name)}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:13px;text-align:center;">${ad.quantity}</td>
+        </tr>`,
+        )
+        .join("");
       return `
         <tr>
           <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:13px;">${escapeHtml(sku)}</td>
           <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:13px;">${escapeHtml(desc || "—")}</td>
           <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:13px;text-align:center;">${it.quantity}</td>
         </tr>
+        ${addonRows}
         ${it.notes ? `<tr><td colspan="3" style="padding:0 10px 8px 10px;font-size:12px;color:#666;border-bottom:1px solid #e8e2d6;font-style:italic;">Note: ${escapeHtml(it.notes)}</td></tr>` : ""}
       `;
     })
@@ -186,12 +201,23 @@ function renderItemRows(items: VendorOrderItem[], struck: boolean): string {
       const cellStyle = struck
         ? "text-decoration:line-through;color:#888;"
         : "";
+      const addonRows = (it.addons ?? [])
+        .map(
+          (ad) => `
+        <tr>
+          <td style="padding:8px 10px 8px 24px;border-bottom:1px solid #e8e2d6;font-size:13px;${cellStyle}">${escapeHtml(ad.sku ?? "")}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:13px;${cellStyle}">Add-on: ${escapeHtml(ad.name)}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:13px;text-align:center;${cellStyle}">${ad.quantity}</td>
+        </tr>`,
+        )
+        .join("");
       return `
         <tr>
           <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:13px;${cellStyle}">${escapeHtml(sku)}</td>
           <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:13px;${cellStyle}">${escapeHtml(desc || "—")}</td>
           <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:13px;text-align:center;${cellStyle}">${it.quantity}</td>
         </tr>
+        ${addonRows}
       `;
     })
     .join("");

@@ -201,6 +201,12 @@ export const AdminVendorOrderItemKind = {
   fabric: "fabric",
 } as const;
 
+export type AdminVendorOrderItemAddonsItem = {
+  sku: string | null;
+  name: string;
+  quantity: number;
+};
+
 export interface AdminVendorOrderItem {
   id: number;
   productId: number | null;
@@ -224,6 +230,8 @@ export interface AdminVendorOrderItem {
   edited: boolean;
   /** 'product' = the product line on the product vendor's PO. 'fabric' = a fabric-only line that was split out to an alternate fabric vendor's PO. */
   kind: AdminVendorOrderItemKind;
+  /** Add-on snapshots (e.g. Marella privacy walls) ordered alongside the parent line. Rendered as SKU/name/qty sub-lines on the PO PDF and email — never with pricing. */
+  addons: AdminVendorOrderItemAddonsItem[];
 }
 
 export interface AdminVendorOrderEdit {

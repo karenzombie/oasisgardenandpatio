@@ -8909,6 +8909,17 @@ export const AdminGetVendorOrderResponse = zod.object({
         .describe(
           "'product' = the product line on the product vendor's PO. 'fabric' = a fabric-only line that was split out to an alternate fabric vendor's PO.",
         ),
+      addons: zod
+        .array(
+          zod.object({
+            sku: zod.string().nullable(),
+            name: zod.string(),
+            quantity: zod.number(),
+          }),
+        )
+        .describe(
+          "Add-on snapshots (e.g. Marella privacy walls) ordered alongside the parent line. Rendered as SKU\/name\/qty sub-lines on the PO PDF and email — never with pricing.",
+        ),
     }),
   ),
   sends: zod.array(
@@ -9043,6 +9054,17 @@ export const AdminUpdateVendorOrderResponse = zod.object({
         .enum(["product", "fabric"])
         .describe(
           "'product' = the product line on the product vendor's PO. 'fabric' = a fabric-only line that was split out to an alternate fabric vendor's PO.",
+        ),
+      addons: zod
+        .array(
+          zod.object({
+            sku: zod.string().nullable(),
+            name: zod.string(),
+            quantity: zod.number(),
+          }),
+        )
+        .describe(
+          "Add-on snapshots (e.g. Marella privacy walls) ordered alongside the parent line. Rendered as SKU\/name\/qty sub-lines on the PO PDF and email — never with pricing.",
         ),
     }),
   ),
@@ -9218,6 +9240,17 @@ export const AdminEditVendorOrderResponse = zod.object({
         .enum(["product", "fabric"])
         .describe(
           "'product' = the product line on the product vendor's PO. 'fabric' = a fabric-only line that was split out to an alternate fabric vendor's PO.",
+        ),
+      addons: zod
+        .array(
+          zod.object({
+            sku: zod.string().nullable(),
+            name: zod.string(),
+            quantity: zod.number(),
+          }),
+        )
+        .describe(
+          "Add-on snapshots (e.g. Marella privacy walls) ordered alongside the parent line. Rendered as SKU\/name\/qty sub-lines on the PO PDF and email — never with pricing.",
         ),
     }),
   ),
@@ -9447,6 +9480,17 @@ export const AdminSendVendorOrderResponse = zod.object({
         .describe(
           "'product' = the product line on the product vendor's PO. 'fabric' = a fabric-only line that was split out to an alternate fabric vendor's PO.",
         ),
+      addons: zod
+        .array(
+          zod.object({
+            sku: zod.string().nullable(),
+            name: zod.string(),
+            quantity: zod.number(),
+          }),
+        )
+        .describe(
+          "Add-on snapshots (e.g. Marella privacy walls) ordered alongside the parent line. Rendered as SKU\/name\/qty sub-lines on the PO PDF and email — never with pricing.",
+        ),
     }),
   ),
   sends: zod.array(
@@ -9581,6 +9625,17 @@ export const AdminUpdateVendorOrderStatusResponse = zod.object({
         .describe(
           "'product' = the product line on the product vendor's PO. 'fabric' = a fabric-only line that was split out to an alternate fabric vendor's PO.",
         ),
+      addons: zod
+        .array(
+          zod.object({
+            sku: zod.string().nullable(),
+            name: zod.string(),
+            quantity: zod.number(),
+          }),
+        )
+        .describe(
+          "Add-on snapshots (e.g. Marella privacy walls) ordered alongside the parent line. Rendered as SKU\/name\/qty sub-lines on the PO PDF and email — never with pricing.",
+        ),
     }),
   ),
   sends: zod.array(
@@ -9713,6 +9768,17 @@ export const AdminReceiveVendorOrderResponse = zod.object({
         .enum(["product", "fabric"])
         .describe(
           "'product' = the product line on the product vendor's PO. 'fabric' = a fabric-only line that was split out to an alternate fabric vendor's PO.",
+        ),
+      addons: zod
+        .array(
+          zod.object({
+            sku: zod.string().nullable(),
+            name: zod.string(),
+            quantity: zod.number(),
+          }),
+        )
+        .describe(
+          "Add-on snapshots (e.g. Marella privacy walls) ordered alongside the parent line. Rendered as SKU\/name\/qty sub-lines on the PO PDF and email — never with pricing.",
         ),
     }),
   ),
@@ -9869,6 +9935,17 @@ export const AdminCancelVendorOrderResponse = zod.object({
         .enum(["product", "fabric"])
         .describe(
           "'product' = the product line on the product vendor's PO. 'fabric' = a fabric-only line that was split out to an alternate fabric vendor's PO.",
+        ),
+      addons: zod
+        .array(
+          zod.object({
+            sku: zod.string().nullable(),
+            name: zod.string(),
+            quantity: zod.number(),
+          }),
+        )
+        .describe(
+          "Add-on snapshots (e.g. Marella privacy walls) ordered alongside the parent line. Rendered as SKU\/name\/qty sub-lines on the PO PDF and email — never with pricing.",
         ),
     }),
   ),
