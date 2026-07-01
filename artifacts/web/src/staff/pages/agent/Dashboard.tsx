@@ -45,7 +45,7 @@ export default function AgentDashboard({ user }: AgentDashboardProps) {
         </div>
 
         <div className="mt-6 bg-white border border-slate-200 rounded-md p-6 text-sm text-slate-700">
-          Use the <strong>New Order</strong> tab to start an in-store order.
+          Use the <strong>Create New Order</strong> tab to start an in-store order.
           Open orders, customers, and reports are visible in the left sidebar.
         </div>
       </PageBody>

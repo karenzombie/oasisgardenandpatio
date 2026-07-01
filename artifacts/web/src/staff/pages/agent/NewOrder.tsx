@@ -755,7 +755,7 @@ export default function AgentNewOrder() {
   return (
     <>
       <PageHeader
-        title="New Order"
+        title="Create New Order"
         subtitle={
           isRestockOrder
             ? "Create an internal inventory restock — items will be grouped into vendor orders by vendor."

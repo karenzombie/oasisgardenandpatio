@@ -44,7 +44,7 @@ export const ADMIN_NAV: NavGroup[] = [
   {
     heading: "Sales",
     items: [
-      { label: "New Order", path: "/admin/new-order", icon: ShoppingCart },
+      { label: "Create New Order", path: "/admin/new-order", icon: ShoppingCart },
       { label: "Orders", path: "/admin/orders", icon: ShoppingCart },
       { label: "Vendor Orders", path: "/admin/vendor-orders", icon: Send },
       { label: "Cushion Orders", path: "/admin/cushion-orders", icon: Layers },
@@ -98,7 +98,7 @@ export const AGENT_NAV: NavGroup[] = [
   {
     heading: "Orders",
     items: [
-      { label: "New Order", path: "/agent/new-order", icon: ShoppingCart },
+      { label: "Create New Order", path: "/agent/new-order", icon: ShoppingCart },
       { label: "Orders", path: "/agent/orders", icon: ClipboardList },
       { label: "Cushion Orders", path: "/agent/cushion-orders", icon: Layers },
       { label: "Customers", path: "/agent/customers", icon: Users },
