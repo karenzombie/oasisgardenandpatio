@@ -1784,13 +1784,13 @@ export default function ProductEdit() {
                   on: "Product is shown on the site with a price and can be added to cart and purchased online.",
                   off: "Product is shown on the site but switches to inquiry mode. Customers must call or request a quote to purchase. No cart or checkout. Toggle back on at any time to make it purchasable again.",
                 }}
-                checked={form.availableOnline}
+                checked={!form.quoteOnly}
                 onChange={(v) =>
                   setForm((f) => ({
                     ...f,
-                    availableOnline: v,
-                    showPriceOnline: v,
+                    availableOnline: true,
                     quoteOnly: !v,
+                    showPriceOnline: v,
                   }))
                 }
               />
@@ -1798,7 +1798,7 @@ export default function ProductEdit() {
             <div className="mt-4">
               <VisibilityStatusBar
                 isActive={form.isActive}
-                availableOnline={form.availableOnline}
+                quoteOnly={form.quoteOnly}
                 showPriceOnline={form.showPriceOnline}
               />
             </div>
@@ -1812,7 +1812,7 @@ export default function ProductEdit() {
                   off: 'Price is hidden entirely. Customers see "Call for price" and an inquiry form.',
                 }}
                 checked={form.showPriceOnline}
-                disabled={form.availableOnline}
+                disabled={!form.quoteOnly}
                 onChange={(v) =>
                   setForm((f) => ({ ...f, showPriceOnline: v }))
                 }
@@ -3339,11 +3339,11 @@ export default function ProductEdit() {
 
 function VisibilityStatusBar({
   isActive,
-  availableOnline,
+  quoteOnly,
   showPriceOnline,
 }: {
   isActive: boolean;
-  availableOnline: boolean;
+  quoteOnly: boolean;
   showPriceOnline: boolean;
 }) {
   let className: string;
@@ -3355,7 +3355,7 @@ function VisibilityStatusBar({
     Icon = Archive;
     text =
       "Product is archived. Hidden from all storefront routes and staff order screens.";
-  } else if (availableOnline) {
+  } else if (!quoteOnly) {
     className = "bg-green-50 border-green-200 text-green-800";
     Icon = CheckCircle2;
     text = "Live and purchasable online.";
