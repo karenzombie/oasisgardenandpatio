@@ -111,6 +111,10 @@ export const vendorOrderSendsTable = pgTable(
     sentToEmail: text("sent_to_email"),
     isResend: boolean("is_resend").notNull().default(false),
     resendNote: text("resend_note"),
+    // Optional "correction note" printed at the TOP of the resent PO so the
+    // vendor knows to disregard the previously sent PO. Distinct from the
+    // internal resendNote (a staff-only "why are you resending" reason).
+    correctionNote: text("correction_note"),
   },
   (t) => [index("vendor_order_sends_vendor_order_idx").on(t.vendorOrderId)],
 );

@@ -70,6 +70,27 @@ const s = StyleSheet.create({
     lineHeight: 1.3,
   },
 
+  /* ── Correction banner (resend only, very top, bold all-caps) ──── */
+  correctionBanner: {
+    border: "1.5px solid #b91c1c",
+    backgroundColor: "#fee2e2",
+    padding: "6px 8px",
+    marginBottom: 8,
+  },
+  correctionLabel: {
+    fontSize: 8,
+    fontFamily: "Helvetica-Bold",
+    color: "#b91c1c",
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  correctionText: {
+    fontSize: 10,
+    fontFamily: "Helvetica-Bold",
+    letterSpacing: 0.5,
+    lineHeight: 1.3,
+  },
+
   /* ── PO meta grid ─────────────────────────────────────────────── */
   // Two-row meta: left half = PO Number / Date Ordered / Customer Order # /
   // Customer Name; right half = Freight / Terms. The long values
@@ -268,6 +289,9 @@ export interface VendorOrderPdfArgs {
   // Staff-authored note to the vendor. Rendered in bold, ALL CAPS at the very
   // top of the PO (above the header) so the manufacturer sees it first.
   noteToVendor?: string | null;
+  // One-off correction note printed at the VERY top of a resent PO (above the
+  // note-to-vendor banner) so the vendor knows to disregard the prior PO.
+  correctionNote?: string | null;
   items: PdfVendorOrderItem[];
   manufacturerName: string | null;
   manufacturerAddressLine1: string | null;
@@ -473,6 +497,16 @@ function VendorOrderDocument(args: VendorOrderPdfArgs) {
   return (
     <Document>
       <Page size="LETTER" orientation="landscape" style={s.page}>
+        {/* ── Correction note (resend only, VERY top of doc) ───── */}
+        {args.correctionNote && args.correctionNote.trim() ? (
+          <View style={s.correctionBanner}>
+            <Text style={s.correctionLabel}>PO CORRECTION NOTICE</Text>
+            <Text style={s.correctionText}>
+              {args.correctionNote.toUpperCase()}
+            </Text>
+          </View>
+        ) : null}
+
         {/* ── Note to Vendor (bold, ALL CAPS, top of doc) ──────── */}
         {args.noteToVendor && args.noteToVendor.trim() ? (
           <View style={s.noteToVendorBanner}>

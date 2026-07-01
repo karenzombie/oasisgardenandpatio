@@ -662,6 +662,7 @@ async function loadVendorOrderDetail(id: number) {
       sentToEmail: row.s.sentToEmail,
       isResend: row.s.isResend,
       resendNote: row.s.resendNote,
+      correctionNote: row.s.correctionNote,
       pdfStorageUrl: toPublicImageUrl(row.s.pdfStorageUrl),
     })),
     edits: edits.map((row) => ({
@@ -981,7 +982,9 @@ router.post(
         .for("update")
         .limit(1);
       if (!existing) return { kind: "not_found" as const };
-      if (existing.status !== "pending") {
+      // Editable only while pending OR already sent. Sent-order edits keep the
+      // status as-is (resending is a separate, explicit action).
+      if (existing.status !== "pending" && existing.status !== "sent") {
         return { kind: "not_pending" as const, status: existing.status };
       }
 
@@ -1101,7 +1104,7 @@ router.post(
     }
     if (result.kind === "not_pending") {
       res.status(409).json({
-        error: `Only pending vendor orders can be edited (this one is '${result.status}').`,
+        error: `Only pending or sent vendor orders can be edited (this one is '${result.status}').`,
       });
       return;
     }
@@ -1360,8 +1363,17 @@ router.post(
         pdfStorageUrl: body.data.pdfStorageUrl ?? null,
         isResend,
         resendNote: isResend ? (body.data.resendNote ?? null) : null,
+        correctionNote: isResend
+          ? (body.data.correctionNote?.trim() || null)
+          : null,
       });
-      return { kind: "ok" as const, isResend };
+      return {
+        kind: "ok" as const,
+        isResend,
+        correctionNote: isResend
+          ? (body.data.correctionNote?.trim() || null)
+          : null,
+      };
     });
     if (result.kind === "not_found") {
       res.status(404).json({ error: "Not found" });
@@ -1407,6 +1419,7 @@ router.post(
           customerName: detail.customerName,
           notes: detail.notes,
           noteToVendor: detail.noteToVendor,
+          correctionNote: result.correctionNote,
           items: detail.items,
           manufacturerName: detail.manufacturerName,
           manufacturerAddressLine1: detail.manufacturerAddressLine1,

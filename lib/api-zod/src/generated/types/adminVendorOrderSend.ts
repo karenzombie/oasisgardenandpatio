@@ -14,5 +14,6 @@ export interface AdminVendorOrderSend {
   sentToEmail: string | null;
   isResend: boolean;
   resendNote: string | null;
+  correctionNote: string | null;
   pdfStorageUrl: string | null;
 }

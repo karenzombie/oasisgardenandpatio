@@ -8865,6 +8865,7 @@ export const AdminGetVendorOrderResponse = zod.object({
       sentToEmail: zod.string().nullable(),
       isResend: zod.boolean(),
       resendNote: zod.string().nullable(),
+      correctionNote: zod.string().nullable(),
       pdfStorageUrl: zod.string().nullable(),
     }),
   ),
@@ -8999,6 +9000,7 @@ export const AdminUpdateVendorOrderResponse = zod.object({
       sentToEmail: zod.string().nullable(),
       isResend: zod.boolean(),
       resendNote: zod.string().nullable(),
+      correctionNote: zod.string().nullable(),
       pdfStorageUrl: zod.string().nullable(),
     }),
   ),
@@ -9173,6 +9175,7 @@ export const AdminEditVendorOrderResponse = zod.object({
       sentToEmail: zod.string().nullable(),
       isResend: zod.boolean(),
       resendNote: zod.string().nullable(),
+      correctionNote: zod.string().nullable(),
       pdfStorageUrl: zod.string().nullable(),
     }),
   ),
@@ -9298,6 +9301,12 @@ export const AdminSendVendorOrderParams = zod.object({
 export const AdminSendVendorOrderBody = zod.object({
   sentToEmail: zod.string().nullish(),
   resendNote: zod.string().nullish(),
+  correctionNote: zod
+    .string()
+    .nullish()
+    .describe(
+      "Optional correction note printed at the top of a resent PO (e.g. 'Updated PO, disregard previously sent PO').",
+    ),
   pdfStorageUrl: zod.string().nullish(),
 });
 
@@ -9394,6 +9403,7 @@ export const AdminSendVendorOrderResponse = zod.object({
       sentToEmail: zod.string().nullable(),
       isResend: zod.boolean(),
       resendNote: zod.string().nullable(),
+      correctionNote: zod.string().nullable(),
       pdfStorageUrl: zod.string().nullable(),
     }),
   ),
@@ -9527,6 +9537,7 @@ export const AdminUpdateVendorOrderStatusResponse = zod.object({
       sentToEmail: zod.string().nullable(),
       isResend: zod.boolean(),
       resendNote: zod.string().nullable(),
+      correctionNote: zod.string().nullable(),
       pdfStorageUrl: zod.string().nullable(),
     }),
   ),
@@ -9659,6 +9670,7 @@ export const AdminReceiveVendorOrderResponse = zod.object({
       sentToEmail: zod.string().nullable(),
       isResend: zod.boolean(),
       resendNote: zod.string().nullable(),
+      correctionNote: zod.string().nullable(),
       pdfStorageUrl: zod.string().nullable(),
     }),
   ),
@@ -9814,6 +9826,7 @@ export const AdminCancelVendorOrderResponse = zod.object({
       sentToEmail: zod.string().nullable(),
       isResend: zod.boolean(),
       resendNote: zod.string().nullable(),
+      correctionNote: zod.string().nullable(),
       pdfStorageUrl: zod.string().nullable(),
     }),
   ),

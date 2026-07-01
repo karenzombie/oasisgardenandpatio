@@ -9,5 +9,7 @@
 export interface SendVendorOrderRequest {
   sentToEmail?: string | null;
   resendNote?: string | null;
+  /** Optional correction note printed at the top of a resent PO (e.g. 'Updated PO, disregard previously sent PO'). */
+  correctionNote?: string | null;
   pdfStorageUrl?: string | null;
 }

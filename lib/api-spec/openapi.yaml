@@ -5588,8 +5588,9 @@ components:
         sentToEmail: { type: string, nullable: true }
         isResend: { type: boolean }
         resendNote: { type: string, nullable: true }
+        correctionNote: { type: string, nullable: true }
         pdfStorageUrl: { type: string, nullable: true }
-      required: [id, sentByUserId, sentByEmail, sentAt, sentToEmail, isResend, resendNote, pdfStorageUrl]
+      required: [id, sentByUserId, sentByEmail, sentAt, sentToEmail, isResend, resendNote, correctionNote, pdfStorageUrl]
     AdminVendorOrderDetail:
       type: object
       properties:
@@ -5696,6 +5697,10 @@ components:
       properties:
         sentToEmail: { type: string, nullable: true }
         resendNote: { type: string, nullable: true }
+        correctionNote:
+          type: string
+          nullable: true
+          description: "Optional correction note printed at the top of a resent PO (e.g. 'Updated PO, disregard previously sent PO')."
         pdfStorageUrl: { type: string, nullable: true }
     UpdateVendorOrderStatusRequest:
       type: object

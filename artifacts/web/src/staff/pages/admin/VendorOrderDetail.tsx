@@ -24,6 +24,12 @@ import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   Dialog,
   DialogContent,
   DialogFooter,
@@ -130,6 +136,15 @@ export default function VendorOrderDetail() {
   const [sendOpen, setSendOpen] = useState(false);
   const [sendEmail, setSendEmail] = useState("");
   const [sendNote, setSendNote] = useState("");
+  // "plain" = send / resend-as-is; "editResend" = the two-phase flow launched
+  // after editing a sent PO (email confirm → optional PO correction note).
+  const [sendFlow, setSendFlow] = useState<"plain" | "editResend">("plain");
+  const [sendPhase, setSendPhase] = useState<"email" | "correction">("email");
+  const [correctionEnabled, setCorrectionEnabled] = useState(false);
+  const [correctionNote, setCorrectionNote] = useState("");
+  // Inline "this order was already sent — how do you want to proceed?" prompt
+  // shown when saving edits on a SENT PO.
+  const [sentSavePromptOpen, setSentSavePromptOpen] = useState(false);
   const [confirmReceive, setConfirmReceive] = useState(false);
   const [receiveNotes, setReceiveNotes] = useState("");
   const [confirmCancel, setConfirmCancel] = useState(false);
@@ -232,6 +247,7 @@ export default function VendorOrderDetail() {
     setEtaDraft(eta);
     setChangeNote("");
     setNoteError(false);
+    setSentSavePromptOpen(false);
     editBaselineRef.current = serializeEdit(rows, notes, noteToVendor, eta);
     setEditMode(true);
   }
@@ -241,6 +257,7 @@ export default function VendorOrderDetail() {
     setEditRows([]);
     setChangeNote("");
     setNoteError(false);
+    setSentSavePromptOpen(false);
     if (vo) {
       setNotesDraft(vo.notes ?? "");
       setNoteToVendorDraft(vo.noteToVendor ?? "");
@@ -282,11 +299,11 @@ export default function VendorOrderDetail() {
     ]);
   }
 
-  function submitEdit() {
+  function buildEditData() {
     const note = changeNote.trim();
     if (!note) {
       setNoteError(true);
-      return;
+      return null;
     }
     // Every kept line needs a description.
     const missingDesc = editRows.some(
@@ -297,7 +314,7 @@ export default function VendorOrderDetail() {
         title: "Each line needs a description",
         variant: "destructive",
       });
-      return;
+      return null;
     }
     const items = editRows.map((r) => ({
       ...(r.id != null ? { id: r.id, removed: r.removed } : {}),
@@ -307,27 +324,71 @@ export default function VendorOrderDetail() {
       quantity: Number(r.quantity) || 0,
       unitPrice: Number(r.unitPrice) || 0,
     }));
+    return {
+      changeNote: note,
+      notes: notesDraft || null,
+      noteToVendor: noteToVendorDraft || null,
+      vendorEstimatedDeliveryDate: etaDraft
+        ? new Date(etaDraft).toISOString()
+        : null,
+      items,
+    };
+  }
+
+  function exitEditState() {
+    setEditMode(false);
+    setEditRows([]);
+    setChangeNote("");
+    setNoteError(false);
+    setSentSavePromptOpen(false);
+  }
+
+  // "Save changes" click. Pending POs save immediately; sent POs first surface
+  // the "save & resend vs. save without resending" choice.
+  function handleEditSaveClick() {
+    if (vo?.status === "sent") {
+      if (!buildEditData()) return;
+      setSentSavePromptOpen(true);
+      return;
+    }
+    submitEdit();
+  }
+
+  // Save only (pending POs, and the sent-PO "save without resending" choice).
+  function submitEdit() {
+    const data = buildEditData();
+    if (!data) return;
     editOrder.mutate(
-      {
-        id,
-        data: {
-          changeNote: note,
-          notes: notesDraft || null,
-          noteToVendor: noteToVendorDraft || null,
-          vendorEstimatedDeliveryDate: etaDraft
-            ? new Date(etaDraft).toISOString()
-            : null,
-          items,
-        },
-      },
+      { id, data },
       {
         onSuccess: () => {
           toast({ title: "Changes saved" });
-          setEditMode(false);
-          setEditRows([]);
-          setChangeNote("");
-          setNoteError(false);
+          exitEditState();
           invalidate();
+        },
+        onError: handleErr("Save failed"),
+      },
+    );
+  }
+
+  // Sent-PO "save and resend": persist the edit first, then open the resend
+  // flow (email confirm → optional PO correction note).
+  function saveAndResend() {
+    const data = buildEditData();
+    if (!data) return;
+    editOrder.mutate(
+      { id, data },
+      {
+        onSuccess: () => {
+          toast({ title: "Changes saved" });
+          exitEditState();
+          invalidate();
+          setSendFlow("editResend");
+          setSendPhase("email");
+          setSendEmail(vo?.manufacturerOrderEmail ?? "");
+          setCorrectionEnabled(false);
+          setCorrectionNote("");
+          setSendOpen(true);
         },
         onError: handleErr("Save failed"),
       },
@@ -352,6 +413,43 @@ export default function VendorOrderDetail() {
           invalidate();
         },
         onError: handleErr("Send failed"),
+      },
+    );
+  }
+
+  function continueToCorrection() {
+    setSendPhase("correction");
+  }
+
+  // Sent-PO resend after an edit: sends the updated PO, optionally with a
+  // one-off correction note printed at the very top for the vendor.
+  function submitEditResend() {
+    if (correctionEnabled && correctionNote.trim().length === 0) {
+      toast({
+        title: "Enter the correction note or uncheck the option",
+        variant: "destructive",
+      });
+      return;
+    }
+    send.mutate(
+      {
+        id,
+        data: {
+          sentToEmail: sendEmail.trim() || null,
+          correctionNote: correctionEnabled ? correctionNote.trim() : null,
+        },
+      },
+      {
+        onSuccess: () => {
+          toast({ title: "Order resent to vendor" });
+          setSendOpen(false);
+          setSendFlow("plain");
+          setSendPhase("email");
+          setCorrectionEnabled(false);
+          setCorrectionNote("");
+          invalidate();
+        },
+        onError: handleErr("Resend failed"),
       },
     );
   }
@@ -856,29 +954,65 @@ export default function VendorOrderDetail() {
                 </div>
               )}
 
-              {editMode && (
-                <div className="flex justify-end gap-2 pt-1">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={cancelEditMode}
-                    disabled={editOrder.isPending}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={submitEdit}
-                    disabled={
-                      editOrder.isPending ||
-                      !editDirty ||
-                      changeNote.trim().length === 0
-                    }
-                  >
-                    Save changes
-                  </Button>
-                </div>
-              )}
+              {editMode &&
+                (sentSavePromptOpen ? (
+                  <div className="rounded-md border border-amber-300 bg-amber-50 p-3 space-y-2">
+                    <div className="text-sm font-medium">
+                      This order was already sent to the vendor.
+                    </div>
+                    <div className="text-sm text-slate-600">
+                      Choose how to proceed:
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Button
+                        type="button"
+                        onClick={saveAndResend}
+                        disabled={editOrder.isPending || send.isPending}
+                      >
+                        Save and resend to vendor
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={submitEdit}
+                        disabled={editOrder.isPending}
+                      >
+                        Save without resending
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setSentSavePromptOpen(false)}
+                        disabled={editOrder.isPending}
+                      >
+                        Back
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex justify-end gap-2 pt-1">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={cancelEditMode}
+                      disabled={editOrder.isPending}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={handleEditSaveClick}
+                      disabled={
+                        editOrder.isPending ||
+                        !editDirty ||
+                        changeNote.trim().length === 0
+                      }
+                    >
+                      Save changes
+                    </Button>
+                  </div>
+                ))}
             </div>
 
             {/* Cancellations */}
@@ -953,7 +1087,11 @@ export default function VendorOrderDetail() {
                           <Badge
                             variant={entry.send.isResend ? "outline" : "default"}
                           >
-                            {entry.send.isResend ? "resend" : "sent"}
+                            {!entry.send.isResend
+                              ? "sent"
+                              : entry.send.correctionNote
+                                ? "resent with correction"
+                                : "resent"}
                           </Badge>
                           <span className="text-slate-600">
                             {entry.send.sentToEmail ?? "(no email recorded)"}
@@ -982,6 +1120,11 @@ export default function VendorOrderDetail() {
                         {entry.send.resendNote && (
                           <div className="text-slate-600 mt-0.5">
                             Note: {entry.send.resendNote}
+                          </div>
+                        )}
+                        {entry.send.correctionNote && (
+                          <div className="text-slate-600 mt-0.5">
+                            PO correction note: {entry.send.correctionNote}
                           </div>
                         )}
                       </li>
@@ -1079,28 +1222,46 @@ export default function VendorOrderDetail() {
                 Print PO
               </Button>
               {(!isTerminal || vo.sentAt) && (
-                <Button
-                  type="button"
-                  className="w-full"
-                  disabled={editMode}
-                  onClick={() => {
-                    setSendEmail(vo.manufacturerOrderEmail ?? "");
-                    setSendOpen(true);
-                  }}
-                >
-                  {vo.sentAt ? "Resend to vendor" : "Send to vendor"}
-                </Button>
+                <div>
+                  <Button
+                    type="button"
+                    className="w-full"
+                    disabled={editMode}
+                    onClick={() => {
+                      setSendFlow("plain");
+                      setSendPhase("email");
+                      setSendEmail(vo.manufacturerOrderEmail ?? "");
+                      setSendNote("");
+                      setSendOpen(true);
+                    }}
+                  >
+                    {vo.sentAt ? "Resend (no changes)" : "Send to vendor"}
+                  </Button>
+                  {vo.sentAt && (
+                    <p className="text-xs text-slate-500 mt-1">
+                      Vendor didn't receive it? Resend the original PO as-is.
+                    </p>
+                  )}
+                </div>
               )}
-              {isPending && !editMode && (
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className="w-full"
-                  onClick={enterEditMode}
-                >
-                  <Pencil className="size-4 mr-2" />
-                  Edit order
-                </Button>
+              {(isPending || vo.status === "sent") && !editMode && (
+                <div>
+                  <Button
+                    type="button"
+                    variant={vo.status === "sent" ? "outline" : "secondary"}
+                    className="w-full"
+                    onClick={enterEditMode}
+                  >
+                    <Pencil className="size-4 mr-2" />
+                    Edit order
+                  </Button>
+                  {vo.status === "sent" && (
+                    <p className="text-xs text-slate-500 mt-1">
+                      Need to correct something? Edit the order and resend an
+                      updated PO.
+                    </p>
+                  )}
+                </div>
               )}
               {vo.status === "sent" && (
                 <Button
@@ -1159,50 +1320,160 @@ export default function VendorOrderDetail() {
         </div>
 
         {/* Send dialog */}
-        <Dialog open={sendOpen} onOpenChange={setSendOpen}>
+        <Dialog
+          open={sendOpen}
+          onOpenChange={(o) => {
+            setSendOpen(o);
+            if (!o) {
+              setSendFlow("plain");
+              setSendPhase("email");
+            }
+          }}
+        >
           <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                {vo.sentAt ? "Resend to vendor" : "Send to vendor"}
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3">
-              <div>
-                <Label htmlFor="send-email">Vendor email</Label>
-                <Input
-                  id="send-email"
-                  type="email"
-                  value={sendEmail}
-                  onChange={(e) => setSendEmail(e.target.value)}
-                  placeholder="orders@vendor.com"
-                />
-                <p className="text-xs text-slate-500 mt-1">
-                  An email with the purchase order details will be sent to this
-                  address. If left blank, the vendor's configured order
-                  email will be used (if set).
-                </p>
-              </div>
-              {vo.sentAt && (
-                <div>
-                  <Label htmlFor="send-note">Resend reason</Label>
-                  <Textarea
-                    id="send-note"
-                    value={sendNote}
-                    onChange={(e) => setSendNote(e.target.value)}
-                    placeholder="Why are you resending?"
-                    rows={3}
-                  />
+            {sendFlow === "editResend" ? (
+              sendPhase === "email" ? (
+                <>
+                  <DialogHeader>
+                    <DialogTitle>Resend updated PO to vendor</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-3">
+                    <div>
+                      <Label htmlFor="send-email">Vendor email</Label>
+                      <Input
+                        id="send-email"
+                        type="email"
+                        value={sendEmail}
+                        onChange={(e) => setSendEmail(e.target.value)}
+                        placeholder="orders@vendor.com"
+                      />
+                      <p className="text-xs text-slate-500 mt-1">
+                        The updated purchase order will be emailed to this
+                        address. If left blank, the vendor's configured order
+                        email will be used (if set).
+                      </p>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => setSendOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button onClick={continueToCorrection}>Continue</Button>
+                  </DialogFooter>
+                </>
+              ) : (
+                <>
+                  <DialogHeader>
+                    <DialogTitle>Add a correction note?</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-2">
+                      <Checkbox
+                        id="correction-enabled"
+                        checked={correctionEnabled}
+                        onCheckedChange={(v) => setCorrectionEnabled(v === true)}
+                        className="mt-0.5"
+                      />
+                      <div className="space-y-1">
+                        <Label
+                          htmlFor="correction-enabled"
+                          className="text-sm font-medium"
+                        >
+                          Include a correction note at the top of the PO
+                        </Label>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <p className="text-xs text-slate-500 underline decoration-dotted cursor-help w-fit">
+                                What's this?
+                              </p>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              Example: "Updated PO, disregard previously sent
+                              PO."
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                    </div>
+                    {correctionEnabled && (
+                      <div>
+                        <Label htmlFor="correction-note">Correction note</Label>
+                        <Textarea
+                          id="correction-note"
+                          value={correctionNote}
+                          onChange={(e) => setCorrectionNote(e.target.value)}
+                          placeholder="Updated PO, disregard previously sent PO"
+                          rows={3}
+                        />
+                        <p className="text-xs text-slate-500 mt-1">
+                          Printed in bold at the very top of the resent PO.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => setSendPhase("email")}
+                    >
+                      Back
+                    </Button>
+                    <Button onClick={submitEditResend} disabled={send.isPending}>
+                      Send updated PO
+                    </Button>
+                  </DialogFooter>
+                </>
+              )
+            ) : (
+              <>
+                <DialogHeader>
+                  <DialogTitle>
+                    {vo.sentAt ? "Resend (no changes)" : "Send to vendor"}
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-3">
+                  <div>
+                    <Label htmlFor="send-email">Vendor email</Label>
+                    <Input
+                      id="send-email"
+                      type="email"
+                      value={sendEmail}
+                      onChange={(e) => setSendEmail(e.target.value)}
+                      placeholder="orders@vendor.com"
+                    />
+                    <p className="text-xs text-slate-500 mt-1">
+                      An email with the purchase order details will be sent to
+                      this address. If left blank, the vendor's configured
+                      order email will be used (if set).
+                    </p>
+                  </div>
+                  {vo.sentAt && (
+                    <div>
+                      <Label htmlFor="send-note">Resend reason</Label>
+                      <Textarea
+                        id="send-note"
+                        value={sendNote}
+                        onChange={(e) => setSendNote(e.target.value)}
+                        placeholder="Why are you resending?"
+                        rows={3}
+                      />
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setSendOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={submitSend} disabled={send.isPending}>
-                {vo.sentAt ? "Resend" : "Send"}
-              </Button>
-            </DialogFooter>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setSendOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={submitSend} disabled={send.isPending}>
+                    {vo.sentAt ? "Resend" : "Send"}
+                  </Button>
+                </DialogFooter>
+              </>
+            )}
           </DialogContent>
         </Dialog>
 
