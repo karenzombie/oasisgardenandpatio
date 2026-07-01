@@ -1786,28 +1786,10 @@ export default function ProductEdit() {
                 </div>
               </div>
               <FlagRow
-                label="Show price online"
-                description='If off, the storefront shows "Call for price".'
-                checked={form.showPriceOnline}
-                onChange={(v) => setForm((f) => ({ ...f, showPriceOnline: v }))}
-              />
-              <FlagRow
                 label="Featured"
                 description="Highlighted on the home page and category pages."
                 checked={form.featured}
                 onChange={(v) => setForm((f) => ({ ...f, featured: v }))}
-              />
-              <FlagRow
-                label="Quote / Call for price"
-                description='Hides price and checkout — customers must call or request a quote. Auto-set by category.'
-                checked={form.quoteOnly}
-                onChange={(v) =>
-                  setForm((f) => ({
-                    ...f,
-                    quoteOnly: v,
-                    showPriceOnline: v ? false : f.showPriceOnline,
-                  }))
-                }
               />
             </div>
           </section>
