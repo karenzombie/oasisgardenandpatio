@@ -1772,12 +1772,6 @@ export default function ProductEdit() {
                 onChange={(v) => setForm((f) => ({ ...f, showPriceOnline: v }))}
               />
               <FlagRow
-                label="In-store only"
-                description="Visible online but cannot be ordered — agents can sell in store."
-                checked={form.inStoreOnly}
-                onChange={(v) => setForm((f) => ({ ...f, inStoreOnly: v }))}
-              />
-              <FlagRow
                 label="Featured"
                 description="Highlighted on the home page and category pages."
                 checked={form.featured}
@@ -1795,21 +1789,6 @@ export default function ProductEdit() {
                   }))
                 }
               />
-              <div>
-                <Label htmlFor="p-order">Display order</Label>
-                <Input
-                  id="p-order"
-                  type="number"
-                  min={0}
-                  value={form.displayOrder}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, displayOrder: e.target.value }))
-                  }
-                />
-                <p className="text-xs text-slate-500 mt-1">
-                  Lower numbers appear first within a category.
-                </p>
-              </div>
             </div>
           </section>
 
