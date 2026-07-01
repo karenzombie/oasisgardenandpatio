@@ -1759,12 +1759,32 @@ export default function ProductEdit() {
                 checked={form.isActive}
                 onChange={(v) => setForm((f) => ({ ...f, isActive: v }))}
               />
-              <FlagRow
-                label="Available online"
-                description="Customers can add this to cart on the website."
-                checked={form.availableOnline}
-                onChange={(v) => setForm((f) => ({ ...f, availableOnline: v }))}
-              />
+              <div className="space-y-2">
+                <FlagRow
+                  label="Available online"
+                  description="Customers can add this to cart on the website."
+                  checked={form.availableOnline}
+                  onChange={(v) =>
+                    setForm((f) => ({
+                      ...f,
+                      availableOnline: v,
+                      showPriceOnline: v,
+                      quoteOnly: !v,
+                    }))
+                  }
+                />
+                <div className="ml-6 pl-4 border-l-2 border-slate-200">
+                  <FlagRow
+                    label="Show price in inquiry mode"
+                    description="Only relevant when available online is off."
+                    checked={form.showPriceOnline}
+                    disabled={form.availableOnline}
+                    onChange={(v) =>
+                      setForm((f) => ({ ...f, showPriceOnline: v }))
+                    }
+                  />
+                </div>
+              </div>
               <FlagRow
                 label="Show price online"
                 description='If off, the storefront shows "Call for price".'
@@ -3299,19 +3319,27 @@ function FlagRow({
   description,
   checked,
   onChange,
+  disabled = false,
 }: {
   label: string;
   description: string;
   checked: boolean;
   onChange: (v: boolean) => void;
+  disabled?: boolean;
 }) {
   return (
-    <label className="flex items-start justify-between gap-4 border border-slate-200 rounded p-3 cursor-pointer hover:bg-slate-50">
+    <label
+      className={`flex items-start justify-between gap-4 border border-slate-200 rounded p-3 ${
+        disabled
+          ? "opacity-50 cursor-not-allowed"
+          : "cursor-pointer hover:bg-slate-50"
+      }`}
+    >
       <div>
         <div className="text-sm font-medium text-slate-800">{label}</div>
         <div className="text-xs text-slate-500 mt-0.5">{description}</div>
       </div>
-      <Switch checked={checked} onCheckedChange={onChange} />
+      <Switch checked={checked} onCheckedChange={onChange} disabled={disabled} />
     </label>
   );
 }
