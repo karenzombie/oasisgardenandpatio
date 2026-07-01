@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Pencil, Plus, Trash2, Truck, Search, X } from "lucide-react";
+import { Pencil, Plus, Truck, Search, X } from "lucide-react";
 import {
   useAdminListShippingRules,
   useAdminCreateShippingRule,
@@ -42,16 +42,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { ToastAction } from "@/components/ui/toast";
 import { useToast } from "@/hooks/use-toast";
 import { PageBody, PageHeader } from "../../StaffShell";
@@ -100,33 +90,12 @@ export default function Shipping() {
   const qc = useQueryClient();
   const toast = useToast();
   const rulesQuery = useAdminListShippingRules();
-  const deleteMut = useAdminDeleteShippingRule();
   const [editing, setEditing] = useState<ShippingRule | "new" | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<ShippingRule | null>(null);
 
   async function refetchRules() {
     await qc.invalidateQueries({
       queryKey: getAdminListShippingRulesQueryKey(),
     });
-  }
-
-  async function handleDelete() {
-    if (!deleteTarget) return;
-    try {
-      await deleteMut.mutateAsync({ id: deleteTarget.id });
-      await refetchRules();
-      toast.toast({ title: "Shipping rule deleted" });
-    } catch (err: unknown) {
-      const msg =
-        err instanceof Error ? err.message : "Failed to delete shipping rule.";
-      toast.toast({
-        title: "Could not delete rule",
-        description: msg,
-        variant: "destructive",
-      });
-    } finally {
-      setDeleteTarget(null);
-    }
   }
 
   const rules = rulesQuery.data?.rules ?? [];
@@ -228,14 +197,6 @@ export default function Shipping() {
                           <Pencil className="size-3.5 mr-1" />
                           Edit
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="ml-1 text-rose-600 hover:text-rose-700"
-                          onClick={() => setDeleteTarget(r)}
-                        >
-                          <Trash2 className="size-3.5" />
-                        </Button>
                       </td>
                     </tr>
                   )),
@@ -255,29 +216,6 @@ export default function Shipping() {
           />
         )}
 
-        <AlertDialog
-          open={deleteTarget !== null}
-          onOpenChange={(o) => !o && setDeleteTarget(null)}
-        >
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete shipping rule?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This removes the {deleteTarget && SCOPE_LABELS[deleteTarget.scope]}{" "}
-                rule. Online orders will stop including this charge immediately.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDelete}
-                className="bg-rose-600 hover:bg-rose-700"
-              >
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </PageBody>
     </>
   );

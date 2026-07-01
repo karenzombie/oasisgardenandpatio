@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocation, useParams } from "wouter";
 import {
+  AlertTriangle,
   ArrowLeft,
   ArrowDown,
   ArrowUp,
@@ -1272,6 +1273,15 @@ export default function ProductEdit() {
         }
       />
       <PageBody>
+        {!isNew && !form.isActive && (
+          <div className="flex items-start gap-4 rounded-lg border-2 border-amber-400 bg-amber-50 px-5 py-4 mb-6">
+            <AlertTriangle className="size-6 text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold text-amber-900 text-base tracking-wide">INACTIVE PRODUCT</p>
+              <p className="text-amber-800 text-sm mt-1">This product is hidden from all customer-facing pages — storefront, search, category listings, and featured sections. Use the "Active" toggle in the Visibility &amp; Flags section below to re-enable it.</p>
+            </div>
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="space-y-6 max-w-5xl">
           {/* Basics */}
           <section className="bg-white border border-slate-200 rounded-md p-6">

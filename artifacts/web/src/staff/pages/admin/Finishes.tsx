@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState, useRef, type FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Boxes, Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import { AlertTriangle, Boxes, Pencil, Plus, Search, X } from "lucide-react";
 import {
   useAdminListFinishes,
   useAdminCreateFinish,
   useAdminUpdateFinish,
-  useAdminDeleteFinish,
   useAdminListManufacturers,
   useAdminListFinishProducts,
   useAdminUpdateFinishProducts,
@@ -30,16 +29,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import {
   Select,
   SelectContent,
@@ -100,7 +89,6 @@ export default function Finishes() {
   const mfgList = useAdminListManufacturers();
   const createMut = useAdminCreateFinish();
   const updateMut = useAdminUpdateFinish();
-  const deleteMut = useAdminDeleteFinish();
 
   const [search, setSearch] = useState("");
   const [vendorFilter, setVendorFilter] = useState(ALL_VENDORS);
@@ -111,8 +99,6 @@ export default function Finishes() {
   const [formError, setFormError] = useState<string | null>(null);
   const [imageUploading, setImageUploading] = useState(false);
   const imageRef = useRef<HTMLInputElement>(null);
-
-  const [confirmDelete, setConfirmDelete] = useState<AdminFinish | null>(null);
 
   const finishes = list.data ?? [];
   const manufacturers = mfgList.data ?? [];
@@ -209,19 +195,6 @@ export default function Finishes() {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to save finish.";
       setFormError(msg);
-    }
-  }
-
-  async function handleDelete(f: AdminFinish) {
-    try {
-      await deleteMut.mutateAsync({ id: f.id });
-      await qc.invalidateQueries({ queryKey: getAdminListFinishesQueryKey() });
-      toast.toast({ title: "Finish deleted", description: f.name });
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Could not delete finish.";
-      toast.toast({ title: "Delete failed", description: msg, variant: "destructive" });
-    } finally {
-      setConfirmDelete(null);
     }
   }
 
@@ -329,15 +302,6 @@ export default function Finishes() {
                         <Button size="icon" variant="ghost" className="size-7" onClick={() => openEdit(f)} title="Edit">
                           <Pencil className="size-3.5" />
                         </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="size-7 text-rose-500 hover:text-rose-700 hover:bg-rose-50"
-                          onClick={() => setConfirmDelete(f)}
-                          title="Delete"
-                        >
-                          <Trash2 className="size-3.5" />
-                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -365,6 +329,15 @@ export default function Finishes() {
                   : ""}
             </DialogDescription>
           </DialogHeader>
+          {editing !== "new" && !form.isActive && (
+            <div className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3">
+              <AlertTriangle className="size-5 text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-amber-800 text-sm">Inactive</p>
+                <p className="text-amber-700 text-xs mt-0.5">This finish is hidden from all customer-facing pages. Toggle "Active" below to re-enable it.</p>
+              </div>
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-4 mt-1">
             <div className="space-y-1.5">
               <Label htmlFor="fin-vendor">Vendor *</Label>
@@ -539,32 +512,6 @@ export default function Finishes() {
           </form>
         </DialogContent>
       </Dialog>
-
-      <AlertDialog
-        open={confirmDelete !== null}
-        onOpenChange={(o) => { if (!o) setConfirmDelete(null); }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete finish?</AlertDialogTitle>
-            <AlertDialogDescription>
-              <span className="font-medium">{confirmDelete?.name}</span>
-              {" "}will be permanently removed. This cannot be undone. Finishes
-              currently assigned to products cannot be deleted.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-rose-600 hover:bg-rose-700"
-              onClick={() => confirmDelete && handleDelete(confirmDelete)}
-              disabled={deleteMut.isPending}
-            >
-              {deleteMut.isPending ? "Deleting…" : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       <FinishProductsDialog
         finish={managingProducts}

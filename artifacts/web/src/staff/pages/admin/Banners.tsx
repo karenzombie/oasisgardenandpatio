@@ -1,11 +1,10 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Megaphone, Pencil, Plus, Trash2 } from "lucide-react";
+import { Megaphone, Pencil, Plus } from "lucide-react";
 import {
   useAdminListBanners,
   useAdminCreateBanner,
   useAdminUpdateBanner,
-  useAdminDeleteBanner,
   useAdminSetBannerActive,
   getAdminListBannersQueryKey,
   type AdminBanner,
@@ -32,16 +31,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { PageBody, PageHeader } from "../../StaffShell";
 
@@ -64,9 +53,7 @@ export default function Banners() {
   const toast = useToast();
   const list = useAdminListBanners();
   const setActive = useAdminSetBannerActive();
-  const deleteMut = useAdminDeleteBanner();
   const [editing, setEditing] = useState<AdminBanner | "new" | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState<AdminBanner | null>(null);
 
   async function refetch() {
     await qc.invalidateQueries({ queryKey: getAdminListBannersQueryKey() });
@@ -80,23 +67,6 @@ export default function Banners() {
       const msg = err instanceof Error ? err.message : "Failed to update";
       toast.toast({
         title: "Could not update banner",
-        description: msg,
-        variant: "destructive",
-      });
-    }
-  }
-
-  async function handleDelete() {
-    if (!confirmDelete) return;
-    try {
-      await deleteMut.mutateAsync({ id: confirmDelete.id });
-      await refetch();
-      toast.toast({ title: "Banner deleted" });
-      setConfirmDelete(null);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to delete";
-      toast.toast({
-        title: "Could not delete",
         description: msg,
         variant: "destructive",
       });
@@ -206,14 +176,6 @@ export default function Banners() {
                           <Pencil className="size-3.5 mr-1" />
                           Edit
                         </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-rose-600 hover:text-rose-700"
-                          onClick={() => setConfirmDelete(b)}
-                        >
-                          <Trash2 className="size-3.5" />
-                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -229,29 +191,6 @@ export default function Banners() {
           onSaved={refetch}
         />
 
-        <AlertDialog
-          open={confirmDelete !== null}
-          onOpenChange={(o) => !o && setConfirmDelete(null)}
-        >
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete this banner?</AlertDialogTitle>
-              <AlertDialogDescription>
-                "{confirmDelete?.title}" will be permanently removed. To keep
-                the record but hide it from the site, toggle it off instead.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDelete}
-                className="bg-rose-600 hover:bg-rose-700"
-              >
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </PageBody>
     </>
   );

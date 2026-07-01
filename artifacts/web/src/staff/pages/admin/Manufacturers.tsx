@@ -5,7 +5,7 @@ import {
   Plus,
   Search,
   Power,
-  Trash2,
+  PowerOff,
   Upload,
   X,
 } from "lucide-react";
@@ -499,7 +499,7 @@ export default function Manufacturers() {
                                 onClick={() => setConfirmDeactivate(row)}
                                 title="Deactivate"
                               >
-                                <Trash2 className="size-4 text-red-600" />
+                                <PowerOff className="size-4 text-amber-600" />
                               </Button>
                             ) : (
                               <Button

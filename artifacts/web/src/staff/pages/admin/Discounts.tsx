@@ -1,15 +1,13 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Pencil, Plus, Trash2, Eye } from "lucide-react";
+import { Pencil, Plus, Eye } from "lucide-react";
 import {
   useAdminListDiscountEvents,
   useAdminCreateDiscountEvent,
   useAdminUpdateDiscountEvent,
-  useAdminDeleteDiscountEvent,
   useAdminListCouponCodes,
   useAdminCreateCouponCode,
   useAdminUpdateCouponCode,
-  useAdminDeleteCouponCode,
   useAdminListCouponCodeUses,
   getAdminListDiscountEventsQueryKey,
   getAdminListCouponCodesQueryKey,
@@ -41,16 +39,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { PageBody, PageHeader } from "../../StaffShell";
 
@@ -108,35 +96,14 @@ function EventsPanel() {
   const list = useAdminListDiscountEvents();
   const createMut = useAdminCreateDiscountEvent();
   const updateMut = useAdminUpdateDiscountEvent();
-  const deleteMut = useAdminDeleteDiscountEvent();
 
   const [editing, setEditing] = useState<AdminDiscountEvent | null>(null);
   const [creating, setCreating] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState<AdminDiscountEvent | null>(
-    null,
-  );
 
   async function refetch() {
     await qc.invalidateQueries({
       queryKey: getAdminListDiscountEventsQueryKey(),
     });
-  }
-
-  async function handleDelete() {
-    if (!confirmDelete) return;
-    try {
-      await deleteMut.mutateAsync({ id: confirmDelete.id });
-      await refetch();
-      toast.toast({ title: `Deleted "${confirmDelete.name}"` });
-      setConfirmDelete(null);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to delete";
-      toast.toast({
-        title: "Could not delete",
-        description: msg,
-        variant: "destructive",
-      });
-    }
   }
 
   const events = list.data ?? [];
@@ -209,13 +176,6 @@ function EventsPanel() {
                       >
                         <Pencil className="size-3.5" />
                       </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setConfirmDelete(e)}
-                      >
-                        <Trash2 className="size-3.5 text-rose-600" />
-                      </Button>
                     </div>
                   </td>
                 </tr>
@@ -249,29 +209,6 @@ function EventsPanel() {
         }
       />
 
-      <AlertDialog
-        open={confirmDelete !== null}
-        onOpenChange={(o) => !o && setConfirmDelete(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete this discount event?</AlertDialogTitle>
-            <AlertDialogDescription>
-              "{confirmDelete?.name}" will be permanently removed. This cannot
-              be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-rose-600 hover:bg-rose-700"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
@@ -456,36 +393,15 @@ function CouponsPanel() {
   const list = useAdminListCouponCodes();
   const createMut = useAdminCreateCouponCode();
   const updateMut = useAdminUpdateCouponCode();
-  const deleteMut = useAdminDeleteCouponCode();
 
   const [editing, setEditing] = useState<AdminCouponCode | null>(null);
   const [creating, setCreating] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState<AdminCouponCode | null>(
-    null,
-  );
   const [viewingUses, setViewingUses] = useState<AdminCouponCode | null>(null);
 
   async function refetch() {
     await qc.invalidateQueries({
       queryKey: getAdminListCouponCodesQueryKey(),
     });
-  }
-
-  async function handleDelete() {
-    if (!confirmDelete) return;
-    try {
-      await deleteMut.mutateAsync({ id: confirmDelete.id });
-      await refetch();
-      toast.toast({ title: `Deleted "${confirmDelete.code}"` });
-      setConfirmDelete(null);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to delete";
-      toast.toast({
-        title: "Could not delete",
-        description: msg,
-        variant: "destructive",
-      });
-    }
   }
 
   const coupons = list.data ?? [];
@@ -570,13 +486,6 @@ function CouponsPanel() {
                       >
                         <Pencil className="size-3.5" />
                       </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setConfirmDelete(c)}
-                      >
-                        <Trash2 className="size-3.5 text-rose-600" />
-                      </Button>
                     </div>
                   </td>
                 </tr>
@@ -610,29 +519,6 @@ function CouponsPanel() {
         }
       />
 
-      <AlertDialog
-        open={confirmDelete !== null}
-        onOpenChange={(o) => !o && setConfirmDelete(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete this coupon code?</AlertDialogTitle>
-            <AlertDialogDescription>
-              "{confirmDelete?.code}" and all its redemption history will be
-              permanently removed.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-rose-600 hover:bg-rose-700"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       <UsesDialog
         coupon={viewingUses}

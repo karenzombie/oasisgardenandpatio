@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Pencil, Plus, Search, Power, Trash2, ChevronLeft, ChevronRight, Star, Upload, X } from "lucide-react";
+import { Pencil, Plus, Search, Power, PowerOff, ChevronLeft, ChevronRight, Star, Upload, X } from "lucide-react";
 import { SortableHeader, toggleSort, type SortState } from "../../lib/sortable";
 import { BulkUpdateProductsDialog } from "../../components/BulkUpdateProductsDialog";
 
@@ -389,7 +389,7 @@ export default function Products() {
                                 onClick={() => setConfirmDeactivate(row)}
                                 title="Deactivate"
                               >
-                                <Trash2 className="size-4 text-red-600" />
+                                <PowerOff className="size-4 text-amber-600" />
                               </Button>
                             ) : (
                               <Button

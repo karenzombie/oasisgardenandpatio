@@ -1,11 +1,10 @@
 import { useMemo, useState, useRef, type FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import { AlertTriangle, Pencil, Plus, Search, X } from "lucide-react";
 import {
   useAdminListFabrics,
   useAdminCreateFabric,
   useAdminUpdateFabric,
-  useAdminDeleteFabric,
   useAdminListManufacturers,
   getAdminListFabricsQueryKey,
   type AdminFabric,
@@ -25,16 +24,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import {
   Select,
   SelectContent,
@@ -118,7 +107,6 @@ export default function Fabrics() {
   const mfgList = useAdminListManufacturers();
   const createMut = useAdminCreateFabric();
   const updateMut = useAdminUpdateFabric();
-  const deleteMut = useAdminDeleteFabric();
 
   const [search, setSearch] = useState("");
   const [vendorFilter, setVendorFilter] = useState(ALL_VENDORS);
@@ -130,8 +118,6 @@ export default function Fabrics() {
   const [formError, setFormError] = useState<string | null>(null);
   const [swatchUploading, setSwatchUploading] = useState(false);
   const swatchRef = useRef<HTMLInputElement>(null);
-
-  const [confirmDelete, setConfirmDelete] = useState<AdminFabric | null>(null);
 
   const fabrics = list.data ?? [];
   const manufacturers = mfgList.data ?? [];
@@ -233,19 +219,6 @@ export default function Fabrics() {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to save fabric.";
       setFormError(msg);
-    }
-  }
-
-  async function handleDelete(f: AdminFabric) {
-    try {
-      await deleteMut.mutateAsync({ id: f.id });
-      await qc.invalidateQueries({ queryKey: getAdminListFabricsQueryKey() });
-      toast.toast({ title: "Fabric deleted", description: f.name });
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Could not delete fabric.";
-      toast.toast({ title: "Delete failed", description: msg, variant: "destructive" });
-    } finally {
-      setConfirmDelete(null);
     }
   }
 
@@ -405,15 +378,6 @@ export default function Fabrics() {
                         >
                           <Pencil className="size-3.5" />
                         </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="size-7 text-rose-500 hover:text-rose-700 hover:bg-rose-50"
-                          onClick={() => setConfirmDelete(f)}
-                          title="Delete"
-                        >
-                          <Trash2 className="size-3.5" />
-                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -442,6 +406,15 @@ export default function Fabrics() {
                   : ""}
             </DialogDescription>
           </DialogHeader>
+          {editing !== "new" && !form.isActive && (
+            <div className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3">
+              <AlertTriangle className="size-5 text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-amber-800 text-sm">Inactive</p>
+                <p className="text-amber-700 text-xs mt-0.5">This fabric is hidden from all customer-facing pages. Toggle "Active" below to re-enable it.</p>
+              </div>
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-4 mt-1">
             <div className="space-y-1.5">
               <Label htmlFor="fab-vendor">Vendor *</Label>
@@ -648,32 +621,6 @@ export default function Fabrics() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete confirmation */}
-      <AlertDialog
-        open={confirmDelete !== null}
-        onOpenChange={(o) => { if (!o) setConfirmDelete(null); }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete fabric?</AlertDialogTitle>
-            <AlertDialogDescription>
-              <span className="font-medium">{confirmDelete?.name}</span>
-              {" "}({confirmDelete?.itemNumber}) will be permanently removed.
-              This cannot be undone. Fabrics currently assigned to products cannot be deleted.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-rose-600 hover:bg-rose-700"
-              onClick={() => confirmDelete && handleDelete(confirmDelete)}
-              disabled={deleteMut.isPending}
-            >
-              {deleteMut.isPending ? "Deleting…" : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }

@@ -6,8 +6,8 @@ import {
   Pencil,
   Plus,
   Power,
+  PowerOff,
   Search,
-  Trash2,
   Upload,
   X,
 } from "lucide-react";
@@ -571,7 +571,7 @@ export default function Categories() {
                                 onClick={() => setConfirmDeactivate(node)}
                                 title="Deactivate"
                               >
-                                <Trash2 className="size-4 text-red-600" />
+                                <PowerOff className="size-4 text-amber-600" />
                               </Button>
                             ) : (
                               <Button
