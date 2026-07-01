@@ -1803,20 +1803,6 @@ export default function ProductEdit() {
                   }))
                 }
               />
-              <FlagRow
-                label="LED lighting"
-                description="Product includes integrated LED lighting."
-                checked={form.hasLedLighting}
-                onChange={(v) => setForm((f) => ({ ...f, hasLedLighting: v }))}
-              />
-              <FlagRow
-                label="Commercial grade"
-                description="Rated for commercial / contract use."
-                checked={form.isCommercialGrade}
-                onChange={(v) =>
-                  setForm((f) => ({ ...f, isCommercialGrade: v }))
-                }
-              />
               <div>
                 <Label htmlFor="p-order">Display order</Label>
                 <Input
