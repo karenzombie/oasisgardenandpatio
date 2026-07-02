@@ -124,6 +124,10 @@ export default function OrderDetail() {
   );
   const [pendingStatus, setPendingStatus] = useState<string>("");
   const [statusNote, setStatusNote] = useState("");
+  // Incremented to ask DeliveryPanel to open its "Add shipment" modal when
+  // staff select the carrier_delivery_update status. The actual status change
+  // is only committed once a shipment is successfully saved.
+  const [carrierModalTrigger, setCarrierModalTrigger] = useState(0);
   const [notesDraft, setNotesDraft] = useState("");
   const [reviewing, setReviewing] = useState<{
     id: number;
@@ -269,8 +273,26 @@ export default function OrderDetail() {
     );
   }
 
+  // Called by DeliveryPanel once the shipment modal opened for a pending
+  // carrier_delivery_update transition closes. Only commit the status change
+  // if a shipment was actually saved; otherwise revert the dropdown so no
+  // status change is recorded and no email fires.
+  function handleCarrierShipmentResult(saved: boolean) {
+    if (!order) return;
+    if (saved) {
+      performStatusUpdate();
+    } else {
+      setPendingStatus(order.status);
+    }
+  }
+
   function handleStatusUpdate() {
     if (!order || pendingStatus === order.status) return;
+    if (pendingStatus === "carrier_delivery_update") {
+      // Route through the Add Shipment modal; status commits on save.
+      setCarrierModalTrigger((n) => n + 1);
+      return;
+    }
     if (pendingStatus === "canceled") {
       setConfirmCancel(true);
       return;
@@ -608,7 +630,19 @@ export default function OrderDetail() {
                   <Label htmlFor="status">Move to</Label>
                   <Select
                     value={pendingStatus}
-                    onValueChange={setPendingStatus}
+                    onValueChange={(v) => {
+                      setPendingStatus(v);
+                      // Selecting carrier_delivery_update opens the Add
+                      // Shipment modal immediately; the status change is
+                      // deferred until a shipment is saved.
+                      if (
+                        v === "carrier_delivery_update" &&
+                        order &&
+                        v !== order.status
+                      ) {
+                        setCarrierModalTrigger((n) => n + 1);
+                      }
+                    }}
                   >
                     <SelectTrigger id="status">
                       <SelectValue />
@@ -993,6 +1027,8 @@ export default function OrderDetail() {
               scheduledDeliveryTime={order.scheduledDeliveryTime ?? null}
               items={order.items}
               shipments={order.shipments}
+              createTrigger={carrierModalTrigger}
+              onCreateResult={handleCarrierShipmentResult}
             />
 
             <div className="rounded-md border bg-white p-4">

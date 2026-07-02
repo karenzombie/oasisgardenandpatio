@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ExternalLink, Pencil, Plus, Trash2 } from "lucide-react";
 import {
@@ -61,6 +61,8 @@ export default function DeliveryPanel({
   scheduledDeliveryTime,
   items,
   shipments,
+  createTrigger,
+  onCreateResult,
 }: {
   orderId: number;
   shippingMethod: string | null;
@@ -68,6 +70,13 @@ export default function DeliveryPanel({
   scheduledDeliveryTime: string | null;
   items: AdminOrderItem[];
   shipments: AdminOrderShipment[];
+  // Incrementing this value asks the panel to open the "Add shipment" modal
+  // programmatically (used when staff selects the carrier_delivery_update
+  // status). onCreateResult is then invoked exactly once when that
+  // trigger-opened modal closes: true if a shipment was saved, false if the
+  // staff cancelled out.
+  createTrigger?: number;
+  onCreateResult?: (saved: boolean) => void;
 }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -111,6 +120,30 @@ export default function DeliveryPanel({
   const [confirmDelete, setConfirmDelete] = useState<AdminOrderShipment | null>(
     null,
   );
+
+  // Tracks whether the currently-open create modal was opened via the parent
+  // `createTrigger` (status-driven) rather than the +Add button. Only for
+  // trigger-opened modals do we report the outcome back via onCreateResult.
+  const [triggerOpened, setTriggerOpened] = useState(false);
+  const lastTrigger = useRef(0);
+  useEffect(() => {
+    if (createTrigger && createTrigger !== lastTrigger.current) {
+      lastTrigger.current = createTrigger;
+      openCreate();
+      setTriggerOpened(true);
+    }
+    // openCreate is stable enough for this effect; re-running only on trigger.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [createTrigger]);
+
+  // Central close handler so we can report the outcome of a trigger-opened
+  // create modal exactly once.
+  function closeEditor(saved: boolean) {
+    const wasTrigger = triggerOpened;
+    setEditing(null);
+    setTriggerOpened(false);
+    if (wasTrigger && onCreateResult) onCreateResult(saved);
+  }
 
   function invalidate() {
     queryClient.invalidateQueries({
@@ -276,7 +309,7 @@ export default function DeliveryPanel({
         {
           onSuccess: () => {
             toast({ title: "Shipment added" });
-            setEditing(null);
+            closeEditor(true);
             invalidate();
           },
           onError: (e: unknown) => {
@@ -294,7 +327,7 @@ export default function DeliveryPanel({
         {
           onSuccess: () => {
             toast({ title: "Shipment updated" });
-            setEditing(null);
+            closeEditor(true);
             invalidate();
           },
           onError: (e: unknown) => {
@@ -504,7 +537,7 @@ export default function DeliveryPanel({
       <Dialog
         open={editing !== null}
         onOpenChange={(open) => {
-          if (!open) setEditing(null);
+          if (!open) closeEditor(false);
         }}
       >
         <DialogContent className="max-w-lg">
@@ -614,7 +647,7 @@ export default function DeliveryPanel({
             <Button
               type="button"
               variant="ghost"
-              onClick={() => setEditing(null)}
+              onClick={() => closeEditor(false)}
             >
               Cancel
             </Button>
