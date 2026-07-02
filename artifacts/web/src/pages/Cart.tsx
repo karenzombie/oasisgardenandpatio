@@ -182,9 +182,6 @@ export default function Cart() {
                     </div>
                   ) : null}
                   <p className="text-sm mt-1">{formatMoney(item.unitPrice)} each</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Shipping: {formatMoney(item.shippingAmount)}
-                  </p>
                   <div className="mt-3 flex items-center gap-3">
                     <div className="inline-flex items-center border border-input">
                       <button
@@ -287,9 +284,6 @@ export default function Cart() {
                     ) : null}
                     <p className="text-sm mt-1">
                       {formatMoney(cover.unitPrice)} each
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      Shipping: {formatMoney(cover.shippingAmount)}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
                       Qty {cover.quantity} — matches the base; removed with it.

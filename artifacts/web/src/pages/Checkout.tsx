@@ -620,9 +620,6 @@ export default function Checkout() {
                     <p className="text-xs text-muted-foreground">
                       Qty {item.quantity}
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      Shipping: {formatMoney(item.shippingAmount)}
-                    </p>
                   </div>
                   <span className="shrink-0">{formatMoney(item.lineTotal)}</span>
                 </li>

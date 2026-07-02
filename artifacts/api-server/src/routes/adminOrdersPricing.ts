@@ -1,7 +1,14 @@
 import { Router, type IRouter, type Request, type Response } from "express";
+import { inArray } from "drizzle-orm";
+import { db, productsTable } from "@workspace/db";
 import { AdminQuoteOrderPricingBody } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import { loadPricingSettings, computeTax } from "../lib/checkoutPricing";
+import {
+  loadShippingConfig,
+  computeShippingForLines,
+  type ShippableRuleLine,
+} from "../lib/shippingRules";
 
 const router: IRouter = Router();
 
@@ -17,7 +24,7 @@ router.post(
         .json({ error: parsed.error.issues[0]?.message ?? "Invalid body" });
       return;
     }
-    const { items, shippingState, shippingZip } = parsed.data;
+    const { items, shippingState, shippingZip, shipToStore } = parsed.data;
 
     let subtotalCents = 0;
     for (const it of items) {
@@ -37,10 +44,56 @@ router.post(
 
     const subtotal = subtotalCents / 100;
     const taxAmount = tax.cents / 100;
-    // Staff/in-store orders default to $0 shipping. The rules engine is the
-    // single source of truth for external customer ONLINE orders only; staff
-    // may enter a manual flat delivery amount in the order builder when needed.
-    const deliveryAmount = 0;
+
+    // Shipping-rules parity: the admin Shipping page is the single source of
+    // truth for shipping cost on EVERY order except ship-to-store, including
+    // staff/admin-created ones. Only ship-to-store (manufacturer ships to the
+    // Oasis store, no customer-facing delivery) skips the rules engine.
+    let deliveryCents = 0;
+    if (!shipToStore) {
+      const productIds = [
+        ...new Set(
+          items
+            .map((it) => it.productId)
+            .filter((id): id is number => id != null),
+        ),
+      ];
+      const productRows = productIds.length
+        ? await db
+            .select({
+              id: productsTable.id,
+              categoryId: productsTable.categoryId,
+              subCategory: productsTable.subCategory,
+              manufacturerId: productsTable.manufacturerId,
+              weight: productsTable.weight,
+            })
+            .from(productsTable)
+            .where(inArray(productsTable.id, productIds))
+        : [];
+      const productById = new Map(productRows.map((p) => [p.id, p]));
+
+      const shippingConfig = await loadShippingConfig();
+      const shippingLines: ShippableRuleLine[] = items.map((it, idx) => {
+        const p = it.productId != null ? productById.get(it.productId) : null;
+        return {
+          key: idx,
+          productId: it.productId ?? -1,
+          categoryId: p?.categoryId ?? null,
+          subCategory: p?.subCategory ?? null,
+          manufacturerId: p?.manufacturerId ?? null,
+          unitPriceCents: Math.round(it.unitPrice * 100),
+          quantity: it.quantity,
+          weightLbs: p?.weight == null ? null : Number(p.weight),
+        };
+      });
+      const shippingResult = computeShippingForLines(
+        shippingConfig,
+        shippingLines,
+      );
+      deliveryCents = shippingResult.totalCents;
+    }
+
+    const deliveryAmount = deliveryCents / 100;
 
     res.json({
       subtotal,

@@ -327,6 +327,7 @@ export default function AgentNewOrder() {
             items: cleanItems,
             shippingState: shippingState ?? null,
             shippingZip: shippingZip ?? null,
+            shipToStore: isRestockOrder ? true : shipToStore,
           },
         },
         {
@@ -342,7 +343,7 @@ export default function AgentNewOrder() {
     }, 350);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items, shippingState, shippingZip, taxMode, deliveryMode, isRestockOrder]);
+  }, [items, shippingState, shippingZip, taxMode, deliveryMode, isRestockOrder, shipToStore]);
 
   const taxRate = taxMode === "auto" ? autoTaxRate : (Number(taxRatePctManual) || 0) / 100;
   const taxAmount = taxMode === "auto" ? autoTaxAmount : subtotal * taxRate;
