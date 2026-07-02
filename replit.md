@@ -68,6 +68,7 @@ A full-stack e-commerce platform for a luxury outdoor furniture retailer, suppor
 
 - I want iterative development.
 - Ask me for clarification instead of making assumptions on ambiguous build decisions.
+- **When I say "stop", "hold on", "confirm", or ask a confirming question mid-task — stop all code changes immediately and answer the question. Do not begin implementing until I explicitly say to proceed.**
 - Do not make changes to files outside the `artifacts/web` and `artifacts/api-server` directories without explicit instruction.
 - I prefer clear, concise communication and detailed explanations for complex technical concepts.
 - When I ask for something and it's finished, mark the task done right away so we don't lose track of what's still open. If you're unsure whether to close it out, prompt me with "mark this task done".
