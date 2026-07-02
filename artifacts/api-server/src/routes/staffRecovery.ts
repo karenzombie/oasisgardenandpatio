@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request } from "express";
 import { randomBytes, createHash, timingSafeEqual } from "node:crypto";
-import { and, asc, eq, isNull, lte, ne, gt } from "drizzle-orm";
+import { and, asc, eq, isNull, ne, gt } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import {
   db,
@@ -21,6 +21,7 @@ import {
 } from "../middlewares/rateLimit";
 import {
   sendRecoveryRequestedEmail,
+  sendRecoveryAlertEmail,
   sendRecoveryFinalizedEmail,
   maskEmail,
 } from "../lib/recoveryEmail";
@@ -30,7 +31,6 @@ import { logger } from "../lib/logger";
 const router: IRouter = Router();
 
 const BCRYPT_ROUNDS = 12;
-const COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
 const TTL_MS = 24 * 60 * 60 * 1000; // 24 hours total link lifetime
 
 function generateRawToken(): string {
@@ -72,7 +72,6 @@ function tokenState(
   if (row.usedAt) return "used";
   if (row.cancelledAt) return "cancelled";
   if (now >= row.expiresAt) return "expired";
-  if (now < row.availableAt) return "pending";
   return "ready";
 }
 
@@ -128,7 +127,8 @@ router.post(
       const rawToken = generateRawToken();
       const tokenHash = hashToken(rawToken);
       const now = new Date();
-      const availableAt = new Date(now.getTime() + COOLDOWN_MS);
+      // No cooldown — the link is usable immediately upon submission.
+      const availableAt = now;
       const expiresAt = new Date(now.getTime() + TTL_MS);
 
       // Cancel any prior active tokens for this user so only the newest
@@ -179,14 +179,14 @@ router.post(
         return;
       }
       const recoveryUrl = `${baseUrl}/staff/recover/${rawToken}`;
+      const staffAccountsUrl = `${baseUrl}/admin/users`;
 
-      // Fire-and-forget email — never block response. Other admins are NOT
-      // emailed; recovery activity is visible in the staff portal instead
-      // (admin recovery-requests dashboard + per-user security activity).
+      // Fire-and-forget emails — never block response. Both the staff
+      // member and the store's main inbox are notified at the same time,
+      // immediately on submission (no cooldown).
       void sendRecoveryRequestedEmail({
         to: user.email,
         recoveryUrl,
-        availableAt,
         expiresAt,
         requestIp: ip,
         requestUserAgent: userAgent,
@@ -194,6 +194,18 @@ router.post(
         logger.error(
           { err, userId: user.id },
           "Failed to send recovery requested email",
+        );
+      });
+
+      void sendRecoveryAlertEmail({
+        targetEmail: user.email,
+        staffAccountsUrl,
+        requestIp: ip,
+        requestUserAgent: userAgent,
+      }).catch((err) => {
+        logger.error(
+          { err, userId: user.id },
+          "Failed to send recovery alert email",
         );
       });
     } catch (err) {
@@ -307,7 +319,6 @@ router.post(
             eq(adminRecoveryTokensTable.id, row.id),
             isNull(adminRecoveryTokensTable.usedAt),
             isNull(adminRecoveryTokensTable.cancelledAt),
-            lte(adminRecoveryTokensTable.availableAt, now),
             gt(adminRecoveryTokensTable.expiresAt, now),
           ),
         )

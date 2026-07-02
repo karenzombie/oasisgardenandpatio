@@ -106,18 +106,9 @@ function escapeHtml(s: string): string {
     .replace(/'/g, "&#39;");
 }
 
-function fmt(d: Date): string {
-  return d.toLocaleString("en-US", {
-    timeZone: "America/Los_Angeles",
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
-}
-
 export interface RecoveryRequestedArgs {
   to: string;
   recoveryUrl: string;
-  availableAt: Date;
   expiresAt: Date;
   requestIp: string | null;
   requestUserAgent: string | null;
@@ -150,11 +141,11 @@ export async function sendRecoveryRequestedEmail(
   }
 }
 
+const RECOVERY_ALERT_TO_EMAIL = "sales@oasisgardenandpatio.com";
+
 export interface RecoveryAlertArgs {
-  to: string;
   targetEmail: string;
-  cancelUrl: string;
-  availableAt: Date;
+  staffAccountsUrl: string;
   requestIp: string | null;
   requestUserAgent: string | null;
 }
@@ -164,25 +155,24 @@ export async function sendRecoveryAlertEmail(
 ): Promise<void> {
   const { client, from } = await getResendClient();
   const body = `
-    <p>A staff account recovery was just requested for <strong>${args.targetEmail}</strong>.</p>
-    <p>If this is legitimate (the user is locked out), no action is needed — the link they received will become usable at <strong>${fmt(args.availableAt)} (Pacific)</strong>.</p>
-    <p>If this looks suspicious, cancel it now from the admin portal:</p>
-    ${buttonLink(args.cancelUrl, "Review recovery requests", "#a33")}
+    <p>A staff account recovery has been requested for <strong>${escapeHtml(args.targetEmail)}</strong>.</p>
     <p style="font-size:13px;color:#666;">
       Request details:<br>
       &nbsp;&nbsp;IP: ${escapeHtml(args.requestIp ?? "unknown")}<br>
       &nbsp;&nbsp;Browser: ${escapeHtml((args.requestUserAgent ?? "unknown").slice(0, 200))}
     </p>
+    <p>If you do not recognize this request or believe it may be unauthorized, it is recommended that you disable this staff user immediately from the admin portal.</p>
+    ${buttonLink(args.staffAccountsUrl, "Review Staff Accounts", "#1a3c5e")}
   `;
   const result = await client.emails.send({
     from,
-    to: args.to,
-    subject: `[Action may be needed] Recovery requested for ${args.targetEmail}`,
-    html: emailLayout("Staff recovery request — review", body),
+    to: RECOVERY_ALERT_TO_EMAIL,
+    subject: `Staff account recovery requested — ${BRAND_NAME}`,
+    html: emailLayout("Staff account recovery requested", body),
   });
   if (result.error) {
     logger.error(
-      { err: result.error, to: args.to },
+      { err: result.error, to: RECOVERY_ALERT_TO_EMAIL },
       "Failed to send staff recovery alert email",
     );
     throw new Error(
