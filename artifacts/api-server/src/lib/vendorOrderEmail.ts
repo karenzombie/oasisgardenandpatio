@@ -182,10 +182,16 @@ export interface SendVendorOrderCancellationEmailArgs {
   to: string;
   vendorOrderNumber: string;
   manufacturerName: string | null;
-  scope: "full" | "partial";
   reason: string | null;
   cancelledItems: VendorOrderItem[];
-  remainingItems: VendorOrderItem[];
+  pdfBuffer?: Buffer;
+}
+
+export interface SendVendorOrderRevisionEmailArgs {
+  to: string;
+  vendorOrderNumber: string;
+  manufacturerName: string | null;
+  items: VendorOrderItem[];
   pdfBuffer?: Buffer;
 }
 
@@ -226,25 +232,8 @@ function renderItemRows(items: VendorOrderItem[], struck: boolean): string {
 export async function sendVendorOrderCancellationEmail(
   args: SendVendorOrderCancellationEmailArgs,
 ): Promise<void> {
-  const {
-    to,
-    vendorOrderNumber,
-    manufacturerName,
-    scope,
-    reason,
-    cancelledItems,
-    remainingItems,
-  } = args;
-
-  const headline =
-    scope === "full"
-      ? `Purchase Order ${vendorOrderNumber} has been CANCELLED`
-      : `Purchase Order ${vendorOrderNumber} has been REVISED — partial cancellation`;
-
-  const intro =
-    scope === "full"
-      ? `<p style="margin:0 0 16px 0;">Please be advised that the following purchase order has been <strong style="color:#b91c1c;">cancelled in full</strong>. Please do not ship these items.</p>`
-      : `<p style="margin:0 0 16px 0;">Please be advised that the items listed below have been <strong style="color:#b91c1c;">cancelled</strong> from purchase order ${escapeHtml(vendorOrderNumber)}. The remaining items on this PO still apply — please ship those as originally agreed.</p>`;
+  const { to, vendorOrderNumber, manufacturerName, reason, cancelledItems } =
+    args;
 
   const vendorLine = manufacturerName
     ? `<p style="margin:0 0 8px 0;"><strong>Vendor:</strong> ${escapeHtml(manufacturerName)}</p>`
@@ -275,43 +264,26 @@ export async function sendVendorOrderCancellationEmail(
       </tbody>
     </table>`;
 
-  const remainingTable =
-    scope === "partial" && remainingItems.length > 0
-      ? `
-    <h2 style="font-size:14px;color:#1a3c5e;margin:20px 0 8px 0;text-transform:uppercase;letter-spacing:0.5px;">Remaining items still on this PO (${remainingItems.length})</h2>
-    <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
-      ${tableHead}
-      <tbody>
-        ${renderItemRows(remainingItems, false)}
-      </tbody>
-    </table>`
-      : "";
-
   const body = `
-    ${intro}
+    <p style="margin:0 0 16px 0;">Please be advised that the following purchase order has been <strong style="color:#b91c1c;">cancelled in full</strong>. Please do not ship these items.</p>
     <div style="margin-bottom:16px;">
       <p style="margin:0 0 8px 0;"><strong>PO number:</strong> ${escapeHtml(vendorOrderNumber)}</p>
       ${vendorLine}
     </div>
     ${reasonBlock}
     ${cancelledTable}
-    ${remainingTable}
     <p style="margin:20px 0 0 0;font-size:13px;color:#666;">
-      A revised purchase order PDF is attached for your records. Please reply to this email to confirm the cancellation, or reach us at (661) 255-9909 or <a href="mailto:sales@oasisgardenandpatio.com">sales@oasisgardenandpatio.com</a> with any questions.
+      A copy of the cancelled purchase order is attached for your records. Please reply to this email to confirm the cancellation, or reach us at (661) 255-9909 or <a href="mailto:sales@oasisgardenandpatio.com">sales@oasisgardenandpatio.com</a> with any questions.
     </p>
   `;
 
-  const subject =
-    scope === "full"
-      ? `CANCELLED: Purchase Order ${vendorOrderNumber} — Oasis Garden & Patio`
-      : `REVISED: Purchase Order ${vendorOrderNumber} — Oasis Garden & Patio`;
-
-  const html = emailLayout(escapeHtml(headline), body, "#b91c1c");
-
-  const filename =
-    scope === "full"
-      ? `PO-${vendorOrderNumber}-CANCELLED.pdf`
-      : `PO-${vendorOrderNumber}-REVISED.pdf`;
+  const subject = `CANCELLED: Purchase Order ${vendorOrderNumber} — Oasis Garden & Patio`;
+  const html = emailLayout(
+    escapeHtml(`Purchase Order ${vendorOrderNumber} — CANCELLED`),
+    body,
+    "#b91c1c",
+  );
+  const filename = `PO-${vendorOrderNumber}-CANCELLED.pdf`;
 
   const { client, from } = await getResendClient();
   const result = await client.emails.send({
@@ -333,6 +305,72 @@ export async function sendVendorOrderCancellationEmail(
     );
     throw new Error(
       `Failed to send vendor cancellation email: ${result.error.message}`,
+    );
+  }
+}
+
+export async function sendVendorOrderRevisionEmail(
+  args: SendVendorOrderRevisionEmailArgs,
+): Promise<void> {
+  const { to, vendorOrderNumber, manufacturerName, items } = args;
+
+  const vendorLine = manufacturerName
+    ? `<p style="margin:0 0 8px 0;"><strong>Vendor:</strong> ${escapeHtml(manufacturerName)}</p>`
+    : "";
+
+  const itemsTable = `
+    <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
+      <thead>
+        <tr style="background:#f5f3ee;">
+          <th style="padding:8px 10px;text-align:left;font-size:12px;color:#666;border-bottom:2px solid #e8e2d6;">SKU</th>
+          <th style="padding:8px 10px;text-align:left;font-size:12px;color:#666;border-bottom:2px solid #e8e2d6;">Description</th>
+          <th style="padding:8px 10px;text-align:center;font-size:12px;color:#666;border-bottom:2px solid #e8e2d6;">Qty</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${renderItemRows(items, false)}
+      </tbody>
+    </table>`;
+
+  const body = `
+    <p style="margin:0 0 16px 0;">A revised purchase order is attached. Please review it in full as changes have been made, and confirm receipt at your earliest convenience.</p>
+    <div style="margin-bottom:16px;">
+      <p style="margin:0 0 8px 0;"><strong>PO number:</strong> ${escapeHtml(vendorOrderNumber)}</p>
+      ${vendorLine}
+    </div>
+    ${itemsTable}
+    <p style="margin:20px 0 0 0;font-size:13px;color:#666;">
+      Please reply to this email to confirm receipt of the revised PO, or reach us at (661) 255-9909 or <a href="mailto:sales@oasisgardenandpatio.com">sales@oasisgardenandpatio.com</a> with any questions.
+    </p>
+  `;
+
+  const subject = `REVISED: Purchase Order ${vendorOrderNumber} — Oasis Garden & Patio`;
+  const html = emailLayout(
+    escapeHtml(`Purchase Order ${vendorOrderNumber} — Revised`),
+    body,
+  );
+  const filename = `PO-${vendorOrderNumber}-REVISED.pdf`;
+
+  const { client, from } = await getResendClient();
+  const result = await client.emails.send({
+    from,
+    to,
+    subject,
+    html,
+    ...(args.pdfBuffer
+      ? {
+          attachments: [{ filename, content: args.pdfBuffer }],
+        }
+      : {}),
+  });
+
+  if (result.error) {
+    logger.error(
+      { err: result.error, to, subject },
+      "Failed to send vendor revision email",
+    );
+    throw new Error(
+      `Failed to send vendor revision email: ${result.error.message}`,
     );
   }
 }

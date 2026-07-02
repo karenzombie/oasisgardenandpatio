@@ -51,6 +51,7 @@ import { recordHistory } from "../lib/history";
 import {
   sendVendorOrderEmail,
   sendVendorOrderCancellationEmail,
+  sendVendorOrderRevisionEmail,
 } from "../lib/vendorOrderEmail";
 import {
   generateVendorOrderPdf,
@@ -1536,19 +1537,36 @@ router.post(
 
     if (toEmail && detail) {
       try {
-        await sendVendorOrderEmail({
-          to: toEmail,
-          vendorOrderNumber: detail.vendorOrderNumber,
-          customerOrderNumber: detail.customerOrderNumber,
-          manufacturerName: detail.manufacturerName,
-          notes: detail.notes,
-          items: detail.items,
-          pdfBuffer,
-        });
-        req.log.info(
-          { vendorOrderId: params.data.id, to: toEmail },
-          "Vendor order email sent",
-        );
+        if (result.isResend) {
+          // Resending an already-sent PO always means it was edited since
+          // the last send (isResend is set once sentAt is non-null) — send
+          // the Revised PO template, never the original send template.
+          await sendVendorOrderRevisionEmail({
+            to: toEmail,
+            vendorOrderNumber: detail.vendorOrderNumber,
+            manufacturerName: detail.manufacturerName,
+            items: detail.items,
+            pdfBuffer,
+          });
+          req.log.info(
+            { vendorOrderId: params.data.id, to: toEmail },
+            "Vendor order revision email sent",
+          );
+        } else {
+          await sendVendorOrderEmail({
+            to: toEmail,
+            vendorOrderNumber: detail.vendorOrderNumber,
+            customerOrderNumber: detail.customerOrderNumber,
+            manufacturerName: detail.manufacturerName,
+            notes: detail.notes,
+            items: detail.items,
+            pdfBuffer,
+          });
+          req.log.info(
+            { vendorOrderId: params.data.id, to: toEmail },
+            "Vendor order email sent",
+          );
+        }
       } catch (err) {
         req.log.error(
           { err, vendorOrderId: params.data.id, to: toEmail },
@@ -2388,16 +2406,27 @@ router.post(
     if (sendEmail) {
       if (toEmail && detailNow) {
         try {
-          await sendVendorOrderCancellationEmail({
-            to: toEmail,
-            vendorOrderNumber: detailNow.vendorOrderNumber,
-            manufacturerName: detailNow.manufacturerName,
-            scope: txResult.effectiveScope,
-            reason,
-            cancelledItems: txResult.cancelItems,
-            remainingItems: txResult.remainingItems,
-            pdfBuffer,
-          });
+          if (txResult.effectiveScope === "full") {
+            await sendVendorOrderCancellationEmail({
+              to: toEmail,
+              vendorOrderNumber: detailNow.vendorOrderNumber,
+              manufacturerName: detailNow.manufacturerName,
+              reason,
+              cancelledItems: txResult.cancelItems,
+              pdfBuffer,
+            });
+          } else {
+            // Partial cancellation — this is a revision to the PO, not a
+            // cancellation of it. Send the clean Revised PO template with
+            // the items still remaining, no cancellation language.
+            await sendVendorOrderRevisionEmail({
+              to: toEmail,
+              vendorOrderNumber: detailNow.vendorOrderNumber,
+              manufacturerName: detailNow.manufacturerName,
+              items: txResult.remainingItems,
+              pdfBuffer,
+            });
+          }
           await db
             .update(vendorOrderCancellationsTable)
             .set({ emailedAt: new Date(), emailedTo: toEmail })
@@ -2410,8 +2439,9 @@ router.post(
               vendorOrderId: params.data.id,
               cancellationId: txResult.cancellationId,
               to: toEmail,
+              scope: txResult.effectiveScope,
             },
-            "Vendor cancellation email sent",
+            "Vendor cancellation/revision email sent",
           );
         } catch (err) {
           emailStatus = "failed";
