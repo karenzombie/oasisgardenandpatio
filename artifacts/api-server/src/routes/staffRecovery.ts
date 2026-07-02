@@ -68,7 +68,7 @@ function clientIp(req: Request): string | null {
 function tokenState(
   row: AdminRecoveryToken,
   now: Date,
-): "pending" | "ready" | "expired" | "used" | "cancelled" {
+): "ready" | "expired" | "used" | "cancelled" {
   if (row.usedAt) return "used";
   if (row.cancelledAt) return "cancelled";
   if (now >= row.expiresAt) return "expired";
@@ -225,7 +225,6 @@ router.get(
     if (!row) {
       res.json({
         state: "not_found",
-        availableAt: null,
         expiresAt: null,
         emailMasked: null,
       });
@@ -239,7 +238,6 @@ router.get(
     const state = tokenState(row, new Date());
     res.json({
       state,
-      availableAt: row.availableAt.toISOString(),
       expiresAt: row.expiresAt.toISOString(),
       emailMasked: user ? maskEmail(user.email) : null,
     });
@@ -286,7 +284,6 @@ router.post(
     const state = tokenState(row, now);
     if (state !== "ready") {
       const messages: Record<Exclude<typeof state, "ready">, string> = {
-        pending: `This link cannot be used until ${row.availableAt.toISOString()}.`,
         expired: "This recovery link has expired.",
         used: "This recovery link has already been used.",
         cancelled:
@@ -433,7 +430,6 @@ router.get(
         userEmail: r.userEmail,
         userRole: r.userRole,
         requestedAt: r.requestedAt.toISOString(),
-        availableAt: r.availableAt.toISOString(),
         expiresAt: r.expiresAt.toISOString(),
         requestIp: r.requestIp,
         requestUserAgent: r.requestUserAgent,

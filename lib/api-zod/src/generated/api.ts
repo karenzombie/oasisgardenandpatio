@@ -2930,15 +2930,7 @@ export const GetStaffRecoveryStatusParams = zod.object({
 });
 
 export const GetStaffRecoveryStatusResponse = zod.object({
-  state: zod.enum([
-    "pending",
-    "ready",
-    "expired",
-    "used",
-    "cancelled",
-    "not_found",
-  ]),
-  availableAt: zod.coerce.date().nullish(),
+  state: zod.enum(["ready", "expired", "used", "cancelled", "not_found"]),
   expiresAt: zod.coerce.date().nullish(),
   emailMasked: zod.string().nullish(),
 });
@@ -2973,7 +2965,6 @@ export const AdminListRecoveryRequestsResponseItem = zod.object({
   userEmail: zod.string(),
   userRole: zod.string(),
   requestedAt: zod.coerce.date(),
-  availableAt: zod.coerce.date(),
   expiresAt: zod.coerce.date(),
   requestIp: zod.string().nullish(),
   requestUserAgent: zod.string().nullish(),

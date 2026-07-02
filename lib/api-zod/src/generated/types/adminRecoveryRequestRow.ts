@@ -12,7 +12,6 @@ export interface AdminRecoveryRequestRow {
   userEmail: string;
   userRole: string;
   requestedAt: Date;
-  availableAt: Date;
   expiresAt: Date;
   /** @nullable */
   requestIp?: string | null;

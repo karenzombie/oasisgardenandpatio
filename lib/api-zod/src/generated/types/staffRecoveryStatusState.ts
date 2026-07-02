@@ -10,7 +10,6 @@ export type StaffRecoveryStatusState =
   (typeof StaffRecoveryStatusState)[keyof typeof StaffRecoveryStatusState];
 
 export const StaffRecoveryStatusState = {
-  pending: "pending",
   ready: "ready",
   expired: "expired",
   used: "used",

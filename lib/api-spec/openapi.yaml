@@ -9965,8 +9965,7 @@ components:
       properties:
         state:
           type: string
-          enum: [pending, ready, expired, used, cancelled, not_found]
-        availableAt: { type: ["string", "null"], format: date-time }
+          enum: [ready, expired, used, cancelled, not_found]
         expiresAt: { type: ["string", "null"], format: date-time }
         emailMasked: { type: ["string", "null"] }
       required: [state]
@@ -9988,11 +9987,10 @@ components:
         userEmail: { type: string }
         userRole: { type: string }
         requestedAt: { type: string, format: date-time }
-        availableAt: { type: string, format: date-time }
         expiresAt: { type: string, format: date-time }
         requestIp: { type: ["string", "null"] }
         requestUserAgent: { type: ["string", "null"] }
-      required: [id, userId, userEmail, userRole, requestedAt, availableAt, expiresAt]
+      required: [id, userId, userEmail, userRole, requestedAt, expiresAt]
     AdminFabric:
       type: object
       properties:

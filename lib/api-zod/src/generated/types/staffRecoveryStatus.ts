@@ -10,8 +10,6 @@ import type { StaffRecoveryStatusState } from "./staffRecoveryStatusState";
 export interface StaffRecoveryStatus {
   state: StaffRecoveryStatusState;
   /** @nullable */
-  availableAt?: Date | null;
-  /** @nullable */
   expiresAt?: Date | null;
   /** @nullable */
   emailMasked?: string | null;

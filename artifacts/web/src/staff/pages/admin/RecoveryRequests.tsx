@@ -59,9 +59,9 @@ export default function RecoveryRequests() {
           Staff Recovery Requests
         </h1>
         <p className="text-sm text-slate-600 mt-1 max-w-2xl leading-relaxed">
-          Locked-out staff can request a delayed recovery link. Each request
-          waits one hour before becoming usable. Cancel any request below if
-          it looks suspicious — the requester will be notified by email.
+          Locked-out staff can request a recovery link, which is usable
+          immediately. Cancel any request below if it looks suspicious — the
+          requester will be notified by email.
         </p>
       </div>
 
@@ -86,7 +86,6 @@ export default function RecoveryRequests() {
                 <th className="px-3 py-2 font-medium">Account</th>
                 <th className="px-3 py-2 font-medium">Role</th>
                 <th className="px-3 py-2 font-medium">Requested</th>
-                <th className="px-3 py-2 font-medium">Usable at</th>
                 <th className="px-3 py-2 font-medium">Expires</th>
                 <th className="px-3 py-2 font-medium">From</th>
                 <th className="px-3 py-2 font-medium text-right">Action</th>
@@ -94,7 +93,6 @@ export default function RecoveryRequests() {
             </thead>
             <tbody>
               {listQuery.data.map((row) => {
-                const usable = new Date(row.availableAt) <= new Date();
                 return (
                   <tr key={row.id} className="border-t border-slate-200">
                     <td className="px-3 py-2 font-medium text-slate-900">
@@ -102,14 +100,6 @@ export default function RecoveryRequests() {
                     </td>
                     <td className="px-3 py-2 capitalize">{row.userRole}</td>
                     <td className="px-3 py-2">{fmt(row.requestedAt)}</td>
-                    <td
-                      className={`px-3 py-2 ${usable ? "text-red-700 font-medium" : ""}`}
-                    >
-                      {fmt(row.availableAt)}
-                      {usable && (
-                        <span className="ml-1 text-xs">(NOW USABLE)</span>
-                      )}
-                    </td>
                     <td className="px-3 py-2">{fmt(row.expiresAt)}</td>
                     <td className="px-3 py-2 text-xs text-slate-600">
                       {row.requestIp ?? "—"}

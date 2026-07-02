@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { Link, useParams, useLocation } from "wouter";
 import {
   useGetStaffRecoveryStatus,
@@ -10,17 +10,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { StaffAuthShell } from "../lib/StaffAuthShell";
-
-function formatRemaining(ms: number): string {
-  if (ms <= 0) return "0s";
-  const totalSec = Math.ceil(ms / 1000);
-  const h = Math.floor(totalSec / 3600);
-  const m = Math.floor((totalSec % 3600) / 60);
-  const s = totalSec % 60;
-  if (h > 0) return `${h}h ${m}m`;
-  if (m > 0) return `${m}m ${s.toString().padStart(2, "0")}s`;
-  return `${s}s`;
-}
 
 function fmtAbsolute(d: Date): string {
   return d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
@@ -35,12 +24,6 @@ export default function StaffRecoverComplete() {
     query: { refetchInterval: 15_000, enabled: token.length > 0 } as any,
   });
 
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, []);
-
   const [pwd, setPwd] = useState("");
   const [pwd2, setPwd2] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -48,10 +31,6 @@ export default function StaffRecoverComplete() {
   const completeMutation = useCompleteStaffRecovery();
 
   const status = statusQuery.data;
-  const availableAt = useMemo(
-    () => (status?.availableAt ? new Date(status.availableAt) : null),
-    [status?.availableAt],
-  );
   const expiresAt = useMemo(
     () => (status?.expiresAt ? new Date(status.expiresAt) : null),
     [status?.expiresAt],
@@ -190,37 +169,6 @@ export default function StaffRecoverComplete() {
         >
           Request a new recovery link
         </Link>
-      </StaffAuthShell>
-    );
-  }
-
-  if (status.state === "pending" && availableAt) {
-    const remaining = availableAt.getTime() - now;
-    return (
-      <StaffAuthShell
-        title="Security cooldown in progress"
-        subtitle={
-          status.emailMasked
-            ? `Recovery for ${status.emailMasked}`
-            : "Your recovery request was received."
-        }
-      >
-        <div className="space-y-4 text-sm text-slate-700">
-          <div className="rounded border border-amber-200 bg-amber-50 p-4">
-            <p className="font-medium text-amber-900">
-              This link cannot be used yet.
-            </p>
-            <p className="mt-1 text-amber-800">
-              Becomes usable in <strong>{formatRemaining(remaining)}</strong>{" "}
-              (at {fmtAbsolute(availableAt)}).
-            </p>
-          </div>
-          <p className="leading-relaxed">
-            During the cooldown, any other administrator can cancel this
-            request from the admin portal. This page refreshes automatically;
-            once the cooldown ends you'll be prompted to set a new password.
-          </p>
-        </div>
       </StaffAuthShell>
     );
   }

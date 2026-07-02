@@ -4171,7 +4171,6 @@ export type StaffRecoveryStatusState =
   (typeof StaffRecoveryStatusState)[keyof typeof StaffRecoveryStatusState];
 
 export const StaffRecoveryStatusState = {
-  pending: "pending",
   ready: "ready",
   expired: "expired",
   used: "used",
@@ -4181,8 +4180,6 @@ export const StaffRecoveryStatusState = {
 
 export interface StaffRecoveryStatus {
   state: StaffRecoveryStatusState;
-  /** @nullable */
-  availableAt?: string | null;
   /** @nullable */
   expiresAt?: string | null;
   /** @nullable */
@@ -4207,7 +4204,6 @@ export interface AdminRecoveryRequestRow {
   userEmail: string;
   userRole: string;
   requestedAt: string;
-  availableAt: string;
   expiresAt: string;
   /** @nullable */
   requestIp?: string | null;
