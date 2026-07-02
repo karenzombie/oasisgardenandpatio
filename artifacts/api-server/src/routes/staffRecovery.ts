@@ -127,8 +127,6 @@ router.post(
       const rawToken = generateRawToken();
       const tokenHash = hashToken(rawToken);
       const now = new Date();
-      // No cooldown — the link is usable immediately upon submission.
-      const availableAt = now;
       const expiresAt = new Date(now.getTime() + TTL_MS);
 
       // Cancel any prior active tokens for this user so only the newest
@@ -151,7 +149,6 @@ router.post(
           .values({
             userId: user.id,
             tokenHash,
-            availableAt,
             expiresAt,
             requestIp: ip,
             requestUserAgent: userAgent,
@@ -164,7 +161,7 @@ router.post(
         action: "staff_recovery.requested",
         entityType: "user",
         entityId: user.id,
-        changes: { tokenId: created?.id, availableAt, expiresAt },
+        changes: { tokenId: created?.id, expiresAt },
       });
 
       const baseUrl = trustedBaseUrl();
@@ -404,7 +401,6 @@ router.get(
         userEmail: usersTable.email,
         userRole: usersTable.role,
         requestedAt: adminRecoveryTokensTable.requestedAt,
-        availableAt: adminRecoveryTokensTable.availableAt,
         expiresAt: adminRecoveryTokensTable.expiresAt,
         requestIp: adminRecoveryTokensTable.requestIp,
         requestUserAgent: adminRecoveryTokensTable.requestUserAgent,
