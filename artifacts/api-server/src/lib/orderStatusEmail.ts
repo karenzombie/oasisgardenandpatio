@@ -28,7 +28,7 @@ function fmtMoney(n: number): string {
 type StatusCopy = {
   subject: (orderNumber: string) => string;
   title: string;
-  body: (greetingHtml: string) => string;
+  body: (greetingHtml: string, order: Order) => string;
 };
 
 const SIGNOFF = `
@@ -109,6 +109,48 @@ const TEMPLATES: Record<string, StatusCopy> = {
       <p>We hope to have the opportunity to serve you again in the future.</p>
       ${SIGNOFF}
     `,
+  },
+};
+
+/**
+ * 3A — "Ready for Store Delivery" status email copy. Built in Step 8; wired
+ * into the status-email dispatch (via `TEMPLATES`) in Step 9.
+ */
+export const readyForStoreDeliveryCopy: StatusCopy = {
+  subject: (n) => `Your order is ready for delivery! (${n})`,
+  title: "Your order is ready for delivery",
+  body: (greeting) => `
+    ${greeting}
+    <p>Great news! Your order is complete and ready for delivery. We will be in touch shortly to schedule a delivery date and time that works for you.</p>
+    <p>If you have a preferred time window or any special instructions, feel free to reply to this email or call us at (661) 255-9909.</p>
+    <p>We can't wait for you to enjoy your new pieces!</p>
+    ${SIGNOFF}
+  `,
+};
+
+/**
+ * 3C — "Out for Local Delivery" status email copy. Pulls the scheduled
+ * delivery time window from the order record; when none is set, the arrival
+ * phrase is omitted per spec. The scheduled date is intentionally not shown —
+ * the email fires on the day of delivery. Wired in Step 9.
+ */
+export const outForLocalDeliveryCopy: StatusCopy = {
+  subject: (n) => `Your order is out for delivery! (${n})`,
+  title: "Your order is out for delivery",
+  body: (greeting, order) => {
+    const time = order.scheduledDeliveryTime?.trim();
+    const lead = time
+      ? `Great news! Your order is out for delivery today and is scheduled to arrive between ${escapeHtml(
+          time,
+        )}.`
+      : `Your order is out for delivery today.`;
+    return `
+      ${greeting}
+      <p>${lead}</p>
+      <p>Please ensure someone is available at your delivery address to receive it. If you have any last minute questions or need to reach us urgently, please reply to this email or call us at (661) 255-9909.</p>
+      <p>We can't wait for you to enjoy your new pieces!</p>
+      ${SIGNOFF}
+    `;
   },
 };
 
@@ -259,6 +301,160 @@ export async function sendOrderRefundEmail(
 }
 
 /**
+ * A single line rendered in a Carrier Delivery Update email (3B). The caller
+ * (the shipment-create endpoint) supplies these already computed. `label` is
+ * the human-readable line (product + variant/finish/fabric snapshots) with no
+ * pricing. `parentOrderItemId` lets add-on items (e.g. Marella privacy walls)
+ * nest as sub-items under their parent line when the parent is present in the
+ * same list.
+ */
+export type CarrierDeliveryLine = {
+  orderItemId: number;
+  parentOrderItemId: number | null;
+  label: string;
+  quantity: number;
+};
+
+/**
+ * Render a list of delivery lines as an HTML `<ul>`, nesting add-on lines
+ * under their parent when the parent is also in the list. Returns "" for an
+ * empty list so callers can omit the surrounding section entirely.
+ */
+function renderDeliveryLineList(lines: CarrierDeliveryLine[]): string {
+  if (lines.length === 0) return "";
+  const present = new Set(lines.map((l) => l.orderItemId));
+  const childrenByParent = new Map<number, CarrierDeliveryLine[]>();
+  const topLevel: CarrierDeliveryLine[] = [];
+  for (const l of lines) {
+    if (l.parentOrderItemId != null && present.has(l.parentOrderItemId)) {
+      const arr = childrenByParent.get(l.parentOrderItemId) ?? [];
+      arr.push(l);
+      childrenByParent.set(l.parentOrderItemId, arr);
+    } else {
+      topLevel.push(l);
+    }
+  }
+  const renderLi = (l: CarrierDeliveryLine): string => {
+    const kids = childrenByParent.get(l.orderItemId) ?? [];
+    const nested =
+      kids.length > 0
+        ? `<ul style="margin:4px 0 0 0;padding-left:20px;">${kids
+            .map(
+              (k) =>
+                `<li style="margin-bottom:4px;">${escapeHtml(
+                  k.label,
+                )} &mdash; Qty ${k.quantity}</li>`,
+            )
+            .join("")}</ul>`
+        : "";
+    return `<li style="margin-bottom:6px;">${escapeHtml(
+      l.label,
+    )} &mdash; Qty ${l.quantity}${nested}</li>`;
+  };
+  return `<ul style="margin:4px 0 16px 0;padding-left:20px;font-size:14px;">${topLevel
+    .map(renderLi)
+    .join("")}</ul>`;
+}
+
+/**
+ * 3B — Send a "Carrier Delivery Update" email for a single shipment. Unlike the
+ * status-change emails, this fires once per shipment saved (the caller wires it
+ * in Step 9), so all shipment-specific data is passed in already computed:
+ *
+ *   - `carrierName` / `trackingNumber` / `trackingUrl`: the tracking number is
+ *     hyperlinked only when `trackingUrl` is non-null (carriers without a
+ *     tracking URL template — e.g. Local Delivery — render plain text).
+ *   - `itemsInShipment`: the lines assigned to this shipment.
+ *   - `itemsRemaining`: lines with unassigned quantity remaining across the
+ *     whole order after this shipment; when empty, the "Items still to be
+ *     shipped" section is omitted entirely.
+ *
+ * No pricing appears anywhere in this email. Errors are logged, never thrown.
+ */
+export async function sendCarrierDeliveryUpdateEmail(
+  orderId: number,
+  data: {
+    carrierName: string;
+    trackingNumber: string | null;
+    trackingUrl: string | null;
+    itemsInShipment: CarrierDeliveryLine[];
+    itemsRemaining: CarrierDeliveryLine[];
+  },
+): Promise<void> {
+  try {
+    const [order] = await db
+      .select()
+      .from(ordersTable)
+      .where(eq(ordersTable.id, orderId))
+      .limit(1);
+    if (!order) {
+      logger.warn({ orderId }, "Order not found for carrier delivery email");
+      return;
+    }
+    if (order.isInternalRestock) {
+      // Internal restocks are not customer-facing.
+      return;
+    }
+    const recipient = await resolveRecipient(order);
+    if (!recipient) {
+      logger.info(
+        { orderId },
+        "Skipping carrier delivery email: no email on file",
+      );
+      return;
+    }
+
+    const greeting = `<p>Hi ${escapeHtml(recipient.name)},</p>`;
+
+    const trackingValueHtml = data.trackingNumber
+      ? data.trackingUrl
+        ? `<a href="${escapeHtml(data.trackingUrl)}" style="color:#1a3c5e;">${escapeHtml(
+            data.trackingNumber,
+          )}</a>`
+        : escapeHtml(data.trackingNumber)
+      : "&mdash;";
+
+    const remainingSection =
+      data.itemsRemaining.length > 0
+        ? `<p style="margin:16px 0 4px 0;"><strong>Items still to be shipped:</strong></p>${renderDeliveryLineList(
+            data.itemsRemaining,
+          )}`
+        : "";
+
+    const bodyHtml = `
+      ${greeting}
+      <p>Great news! Your order is on its way. Your shipment details are below.</p>
+      <p style="margin:16px 0;">
+        <strong>Carrier:</strong> ${escapeHtml(data.carrierName)}<br/>
+        <strong>Tracking number:</strong> ${trackingValueHtml}
+      </p>
+      <p style="margin:16px 0 4px 0;"><strong>Items in this shipment:</strong></p>
+      ${renderDeliveryLineList(data.itemsInShipment)}
+      ${remainingSection}
+      <p>If you have any questions, feel free to reply to this email or call us at (661) 255-9909.</p>
+      <p>We can't wait for you to enjoy your new pieces!</p>
+      ${SIGNOFF}
+      <p style="font-size:13px;color:#666;margin-top:24px;">Order reference: <strong>${escapeHtml(
+        order.orderNumber,
+      )}</strong></p>
+    `;
+
+    await sendEmail({
+      to: recipient.email,
+      subject: `Your order is on its way! (${order.orderNumber})`,
+      title: "Your order is on its way",
+      bodyHtml,
+    });
+    logger.info(
+      { orderId, orderNumber: order.orderNumber, to: recipient.email },
+      "Sent carrier delivery update email",
+    );
+  } catch (err) {
+    logger.error({ err, orderId }, "Failed to send carrier delivery update email");
+  }
+}
+
+/**
  * Send a status-change email for an order. Looks up the recipient from
  * the order's linked customer (or walk-in fields). No-op + warn log if:
  *
@@ -309,7 +505,7 @@ export async function sendOrderStatusEmail(
       subject: tpl.subject(order.orderNumber),
       title: tpl.title,
       bodyHtml: `
-        ${tpl.body(greeting)}
+        ${tpl.body(greeting, order)}
         <p style="font-size:13px;color:#666;margin-top:24px;">Order reference: <strong>${order.orderNumber}</strong></p>
       `,
     });
