@@ -35,6 +35,48 @@ const SIGNOFF = `
   <p style="margin-top:24px;">Warm regards,<br/>The Oasis Garden &amp; Patio Team</p>
 `;
 
+/**
+ * 3A — "Ready for Store Delivery" status email copy. Fires via the generic
+ * status-email dispatcher when an order moves to `ready_for_store_delivery`.
+ */
+export const readyForStoreDeliveryCopy: StatusCopy = {
+  subject: (n) => `Your order is ready for delivery! (${n})`,
+  title: "Your order is ready for delivery",
+  body: (greeting) => `
+    ${greeting}
+    <p>Great news! Your order is complete and ready for delivery. We will be in touch shortly to schedule a delivery date and time that works for you.</p>
+    <p>If you have a preferred time window or any special instructions, feel free to reply to this email or call us at (661) 255-9909.</p>
+    <p>We can't wait for you to enjoy your new pieces!</p>
+    ${SIGNOFF}
+  `,
+};
+
+/**
+ * 3C — "Out for Local Delivery" status email copy. Pulls the scheduled
+ * delivery time window from the order record; when none is set, the arrival
+ * phrase is omitted per spec. The scheduled date is intentionally not shown —
+ * the email fires on the day of delivery.
+ */
+export const outForLocalDeliveryCopy: StatusCopy = {
+  subject: (n) => `Your order is out for delivery! (${n})`,
+  title: "Your order is out for delivery",
+  body: (greeting, order) => {
+    const time = order.scheduledDeliveryTime?.trim();
+    const lead = time
+      ? `Great news! Your order is out for delivery today and is scheduled to arrive between ${escapeHtml(
+          time,
+        )}.`
+      : `Your order is out for delivery today.`;
+    return `
+      ${greeting}
+      <p>${lead}</p>
+      <p>Please ensure someone is available at your delivery address to receive it. If you have any last minute questions or need to reach us urgently, please reply to this email or call us at (661) 255-9909.</p>
+      <p>We can't wait for you to enjoy your new pieces!</p>
+      ${SIGNOFF}
+    `;
+  },
+};
+
 const TEMPLATES: Record<string, StatusCopy> = {
   pending: {
     subject: (n) => `We received your order! (${n})`,
@@ -110,48 +152,8 @@ const TEMPLATES: Record<string, StatusCopy> = {
       ${SIGNOFF}
     `,
   },
-};
-
-/**
- * 3A — "Ready for Store Delivery" status email copy. Built in Step 8; wired
- * into the status-email dispatch (via `TEMPLATES`) in Step 9.
- */
-export const readyForStoreDeliveryCopy: StatusCopy = {
-  subject: (n) => `Your order is ready for delivery! (${n})`,
-  title: "Your order is ready for delivery",
-  body: (greeting) => `
-    ${greeting}
-    <p>Great news! Your order is complete and ready for delivery. We will be in touch shortly to schedule a delivery date and time that works for you.</p>
-    <p>If you have a preferred time window or any special instructions, feel free to reply to this email or call us at (661) 255-9909.</p>
-    <p>We can't wait for you to enjoy your new pieces!</p>
-    ${SIGNOFF}
-  `,
-};
-
-/**
- * 3C — "Out for Local Delivery" status email copy. Pulls the scheduled
- * delivery time window from the order record; when none is set, the arrival
- * phrase is omitted per spec. The scheduled date is intentionally not shown —
- * the email fires on the day of delivery. Wired in Step 9.
- */
-export const outForLocalDeliveryCopy: StatusCopy = {
-  subject: (n) => `Your order is out for delivery! (${n})`,
-  title: "Your order is out for delivery",
-  body: (greeting, order) => {
-    const time = order.scheduledDeliveryTime?.trim();
-    const lead = time
-      ? `Great news! Your order is out for delivery today and is scheduled to arrive between ${escapeHtml(
-          time,
-        )}.`
-      : `Your order is out for delivery today.`;
-    return `
-      ${greeting}
-      <p>${lead}</p>
-      <p>Please ensure someone is available at your delivery address to receive it. If you have any last minute questions or need to reach us urgently, please reply to this email or call us at (661) 255-9909.</p>
-      <p>We can't wait for you to enjoy your new pieces!</p>
-      ${SIGNOFF}
-    `;
-  },
+  ready_for_store_delivery: readyForStoreDeliveryCopy,
+  out_for_local_delivery: outForLocalDeliveryCopy,
 };
 
 function nameOf(first: string | null, last: string | null): string | null {

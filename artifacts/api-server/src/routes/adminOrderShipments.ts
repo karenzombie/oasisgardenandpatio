@@ -25,6 +25,10 @@ import {
 } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import { recordHistory } from "../lib/history";
+import {
+  sendCarrierDeliveryUpdateEmail,
+  type CarrierDeliveryLine,
+} from "../lib/orderStatusEmail";
 
 const router: IRouter = Router();
 
@@ -282,6 +286,62 @@ async function buildShipmentItemPayloads(
   }));
 }
 
+// Fire the "Carrier Delivery Update" email (3B) for a shipment that was just
+// created. Called ONLY from the shipment-create endpoint — never on edit or
+// delete — regardless of whether a status change accompanied the create.
+// Computes the two customer-facing lists (no pricing) from the same
+// assigned-quantity logic used for validation:
+//   - itemsInShipment: the lines assigned to this shipment.
+//   - itemsRemaining:  lines with unassigned quantity left across the whole
+//                      order AFTER this shipment (empty ⇒ section omitted).
+// Fire-and-forget: email failures must never fail the create request.
+async function fireCarrierDeliveryUpdateEmail(
+  orderId: number,
+  carrier: Carrier,
+  trackingNumber: string,
+  shipmentItems: { orderItemId: number; quantity: number }[],
+): Promise<void> {
+  const lines = await db
+    .select()
+    .from(orderItemsTable)
+    .where(eq(orderItemsTable.orderId, orderId));
+  const byId = new Map(lines.map((l) => [l.id, l]));
+
+  const itemsInShipment: CarrierDeliveryLine[] = shipmentItems.map((si) => {
+    const oi = byId.get(si.orderItemId);
+    return {
+      orderItemId: si.orderItemId,
+      parentOrderItemId: oi?.parentOrderItemId ?? null,
+      label: oi ? orderItemLabel(oi) : "",
+      quantity: si.quantity,
+    };
+  });
+
+  // Assigned across ALL shipments (the just-created one included), so the
+  // remainder reflects the state after this shipment.
+  const assigned = await loadAssignedByOrderItem(orderId);
+  const itemsRemaining: CarrierDeliveryLine[] = [];
+  for (const l of lines) {
+    const remaining = l.quantity - (assigned.get(l.id) ?? 0);
+    if (remaining > 0) {
+      itemsRemaining.push({
+        orderItemId: l.id,
+        parentOrderItemId: l.parentOrderItemId ?? null,
+        label: orderItemLabel(l),
+        quantity: remaining,
+      });
+    }
+  }
+
+  await sendCarrierDeliveryUpdateEmail(orderId, {
+    carrierName: carrier.name,
+    trackingNumber,
+    trackingUrl: buildTrackingUrl(carrier.trackingUrlTemplate, trackingNumber),
+    itemsInShipment,
+    itemsRemaining,
+  });
+}
+
 router.patch(
   "/admin/orders/:id/shipping-method",
   requireAuth,
@@ -479,6 +539,14 @@ router.post(
       snapshot: created,
       notes: `shipment.create id=${created.id}`,
     });
+    // 3B — Carrier Delivery Update email fires on shipment CREATE only (never
+    // edit/delete), independent of any status change. Non-blocking.
+    void fireCarrierDeliveryUpdateEmail(
+      orderId,
+      carrier,
+      validated.value.trackingNumber,
+      validated.value.items,
+    ).catch(() => {});
     const itemPayloads = await buildShipmentItemPayloads(validated.value.items);
     res.status(201).json(shipmentToPayload(created, carrier, itemPayloads));
   },
