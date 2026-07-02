@@ -59,3 +59,9 @@ id = "mQDIuGyMLT5UsYQTXvC9B"
 uri = "file://missing_finish_images.csv"
 type = "table"
 title = "Missing Finish Images (54 finishes)"
+
+[[outputs]]
+id = "EX6lsrAlJfZvBI3bQ-zlr"
+uri = "file://.local/exports/email_templates_raw_source.md"
+type = "text"
+title = "Email Templates — Raw Source Export"
