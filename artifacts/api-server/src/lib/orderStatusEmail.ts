@@ -358,6 +358,71 @@ function renderDeliveryLineList(lines: CarrierDeliveryLine[]): string {
     .join("")}</ul>`;
 }
 
+export interface CarrierDeliveryUpdateData {
+  carrierName: string;
+  trackingNumber: string | null;
+  trackingUrl: string | null;
+  itemsInShipment: CarrierDeliveryLine[];
+  itemsRemaining: CarrierDeliveryLine[];
+}
+
+/**
+ * Pure renderer for the 3B "Carrier Delivery Update" email. Separated from the
+ * IO wrapper (`sendCarrierDeliveryUpdateEmail`) so the exact subject/title/body
+ * can be produced and verified without a DB lookup or a live Resend send. No
+ * pricing appears anywhere. The tracking number is hyperlinked only when a
+ * tracking URL is present; the "Items still to be shipped" section is omitted
+ * entirely when nothing remains.
+ */
+export function buildCarrierDeliveryUpdateEmail(input: {
+  recipientName: string;
+  orderNumber: string;
+  data: CarrierDeliveryUpdateData;
+}): { subject: string; title: string; bodyHtml: string } {
+  const { recipientName, orderNumber, data } = input;
+
+  const greeting = `<p>Hi ${escapeHtml(recipientName)},</p>`;
+
+  const trackingValueHtml = data.trackingNumber
+    ? data.trackingUrl
+      ? `<a href="${escapeHtml(data.trackingUrl)}" style="color:#1a3c5e;">${escapeHtml(
+          data.trackingNumber,
+        )}</a>`
+      : escapeHtml(data.trackingNumber)
+    : "&mdash;";
+
+  const remainingSection =
+    data.itemsRemaining.length > 0
+      ? `<p style="margin:16px 0 4px 0;"><strong>Items still to be shipped:</strong></p>${renderDeliveryLineList(
+          data.itemsRemaining,
+        )}`
+      : "";
+
+  const bodyHtml = `
+      ${greeting}
+      <p>Great news! Your order is on its way. Your shipment details are below.</p>
+      <p style="margin:16px 0;">
+        <strong>Carrier:</strong> ${escapeHtml(data.carrierName)}<br/>
+        <strong>Tracking number:</strong> ${trackingValueHtml}
+      </p>
+      <p style="margin:16px 0 4px 0;"><strong>Items in this shipment:</strong></p>
+      ${renderDeliveryLineList(data.itemsInShipment)}
+      ${remainingSection}
+      <p>If you have any questions, feel free to reply to this email or call us at (661) 255-9909.</p>
+      <p>We can't wait for you to enjoy your new pieces!</p>
+      ${SIGNOFF}
+      <p style="font-size:13px;color:#666;margin-top:24px;">Order reference: <strong>${escapeHtml(
+        orderNumber,
+      )}</strong></p>
+    `;
+
+  return {
+    subject: `Your order is on its way! (${orderNumber})`,
+    title: "Your order is on its way",
+    bodyHtml,
+  };
+}
+
 /**
  * 3B — Send a "Carrier Delivery Update" email for a single shipment. Unlike the
  * status-change emails, this fires once per shipment saved (the caller wires it
@@ -375,13 +440,7 @@ function renderDeliveryLineList(lines: CarrierDeliveryLine[]): string {
  */
 export async function sendCarrierDeliveryUpdateEmail(
   orderId: number,
-  data: {
-    carrierName: string;
-    trackingNumber: string | null;
-    trackingUrl: string | null;
-    itemsInShipment: CarrierDeliveryLine[];
-    itemsRemaining: CarrierDeliveryLine[];
-  },
+  data: CarrierDeliveryUpdateData,
 ): Promise<void> {
   try {
     const [order] = await db
@@ -406,47 +465,12 @@ export async function sendCarrierDeliveryUpdateEmail(
       return;
     }
 
-    const greeting = `<p>Hi ${escapeHtml(recipient.name)},</p>`;
-
-    const trackingValueHtml = data.trackingNumber
-      ? data.trackingUrl
-        ? `<a href="${escapeHtml(data.trackingUrl)}" style="color:#1a3c5e;">${escapeHtml(
-            data.trackingNumber,
-          )}</a>`
-        : escapeHtml(data.trackingNumber)
-      : "&mdash;";
-
-    const remainingSection =
-      data.itemsRemaining.length > 0
-        ? `<p style="margin:16px 0 4px 0;"><strong>Items still to be shipped:</strong></p>${renderDeliveryLineList(
-            data.itemsRemaining,
-          )}`
-        : "";
-
-    const bodyHtml = `
-      ${greeting}
-      <p>Great news! Your order is on its way. Your shipment details are below.</p>
-      <p style="margin:16px 0;">
-        <strong>Carrier:</strong> ${escapeHtml(data.carrierName)}<br/>
-        <strong>Tracking number:</strong> ${trackingValueHtml}
-      </p>
-      <p style="margin:16px 0 4px 0;"><strong>Items in this shipment:</strong></p>
-      ${renderDeliveryLineList(data.itemsInShipment)}
-      ${remainingSection}
-      <p>If you have any questions, feel free to reply to this email or call us at (661) 255-9909.</p>
-      <p>We can't wait for you to enjoy your new pieces!</p>
-      ${SIGNOFF}
-      <p style="font-size:13px;color:#666;margin-top:24px;">Order reference: <strong>${escapeHtml(
-        order.orderNumber,
-      )}</strong></p>
-    `;
-
-    await sendEmail({
-      to: recipient.email,
-      subject: `Your order is on its way! (${order.orderNumber})`,
-      title: "Your order is on its way",
-      bodyHtml,
+    const { subject, title, bodyHtml } = buildCarrierDeliveryUpdateEmail({
+      recipientName: recipient.name,
+      orderNumber: order.orderNumber,
+      data,
     });
+    await sendEmail({ to: recipient.email, subject, title, bodyHtml });
     logger.info(
       { orderId, orderNumber: order.orderNumber, to: recipient.email },
       "Sent carrier delivery update email",
