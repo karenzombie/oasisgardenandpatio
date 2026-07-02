@@ -54,31 +54,43 @@ app.use(express.urlencoded({ extended: true, limit: "25mb" }));
 // preview, where the artifact is loaded inside an iframe whose top-level
 // document is on a different origin. Without this, login succeeds but the
 // session cookie is silently dropped by the browser on subsequent requests.
-app.use((_req, res, next) => {
-  const origWriteHead = res.writeHead.bind(res) as (
-    ...args: unknown[]
-  ) => typeof res;
-  (res as unknown as { writeHead: (...args: unknown[]) => typeof res }).writeHead =
-    function patchedWriteHead(...args: unknown[]): typeof res {
-      const existing = res.getHeader("set-cookie");
-      if (existing) {
-        const cookies = Array.isArray(existing)
-          ? existing
-          : [String(existing)];
-        const patched = cookies.map((c) =>
-          typeof c === "string"
-          && /;\s*samesite=none/i.test(c)
-          && /;\s*secure/i.test(c)
-          && !/;\s*partitioned/i.test(c)
-            ? `${c}; Partitioned`
-            : c,
-        );
-        res.setHeader("set-cookie", patched);
-      }
-      return origWriteHead(...args);
-    };
-  next();
-});
+//
+// This is ONLY needed in that dev/preview iframe scenario. On the published
+// production site the app is visited directly (no cross-site iframe), so the
+// cookie doesn't need to be partitioned at all. Partitioned cookies are
+// subject to stricter, less predictable browser storage/eviction rules than
+// regular first-party cookies — applying the attribute unnecessarily in
+// production was causing staff sessions to be intermittently/randomly
+// dropped (most noticeable after the tab or autoscale deployment had been
+// idle), forcing an unexpected re-login. So we gate this patch to
+// non-production only.
+if (process.env["NODE_ENV"] !== "production") {
+  app.use((_req, res, next) => {
+    const origWriteHead = res.writeHead.bind(res) as (
+      ...args: unknown[]
+    ) => typeof res;
+    (res as unknown as { writeHead: (...args: unknown[]) => typeof res }).writeHead =
+      function patchedWriteHead(...args: unknown[]): typeof res {
+        const existing = res.getHeader("set-cookie");
+        if (existing) {
+          const cookies = Array.isArray(existing)
+            ? existing
+            : [String(existing)];
+          const patched = cookies.map((c) =>
+            typeof c === "string"
+            && /;\s*samesite=none/i.test(c)
+            && /;\s*secure/i.test(c)
+            && !/;\s*partitioned/i.test(c)
+              ? `${c}; Partitioned`
+              : c,
+          );
+          res.setHeader("set-cookie", patched);
+        }
+        return origWriteHead(...args);
+      };
+    next();
+  });
+}
 
 app.use(buildSessionMiddleware());
 
