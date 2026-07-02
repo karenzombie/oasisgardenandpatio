@@ -132,17 +132,6 @@ const TEMPLATES: Record<string, StatusCopy> = {
       ${SIGNOFF}
     `,
   },
-  refunded: {
-    subject: (n) => `Your refund has been processed (${n})`,
-    title: "Refund processed",
-    body: (greeting) => `
-      ${greeting}
-      <p>Your refund has been processed. Depending on your bank or payment provider, it may take 5 to 7 business days for the funds to appear in your account.</p>
-      <p>If you have any questions about your refund or would like to discuss your order further, please don't hesitate to contact us.</p>
-      <p>Thank you for your understanding, and we hope to serve you again.</p>
-      ${SIGNOFF}
-    `,
-  },
 };
 
 function nameOf(first: string | null, last: string | null): string | null {
