@@ -124,7 +124,7 @@ export async function sendVendorOrderEmail(
     : "";
 
   const body = `
-    <p style="margin:0 0 16px 0;">Please see the purchase order details below. Kindly acknowledge receipt and provide an estimated delivery date.</p>
+    <p style="margin:0 0 16px 0;">Purchase order from Oasis Garden &amp; Patio is attached. Please acknowledge receipt and provide an estimated delivery date at your earliest convenience.</p>
     <div style="margin-bottom:16px;">
       <p style="margin:0 0 8px 0;"><strong>PO number:</strong> ${escapeHtml(vendorOrderNumber)}</p>
       ${customerOrderLine}

@@ -51,7 +51,13 @@ const TEMPLATES: Record<string, StatusCopy> = {
     title: "Order confirmed",
     body: (greeting) => `
       ${greeting}
-      <p>Great news! Your order has been confirmed and is now in our system. Our team will begin working on it soon.</p>
+      <p>Great news! Your order has been confirmed and has been submitted to the manufacturer.</p>
+      <p>Here is what you can expect next:</p>
+      <ul style="margin:0 0 16px 0;padding-left:20px;font-size:14px;">
+        <li style="margin-bottom:8px;">The manufacturer will provide an estimated completion date. Please keep in mind that estimated dates are not guaranteed &mdash; we will keep you informed along the way.</li>
+        <li>Once your order is ready, we will follow up with delivery details so you know exactly when to expect it.</li>
+      </ul>
+      <p>As always, if you have any questions in the meantime feel free to reply to this email or call us at (661) 255-9909.</p>
       <p>Thank you for choosing Oasis Garden &amp; Patio!</p>
       ${SIGNOFF}
     `,
@@ -61,7 +67,8 @@ const TEMPLATES: Record<string, StatusCopy> = {
     title: "Your order is being made",
     body: (greeting) => `
       ${greeting}
-      <p>Your order is now in production! Our team is hard at work crafting your items.</p>
+      <p>Your order is now in production with the manufacturer. We will keep you posted as it progresses.</p>
+      <p>As always, if you have any questions feel free to reply to this email or call us at (661) 255-9909.</p>
       <p>Thank you for your patience!</p>
       ${SIGNOFF}
     `,
@@ -94,8 +101,10 @@ const TEMPLATES: Record<string, StatusCopy> = {
     body: (greeting) => `
       ${greeting}
       <p>Your order has been delivered! We hope everything arrived in perfect condition.</p>
-      <p>If you have any concerns about your delivery or would like to share feedback, please don't hesitate to reach out. We'd love to hear from you!</p>
-      <p>Thank you for shopping with Oasis Garden &amp; Patio.</p>
+      <p>If you have any concerns about your delivery, please do not hesitate to reach out. We are always happy to help.</p>
+      <p>If you are loving your new pieces, we would really appreciate it if you took a moment to share your experience. It means a lot to a small business like ours!</p>
+      <p>Leave us a review on <a href="https://www.yelp.com/biz/oasis-garden-and-patio-santa-clarita" style="color:#1a3c5e;">Yelp</a></p>
+      <p>Thank you so much for shopping with Oasis Garden &amp; Patio. We hope to see you again!</p>
       ${SIGNOFF}
     `,
   },
@@ -104,9 +113,11 @@ const TEMPLATES: Record<string, StatusCopy> = {
     title: "Order complete",
     body: (greeting) => `
       ${greeting}
-      <p>Your order is now marked as complete. We truly appreciate your business and hope you're enjoying your new pieces from Oasis Garden &amp; Patio.</p>
-      <p>If you ever need anything in the future, we're always here to help. We'd also love it if you shared a photo of your space!</p>
-      <p>Thank you again for choosing us.</p>
+      <p>Your order is now complete and we hope you are absolutely loving your new pieces from Oasis Garden &amp; Patio. We truly appreciate your business!</p>
+      <p>If you ever need anything in the future, we are always here to help.</p>
+      <p>We would love to see your new space! Share a photo and tag us on <a href="https://www.facebook.com/people/Oasis-Garden-Patio/100057549515695/" style="color:#1a3c5e;">Facebook</a> or <a href="https://www.instagram.com/oasisgardenandpatio/" style="color:#1a3c5e;">Instagram</a>.</p>
+      <p>Leave us a review on <a href="https://www.yelp.com/biz/oasis-garden-and-patio-santa-clarita" style="color:#1a3c5e;">Yelp</a></p>
+      <p>Thank you again for choosing Oasis Garden &amp; Patio. We hope to see you again soon!</p>
       ${SIGNOFF}
     `,
   },

@@ -203,7 +203,8 @@ export async function sendOrderConfirmationEmail(
 
     const bodyHtml = `
       <p>Hi ${escapeHtml(name)},</p>
-      <p>Thank you for your order with Oasis Garden &amp; Patio! We've received it and our team will be in touch soon to confirm details and schedule delivery.</p>
+      <p>Thank you for your order with Oasis Garden &amp; Patio! We have received it and will be in touch if we have any questions before it goes into production.</p>
+      <p>Please take a moment to review our <a href="${baseUrl ?? ""}/shipping-returns.pdf" style="color:#1a3c5e;">Shipping, Returns and Cancellation Policy</a> for information about your order.</p>
       <h2 style="font-size:16px;color:#1a3c5e;margin:24px 0 8px;">Order ${escapeHtml(orderNumber)}</h2>
       ${buildItemsTable(data.items)}
       ${buildTotalsTable(data)}
@@ -214,7 +215,7 @@ export async function sendOrderConfirmationEmail(
 
     await sendEmail({
       to: customer.email,
-      subject: `Your order has been placed! (${orderNumber})`,
+      subject: `Your order has been received! (${orderNumber})`,
       title: "Order received",
       bodyHtml,
     });
@@ -261,6 +262,12 @@ export async function sendStoreNewOrderNotification(
 
     const bodyHtml = `
       <p>A new customer order has been placed on the website.</p>
+      <p>Please complete the following steps to process this order:</p>
+      <ol style="margin:0 0 16px 0;padding-left:20px;font-size:14px;">
+        <li style="margin-bottom:4px;">Review the order for accuracy (items, address, and pricing)</li>
+        <li style="margin-bottom:4px;">Update the order status to Confirmed</li>
+        <li>Review and send the purchase order to the vendor</li>
+      </ol>
       <table style="width:100%;border-collapse:collapse;font-size:14px;margin:16px 0;background:#f9f7f4;border-radius:4px;padding:12px;">
         <tr><td style="padding:5px 8px;color:#555;width:140px;">Order number</td><td style="padding:5px 8px;font-weight:bold;">${escapeHtml(orderNumber)}</td></tr>
         <tr><td style="padding:5px 8px;color:#555;">Customer name</td><td style="padding:5px 8px;">${escapeHtml(customerName)}</td></tr>

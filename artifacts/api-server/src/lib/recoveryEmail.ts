@@ -128,17 +128,10 @@ export async function sendRecoveryRequestedEmail(
 ): Promise<void> {
   const { client, from } = await getResendClient();
   const body = `
-    <p>A staff account recovery was requested for this email address.</p>
-    <p>For security, the link below will <strong>not work until ${fmt(args.availableAt)} (Pacific)</strong> — about one hour from now. After that it remains usable until ${fmt(args.expiresAt)}.</p>
-    ${buttonLink(args.recoveryUrl, "Open recovery link")}
-    <p style="font-size:13px;color:#666;">
-      Request details:<br>
-      &nbsp;&nbsp;IP: ${escapeHtml(args.requestIp ?? "unknown")}<br>
-      &nbsp;&nbsp;Browser: ${escapeHtml((args.requestUserAgent ?? "unknown").slice(0, 200))}
-    </p>
-    <p style="font-size:13px;color:#a33;">
-      <strong>If you did not request this</strong>, ignore this email and notify another administrator immediately so they can cancel the request from the admin portal.
-    </p>
+    <p>A recovery request has been submitted for your Oasis Garden &amp; Patio staff account. Click the link below to proceed.</p>
+    ${buttonLink(args.recoveryUrl, "Open Recovery Link")}
+    <p>If you did not request this, please contact your administrator immediately.</p>
+    <p style="margin-top:24px;">Warm regards,<br/>The Oasis Garden &amp; Patio Team</p>
   `;
   const result = await client.emails.send({
     from,

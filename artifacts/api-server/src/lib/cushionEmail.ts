@@ -38,21 +38,21 @@ interface CustomerConfirmationArgs {
 export async function sendCustomerConfirmationEmail(
   args: CustomerConfirmationArgs,
 ): Promise<void> {
-  const kindLabel =
-    args.orderKind === "custom" ? "custom cushion" : "replacement cushion";
   const body = `
     <p style="margin:0 0 12px 0;">Hi ${escapeHtml(args.customerName)},</p>
     <p style="margin:0 0 12px 0;">
-      Thank you for your ${kindLabel} order with Oasis Garden &amp; Patio.
-      We have received your request and will reach out to confirm details and pricing.
+      Thank you for your cushion order with Oasis Garden &amp; Patio! We have received your request and will be in touch shortly to confirm details and pricing.
     </p>
     <p style="margin:0 0 12px 0;">
-      <strong>Order number:</strong> ${escapeHtml(args.orderNumber)}<br/>
+      <strong>Order number:</strong> ${escapeHtml(args.orderNumber)}
+    </p>
+    <p style="margin:0 0 12px 0;">
       <strong>Items:</strong> ${escapeHtml(args.itemSummary)}
     </p>
-    <p style="margin:16px 0 0 0;">
-      If you have questions, reply to this email or call (661) 255-9909.
+    <p style="margin:0 0 12px 0;">
+      If you have any questions in the meantime, feel free to reply to this email or call us at (661) 255-9909.
     </p>
+    <p style="margin-top:24px;">Warm regards,<br/>The Oasis Garden &amp; Patio Team</p>
   `;
   // Intentionally do NOT swallow errors here — callers (the public submit
   // path uses `void` to fire-and-forget; the staff resend path awaits and
@@ -76,14 +76,14 @@ interface AdminAlertArgs {
 
 export async function sendAdminAlertEmail(args: AdminAlertArgs): Promise<void> {
   const body = `
-    <p style="margin:0 0 12px 0;">A new ${args.orderKind} cushion order has been submitted.</p>
+    <p style="margin:0 0 12px 0;">A new cushion order has been submitted.</p>
     <p style="margin:0 0 12px 0;">
       <strong>Order:</strong> ${escapeHtml(args.orderNumber)}<br/>
       <strong>Customer:</strong> ${escapeHtml(args.customerName)}<br/>
       <strong>Items:</strong> ${escapeHtml(args.itemSummary)}
     </p>
-    <p style="margin:0;">
-      <a href="${escapeHtml(args.detailUrl)}">View in admin dashboard</a>
+    <p style="text-align:center;margin:28px 0;">
+      <a href="${escapeHtml(args.detailUrl)}" style="display:inline-block;background:#1a3c5e;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:4px;font-family:Arial,sans-serif;font-size:14px;letter-spacing:1px;">View in Admin Dashboard</a>
     </p>
   `;
   // Same rationale as customer email — let the caller decide what to do
