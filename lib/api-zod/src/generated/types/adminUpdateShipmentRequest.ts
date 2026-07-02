@@ -5,11 +5,11 @@
  * Oasis Garden & Patio API
  * OpenAPI spec version: 0.1.0
  */
+import type { AdminShipmentItemInput } from "./adminShipmentItemInput";
 
 export interface AdminUpdateShipmentRequest {
   carrierId?: number | null;
   trackingNumber?: string | null;
-  shippedAt?: Date | null;
-  deliveredAt?: Date | null;
   notes?: string | null;
+  items: AdminShipmentItemInput[];
 }

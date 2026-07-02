@@ -107,6 +107,7 @@ import type {
   AdminUpdateFinishCollectionRequest,
   AdminUpdateFinishProductsRequest,
   AdminUpdateFinishRequest,
+  AdminUpdateOrderScheduledDeliveryRequest,
   AdminUpdateOrderShippingMethodRequest,
   AdminUpdateOrderTotalsRequest,
   AdminUpdatePaymentRequest,
@@ -11708,6 +11709,99 @@ export const useAdminUpdateOrderShippingMethod = <
   TContext
 > => {
   return useMutation(getAdminUpdateOrderShippingMethodMutationOptions(options));
+};
+
+/**
+ * @summary Update an order's scheduled store-delivery date and time window
+ */
+export const getAdminUpdateOrderScheduledDeliveryUrl = (id: number) => {
+  return `/api/admin/orders/${id}/scheduled-delivery`;
+};
+
+export const adminUpdateOrderScheduledDelivery = async (
+  id: number,
+  adminUpdateOrderScheduledDeliveryRequest: AdminUpdateOrderScheduledDeliveryRequest,
+  options?: RequestInit,
+): Promise<AdminOrderDetail> => {
+  return customFetch<AdminOrderDetail>(
+    getAdminUpdateOrderScheduledDeliveryUrl(id),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(adminUpdateOrderScheduledDeliveryRequest),
+    },
+  );
+};
+
+export const getAdminUpdateOrderScheduledDeliveryMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateOrderScheduledDelivery>>,
+    TError,
+    { id: number; data: BodyType<AdminUpdateOrderScheduledDeliveryRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUpdateOrderScheduledDelivery>>,
+  TError,
+  { id: number; data: BodyType<AdminUpdateOrderScheduledDeliveryRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminUpdateOrderScheduledDelivery"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUpdateOrderScheduledDelivery>>,
+    { id: number; data: BodyType<AdminUpdateOrderScheduledDeliveryRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminUpdateOrderScheduledDelivery(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminUpdateOrderScheduledDeliveryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUpdateOrderScheduledDelivery>>
+>;
+export type AdminUpdateOrderScheduledDeliveryMutationBody =
+  BodyType<AdminUpdateOrderScheduledDeliveryRequest>;
+export type AdminUpdateOrderScheduledDeliveryMutationError = ErrorType<Error>;
+
+/**
+ * @summary Update an order's scheduled store-delivery date and time window
+ */
+export const useAdminUpdateOrderScheduledDelivery = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateOrderScheduledDelivery>>,
+    TError,
+    { id: number; data: BodyType<AdminUpdateOrderScheduledDeliveryRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUpdateOrderScheduledDelivery>>,
+  TError,
+  { id: number; data: BodyType<AdminUpdateOrderScheduledDeliveryRequest> },
+  TContext
+> => {
+  return useMutation(
+    getAdminUpdateOrderScheduledDeliveryMutationOptions(options),
+  );
 };
 
 /**

@@ -5,6 +5,7 @@
  * Oasis Garden & Patio API
  * OpenAPI spec version: 0.1.0
  */
+import type { AdminShipmentItem } from "./adminShipmentItem";
 
 export interface AdminOrderShipment {
   id: number;
@@ -14,8 +15,7 @@ export interface AdminOrderShipment {
   carrierCode: string | null;
   trackingNumber: string | null;
   trackingUrl: string | null;
-  shippedAt: Date | null;
-  deliveredAt: Date | null;
   notes: string | null;
+  items: AdminShipmentItem[];
   createdAt: Date;
 }

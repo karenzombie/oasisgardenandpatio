@@ -988,6 +988,9 @@ export default function OrderDetail() {
             <DeliveryPanel
               orderId={orderId}
               shippingMethod={order.shippingMethod}
+              scheduledDeliveryDate={order.scheduledDeliveryDate ?? null}
+              scheduledDeliveryTime={order.scheduledDeliveryTime ?? null}
+              items={order.items}
               shipments={order.shipments}
             />
 

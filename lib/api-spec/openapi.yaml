@@ -3565,6 +3565,28 @@ paths:
         "404":
           description: Not found
           content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/orders/{id}/scheduled-delivery:
+    patch:
+      operationId: adminUpdateOrderScheduledDelivery
+      tags: [admin-orders]
+      summary: Update an order's scheduled store-delivery date and time window
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdminUpdateOrderScheduledDeliveryRequest" }
+      responses:
+        "200":
+          description: Updated order
+          content: { application/json: { schema: { $ref: "#/components/schemas/AdminOrderDetail" } } }
+        "404":
+          description: Not found
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
   /admin/orders/{id}/shipments:
     get:
       operationId: adminListOrderShipments
@@ -6018,6 +6040,8 @@ components:
         agentName: { type: string, nullable: true }
         salespersonName: { type: string, nullable: true }
         shippingMethod: { type: string, nullable: true }
+        scheduledDeliveryDate: { type: string, nullable: true, description: "Store-delivery scheduled date (YYYY-MM-DD)." }
+        scheduledDeliveryTime: { type: string, nullable: true, description: "Free-text store-delivery time window (e.g. '2-4 PM')." }
         specialInstructions: { type: string, nullable: true }
         notes: { type: string, nullable: true }
         merchandiseReceived: { type: boolean }
@@ -6111,6 +6135,20 @@ components:
         notes: { type: string, nullable: true }
         receivedAt: { type: string, format: date-time, nullable: true }
       required: [paymentMethod]
+    AdminShipmentItem:
+      type: object
+      description: A single order line assigned to a shipment, with the quantity included in that shipment.
+      properties:
+        orderItemId: { type: integer }
+        quantity: { type: integer }
+        description: { type: string, description: "Snapshot description of the order line (product + variant/finish/fabric)." }
+      required: [orderItemId, quantity, description]
+    AdminShipmentItemInput:
+      type: object
+      properties:
+        orderItemId: { type: integer }
+        quantity: { type: integer }
+      required: [orderItemId, quantity]
     AdminOrderShipment:
       type: object
       properties:
@@ -6121,32 +6159,43 @@ components:
         carrierCode: { type: string, nullable: true }
         trackingNumber: { type: string, nullable: true }
         trackingUrl: { type: string, nullable: true }
-        shippedAt: { type: string, format: date-time, nullable: true }
-        deliveredAt: { type: string, format: date-time, nullable: true }
         notes: { type: string, nullable: true }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/AdminShipmentItem" }
         createdAt: { type: string, format: date-time }
-      required: [id, orderId, carrierId, carrierName, carrierCode, trackingNumber, trackingUrl, shippedAt, deliveredAt, notes, createdAt]
+      required: [id, orderId, carrierId, carrierName, carrierCode, trackingNumber, trackingUrl, notes, items, createdAt]
     AdminCreateShipmentRequest:
       type: object
       properties:
         carrierId: { type: integer, nullable: true }
         trackingNumber: { type: string, nullable: true }
-        shippedAt: { type: string, format: date-time, nullable: true }
-        deliveredAt: { type: string, format: date-time, nullable: true }
         notes: { type: string, nullable: true }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/AdminShipmentItemInput" }
+      required: [items]
     AdminUpdateShipmentRequest:
       type: object
       properties:
         carrierId: { type: integer, nullable: true }
         trackingNumber: { type: string, nullable: true }
-        shippedAt: { type: string, format: date-time, nullable: true }
-        deliveredAt: { type: string, format: date-time, nullable: true }
         notes: { type: string, nullable: true }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/AdminShipmentItemInput" }
+      required: [items]
     AdminUpdateOrderShippingMethodRequest:
       type: object
       properties:
         shippingMethod: { type: string, nullable: true }
       required: [shippingMethod]
+    AdminUpdateOrderScheduledDeliveryRequest:
+      type: object
+      properties:
+        scheduledDeliveryDate: { type: string, nullable: true, description: "YYYY-MM-DD, or null to clear." }
+        scheduledDeliveryTime: { type: string, nullable: true, description: "Free-text time window, or null to clear." }
+      required: [scheduledDeliveryDate, scheduledDeliveryTime]
     StaffNotification:
       type: object
       properties:

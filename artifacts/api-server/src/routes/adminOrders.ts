@@ -371,6 +371,8 @@ export async function loadOrderDetail(orderId: number) {
       : null,
     salespersonName: o.salespersonName,
     shippingMethod: o.shippingMethod,
+    scheduledDeliveryDate: o.scheduledDeliveryDate,
+    scheduledDeliveryTime: o.scheduledDeliveryTime,
     specialInstructions: o.specialInstructions,
     notes: o.notes,
     merchandiseReceived: o.merchandiseReceived,

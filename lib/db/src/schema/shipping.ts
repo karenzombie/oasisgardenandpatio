@@ -11,7 +11,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
-import { ordersTable } from "./orders";
+import { ordersTable, orderItemsTable } from "./orders";
 import { categoriesTable } from "./categories";
 import { manufacturersTable } from "./manufacturers";
 import { productsTable } from "./products";
@@ -53,8 +53,6 @@ export const shipmentsTable = pgTable(
       onDelete: "set null",
     }),
     trackingNumber: text("tracking_number"),
-    shippedAt: timestamp("shipped_at", { withTimezone: true }),
-    deliveredAt: timestamp("delivered_at", { withTimezone: true }),
     notes: text("notes"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -72,6 +70,35 @@ export const insertShipmentSchema = createInsertSchema(shipmentsTable).omit({
 });
 export type InsertShipment = z.infer<typeof insertShipmentSchema>;
 export type Shipment = typeof shipmentsTable.$inferSelect;
+
+// Per-shipment item assignment: which order lines (and how many units of each)
+// are included in a given shipment. A single order line can be split across
+// multiple shipments; remaining unassigned quantity = ordered qty − sum here.
+export const shipmentItemsTable = pgTable(
+  "shipment_items",
+  {
+    id: serial("id").primaryKey(),
+    shipmentId: integer("shipment_id")
+      .notNull()
+      .references(() => shipmentsTable.id, { onDelete: "cascade" }),
+    orderItemId: integer("order_item_id")
+      .notNull()
+      .references(() => orderItemsTable.id, { onDelete: "cascade" }),
+    quantity: integer("quantity").notNull(),
+  },
+  (t) => [
+    index("shipment_items_shipment_id_idx").on(t.shipmentId),
+    index("shipment_items_order_item_id_idx").on(t.orderItemId),
+  ],
+);
+
+export const insertShipmentItemSchema = createInsertSchema(
+  shipmentItemsTable,
+).omit({
+  id: true,
+});
+export type InsertShipmentItem = z.infer<typeof insertShipmentItemSchema>;
+export type ShipmentItem = typeof shipmentItemsTable.$inferSelect;
 
 /**
  * Customer-facing shipping rate rules. These are the SINGLE SOURCE OF TRUTH for

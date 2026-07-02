@@ -648,6 +648,16 @@ export interface AdminCancellationRequest {
   createdAt: string;
 }
 
+/**
+ * A single order line assigned to a shipment, with the quantity included in that shipment.
+ */
+export interface AdminShipmentItem {
+  orderItemId: number;
+  quantity: number;
+  /** Snapshot description of the order line (product + variant/finish/fabric). */
+  description: string;
+}
+
 export interface AdminOrderShipment {
   id: number;
   orderId: number;
@@ -656,9 +666,8 @@ export interface AdminOrderShipment {
   carrierCode: string | null;
   trackingNumber: string | null;
   trackingUrl: string | null;
-  shippedAt: string | null;
-  deliveredAt: string | null;
   notes: string | null;
+  items: AdminShipmentItem[];
   createdAt: string;
 }
 
@@ -696,6 +705,10 @@ export interface AdminOrderDetail {
   agentName: string | null;
   salespersonName: string | null;
   shippingMethod: string | null;
+  /** Store-delivery scheduled date (YYYY-MM-DD). */
+  scheduledDeliveryDate?: string | null;
+  /** Free-text store-delivery time window (e.g. '2-4 PM'). */
+  scheduledDeliveryTime?: string | null;
   specialInstructions: string | null;
   notes: string | null;
   merchandiseReceived: boolean;
@@ -751,24 +764,34 @@ export interface AdminMarkOrderPaidInFullRequest {
   receivedAt?: string | null;
 }
 
+export interface AdminShipmentItemInput {
+  orderItemId: number;
+  quantity: number;
+}
+
 export interface AdminCreateShipmentRequest {
   carrierId?: number | null;
   trackingNumber?: string | null;
-  shippedAt?: string | null;
-  deliveredAt?: string | null;
   notes?: string | null;
+  items: AdminShipmentItemInput[];
 }
 
 export interface AdminUpdateShipmentRequest {
   carrierId?: number | null;
   trackingNumber?: string | null;
-  shippedAt?: string | null;
-  deliveredAt?: string | null;
   notes?: string | null;
+  items: AdminShipmentItemInput[];
 }
 
 export interface AdminUpdateOrderShippingMethodRequest {
   shippingMethod: string | null;
+}
+
+export interface AdminUpdateOrderScheduledDeliveryRequest {
+  /** YYYY-MM-DD, or null to clear. */
+  scheduledDeliveryDate: string | null;
+  /** Free-text time window, or null to clear. */
+  scheduledDeliveryTime: string | null;
 }
 
 export interface StaffNotification {

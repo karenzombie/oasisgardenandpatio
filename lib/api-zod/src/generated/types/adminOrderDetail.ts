@@ -31,6 +31,10 @@ export interface AdminOrderDetail {
   agentName: string | null;
   salespersonName: string | null;
   shippingMethod: string | null;
+  /** Store-delivery scheduled date (YYYY-MM-DD). */
+  scheduledDeliveryDate?: string | null;
+  /** Free-text store-delivery time window (e.g. '2-4 PM'). */
+  scheduledDeliveryTime?: string | null;
   specialInstructions: string | null;
   notes: string | null;
   merchandiseReceived: boolean;
