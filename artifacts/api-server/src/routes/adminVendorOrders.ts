@@ -6,6 +6,7 @@ import {
   vendorOrderSendsTable,
   vendorOrderEditsTable,
   vendorOrderCancellationsTable,
+  vendorOrderReceivesTable,
   ordersTable,
   orderItemsTable,
   orderItemAddonsTable,
@@ -37,6 +38,8 @@ import {
   AdminReceiveVendorOrderBody,
   AdminCancelVendorOrderParams,
   AdminCancelVendorOrderBody,
+  AdminCancelPendingVendorOrderParams,
+  AdminCancelPendingVendorOrderBody,
   AdminEditVendorOrderParams,
   AdminEditVendorOrderBody,
   AdminCreateStandaloneVendorOrderBody,
@@ -121,6 +124,7 @@ function itemToPayload(
     fabricGradeSnapshot: it.fabricGradeSnapshot,
     description: effDescription,
     quantity: effQuantity,
+    receivedQuantity: it.receivedQuantity,
     unitPrice: kind === "fabric" ? 0 : Number(effUnitRaw),
     amount: kind === "fabric" ? 0 : Number(effUnitRaw) * effQuantity,
     notes: it.notes,
@@ -569,6 +573,13 @@ async function loadVendorOrderDetail(id: number) {
     return Number.isFinite(n) ? n : null;
   };
 
+  const receives = await db
+    .select({ r: vendorOrderReceivesTable, receiver: usersTable })
+    .from(vendorOrderReceivesTable)
+    .leftJoin(usersTable, eq(usersTable.id, vendorOrderReceivesTable.receivedByUserId))
+    .where(eq(vendorOrderReceivesTable.vendorOrderId, id))
+    .orderBy(desc(vendorOrderReceivesTable.receivedAt));
+
   const edits = await db
     .select({ e: vendorOrderEditsTable, editor: usersTable })
     .from(vendorOrderEditsTable)
@@ -727,6 +738,14 @@ async function loadVendorOrderDetail(id: number) {
       emailedAt: row.c.emailedAt ? row.c.emailedAt.toISOString() : null,
       emailedTo: row.c.emailedTo,
       itemCount: Array.isArray(row.c.items) ? row.c.items.length : 0,
+    })),
+    receives: receives.map((row) => ({
+      id: row.r.id,
+      receivedByUserId: row.r.receivedByUserId,
+      receivedByEmail: row.receiver?.email ?? null,
+      receivedAt: row.r.receivedAt.toISOString(),
+      notes: row.r.notes,
+      items: Array.isArray(row.r.items) ? row.r.items : [],
     })),
   };
 }
@@ -1647,204 +1666,365 @@ router.post(
       return;
     }
     const userId = req.session?.userId ?? null;
-    const result = await db.transaction(async (tx) => {
-      const [existing] = await tx
-        .select()
-        .from(vendorOrdersTable)
-        .where(eq(vendorOrdersTable.id, params.data.id))
-        .for("update")
-        .limit(1);
-      if (!existing) return { kind: "not_found" as const };
-      if (existing.status === "received") {
-        return { kind: "noop" as const };
-      }
-      if (existing.status === "canceled" || existing.status === "pending") {
-        return {
-          kind: "invalid" as const,
-          status: existing.status,
-        };
-      }
+    const requestedItems = body.data.items; // [{ orderItemId, quantity }]
 
-      // Decide whether to bump on-hand inventory. Restock orders and any
-      // ship-to-store staff orders both bring physical goods to our shelves,
-      // so both should increment on-hand on receipt.  Direct-ship online
-      // orders bypass the store entirely and must NOT inflate counts.
-      // Standalone POs (no customer order) use the VO's own
-      // shipToStoreOverride flag captured at creation time.
-      let isRestock = false;
-      let shouldBumpInventory = false;
-      let restockLocationId: number | null = null;
-      if (existing.customerOrderId != null) {
-        const [parent] = await tx
-          .select({
-            isInternalRestock: ordersTable.isInternalRestock,
-            shipToStore: ordersTable.shipToStore,
-          })
-          .from(ordersTable)
-          .where(eq(ordersTable.id, existing.customerOrderId));
-        isRestock = parent?.isInternalRestock === true;
-        shouldBumpInventory = isRestock || parent?.shipToStore === true;
-        // Allow an explicit per-VO override even on customer-order POs.
-        if (existing.shipToStoreOverride === false) shouldBumpInventory = false;
-        if (existing.shipToStoreOverride === true) shouldBumpInventory = true;
-      } else {
-        // Standalone PO: default to ship-to-store when no explicit flag.
-        shouldBumpInventory = existing.shipToStoreOverride !== false;
-      }
-      if (shouldBumpInventory) {
-        const [defaultLoc] = await tx
-          .select({ id: inventoryLocationsTable.id })
-          .from(inventoryLocationsTable)
-          .where(eq(inventoryLocationsTable.isDefault, true));
-        if (!defaultLoc) {
-          return { kind: "no_default_location" as const };
+    type ReceiveTxResult =
+      | { kind: "not_found" }
+      | { kind: "invalid"; status: string }
+      | { kind: "bad_items"; msg: string }
+      | { kind: "no_default_location" }
+      | { kind: "ok"; newStatus: "received" | "partially_received" };
+
+    let txResult: ReceiveTxResult;
+    try {
+      txResult = await db.transaction<ReceiveTxResult>(async (tx) => {
+        const [existing] = await tx
+          .select()
+          .from(vendorOrdersTable)
+          .where(eq(vendorOrdersTable.id, params.data.id))
+          .for("update")
+          .limit(1);
+        if (!existing) return { kind: "not_found" };
+        if (existing.status === "received" || existing.status === "canceled" || existing.status === "pending") {
+          return { kind: "invalid", status: existing.status };
         }
-        restockLocationId = defaultLoc.id;
-      }
 
-      const now = new Date();
-      await tx
-        .update(vendorOrdersTable)
-        .set({
-          status: "received",
-          itemsReceived: true,
-          receivedAt: now,
-          receivedByUserId: userId,
-        })
-        .where(eq(vendorOrdersTable.id, existing.id));
-      await tx.insert(inventoryReceiptsTable).values({
-        vendorOrderId: existing.id,
-        receivedByUserId: userId,
-        linkedOrderId: existing.customerOrderId,
-        locationId: restockLocationId,
-        notes: body.data.notes ?? null,
-      });
-
-      if (shouldBumpInventory) {
-        // Walk the line items linked to this vendor order and bump on-hand
-        // per (productId, variantId, fabricId). Each line gets its own audit
-        // row tagged 'vendor_receipt' for traceability.
-        const lines = await tx
-          .select({
-            productId: orderItemsTable.productId,
-            variantId: orderItemsTable.variantId,
-            fabricId: orderItemsTable.fabricId,
-            quantity: orderItemsTable.quantity,
-            inventoryQtyUsed: orderItemsTable.inventoryQtyUsed,
-          })
+        // Load all non-removed items on this PO (product lines + fabric lines)
+        const productLineRows = await tx
+          .select()
           .from(orderItemsTable)
-          .where(eq(orderItemsTable.vendorOrderId, existing.id));
+          .where(and(eq(orderItemsTable.vendorOrderId, existing.id), eq(orderItemsTable.poRemoved, false)));
+        const fabricLineRows = await tx
+          .select()
+          .from(orderItemsTable)
+          .where(and(eq(orderItemsTable.fabricVendorOrderId, existing.id), eq(orderItemsTable.poRemoved, false)));
+        const allItems = [...productLineRows, ...fabricLineRows];
+        const itemById = new Map(allItems.map((x) => [x.id, x]));
 
-        for (const line of lines) {
-          // bumpQty = vendor-supplied balance only; pre-existing stock (inventoryQtyUsed)
-          // was already on the shelf and must not be double-counted.
-          const bumpQty = Math.max(line.quantity - line.inventoryQtyUsed, 0);
-          if (line.productId == null || bumpQty <= 0) continue;
-          const pid = line.productId;
-          const vid = line.variantId;
-          const fid = line.fabricId;
+        // Validate requested items
+        const requestedMap = new Map<number, number>();
+        for (const ri of requestedItems) {
+          const item = itemById.get(ri.orderItemId);
+          if (!item) return { kind: "bad_items", msg: `Item ${ri.orderItemId} not found on this vendor order` };
+          const remaining = item.quantity - item.receivedQuantity;
+          if (ri.quantity > remaining) {
+            return { kind: "bad_items", msg: `Item ${ri.orderItemId}: requested ${ri.quantity} but only ${remaining} remaining` };
+          }
+          requestedMap.set(ri.orderItemId, ri.quantity);
+        }
 
-          // Get-or-create the inventory row for this exact SKU. NULLS NOT
-          // DISTINCT means (pid, NULL, NULL) collides with itself, so flat
-          // products don't proliferate rows.
-          const variantCond = vid == null
-            ? isNull(inventoryTable.variantId)
-            : eq(inventoryTable.variantId, vid);
-          const fabricCond = fid == null
-            ? isNull(inventoryTable.fabricId)
-            : eq(inventoryTable.fabricId, fid);
-          let [inv] = await tx
-            .select()
-            .from(inventoryTable)
-            .where(
-              and(
-                eq(inventoryTable.productId, pid),
-                variantCond,
-                fabricCond,
-              ),
-            )
-            .for("update");
-          if (!inv) {
-            const [created] = await tx
-              .insert(inventoryTable)
-              .values({
-                productId: pid,
-                variantId: vid,
-                fabricId: fid,
-                onHand: 0,
-                onHold: 0,
-                reorderThreshold: 0,
-              })
-              .returning();
-            const [locked] = await tx
+        // Decide whether to bump on-hand inventory. Restock orders and any
+        // ship-to-store staff orders both bring physical goods to our shelves.
+        let shouldBumpInventory = false;
+        let restockLocationId: number | null = null;
+        if (existing.customerOrderId != null) {
+          const [parent] = await tx
+            .select({ isInternalRestock: ordersTable.isInternalRestock, shipToStore: ordersTable.shipToStore })
+            .from(ordersTable)
+            .where(eq(ordersTable.id, existing.customerOrderId));
+          shouldBumpInventory = parent?.isInternalRestock === true || parent?.shipToStore === true;
+          if (existing.shipToStoreOverride === false) shouldBumpInventory = false;
+          if (existing.shipToStoreOverride === true) shouldBumpInventory = true;
+        } else {
+          shouldBumpInventory = existing.shipToStoreOverride !== false;
+        }
+        if (shouldBumpInventory) {
+          const [defaultLoc] = await tx
+            .select({ id: inventoryLocationsTable.id })
+            .from(inventoryLocationsTable)
+            .where(eq(inventoryLocationsTable.isDefault, true));
+          if (!defaultLoc) return { kind: "no_default_location" };
+          restockLocationId = defaultLoc.id;
+        }
+
+        const now = new Date();
+
+        // Increment received_quantity on each requested item
+        for (const ri of requestedItems) {
+          const item = itemById.get(ri.orderItemId)!;
+          await tx
+            .update(orderItemsTable)
+            .set({ receivedQuantity: item.receivedQuantity + ri.quantity })
+            .where(eq(orderItemsTable.id, ri.orderItemId));
+        }
+
+        // Determine new status: fully received only when every item is at capacity
+        const fullyReceived = allItems.every((item) => {
+          const addedNow = requestedMap.get(item.id) ?? 0;
+          return item.receivedQuantity + addedNow >= item.quantity;
+        });
+        const newStatus: "received" | "partially_received" = fullyReceived ? "received" : "partially_received";
+
+        if (newStatus === "received") {
+          await tx
+            .update(vendorOrdersTable)
+            .set({ status: "received", itemsReceived: true, receivedAt: now, receivedByUserId: userId })
+            .where(eq(vendorOrdersTable.id, existing.id));
+        } else {
+          await tx
+            .update(vendorOrdersTable)
+            .set({ status: "partially_received" })
+            .where(eq(vendorOrdersTable.id, existing.id));
+        }
+
+        // Insert receive event log
+        const receiveItemsSnapshot = requestedItems.map((ri) => {
+          const item = itemById.get(ri.orderItemId)!;
+          return {
+            orderItemId: ri.orderItemId,
+            sku: item.variantSkuSnapshot ?? item.productSkuSnapshot ?? null,
+            description: item.description,
+            quantityReceived: ri.quantity,
+          };
+        });
+        await tx.insert(vendorOrderReceivesTable).values({
+          vendorOrderId: existing.id,
+          receivedByUserId: userId,
+          notes: body.data.notes ?? null,
+          items: receiveItemsSnapshot,
+        });
+
+        // Insert inventory receipt record for audit trail
+        await tx.insert(inventoryReceiptsTable).values({
+          vendorOrderId: existing.id,
+          receivedByUserId: userId,
+          linkedOrderId: existing.customerOrderId,
+          locationId: restockLocationId,
+          notes: body.data.notes ?? null,
+        });
+
+        // Bump on-hand inventory for product-PO lines when applicable.
+        // vendorPortion = total qty expected from vendor (qty − already used from stock)
+        // alreadyBumped = min(receivedQty before this event, vendorPortion)
+        // bumpNow = min(receivingNow, max(vendorPortion − alreadyBumped, 0))
+        if (shouldBumpInventory) {
+          for (const ri of requestedItems) {
+            const item = itemById.get(ri.orderItemId);
+            if (!item || item.productId == null) continue;
+            if (item.vendorOrderId !== existing.id) continue; // skip fabric-only lines
+
+            const vendorPortion = Math.max(item.quantity - item.inventoryQtyUsed, 0);
+            const alreadyBumped = Math.min(item.receivedQuantity, vendorPortion);
+            const bumpQty = Math.min(ri.quantity, Math.max(vendorPortion - alreadyBumped, 0));
+            if (bumpQty <= 0) continue;
+
+            const pid = item.productId;
+            const vid = item.variantId;
+            const fid = item.fabricId;
+            const variantCond = vid == null ? isNull(inventoryTable.variantId) : eq(inventoryTable.variantId, vid);
+            const fabricCond = fid == null ? isNull(inventoryTable.fabricId) : eq(inventoryTable.fabricId, fid);
+
+            let [inv] = await tx
               .select()
               .from(inventoryTable)
-              .where(eq(inventoryTable.id, created!.id))
+              .where(and(eq(inventoryTable.productId, pid), variantCond, fabricCond))
               .for("update");
-            inv = locked!;
+            if (!inv) {
+              const [created] = await tx
+                .insert(inventoryTable)
+                .values({ productId: pid, variantId: vid, fabricId: fid, onHand: 0, onHold: 0, reorderThreshold: 0 })
+                .returning();
+              const [locked] = await tx.select().from(inventoryTable).where(eq(inventoryTable.id, created!.id)).for("update");
+              inv = locked!;
+            }
+            const newOnHand = inv.onHand + bumpQty;
+            await tx.update(inventoryTable).set({ onHand: newOnHand }).where(eq(inventoryTable.id, inv.id));
+            await tx.insert(inventoryAdjustmentsTable).values({
+              productId: pid, variantId: vid, fabricId: fid,
+              inventoryId: inv.id, locationId: restockLocationId,
+              adjustmentType: "vendor_receipt",
+              quantityChange: bumpQty, quantityAfter: newOnHand,
+              vendorOrderId: existing.id, orderId: existing.customerOrderId,
+              performedByUserId: userId,
+            });
           }
-
-          const newOnHand = inv.onHand + bumpQty;
-          await tx
-            .update(inventoryTable)
-            .set({ onHand: newOnHand })
-            .where(eq(inventoryTable.id, inv.id));
-
-          await tx.insert(inventoryAdjustmentsTable).values({
-            productId: pid,
-            variantId: vid,
-            fabricId: fid,
-            inventoryId: inv.id,
-            locationId: restockLocationId,
-            adjustmentType: "vendor_receipt",
-            quantityChange: bumpQty,
-            quantityAfter: newOnHand,
-            vendorOrderId: existing.id,
-            orderId: existing.customerOrderId,
-            performedByUserId: userId,
-          });
         }
-      }
 
-      return { kind: "received" as const, isRestock };
-    });
-    if (result.kind === "not_found") {
+        return { kind: "ok", newStatus };
+      });
+    } catch (err) {
+      req.log.error({ err }, "receive vendor order failed");
+      res.status(500).json({ error: "Internal server error" });
+      return;
+    }
+
+    if (txResult.kind === "not_found") {
       res.status(404).json({ error: "Not found" });
       return;
     }
-    if (result.kind === "invalid") {
-      res.status(409).json({
-        error: `Cannot mark a '${result.status}' vendor order as received — send it first`,
-      });
+    if (txResult.kind === "invalid") {
+      res.status(409).json({ error: `Cannot receive a '${txResult.status}' vendor order` });
       return;
     }
-    if (result.kind === "no_default_location") {
-      res.status(400).json({
-        error:
-          "Cannot receive restock: no default inventory location is configured. Set one in Inventory → Locations.",
-      });
+    if (txResult.kind === "bad_items") {
+      res.status(400).json({ error: txResult.msg });
       return;
     }
-    if (result.kind === "received") {
-      await recordAudit(req, {
-        action: "vendor_order.receive",
+    if (txResult.kind === "no_default_location") {
+      res.status(400).json({ error: "Cannot receive restock: no default inventory location is configured. Set one in Inventory → Locations." });
+      return;
+    }
+
+    await recordAudit(req, {
+      action: "vendor_order.receive",
+      entityType: "vendor_order",
+      entityId: params.data.id,
+      changes: { newStatus: txResult.newStatus, notes: body.data.notes ?? null },
+    });
+    const [voRow] = await db.select().from(vendorOrdersTable).where(eq(vendorOrdersTable.id, params.data.id));
+    if (voRow) {
+      await recordHistory(req, {
         entityType: "vendor_order",
         entityId: params.data.id,
-        changes: { notes: body.data.notes ?? null },
+        changeType: "update",
+        snapshot: voRow,
+        notes: `${txResult.newStatus === "received" ? "fully received" : "partially received"}${body.data.notes ? `: ${body.data.notes}` : ""}`,
       });
-      const [voRow] = await db
-        .select()
-        .from(vendorOrdersTable)
-        .where(eq(vendorOrdersTable.id, params.data.id));
-      if (voRow) {
-        await recordHistory(req, {
-          entityType: "vendor_order",
-          entityId: params.data.id,
-          changeType: "update",
-          snapshot: voRow,
-          notes: `received${body.data.notes ? `: ${body.data.notes}` : ""}`,
-        });
-      }
+    }
+    const detail = await loadVendorOrderDetail(params.data.id);
+    res.json(detail);
+  },
+);
+
+// Cancel a pending (unsent) vendor order without generating a PDF or notifying
+// the vendor. Un-assigns items so they can be regrouped; retains the PO record
+// with status='canceled'. Partial scope leaves the PO in 'pending' with the
+// surviving items still attached.
+router.post(
+  "/admin/vendor-orders/:id/cancel-pending",
+  requireAuth,
+  requireRole("admin"),
+  async (req: Request, res: Response): Promise<void> => {
+    const params = AdminCancelPendingVendorOrderParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: "Invalid id" });
+      return;
+    }
+    const body = AdminCancelPendingVendorOrderBody.safeParse(req.body ?? {});
+    if (!body.success) {
+      res.status(400).json({ error: body.error.issues[0]?.message ?? "Invalid body" });
+      return;
+    }
+    const scope = body.data.scope;
+    const reason = body.data.reason?.trim() || null;
+    const requestedItemIds = body.data.itemIds ?? [];
+
+    if (scope === "partial" && requestedItemIds.length === 0) {
+      res.status(400).json({ error: "Partial cancellation requires at least one itemId" });
+      return;
+    }
+
+    type PendingCancelResult =
+      | { kind: "not_found" }
+      | { kind: "not_pending"; status: string }
+      | { kind: "bad_items" }
+      | { kind: "ok"; effectiveScope: "full" | "partial" };
+
+    let txResult: PendingCancelResult;
+    try {
+      txResult = await db.transaction<PendingCancelResult>(async (tx) => {
+        const [existing] = await tx
+          .select()
+          .from(vendorOrdersTable)
+          .where(eq(vendorOrdersTable.id, params.data.id))
+          .for("update")
+          .limit(1);
+        if (!existing) return { kind: "not_found" };
+        if (existing.status !== "pending") return { kind: "not_pending", status: existing.status };
+
+        const productLineRows = await tx
+          .select()
+          .from(orderItemsTable)
+          .where(eq(orderItemsTable.vendorOrderId, existing.id))
+          .orderBy(asc(orderItemsTable.id));
+        const fabricLineRows = await tx
+          .select()
+          .from(orderItemsTable)
+          .where(eq(orderItemsTable.fabricVendorOrderId, existing.id))
+          .orderBy(asc(orderItemsTable.id));
+        const poKind: "product" | "fabric" =
+          fabricLineRows.length > 0 && productLineRows.length === 0 ? "fabric" : "product";
+        const allItems = poKind === "fabric" ? fabricLineRows : productLineRows;
+
+        let cancelItems: OrderItem[];
+        let remainingItems: OrderItem[];
+        if (scope === "full") {
+          cancelItems = allItems;
+          remainingItems = [];
+        } else {
+          const requestedSet = new Set(requestedItemIds);
+          cancelItems = allItems.filter((it) => requestedSet.has(it.id));
+          remainingItems = allItems.filter((it) => !requestedSet.has(it.id));
+          if (cancelItems.length !== requestedSet.size || cancelItems.length === 0) {
+            return { kind: "bad_items" };
+          }
+        }
+
+        // Un-assign the cancelled items from this PO
+        if (cancelItems.length > 0) {
+          if (poKind === "fabric") {
+            await tx
+              .update(orderItemsTable)
+              .set({ fabricVendorOrderId: null })
+              .where(inArray(orderItemsTable.id, cancelItems.map((x) => x.id)));
+          } else {
+            await tx
+              .update(orderItemsTable)
+              .set({ vendorOrderId: null })
+              .where(inArray(orderItemsTable.id, cancelItems.map((x) => x.id)));
+          }
+        }
+
+        const effectiveScope: "full" | "partial" =
+          scope === "full" || remainingItems.length === 0 ? "full" : "partial";
+        if (effectiveScope === "full") {
+          await tx
+            .update(vendorOrdersTable)
+            .set({ status: "canceled" })
+            .where(eq(vendorOrdersTable.id, existing.id));
+        }
+
+        return { kind: "ok", effectiveScope };
+      });
+    } catch (err) {
+      req.log.error({ err }, "cancel pending vendor order failed");
+      res.status(500).json({ error: "Internal server error" });
+      return;
+    }
+
+    if (txResult.kind === "not_found") {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+    if (txResult.kind === "not_pending") {
+      res.status(409).json({
+        error: `Cannot cancel-pending a '${txResult.status}' vendor order — it has already been sent`,
+      });
+      return;
+    }
+    if (txResult.kind === "bad_items") {
+      res.status(400).json({ error: "One or more itemIds not found on this vendor order" });
+      return;
+    }
+
+    await recordAudit(req, {
+      action: "vendor_order.cancel_pending",
+      entityType: "vendor_order",
+      entityId: params.data.id,
+      changes: { scope, reason },
+    });
+    const [voRow] = await db
+      .select()
+      .from(vendorOrdersTable)
+      .where(eq(vendorOrdersTable.id, params.data.id));
+    if (voRow) {
+      await recordHistory(req, {
+        entityType: "vendor_order",
+        entityId: params.data.id,
+        changeType: "update",
+        snapshot: voRow,
+        notes: `canceled pending (${txResult.effectiveScope})${reason ? `: ${reason}` : ""}`,
+      });
     }
     const detail = await loadVendorOrderDetail(params.data.id);
     res.json(detail);

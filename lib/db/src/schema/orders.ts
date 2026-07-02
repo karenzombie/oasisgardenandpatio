@@ -209,6 +209,7 @@ export const orderItemsTable = pgTable(
     notes: text("notes"),
     useInventory: boolean("use_inventory").notNull().default(false),
     inventoryQtyUsed: integer("inventory_qty_used").notNull().default(0),
+    receivedQuantity: integer("received_quantity").notNull().default(0),
     // When set, this order line is an ACCESSORY tied 1:1 to a parent line — the
     // immutable snapshot counterpart of cart_items.parent_cart_item_id (used by
     // the galvanized-base Aluminum Top Cover). Lets order/PDF views group a

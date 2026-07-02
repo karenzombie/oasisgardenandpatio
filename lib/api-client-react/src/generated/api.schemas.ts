@@ -217,6 +217,8 @@ export interface AdminVendorOrderItem {
   fabricNameSnapshot: string | null;
   description: string;
   quantity: number;
+  /** Cumulative quantity received across all partial receive events for this line item. */
+  receivedQuantity: number;
   unitPrice: number;
   amount: number;
   notes: string | null;
@@ -301,6 +303,22 @@ export interface AdminVendorOrderCancellation {
   itemCount: number;
 }
 
+export type AdminVendorOrderReceiveItemsItem = {
+  orderItemId: number;
+  sku: string | null;
+  description: string;
+  quantityReceived: number;
+};
+
+export interface AdminVendorOrderReceive {
+  id: number;
+  receivedByUserId: number | null;
+  receivedByEmail: string | null;
+  receivedAt: string;
+  notes: string | null;
+  items: AdminVendorOrderReceiveItemsItem[];
+}
+
 export interface AdminVendorOrderDetail {
   id: number;
   vendorOrderNumber: string;
@@ -345,6 +363,7 @@ export interface AdminVendorOrderDetail {
   sends: AdminVendorOrderSend[];
   edits: AdminVendorOrderEdit[];
   cancellations: AdminVendorOrderCancellation[];
+  receives: AdminVendorOrderReceive[];
 }
 
 export interface CreateStandaloneVendorOrderItem {
@@ -410,7 +429,18 @@ export interface UpdateVendorOrderStatusRequest {
   note?: string | null;
 }
 
+export type ReceiveVendorOrderRequestItemsItem = {
+  orderItemId: number;
+  /** @minimum 1 */
+  quantity: number;
+};
+
 export interface ReceiveVendorOrderRequest {
+  /**
+   * Per-line quantities being received in this event. Each entry must reference an item currently on this vendor order.
+   * @minItems 1
+   */
+  items: ReceiveVendorOrderRequestItemsItem[];
   notes?: string | null;
 }
 
@@ -439,6 +469,27 @@ export interface CancelVendorOrderRequest {
   sendEmail?: boolean;
   /** Override the recipient address. Falls back to the manufacturer's order email. */
   sentToEmail?: string | null;
+}
+
+export type CancelPendingVendorOrderRequestScope =
+  (typeof CancelPendingVendorOrderRequestScope)[keyof typeof CancelPendingVendorOrderRequestScope];
+
+export const CancelPendingVendorOrderRequestScope = {
+  full: "full",
+  partial: "partial",
+} as const;
+
+/**
+ * Cancel a pending (unsent) vendor order. No PDF is generated and no vendor notification is sent.
+For 'full' scope, all items are un-assigned and the PO status moves to 'canceled'.
+For 'partial' scope, only the selected items are un-assigned; the PO stays 'pending'.
+
+ */
+export interface CancelPendingVendorOrderRequest {
+  scope: CancelPendingVendorOrderRequestScope;
+  /** Required when scope=partial. */
+  itemIds?: number[];
+  reason?: string | null;
 }
 
 export interface UpdateVendorOrderRequest {

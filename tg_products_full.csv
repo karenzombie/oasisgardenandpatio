@@ -1,0 +1,107 @@
+id,sku,name,msrp,sale_price,price,category
+4848,AG25TR,11.5’ AG25T,1835.00,1377.00,1835.00,Umbrellas
+4850,AG25TR10,10’ AG25T,1720.00,1290.00,1720.00,Umbrellas
+4849,AG25TSQR,10’ AG25TSQ,1770.00,1328.00,1770.00,Umbrellas
+4847,AKZP,11’ AKZ PLUS,2235.00,1677.00,2235.00,Umbrellas
+4844,AKZP13,13’ AKZ PLUS,2410.00,1808.00,2410.00,Umbrellas
+4842,AKZP13LX,13’ STARLUX AKZ PLUS,2805.00,2104.00,2805.00,Umbrellas
+4845,AKZPRT,10’x13’ AKZ PLUS,2400.00,1800.00,2400.00,Umbrellas
+4843,AKZPRTLX,10’x13’ STARLUX AKZ PLUS,2800.00,2100.00,2800.00,Umbrellas
+4846,AKZPSQ11,11.5’ AKZ PLUS,2380.00,1785.00,2380.00,Umbrellas
+4870,BA150,Commercial,785.00,588.75,785.00,Umbrella Bases
+4877,BA50,Art Deco,300.00,225.00,300.00,Umbrella Bases
+4885,BASE-13-_,AKZ13 Base,600.00,450.00,600.00,Umbrella Bases
+4883,BASE-13R-_,AKZ13 Rolling Base,1380.00,1035.00,1380.00,Umbrella Bases
+4886,BASE-AKZ-_,AKZ Base,325.00,243.75,325.00,Umbrella Bases
+4876,BG50,Garden,310.00,232.50,310.00,Umbrella Bases
+4874,BKM100,Monaco Round,620.00,465.00,620.00,Umbrella Bases
+4875,BKMSQ100,Monaco Square,620.00,465.00,620.00,Umbrella Bases
+4873,BRW100,Aurora,655.00,491.25,655.00,Umbrella Bases
+4879,BS359,Steel,160.00,120.00,160.00,Umbrella Bases
+4881,BS70-2.0,Steel,355.00,266.25,355.00,Umbrella Bases
+4871,BSK120,Steel (with casters),660.00,495.00,660.00,Umbrella Bases
+4872,BTT100,Athens,870.00,652.50,870.00,Umbrella Bases
+4880,BW30,Add-On Weight,105.00,78.75,105.00,Umbrella Bases
+4878,BW50,Classic,190.00,142.50,190.00,Umbrella Bases
+4852,ET310,Easy Track®,1020.00,765.00,1020.00,Umbrellas
+4851,ET3RT,10’x13’ EASY TRACK®,1520.00,1140.00,1520.00,Umbrellas
+5041,PFC115,Dining Chair,,51.00,68.00,Protective Covers
+5042,PFC116,Counter Height Chair,,58.00,77.00,Protective Covers
+5043,PFC117,Bar Height Chair,,59.00,78.00,Protective Covers
+5045,PFC119L,Large Chaise,,106.00,141.00,Protective Covers
+5044,PFC119S,Small Chaise,,86.00,114.00,Protective Covers
+5033,PFC401,Modular Right End (Left Facing),,78.00,104.00,Protective Covers
+5034,PFC402,Modular Armless (Middle),,99.00,132.00,Protective Covers
+5035,PFC403,Modular Left End (Right Facing),,78.00,104.00,Protective Covers
+5036,PFC404,Modular Corner,,112.00,149.00,Protective Covers
+5037,PFC405,Modular Extension,,58.00,77.00,Protective Covers
+5039,PFC406-C,Modular Wedge Center,,112.00,149.00,Protective Covers
+5040,PFC406-L,Modular Wedge Left End (Right Facing),,99.00,132.00,Protective Covers
+5038,PFC406-R,Modular Wedge Right End (Left Facing),,99.00,132.00,Protective Covers
+5024,PFC530,30″ Bistro Table & Chairs,,78.00,104.00,Protective Covers
+5025,PFC536,36″ Round/Square Bistro Table & Chairs,,97.00,129.00,Protective Covers
+5026,PFC551,48″ Round/Square Table & Chairs,,135.00,179.00,Protective Covers
+5027,PFC571,54″ Round/Square Table & Chairs,,148.00,197.00,Protective Covers
+5028,PFC590,60″ Round/Square Table & Chairs,,201.00,268.00,Protective Covers
+5029,PFC592,Small Oval/Rectangle Table & Chairs,,122.00,162.00,Protective Covers
+5030,PFC594,Medium Oval/Rectangle Table & Chairs,,152.00,202.00,Protective Covers
+5031,PFC596,Large Oval/Rectangle Table & Chairs,,189.00,252.00,Protective Covers
+5032,PFC598,X-Large Oval/Rectangle Table & Chairs,,252.00,335.00,Protective Covers
+5060,PFC711,Lounge Chair,,69.00,92.00,Protective Covers
+5061,PFC712,Large Lounge Chair,,82.00,109.00,Protective Covers
+5063,PFC720,Loveseat,,77.00,102.00,Protective Covers
+5064,PFC722,Large Loveseat,,105.00,140.00,Protective Covers
+5066,PFC723,Sofa,,118.00,157.00,Protective Covers
+5067,PFC733,Large Sofa,,135.00,180.00,Protective Covers
+5062,PFC741,X-Large Lounge Chair,,87.00,115.00,Protective Covers
+5065,PFC742,X-Large Loveseat,,126.00,168.00,Protective Covers
+5068,PFC743,X-Large Sofa,,146.00,194.00,Protective Covers
+5069,PFC753,Curved Sofa,,136.00,181.00,Protective Covers
+5052,PFC805,Fire Pit/Table/Ottoman - Round 36″-42″,,57.00,75.00,Protective Covers
+5053,PFC810,Fire Pit/Table/Ottoman - Round 48″-54″,,63.00,84.00,Protective Covers
+5054,PFC815,Fire Pit/Table/Ottoman - Square 19″-26″,,42.00,55.00,Protective Covers
+5055,PFC820,Fire Pit/Table/Ottoman - Square 42″-48″,,70.00,93.00,Protective Covers
+5056,PFC825,Fire Pit/Table/Ottoman - Small Rectangle,,43.00,57.00,Protective Covers
+5057,PFC830,Fire Pit/Table/Ottoman - Medium Rectangle,,56.00,74.00,Protective Covers
+5058,PFC835,Fire Pit/Table/Ottoman - Large Rectangle,,57.00,75.00,Protective Covers
+5059,PFC840,Fire Pit/Table/Ottoman - X-Large Rectangle,,70.00,93.00,Protective Covers
+5046,PFC901,Umbrella (6' to 8.5'),,35.00,46.00,Protective Covers
+5047,PFC902,Large Umbrella (9' to 11'),,39.00,52.00,Protective Covers
+5048,PFC910,X-Large Umbrella (Rectangle up to 10'x13'),,56.00,74.00,Protective Covers
+5049,PFC912,Cantilever (8' to 10'),,56.00,74.00,Protective Covers
+5051,PFC920,X-Large Cantilever (AKZP styles),,69.00,91.00,Protective Covers
+5050,PFC955,Large Cantilever (10' to 11.5'),,63.00,83.00,Protective Covers
+5014,RG-097-365,North Shore - Sky Blue,,236.00,314.00,Outdoor Rugs
+5020,RG-097-965,North Shore - Pebble,,236.00,314.00,Outdoor Rugs
+5018,RG-203-651,Canyon - Taupe,,236.00,314.00,Outdoor Rugs
+5019,RG-204-651,Sand Dune - Textured Beige,,236.00,314.00,Outdoor Rugs
+5017,RG-252-560,Prism - Taupe,,236.00,314.00,Outdoor Rugs
+5015,RG-253-099,Seaside Harbor - Blue,,236.00,314.00,Outdoor Rugs
+5013,RG-334-369,Reflections - Ocean Blue,,236.00,314.00,Outdoor Rugs
+5016,RG-533-050,South Beach - Spectrum,,236.00,314.00,Outdoor Rugs
+5010,RP-001-910,Desert Sunset - Orange,,269.00,358.00,Outdoor Rugs
+5009,RP-004-470,Paradise Cove - Spa,,269.00,358.00,Outdoor Rugs
+5012,RP-008-350,Trellis - Stone Gray,,269.00,358.00,Outdoor Rugs
+5011,RP-505-360,Illusion - Black Mirage,,269.00,358.00,Outdoor Rugs
+5021,RS-511-061,Serenity Stripe - Linen (NEW),,182.00,242.00,Outdoor Rugs
+5022,RS-607-637,Athens - Silver,,182.00,242.00,Outdoor Rugs
+5023,RS-721-690,Urban Hex - Black (NEW),,182.00,242.00,Outdoor Rugs
+4858,UM800,9’ COLLAR TILT,590.00,443.00,590.00,Umbrellas
+4856,UM800LX,9’ STARLUX COLLAR TILT,1065.00,799.00,1065.00,Umbrellas
+4857,UM801,11’ COLLAR TILT,890.00,668.00,890.00,Umbrellas
+4869,UM809-1H,9’ QUAD PULLEY LIFT,405.00,304.00,405.00,Umbrellas
+4863,UM810,9’ AUTO TILT,500.00,375.00,500.00,Umbrellas
+4862,UM812,11’ AUTO TILT,750.00,563.00,750.00,Umbrellas
+4860,UM840,9’ FLEX,520.00,390.00,520.00,Umbrellas
+4859,UM841,11’ FLEX,770.00,578.00,770.00,Umbrellas
+4861,UM847SQ,7.5’ FLEX,480.00,360.00,480.00,Umbrellas
+4855,UM850,9’ TWIST,690.00,518.00,690.00,Umbrellas
+4854,UM851,11’ TWIST,980.00,735.00,980.00,Umbrellas
+4864,UM8810RT,8’x10’ AUTO TILT,715.00,537.00,715.00,Umbrellas
+4868,UM907,7.5’ PUSH BUTTON TILT,335.00,252.00,335.00,Umbrellas
+4867,UM920,9’ PUSH BUTTON TILT,390.00,293.00,390.00,Umbrellas
+4865,UM970,9’ GLIDE TILT,415.00,312.00,415.00,Umbrellas
+4866,UM977,7.5’ GLIDE TILT,380.00,285.00,380.00,Umbrellas
+4853,USA45-09,10’ SHANGHAI COLLAR TILT,890.00,668.00,890.00,Umbrellas
+4884,ZB115,Z-Plate,735.00,551.25,735.00,Umbrella Bases
+4882,ZBWH-SM,Add-On Wheels,50.00,37.50,50.00,Umbrella Bases

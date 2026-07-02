@@ -122,6 +122,7 @@ import type {
   AdminVendorOrderPage,
   AuditLogPage,
   Banner,
+  CancelPendingVendorOrderRequest,
   CancelVendorOrderRequest,
   Carrier,
   CartResponse,
@@ -15527,6 +15528,97 @@ export const useAdminReceiveVendorOrder = <
   TContext
 > => {
   return useMutation(getAdminReceiveVendorOrderMutationOptions(options));
+};
+
+/**
+ * @summary Cancel a pending (unsent) vendor order without generating a PDF or notifying the vendor.
+ */
+export const getAdminCancelPendingVendorOrderUrl = (id: number) => {
+  return `/api/admin/vendor-orders/${id}/cancel-pending`;
+};
+
+export const adminCancelPendingVendorOrder = async (
+  id: number,
+  cancelPendingVendorOrderRequest?: CancelPendingVendorOrderRequest,
+  options?: RequestInit,
+): Promise<AdminVendorOrderDetail> => {
+  return customFetch<AdminVendorOrderDetail>(
+    getAdminCancelPendingVendorOrderUrl(id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(cancelPendingVendorOrderRequest),
+    },
+  );
+};
+
+export const getAdminCancelPendingVendorOrderMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCancelPendingVendorOrder>>,
+    TError,
+    { id: number; data: BodyType<CancelPendingVendorOrderRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminCancelPendingVendorOrder>>,
+  TError,
+  { id: number; data: BodyType<CancelPendingVendorOrderRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminCancelPendingVendorOrder"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminCancelPendingVendorOrder>>,
+    { id: number; data: BodyType<CancelPendingVendorOrderRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminCancelPendingVendorOrder(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminCancelPendingVendorOrderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminCancelPendingVendorOrder>>
+>;
+export type AdminCancelPendingVendorOrderMutationBody =
+  BodyType<CancelPendingVendorOrderRequest>;
+export type AdminCancelPendingVendorOrderMutationError = ErrorType<Error>;
+
+/**
+ * @summary Cancel a pending (unsent) vendor order without generating a PDF or notifying the vendor.
+ */
+export const useAdminCancelPendingVendorOrder = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCancelPendingVendorOrder>>,
+    TError,
+    { id: number; data: BodyType<CancelPendingVendorOrderRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminCancelPendingVendorOrder>>,
+  TError,
+  { id: number; data: BodyType<CancelPendingVendorOrderRequest> },
+  TContext
+> => {
+  return useMutation(getAdminCancelPendingVendorOrderMutationOptions(options));
 };
 
 /**

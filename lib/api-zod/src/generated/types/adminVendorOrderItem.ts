@@ -18,6 +18,8 @@ export interface AdminVendorOrderItem {
   fabricNameSnapshot: string | null;
   description: string;
   quantity: number;
+  /** Cumulative quantity received across all partial receive events for this line item. */
+  receivedQuantity: number;
   unitPrice: number;
   amount: number;
   notes: string | null;

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Printer, Pencil, Flag, Trash2, Plus } from "lucide-react";
+import { ArrowLeft, Printer, Pencil, Flag, Plus, X } from "lucide-react";
 import {
   useAdminGetVendorOrder,
   useAdminUpdateVendorOrder,
@@ -10,7 +10,7 @@ import {
   useAdminUpdateVendorOrderStatus,
   useAdminReceiveVendorOrder,
   useAdminCancelVendorOrder,
-  useAdminDeleteVendorOrder,
+  useAdminCancelPendingVendorOrder,
   getAdminGetVendorOrderQueryKey,
   getAdminListVendorOrdersQueryKey,
   getAdminGetOrderQueryKey,
@@ -48,8 +48,13 @@ const STATUS_VARIANT: Record<
   sent: "default",
   acknowledged: "default",
   fulfilled: "default",
+  partially_received: "secondary",
   received: "outline",
   canceled: "destructive",
+};
+
+const STATUS_EXTRA_CLASS: Record<string, string> = {
+  partially_received: "bg-amber-100 text-amber-800 border-amber-300",
 };
 
 function fmtMoney(n: number): string {
@@ -146,6 +151,7 @@ export default function VendorOrderDetail() {
   // shown when saving edits on a SENT PO.
   const [sentSavePromptOpen, setSentSavePromptOpen] = useState(false);
   const [confirmReceive, setConfirmReceive] = useState(false);
+  const [receiveItems, setReceiveItems] = useState<Map<number, string>>(new Map());
   const [receiveNotes, setReceiveNotes] = useState("");
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [cancelScope, setCancelScope] = useState<"full" | "partial">("full");
@@ -153,7 +159,10 @@ export default function VendorOrderDetail() {
   const [cancelReason, setCancelReason] = useState("");
   const [cancelSendEmail, setCancelSendEmail] = useState(true);
   const [cancelEmail, setCancelEmail] = useState("");
-  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmCancelPending, setConfirmCancelPending] = useState(false);
+  const [cancelPendingScope, setCancelPendingScope] = useState<"full" | "partial">("full");
+  const [cancelPendingItemIds, setCancelPendingItemIds] = useState<Set<number>>(new Set());
+  const [cancelPendingReason, setCancelPendingReason] = useState("");
 
   // ── Edit mode ──────────────────────────────────────────────────────────
   const [editMode, setEditMode] = useState(false);
@@ -177,7 +186,7 @@ export default function VendorOrderDetail() {
   const updateStatus = useAdminUpdateVendorOrderStatus();
   const receive = useAdminReceiveVendorOrder();
   const cancelMut = useAdminCancelVendorOrder();
-  const deleteMut = useAdminDeleteVendorOrder();
+  const cancelPendingMut = useAdminCancelPendingVendorOrder();
 
   function invalidate() {
     queryClient.invalidateQueries({
@@ -467,13 +476,35 @@ export default function VendorOrderDetail() {
     );
   }
 
+  function openReceiveDialog() {
+    if (!vo) return;
+    const initMap = new Map<number, string>();
+    for (const item of vo.items) {
+      const remaining = item.quantity - item.receivedQuantity;
+      if (remaining > 0) initMap.set(item.id, String(remaining));
+    }
+    setReceiveItems(initMap);
+    setReceiveNotes("");
+    setConfirmReceive(true);
+  }
+
   function submitReceive() {
+    const items: { orderItemId: number; quantity: number }[] = [];
+    for (const [orderItemId, qtyStr] of receiveItems) {
+      const qty = parseInt(qtyStr, 10);
+      if (Number.isFinite(qty) && qty > 0) items.push({ orderItemId, quantity: qty });
+    }
+    if (items.length === 0) {
+      toast({ title: "Enter at least one quantity to receive", variant: "destructive" });
+      return;
+    }
     receive.mutate(
-      { id, data: { notes: receiveNotes.trim() || null } },
+      { id, data: { items, notes: receiveNotes.trim() || null } },
       {
         onSuccess: () => {
-          toast({ title: "Marked received" });
+          toast({ title: "Items received" });
           setConfirmReceive(false);
+          setReceiveItems(new Map());
           setReceiveNotes("");
           invalidate();
         },
@@ -553,17 +584,49 @@ export default function VendorOrderDetail() {
     );
   }
 
-  function submitDelete() {
-    deleteMut.mutate(
-      { id },
+  function openCancelPendingDialog() {
+    setCancelPendingScope("full");
+    setCancelPendingItemIds(new Set());
+    setCancelPendingReason("");
+    setConfirmCancelPending(true);
+  }
+
+  function toggleCancelPendingItem(itemId: number) {
+    setCancelPendingItemIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(itemId)) next.delete(itemId);
+      else next.add(itemId);
+      return next;
+    });
+  }
+
+  function submitCancelPending() {
+    if (cancelPendingScope === "partial" && cancelPendingItemIds.size === 0) {
+      toast({ title: "Select at least one item to cancel", variant: "destructive" });
+      return;
+    }
+    cancelPendingMut.mutate(
+      {
+        id,
+        data: {
+          scope: cancelPendingScope,
+          ...(cancelPendingScope === "partial"
+            ? { itemIds: Array.from(cancelPendingItemIds) }
+            : {}),
+          reason: cancelPendingReason.trim() || null,
+        },
+      },
       {
         onSuccess: () => {
-          toast({ title: "Vendor order deleted" });
-          setConfirmDelete(false);
+          const msg =
+            cancelPendingScope === "full"
+              ? "Vendor order canceled"
+              : `${cancelPendingItemIds.size} item(s) removed from order`;
+          toast({ title: msg });
+          setConfirmCancelPending(false);
           invalidate();
-          window.history.back();
         },
-        onError: handleErr("Delete failed"),
+        onError: handleErr("Cancel failed"),
       },
     );
   }
@@ -606,7 +669,8 @@ export default function VendorOrderDetail() {
   const canReceive =
     vo.status === "sent" ||
     vo.status === "acknowledged" ||
-    vo.status === "fulfilled";
+    vo.status === "fulfilled" ||
+    vo.status === "partially_received";
 
   const editDirty =
     editMode &&
@@ -745,7 +809,7 @@ export default function VendorOrderDetail() {
                               }
                               title={r.removed ? "Restore line" : "Remove line"}
                             >
-                              <Trash2 className="size-4" />
+                              <X className="size-4" />
                             </button>
                           </td>
                         </tr>
@@ -1015,6 +1079,63 @@ export default function VendorOrderDetail() {
                 ))}
             </div>
 
+            {/* Receive history */}
+            {vo.receives.length > 0 && (
+              <div className="rounded-md border bg-white">
+                <div className="px-4 py-3 border-b font-medium text-green-700">
+                  Receive history
+                </div>
+                <ul className="divide-y">
+                  {vo.receives.map((r) => (
+                    <li key={r.id} className="px-4 py-2 text-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-green-700">
+                          {r.items.reduce(
+                            (s: number, it: { quantityReceived: number }) => s + it.quantityReceived,
+                            0,
+                          )}{" "}
+                          unit(s) received
+                        </span>
+                        <span className="ml-auto text-xs text-slate-500">
+                          {fmtDateTime(r.receivedAt)}
+                        </span>
+                      </div>
+                      {r.receivedByEmail && (
+                        <div className="text-xs text-slate-500 mt-0.5">
+                          by {r.receivedByEmail}
+                        </div>
+                      )}
+                      {r.notes && (
+                        <div className="text-slate-600 mt-0.5">Notes: {r.notes}</div>
+                      )}
+                      {Array.isArray(r.items) && r.items.length > 0 && (
+                        <div className="mt-1 rounded border bg-slate-50 overflow-hidden">
+                          <table className="w-full text-xs">
+                            <thead className="bg-slate-100">
+                              <tr>
+                                <th className="px-2 py-1 text-left font-medium">SKU</th>
+                                <th className="px-2 py-1 text-left font-medium">Description</th>
+                                <th className="px-2 py-1 text-right font-medium">Qty</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {(r.items as { orderItemId: number; sku: string | null; description: string; quantityReceived: number }[]).map((it) => (
+                                <tr key={it.orderItemId} className="border-t">
+                                  <td className="px-2 py-1 font-mono">{it.sku ?? "—"}</td>
+                                  <td className="px-2 py-1 text-slate-700">{it.description}</td>
+                                  <td className="px-2 py-1 text-right">{it.quantityReceived}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             {/* Cancellations */}
             {vo.cancellations.length > 0 && (
               <div className="rounded-md border bg-white">
@@ -1274,35 +1395,26 @@ export default function VendorOrderDetail() {
                   Mark acknowledged
                 </Button>
               )}
-              {(vo.status === "sent" || vo.status === "acknowledged") && (
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className="w-full"
-                  onClick={() => transitionTo("fulfilled")}
-                  disabled={updateStatus.isPending}
-                >
-                  Mark fulfilled
-                </Button>
-              )}
               {canReceive && (
                 <Button
                   type="button"
                   variant="default"
                   className="w-full"
-                  onClick={() => setConfirmReceive(true)}
+                  onClick={openReceiveDialog}
                 >
-                  Mark received
+                  {vo.status === "partially_received"
+                    ? "Record more received"
+                    : "Mark received"}
                 </Button>
               )}
               {isPending && (
                 <Button
                   type="button"
                   variant="outline"
-                  className="w-full"
-                  onClick={() => setConfirmDelete(true)}
+                  className="w-full border-red-200 text-red-700 hover:bg-red-50"
+                  onClick={openCancelPendingDialog}
                 >
-                  Delete (un-assign items)
+                  Cancel order
                 </Button>
               )}
               {canCancel && !isPending && (
@@ -1477,25 +1589,83 @@ export default function VendorOrderDetail() {
           </DialogContent>
         </Dialog>
 
-        {/* Receive dialog */}
+        {/* Receive dialog — partial receive, per-item quantities */}
         <Dialog open={confirmReceive} onOpenChange={setConfirmReceive}>
-          <DialogContent>
+          <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Mark items received?</DialogTitle>
+              <DialogTitle>Record items received</DialogTitle>
             </DialogHeader>
-            <div className="space-y-3 text-sm">
-              <p>
-                This records receipt of all items on this vendor order. The
-                status will move to <span className="font-medium">received</span>{" "}
-                and a receipt will be logged.
+            <div className="space-y-4 text-sm">
+              <p className="text-slate-600">
+                Enter the quantity received for each item in this shipment.
+                Leave a line at 0 if those items weren't in this delivery.
+                The order moves to <span className="font-medium">received</span>{" "}
+                once all quantities are fulfilled.
               </p>
+              <div className="rounded-md border overflow-hidden">
+                <table className="w-full text-xs">
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <th className="px-3 py-2 text-left font-medium">SKU</th>
+                      <th className="px-3 py-2 text-left font-medium">Description</th>
+                      <th className="px-3 py-2 text-right font-medium">Received / Ordered</th>
+                      <th className="px-3 py-2 text-right font-medium w-28">Qty now</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {vo.items.map((item) => {
+                      const remaining = item.quantity - item.receivedQuantity;
+                      const qtyStr = receiveItems.get(item.id) ?? "0";
+                      const isFullyReceived = remaining <= 0;
+                      return (
+                        <tr
+                          key={item.id}
+                          className={`border-t ${isFullyReceived ? "opacity-50" : ""}`}
+                        >
+                          <td className="px-3 py-2 font-mono text-xs">
+                            {item.sku ?? item.variantSkuSnapshot ?? item.productSkuSnapshot ?? "—"}
+                          </td>
+                          <td className="px-3 py-2 text-slate-700 max-w-[240px]">
+                            <div>{item.description}</div>
+                            {item.subDescription && (
+                              <div className="text-slate-500 text-xs">{item.subDescription}</div>
+                            )}
+                          </td>
+                          <td className="px-3 py-2 text-right text-slate-600">
+                            {item.receivedQuantity} / {item.quantity}
+                          </td>
+                          <td className="px-3 py-2 text-right">
+                            {isFullyReceived ? (
+                              <span className="text-green-600 font-medium text-xs">Done</span>
+                            ) : (
+                              <Input
+                                type="number"
+                                min={0}
+                                max={remaining}
+                                value={qtyStr}
+                                onChange={(e) => {
+                                  const next = new Map(receiveItems);
+                                  next.set(item.id, e.target.value);
+                                  setReceiveItems(next);
+                                }}
+                                className="w-20 text-right h-7 text-sm ml-auto"
+                              />
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
               <div>
                 <Label htmlFor="receive-notes">Receipt notes (optional)</Label>
                 <Textarea
                   id="receive-notes"
                   value={receiveNotes}
                   onChange={(e) => setReceiveNotes(e.target.value)}
-                  rows={3}
+                  placeholder="e.g. 2 chairs on back-order, rest delivered"
+                  rows={2}
                 />
               </div>
             </div>
@@ -1507,7 +1677,7 @@ export default function VendorOrderDetail() {
                 Cancel
               </Button>
               <Button onClick={submitReceive} disabled={receive.isPending}>
-                Mark received
+                {receive.isPending ? "Saving…" : "Save receipt"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -1688,30 +1858,124 @@ export default function VendorOrderDetail() {
           </DialogContent>
         </Dialog>
 
-        {/* Delete dialog */}
-        <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
-          <DialogContent>
+        {/* Cancel-pending dialog — for pending (unsent) orders only */}
+        <Dialog open={confirmCancelPending} onOpenChange={setConfirmCancelPending}>
+          <DialogContent className="max-w-lg">
             <DialogHeader>
-              <DialogTitle>Delete this vendor order?</DialogTitle>
+              <DialogTitle>Cancel this vendor order?</DialogTitle>
             </DialogHeader>
-            <p className="text-sm">
-              The vendor order is still in <span className="font-medium">pending</span>{" "}
-              status, so it can be deleted. Its items will be un-assigned and
-              available to regroup.
-            </p>
+            <div className="space-y-4 text-sm">
+              <p className="text-slate-600">
+                The order is still <span className="font-medium">pending</span> and
+                hasn't been sent to the vendor yet. Canceling will un-assign its items
+                so they can be regrouped onto a different vendor order. The record will
+                be retained with a <span className="font-medium">canceled</span> status.
+              </p>
+
+              {vo && vo.items.length > 1 && (
+                <div className="rounded-md border p-3 space-y-2">
+                  <label className="flex items-start gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="cancel-pending-scope"
+                      checked={cancelPendingScope === "full"}
+                      onChange={() => setCancelPendingScope("full")}
+                      className="mt-0.5"
+                    />
+                    <div>
+                      <div className="font-medium">Cancel entire order</div>
+                      <div className="text-xs text-slate-500">
+                        All {vo.items.length} items will be un-assigned and the PO
+                        will be marked <span className="font-medium">canceled</span>.
+                      </div>
+                    </div>
+                  </label>
+                  <label className="flex items-start gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="cancel-pending-scope"
+                      checked={cancelPendingScope === "partial"}
+                      onChange={() => setCancelPendingScope("partial")}
+                      className="mt-0.5"
+                    />
+                    <div>
+                      <div className="font-medium">Remove specific items</div>
+                      <div className="text-xs text-slate-500">
+                        Only the selected items are un-assigned; the rest stay on this PO.
+                      </div>
+                    </div>
+                  </label>
+                </div>
+              )}
+
+              {vo && cancelPendingScope === "partial" && vo.items.length > 1 && (
+                <div className="rounded-md border max-h-48 overflow-y-auto">
+                  <table className="w-full text-xs">
+                    <thead className="bg-slate-50 sticky top-0">
+                      <tr>
+                        <th className="px-2 py-1 w-8"></th>
+                        <th className="px-2 py-1 text-left">SKU</th>
+                        <th className="px-2 py-1 text-left">Description</th>
+                        <th className="px-2 py-1 text-right">Qty</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {vo.items.map((it) => {
+                        const checked = cancelPendingItemIds.has(it.id);
+                        return (
+                          <tr
+                            key={it.id}
+                            className={`border-t cursor-pointer ${checked ? "bg-red-50" : ""}`}
+                            onClick={() => toggleCancelPendingItem(it.id)}
+                          >
+                            <td className="px-2 py-1">
+                              <Checkbox
+                                checked={checked}
+                                onCheckedChange={() => toggleCancelPendingItem(it.id)}
+                                aria-label={`Cancel item ${it.id}`}
+                              />
+                            </td>
+                            <td className="px-2 py-1 font-mono">
+                              {it.sku ?? it.variantSkuSnapshot ?? it.productSkuSnapshot ?? "—"}
+                            </td>
+                            <td className="px-2 py-1 text-slate-700">{it.description}</td>
+                            <td className="px-2 py-1 text-right">{it.quantity}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              <div>
+                <Label htmlFor="cancel-pending-reason">Reason (optional)</Label>
+                <Textarea
+                  id="cancel-pending-reason"
+                  value={cancelPendingReason}
+                  onChange={(e) => setCancelPendingReason(e.target.value)}
+                  placeholder="e.g. customer canceled order, wrong vendor"
+                  rows={2}
+                />
+              </div>
+            </div>
             <DialogFooter>
               <Button
                 variant="outline"
-                onClick={() => setConfirmDelete(false)}
+                onClick={() => setConfirmCancelPending(false)}
               >
-                Keep
+                Keep order
               </Button>
               <Button
                 variant="destructive"
-                onClick={submitDelete}
-                disabled={deleteMut.isPending}
+                onClick={submitCancelPending}
+                disabled={cancelPendingMut.isPending}
               >
-                Delete
+                {cancelPendingMut.isPending
+                  ? "Canceling…"
+                  : cancelPendingScope === "full"
+                  ? "Cancel order"
+                  : "Remove items"}
               </Button>
             </DialogFooter>
           </DialogContent>

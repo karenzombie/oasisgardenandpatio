@@ -22,8 +22,13 @@ const STATUS_VARIANT: Record<
   sent: "default",
   acknowledged: "default",
   fulfilled: "default",
+  partially_received: "secondary",
   received: "outline",
   canceled: "destructive",
+};
+
+const STATUS_EXTRA_CLASS: Record<string, string> = {
+  partially_received: "bg-amber-100 text-amber-800 border-amber-300",
 };
 
 function fmtDate(s: string | null): string {
@@ -163,6 +168,7 @@ export default function VendorOrders() {
                       <td className="px-3 py-2">
                         <Badge
                           variant={STATUS_VARIANT[r.status] ?? "secondary"}
+                          className={STATUS_EXTRA_CLASS[r.status] ?? ""}
                         >
                           {r.status.replace(/_/g, " ")}
                         </Badge>

@@ -5,7 +5,13 @@
  * Oasis Garden & Patio API
  * OpenAPI spec version: 0.1.0
  */
+import type { ReceiveVendorOrderRequestItemsItem } from "./receiveVendorOrderRequestItemsItem";
 
 export interface ReceiveVendorOrderRequest {
+  /**
+   * Per-line quantities being received in this event. Each entry must reference an item currently on this vendor order.
+   * @minItems 1
+   */
+  items: ReceiveVendorOrderRequestItemsItem[];
   notes?: string | null;
 }

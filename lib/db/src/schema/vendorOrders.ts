@@ -187,6 +187,30 @@ export const vendorOrderCancellationsTable = pgTable(
 export type VendorOrderCancellation =
   typeof vendorOrderCancellationsTable.$inferSelect;
 
+// Per-event receive log for vendor orders. Each call to /receive inserts one
+// row here with a per-item breakdown, enabling a full partial-receive audit
+// trail on the detail page. The items JSONB mirrors the shape returned in the
+// AdminVendorOrderReceive API payload.
+export const vendorOrderReceivesTable = pgTable(
+  "vendor_order_receives",
+  {
+    id: serial("id").primaryKey(),
+    vendorOrderId: integer("vendor_order_id")
+      .notNull()
+      .references(() => vendorOrdersTable.id, { onDelete: "cascade" }),
+    receivedByUserId: integer("received_by_user_id").references(
+      () => usersTable.id,
+      { onDelete: "set null" },
+    ),
+    notes: text("notes"),
+    receivedAt: timestamp("received_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    items: jsonb("items").notNull().default([]),
+  },
+  (t) => [index("vendor_order_receives_vendor_order_idx").on(t.vendorOrderId)],
+);
+
 export const cancellationRequestsTable = pgTable(
   "cancellation_requests",
   {

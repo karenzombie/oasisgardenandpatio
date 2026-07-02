@@ -8878,6 +8878,11 @@ export const AdminGetVendorOrderResponse = zod.object({
       fabricNameSnapshot: zod.string().nullable(),
       description: zod.string(),
       quantity: zod.number(),
+      receivedQuantity: zod
+        .number()
+        .describe(
+          "Cumulative quantity received across all partial receive events for this line item.",
+        ),
       unitPrice: zod.number(),
       amount: zod.number(),
       notes: zod.string().nullable(),
@@ -8956,6 +8961,23 @@ export const AdminGetVendorOrderResponse = zod.object({
       emailedAt: zod.coerce.date().nullable(),
       emailedTo: zod.string().nullable(),
       itemCount: zod.number(),
+    }),
+  ),
+  receives: zod.array(
+    zod.object({
+      id: zod.number(),
+      receivedByUserId: zod.number().nullable(),
+      receivedByEmail: zod.string().nullable(),
+      receivedAt: zod.coerce.date(),
+      notes: zod.string().nullable(),
+      items: zod.array(
+        zod.object({
+          orderItemId: zod.number(),
+          sku: zod.string().nullable(),
+          description: zod.string(),
+          quantityReceived: zod.number(),
+        }),
+      ),
     }),
   ),
 });
@@ -9024,6 +9046,11 @@ export const AdminUpdateVendorOrderResponse = zod.object({
       fabricNameSnapshot: zod.string().nullable(),
       description: zod.string(),
       quantity: zod.number(),
+      receivedQuantity: zod
+        .number()
+        .describe(
+          "Cumulative quantity received across all partial receive events for this line item.",
+        ),
       unitPrice: zod.number(),
       amount: zod.number(),
       notes: zod.string().nullable(),
@@ -9102,6 +9129,23 @@ export const AdminUpdateVendorOrderResponse = zod.object({
       emailedAt: zod.coerce.date().nullable(),
       emailedTo: zod.string().nullable(),
       itemCount: zod.number(),
+    }),
+  ),
+  receives: zod.array(
+    zod.object({
+      id: zod.number(),
+      receivedByUserId: zod.number().nullable(),
+      receivedByEmail: zod.string().nullable(),
+      receivedAt: zod.coerce.date(),
+      notes: zod.string().nullable(),
+      items: zod.array(
+        zod.object({
+          orderItemId: zod.number(),
+          sku: zod.string().nullable(),
+          description: zod.string(),
+          quantityReceived: zod.number(),
+        }),
+      ),
     }),
   ),
 });
@@ -9210,6 +9254,11 @@ export const AdminEditVendorOrderResponse = zod.object({
       fabricNameSnapshot: zod.string().nullable(),
       description: zod.string(),
       quantity: zod.number(),
+      receivedQuantity: zod
+        .number()
+        .describe(
+          "Cumulative quantity received across all partial receive events for this line item.",
+        ),
       unitPrice: zod.number(),
       amount: zod.number(),
       notes: zod.string().nullable(),
@@ -9288,6 +9337,23 @@ export const AdminEditVendorOrderResponse = zod.object({
       emailedAt: zod.coerce.date().nullable(),
       emailedTo: zod.string().nullable(),
       itemCount: zod.number(),
+    }),
+  ),
+  receives: zod.array(
+    zod.object({
+      id: zod.number(),
+      receivedByUserId: zod.number().nullable(),
+      receivedByEmail: zod.string().nullable(),
+      receivedAt: zod.coerce.date(),
+      notes: zod.string().nullable(),
+      items: zod.array(
+        zod.object({
+          orderItemId: zod.number(),
+          sku: zod.string().nullable(),
+          description: zod.string(),
+          quantityReceived: zod.number(),
+        }),
+      ),
     }),
   ),
 });
@@ -9449,6 +9515,11 @@ export const AdminSendVendorOrderResponse = zod.object({
       fabricNameSnapshot: zod.string().nullable(),
       description: zod.string(),
       quantity: zod.number(),
+      receivedQuantity: zod
+        .number()
+        .describe(
+          "Cumulative quantity received across all partial receive events for this line item.",
+        ),
       unitPrice: zod.number(),
       amount: zod.number(),
       notes: zod.string().nullable(),
@@ -9527,6 +9598,23 @@ export const AdminSendVendorOrderResponse = zod.object({
       emailedAt: zod.coerce.date().nullable(),
       emailedTo: zod.string().nullable(),
       itemCount: zod.number(),
+    }),
+  ),
+  receives: zod.array(
+    zod.object({
+      id: zod.number(),
+      receivedByUserId: zod.number().nullable(),
+      receivedByEmail: zod.string().nullable(),
+      receivedAt: zod.coerce.date(),
+      notes: zod.string().nullable(),
+      items: zod.array(
+        zod.object({
+          orderItemId: zod.number(),
+          sku: zod.string().nullable(),
+          description: zod.string(),
+          quantityReceived: zod.number(),
+        }),
+      ),
     }),
   ),
 });
@@ -9594,6 +9682,11 @@ export const AdminUpdateVendorOrderStatusResponse = zod.object({
       fabricNameSnapshot: zod.string().nullable(),
       description: zod.string(),
       quantity: zod.number(),
+      receivedQuantity: zod
+        .number()
+        .describe(
+          "Cumulative quantity received across all partial receive events for this line item.",
+        ),
       unitPrice: zod.number(),
       amount: zod.number(),
       notes: zod.string().nullable(),
@@ -9674,6 +9767,23 @@ export const AdminUpdateVendorOrderStatusResponse = zod.object({
       itemCount: zod.number(),
     }),
   ),
+  receives: zod.array(
+    zod.object({
+      id: zod.number(),
+      receivedByUserId: zod.number().nullable(),
+      receivedByEmail: zod.string().nullable(),
+      receivedAt: zod.coerce.date(),
+      notes: zod.string().nullable(),
+      items: zod.array(
+        zod.object({
+          orderItemId: zod.number(),
+          sku: zod.string().nullable(),
+          description: zod.string(),
+          quantityReceived: zod.number(),
+        }),
+      ),
+    }),
+  ),
 });
 
 /**
@@ -9684,6 +9794,17 @@ export const AdminReceiveVendorOrderParams = zod.object({
 });
 
 export const AdminReceiveVendorOrderBody = zod.object({
+  items: zod
+    .array(
+      zod.object({
+        orderItemId: zod.number(),
+        quantity: zod.number().min(1),
+      }),
+    )
+    .min(1)
+    .describe(
+      "Per-line quantities being received in this event. Each entry must reference an item currently on this vendor order.",
+    ),
   notes: zod.string().nullish(),
 });
 
@@ -9738,6 +9859,11 @@ export const AdminReceiveVendorOrderResponse = zod.object({
       fabricNameSnapshot: zod.string().nullable(),
       description: zod.string(),
       quantity: zod.number(),
+      receivedQuantity: zod
+        .number()
+        .describe(
+          "Cumulative quantity received across all partial receive events for this line item.",
+        ),
       unitPrice: zod.number(),
       amount: zod.number(),
       notes: zod.string().nullable(),
@@ -9816,6 +9942,198 @@ export const AdminReceiveVendorOrderResponse = zod.object({
       emailedAt: zod.coerce.date().nullable(),
       emailedTo: zod.string().nullable(),
       itemCount: zod.number(),
+    }),
+  ),
+  receives: zod.array(
+    zod.object({
+      id: zod.number(),
+      receivedByUserId: zod.number().nullable(),
+      receivedByEmail: zod.string().nullable(),
+      receivedAt: zod.coerce.date(),
+      notes: zod.string().nullable(),
+      items: zod.array(
+        zod.object({
+          orderItemId: zod.number(),
+          sku: zod.string().nullable(),
+          description: zod.string(),
+          quantityReceived: zod.number(),
+        }),
+      ),
+    }),
+  ),
+});
+
+/**
+ * @summary Cancel a pending (unsent) vendor order without generating a PDF or notifying the vendor.
+ */
+export const AdminCancelPendingVendorOrderParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminCancelPendingVendorOrderBody = zod
+  .object({
+    scope: zod.enum(["full", "partial"]),
+    itemIds: zod
+      .array(zod.number())
+      .optional()
+      .describe("Required when scope=partial."),
+    reason: zod.string().nullish(),
+  })
+  .describe(
+    "Cancel a pending (unsent) vendor order. No PDF is generated and no vendor notification is sent.\nFor 'full' scope, all items are un-assigned and the PO status moves to 'canceled'.\nFor 'partial' scope, only the selected items are un-assigned; the PO stays 'pending'.\n",
+  );
+
+export const AdminCancelPendingVendorOrderResponse = zod.object({
+  id: zod.number(),
+  vendorOrderNumber: zod.string(),
+  status: zod.string(),
+  notes: zod.string().nullable(),
+  noteToVendor: zod.string().nullable(),
+  vendorEstimatedDeliveryDate: zod.coerce.date().nullable(),
+  sentAt: zod.coerce.date().nullable(),
+  acknowledgedAt: zod.coerce.date().nullable(),
+  fulfilledAt: zod.coerce.date().nullable(),
+  receivedAt: zod.coerce.date().nullable(),
+  receivedByUserId: zod.number().nullable(),
+  receivedByEmail: zod.string().nullable(),
+  itemsReceived: zod.boolean(),
+  createdByUserId: zod.number().nullable(),
+  createdByEmail: zod.string().nullable(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+  manufacturerId: zod.number().nullable(),
+  manufacturerName: zod.string().nullable(),
+  manufacturerOrderEmail: zod.string().nullable(),
+  manufacturerAddressLine1: zod.string().nullable(),
+  manufacturerAddressLine2: zod.string().nullable(),
+  manufacturerCity: zod.string().nullable(),
+  manufacturerState: zod.string().nullable(),
+  manufacturerPostalCode: zod.string().nullable(),
+  manufacturerPhone: zod.string().nullable(),
+  manufacturerFax: zod.string().nullable(),
+  customerOrderId: zod.number().nullable(),
+  customerOrderNumber: zod.string().nullable(),
+  customerOrderStatus: zod.string().nullable(),
+  customerName: zod.string().nullable(),
+  shipToStore: zod.boolean(),
+  shipToName: zod.string().nullable(),
+  shipToLine1: zod.string().nullable(),
+  shipToLine2: zod.string().nullable(),
+  shipToCity: zod.string().nullable(),
+  shipToState: zod.string().nullable(),
+  shipToPostalCode: zod.string().nullable(),
+  shipToPhone: zod.string().nullable(),
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      productId: zod.number().nullable(),
+      productSkuSnapshot: zod.string().nullable(),
+      variantSkuSnapshot: zod.string().nullable(),
+      variantNameSnapshot: zod.string().nullable(),
+      weightSnapshot: zod.string().nullable(),
+      fabricNameSnapshot: zod.string().nullable(),
+      description: zod.string(),
+      quantity: zod.number(),
+      receivedQuantity: zod
+        .number()
+        .describe(
+          "Cumulative quantity received across all partial receive events for this line item.",
+        ),
+      unitPrice: zod.number(),
+      amount: zod.number(),
+      notes: zod.string().nullable(),
+      sku: zod
+        .string()
+        .nullable()
+        .describe(
+          "Effective SKU shown on the PO (PO override if edited, else the variant\/product snapshot SKU).",
+        ),
+      subDescription: zod
+        .string()
+        .nullable()
+        .describe(
+          "Effective sub-description \/ variant line (PO override if edited, else the variant\/fabric snapshot line).",
+        ),
+      cost: zod
+        .number()
+        .nullable()
+        .describe(
+          "Per-unit cost from the product record (staff-only, never printed on the PO). Null when there is no cost data for the line.",
+        ),
+      edited: zod
+        .boolean()
+        .describe(
+          "True when this line differs from the customer's original order (drives the staff-only red flag). Never printed on the PO.",
+        ),
+      kind: zod
+        .enum(["product", "fabric"])
+        .describe(
+          "'product' = the product line on the product vendor's PO. 'fabric' = a fabric-only line that was split out to an alternate fabric vendor's PO.",
+        ),
+      addons: zod
+        .array(
+          zod.object({
+            sku: zod.string().nullable(),
+            name: zod.string(),
+            quantity: zod.number(),
+          }),
+        )
+        .describe(
+          "Add-on snapshots (e.g. Marella privacy walls) ordered alongside the parent line. Rendered as SKU\/name\/qty sub-lines on the PO PDF and email — never with pricing.",
+        ),
+    }),
+  ),
+  sends: zod.array(
+    zod.object({
+      id: zod.number(),
+      sentByUserId: zod.number().nullable(),
+      sentByEmail: zod.string().nullable(),
+      sentAt: zod.coerce.date(),
+      sentToEmail: zod.string().nullable(),
+      isResend: zod.boolean(),
+      resendNote: zod.string().nullable(),
+      correctionNote: zod.string().nullable(),
+      pdfStorageUrl: zod.string().nullable(),
+    }),
+  ),
+  edits: zod.array(
+    zod.object({
+      id: zod.number(),
+      editedByUserId: zod.number().nullable(),
+      editedByEmail: zod.string().nullable(),
+      editedAt: zod.coerce.date(),
+      note: zod.string(),
+    }),
+  ),
+  cancellations: zod.array(
+    zod.object({
+      id: zod.number(),
+      scope: zod.enum(["full", "partial"]),
+      reason: zod.string().nullable(),
+      cancelledByUserId: zod.number().nullable(),
+      cancelledByEmail: zod.string().nullable(),
+      cancelledAt: zod.coerce.date(),
+      pdfStorageUrl: zod.string().nullable(),
+      emailedAt: zod.coerce.date().nullable(),
+      emailedTo: zod.string().nullable(),
+      itemCount: zod.number(),
+    }),
+  ),
+  receives: zod.array(
+    zod.object({
+      id: zod.number(),
+      receivedByUserId: zod.number().nullable(),
+      receivedByEmail: zod.string().nullable(),
+      receivedAt: zod.coerce.date(),
+      notes: zod.string().nullable(),
+      items: zod.array(
+        zod.object({
+          orderItemId: zod.number(),
+          sku: zod.string().nullable(),
+          description: zod.string(),
+          quantityReceived: zod.number(),
+        }),
+      ),
     }),
   ),
 });
@@ -9905,6 +10223,11 @@ export const AdminCancelVendorOrderResponse = zod.object({
       fabricNameSnapshot: zod.string().nullable(),
       description: zod.string(),
       quantity: zod.number(),
+      receivedQuantity: zod
+        .number()
+        .describe(
+          "Cumulative quantity received across all partial receive events for this line item.",
+        ),
       unitPrice: zod.number(),
       amount: zod.number(),
       notes: zod.string().nullable(),
@@ -9983,6 +10306,23 @@ export const AdminCancelVendorOrderResponse = zod.object({
       emailedAt: zod.coerce.date().nullable(),
       emailedTo: zod.string().nullable(),
       itemCount: zod.number(),
+    }),
+  ),
+  receives: zod.array(
+    zod.object({
+      id: zod.number(),
+      receivedByUserId: zod.number().nullable(),
+      receivedByEmail: zod.string().nullable(),
+      receivedAt: zod.coerce.date(),
+      notes: zod.string().nullable(),
+      items: zod.array(
+        zod.object({
+          orderItemId: zod.number(),
+          sku: zod.string().nullable(),
+          description: zod.string(),
+          quantityReceived: zod.number(),
+        }),
+      ),
     }),
   ),
 });

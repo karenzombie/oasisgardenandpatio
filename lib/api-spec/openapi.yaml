@@ -4531,6 +4531,30 @@ paths:
               schema: { $ref: "#/components/schemas/AdminVendorOrderDetail" }
         "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
         "409": { description: Invalid state for receive, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+  /admin/vendor-orders/{id}/cancel-pending:
+    post:
+      operationId: adminCancelPendingVendorOrder
+      tags: [admin-vendor-orders]
+      summary: Cancel a pending (unsent) vendor order without generating a PDF or notifying the vendor.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CancelPendingVendorOrderRequest" }
+      responses:
+        "200":
+          description: Updated vendor order
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminVendorOrderDetail" }
+        "400": { description: Bad request, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+        "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+        "409": { description: Not in pending status, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
   /admin/vendor-orders/{id}/cancel:
     post:
       operationId: adminCancelVendorOrder
@@ -5515,6 +5539,9 @@ components:
         fabricNameSnapshot: { type: string, nullable: true }
         description: { type: string }
         quantity: { type: integer }
+        receivedQuantity:
+          type: integer
+          description: "Cumulative quantity received across all partial receive events for this line item."
         unitPrice: { type: number }
         amount: { type: number }
         notes: { type: string, nullable: true }
@@ -5548,7 +5575,7 @@ components:
               quantity: { type: integer }
             required: [sku, name, quantity]
       required:
-        [id, productId, productSkuSnapshot, variantSkuSnapshot, variantNameSnapshot, weightSnapshot, fabricNameSnapshot, description, quantity, unitPrice, amount, notes, sku, subDescription, cost, edited, kind, addons]
+        [id, productId, productSkuSnapshot, variantSkuSnapshot, variantNameSnapshot, weightSnapshot, fabricNameSnapshot, description, quantity, receivedQuantity, unitPrice, amount, notes, sku, subDescription, cost, edited, kind, addons]
     AdminVendorOrderEdit:
       type: object
       properties:
@@ -5655,8 +5682,11 @@ components:
         cancellations:
           type: array
           items: { $ref: "#/components/schemas/AdminVendorOrderCancellation" }
+        receives:
+          type: array
+          items: { $ref: "#/components/schemas/AdminVendorOrderReceive" }
       required:
-        [id, vendorOrderNumber, status, notes, noteToVendor, vendorEstimatedDeliveryDate, sentAt, acknowledgedAt, fulfilledAt, receivedAt, receivedByUserId, receivedByEmail, itemsReceived, createdByUserId, createdByEmail, createdAt, updatedAt, manufacturerId, manufacturerName, manufacturerOrderEmail, manufacturerAddressLine1, manufacturerAddressLine2, manufacturerCity, manufacturerState, manufacturerPostalCode, manufacturerPhone, manufacturerFax, customerOrderId, customerOrderNumber, customerOrderStatus, customerName, shipToStore, shipToName, shipToLine1, shipToLine2, shipToCity, shipToState, shipToPostalCode, shipToPhone, items, sends, edits, cancellations]
+        [id, vendorOrderNumber, status, notes, noteToVendor, vendorEstimatedDeliveryDate, sentAt, acknowledgedAt, fulfilledAt, receivedAt, receivedByUserId, receivedByEmail, itemsReceived, createdByUserId, createdByEmail, createdAt, updatedAt, manufacturerId, manufacturerName, manufacturerOrderEmail, manufacturerAddressLine1, manufacturerAddressLine2, manufacturerCity, manufacturerState, manufacturerPostalCode, manufacturerPhone, manufacturerFax, customerOrderId, customerOrderNumber, customerOrderStatus, customerName, shipToStore, shipToName, shipToLine1, shipToLine2, shipToCity, shipToState, shipToPostalCode, shipToPhone, items, sends, edits, cancellations, receives]
     CreateStandaloneVendorOrderItem:
       type: object
       properties:
@@ -5721,7 +5751,18 @@ components:
     ReceiveVendorOrderRequest:
       type: object
       properties:
+        items:
+          type: array
+          minItems: 1
+          description: "Per-line quantities being received in this event. Each entry must reference an item currently on this vendor order."
+          items:
+            type: object
+            properties:
+              orderItemId: { type: integer }
+              quantity: { type: integer, minimum: 1 }
+            required: [orderItemId, quantity]
         notes: { type: string, nullable: true }
+      required: [items]
     CancelVendorOrderRequest:
       type: object
       description: |
@@ -5764,6 +5805,41 @@ components:
         itemCount: { type: integer }
       required:
         [id, scope, reason, cancelledByUserId, cancelledByEmail, cancelledAt, pdfStorageUrl, emailedAt, emailedTo, itemCount]
+    AdminVendorOrderReceive:
+      type: object
+      properties:
+        id: { type: integer }
+        receivedByUserId: { type: integer, nullable: true }
+        receivedByEmail: { type: string, nullable: true }
+        receivedAt: { type: string, format: date-time }
+        notes: { type: string, nullable: true }
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              orderItemId: { type: integer }
+              sku: { type: string, nullable: true }
+              description: { type: string }
+              quantityReceived: { type: integer }
+            required: [orderItemId, sku, description, quantityReceived]
+      required: [id, receivedByUserId, receivedByEmail, receivedAt, notes, items]
+    CancelPendingVendorOrderRequest:
+      type: object
+      description: |
+        Cancel a pending (unsent) vendor order. No PDF is generated and no vendor notification is sent.
+        For 'full' scope, all items are un-assigned and the PO status moves to 'canceled'.
+        For 'partial' scope, only the selected items are un-assigned; the PO stays 'pending'.
+      properties:
+        scope:
+          type: string
+          enum: [full, partial]
+        itemIds:
+          type: array
+          items: { type: integer }
+          description: Required when scope=partial.
+        reason: { type: string, nullable: true }
+      required: [scope]
     UpdateVendorOrderRequest:
       type: object
       properties:

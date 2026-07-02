@@ -8,6 +8,7 @@
 import type { AdminVendorOrderCancellation } from "./adminVendorOrderCancellation";
 import type { AdminVendorOrderEdit } from "./adminVendorOrderEdit";
 import type { AdminVendorOrderItem } from "./adminVendorOrderItem";
+import type { AdminVendorOrderReceive } from "./adminVendorOrderReceive";
 import type { AdminVendorOrderSend } from "./adminVendorOrderSend";
 
 export interface AdminVendorOrderDetail {
@@ -54,4 +55,5 @@ export interface AdminVendorOrderDetail {
   sends: AdminVendorOrderSend[];
   edits: AdminVendorOrderEdit[];
   cancellations: AdminVendorOrderCancellation[];
+  receives: AdminVendorOrderReceive[];
 }
