@@ -73,28 +73,6 @@ const TEMPLATES: Record<string, StatusCopy> = {
       ${SIGNOFF}
     `,
   },
-  ready_for_delivery: {
-    subject: (n) => `Your order is ready! (${n})`,
-    title: "Ready for delivery",
-    body: (greeting) => `
-      ${greeting}
-      <p>Your order is complete and ready for delivery! Our team will be in touch shortly to coordinate a delivery time that works for you.</p>
-      <p>If you have a preferred time window or any special instructions, feel free to reply to this email.</p>
-      <p>We can't wait for you to enjoy your new pieces!</p>
-      ${SIGNOFF}
-    `,
-  },
-  out_for_delivery: {
-    subject: (n) => `Your order is on its way! (${n})`,
-    title: "Out for delivery",
-    body: (greeting) => `
-      ${greeting}
-      <p>Exciting news! Your order is out for delivery today. Please ensure someone is available to receive it at your delivery address.</p>
-      <p>If you have any questions or need to reach us urgently, please reply to this email or call us directly.</p>
-      <p>We hope you love your new items!</p>
-      ${SIGNOFF}
-    `,
-  },
   delivered: {
     subject: (n) => `Your order has been delivered! (${n})`,
     title: "Delivered",

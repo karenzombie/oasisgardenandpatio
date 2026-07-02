@@ -24,8 +24,8 @@ import { useToast } from "@/hooks/use-toast";
 import { PageBody, PageHeader } from "../../StaffShell";
 
 const ORDER_STATUSES = [
-  "pending", "confirmed", "in_production", "ready_for_delivery",
-  "out_for_delivery", "delivered", "completed",
+  "pending", "confirmed", "in_production", "ready_for_store_delivery",
+  "carrier_delivery_update", "out_for_local_delivery", "delivered", "completed",
 ] as const;
 
 function fmtMoney(n: number): string {
