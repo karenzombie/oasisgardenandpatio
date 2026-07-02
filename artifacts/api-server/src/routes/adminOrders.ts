@@ -64,6 +64,11 @@ const DEFAULT_LIMIT = 50;
 // Allowed statuses for the order lifecycle. Kept permissive for v1; we accept
 // any of these and log the transition. Strict transition graphs come later
 // when the agent / customer-facing flows formalize the workflow.
+// "refunded" is intentionally excluded: refunds must go through the
+// dedicated POST /admin/orders/:id/refund endpoint (Path B), which fires
+// sendOrderRefundEmail with the actual gross/net amounts. The generic
+// status endpoint explicitly rejects "refunded" above before this check
+// is even reached.
 const ALLOWED_ORDER_STATUSES = new Set([
   "pending",
   "confirmed",
@@ -73,7 +78,6 @@ const ALLOWED_ORDER_STATUSES = new Set([
   "delivered",
   "completed",
   "canceled",
-  "refunded",
 ]);
 
 // Once an order reaches one of these, it cannot transition out of it.
@@ -564,6 +568,12 @@ router.post(
       res
         .status(400)
         .json({ error: body.error.issues[0]?.message ?? "Invalid body" });
+      return;
+    }
+    if (body.data.toStatus === "refunded") {
+      res.status(400).json({
+        error: "Refunds must be processed through the /refund endpoint.",
+      });
       return;
     }
     if (!ALLOWED_ORDER_STATUSES.has(body.data.toStatus)) {
