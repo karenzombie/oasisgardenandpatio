@@ -2041,7 +2041,7 @@ export default function Product() {
                 <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-sm">
                   {Object.entries(data.specs).map(([k, v]) => {
                     const val = String(v).trim();
-                    const isUrl = /^https?:\/\//i.test(val);
+                    const isUrl = /^https?:\/\//i.test(val) || val.startsWith("/");
                     const isPdf = /pdf/i.test(k) || /\.pdf($|\?)/i.test(val);
                     return (
                       <div key={k} className="flex gap-2 border-b border-border py-2">
