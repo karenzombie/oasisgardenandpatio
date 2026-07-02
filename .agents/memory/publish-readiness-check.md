@@ -17,6 +17,7 @@ When the user signals they are about to publish (or asks if everything is ready 
 4. **Cross-check key dev/prod counts** for the affected manufacturers/tables — active products, active variants, fabric_links, grade_prices, finishes, fabrics.
 5. **Typecheck** (`pnpm run typecheck`) — must be clean.
 6. **check-image-urls** workflow — must finish clean.
-7. **Report any mismatches before publishing**, not after.
+7. **Diff dev vs prod across ALL tables** — not just the changed ones. Compare row counts for every table; enumerate prod-only rows in transactional tables (orders, customers, vendor_orders, users) that a sync's TRUNCATE CASCADE would destroy. Flag EVERY difference to the user for a decision before pushing (pre-launch policy: dev overwrites prod, but the user decides on each difference).
+8. **Report any mismatches before publishing**, not after.
 
 **Why:** The Galtech/TG publish in June 2026 shipped with `fabrics.notes` missing from one SELECT (instant 500), TG rug products never seeded to prod, and TG umbrella fabric_links never cleaned up — all discovered only after publishing. A pre-publish audit against prod catches all of these.

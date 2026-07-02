@@ -73,6 +73,7 @@ A full-stack e-commerce platform for a luxury outdoor furniture retailer, suppor
 - When I ask for something and it's finished, mark the task done right away so we don't lose track of what's still open. If you're unsure whether to close it out, prompt me with "mark this task done".
 - **Never carry work over as "in progress" or "incomplete" unless I explicitly tell you to.** When a piece of work is finished, fully close it out — do not leave stale plans, session plans, or task files lingering that resurface in later turns. If you're not certain whether something is done, ask me before marking it complete rather than leaving it open. Delete completed `.local/session_plan.md` and any other completed plan files so they don't reappear.
 - **Before any publish**: run a full readiness audit — identify the last publish commit, list every task completed since, verify each one is reflected in prod (schema, seed data, post-merge.sh coverage, dev/prod count cross-checks), typecheck clean, check-image-urls clean. Report mismatches before publishing, not after.
+- **Pre-launch dev→prod policy**: until launch, publishes push dev over prod (code + DB data, including product data). BUT: flag ANY difference found between dev and prod — in ANY database table, including transactional data (orders, customers, vendor orders, users) — for my review BEFORE publishing or syncing. I decide what gets overwritten; never silently overwrite or skip differences.
 
 ## Gotchas
 

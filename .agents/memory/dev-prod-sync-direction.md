@@ -12,6 +12,14 @@ When dev and production databases diverge on data (SKUs, codes, material IDs, et
 
 **How to apply:** Before running any UPDATE on dev to "normalize" it to prod, stop and ask: is prod's format correct and intentional, or is it a legacy artifact? If prod is stale, fix prod.
 
+## Pre-launch policy (user-set, July 2026): flag ALL dev/prod differences before publish
+
+Until the site launches, every publish pushes dev over prod (code + DB data incl. catalog). But the user requires that **any difference found between dev and prod — in ANY table, not just catalog** — is flagged to them for a decision BEFORE publishing/syncing. Do not silently overwrite or silently skip differences.
+
+**Why:** The July 2026 catalog sync's `TRUNCATE manufacturers CASCADE` silently wiped prod `vendor_orders` (FK cascade) — the user accepted the loss but wants to make that call themselves next time. Transactional tables (orders, customers, vendor_orders, users) may hold prod-only test data the user cares about.
+
+**How to apply:** Before any publish or prod data sync, diff dev vs prod row counts across ALL tables (not just the catalog mirror list), enumerate prod-only rows in transactional tables that a TRUNCATE CASCADE would destroy, and present the differences to the user for sign-off first.
+
 ## Catalog mirror mechanism (replaces old syncProd.ts + seedGaltech.ts)
 
 `scripts/post-merge.sh` now syncs prod via a **full-catalog mirror**, not per-manufacturer seed scripts:
