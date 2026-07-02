@@ -32,7 +32,7 @@ import Banners from "./pages/admin/Banners";
 import Legal from "./pages/admin/Legal";
 import Settings from "./pages/admin/Settings";
 import Discounts from "./pages/admin/Discounts";
-import Users from "./pages/admin/Users";
+import CustomerUsers, { StaffAccountsPage } from "./pages/admin/Users";
 import AuditLog from "./pages/admin/AuditLog";
 import Orders from "./pages/admin/Orders";
 import OrderDetail from "./pages/admin/OrderDetail";
@@ -91,8 +91,8 @@ export default function StaffRouter() {
                 <Route path="/admin/legal" component={Legal} />
                 <Route path="/admin/settings" component={Settings} />
                 <Route path="/admin/discounts" component={Discounts} />
-                <Route path="/admin/users" component={Users} />
-                <Route path="/admin/customers" component={Users} />
+                <Route path="/admin/users" component={StaffAccountsPage} />
+                <Route path="/admin/customers" component={CustomerUsers} />
                 <Route path="/admin/audit-log" component={AuditLog} />
                 <Route path="/admin/recovery-requests" component={RecoveryRequests} />
                 <Route path="/admin/orders" component={Orders} />

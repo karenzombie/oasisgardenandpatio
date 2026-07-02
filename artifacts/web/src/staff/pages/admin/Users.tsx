@@ -29,7 +29,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -53,23 +52,23 @@ function formatDateTime(s: string | null): string {
   return s ? new Date(s).toLocaleString() : "Never";
 }
 
-export default function Users() {
+export function StaffAccountsPage() {
   return (
     <>
-      <PageHeader title="Users" />
+      <PageHeader title="Staff Accounts" />
       <PageBody>
-        <Tabs defaultValue="staff">
-          <TabsList>
-            <TabsTrigger value="staff">Staff</TabsTrigger>
-            <TabsTrigger value="customers">Customers</TabsTrigger>
-          </TabsList>
-          <TabsContent value="staff" className="mt-4">
-            <UsersPanel group="staff" />
-          </TabsContent>
-          <TabsContent value="customers" className="mt-4">
-            <UsersPanel group="customers" />
-          </TabsContent>
-        </Tabs>
+        <UsersPanel group="staff" />
+      </PageBody>
+    </>
+  );
+}
+
+export default function CustomersPage() {
+  return (
+    <>
+      <PageHeader title="Customers" />
+      <PageBody>
+        <UsersPanel group="customers" />
       </PageBody>
     </>
   );
