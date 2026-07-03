@@ -88,23 +88,37 @@ const s = StyleSheet.create({
     flexDirection: "row",
     borderBottom: `1px solid ${BORDER}`,
   },
+  // Cells are Views (which establish a hard width boundary for layout)
+  // wrapping a Text (which does the actual word-wrapping). Applying width
+  // directly to a <Text> does not reliably contain long unbroken tokens
+  // (e.g. order numbers) in react-pdf -- the text can overflow past its
+  // column and visually bleed into the next one. Wrapping in a sized View
+  // fixes that regardless of content length.
   cell: {
     padding: 6,
     borderRight: `1px solid ${BORDER}`,
-    fontSize: 11,
   },
   headerCell: {
     padding: 6,
     borderRight: `1px solid ${BORDER}`,
+  },
+  cellText: {
+    fontSize: 11,
+  },
+  headerCellText: {
     fontSize: 11,
     fontFamily: "Helvetica-Bold",
   },
-  colOrder: { width: "13%" },
-  colCustomer: { width: "20%" },
-  colAddress: { width: "27%" },
-  colDate: { width: "12%" },
-  colTime: { width: "18%" },
-  colTotal: { width: "10%", borderRight: "none", textAlign: "right" },
+  // Order # and Customer are the widest/longest fields (order numbers run
+  // ~17 chars, customer names vary), so they get the most room; the
+  // remaining columns are sized down to fit within 100%.
+  colOrder: { width: "16%" },
+  colCustomer: { width: "23%" },
+  colAddress: { width: "22%" },
+  colDate: { width: "10%" },
+  colTime: { width: "17%" },
+  colTotal: { width: "12%", borderRight: "none" },
+  totalText: { textAlign: "right" },
 });
 
 function ManifestDocument({
@@ -124,29 +138,49 @@ function ManifestDocument({
 
         <View style={s.table}>
           <View style={s.headerRow} fixed>
-            <Text style={[s.headerCell, s.colOrder]}>Order #</Text>
-            <Text style={[s.headerCell, s.colCustomer]}>Customer</Text>
-            <Text style={[s.headerCell, s.colAddress]}>Shipping Address</Text>
-            <Text style={[s.headerCell, s.colDate]}>Date</Text>
-            <Text style={[s.headerCell, s.colTime]}>Time Window</Text>
-            <Text style={[s.headerCell, s.colTotal]}>Total</Text>
+            <View style={[s.headerCell, s.colOrder]}>
+              <Text style={s.headerCellText}>Order #</Text>
+            </View>
+            <View style={[s.headerCell, s.colCustomer]}>
+              <Text style={s.headerCellText}>Customer</Text>
+            </View>
+            <View style={[s.headerCell, s.colAddress]}>
+              <Text style={s.headerCellText}>Shipping Address</Text>
+            </View>
+            <View style={[s.headerCell, s.colDate]}>
+              <Text style={s.headerCellText}>Date</Text>
+            </View>
+            <View style={[s.headerCell, s.colTime]}>
+              <Text style={s.headerCellText}>Time Window</Text>
+            </View>
+            <View style={[s.headerCell, s.colTotal]}>
+              <Text style={[s.headerCellText, s.totalText]}>Total</Text>
+            </View>
           </View>
           {rows.map((r) => (
             <View style={s.row} key={r.orderNumber} wrap={false}>
-              <Text style={[s.cell, s.colOrder]}>{r.orderNumber}</Text>
-              <Text style={[s.cell, s.colCustomer]}>
-                {r.customerName ?? "—"}
-              </Text>
-              <Text style={[s.cell, s.colAddress]}>
-                {fmtAddress(r.shippingAddress)}
-              </Text>
-              <Text style={[s.cell, s.colDate]}>
-                {fmtDate(r.scheduledDeliveryDate)}
-              </Text>
-              <Text style={[s.cell, s.colTime]}>
-                {r.scheduledDeliveryTimeLabel}
-              </Text>
-              <Text style={[s.cell, s.colTotal]}>{fmtMoney(r.total)}</Text>
+              <View style={[s.cell, s.colOrder]}>
+                <Text style={s.cellText}>{r.orderNumber}</Text>
+              </View>
+              <View style={[s.cell, s.colCustomer]}>
+                <Text style={s.cellText}>{r.customerName ?? "—"}</Text>
+              </View>
+              <View style={[s.cell, s.colAddress]}>
+                <Text style={s.cellText}>{fmtAddress(r.shippingAddress)}</Text>
+              </View>
+              <View style={[s.cell, s.colDate]}>
+                <Text style={s.cellText}>
+                  {fmtDate(r.scheduledDeliveryDate)}
+                </Text>
+              </View>
+              <View style={[s.cell, s.colTime]}>
+                <Text style={s.cellText}>{r.scheduledDeliveryTimeLabel}</Text>
+              </View>
+              <View style={[s.cell, s.colTotal]}>
+                <Text style={[s.cellText, s.totalText]}>
+                  {fmtMoney(r.total)}
+                </Text>
+              </View>
             </View>
           ))}
         </View>

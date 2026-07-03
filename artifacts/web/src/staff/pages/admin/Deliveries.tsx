@@ -128,16 +128,23 @@ function LocalDeliveriesTab() {
           title="Generate Delivery Manifest"
           onClick={() => {
             const orderIds = Array.from(selected).join(",");
+            // Browsers only allow one window.open() new-tab per user gesture;
+            // a second call is silently blocked as a popup. So the summary
+            // opens for on-screen viewing, and the merged copies file is
+            // triggered as a direct download instead of a second tab -- a
+            // same-origin <a download> click isn't subject to the popup
+            // limit, so both PDFs reliably reach the user from one click.
             window.open(
               `/api/admin/deliveries/manifest-summary?orderIds=${orderIds}`,
               "_blank",
               "noopener,noreferrer",
             );
-            window.open(
-              `/api/admin/deliveries/manifest-copies?orderIds=${orderIds}`,
-              "_blank",
-              "noopener,noreferrer",
-            );
+            const link = document.createElement("a");
+            link.href = `/api/admin/deliveries/manifest-copies?orderIds=${orderIds}`;
+            link.download = "delivery-copies-merged.pdf";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
           }}
         >
           Generate Delivery Manifest
