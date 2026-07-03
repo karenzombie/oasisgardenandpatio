@@ -137,8 +137,7 @@ const TEMPLATES: Record<string, StatusCopy> = {
       ${greeting}
       <p>Your order is now complete and we hope you are absolutely loving your new pieces from Oasis Garden &amp; Patio. We truly appreciate your business!</p>
       <p>If you ever need anything in the future, we are always here to help.</p>
-      <p>We would love to see your new space! Share a photo and tag us on <a href="https://www.facebook.com/people/Oasis-Garden-Patio/100057549515695/" style="color:#1a3c5e;">Facebook</a> or <a href="https://www.instagram.com/oasisgardenandpatio/" style="color:#1a3c5e;">Instagram</a>.</p>
-      <p>Leave us a review on <a href="https://www.yelp.com/biz/oasis-garden-and-patio-santa-clarita" style="color:#1a3c5e;">Yelp</a></p>
+      <p>We would love to see your new space! Share a photo and tag us on <a href="https://www.facebook.com/people/Oasis-Garden-Patio/100057549515695/" style="color:#1a3c5e;">Facebook</a> or <a href="https://www.instagram.com/oasisgardenandpatio/" style="color:#1a3c5e;">Instagram</a>. And if you have a moment, we would love it if you left us a review on <a href="https://www.yelp.com/biz/oasis-garden-and-patio-santa-clarita" style="color:#1a3c5e;">Yelp</a>.</p>
       <p>Thank you again for choosing Oasis Garden &amp; Patio. We hope to see you again soon!</p>
       ${SIGNOFF}
     `,
