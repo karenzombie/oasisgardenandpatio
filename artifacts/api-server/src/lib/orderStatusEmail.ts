@@ -496,6 +496,7 @@ export async function sendCarrierDeliveryUpdateEmail(
 export async function sendOrderStatusEmail(
   orderId: number,
   toStatus: string,
+  noteToCustomer?: string | null,
 ): Promise<void> {
   try {
     const [order] = await db
@@ -528,6 +529,10 @@ export async function sendOrderStatusEmail(
       return;
     }
     const greeting = `<p>Hi ${escapeHtml(recipient.name)},</p>`;
+    const trimmedNote = noteToCustomer?.trim();
+    const noteHtml = trimmedNote
+      ? `<p style="font-size:13px;color:#666;margin-top:4px;">Note from Oasis Staff: ${escapeHtml(trimmedNote)}</p>`
+      : "";
     await sendEmail({
       to: recipient.email,
       subject: tpl.subject(order.orderNumber),
@@ -535,6 +540,7 @@ export async function sendOrderStatusEmail(
       bodyHtml: `
         ${tpl.body(greeting, order)}
         <p style="font-size:13px;color:#666;margin-top:24px;">Order reference: <strong>${order.orderNumber}</strong></p>
+        ${noteHtml}
       `,
     });
     logger.info(

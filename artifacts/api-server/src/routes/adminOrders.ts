@@ -655,7 +655,11 @@ router.post(
       // response or tie up an Express worker. Errors are swallowed
       // inside the helper, but we attach a final `.catch` as belt-and-
       // suspenders against any unhandled rejection.
-      void sendOrderStatusEmail(orderId, body.data.toStatus).catch(() => {});
+      void sendOrderStatusEmail(
+        orderId,
+        body.data.toStatus,
+        body.data.note ?? null,
+      ).catch(() => {});
       if (body.data.toStatus === "delivered") {
         try {
           await deductInventoryForDelivery(orderId, req.session?.userId ?? null);

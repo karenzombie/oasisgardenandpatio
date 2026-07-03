@@ -657,7 +657,7 @@ export default function OrderDetail() {
                   </Select>
                 </div>
                 <div className="flex-[2] min-w-[240px]">
-                  <Label htmlFor="status-note">Note (optional)</Label>
+                  <Label htmlFor="status-note">Note to Customer (optional)</Label>
                   <Input
                     id="status-note"
                     value={statusNote}
