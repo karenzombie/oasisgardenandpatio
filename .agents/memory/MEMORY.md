@@ -51,4 +51,5 @@
 - [Verify emails without a browser](verify-emails-without-browser.md) — 2FA blocks Playwright + Resend really sends; split a pure builder, run a tsx harness in api-server, grep callsites for trigger proof.
 - [Vendor docs no-pricing rule](vendor-pdf-no-pricing.md) — NO pricing on ANY vendor-facing output (PO/cancellation PDFs + emails): SKU/desc/qty only; hard client rule.
 - [Vendor order edit overlay](vendor-order-edit-overlay.md) — pending-PO edits are po_* overlays on order_items (never mutate customer order) via audited /edit route; no cost/pricing on printed PO; shared product+fabric rows aren't PO-scoped.
+- [Guest cart session persistence](guest-cart-session-persistence.md) — every route that can be the FIRST guest write must call ensureSessionPersisted(req) or the cart/session id never reaches the browser and the cart is silently orphaned.
 - [CSV duplicate-SKU collisions during import](csv-duplicate-sku-collision.md) — one raw CSV SKU can represent 2+ distinct products; a seed's SKU_REMAP intent doesn't guarantee both rows landed — verify count in DB, don't assume.

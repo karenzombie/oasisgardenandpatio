@@ -309,6 +309,7 @@ router.delete(
 router.post(
   "/cart/items",
   async (req: Request, res: Response): Promise<void> => {
+    await ensureSessionPersisted(req);
     const parsed = AddCartItemBody.safeParse(req.body);
     if (!parsed.success) {
       res
