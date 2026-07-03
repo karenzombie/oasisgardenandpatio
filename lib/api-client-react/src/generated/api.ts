@@ -36,6 +36,7 @@ import type {
   AdminCancelRecoveryRequest200,
   AdminCancellationRequest,
   AdminCategory,
+  AdminCompletedDeliveryPage,
   AdminCouponCode,
   AdminCouponCodeUse,
   AdminCreateCustomerResponse,
@@ -63,6 +64,7 @@ import type {
   AdminLegalDocument,
   AdminListAuditLogParams,
   AdminListCancellationRequestsParams,
+  AdminListCompletedDeliveriesParams,
   AdminListCustomersParams,
   AdminListDirectShipDeliveriesParams,
   AdminListFinishCollectionsParams,
@@ -14645,6 +14647,116 @@ export function useAdminListDirectShipDeliveries<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getAdminListDirectShipDeliveriesQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Orders with status delivered. Delivery Type is derived: Direct Ship if the order has at least one shipment with a non-null tracking_number, otherwise Local Delivery. Sorted by placedAt descending (same recency column as the existing Orders list).
+ * @summary List fully delivered orders (local and direct ship) for the Deliveries > Completed tab
+ */
+export const getAdminListCompletedDeliveriesUrl = (
+  params?: AdminListCompletedDeliveriesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/admin/deliveries/completed?${stringifiedParams}`
+    : `/api/admin/deliveries/completed`;
+};
+
+export const adminListCompletedDeliveries = async (
+  params?: AdminListCompletedDeliveriesParams,
+  options?: RequestInit,
+): Promise<AdminCompletedDeliveryPage> => {
+  return customFetch<AdminCompletedDeliveryPage>(
+    getAdminListCompletedDeliveriesUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getAdminListCompletedDeliveriesQueryKey = (
+  params?: AdminListCompletedDeliveriesParams,
+) => {
+  return [
+    `/api/admin/deliveries/completed`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getAdminListCompletedDeliveriesQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminListCompletedDeliveries>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: AdminListCompletedDeliveriesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminListCompletedDeliveries>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getAdminListCompletedDeliveriesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminListCompletedDeliveries>>
+  > = ({ signal }) =>
+    adminListCompletedDeliveries(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminListCompletedDeliveries>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminListCompletedDeliveriesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminListCompletedDeliveries>>
+>;
+export type AdminListCompletedDeliveriesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List fully delivered orders (local and direct ship) for the Deliveries > Completed tab
+ */
+
+export function useAdminListCompletedDeliveries<
+  TData = Awaited<ReturnType<typeof adminListCompletedDeliveries>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: AdminListCompletedDeliveriesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminListCompletedDeliveries>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminListCompletedDeliveriesQueryOptions(
     params,
     options,
   );

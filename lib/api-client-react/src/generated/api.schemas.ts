@@ -125,6 +125,29 @@ export interface AdminDirectShipPage {
   total: number;
 }
 
+export interface CompletedDeliveryShipmentPair {
+  carrierName: string | null;
+  trackingNumber: string;
+}
+
+export type AdminCompletedDeliverySummaryDeliveryType =
+  (typeof AdminCompletedDeliverySummaryDeliveryType)[keyof typeof AdminCompletedDeliverySummaryDeliveryType];
+
+export const AdminCompletedDeliverySummaryDeliveryType = {
+  local: "local",
+  direct_ship: "direct_ship",
+} as const;
+
+export type AdminCompletedDeliverySummary = AdminOrderSummary & {
+  deliveryType: AdminCompletedDeliverySummaryDeliveryType;
+  shipments: CompletedDeliveryShipmentPair[];
+};
+
+export interface AdminCompletedDeliveryPage {
+  rows: AdminCompletedDeliverySummary[];
+  total: number;
+}
+
 export interface AdminOrderItem {
   id: number;
   productId: number | null;
@@ -5221,6 +5244,31 @@ export type AdminListDirectShipDeliveriesParams = {
    */
   offset?: number;
 };
+
+export type AdminListCompletedDeliveriesParams = {
+  /**
+   * all (default), local, or direct-ship
+   */
+  filter?: AdminListCompletedDeliveriesFilter;
+  /**
+   * @minimum 1
+   * @maximum 200
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   */
+  offset?: number;
+};
+
+export type AdminListCompletedDeliveriesFilter =
+  (typeof AdminListCompletedDeliveriesFilter)[keyof typeof AdminListCompletedDeliveriesFilter];
+
+export const AdminListCompletedDeliveriesFilter = {
+  all: "all",
+  local: "local",
+  "direct-ship": "direct-ship",
+} as const;
 
 export type AdminListCancellationRequestsParams = {
   status?: string;

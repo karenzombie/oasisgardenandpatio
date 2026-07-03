@@ -14,6 +14,7 @@ import {
 import {
   AdminListLocalDeliveriesQueryParams,
   AdminListDirectShipDeliveriesQueryParams,
+  AdminListCompletedDeliveriesQueryParams,
 } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import { loadOrderPdfArgs } from "./adminOrders";
@@ -187,6 +188,122 @@ router.get(
         total: Number(r.order.total),
         balanceDue: Number(r.order.balanceDue),
         placedAt: r.order.placedAt.toISOString(),
+      })),
+      total: countRow?.count ?? 0,
+    });
+  },
+);
+
+router.get(
+  "/admin/deliveries/completed",
+  requireAuth,
+  requireRole("admin", "agent"),
+  async (req: Request, res: Response): Promise<void> => {
+    const parsed = AdminListCompletedDeliveriesQueryParams.safeParse(
+      req.query,
+    );
+    if (!parsed.success) {
+      res.status(400).json({ error: "Invalid query" });
+      return;
+    }
+    const { filter, limit, offset } = parsed.data;
+    const cap = Math.min(limit ?? DEFAULT_LIMIT, 200);
+    const off = offset ?? 0;
+
+    // Delivery Type per Brief 6 Section 5B: Direct Ship if the order has at
+    // least one shipment with a non-null tracking_number, else Local
+    // Delivery. This EXISTS clause is the single definitive rule, reused
+    // for both the derived column and the filter.
+    const hasTrackedShipment = sql`EXISTS (
+      SELECT 1 FROM ${shipmentsTable} s2
+      WHERE s2.order_id = ${ordersTable.id}
+        AND s2.tracking_number IS NOT NULL
+    )`;
+
+    const conditions = [eq(ordersTable.status, "delivered")];
+    if (filter === "local") {
+      conditions.push(sql`NOT ${hasTrackedShipment}`);
+    } else if (filter === "direct-ship") {
+      conditions.push(hasTrackedShipment);
+    }
+    const whereExpr = and(...conditions);
+
+    const rows = await db
+      .select({
+        order: ordersTable,
+        customer: customersTable,
+        isDirectShip: sql<boolean>`${hasTrackedShipment}`,
+        itemCount: sql<number>`(
+          SELECT count(*)::int
+          FROM ${orderItemsTable}
+          WHERE ${orderItemsTable.orderId} = ${ordersTable.id}
+        )`,
+      })
+      .from(ordersTable)
+      .leftJoin(customersTable, eq(customersTable.id, ordersTable.customerId))
+      .where(whereExpr)
+      .orderBy(desc(ordersTable.placedAt))
+      .limit(cap)
+      .offset(off);
+
+    const [countRow] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(ordersTable)
+      .where(whereExpr);
+
+    const orderIds = rows.map((r) => r.order.id);
+    const shipmentRows = orderIds.length
+      ? await db
+          .select({
+            orderId: shipmentsTable.orderId,
+            trackingNumber: shipmentsTable.trackingNumber,
+            carrierName: carriersTable.name,
+          })
+          .from(shipmentsTable)
+          .leftJoin(
+            carriersTable,
+            eq(carriersTable.id, shipmentsTable.carrierId),
+          )
+          .where(
+            and(
+              inArray(shipmentsTable.orderId, orderIds),
+              sql`${shipmentsTable.trackingNumber} IS NOT NULL`,
+            ),
+          )
+      : [];
+    const shipmentsByOrderId = new Map<
+      number,
+      { carrierName: string | null; trackingNumber: string }[]
+    >();
+    for (const s of shipmentRows) {
+      const list = shipmentsByOrderId.get(s.orderId) ?? [];
+      list.push({
+        carrierName: s.carrierName ?? null,
+        trackingNumber: s.trackingNumber as string,
+      });
+      shipmentsByOrderId.set(s.orderId, list);
+    }
+
+    res.json({
+      rows: rows.map((r) => ({
+        id: r.order.id,
+        orderNumber: r.order.orderNumber,
+        status: r.order.status,
+        orderType: r.order.orderType,
+        total: Number(r.order.total),
+        balanceDue: Number(r.order.balanceDue),
+        customerId: r.order.customerId,
+        customerName: r.customer
+          ? nameOf(r.customer.firstName, r.customer.lastName)
+          : null,
+        customerEmail: r.customer?.email ?? null,
+        agentId: r.order.createdByAgentId,
+        agentName: null,
+        itemCount: r.itemCount,
+        placedAt: r.order.placedAt.toISOString(),
+        isInternalRestock: r.order.isInternalRestock,
+        deliveryType: r.isDirectShip ? "direct_ship" : "local",
+        shipments: shipmentsByOrderId.get(r.order.id) ?? [],
       })),
       total: countRow?.count ?? 0,
     });

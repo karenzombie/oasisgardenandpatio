@@ -4295,6 +4295,36 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/AdminDirectShipPage" }
+  /admin/deliveries/completed:
+    get:
+      operationId: adminListCompletedDeliveries
+      tags: [admin-orders]
+      summary: List fully delivered orders (local and direct ship) for the Deliveries > Completed tab
+      description: >-
+        Orders with status delivered. Delivery Type is derived: Direct Ship
+        if the order has at least one shipment with a non-null
+        tracking_number, otherwise Local Delivery. Sorted by placedAt
+        descending (same recency column as the existing Orders list).
+      parameters:
+        - name: filter
+          in: query
+          required: false
+          description: "all (default), local, or direct-ship"
+          schema: { type: string, enum: [all, local, direct-ship] }
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 200 }
+        - name: offset
+          in: query
+          required: false
+          schema: { type: integer, minimum: 0 }
+      responses:
+        "200":
+          description: Completed deliveries page
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminCompletedDeliveryPage" }
   /admin/orders/{orderId}/items/{itemId}/fabric-vendor:
     patch:
       operationId: adminUpdateOrderItemFabricVendor
@@ -5571,6 +5601,30 @@ components:
         rows:
           type: array
           items: { $ref: "#/components/schemas/AdminDirectShipSummary" }
+        total: { type: integer }
+      required: [rows, total]
+    CompletedDeliveryShipmentPair:
+      type: object
+      properties:
+        carrierName: { type: string, nullable: true }
+        trackingNumber: { type: string }
+      required: [carrierName, trackingNumber]
+    AdminCompletedDeliverySummary:
+      allOf:
+        - $ref: "#/components/schemas/AdminOrderSummary"
+        - type: object
+          properties:
+            deliveryType: { type: string, enum: [local, direct_ship] }
+            shipments:
+              type: array
+              items: { $ref: "#/components/schemas/CompletedDeliveryShipmentPair" }
+          required: [deliveryType, shipments]
+    AdminCompletedDeliveryPage:
+      type: object
+      properties:
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/AdminCompletedDeliverySummary" }
         total: { type: integer }
       required: [rows, total]
     AdminOrderItem:

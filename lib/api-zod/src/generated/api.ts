@@ -8824,6 +8824,64 @@ export const AdminListDirectShipDeliveriesResponse = zod.object({
 });
 
 /**
+ * Orders with status delivered. Delivery Type is derived: Direct Ship if the order has at least one shipment with a non-null tracking_number, otherwise Local Delivery. Sorted by placedAt descending (same recency column as the existing Orders list).
+ * @summary List fully delivered orders (local and direct ship) for the Deliveries > Completed tab
+ */
+export const adminListCompletedDeliveriesQueryLimitMax = 200;
+
+export const adminListCompletedDeliveriesQueryOffsetMin = 0;
+
+export const AdminListCompletedDeliveriesQueryParams = zod.object({
+  filter: zod
+    .enum(["all", "local", "direct-ship"])
+    .optional()
+    .describe("all (default), local, or direct-ship"),
+  limit: zod.coerce
+    .number()
+    .min(1)
+    .max(adminListCompletedDeliveriesQueryLimitMax)
+    .optional(),
+  offset: zod.coerce
+    .number()
+    .min(adminListCompletedDeliveriesQueryOffsetMin)
+    .optional(),
+});
+
+export const AdminListCompletedDeliveriesResponse = zod.object({
+  rows: zod.array(
+    zod
+      .object({
+        id: zod.number(),
+        orderNumber: zod.string(),
+        status: zod.string(),
+        orderType: zod.string(),
+        total: zod.number(),
+        balanceDue: zod.number(),
+        customerId: zod.number().nullable(),
+        customerName: zod.string().nullable(),
+        customerEmail: zod.string().nullable(),
+        agentId: zod.number().nullable(),
+        agentName: zod.string().nullable(),
+        itemCount: zod.number(),
+        placedAt: zod.coerce.date(),
+        isInternalRestock: zod.boolean(),
+      })
+      .and(
+        zod.object({
+          deliveryType: zod.enum(["local", "direct_ship"]),
+          shipments: zod.array(
+            zod.object({
+              carrierName: zod.string().nullable(),
+              trackingNumber: zod.string(),
+            }),
+          ),
+        }),
+      ),
+  ),
+  total: zod.number(),
+});
+
+/**
  * Staff-portal only. When `fabricVendorId` is non-null, this line's fabric is split out of the product vendor's PO and placed on a separate PO for the chosen fabric vendor. Setting it to null returns to the default behavior (fabric ships with the product vendor). Vendor POs are re-grouped after the change. The change is rejected with 409 if any vendor PO that currently includes this line is no longer in 'pending' status (i.e. already sent / fulfilled / received / canceled) — staff must cancel that PO first.
  * @summary Set or clear the alternate fabric vendor on a line item
  */
