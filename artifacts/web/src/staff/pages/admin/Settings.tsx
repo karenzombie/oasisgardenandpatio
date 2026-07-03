@@ -19,9 +19,6 @@ type FormState = {
   defaultTaxRate: string;
   overdueVendorOrderThresholdDays: string;
   lowStockThreshold: string;
-  defaultAgentDiscountCap: string;
-  currentSequenceYear: string;
-  currentYearOrderSequence: string;
 };
 
 function settingsToForm(s: SystemSettings): FormState {
@@ -29,9 +26,6 @@ function settingsToForm(s: SystemSettings): FormState {
     defaultTaxRate: (s.defaultTaxRate * 100).toFixed(4),
     overdueVendorOrderThresholdDays: String(s.overdueVendorOrderThresholdDays),
     lowStockThreshold: String(s.lowStockThreshold),
-    defaultAgentDiscountCap: (s.defaultAgentDiscountCap * 100).toFixed(4),
-    currentSequenceYear: String(s.currentSequenceYear),
-    currentYearOrderSequence: String(s.currentYearOrderSequence),
   };
 }
 
@@ -68,26 +62,6 @@ function buildUpdate(
     return { update, error: "Low stock threshold must be ≥ 0." };
   if (lowStock !== original.lowStockThreshold)
     update.lowStockThreshold = lowStock;
-
-  const agentCap = num(form.defaultAgentDiscountCap);
-  if (agentCap === null) return { update, error: "Agent discount cap is invalid." };
-  const agentCapFrac = agentCap / 100;
-  if (agentCapFrac < 0 || agentCapFrac > 1)
-    return { update, error: "Agent discount cap must be between 0% and 100%." };
-  if (Math.abs(agentCapFrac - original.defaultAgentDiscountCap) > 1e-9)
-    update.defaultAgentDiscountCap = agentCapFrac;
-
-  const seqYr = int(form.currentSequenceYear);
-  if (seqYr === null || seqYr < 2000 || seqYr > 2999)
-    return { update, error: "Sequence year must be between 2000 and 2999." };
-  if (seqYr !== original.currentSequenceYear)
-    update.currentSequenceYear = seqYr;
-
-  const seqNum = int(form.currentYearOrderSequence);
-  if (seqNum === null || seqNum < 0)
-    return { update, error: "Current order sequence must be ≥ 0." };
-  if (seqNum !== original.currentYearOrderSequence)
-    update.currentYearOrderSequence = seqNum;
 
   return { update, error: null };
 }
@@ -228,72 +202,6 @@ export default function Settings() {
                 }
               />
             </Field>
-          </Panel>
-
-          <Panel
-            title="Sales agents"
-            description="Defaults applied when creating new sales agents."
-          >
-            <Field
-              id="agentCap"
-              label="Default agent discount cap"
-              suffix="%"
-              hint="Maximum line discount an agent may apply unless overridden per agent"
-            >
-              <Input
-                id="agentCap"
-                type="number"
-                step="0.01"
-                min="0"
-                max="100"
-                value={form.defaultAgentDiscountCap}
-                onChange={(e) =>
-                  update("defaultAgentDiscountCap", e.target.value)
-                }
-              />
-            </Field>
-          </Panel>
-
-          <Panel
-            title="Order numbering"
-            description="Controls the human-readable order number prefix and counter. Adjust with care — changing these affects all subsequently created orders."
-          >
-            <Field id="seqYr" label="Sequence year">
-              <Input
-                id="seqYr"
-                type="number"
-                step="1"
-                min="2000"
-                max="2999"
-                value={form.currentSequenceYear}
-                onChange={(e) => update("currentSequenceYear", e.target.value)}
-              />
-            </Field>
-            <Field
-              id="seqNum"
-              label="Current order sequence"
-              hint="Last allocated order number for this year"
-            >
-              <Input
-                id="seqNum"
-                type="number"
-                step="1"
-                min="0"
-                value={form.currentYearOrderSequence}
-                onChange={(e) =>
-                  update("currentYearOrderSequence", e.target.value)
-                }
-              />
-            </Field>
-            <div className="text-xs text-slate-500 px-1">
-              Next order will be{" "}
-              <span className="font-mono font-semibold text-slate-700">
-                {form.currentSequenceYear}-
-                {String(
-                  Number(form.currentYearOrderSequence || "0") + 1,
-                ).padStart(5, "0")}
-              </span>
-            </div>
           </Panel>
 
           {error && (

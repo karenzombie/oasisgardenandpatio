@@ -3208,18 +3208,6 @@ export interface SystemSettings {
   overdueVendorOrderThresholdDays: number;
   /** @minimum 0 */
   lowStockThreshold: number;
-  /**
-   * @minimum 0
-   * @maximum 1
-   */
-  defaultAgentDiscountCap: number;
-  /**
-   * @minimum 2000
-   * @maximum 2999
-   */
-  currentSequenceYear: number;
-  /** @minimum 0 */
-  currentYearOrderSequence: number;
 }
 
 export interface SystemSettingsUpdate {
@@ -3232,18 +3220,6 @@ export interface SystemSettingsUpdate {
   overdueVendorOrderThresholdDays?: number;
   /** @minimum 0 */
   lowStockThreshold?: number;
-  /**
-   * @minimum 0
-   * @maximum 1
-   */
-  defaultAgentDiscountCap?: number;
-  /**
-   * @minimum 2000
-   * @maximum 2999
-   */
-  currentSequenceYear?: number;
-  /** @minimum 0 */
-  currentYearOrderSequence?: number;
 }
 
 export type AdminDiscountEventType =

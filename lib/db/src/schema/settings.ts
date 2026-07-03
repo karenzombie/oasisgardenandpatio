@@ -22,7 +22,4 @@ export const SETTING_KEYS = {
   defaultTaxRate: "default_tax_rate",
   overdueVendorOrderThresholdDays: "overdue_vendor_order_threshold_days",
   lowStockThreshold: "low_stock_threshold",
-  defaultAgentDiscountCap: "default_agent_discount_cap",
-  currentSequenceYear: "current_sequence_year",
-  currentYearOrderSequence: "current_year_order_sequence",
 } as const;

@@ -19,9 +19,6 @@ const KEY_MAP: Record<keyof Settings, string> = {
   overdueVendorOrderThresholdDays:
     SETTING_KEYS.overdueVendorOrderThresholdDays,
   lowStockThreshold: SETTING_KEYS.lowStockThreshold,
-  defaultAgentDiscountCap: SETTING_KEYS.defaultAgentDiscountCap,
-  currentSequenceYear: SETTING_KEYS.currentSequenceYear,
-  currentYearOrderSequence: SETTING_KEYS.currentYearOrderSequence,
 };
 
 const REVERSE_KEY_MAP: Record<string, keyof Settings> = Object.fromEntries(

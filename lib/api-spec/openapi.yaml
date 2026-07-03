@@ -9615,25 +9615,16 @@ components:
         defaultTaxRate: { type: number, minimum: 0, maximum: 1 }
         overdueVendorOrderThresholdDays: { type: integer, minimum: 1 }
         lowStockThreshold: { type: integer, minimum: 0 }
-        defaultAgentDiscountCap: { type: number, minimum: 0, maximum: 1 }
-        currentSequenceYear: { type: integer, minimum: 2000, maximum: 2999 }
-        currentYearOrderSequence: { type: integer, minimum: 0 }
       required:
         - defaultTaxRate
         - overdueVendorOrderThresholdDays
         - lowStockThreshold
-        - defaultAgentDiscountCap
-        - currentSequenceYear
-        - currentYearOrderSequence
     SystemSettingsUpdate:
       type: object
       properties:
         defaultTaxRate: { type: number, minimum: 0, maximum: 1 }
         overdueVendorOrderThresholdDays: { type: integer, minimum: 1 }
         lowStockThreshold: { type: integer, minimum: 0 }
-        defaultAgentDiscountCap: { type: number, minimum: 0, maximum: 1 }
-        currentSequenceYear: { type: integer, minimum: 2000, maximum: 2999 }
-        currentYearOrderSequence: { type: integer, minimum: 0 }
     AdminDiscountEvent:
       type: object
       properties:

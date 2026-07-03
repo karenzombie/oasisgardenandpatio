@@ -18,18 +18,6 @@ const DEFAULTS: Record<string, DefaultEntry> = {
     description:
       "Default low-stock threshold used for products without their own value",
   },
-  [SETTING_KEYS.defaultAgentDiscountCap]: {
-    value: 0.1,
-    description: "Default maximum discount (0-1) a sales agent may apply",
-  },
-  [SETTING_KEYS.currentSequenceYear]: {
-    value: new Date().getUTCFullYear(),
-    description: "Calendar year used in the human-readable order number prefix",
-  },
-  [SETTING_KEYS.currentYearOrderSequence]: {
-    value: 0,
-    description: "Per-year monotonically increasing order counter",
-  },
 };
 
 export async function seedDefaultSettings(): Promise<void> {

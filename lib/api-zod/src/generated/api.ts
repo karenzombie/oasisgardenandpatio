@@ -11531,14 +11531,6 @@ export const adminGetSettingsResponseDefaultTaxRateMax = 1;
 
 export const adminGetSettingsResponseLowStockThresholdMin = 0;
 
-export const adminGetSettingsResponseDefaultAgentDiscountCapMin = 0;
-export const adminGetSettingsResponseDefaultAgentDiscountCapMax = 1;
-
-export const adminGetSettingsResponseCurrentSequenceYearMin = 2000;
-export const adminGetSettingsResponseCurrentSequenceYearMax = 2999;
-
-export const adminGetSettingsResponseCurrentYearOrderSequenceMin = 0;
-
 export const AdminGetSettingsResponse = zod.object({
   defaultTaxRate: zod
     .number()
@@ -11548,17 +11540,6 @@ export const AdminGetSettingsResponse = zod.object({
   lowStockThreshold: zod
     .number()
     .min(adminGetSettingsResponseLowStockThresholdMin),
-  defaultAgentDiscountCap: zod
-    .number()
-    .min(adminGetSettingsResponseDefaultAgentDiscountCapMin)
-    .max(adminGetSettingsResponseDefaultAgentDiscountCapMax),
-  currentSequenceYear: zod
-    .number()
-    .min(adminGetSettingsResponseCurrentSequenceYearMin)
-    .max(adminGetSettingsResponseCurrentSequenceYearMax),
-  currentYearOrderSequence: zod
-    .number()
-    .min(adminGetSettingsResponseCurrentYearOrderSequenceMin),
 });
 
 /**
@@ -11568,14 +11549,6 @@ export const adminUpdateSettingsBodyDefaultTaxRateMin = 0;
 export const adminUpdateSettingsBodyDefaultTaxRateMax = 1;
 
 export const adminUpdateSettingsBodyLowStockThresholdMin = 0;
-
-export const adminUpdateSettingsBodyDefaultAgentDiscountCapMin = 0;
-export const adminUpdateSettingsBodyDefaultAgentDiscountCapMax = 1;
-
-export const adminUpdateSettingsBodyCurrentSequenceYearMin = 2000;
-export const adminUpdateSettingsBodyCurrentSequenceYearMax = 2999;
-
-export const adminUpdateSettingsBodyCurrentYearOrderSequenceMin = 0;
 
 export const AdminUpdateSettingsBody = zod.object({
   defaultTaxRate: zod
@@ -11588,34 +11561,12 @@ export const AdminUpdateSettingsBody = zod.object({
     .number()
     .min(adminUpdateSettingsBodyLowStockThresholdMin)
     .optional(),
-  defaultAgentDiscountCap: zod
-    .number()
-    .min(adminUpdateSettingsBodyDefaultAgentDiscountCapMin)
-    .max(adminUpdateSettingsBodyDefaultAgentDiscountCapMax)
-    .optional(),
-  currentSequenceYear: zod
-    .number()
-    .min(adminUpdateSettingsBodyCurrentSequenceYearMin)
-    .max(adminUpdateSettingsBodyCurrentSequenceYearMax)
-    .optional(),
-  currentYearOrderSequence: zod
-    .number()
-    .min(adminUpdateSettingsBodyCurrentYearOrderSequenceMin)
-    .optional(),
 });
 
 export const adminUpdateSettingsResponseDefaultTaxRateMin = 0;
 export const adminUpdateSettingsResponseDefaultTaxRateMax = 1;
 
 export const adminUpdateSettingsResponseLowStockThresholdMin = 0;
-
-export const adminUpdateSettingsResponseDefaultAgentDiscountCapMin = 0;
-export const adminUpdateSettingsResponseDefaultAgentDiscountCapMax = 1;
-
-export const adminUpdateSettingsResponseCurrentSequenceYearMin = 2000;
-export const adminUpdateSettingsResponseCurrentSequenceYearMax = 2999;
-
-export const adminUpdateSettingsResponseCurrentYearOrderSequenceMin = 0;
 
 export const AdminUpdateSettingsResponse = zod.object({
   defaultTaxRate: zod
@@ -11626,17 +11577,6 @@ export const AdminUpdateSettingsResponse = zod.object({
   lowStockThreshold: zod
     .number()
     .min(adminUpdateSettingsResponseLowStockThresholdMin),
-  defaultAgentDiscountCap: zod
-    .number()
-    .min(adminUpdateSettingsResponseDefaultAgentDiscountCapMin)
-    .max(adminUpdateSettingsResponseDefaultAgentDiscountCapMax),
-  currentSequenceYear: zod
-    .number()
-    .min(adminUpdateSettingsResponseCurrentSequenceYearMin)
-    .max(adminUpdateSettingsResponseCurrentSequenceYearMax),
-  currentYearOrderSequence: zod
-    .number()
-    .min(adminUpdateSettingsResponseCurrentYearOrderSequenceMin),
 });
 
 /**
