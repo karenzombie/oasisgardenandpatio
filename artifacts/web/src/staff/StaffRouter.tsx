@@ -46,6 +46,7 @@ import CushionOrderNew from "./pages/admin/CushionOrderNew";
 import RecoveryRequests from "./pages/admin/RecoveryRequests";
 import Reports from "./pages/admin/Reports";
 import Notifications from "./pages/admin/Notifications";
+import Deliveries from "./pages/admin/Deliveries";
 import { PagePlaceholder } from "./pages/PagePlaceholder";
 
 const ADMIN_PLACEHOLDERS: Array<{ path: string; title: string; comingIn: string }> = [];
@@ -98,6 +99,7 @@ export default function StaffRouter() {
                 <Route path="/admin/orders" component={Orders} />
                 <Route path="/admin/new-order" component={AgentNewOrder} />
                 <Route path="/admin/orders/:id" component={OrderDetail} />
+                <Route path="/admin/deliveries" component={Deliveries} />
                 <Route path="/admin/vendor-orders" component={VendorOrders} />
                 <Route path="/admin/vendor-orders/new" component={VendorOrderNew} />
                 <Route path="/admin/vendor-orders/:id" component={VendorOrderDetail} />
