@@ -12,4 +12,6 @@ export interface SendVendorOrderRequest {
   /** Optional correction note printed at the top of a resent PO (e.g. 'Updated PO, disregard previously sent PO'). */
   correctionNote?: string | null;
   pdfStorageUrl?: string | null;
+  /** When true, this is a plain 'Resend (no changes)' — send the original PO email template (subject prefixed RESENT:) instead of the Revised PO template. Ignored on the first send. */
+  noChanges?: boolean;
 }

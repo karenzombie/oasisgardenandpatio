@@ -76,6 +76,8 @@ export interface SendVendorOrderEmailArgs {
   notes: string | null;
   items: VendorOrderItem[];
   pdfBuffer?: Buffer;
+  /** When true (plain "Resend, no changes"), prefix the subject with "RESENT: ". */
+  isResend?: boolean;
 }
 
 export async function sendVendorOrderEmail(
@@ -149,7 +151,9 @@ export async function sendVendorOrderEmail(
     </p>
   `;
 
-  const subject = `Purchase Order ${vendorOrderNumber} — Oasis Garden & Patio`;
+  const subject = args.isResend
+    ? `RESENT: Purchase Order ${vendorOrderNumber} -- Oasis Garden & Patio`
+    : `Purchase Order ${vendorOrderNumber} — Oasis Garden & Patio`;
 
   const { client, from } = await getResendClient();
   const result = await client.emails.send({

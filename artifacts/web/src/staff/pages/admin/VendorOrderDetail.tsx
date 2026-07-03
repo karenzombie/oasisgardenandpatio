@@ -411,6 +411,7 @@ export default function VendorOrderDetail() {
         data: {
           sentToEmail: sendEmail.trim() || null,
           resendNote: sendNote.trim() || null,
+          noChanges: vo?.sentAt != null,
         },
       },
       {

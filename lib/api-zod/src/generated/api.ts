@@ -10158,6 +10158,12 @@ export const AdminSendVendorOrderBody = zod.object({
       "Optional correction note printed at the top of a resent PO (e.g. 'Updated PO, disregard previously sent PO').",
     ),
   pdfStorageUrl: zod.string().nullish(),
+  noChanges: zod
+    .boolean()
+    .optional()
+    .describe(
+      "When true, this is a plain 'Resend (no changes)' — send the original PO email template (subject prefixed RESENT:) instead of the Revised PO template. Ignored on the first send.",
+    ),
 });
 
 export const AdminSendVendorOrderResponse = zod.object({

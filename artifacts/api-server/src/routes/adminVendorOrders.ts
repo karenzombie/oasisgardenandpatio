@@ -1537,10 +1537,10 @@ router.post(
 
     if (toEmail && detail) {
       try {
-        if (result.isResend) {
-          // Resending an already-sent PO always means it was edited since
-          // the last send (isResend is set once sentAt is non-null) — send
-          // the Revised PO template, never the original send template.
+        if (result.isResend && !body.data.noChanges) {
+          // Resending an already-sent PO with edits — send the Revised PO
+          // template. A plain "Resend (no changes)" (noChanges=true) instead
+          // sends the original PO template below with a RESENT: subject.
           await sendVendorOrderRevisionEmail({
             to: toEmail,
             vendorOrderNumber: detail.vendorOrderNumber,
@@ -1561,6 +1561,7 @@ router.post(
             notes: detail.notes,
             items: detail.items,
             pdfBuffer,
+            isResend: result.isResend,
           });
           req.log.info(
             { vendorOrderId: params.data.id, to: toEmail },
