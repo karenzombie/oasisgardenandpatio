@@ -33,7 +33,7 @@ export interface AdminOrderDetail {
   shippingMethod: string | null;
   /** Store-delivery scheduled date (YYYY-MM-DD). */
   scheduledDeliveryDate?: string | null;
-  /** Free-text store-delivery time window (e.g. '2-4 PM'). */
+  /** Store-delivery time window start (HH:MM:SS, e.g. '14:00:00' for the 2-3 PM window). See the fixed 1-hour window mapping. */
   scheduledDeliveryTime?: string | null;
   specialInstructions: string | null;
   notes: string | null;

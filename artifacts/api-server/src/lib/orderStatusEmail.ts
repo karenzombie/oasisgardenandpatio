@@ -7,6 +7,7 @@ import {
 } from "@workspace/db";
 import { sendEmail } from "./email";
 import { logger } from "./logger";
+import { deliveryTimeWindowLabel } from "./deliveryTimeWindows";
 
 function fmtMoney(n: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -61,12 +62,13 @@ export const outForLocalDeliveryCopy: StatusCopy = {
   subject: (n) => `Your order is out for delivery! (${n})`,
   title: "Your order is out for delivery",
   body: (greeting, order) => {
-    const time = order.scheduledDeliveryTime?.trim();
-    const lead = time
-      ? `Great news! Your order is out for delivery today and is scheduled to arrive between ${escapeHtml(
-          time,
-        )}.`
-      : `Your order is out for delivery today.`;
+    const label = deliveryTimeWindowLabel(order.scheduledDeliveryTime);
+    const lead =
+      label !== "Not set"
+        ? `Great news! Your order is out for delivery today and is scheduled to arrive between ${escapeHtml(
+            label,
+          )}.`
+        : `Your order is out for delivery today.`;
     return `
       ${greeting}
       <p>${lead}</p>

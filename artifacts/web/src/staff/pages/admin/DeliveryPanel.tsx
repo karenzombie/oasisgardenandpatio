@@ -32,8 +32,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { DELIVERY_TIME_WINDOWS } from "@/staff/lib/deliveryTimeWindows";
 
 const NO_CARRIER = "";
+const NO_TIME_WINDOW = "__none__";
 
 function itemLabel(it: AdminOrderItem): string {
   const extras = [
@@ -426,13 +428,24 @@ export default function DeliveryPanel({
             <Label htmlFor={`sched-time-${orderId}`} className="text-xs">
               Time window
             </Label>
-            <Input
-              id={`sched-time-${orderId}`}
-              value={timeDraft}
-              onChange={(e) => setTimeDraft(e.target.value)}
-              placeholder="e.g. 2–4 PM"
-              className="w-40"
-            />
+            <Select
+              value={timeDraft === "" ? NO_TIME_WINDOW : timeDraft}
+              onValueChange={(v) =>
+                setTimeDraft(v === NO_TIME_WINDOW ? "" : v)
+              }
+            >
+              <SelectTrigger id={`sched-time-${orderId}`} className="w-52">
+                <SelectValue placeholder="Not set" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NO_TIME_WINDOW}>Not set</SelectItem>
+                {DELIVERY_TIME_WINDOWS.map((w) => (
+                  <SelectItem key={w.value} value={w.value}>
+                    {w.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <Button
             type="button"

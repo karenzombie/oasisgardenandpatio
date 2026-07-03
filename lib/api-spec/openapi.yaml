@@ -6041,7 +6041,7 @@ components:
         salespersonName: { type: string, nullable: true }
         shippingMethod: { type: string, nullable: true }
         scheduledDeliveryDate: { type: string, nullable: true, description: "Store-delivery scheduled date (YYYY-MM-DD)." }
-        scheduledDeliveryTime: { type: string, nullable: true, description: "Free-text store-delivery time window (e.g. '2-4 PM')." }
+        scheduledDeliveryTime: { type: string, nullable: true, description: "Store-delivery time window start (HH:MM:SS, e.g. '14:00:00' for the 2-3 PM window). See the fixed 1-hour window mapping." }
         specialInstructions: { type: string, nullable: true }
         notes: { type: string, nullable: true }
         merchandiseReceived: { type: boolean }
@@ -6194,7 +6194,7 @@ components:
       type: object
       properties:
         scheduledDeliveryDate: { type: string, nullable: true, description: "YYYY-MM-DD, or null to clear." }
-        scheduledDeliveryTime: { type: string, nullable: true, description: "Free-text time window, or null to clear." }
+        scheduledDeliveryTime: { type: string, nullable: true, description: "Time window start (HH:MM:SS) from the fixed 1-hour window list, or null to clear." }
       required: [scheduledDeliveryDate, scheduledDeliveryTime]
     StaffNotification:
       type: object

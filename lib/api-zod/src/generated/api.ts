@@ -6036,7 +6036,9 @@ export const AdminUpdateOrderShippingMethodResponse = zod.object({
   scheduledDeliveryTime: zod
     .string()
     .nullish()
-    .describe("Free-text store-delivery time window (e.g. '2-4 PM')."),
+    .describe(
+      "Store-delivery time window start (HH:MM:SS, e.g. '14:00:00' for the 2-3 PM window). See the fixed 1-hour window mapping.",
+    ),
   specialInstructions: zod.string().nullable(),
   notes: zod.string().nullable(),
   merchandiseReceived: zod.boolean(),
@@ -6235,7 +6237,9 @@ export const AdminUpdateOrderScheduledDeliveryBody = zod.object({
   scheduledDeliveryTime: zod
     .string()
     .nullable()
-    .describe("Free-text time window, or null to clear."),
+    .describe(
+      "Time window start (HH:MM:SS) from the fixed 1-hour window list, or null to clear.",
+    ),
 });
 
 export const AdminUpdateOrderScheduledDeliveryResponse = zod.object({
@@ -6263,7 +6267,9 @@ export const AdminUpdateOrderScheduledDeliveryResponse = zod.object({
   scheduledDeliveryTime: zod
     .string()
     .nullish()
-    .describe("Free-text store-delivery time window (e.g. '2-4 PM')."),
+    .describe(
+      "Store-delivery time window start (HH:MM:SS, e.g. '14:00:00' for the 2-3 PM window). See the fixed 1-hour window mapping.",
+    ),
   specialInstructions: zod.string().nullable(),
   notes: zod.string().nullable(),
   merchandiseReceived: zod.boolean(),
@@ -6643,7 +6649,9 @@ export const AdminMarkOrderPaidInFullResponse = zod.object({
   scheduledDeliveryTime: zod
     .string()
     .nullish()
-    .describe("Free-text store-delivery time window (e.g. '2-4 PM')."),
+    .describe(
+      "Store-delivery time window start (HH:MM:SS, e.g. '14:00:00' for the 2-3 PM window). See the fixed 1-hour window mapping.",
+    ),
   specialInstructions: zod.string().nullable(),
   notes: zod.string().nullable(),
   merchandiseReceived: zod.boolean(),
@@ -6871,7 +6879,9 @@ export const AdminUpdateOrderPaymentResponse = zod.object({
   scheduledDeliveryTime: zod
     .string()
     .nullish()
-    .describe("Free-text store-delivery time window (e.g. '2-4 PM')."),
+    .describe(
+      "Store-delivery time window start (HH:MM:SS, e.g. '14:00:00' for the 2-3 PM window). See the fixed 1-hour window mapping.",
+    ),
   specialInstructions: zod.string().nullable(),
   notes: zod.string().nullable(),
   merchandiseReceived: zod.boolean(),
@@ -7088,7 +7098,9 @@ export const AdminDeleteOrderPaymentResponse = zod.object({
   scheduledDeliveryTime: zod
     .string()
     .nullish()
-    .describe("Free-text store-delivery time window (e.g. '2-4 PM')."),
+    .describe(
+      "Store-delivery time window start (HH:MM:SS, e.g. '14:00:00' for the 2-3 PM window). See the fixed 1-hour window mapping.",
+    ),
   specialInstructions: zod.string().nullable(),
   notes: zod.string().nullable(),
   merchandiseReceived: zod.boolean(),
@@ -7819,7 +7831,9 @@ export const AdminGetOrderResponse = zod.object({
   scheduledDeliveryTime: zod
     .string()
     .nullish()
-    .describe("Free-text store-delivery time window (e.g. '2-4 PM')."),
+    .describe(
+      "Store-delivery time window start (HH:MM:SS, e.g. '14:00:00' for the 2-3 PM window). See the fixed 1-hour window mapping.",
+    ),
   specialInstructions: zod.string().nullable(),
   notes: zod.string().nullable(),
   merchandiseReceived: zod.boolean(),
@@ -8040,7 +8054,9 @@ export const AdminUpdateOrderStatusResponse = zod.object({
   scheduledDeliveryTime: zod
     .string()
     .nullish()
-    .describe("Free-text store-delivery time window (e.g. '2-4 PM')."),
+    .describe(
+      "Store-delivery time window start (HH:MM:SS, e.g. '14:00:00' for the 2-3 PM window). See the fixed 1-hour window mapping.",
+    ),
   specialInstructions: zod.string().nullable(),
   notes: zod.string().nullable(),
   merchandiseReceived: zod.boolean(),
@@ -8269,7 +8285,9 @@ export const AdminRefundOrderResponse = zod.object({
   scheduledDeliveryTime: zod
     .string()
     .nullish()
-    .describe("Free-text store-delivery time window (e.g. '2-4 PM')."),
+    .describe(
+      "Store-delivery time window start (HH:MM:SS, e.g. '14:00:00' for the 2-3 PM window). See the fixed 1-hour window mapping.",
+    ),
   specialInstructions: zod.string().nullable(),
   notes: zod.string().nullable(),
   merchandiseReceived: zod.boolean(),
@@ -8507,7 +8525,9 @@ export const AdminUpdateOrderTotalsResponse = zod.object({
   scheduledDeliveryTime: zod
     .string()
     .nullish()
-    .describe("Free-text store-delivery time window (e.g. '2-4 PM')."),
+    .describe(
+      "Store-delivery time window start (HH:MM:SS, e.g. '14:00:00' for the 2-3 PM window). See the fixed 1-hour window mapping.",
+    ),
   specialInstructions: zod.string().nullable(),
   notes: zod.string().nullable(),
   merchandiseReceived: zod.boolean(),
@@ -8729,7 +8749,9 @@ export const AdminUpdateOrderItemFabricVendorResponse = zod.object({
   scheduledDeliveryTime: zod
     .string()
     .nullish()
-    .describe("Free-text store-delivery time window (e.g. '2-4 PM')."),
+    .describe(
+      "Store-delivery time window start (HH:MM:SS, e.g. '14:00:00' for the 2-3 PM window). See the fixed 1-hour window mapping.",
+    ),
   specialInstructions: zod.string().nullable(),
   notes: zod.string().nullable(),
   merchandiseReceived: zod.boolean(),
@@ -8949,7 +8971,9 @@ export const AdminUpdateOrderNotesResponse = zod.object({
   scheduledDeliveryTime: zod
     .string()
     .nullish()
-    .describe("Free-text store-delivery time window (e.g. '2-4 PM')."),
+    .describe(
+      "Store-delivery time window start (HH:MM:SS, e.g. '14:00:00' for the 2-3 PM window). See the fixed 1-hour window mapping.",
+    ),
   specialInstructions: zod.string().nullable(),
   notes: zod.string().nullable(),
   merchandiseReceived: zod.boolean(),

@@ -5,6 +5,7 @@ import {
   boolean,
   timestamp,
   date,
+  time,
   integer,
   numeric,
   jsonb,
@@ -69,11 +70,13 @@ export const ordersTable = pgTable(
       { onDelete: "set null" },
     ),
     shippingMethod: text("shipping_method"),
-    // Store-delivery scheduling (Section 2B). Optional free-text time window
-    // (e.g. "2-4 PM", "Morning") — deliberately text, not a time type, to match
-    // how the crew actually schedules. Used by the "Out for Local Delivery" email.
+    // Store-delivery scheduling. scheduledDeliveryTime stores the START time
+    // of a fixed 1-hour delivery window (e.g. "14:00:00" for 2-3 PM) — see
+    // DELIVERY_TIME_WINDOWS in the web/api-server delivery lib for the label
+    // mapping. Used by the "Out for Local Delivery" email and the Deliveries
+    // manifest (Brief 6).
     scheduledDeliveryDate: date("scheduled_delivery_date"),
-    scheduledDeliveryTime: text("scheduled_delivery_time"),
+    scheduledDeliveryTime: time("scheduled_delivery_time"),
     salespersonName: text("salesperson_name"),
     specialInstructions: text("special_instructions"),
     merchandiseReceived: boolean("merchandise_received")

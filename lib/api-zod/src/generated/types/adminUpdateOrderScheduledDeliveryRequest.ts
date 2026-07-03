@@ -9,6 +9,6 @@
 export interface AdminUpdateOrderScheduledDeliveryRequest {
   /** YYYY-MM-DD, or null to clear. */
   scheduledDeliveryDate: string | null;
-  /** Free-text time window, or null to clear. */
+  /** Time window start (HH:MM:SS) from the fixed 1-hour window list, or null to clear. */
   scheduledDeliveryTime: string | null;
 }
