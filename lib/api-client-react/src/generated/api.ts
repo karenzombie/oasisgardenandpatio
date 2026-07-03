@@ -48,6 +48,7 @@ import type {
   AdminCustomerDetail,
   AdminCustomerPage,
   AdminDashboardStats,
+  AdminDirectShipPage,
   AdminDiscountEvent,
   AdminFabric,
   AdminFinish,
@@ -63,6 +64,7 @@ import type {
   AdminListAuditLogParams,
   AdminListCancellationRequestsParams,
   AdminListCustomersParams,
+  AdminListDirectShipDeliveriesParams,
   AdminListFinishCollectionsParams,
   AdminListHistory200,
   AdminListHistoryParams,
@@ -14533,6 +14535,116 @@ export function useAdminGetDeliveryManifestCopiesPdf<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getAdminGetDeliveryManifestCopiesPdfQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Orders with status carrier_delivery_update that have at least one shipment with a non-null tracking_number. One row per shipment record (order number repeats when an order has multiple shipments), sorted by shipments.created_at descending. No filters.
+ * @summary List incomplete direct-ship orders for the Deliveries > Direct Ship tab
+ */
+export const getAdminListDirectShipDeliveriesUrl = (
+  params?: AdminListDirectShipDeliveriesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/admin/deliveries/direct-ship?${stringifiedParams}`
+    : `/api/admin/deliveries/direct-ship`;
+};
+
+export const adminListDirectShipDeliveries = async (
+  params?: AdminListDirectShipDeliveriesParams,
+  options?: RequestInit,
+): Promise<AdminDirectShipPage> => {
+  return customFetch<AdminDirectShipPage>(
+    getAdminListDirectShipDeliveriesUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getAdminListDirectShipDeliveriesQueryKey = (
+  params?: AdminListDirectShipDeliveriesParams,
+) => {
+  return [
+    `/api/admin/deliveries/direct-ship`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getAdminListDirectShipDeliveriesQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminListDirectShipDeliveries>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: AdminListDirectShipDeliveriesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminListDirectShipDeliveries>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getAdminListDirectShipDeliveriesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminListDirectShipDeliveries>>
+  > = ({ signal }) =>
+    adminListDirectShipDeliveries(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminListDirectShipDeliveries>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminListDirectShipDeliveriesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminListDirectShipDeliveries>>
+>;
+export type AdminListDirectShipDeliveriesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List incomplete direct-ship orders for the Deliveries > Direct Ship tab
+ */
+
+export function useAdminListDirectShipDeliveries<
+  TData = Awaited<ReturnType<typeof adminListDirectShipDeliveries>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: AdminListDirectShipDeliveriesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminListDirectShipDeliveries>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminListDirectShipDeliveriesQueryOptions(
     params,
     options,
   );

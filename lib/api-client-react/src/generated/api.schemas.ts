@@ -104,6 +104,27 @@ export interface AdminLocalDeliveryPage {
   total: number;
 }
 
+export interface AdminDirectShipSummary {
+  shipmentId: number;
+  orderId: number;
+  orderNumber: string;
+  status: string;
+  carrierName: string | null;
+  trackingNumber: string | null;
+  orderType: string;
+  customerName: string | null;
+  customerEmail: string | null;
+  itemCount: number;
+  total: number;
+  balanceDue: number;
+  placedAt: string;
+}
+
+export interface AdminDirectShipPage {
+  rows: AdminDirectShipSummary[];
+  total: number;
+}
+
 export interface AdminOrderItem {
   id: number;
   productId: number | null;
@@ -5187,6 +5208,18 @@ export type AdminGetDeliveryManifestCopiesPdfParams = {
    * Comma-separated order IDs, e.g. "12,45,9"
    */
   orderIds: string;
+};
+
+export type AdminListDirectShipDeliveriesParams = {
+  /**
+   * @minimum 1
+   * @maximum 200
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   */
+  offset?: number;
 };
 
 export type AdminListCancellationRequestsParams = {

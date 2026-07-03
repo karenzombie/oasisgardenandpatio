@@ -3,7 +3,9 @@ import { Link } from "wouter";
 import { Truck } from "lucide-react";
 import {
   useAdminListLocalDeliveries,
+  useAdminListDirectShipDeliveries,
   type AdminLocalDeliverySummary,
+  type AdminDirectShipSummary,
 } from "@workspace/api-client-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -37,11 +39,13 @@ function initialTab(): DeliveriesTab {
 const STATUS_VARIANT: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
   ready_for_store_delivery: "default",
   out_for_local_delivery: "default",
+  carrier_delivery_update: "default",
 };
 
 const STATUS_LABEL: Record<string, string> = {
   ready_for_store_delivery: "Ready for Delivery",
   out_for_local_delivery: "Out for Delivery",
+  carrier_delivery_update: "In Transit",
 };
 
 function fmtMoney(n: number): string {
@@ -250,6 +254,130 @@ function LocalDeliveriesTab() {
   );
 }
 
+function DirectShipTab() {
+  const [page, setPage] = useState(0);
+
+  const params = useMemo(
+    () => ({
+      limit: PAGE_SIZE,
+      offset: page * PAGE_SIZE,
+    }),
+    [page],
+  );
+
+  const list = useAdminListDirectShipDeliveries(params);
+  const rows: AdminDirectShipSummary[] = list.data?.rows ?? [];
+  const total = list.data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  return (
+    <>
+      {list.isLoading ? (
+        <div className="flex items-center justify-center py-16">
+          <Spinner />
+        </div>
+      ) : list.error ? (
+        <div className="text-sm text-red-600">Failed to load deliveries.</div>
+      ) : rows.length === 0 ? (
+        <div className="flex flex-col items-center gap-2 py-16 text-slate-500">
+          <Truck className="size-10 opacity-40" />
+          <div>No direct-ship deliveries in progress.</div>
+        </div>
+      ) : (
+        <>
+          <div className="rounded-md border bg-white overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 text-left">
+                <tr>
+                  <th className="px-3 py-2 font-medium">Order #</th>
+                  <th className="px-3 py-2 font-medium">Status</th>
+                  <th className="px-3 py-2 font-medium">Carrier</th>
+                  <th className="px-3 py-2 font-medium">Tracking Number</th>
+                  <th className="px-3 py-2 font-medium">Type</th>
+                  <th className="px-3 py-2 font-medium">Customer</th>
+                  <th className="px-3 py-2 font-medium">Items</th>
+                  <th className="px-3 py-2 font-medium text-right">Total</th>
+                  <th className="px-3 py-2 font-medium text-right">Balance</th>
+                  <th className="px-3 py-2 font-medium">Placed</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r) => (
+                  <tr
+                    key={r.shipmentId}
+                    className="border-t hover:bg-slate-50"
+                  >
+                    <td className="px-3 py-2">
+                      <Link
+                        href={`/admin/orders/${r.orderId}`}
+                        className="text-blue-700 hover:underline"
+                      >
+                        {r.orderNumber}
+                      </Link>
+                    </td>
+                    <td className="px-3 py-2">
+                      <Badge variant={STATUS_VARIANT[r.status] ?? "secondary"}>
+                        {STATUS_LABEL[r.status] ?? r.status.replace(/_/g, " ")}
+                      </Badge>
+                    </td>
+                    <td className="px-3 py-2">{r.carrierName ?? "Unknown"}</td>
+                    <td className="px-3 py-2">{r.trackingNumber ?? "—"}</td>
+                    <td className="px-3 py-2 capitalize">
+                      {r.orderType.replace(/_/g, " ")}
+                    </td>
+                    <td className="px-3 py-2">
+                      <div>{r.customerName ?? "—"}</div>
+                      <div className="text-xs text-slate-500">
+                        {r.customerEmail ?? ""}
+                      </div>
+                    </td>
+                    <td className="px-3 py-2">{r.itemCount}</td>
+                    <td className="px-3 py-2 text-right font-medium">
+                      {fmtMoney(r.total)}
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      {fmtMoney(r.balanceDue)}
+                    </td>
+                    <td className="px-3 py-2">{fmtDate(r.placedAt)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-3 text-sm">
+              <div className="text-slate-500">
+                Page {page + 1} of {totalPages} · {total} total
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={page === 0}
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                >
+                  Previous
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={page + 1 >= totalPages}
+                  onClick={() => setPage((p) => p + 1)}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </>
+  );
+}
+
 export default function Deliveries() {
   const [tab, setTab] = useState<DeliveriesTab>(initialTab);
 
@@ -273,11 +401,7 @@ export default function Deliveries() {
             <LocalDeliveriesTab />
           </TabsContent>
           <TabsContent value="direct-ship" className="mt-4">
-            <div className="bg-white border border-slate-200 rounded-md p-12 text-center">
-              <div className="text-slate-500 text-sm">
-                Direct Ship table coming soon.
-              </div>
-            </div>
+            <DirectShipTab />
           </TabsContent>
           <TabsContent value="completed" className="mt-4">
             <div className="bg-white border border-slate-200 rounded-md p-12 text-center">

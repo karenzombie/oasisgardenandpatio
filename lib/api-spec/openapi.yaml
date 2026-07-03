@@ -4270,6 +4270,31 @@ paths:
             application/pdf:
               schema: { type: string, format: binary }
         "400": { description: Bad request, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+  /admin/deliveries/direct-ship:
+    get:
+      operationId: adminListDirectShipDeliveries
+      tags: [admin-orders]
+      summary: List incomplete direct-ship orders for the Deliveries > Direct Ship tab
+      description: >-
+        Orders with status carrier_delivery_update that have at least one
+        shipment with a non-null tracking_number. One row per shipment
+        record (order number repeats when an order has multiple shipments),
+        sorted by shipments.created_at descending. No filters.
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 200 }
+        - name: offset
+          in: query
+          required: false
+          schema: { type: integer, minimum: 0 }
+      responses:
+        "200":
+          description: Direct ship page
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminDirectShipPage" }
   /admin/orders/{orderId}/items/{itemId}/fabric-vendor:
     patch:
       operationId: adminUpdateOrderItemFabricVendor
@@ -5520,6 +5545,32 @@ components:
         rows:
           type: array
           items: { $ref: "#/components/schemas/AdminLocalDeliverySummary" }
+        total: { type: integer }
+      required: [rows, total]
+    AdminDirectShipSummary:
+      type: object
+      properties:
+        shipmentId: { type: integer }
+        orderId: { type: integer }
+        orderNumber: { type: string }
+        status: { type: string }
+        carrierName: { type: string, nullable: true }
+        trackingNumber: { type: string, nullable: true }
+        orderType: { type: string }
+        customerName: { type: string, nullable: true }
+        customerEmail: { type: string, nullable: true }
+        itemCount: { type: integer }
+        total: { type: number }
+        balanceDue: { type: number }
+        placedAt: { type: string, format: date-time }
+      required:
+        [shipmentId, orderId, orderNumber, status, carrierName, trackingNumber, orderType, customerName, customerEmail, itemCount, total, balanceDue, placedAt]
+    AdminDirectShipPage:
+      type: object
+      properties:
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/AdminDirectShipSummary" }
         total: { type: integer }
       required: [rows, total]
     AdminOrderItem:

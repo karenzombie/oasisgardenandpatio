@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import {
   db,
@@ -8,8 +8,13 @@ import {
   usersTable,
   orderItemsTable,
   addressesTable,
+  shipmentsTable,
+  carriersTable,
 } from "@workspace/db";
-import { AdminListLocalDeliveriesQueryParams } from "@workspace/api-zod";
+import {
+  AdminListLocalDeliveriesQueryParams,
+  AdminListDirectShipDeliveriesQueryParams,
+} from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import { loadOrderPdfArgs } from "./adminOrders";
 import {
@@ -103,6 +108,85 @@ router.get(
         isInternalRestock: r.order.isInternalRestock,
         scheduledDeliveryDate: r.order.scheduledDeliveryDate,
         scheduledDeliveryTime: r.order.scheduledDeliveryTime,
+      })),
+      total: countRow?.count ?? 0,
+    });
+  },
+);
+
+router.get(
+  "/admin/deliveries/direct-ship",
+  requireAuth,
+  requireRole("admin", "agent"),
+  async (req: Request, res: Response): Promise<void> => {
+    const parsed = AdminListDirectShipDeliveriesQueryParams.safeParse(
+      req.query,
+    );
+    if (!parsed.success) {
+      res.status(400).json({ error: "Invalid query" });
+      return;
+    }
+    const { limit, offset } = parsed.data;
+    const cap = Math.min(limit ?? DEFAULT_LIMIT, 200);
+    const off = offset ?? 0;
+
+    // Order-level eligibility per Brief 6 Section 4A: status must be
+    // carrier_delivery_update AND the order has at least one shipment with
+    // a non-null tracking_number. Once an order qualifies, ALL of its
+    // shipment records are shown (Section 4B: one row per shipment).
+    const whereExpr = and(
+      eq(ordersTable.status, "carrier_delivery_update"),
+      sql`EXISTS (
+        SELECT 1 FROM ${shipmentsTable} s2
+        WHERE s2.order_id = ${ordersTable.id}
+          AND s2.tracking_number IS NOT NULL
+      )`,
+    );
+
+    const rows = await db
+      .select({
+        shipment: shipmentsTable,
+        order: ordersTable,
+        customer: customersTable,
+        carrier: carriersTable,
+        itemCount: sql<number>`(
+          SELECT count(*)::int
+          FROM ${orderItemsTable}
+          WHERE ${orderItemsTable.orderId} = ${ordersTable.id}
+        )`,
+      })
+      .from(shipmentsTable)
+      .innerJoin(ordersTable, eq(ordersTable.id, shipmentsTable.orderId))
+      .leftJoin(customersTable, eq(customersTable.id, ordersTable.customerId))
+      .leftJoin(carriersTable, eq(carriersTable.id, shipmentsTable.carrierId))
+      .where(whereExpr)
+      .orderBy(desc(shipmentsTable.createdAt))
+      .limit(cap)
+      .offset(off);
+
+    const [countRow] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(shipmentsTable)
+      .innerJoin(ordersTable, eq(ordersTable.id, shipmentsTable.orderId))
+      .where(whereExpr);
+
+    res.json({
+      rows: rows.map((r) => ({
+        shipmentId: r.shipment.id,
+        orderId: r.order.id,
+        orderNumber: r.order.orderNumber,
+        status: r.order.status,
+        carrierName: r.carrier?.name ?? null,
+        trackingNumber: r.shipment.trackingNumber,
+        orderType: r.order.orderType,
+        customerName: r.customer
+          ? nameOf(r.customer.firstName, r.customer.lastName)
+          : null,
+        customerEmail: r.customer?.email ?? null,
+        itemCount: r.itemCount,
+        total: Number(r.order.total),
+        balanceDue: Number(r.order.balanceDue),
+        placedAt: r.order.placedAt.toISOString(),
       })),
       total: countRow?.count ?? 0,
     });

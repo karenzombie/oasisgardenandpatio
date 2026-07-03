@@ -8783,6 +8783,47 @@ export const AdminGetDeliveryManifestCopiesPdfQueryParams = zod.object({
 });
 
 /**
+ * Orders with status carrier_delivery_update that have at least one shipment with a non-null tracking_number. One row per shipment record (order number repeats when an order has multiple shipments), sorted by shipments.created_at descending. No filters.
+ * @summary List incomplete direct-ship orders for the Deliveries > Direct Ship tab
+ */
+export const adminListDirectShipDeliveriesQueryLimitMax = 200;
+
+export const adminListDirectShipDeliveriesQueryOffsetMin = 0;
+
+export const AdminListDirectShipDeliveriesQueryParams = zod.object({
+  limit: zod.coerce
+    .number()
+    .min(1)
+    .max(adminListDirectShipDeliveriesQueryLimitMax)
+    .optional(),
+  offset: zod.coerce
+    .number()
+    .min(adminListDirectShipDeliveriesQueryOffsetMin)
+    .optional(),
+});
+
+export const AdminListDirectShipDeliveriesResponse = zod.object({
+  rows: zod.array(
+    zod.object({
+      shipmentId: zod.number(),
+      orderId: zod.number(),
+      orderNumber: zod.string(),
+      status: zod.string(),
+      carrierName: zod.string().nullable(),
+      trackingNumber: zod.string().nullable(),
+      orderType: zod.string(),
+      customerName: zod.string().nullable(),
+      customerEmail: zod.string().nullable(),
+      itemCount: zod.number(),
+      total: zod.number(),
+      balanceDue: zod.number(),
+      placedAt: zod.coerce.date(),
+    }),
+  ),
+  total: zod.number(),
+});
+
+/**
  * Staff-portal only. When `fabricVendorId` is non-null, this line's fabric is split out of the product vendor's PO and placed on a separate PO for the chosen fabric vendor. Setting it to null returns to the default behavior (fabric ships with the product vendor). Vendor POs are re-grouped after the change. The change is rejected with 409 if any vendor PO that currently includes this line is no longer in 'pending' status (i.e. already sent / fulfilled / received / canceled) — staff must cancel that PO first.
  * @summary Set or clear the alternate fabric vendor on a line item
  */
