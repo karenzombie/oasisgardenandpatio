@@ -66,10 +66,12 @@ import type {
   AdminListHistoryParams,
   AdminListInventoryAdjustmentsParams,
   AdminListInventoryParams,
+  AdminListLocalDeliveriesParams,
   AdminListOrdersParams,
   AdminListProductsParams,
   AdminListUsersParams,
   AdminListVendorOrdersParams,
+  AdminLocalDeliveryPage,
   AdminManufacturer,
   AdminMarkOrderPaidInFullRequest,
   AdminOrderDetail,
@@ -14221,6 +14223,110 @@ export const useAdminUpdateOrderTotals = <
 > => {
   return useMutation(getAdminUpdateOrderTotalsMutationOptions(options));
 };
+
+/**
+ * Orders with status ready_for_store_delivery or out_for_local_delivery, sorted by scheduled_delivery_date ascending (NULLs last), then scheduled_delivery_time ascending (NULLs last).
+ * @summary List incomplete local-delivery orders for the Deliveries > Local Deliveries tab
+ */
+export const getAdminListLocalDeliveriesUrl = (
+  params?: AdminListLocalDeliveriesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/admin/deliveries/local?${stringifiedParams}`
+    : `/api/admin/deliveries/local`;
+};
+
+export const adminListLocalDeliveries = async (
+  params?: AdminListLocalDeliveriesParams,
+  options?: RequestInit,
+): Promise<AdminLocalDeliveryPage> => {
+  return customFetch<AdminLocalDeliveryPage>(
+    getAdminListLocalDeliveriesUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getAdminListLocalDeliveriesQueryKey = (
+  params?: AdminListLocalDeliveriesParams,
+) => {
+  return [`/api/admin/deliveries/local`, ...(params ? [params] : [])] as const;
+};
+
+export const getAdminListLocalDeliveriesQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminListLocalDeliveries>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: AdminListLocalDeliveriesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminListLocalDeliveries>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getAdminListLocalDeliveriesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminListLocalDeliveries>>
+  > = ({ signal }) =>
+    adminListLocalDeliveries(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminListLocalDeliveries>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminListLocalDeliveriesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminListLocalDeliveries>>
+>;
+export type AdminListLocalDeliveriesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List incomplete local-delivery orders for the Deliveries > Local Deliveries tab
+ */
+
+export function useAdminListLocalDeliveries<
+  TData = Awaited<ReturnType<typeof adminListLocalDeliveries>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: AdminListLocalDeliveriesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminListLocalDeliveries>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminListLocalDeliveriesQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * Staff-portal only. When `fabricVendorId` is non-null, this line's fabric is split out of the product vendor's PO and placed on a separate PO for the chosen fabric vendor. Setting it to null returns to the default behavior (fabric ships with the product vendor). Vendor POs are re-grouped after the change. The change is rejected with 409 if any vendor PO that currently includes this line is no longer in 'pending' status (i.e. already sent / fulfilled / received / canceled) — staff must cancel that PO first.

@@ -4205,6 +4205,35 @@ paths:
               schema: { $ref: "#/components/schemas/AdminOrderDetail" }
         "400": { description: Bad request, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
         "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+  /admin/deliveries/local:
+    get:
+      operationId: adminListLocalDeliveries
+      tags: [admin-orders]
+      summary: List incomplete local-delivery orders for the Deliveries > Local Deliveries tab
+      description: >-
+        Orders with status ready_for_store_delivery or out_for_local_delivery,
+        sorted by scheduled_delivery_date ascending (NULLs last), then
+        scheduled_delivery_time ascending (NULLs last).
+      parameters:
+        - name: filter
+          in: query
+          required: false
+          description: "all (default) or unscheduled (scheduled_delivery_date IS NULL)"
+          schema: { type: string, enum: [all, unscheduled] }
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 200 }
+        - name: offset
+          in: query
+          required: false
+          schema: { type: integer, minimum: 0 }
+      responses:
+        "200":
+          description: Local deliveries page
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminLocalDeliveryPage" }
   /admin/orders/{orderId}/items/{itemId}/fabric-vendor:
     patch:
       operationId: adminUpdateOrderItemFabricVendor
@@ -5439,6 +5468,22 @@ components:
         rows:
           type: array
           items: { $ref: "#/components/schemas/AdminOrderSummary" }
+        total: { type: integer }
+      required: [rows, total]
+    AdminLocalDeliverySummary:
+      allOf:
+        - $ref: "#/components/schemas/AdminOrderSummary"
+        - type: object
+          properties:
+            scheduledDeliveryDate: { type: string, format: date, nullable: true }
+            scheduledDeliveryTime: { type: string, nullable: true }
+          required: [scheduledDeliveryDate, scheduledDeliveryTime]
+    AdminLocalDeliveryPage:
+      type: object
+      properties:
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/AdminLocalDeliverySummary" }
         total: { type: integer }
       required: [rows, total]
     AdminOrderItem:

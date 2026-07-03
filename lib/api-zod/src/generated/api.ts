@@ -8712,6 +8712,59 @@ export const AdminUpdateOrderTotalsResponse = zod.object({
 });
 
 /**
+ * Orders with status ready_for_store_delivery or out_for_local_delivery, sorted by scheduled_delivery_date ascending (NULLs last), then scheduled_delivery_time ascending (NULLs last).
+ * @summary List incomplete local-delivery orders for the Deliveries > Local Deliveries tab
+ */
+export const adminListLocalDeliveriesQueryLimitMax = 200;
+
+export const adminListLocalDeliveriesQueryOffsetMin = 0;
+
+export const AdminListLocalDeliveriesQueryParams = zod.object({
+  filter: zod
+    .enum(["all", "unscheduled"])
+    .optional()
+    .describe("all (default) or unscheduled (scheduled_delivery_date IS NULL)"),
+  limit: zod.coerce
+    .number()
+    .min(1)
+    .max(adminListLocalDeliveriesQueryLimitMax)
+    .optional(),
+  offset: zod.coerce
+    .number()
+    .min(adminListLocalDeliveriesQueryOffsetMin)
+    .optional(),
+});
+
+export const AdminListLocalDeliveriesResponse = zod.object({
+  rows: zod.array(
+    zod
+      .object({
+        id: zod.number(),
+        orderNumber: zod.string(),
+        status: zod.string(),
+        orderType: zod.string(),
+        total: zod.number(),
+        balanceDue: zod.number(),
+        customerId: zod.number().nullable(),
+        customerName: zod.string().nullable(),
+        customerEmail: zod.string().nullable(),
+        agentId: zod.number().nullable(),
+        agentName: zod.string().nullable(),
+        itemCount: zod.number(),
+        placedAt: zod.coerce.date(),
+        isInternalRestock: zod.boolean(),
+      })
+      .and(
+        zod.object({
+          scheduledDeliveryDate: zod.coerce.date().nullable(),
+          scheduledDeliveryTime: zod.string().nullable(),
+        }),
+      ),
+  ),
+  total: zod.number(),
+});
+
+/**
  * Staff-portal only. When `fabricVendorId` is non-null, this line's fabric is split out of the product vendor's PO and placed on a separate PO for the chosen fabric vendor. Setting it to null returns to the default behavior (fabric ships with the product vendor). Vendor POs are re-grouped after the change. The change is rejected with 409 if any vendor PO that currently includes this line is no longer in 'pending' status (i.e. already sent / fulfilled / received / canceled) — staff must cancel that PO first.
  * @summary Set or clear the alternate fabric vendor on a line item
  */

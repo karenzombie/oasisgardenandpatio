@@ -94,6 +94,16 @@ export interface AdminOrderPage {
   total: number;
 }
 
+export type AdminLocalDeliverySummary = AdminOrderSummary & {
+  scheduledDeliveryDate: string | null;
+  scheduledDeliveryTime: string | null;
+};
+
+export interface AdminLocalDeliveryPage {
+  rows: AdminLocalDeliverySummary[];
+  total: number;
+}
+
 export interface AdminOrderItem {
   id: number;
   productId: number | null;
@@ -5140,6 +5150,30 @@ export type AdminListOrdersParams = {
    */
   offset?: number;
 };
+
+export type AdminListLocalDeliveriesParams = {
+  /**
+   * all (default) or unscheduled (scheduled_delivery_date IS NULL)
+   */
+  filter?: AdminListLocalDeliveriesFilter;
+  /**
+   * @minimum 1
+   * @maximum 200
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   */
+  offset?: number;
+};
+
+export type AdminListLocalDeliveriesFilter =
+  (typeof AdminListLocalDeliveriesFilter)[keyof typeof AdminListLocalDeliveriesFilter];
+
+export const AdminListLocalDeliveriesFilter = {
+  all: "all",
+  unscheduled: "unscheduled",
+} as const;
 
 export type AdminListCancellationRequestsParams = {
   status?: string;
