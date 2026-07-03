@@ -1,5 +1,5 @@
-import ComingSoon from "@/pages/ComingSoon";
+import LegalDocument from "@/pages/LegalDocument";
 
 export default function TermsAndConditions() {
-  return <ComingSoon title="Terms & Conditions" />;
+  return <LegalDocument type="terms_and_conditions" />;
 }

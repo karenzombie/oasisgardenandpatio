@@ -15,11 +15,11 @@ import { SignInPage, SignUpPage } from "@/pages/auth/ClerkAuthPages";
 
 import Home from "@/pages/Home";
 import Contact from "@/pages/Contact";
-import ComingSoon from "@/pages/ComingSoon";
 import Shop from "@/pages/Shop";
 import SearchPage from "@/pages/Search";
 import Product from "@/pages/Product";
 import ShippingReturns from "@/pages/ShippingReturns";
+import Warranty from "@/pages/Warranty";
 import Fabrics from "@/pages/Fabrics";
 import Finishes from "@/pages/Finishes";
 import Materials from "@/pages/Materials";
@@ -75,7 +75,7 @@ function CustomerRouter() {
         <Route path="/shop/category/:slug" component={Shop} />
         <Route path="/shop/:slug" component={Product} />
         <Route path="/shipping-returns" component={ShippingReturns} />
-        <Route path="/warranty">{() => <ComingSoon />}</Route>
+        <Route path="/warranty" component={Warranty} />
         <Route path="/fabrics" component={Fabrics} />
         <Route path="/finishes" component={Finishes} />
         <Route path="/commercial" component={Commercial} />

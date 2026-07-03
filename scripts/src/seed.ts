@@ -97,6 +97,62 @@ Santa Clarita, CA 91350
 (661) 255-9909
 sales@oasisgardenandpatio.com`;
 
+const SHIPPING_RETURNS_CONTENT = `Oasis Garden & Patio Shipping, Returns & Cancellation Policy
+
+Effective May 2026
+
+This policy covers shipping, damage claims, cancellations, and returns for orders placed with Oasis Garden & Patio, whether online, by phone, or in our Santa Clarita showroom.
+
+1. Shipping
+We ship to addresses within the contiguous 48 United States. Shipping is charged at a flat rate per product, shown at checkout before your order is finalized. Small parcel items ship via FedEx or UPS and typically do not require a signature. Large or oversized items ship via freight carrier with curbside delivery only, and a signature is required at the time of delivery.
+
+2. Estimated Ship Dates
+Ship dates shown on product pages are estimates and subject to change based on availability and manufacturer lead times. Most in-stock orders ship within two weeks of order placement. Once the manufacturer accepts your order, we will email you a confirmed Estimated Ship Date (ESD).
+
+3. Inspecting Freight Deliveries
+You must inspect freight deliveries for visible damage before signing the delivery receipt, and note any damage in writing on the receipt at the time of delivery. Failure to do so may limit or void your ability to file a damage claim.
+
+4. Damaged Items
+If you discover damage, notify us within 24 hours of delivery at sales@oasisgardenandpatio.com or (661) 255-9909, with your order number, a description of the damage, and supporting photos. We respond to all damage claims within 7 business days. Claims submitted after 24 hours, or without documentation, may be denied.
+
+5. Cancellations
+Orders may be cancelled with no penalty within 48 hours of placement by emailing sales@oasisgardenandpatio.com. Once your order enters production and you receive an ESD confirmation email, you have an additional 48 hours to cancel or make changes, provided it has not yet shipped. Requests outside these windows are reviewed case-by-case and cannot be guaranteed.
+
+6. Returns & Restocking Fees
+If an order cannot be cancelled per the above, our standard return policy applies, including any restocking fee disclosed on the individual product page. By placing an order, you agree to the restocking fee terms listed on that page.
+
+7. Contact Us
+Oasis Garden & Patio
+21182 Centre Pointe Pkwy #100
+Santa Clarita, CA 91350
+(661) 255-9909
+sales@oasisgardenandpatio.com`;
+
+const WARRANTY_CONTENT = `Oasis Garden & Patio Manufacturer Warranty Reference
+
+Effective May 2026
+
+All products sold by Oasis Garden & Patio are backed by the original manufacturer's own limited warranty. Warranty terms, coverage periods, and claim procedures vary by brand and product line. Warranties are between you, the original purchaser, and the manufacturer; proof of purchase from Oasis Garden & Patio may be required when submitting a claim.
+
+1. Frame Warranties
+Most premium aluminum and teak frames carry warranties of 5 to 15 years against structural defects. Cast aluminum and wrought iron frames are typically covered against welds and finish defects.
+
+2. Fabric & Cushion Warranties
+Solution-dyed fabrics from Sunbrella and similar premium mills carry a 5-year limited warranty against fading and degradation under normal outdoor conditions.
+
+3. Umbrella Warranties
+Treasure Garden umbrellas carry a one-year limited warranty on all components, with extended coverage on the frame. Sunbrella canopies are covered separately under the fabric warranty.
+
+4. Filing a Warranty Claim
+As your retailer, we will help coordinate warranty claims with the manufacturer on your behalf. Email sales@oasisgardenandpatio.com with photos of the issue and your order number, and we will take it from there.
+
+5. Contact Us
+Oasis Garden & Patio
+21182 Centre Pointe Pkwy #100
+Santa Clarita, CA 91350
+(661) 255-9909
+sales@oasisgardenandpatio.com`;
+
 const TERMS_CONTENT = `Oasis Garden & Patio Terms & Conditions
 
 Effective May 2026
@@ -255,7 +311,11 @@ async function seedMaterials() {
 
 async function seedLegalDocuments() {
   const docs: Array<{
-    type: "privacy_policy" | "terms_and_conditions";
+    type:
+      | "privacy_policy"
+      | "terms_and_conditions"
+      | "shipping_returns"
+      | "warranty";
     version: string;
     content: string;
     effectiveDate: string;
@@ -270,6 +330,18 @@ async function seedLegalDocuments() {
       type: "terms_and_conditions",
       version: "2026-05-01",
       content: TERMS_CONTENT,
+      effectiveDate: "2026-05-01",
+    },
+    {
+      type: "shipping_returns",
+      version: "2026-05-01",
+      content: SHIPPING_RETURNS_CONTENT,
+      effectiveDate: "2026-05-01",
+    },
+    {
+      type: "warranty",
+      version: "2026-05-01",
+      content: WARRANTY_CONTENT,
       effectiveDate: "2026-05-01",
     },
   ];

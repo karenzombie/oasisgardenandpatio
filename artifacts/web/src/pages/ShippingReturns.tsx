@@ -1,5 +1,5 @@
-import ComingSoon from "@/pages/ComingSoon";
+import LegalDocument from "@/pages/LegalDocument";
 
 export default function ShippingReturns() {
-  return <ComingSoon title="Shipping & Returns" />;
+  return <LegalDocument type="shipping_returns" />;
 }

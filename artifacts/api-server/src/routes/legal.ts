@@ -5,7 +5,12 @@ import { GetLegalDocumentParams } from "@workspace/api-zod";
 
 const router: IRouter = Router();
 
-const LEGAL_TYPES = ["privacy_policy", "terms_and_conditions"] as const;
+const LEGAL_TYPES = [
+  "privacy_policy",
+  "terms_and_conditions",
+  "shipping_returns",
+  "warranty",
+] as const;
 type LegalType = (typeof LEGAL_TYPES)[number];
 
 router.get("/legal/:type", async (req, res): Promise<void> => {

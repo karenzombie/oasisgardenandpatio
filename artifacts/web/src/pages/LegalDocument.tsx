@@ -3,16 +3,35 @@ import {
   getGetLegalDocumentQueryKey,
 } from "@workspace/api-client-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import ComingSoon from "@/pages/ComingSoon";
 
-export default function LegalDocument({ type }: { type: "privacy_policy" | "terms_and_conditions" }) {
-  const { data: document, isLoading } = useGetLegalDocument(type, {
+type LegalDocumentType =
+  | "privacy_policy"
+  | "terms_and_conditions"
+  | "shipping_returns"
+  | "warranty";
+
+const TITLES: Record<LegalDocumentType, string> = {
+  privacy_policy: "Privacy Policy",
+  terms_and_conditions: "Terms & Conditions",
+  shipping_returns: "Shipping & Returns",
+  warranty: "Warranty",
+};
+
+export default function LegalDocument({ type }: { type: LegalDocumentType }) {
+  const { data: document, isLoading, isError } = useGetLegalDocument(type, {
     query: {
       enabled: !!type,
       queryKey: getGetLegalDocumentQueryKey(type),
+      retry: false,
     },
   });
 
-  const title = type === "privacy_policy" ? "Privacy Policy" : "Terms & Conditions";
+  const title = TITLES[type];
+
+  if (!isLoading && (isError || !document)) {
+    return <ComingSoon title={title} />;
+  }
 
   return (
     <div className="w-full bg-background py-16 md:py-24">
@@ -34,19 +53,40 @@ export default function LegalDocument({ type }: { type: "privacy_policy" | "term
               <Skeleton className="h-4 w-full" />
             </div>
           ) : document ? (
-            <div className="space-y-6 text-muted-foreground leading-relaxed whitespace-pre-wrap">
-              <p className="text-sm font-medium text-foreground">
+            <div className="space-y-6">
+              <p className="text-sm font-medium text-foreground not-italic">
                 Effective Date: {new Date(document.effectiveDate).toLocaleDateString()} (Version: {document.version})
               </p>
-              <div>{document.content}</div>
+              <LegalDocumentBody content={document.content} />
             </div>
-          ) : (
-            <div className="text-muted-foreground">
-              Document not found.
-            </div>
-          )}
+          ) : null}
         </div>
       </div>
+    </div>
+  );
+}
+
+function LegalDocumentBody({ content }: { content: string }) {
+  const blocks = content.split(/\n\s*\n/).filter((block) => block.trim().length > 0);
+
+  return (
+    <div className="space-y-5 text-muted-foreground leading-relaxed">
+      {blocks.map((block, i) => {
+        const trimmed = block.trim();
+        const isHeading = /^\d+(\.\d+)?\.\s+\S/.test(trimmed) && !trimmed.includes("\n");
+        if (isHeading) {
+          return (
+            <h2 key={i} className="text-foreground font-serif text-xl md:text-2xl mt-10 first:mt-0 mb-2">
+              {trimmed}
+            </h2>
+          );
+        }
+        return (
+          <p key={i} className="whitespace-pre-line">
+            {trimmed}
+          </p>
+        );
+      })}
     </div>
   );
 }

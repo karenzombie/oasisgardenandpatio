@@ -1,5 +1,5 @@
-import ComingSoon from "@/pages/ComingSoon";
+import LegalDocument from "@/pages/LegalDocument";
 
 export default function PrivacyPolicy() {
-  return <ComingSoon title="Privacy Policy" />;
+  return <LegalDocument type="privacy_policy" />;
 }
