@@ -39,6 +39,19 @@ import { computeStartingPrices } from "../lib/startingPrices";
 
 const router: IRouter = Router();
 
+// Facet filter params (categorySlug, manufacturerSlug, materialSlug,
+// collection, subCategory) accept a comma-separated list of values to
+// support multi-select filtering: multiple values within a facet are OR'd
+// together, while different facets combine with AND. No facet value in this
+// catalog contains a literal comma, so a plain split is safe.
+function parseMulti(raw: string | undefined): string[] {
+  if (!raw) return [];
+  return raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
 router.get("/products/featured", async (_req, res): Promise<void> => {
   const rows = await db
     .select({
@@ -205,13 +218,23 @@ router.get(
         )!,
       );
     }
-    if (manufacturerSlug) {
-      conditions.push(ilike(manufacturersTable.slug, manufacturerSlug));
+    const manufacturerSlugs = parseMulti(manufacturerSlug);
+    const categorySlugs = parseMulti(categorySlug);
+    const materialSlugs = parseMulti(materialSlug);
+    const collections = parseMulti(collection);
+    const subCategories = parseMulti(subCategory);
+
+    if (manufacturerSlugs.length) {
+      conditions.push(
+        or(...manufacturerSlugs.map((s) => ilike(manufacturersTable.slug, s)))!,
+      );
     }
-    if (categorySlug) {
-      conditions.push(ilike(categoriesTable.slug, categorySlug));
+    if (categorySlugs.length) {
+      conditions.push(
+        or(...categorySlugs.map((s) => ilike(categoriesTable.slug, s)))!,
+      );
     }
-    if (materialSlug) {
+    if (materialSlugs.length) {
       conditions.push(
         exists(
           db
@@ -224,17 +247,17 @@ router.get(
             .where(
               and(
                 eq(productMaterialsTable.productId, productsTable.id),
-                ilike(materialsTable.slug, materialSlug),
+                or(...materialSlugs.map((s) => ilike(materialsTable.slug, s)))!,
               ),
             ),
         ),
       );
     }
-    if (collection && collection.trim()) {
-      conditions.push(eq(productsTable.collection, collection.trim()));
+    if (collections.length) {
+      conditions.push(inArray(productsTable.collection, collections));
     }
-    if (subCategory && subCategory.trim()) {
-      conditions.push(eq(productsTable.subCategory, subCategory.trim()));
+    if (subCategories.length) {
+      conditions.push(inArray(productsTable.subCategory, subCategories));
     }
     const whereClause = and(...conditions);
 
@@ -413,6 +436,11 @@ router.get(
       | "material"
       | "collection"
       | "subCategory";
+    const manufacturerSlugs = parseMulti(manufacturerSlug);
+    const categorySlugs = parseMulti(categorySlug);
+    const materialSlugs = parseMulti(materialSlug);
+    const collections = parseMulti(collection);
+    const subCategories = parseMulti(subCategory);
     const buildConditions = (exclude: Facet | null) => {
       const conds = [
         eq(productsTable.isActive, true),
@@ -432,13 +460,17 @@ router.get(
           )!,
         );
       }
-      if (manufacturerSlug && exclude !== "manufacturer") {
-        conds.push(ilike(manufacturersTable.slug, manufacturerSlug));
+      if (manufacturerSlugs.length && exclude !== "manufacturer") {
+        conds.push(
+          or(...manufacturerSlugs.map((s) => ilike(manufacturersTable.slug, s)))!,
+        );
       }
-      if (categorySlug && exclude !== "category") {
-        conds.push(ilike(categoriesTable.slug, categorySlug));
+      if (categorySlugs.length && exclude !== "category") {
+        conds.push(
+          or(...categorySlugs.map((s) => ilike(categoriesTable.slug, s)))!,
+        );
       }
-      if (materialSlug && exclude !== "material") {
+      if (materialSlugs.length && exclude !== "material") {
         conds.push(
           exists(
             db
@@ -451,18 +483,18 @@ router.get(
               .where(
                 and(
                   eq(productMaterialsTable.productId, productsTable.id),
-                  ilike(materialsTable.slug, materialSlug),
+                  or(...materialSlugs.map((s) => ilike(materialsTable.slug, s)))!,
                   eq(materialsTable.isActive, true),
                 ),
               ),
           ),
         );
       }
-      if (collection && collection.trim() && exclude !== "collection") {
-        conds.push(eq(productsTable.collection, collection.trim()));
+      if (collections.length && exclude !== "collection") {
+        conds.push(inArray(productsTable.collection, collections));
       }
-      if (subCategory && subCategory.trim() && exclude !== "subCategory") {
-        conds.push(eq(productsTable.subCategory, subCategory.trim()));
+      if (subCategories.length && exclude !== "subCategory") {
+        conds.push(inArray(productsTable.subCategory, subCategories));
       }
       return conds;
     };

@@ -18,6 +18,7 @@ import { WishlistButton } from "@/components/WishlistButton";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { CheckboxGroup, type FilterOption } from "@/components/FilterCheckboxGroup";
+import { parseListParam, joinListParam } from "@/lib/filterParams";
 
 const PAGE_SIZE_DISPLAY = 24;
 
@@ -39,10 +40,10 @@ export default function ManufacturerProducts() {
   // Manufacturer is fixed by the route; category/sub-category/collection/material
   // are query-param filters. Sub-category is gated behind a selected category
   // and collection is always available (the brand is already fixed).
-  const activeCategory = q.get("category") ?? "";
-  const activeSubCategory = q.get("subcategory") ?? "";
-  const activeCollection = q.get("collection") ?? "";
-  const activeMaterial = q.get("material") ?? "";
+  const activeCategories = useMemo(() => parseListParam(q.get("category")), [q]);
+  const activeSubCategories = useMemo(() => parseListParam(q.get("subcategory")), [q]);
+  const activeCollections = useMemo(() => parseListParam(q.get("collection")), [q]);
+  const activeMaterials = useMemo(() => parseListParam(q.get("material")), [q]);
   const displayPage = Math.max(1, Number(q.get("page") ?? "1") || 1);
 
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
@@ -68,18 +69,19 @@ export default function ManufacturerProducts() {
       page: displayPage,
       pageSize: PAGE_SIZE_DISPLAY,
     };
-    if (activeCategory) out.categorySlug = activeCategory;
-    if (activeCategory && activeSubCategory) out.subCategory = activeSubCategory;
-    if (activeCollection) out.collection = activeCollection;
-    if (activeMaterial) out.materialSlug = activeMaterial;
+    if (activeCategories.length) out.categorySlug = activeCategories.join(",");
+    if (activeCategories.length && activeSubCategories.length)
+      out.subCategory = activeSubCategories.join(",");
+    if (activeCollections.length) out.collection = activeCollections.join(",");
+    if (activeMaterials.length) out.materialSlug = activeMaterials.join(",");
     return out;
   }, [
     slug,
     displayPage,
-    activeCategory,
-    activeSubCategory,
-    activeCollection,
-    activeMaterial,
+    activeCategories,
+    activeSubCategories,
+    activeCollections,
+    activeMaterials,
   ]);
 
   const { data, isLoading, error } = useListCatalogProducts(queryParams);
@@ -89,12 +91,13 @@ export default function ManufacturerProducts() {
   // selections (and to this manufacturer) so zero-result options stay hidden.
   const facetParams = useMemo<ListCatalogFacetsParams>(() => {
     const out: ListCatalogFacetsParams = { manufacturerSlug: slug };
-    if (activeCategory) out.categorySlug = activeCategory;
-    if (activeCategory && activeSubCategory) out.subCategory = activeSubCategory;
-    if (activeCollection) out.collection = activeCollection;
-    if (activeMaterial) out.materialSlug = activeMaterial;
+    if (activeCategories.length) out.categorySlug = activeCategories.join(",");
+    if (activeCategories.length && activeSubCategories.length)
+      out.subCategory = activeSubCategories.join(",");
+    if (activeCollections.length) out.collection = activeCollections.join(",");
+    if (activeMaterials.length) out.materialSlug = activeMaterials.join(",");
     return out;
-  }, [slug, activeCategory, activeSubCategory, activeCollection, activeMaterial]);
+  }, [slug, activeCategories, activeSubCategories, activeCollections, activeMaterials]);
 
   const { data: facets } = useListCatalogFacets(facetParams);
 
@@ -128,14 +131,11 @@ export default function ManufacturerProducts() {
     [facets],
   );
 
-  const activeCategoryName =
-    categoryOptions.find((c) => c.value === activeCategory)?.label ?? activeCategory;
-
   const activeFilterCount =
-    (activeCategory ? 1 : 0) +
-    (activeCategory && activeSubCategory ? 1 : 0) +
-    (activeCollection ? 1 : 0) +
-    (activeMaterial ? 1 : 0);
+    activeCategories.length +
+    activeSubCategories.length +
+    activeCollections.length +
+    activeMaterials.length;
   const brandLogo = getBrandLogo(manufacturer?.name ?? "");
   const displayName = manufacturer?.name ?? slug.replace(/-/g, " ");
   const aboutInfo = getManufacturerAbout(slug);
@@ -175,28 +175,30 @@ export default function ManufacturerProducts() {
       <CheckboxGroup
         label="Category"
         options={categoryOptions}
-        selected={activeCategory}
-        onChange={(v) => updateSearch({ category: v || null, subcategory: null, page: "1" })}
+        selected={activeCategories}
+        onChange={(v) =>
+          updateSearch({ category: joinListParam(v), subcategory: null, page: "1" })
+        }
       />
-      {activeCategory && subCategoryOptions.length > 0 && (
+      {activeCategories.length > 0 && subCategoryOptions.length > 0 && (
         <CheckboxGroup
           label="Sub Category"
           options={subCategoryOptions}
-          selected={activeSubCategory}
-          onChange={(v) => updateSearch({ subcategory: v || null, page: "1" })}
+          selected={activeSubCategories}
+          onChange={(v) => updateSearch({ subcategory: joinListParam(v), page: "1" })}
         />
       )}
       <CheckboxGroup
         label="Collection"
         options={collectionOptions}
-        selected={activeCollection}
-        onChange={(v) => updateSearch({ collection: v || null, page: "1" })}
+        selected={activeCollections}
+        onChange={(v) => updateSearch({ collection: joinListParam(v), page: "1" })}
       />
       <CheckboxGroup
         label="Material"
         options={materialOptions}
-        selected={activeMaterial}
-        onChange={(v) => updateSearch({ material: v || null, page: "1" })}
+        selected={activeMaterials}
+        onChange={(v) => updateSearch({ material: joinListParam(v), page: "1" })}
       />
     </aside>
   );
@@ -288,38 +290,71 @@ export default function ManufacturerProducts() {
           {/* Active filter chips */}
           {activeFilterCount > 0 && (
             <div className="flex flex-wrap gap-2 mb-6">
-              {activeCategory && (
-                <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
-                  {activeCategoryName}
-                  <button type="button" onClick={() => updateSearch({ category: null, subcategory: null, page: "1" })}>
+              {activeCategories.map((c) => (
+                <span key={`cat-${c}`} className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
+                  {categoryOptions.find((o) => o.value === c)?.label ?? c}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      updateSearch({
+                        category: joinListParam(activeCategories.filter((v) => v !== c)),
+                        subcategory: null,
+                        page: "1",
+                      })
+                    }
+                  >
                     <X className="size-3" />
                   </button>
                 </span>
-              )}
-              {activeCategory && activeSubCategory && (
-                <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
-                  {activeSubCategory}
-                  <button type="button" onClick={() => updateSearch({ subcategory: null, page: "1" })}>
+              ))}
+              {activeSubCategories.map((sc) => (
+                <span key={`subcat-${sc}`} className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
+                  {sc}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      updateSearch({
+                        subcategory: joinListParam(activeSubCategories.filter((v) => v !== sc)),
+                        page: "1",
+                      })
+                    }
+                  >
                     <X className="size-3" />
                   </button>
                 </span>
-              )}
-              {activeCollection && (
-                <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
-                  {activeCollection}
-                  <button type="button" onClick={() => updateSearch({ collection: null, page: "1" })}>
+              ))}
+              {activeCollections.map((c) => (
+                <span key={`coll-${c}`} className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
+                  {c}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      updateSearch({
+                        collection: joinListParam(activeCollections.filter((v) => v !== c)),
+                        page: "1",
+                      })
+                    }
+                  >
                     <X className="size-3" />
                   </button>
                 </span>
-              )}
-              {activeMaterial && (
-                <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
-                  {materialOptions.find((m) => m.value === activeMaterial)?.label ?? activeMaterial}
-                  <button type="button" onClick={() => updateSearch({ material: null, page: "1" })}>
+              ))}
+              {activeMaterials.map((m) => (
+                <span key={`mat-${m}`} className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
+                  {materialOptions.find((o) => o.value === m)?.label ?? m}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      updateSearch({
+                        material: joinListParam(activeMaterials.filter((v) => v !== m)),
+                        page: "1",
+                      })
+                    }
+                  >
                     <X className="size-3" />
                   </button>
                 </span>
-              )}
+              ))}
             </div>
           )}
 

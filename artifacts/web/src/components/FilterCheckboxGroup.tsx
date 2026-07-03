@@ -9,15 +9,16 @@ export interface FilterOption {
 interface CheckboxGroupProps {
   label: string;
   options: FilterOption[];
-  selected: string;
-  onChange: (value: string) => void;
+  selected: string[];
+  onChange: (values: string[]) => void;
   defaultOpen?: boolean;
 }
 
 /**
- * Single-select checkbox facet used across all product browse screens
- * (Search, Shop/category, manufacturer product lists). Toggling the checked
- * option clears it. Combine different facets to narrow results.
+ * Multi-select checkbox facet used across all product browse screens
+ * (Search, Shop/category, manufacturer product lists). Multiple checked
+ * options within a facet are combined with OR; different facets combine
+ * with AND to narrow results.
  */
 export function CheckboxGroup({
   label,
@@ -49,7 +50,7 @@ export function CheckboxGroup({
       {open && (
         <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
           {options.map((opt) => {
-            const checked = selected === opt.value;
+            const checked = selected.includes(opt.value);
             return (
               <label
                 key={opt.value}
@@ -58,7 +59,13 @@ export function CheckboxGroup({
                 <input
                   type="checkbox"
                   checked={checked}
-                  onChange={() => onChange(checked ? "" : opt.value)}
+                  onChange={() =>
+                    onChange(
+                      checked
+                        ? selected.filter((v) => v !== opt.value)
+                        : [...selected, opt.value],
+                    )
+                  }
                   className="size-3.5 rounded-sm accent-primary shrink-0"
                 />
                 <span

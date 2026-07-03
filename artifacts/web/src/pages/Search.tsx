@@ -19,6 +19,7 @@ import { getBrandLogo } from "@/lib/brandLogos";
 import { WishlistButton } from "@/components/WishlistButton";
 import { FabricSwatchImage } from "@/components/FabricSwatchImage";
 import { Button } from "@/components/ui/button";
+import { parseListParam, joinListParam } from "@/lib/filterParams";
 
 const SORTS = [
   { value: "featured", label: "Featured" },
@@ -47,20 +48,20 @@ export default function SearchPage() {
   const searchRef = useRef<HTMLInputElement>(null);
 
   const activeQ = q.get("q") ?? "";
-  const activeCategory = q.get("category") ?? "";
-  const activeSubCategory = q.get("subcategory") ?? "";
-  const activeManufacturer = q.get("manufacturer") ?? "";
-  const activeCollection = q.get("collection") ?? "";
-  const activeMaterial = q.get("material") ?? "";
+  const activeCategories = useMemo(() => parseListParam(q.get("category")), [q]);
+  const activeSubCategories = useMemo(() => parseListParam(q.get("subcategory")), [q]);
+  const activeManufacturers = useMemo(() => parseListParam(q.get("manufacturer")), [q]);
+  const activeCollections = useMemo(() => parseListParam(q.get("collection")), [q]);
+  const activeMaterials = useMemo(() => parseListParam(q.get("material")), [q]);
   const activeSort = (q.get("sort") ?? "featured") as ListCatalogProductsParams["sort"];
   const activePage = Math.max(1, Number(q.get("page") ?? "1") || 1);
 
   const activeFilterCount =
-    (activeCategory ? 1 : 0) +
-    (activeCategory && activeSubCategory ? 1 : 0) +
-    (activeManufacturer ? 1 : 0) +
-    (activeManufacturer && activeCollection ? 1 : 0) +
-    (activeMaterial ? 1 : 0);
+    activeCategories.length +
+    activeSubCategories.length +
+    activeManufacturers.length +
+    activeCollections.length +
+    activeMaterials.length;
 
   function updateSearch(patch: Record<string, string | null>) {
     const next = new URLSearchParams(search);
@@ -93,19 +94,21 @@ export default function SearchPage() {
       sort: activeSort ?? "featured",
     };
     if (activeQ) out.q = activeQ;
-    if (activeCategory) out.categorySlug = activeCategory;
-    if (activeCategory && activeSubCategory) out.subCategory = activeSubCategory;
-    if (activeManufacturer) out.manufacturerSlug = activeManufacturer;
-    if (activeManufacturer && activeCollection) out.collection = activeCollection;
-    if (activeMaterial) out.materialSlug = activeMaterial;
+    if (activeCategories.length) out.categorySlug = activeCategories.join(",");
+    if (activeCategories.length && activeSubCategories.length)
+      out.subCategory = activeSubCategories.join(",");
+    if (activeManufacturers.length) out.manufacturerSlug = activeManufacturers.join(",");
+    if (activeManufacturers.length && activeCollections.length)
+      out.collection = activeCollections.join(",");
+    if (activeMaterials.length) out.materialSlug = activeMaterials.join(",");
     return out;
   }, [
     activeQ,
-    activeCategory,
-    activeSubCategory,
-    activeManufacturer,
-    activeCollection,
-    activeMaterial,
+    activeCategories,
+    activeSubCategories,
+    activeManufacturers,
+    activeCollections,
+    activeMaterials,
     activeSort,
     activePage,
   ]);
@@ -134,19 +137,21 @@ export default function SearchPage() {
   const facetParams = useMemo<ListCatalogFacetsParams>(() => {
     const out: ListCatalogFacetsParams = {};
     if (activeQ) out.q = activeQ;
-    if (activeCategory) out.categorySlug = activeCategory;
-    if (activeCategory && activeSubCategory) out.subCategory = activeSubCategory;
-    if (activeManufacturer) out.manufacturerSlug = activeManufacturer;
-    if (activeManufacturer && activeCollection) out.collection = activeCollection;
-    if (activeMaterial) out.materialSlug = activeMaterial;
+    if (activeCategories.length) out.categorySlug = activeCategories.join(",");
+    if (activeCategories.length && activeSubCategories.length)
+      out.subCategory = activeSubCategories.join(",");
+    if (activeManufacturers.length) out.manufacturerSlug = activeManufacturers.join(",");
+    if (activeManufacturers.length && activeCollections.length)
+      out.collection = activeCollections.join(",");
+    if (activeMaterials.length) out.materialSlug = activeMaterials.join(",");
     return out;
   }, [
     activeQ,
-    activeCategory,
-    activeSubCategory,
-    activeManufacturer,
-    activeCollection,
-    activeMaterial,
+    activeCategories,
+    activeSubCategories,
+    activeManufacturers,
+    activeCollections,
+    activeMaterials,
   ]);
   const { data: facets } = useListCatalogFacets(facetParams);
 
@@ -206,36 +211,40 @@ export default function SearchPage() {
       <CheckboxGroup
         label="Category"
         options={categoryOptions}
-        selected={activeCategory}
-        onChange={(v) => updateSearch({ category: v || null, subcategory: null, page: "1" })}
+        selected={activeCategories}
+        onChange={(v) =>
+          updateSearch({ category: joinListParam(v), subcategory: null, page: "1" })
+        }
       />
-      {activeCategory && subCategoryOptions.length > 0 && (
+      {activeCategories.length > 0 && subCategoryOptions.length > 0 && (
         <CheckboxGroup
           label="Sub Category"
           options={subCategoryOptions}
-          selected={activeSubCategory}
-          onChange={(v) => updateSearch({ subcategory: v || null, page: "1" })}
+          selected={activeSubCategories}
+          onChange={(v) => updateSearch({ subcategory: joinListParam(v), page: "1" })}
         />
       )}
       <CheckboxGroup
         label="Manufacturer"
         options={manufacturerOptions}
-        selected={activeManufacturer}
-        onChange={(v) => updateSearch({ manufacturer: v || null, collection: null, page: "1" })}
+        selected={activeManufacturers}
+        onChange={(v) =>
+          updateSearch({ manufacturer: joinListParam(v), collection: null, page: "1" })
+        }
       />
-      {activeManufacturer && collectionOptions.length > 0 && (
+      {activeManufacturers.length > 0 && collectionOptions.length > 0 && (
         <CheckboxGroup
           label="Collection"
           options={collectionOptions}
-          selected={activeCollection}
-          onChange={(v) => updateSearch({ collection: v || null, page: "1" })}
+          selected={activeCollections}
+          onChange={(v) => updateSearch({ collection: joinListParam(v), page: "1" })}
         />
       )}
       <CheckboxGroup
         label="Material"
         options={materialOptions}
-        selected={activeMaterial}
-        onChange={(v) => updateSearch({ material: v || null, page: "1" })}
+        selected={activeMaterials}
+        onChange={(v) => updateSearch({ material: joinListParam(v), page: "1" })}
       />
     </aside>
   );
@@ -318,46 +327,88 @@ export default function SearchPage() {
       {/* Active filter chips */}
       {activeFilterCount > 0 && (
         <div className="flex flex-wrap gap-2 mb-6">
-          {activeCategory && (
-            <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
-              {categoryOptions.find((c) => c.value === activeCategory)?.label ?? activeCategory}
-              <button type="button" onClick={() => updateSearch({ category: null, subcategory: null, page: "1" })}>
+          {activeCategories.map((c) => (
+            <span key={`cat-${c}`} className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
+              {categoryOptions.find((o) => o.value === c)?.label ?? c}
+              <button
+                type="button"
+                onClick={() =>
+                  updateSearch({
+                    category: joinListParam(activeCategories.filter((v) => v !== c)),
+                    subcategory: null,
+                    page: "1",
+                  })
+                }
+              >
                 <X className="size-3" />
               </button>
             </span>
-          )}
-          {activeCategory && activeSubCategory && (
-            <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
-              {activeSubCategory}
-              <button type="button" onClick={() => updateSearch({ subcategory: null, page: "1" })}>
+          ))}
+          {activeSubCategories.map((sc) => (
+            <span key={`subcat-${sc}`} className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
+              {sc}
+              <button
+                type="button"
+                onClick={() =>
+                  updateSearch({
+                    subcategory: joinListParam(activeSubCategories.filter((v) => v !== sc)),
+                    page: "1",
+                  })
+                }
+              >
                 <X className="size-3" />
               </button>
             </span>
-          )}
-          {activeManufacturer && (
-            <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
-              {manufacturerOptions.find((m) => m.value === activeManufacturer)?.label ?? activeManufacturer}
-              <button type="button" onClick={() => updateSearch({ manufacturer: null, collection: null, page: "1" })}>
+          ))}
+          {activeManufacturers.map((m) => (
+            <span key={`mfr-${m}`} className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
+              {manufacturerOptions.find((o) => o.value === m)?.label ?? m}
+              <button
+                type="button"
+                onClick={() =>
+                  updateSearch({
+                    manufacturer: joinListParam(activeManufacturers.filter((v) => v !== m)),
+                    collection: null,
+                    page: "1",
+                  })
+                }
+              >
                 <X className="size-3" />
               </button>
             </span>
-          )}
-          {activeManufacturer && activeCollection && (
-            <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
-              {activeCollection}
-              <button type="button" onClick={() => updateSearch({ collection: null, page: "1" })}>
+          ))}
+          {activeCollections.map((c) => (
+            <span key={`coll-${c}`} className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
+              {c}
+              <button
+                type="button"
+                onClick={() =>
+                  updateSearch({
+                    collection: joinListParam(activeCollections.filter((v) => v !== c)),
+                    page: "1",
+                  })
+                }
+              >
                 <X className="size-3" />
               </button>
             </span>
-          )}
-          {activeMaterial && (
-            <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
-              {materialOptions.find((m) => m.value === activeMaterial)?.label ?? activeMaterial}
-              <button type="button" onClick={() => updateSearch({ material: null, page: "1" })}>
+          ))}
+          {activeMaterials.map((m) => (
+            <span key={`mat-${m}`} className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
+              {materialOptions.find((o) => o.value === m)?.label ?? m}
+              <button
+                type="button"
+                onClick={() =>
+                  updateSearch({
+                    material: joinListParam(activeMaterials.filter((v) => v !== m)),
+                    page: "1",
+                  })
+                }
+              >
                 <X className="size-3" />
               </button>
             </span>
-          )}
+          ))}
         </div>
       )}
 

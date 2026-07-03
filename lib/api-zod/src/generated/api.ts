@@ -179,20 +179,35 @@ export const listCatalogProductsQueryPageSizeMax = 60;
 
 export const ListCatalogProductsQueryParams = zod.object({
   q: zod.coerce.string().optional(),
-  categorySlug: zod.coerce.string().optional(),
-  manufacturerSlug: zod.coerce.string().optional(),
-  materialSlug: zod.coerce.string().optional(),
+  categorySlug: zod.coerce
+    .string()
+    .optional()
+    .describe(
+      'One or more category slugs, comma-separated for multi-select (OR\'d together, e.g. \"umbrellas,bases\").',
+    ),
+  manufacturerSlug: zod.coerce
+    .string()
+    .optional()
+    .describe(
+      "One or more manufacturer slugs, comma-separated for multi-select (OR'd together).",
+    ),
+  materialSlug: zod.coerce
+    .string()
+    .optional()
+    .describe(
+      "One or more material slugs, comma-separated for multi-select (OR'd together).",
+    ),
   collection: zod.coerce
     .string()
     .optional()
     .describe(
-      "Filter by product collection name (exact match). Typically used together with manufacturerSlug.",
+      "One or more product collection names (exact match), comma-separated for multi-select (OR'd together). Typically used together with manufacturerSlug.",
     ),
   subCategory: zod.coerce
     .string()
     .optional()
     .describe(
-      "Filter by product sub-category name (exact match). Typically used together with categorySlug.",
+      "One or more product sub-category names (exact match), comma-separated for multi-select (OR'd together). Typically used together with categorySlug.",
     ),
   onlineOnly: zod.coerce
     .boolean()
@@ -283,11 +298,36 @@ export const ListCatalogCollectionsResponse = zod.array(
  */
 export const ListCatalogFacetsQueryParams = zod.object({
   q: zod.coerce.string().optional(),
-  categorySlug: zod.coerce.string().optional(),
-  manufacturerSlug: zod.coerce.string().optional(),
-  materialSlug: zod.coerce.string().optional(),
-  collection: zod.coerce.string().optional(),
-  subCategory: zod.coerce.string().optional(),
+  categorySlug: zod.coerce
+    .string()
+    .optional()
+    .describe(
+      "One or more category slugs, comma-separated for multi-select (OR'd together).",
+    ),
+  manufacturerSlug: zod.coerce
+    .string()
+    .optional()
+    .describe(
+      "One or more manufacturer slugs, comma-separated for multi-select (OR'd together).",
+    ),
+  materialSlug: zod.coerce
+    .string()
+    .optional()
+    .describe(
+      "One or more material slugs, comma-separated for multi-select (OR'd together).",
+    ),
+  collection: zod.coerce
+    .string()
+    .optional()
+    .describe(
+      "One or more product collection names, comma-separated for multi-select (OR'd together).",
+    ),
+  subCategory: zod.coerce
+    .string()
+    .optional()
+    .describe(
+      "One or more product sub-category names, comma-separated for multi-select (OR'd together).",
+    ),
   onlineOnly: zod.coerce.boolean().optional(),
 });
 

@@ -4919,15 +4919,24 @@ export type ListCategoriesParams = {
 
 export type ListCatalogProductsParams = {
   q?: string;
+  /**
+   * One or more category slugs, comma-separated for multi-select (OR'd together, e.g. "umbrellas,bases").
+   */
   categorySlug?: string;
+  /**
+   * One or more manufacturer slugs, comma-separated for multi-select (OR'd together).
+   */
   manufacturerSlug?: string;
+  /**
+   * One or more material slugs, comma-separated for multi-select (OR'd together).
+   */
   materialSlug?: string;
   /**
-   * Filter by product collection name (exact match). Typically used together with manufacturerSlug.
+   * One or more product collection names (exact match), comma-separated for multi-select (OR'd together). Typically used together with manufacturerSlug.
    */
   collection?: string;
   /**
-   * Filter by product sub-category name (exact match). Typically used together with categorySlug.
+   * One or more product sub-category names (exact match), comma-separated for multi-select (OR'd together). Typically used together with categorySlug.
    */
   subCategory?: string;
   /**
@@ -4966,10 +4975,25 @@ export type ListCatalogCollectionsParams = {
 
 export type ListCatalogFacetsParams = {
   q?: string;
+  /**
+   * One or more category slugs, comma-separated for multi-select (OR'd together).
+   */
   categorySlug?: string;
+  /**
+   * One or more manufacturer slugs, comma-separated for multi-select (OR'd together).
+   */
   manufacturerSlug?: string;
+  /**
+   * One or more material slugs, comma-separated for multi-select (OR'd together).
+   */
   materialSlug?: string;
+  /**
+   * One or more product collection names, comma-separated for multi-select (OR'd together).
+   */
   collection?: string;
+  /**
+   * One or more product sub-category names, comma-separated for multi-select (OR'd together).
+   */
   subCategory?: string;
   onlineOnly?: boolean;
 };

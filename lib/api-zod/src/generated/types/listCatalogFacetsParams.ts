@@ -8,10 +8,25 @@
 
 export type ListCatalogFacetsParams = {
   q?: string;
+  /**
+   * One or more category slugs, comma-separated for multi-select (OR'd together).
+   */
   categorySlug?: string;
+  /**
+   * One or more manufacturer slugs, comma-separated for multi-select (OR'd together).
+   */
   manufacturerSlug?: string;
+  /**
+   * One or more material slugs, comma-separated for multi-select (OR'd together).
+   */
   materialSlug?: string;
+  /**
+   * One or more product collection names, comma-separated for multi-select (OR'd together).
+   */
   collection?: string;
+  /**
+   * One or more product sub-category names, comma-separated for multi-select (OR'd together).
+   */
   subCategory?: string;
   onlineOnly?: boolean;
 };

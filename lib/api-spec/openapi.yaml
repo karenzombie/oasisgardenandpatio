@@ -193,28 +193,31 @@ paths:
         - name: categorySlug
           in: query
           required: false
+          description: One or more category slugs, comma-separated for multi-select (OR'd together, e.g. "umbrellas,bases").
           schema:
             type: string
         - name: manufacturerSlug
           in: query
           required: false
+          description: One or more manufacturer slugs, comma-separated for multi-select (OR'd together).
           schema:
             type: string
         - name: materialSlug
           in: query
           required: false
+          description: One or more material slugs, comma-separated for multi-select (OR'd together).
           schema:
             type: string
         - name: collection
           in: query
           required: false
-          description: Filter by product collection name (exact match). Typically used together with manufacturerSlug.
+          description: One or more product collection names (exact match), comma-separated for multi-select (OR'd together). Typically used together with manufacturerSlug.
           schema:
             type: string
         - name: subCategory
           in: query
           required: false
-          description: Filter by product sub-category name (exact match). Typically used together with categorySlug.
+          description: One or more product sub-category names (exact match), comma-separated for multi-select (OR'd together). Typically used together with categorySlug.
           schema:
             type: string
         - name: onlineOnly
@@ -292,26 +295,31 @@ paths:
         - name: categorySlug
           in: query
           required: false
+          description: One or more category slugs, comma-separated for multi-select (OR'd together).
           schema:
             type: string
         - name: manufacturerSlug
           in: query
           required: false
+          description: One or more manufacturer slugs, comma-separated for multi-select (OR'd together).
           schema:
             type: string
         - name: materialSlug
           in: query
           required: false
+          description: One or more material slugs, comma-separated for multi-select (OR'd together).
           schema:
             type: string
         - name: collection
           in: query
           required: false
+          description: One or more product collection names, comma-separated for multi-select (OR'd together).
           schema:
             type: string
         - name: subCategory
           in: query
           required: false
+          description: One or more product sub-category names, comma-separated for multi-select (OR'd together).
           schema:
             type: string
         - name: onlineOnly
