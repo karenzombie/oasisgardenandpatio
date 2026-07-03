@@ -385,7 +385,6 @@ export default function DeliveryPanel({
             list={`delivery-method-options-${orderId}`}
           />
           <datalist id={`delivery-method-options-${orderId}`}>
-            <option value="Local Delivery" />
             <option value="Will Call" />
             <option value="In-Store Pickup" />
             {activeCarriers.map((c) => (
