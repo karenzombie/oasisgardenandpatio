@@ -8765,6 +8765,24 @@ export const AdminListLocalDeliveriesResponse = zod.object({
 });
 
 /**
+ * @summary Delivery Manifest Summary PDF for the checked orders (Brief 6, Section 3F Document 1)
+ */
+export const AdminGetDeliveryManifestSummaryPdfQueryParams = zod.object({
+  orderIds: zod.coerce
+    .string()
+    .describe('Comma-separated order IDs, e.g. \"12,45,9\"'),
+});
+
+/**
+ * @summary Merged Delivery Copies PDF for the checked orders (Brief 6, Section 3F Document 2)
+ */
+export const AdminGetDeliveryManifestCopiesPdfQueryParams = zod.object({
+  orderIds: zod.coerce
+    .string()
+    .describe('Comma-separated order IDs, e.g. \"12,45,9\"'),
+});
+
+/**
  * Staff-portal only. When `fabricVendorId` is non-null, this line's fabric is split out of the product vendor's PO and placed on a separate PO for the chosen fabric vendor. Setting it to null returns to the default behavior (fabric ships with the product vendor). Vendor POs are re-grouped after the change. The change is rejected with 409 if any vendor PO that currently includes this line is no longer in 'pending' status (i.e. already sent / fulfilled / received / canceled) — staff must cancel that PO first.
  * @summary Set or clear the alternate fabric vendor on a line item
  */

@@ -5175,6 +5175,20 @@ export const AdminListLocalDeliveriesFilter = {
   unscheduled: "unscheduled",
 } as const;
 
+export type AdminGetDeliveryManifestSummaryPdfParams = {
+  /**
+   * Comma-separated order IDs, e.g. "12,45,9"
+   */
+  orderIds: string;
+};
+
+export type AdminGetDeliveryManifestCopiesPdfParams = {
+  /**
+   * Comma-separated order IDs, e.g. "12,45,9"
+   */
+  orderIds: string;
+};
+
 export type AdminListCancellationRequestsParams = {
   status?: string;
 };

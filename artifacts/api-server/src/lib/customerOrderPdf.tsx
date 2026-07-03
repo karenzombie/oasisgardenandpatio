@@ -555,7 +555,13 @@ function PaymentsBlock({ payments }: { payments: PdfCustomerOrderPayment[] }) {
   );
 }
 
-function CustomerOrderDocument(args: PdfCustomerOrderArgs) {
+// Renders one order's full printable page (Customer / Store / Delivery
+// copy). Extracted as a standalone sub-component so the Deliveries
+// "Merge Delivery Copies" manifest feature (Brief 6, Section 3F Document 2)
+// can compose it N times — once per checked order — into a single
+// react-pdf <Document>, instead of generating N separate PDF files that
+// would then need merging with an external library.
+function OrderPdfPage({ args }: { args: PdfCustomerOrderArgs }) {
   const copyLabel =
     args.copy === "customer"
       ? "Customer Copy"
@@ -563,7 +569,6 @@ function CustomerOrderDocument(args: PdfCustomerOrderArgs) {
         ? "Store Copy"
         : "Delivery Copy";
   return (
-    <Document>
       <Page size="LETTER" style={s.page}>
         {/* Header */}
         <View style={s.headerRow}>
@@ -648,6 +653,13 @@ function CustomerOrderDocument(args: PdfCustomerOrderArgs) {
           }
         />
       </Page>
+  );
+}
+
+function CustomerOrderDocument(args: PdfCustomerOrderArgs) {
+  return (
+    <Document>
+      <OrderPdfPage args={args} />
     </Document>
   );
 }
@@ -656,4 +668,22 @@ export async function generateCustomerOrderPdf(
   args: PdfCustomerOrderArgs,
 ): Promise<Buffer> {
   return renderToBuffer(<CustomerOrderDocument {...args} />);
+}
+
+// Deliveries "Generate Delivery Manifest" merge feature (Brief 6, Section
+// 3F Document 2): renders one Delivery Copy page per checked order, in the
+// order given by the caller, all inside a single react-pdf Document. Each
+// order still gets the exact same delivery-copy layout as a standalone
+// print (via the shared OrderPdfPage sub-component) — this only changes how
+// many pages land in one PDF.
+export async function generateMergedDeliveryCopiesPdf(
+  argsList: PdfCustomerOrderArgs[],
+): Promise<Buffer> {
+  return renderToBuffer(
+    <Document>
+      {argsList.map((args) => (
+        <OrderPdfPage key={args.orderNumber} args={args} />
+      ))}
+    </Document>,
+  );
 }

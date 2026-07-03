@@ -63,6 +63,8 @@ export * from "./adminFinishCollection";
 export * from "./adminFinishCollectionsResponse";
 export * from "./adminFinishProduct";
 export * from "./adminFinishProductsResponse";
+export * from "./adminGetDeliveryManifestCopiesPdfParams";
+export * from "./adminGetDeliveryManifestSummaryPdfParams";
 export * from "./adminGetShippingSubcategoriesParams";
 export * from "./adminInventoryAdjustment";
 export * from "./adminInventoryAdjustmentsPage";

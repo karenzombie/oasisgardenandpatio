@@ -4234,6 +4234,42 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/AdminLocalDeliveryPage" }
+  /admin/deliveries/manifest-summary:
+    get:
+      operationId: adminGetDeliveryManifestSummaryPdf
+      tags: [admin-orders]
+      summary: Delivery Manifest Summary PDF for the checked orders (Brief 6, Section 3F Document 1)
+      parameters:
+        - name: orderIds
+          in: query
+          required: true
+          description: Comma-separated order IDs, e.g. "12,45,9"
+          schema: { type: string }
+      responses:
+        "200":
+          description: PDF bytes
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+        "400": { description: Bad request, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+  /admin/deliveries/manifest-copies:
+    get:
+      operationId: adminGetDeliveryManifestCopiesPdf
+      tags: [admin-orders]
+      summary: Merged Delivery Copies PDF for the checked orders (Brief 6, Section 3F Document 2)
+      parameters:
+        - name: orderIds
+          in: query
+          required: true
+          description: Comma-separated order IDs, e.g. "12,45,9"
+          schema: { type: string }
+      responses:
+        "200":
+          description: PDF bytes
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+        "400": { description: Bad request, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
   /admin/orders/{orderId}/items/{itemId}/fabric-vendor:
     patch:
       operationId: adminUpdateOrderItemFabricVendor

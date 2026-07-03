@@ -118,6 +118,19 @@ function LocalDeliveriesTab() {
           type="button"
           disabled={selected.size === 0}
           title="Generate Delivery Manifest"
+          onClick={() => {
+            const orderIds = Array.from(selected).join(",");
+            window.open(
+              `/api/admin/deliveries/manifest-summary?orderIds=${orderIds}`,
+              "_blank",
+              "noopener,noreferrer",
+            );
+            window.open(
+              `/api/admin/deliveries/manifest-copies?orderIds=${orderIds}`,
+              "_blank",
+              "noopener,noreferrer",
+            );
+          }}
         >
           Generate Delivery Manifest
         </Button>

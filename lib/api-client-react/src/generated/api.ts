@@ -54,6 +54,8 @@ import type {
   AdminFinishCollection,
   AdminFinishCollectionsResponse,
   AdminFinishProductsResponse,
+  AdminGetDeliveryManifestCopiesPdfParams,
+  AdminGetDeliveryManifestSummaryPdfParams,
   AdminGetShippingSubcategoriesParams,
   AdminInventoryAdjustmentsPage,
   AdminInventoryPage,
@@ -14320,6 +14322,220 @@ export function useAdminListLocalDeliveries<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getAdminListLocalDeliveriesQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Delivery Manifest Summary PDF for the checked orders (Brief 6, Section 3F Document 1)
+ */
+export const getAdminGetDeliveryManifestSummaryPdfUrl = (
+  params: AdminGetDeliveryManifestSummaryPdfParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/admin/deliveries/manifest-summary?${stringifiedParams}`
+    : `/api/admin/deliveries/manifest-summary`;
+};
+
+export const adminGetDeliveryManifestSummaryPdf = async (
+  params: AdminGetDeliveryManifestSummaryPdfParams,
+  options?: RequestInit,
+): Promise<Blob> => {
+  return customFetch<Blob>(getAdminGetDeliveryManifestSummaryPdfUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAdminGetDeliveryManifestSummaryPdfQueryKey = (
+  params?: AdminGetDeliveryManifestSummaryPdfParams,
+) => {
+  return [
+    `/api/admin/deliveries/manifest-summary`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getAdminGetDeliveryManifestSummaryPdfQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminGetDeliveryManifestSummaryPdf>>,
+  TError = ErrorType<Error>,
+>(
+  params: AdminGetDeliveryManifestSummaryPdfParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminGetDeliveryManifestSummaryPdf>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getAdminGetDeliveryManifestSummaryPdfQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminGetDeliveryManifestSummaryPdf>>
+  > = ({ signal }) =>
+    adminGetDeliveryManifestSummaryPdf(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetDeliveryManifestSummaryPdf>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminGetDeliveryManifestSummaryPdfQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminGetDeliveryManifestSummaryPdf>>
+>;
+export type AdminGetDeliveryManifestSummaryPdfQueryError = ErrorType<Error>;
+
+/**
+ * @summary Delivery Manifest Summary PDF for the checked orders (Brief 6, Section 3F Document 1)
+ */
+
+export function useAdminGetDeliveryManifestSummaryPdf<
+  TData = Awaited<ReturnType<typeof adminGetDeliveryManifestSummaryPdf>>,
+  TError = ErrorType<Error>,
+>(
+  params: AdminGetDeliveryManifestSummaryPdfParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminGetDeliveryManifestSummaryPdf>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminGetDeliveryManifestSummaryPdfQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Merged Delivery Copies PDF for the checked orders (Brief 6, Section 3F Document 2)
+ */
+export const getAdminGetDeliveryManifestCopiesPdfUrl = (
+  params: AdminGetDeliveryManifestCopiesPdfParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/admin/deliveries/manifest-copies?${stringifiedParams}`
+    : `/api/admin/deliveries/manifest-copies`;
+};
+
+export const adminGetDeliveryManifestCopiesPdf = async (
+  params: AdminGetDeliveryManifestCopiesPdfParams,
+  options?: RequestInit,
+): Promise<Blob> => {
+  return customFetch<Blob>(getAdminGetDeliveryManifestCopiesPdfUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAdminGetDeliveryManifestCopiesPdfQueryKey = (
+  params?: AdminGetDeliveryManifestCopiesPdfParams,
+) => {
+  return [
+    `/api/admin/deliveries/manifest-copies`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getAdminGetDeliveryManifestCopiesPdfQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminGetDeliveryManifestCopiesPdf>>,
+  TError = ErrorType<Error>,
+>(
+  params: AdminGetDeliveryManifestCopiesPdfParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminGetDeliveryManifestCopiesPdf>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getAdminGetDeliveryManifestCopiesPdfQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminGetDeliveryManifestCopiesPdf>>
+  > = ({ signal }) =>
+    adminGetDeliveryManifestCopiesPdf(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetDeliveryManifestCopiesPdf>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminGetDeliveryManifestCopiesPdfQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminGetDeliveryManifestCopiesPdf>>
+>;
+export type AdminGetDeliveryManifestCopiesPdfQueryError = ErrorType<Error>;
+
+/**
+ * @summary Merged Delivery Copies PDF for the checked orders (Brief 6, Section 3F Document 2)
+ */
+
+export function useAdminGetDeliveryManifestCopiesPdf<
+  TData = Awaited<ReturnType<typeof adminGetDeliveryManifestCopiesPdf>>,
+  TError = ErrorType<Error>,
+>(
+  params: AdminGetDeliveryManifestCopiesPdfParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminGetDeliveryManifestCopiesPdf>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminGetDeliveryManifestCopiesPdfQueryOptions(
+    params,
+    options,
+  );
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
