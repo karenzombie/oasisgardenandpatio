@@ -550,6 +550,7 @@ function VendorOrderDocument(args: VendorOrderPdfArgs) {
               <Text style={s.addrLine}>{OASIS_ADDR1}</Text>
               <Text style={s.addrLine}>{OASIS_ADDR2}</Text>
               <Text style={s.addrLine}>{OASIS_EMAIL}</Text>
+              <Text style={s.addrLine}>Phone: {OASIS_PHONE}</Text>
             </View>
           </View>
         </View>
@@ -913,6 +914,7 @@ function VendorOrderCancellationDocument(args: VendorOrderCancellationPdfArgs) {
               <Text style={s.addrLine}>{OASIS_ADDR1}</Text>
               <Text style={s.addrLine}>{OASIS_ADDR2}</Text>
               <Text style={s.addrLine}>{OASIS_EMAIL}</Text>
+              <Text style={s.addrLine}>Phone: {OASIS_PHONE}</Text>
             </View>
           </View>
         </View>
