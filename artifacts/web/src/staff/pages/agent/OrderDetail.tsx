@@ -20,6 +20,9 @@ import { Badge } from "@/components/ui/badge";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { PageBody, PageHeader } from "../../StaffShell";
 
@@ -66,6 +69,7 @@ export default function AgentOrderDetail() {
   const [pendingStatus, setPendingStatus] = useState<string>("");
   const [statusNote, setStatusNote] = useState("");
   const [notesDraft, setNotesDraft] = useState("");
+  const [confirmBackward, setConfirmBackward] = useState(false);
 
   useEffect(() => {
     if (order) {
@@ -82,7 +86,7 @@ export default function AgentOrderDetail() {
     queryClient.invalidateQueries({ queryKey: getAdminListOrdersQueryKey() });
   }
 
-  function handleStatusUpdate() {
+  function performStatusUpdate() {
     if (!order || pendingStatus === order.status) return;
     updateStatus.mutate(
       { id: orderId, data: { toStatus: pendingStatus, note: statusNote || null } },
@@ -95,6 +99,17 @@ export default function AgentOrderDetail() {
         }),
       },
     );
+  }
+
+  function handleStatusUpdate() {
+    if (!order || pendingStatus === order.status) return;
+    const fromIdx = ORDER_STATUSES.indexOf(order.status as (typeof ORDER_STATUSES)[number]);
+    const toIdx = ORDER_STATUSES.indexOf(pendingStatus as (typeof ORDER_STATUSES)[number]);
+    if (fromIdx !== -1 && toIdx !== -1 && toIdx < fromIdx) {
+      setConfirmBackward(true);
+      return;
+    }
+    performStatusUpdate();
   }
 
   function handleNotesSave() {
@@ -287,6 +302,48 @@ export default function AgentOrderDetail() {
             </div>
           </div>
         </div>
+
+        <Dialog
+          open={confirmBackward}
+          onOpenChange={(open) => {
+            setConfirmBackward(open);
+            if (!open && order) setPendingStatus(order.status);
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Move status backward?</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3 text-sm">
+              <p>
+                This order is currently{" "}
+                <span className="font-medium">{order.status.replace(/_/g, " ")}</span>.
+                Moving it back to{" "}
+                <span className="font-medium">{pendingStatus.replace(/_/g, " ")}</span>{" "}
+                may not be valid for this order. Are you sure you want to continue?
+              </p>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setConfirmBackward(false);
+                  setPendingStatus(order.status);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  setConfirmBackward(false);
+                  performStatusUpdate();
+                }}
+              >
+                Confirm
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </PageBody>
     </>
   );

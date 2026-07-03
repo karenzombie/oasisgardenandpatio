@@ -139,6 +139,7 @@ export default function OrderDetail() {
   const [taxDraft, setTaxDraft] = useState("");
   const [totalsNote, setTotalsNote] = useState("");
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [confirmBackward, setConfirmBackward] = useState(false);
   const [refundOpen, setRefundOpen] = useState(false);
   const [grossRefundAmt, setGrossRefundAmt] = useState("");
   const [restockingFeeType, setRestockingFeeType] = useState<"none" | "flat" | "percent">("none");
@@ -286,8 +287,8 @@ export default function OrderDetail() {
     }
   }
 
-  function handleStatusUpdate() {
-    if (!order || pendingStatus === order.status) return;
+  function proceedWithStatusChange() {
+    if (!order) return;
     if (pendingStatus === "carrier_delivery_update") {
       // Route through the Add Shipment modal; status commits on save.
       setCarrierModalTrigger((n) => n + 1);
@@ -306,6 +307,21 @@ export default function OrderDetail() {
       return;
     }
     performStatusUpdate();
+  }
+
+  function handleStatusUpdate() {
+    if (!order || pendingStatus === order.status) return;
+    const fromIdx = ORDER_STATUSES.indexOf(
+      order.status as (typeof ORDER_STATUSES)[number],
+    );
+    const toIdx = ORDER_STATUSES.indexOf(
+      pendingStatus as (typeof ORDER_STATUSES)[number],
+    );
+    if (fromIdx !== -1 && toIdx !== -1 && toIdx < fromIdx) {
+      setConfirmBackward(true);
+      return;
+    }
+    proceedWithStatusChange();
   }
 
   function handleRefundSubmit() {
@@ -1356,6 +1372,54 @@ export default function OrderDetail() {
                 disabled={updateStatus.isPending}
               >
                 {updateStatus.isPending ? "Cancelling…" : "Cancel order"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Backward status-transition confirmation */}
+        <Dialog
+          open={confirmBackward}
+          onOpenChange={(open) => {
+            setConfirmBackward(open);
+            if (!open && order) setPendingStatus(order.status);
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Move status backward?</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3 text-sm">
+              <p>
+                This order is currently{" "}
+                <span className="font-medium">
+                  {order?.status.replace(/_/g, " ")}
+                </span>
+                . Moving it back to{" "}
+                <span className="font-medium">
+                  {pendingStatus.replace(/_/g, " ")}
+                </span>{" "}
+                may not be valid for this order. Are you sure you want to
+                continue?
+              </p>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setConfirmBackward(false);
+                  if (order) setPendingStatus(order.status);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  setConfirmBackward(false);
+                  proceedWithStatusChange();
+                }}
+              >
+                Confirm
               </Button>
             </DialogFooter>
           </DialogContent>

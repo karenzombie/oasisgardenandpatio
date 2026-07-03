@@ -82,10 +82,6 @@ const ALLOWED_ORDER_STATUSES = new Set([
   "canceled",
 ]);
 
-// Once an order reaches one of these, it cannot transition out of it.
-// Refunds out of canceled are intentionally allowed (canceled -> refunded).
-const TERMINAL_ORDER_STATUSES = new Set(["completed", "refunded"]);
-
 function nameOf(first: string | null, last: string | null): string | null {
   const v = [first, last].filter(Boolean).join(" ").trim();
   return v.length === 0 ? null : v;
@@ -604,12 +600,6 @@ router.post(
       if (existing.status === body.data.toStatus) {
         return { kind: "noop" as const };
       }
-      if (TERMINAL_ORDER_STATUSES.has(existing.status)) {
-        return {
-          kind: "terminal" as const,
-          fromStatus: existing.status,
-        };
-      }
       const [row] = await tx
         .update(ordersTable)
         .set({ status: body.data.toStatus })
@@ -626,12 +616,6 @@ router.post(
     });
     if (result.kind === "not_found") {
       res.status(404).json({ error: "Not found" });
-      return;
-    }
-    if (result.kind === "terminal") {
-      res.status(409).json({
-        error: `Cannot transition out of terminal status '${result.fromStatus}'`,
-      });
       return;
     }
     if (result.kind === "updated") {
