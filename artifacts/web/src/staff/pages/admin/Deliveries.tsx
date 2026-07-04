@@ -569,7 +569,7 @@ export default function Deliveries() {
           <TabsList>
             <TabsTrigger value="local">Local Deliveries</TabsTrigger>
             <TabsTrigger value="direct-ship">Direct Ship</TabsTrigger>
-            <TabsTrigger value="completed">Completed</TabsTrigger>
+            <TabsTrigger value="completed">Recently Completed Deliveries</TabsTrigger>
           </TabsList>
           <TabsContent value="local" className="mt-4">
             <LocalDeliveriesTab />
