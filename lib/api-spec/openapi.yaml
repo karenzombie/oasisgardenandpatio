@@ -621,6 +621,24 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /account/marketing-preference/opt-out:
+    post:
+      operationId: optOutMarketingPreference
+      tags: [account]
+      summary: Validate a signed wishlist-email opt-out token and mark the customer opted out. Public endpoint -- no auth, reached from an email link.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MarketingOptOutBody"
+      responses:
+        "200":
+          description: Token processed (valid or invalid/expired -- see status)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketingOptOutResponse"
   /account/addresses/role/{role}:
     put:
       operationId: upsertAccountRoleAddress
@@ -8407,6 +8425,22 @@ components:
           type: boolean
       required:
         - marketingOptOut
+    MarketingOptOutBody:
+      type: object
+      properties:
+        token:
+          type: string
+      required:
+        - token
+    MarketingOptOutResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [success, invalid]
+          description: success = token was valid and marketing_opt_out was set true. invalid = token missing/expired/tampered; no change was made.
+      required:
+        - status
     RequestEmailChangeBody:
       type: object
       properties:

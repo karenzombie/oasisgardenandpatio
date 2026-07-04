@@ -191,6 +191,8 @@ import type {
   ListManufacturersParams,
   LoginRequest,
   Manufacturer,
+  MarketingOptOutBody,
+  MarketingOptOutResponse,
   Material,
   MergeWishlistRequest,
   PlaceOrderRequest,
@@ -2243,6 +2245,96 @@ export const useUpdateAccountMarketingPreference = <
   return useMutation(
     getUpdateAccountMarketingPreferenceMutationOptions(options),
   );
+};
+
+/**
+ * @summary Validate a signed wishlist-email opt-out token and mark the customer opted out. Public endpoint -- no auth, reached from an email link.
+ */
+export const getOptOutMarketingPreferenceUrl = () => {
+  return `/api/account/marketing-preference/opt-out`;
+};
+
+export const optOutMarketingPreference = async (
+  marketingOptOutBody: MarketingOptOutBody,
+  options?: RequestInit,
+): Promise<MarketingOptOutResponse> => {
+  return customFetch<MarketingOptOutResponse>(
+    getOptOutMarketingPreferenceUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(marketingOptOutBody),
+    },
+  );
+};
+
+export const getOptOutMarketingPreferenceMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof optOutMarketingPreference>>,
+    TError,
+    { data: BodyType<MarketingOptOutBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof optOutMarketingPreference>>,
+  TError,
+  { data: BodyType<MarketingOptOutBody> },
+  TContext
+> => {
+  const mutationKey = ["optOutMarketingPreference"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof optOutMarketingPreference>>,
+    { data: BodyType<MarketingOptOutBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return optOutMarketingPreference(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type OptOutMarketingPreferenceMutationResult = NonNullable<
+  Awaited<ReturnType<typeof optOutMarketingPreference>>
+>;
+export type OptOutMarketingPreferenceMutationBody =
+  BodyType<MarketingOptOutBody>;
+export type OptOutMarketingPreferenceMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Validate a signed wishlist-email opt-out token and mark the customer opted out. Public endpoint -- no auth, reached from an email link.
+ */
+export const useOptOutMarketingPreference = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof optOutMarketingPreference>>,
+    TError,
+    { data: BodyType<MarketingOptOutBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof optOutMarketingPreference>>,
+  TError,
+  { data: BodyType<MarketingOptOutBody> },
+  TContext
+> => {
+  return useMutation(getOptOutMarketingPreferenceMutationOptions(options));
 };
 
 /**

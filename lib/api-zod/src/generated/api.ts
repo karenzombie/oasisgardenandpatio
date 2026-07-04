@@ -1293,6 +1293,21 @@ export const UpdateAccountMarketingPreferenceResponse = zod.object({
 });
 
 /**
+ * @summary Validate a signed wishlist-email opt-out token and mark the customer opted out. Public endpoint -- no auth, reached from an email link.
+ */
+export const OptOutMarketingPreferenceBody = zod.object({
+  token: zod.string(),
+});
+
+export const OptOutMarketingPreferenceResponse = zod.object({
+  status: zod
+    .enum(["success", "invalid"])
+    .describe(
+      "success = token was valid and marketing_opt_out was set true. invalid = token missing\/expired\/tampered; no change was made.",
+    ),
+});
+
+/**
  * @summary Create or update the signed-in customer's default billing or shipping address
  */
 export const UpsertAccountRoleAddressParams = zod.object({

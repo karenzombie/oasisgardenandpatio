@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { and, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, count, desc, eq, isNull, sql } from "drizzle-orm";
 import {
   db,
   wishlistItemsTable,
@@ -7,6 +7,8 @@ import {
   productImagesTable,
   manufacturersTable,
   categoriesTable,
+  usersTable,
+  customersTable,
 } from "@workspace/db";
 import {
   GetWishlistResponse,
@@ -16,6 +18,63 @@ import {
 } from "@workspace/api-zod";
 import { optionalAuth, requireAuth } from "../middlewares/requireAuth";
 import { toPublicImageUrl } from "../lib/imageUrl";
+import { getOrCreateCustomer } from "./account";
+import { sendWishlistDisclosureEmail } from "../lib/email";
+import { signOptOutToken } from "../lib/marketingOptOutToken";
+import { logger } from "../lib/logger";
+
+function getBaseUrl(): string {
+  const baseUrl = process.env["BASE_URL"];
+  if (!baseUrl) {
+    throw new Error("BASE_URL environment variable is required");
+  }
+  return baseUrl.replace(/\/$/, "");
+}
+
+// Fires the one-time wishlist disclosure email (Brief 7, Step 4) the first
+// time a signed-in customer ever saves a wishlist item. Best-effort: email
+// failures are logged, never surfaced to the caller or allowed to fail the
+// wishlist save itself.
+async function maybeSendWishlistDisclosureEmail(
+  customerId: number,
+  wasFirstSaveEver: boolean,
+  productName: string,
+): Promise<void> {
+  if (!wasFirstSaveEver) return;
+
+  const [customer] = await db
+    .select({
+      email: usersTable.email,
+      firstName: usersTable.firstName,
+      marketingOptOut: customersTable.marketingOptOut,
+    })
+    .from(customersTable)
+    .leftJoin(usersTable, eq(usersTable.id, customersTable.userId))
+    .where(eq(customersTable.id, customerId))
+    .limit(1);
+
+  if (!customer || !customer.email || customer.marketingOptOut) return;
+
+  try {
+    const baseUrl = getBaseUrl();
+    const optOutUrl = `${baseUrl}/account/preferences/opt-out?token=${encodeURIComponent(
+      signOptOutToken(customerId),
+    )}`;
+    const accountSettingsUrl = `${baseUrl}/account`;
+    await sendWishlistDisclosureEmail({
+      to: customer.email,
+      firstName: customer.firstName,
+      productName,
+      optOutUrl,
+      accountSettingsUrl,
+    });
+  } catch (err) {
+    logger.error(
+      { err, customerId },
+      "Failed to send wishlist disclosure email",
+    );
+  }
+}
 
 const router: IRouter = Router();
 
@@ -157,7 +216,7 @@ router.post(
     // Wishlist may hold non-purchasable products (e.g. most O.W. Lee items),
     // so only require the product to be active — not available online.
     const [product] = await db
-      .select({ id: productsTable.id })
+      .select({ id: productsTable.id, name: productsTable.name })
       .from(productsTable)
       .where(
         and(eq(productsTable.id, productId), eq(productsTable.isActive, true)),
@@ -197,9 +256,30 @@ router.post(
         (e) => configKey({ productId, ...e }) === targetKey,
       );
       if (!dup) {
-        await db
-          .insert(wishlistItemsTable)
-          .values({ userId: req.user.id, productId, ...config });
+        const customer = await getOrCreateCustomer(req.user.id);
+
+        // "First save ever" per Brief 7 Step 4: zero existing wishlist_items
+        // rows for this customer_id at the moment of insert. Checked before
+        // the insert below, scoped to customerId (not userId) so it reflects
+        // the customer-account-level rule the brief specifies.
+        const [{ value: existingCount }] = await db
+          .select({ value: count() })
+          .from(wishlistItemsTable)
+          .where(eq(wishlistItemsTable.customerId, customer.id));
+        const wasFirstSaveEver = existingCount === 0;
+
+        await db.insert(wishlistItemsTable).values({
+          userId: req.user.id,
+          customerId: customer.id,
+          productId,
+          ...config,
+        });
+
+        await maybeSendWishlistDisclosureEmail(
+          customer.id,
+          wasFirstSaveEver,
+          product.name,
+        );
       }
       res.json(await loadWishlist({ userId: req.user.id }));
       return;

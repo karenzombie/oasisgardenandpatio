@@ -40,6 +40,7 @@ import Checkout from "@/pages/Checkout";
 import OrderConfirmation from "@/pages/OrderConfirmation";
 import AccountOrders from "@/pages/AccountOrders";
 import AccountOrderDetail from "@/pages/AccountOrderDetail";
+import AccountOptOut from "@/pages/AccountOptOut";
 
 import StaffRouter from "@/staff/StaffRouter";
 
@@ -104,6 +105,7 @@ function CustomerRouter() {
         <Route path="/order-confirmation/:orderNumber" component={OrderConfirmation} />
         <Route path="/account/orders" component={AccountOrders} />
         <Route path="/account/orders/:orderNumber" component={AccountOrderDetail} />
+        <Route path="/account/preferences/opt-out" component={AccountOptOut} />
 
         {/* 404 */}
         <Route component={NotFound} />

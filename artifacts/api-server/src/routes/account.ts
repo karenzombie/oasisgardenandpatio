@@ -18,6 +18,7 @@ import {
   CreateAccountAddressBody,
   UpdateAccountProfileBody,
   UpdateAccountMarketingPreferenceBody,
+  OptOutMarketingPreferenceBody,
   UpsertAccountRoleAddressBody,
   RequestAccountEmailChangeBody,
   VerifyAccountEmailChangeBody,
@@ -29,6 +30,7 @@ import {
 import { requireAuth } from "../middlewares/requireAuth";
 import { toPublicImageUrl } from "../lib/imageUrl";
 import { sendEmailChangeCode } from "../lib/email";
+import { verifyOptOutToken } from "../lib/marketingOptOutToken";
 
 const EMAIL_CHANGE_CODE_TTL_MS = 30 * 60 * 1000;
 
@@ -424,6 +426,29 @@ router.put(
       .where(eq(customersTable.id, customer.id));
 
     res.json(await loadProfile(req.user!.id));
+  },
+);
+
+// Public endpoint reached directly from the wishlist disclosure email's
+// opt-out link. No auth -- the signed token itself is the credential.
+router.post(
+  "/account/marketing-preference/opt-out",
+  async (req: Request, res: Response): Promise<void> => {
+    const parsed = OptOutMarketingPreferenceBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.json({ status: "invalid" });
+      return;
+    }
+    const verified = verifyOptOutToken(parsed.data.token);
+    if (!verified) {
+      res.json({ status: "invalid" });
+      return;
+    }
+    await db
+      .update(customersTable)
+      .set({ marketingOptOut: true, marketingOptOutAt: new Date() })
+      .where(eq(customersTable.id, verified.customerId));
+    res.json({ status: "success" });
   },
 );
 

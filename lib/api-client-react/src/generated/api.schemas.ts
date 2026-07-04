@@ -2195,6 +2195,26 @@ export interface UpdateMarketingPreferenceBody {
   marketingOptOut: boolean;
 }
 
+export interface MarketingOptOutBody {
+  token: string;
+}
+
+/**
+ * success = token was valid and marketing_opt_out was set true. invalid = token missing/expired/tampered; no change was made.
+ */
+export type MarketingOptOutResponseStatus =
+  (typeof MarketingOptOutResponseStatus)[keyof typeof MarketingOptOutResponseStatus];
+
+export const MarketingOptOutResponseStatus = {
+  success: "success",
+  invalid: "invalid",
+} as const;
+
+export interface MarketingOptOutResponse {
+  /** success = token was valid and marketing_opt_out was set true. invalid = token missing/expired/tampered; no change was made. */
+  status: MarketingOptOutResponseStatus;
+}
+
 export interface RequestEmailChangeBody {
   /** @minLength 3 */
   newEmail: string;
