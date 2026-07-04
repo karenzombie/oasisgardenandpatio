@@ -94,6 +94,49 @@ export interface AdminOrderPage {
   total: number;
 }
 
+export interface AdminWishlistSummary {
+  customerId: number;
+  wishlistNumber: string;
+  customerName: string;
+  customerEmail: string;
+  itemCount: number;
+  mostRecentSaveAt: string;
+  marketingOptOut: boolean;
+  marketingOptOutAt: string | null;
+}
+
+export interface AdminWishlistPage {
+  rows: AdminWishlistSummary[];
+  total: number;
+}
+
+export interface AdminWishlistItem {
+  id: number;
+  productId: number | null;
+  description: string;
+  sku: string | null;
+  variantLabel: string | null;
+  quantity: number;
+  /** Live sale-or-MSRP price read from the product at request time. Null if the product no longer exists or has no price on file. */
+  unitPrice: number | null;
+  amount: number | null;
+  addedAt: string;
+}
+
+export interface AdminWishlistDetail {
+  customerId: number;
+  wishlistNumber: string;
+  createdAt: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string | null;
+  marketingOptOut: boolean;
+  marketingOptOutAt: string | null;
+  items: AdminWishlistItem[];
+  subtotal: number;
+  hasUnpricedItems: boolean;
+}
+
 export type AdminLocalDeliverySummary = AdminOrderSummary & {
   scheduledDeliveryDate: string | null;
   scheduledDeliveryTime: string | null;
@@ -3504,6 +3547,9 @@ export interface AdminAgentPrivileges {
 
 export type AdminUserDetail = AdminUserSummary & {
   agentPrivileges: AdminAgentPrivileges | null;
+  /** Null when this user has no linked customer record (e.g. staff accounts). */
+  marketingOptOut: boolean | null;
+  marketingOptOutAt: string | null;
 };
 
 export type CreateStaffUserRequestRole =
@@ -5419,6 +5465,22 @@ export type StaffListNotificationsParams = {
 export type AdminListCustomersParams = {
   /**
    * Match email, name, phone, or company
+   */
+  q?: string;
+  /**
+   * @minimum 1
+   * @maximum 200
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   */
+  offset?: number;
+};
+
+export type AdminListWishlistsParams = {
+  /**
+   * Match wishlist number, customer email, or customer name
    */
   q?: string;
   /**

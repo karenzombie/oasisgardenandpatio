@@ -77,6 +77,7 @@ import type {
   AdminListProductsParams,
   AdminListUsersParams,
   AdminListVendorOrdersParams,
+  AdminListWishlistsParams,
   AdminLocalDeliveryPage,
   AdminManufacturer,
   AdminMarkOrderPaidInFullRequest,
@@ -129,6 +130,8 @@ import type {
   AdminUserSummary,
   AdminVendorOrderDetail,
   AdminVendorOrderPage,
+  AdminWishlistDetail,
+  AdminWishlistPage,
   AuditLogPage,
   Banner,
   CancelPendingVendorOrderRequest,
@@ -19592,6 +19595,281 @@ export const useAdminUpdateCustomerAddress = <
 > => {
   return useMutation(getAdminUpdateCustomerAddressMutationOptions(options));
 };
+
+/**
+ * @summary List customer wishlists with at least one item (most recent save first)
+ */
+export const getAdminListWishlistsUrl = (params?: AdminListWishlistsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/admin/wishlists?${stringifiedParams}`
+    : `/api/admin/wishlists`;
+};
+
+export const adminListWishlists = async (
+  params?: AdminListWishlistsParams,
+  options?: RequestInit,
+): Promise<AdminWishlistPage> => {
+  return customFetch<AdminWishlistPage>(getAdminListWishlistsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAdminListWishlistsQueryKey = (
+  params?: AdminListWishlistsParams,
+) => {
+  return [`/api/admin/wishlists`, ...(params ? [params] : [])] as const;
+};
+
+export const getAdminListWishlistsQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminListWishlists>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: AdminListWishlistsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminListWishlists>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getAdminListWishlistsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminListWishlists>>
+  > = ({ signal }) => adminListWishlists(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminListWishlists>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminListWishlistsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminListWishlists>>
+>;
+export type AdminListWishlistsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List customer wishlists with at least one item (most recent save first)
+ */
+
+export function useAdminListWishlists<
+  TData = Awaited<ReturnType<typeof adminListWishlists>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: AdminListWishlistsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminListWishlists>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminListWishlistsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Wishlist detail for a customer (items, live pricing, marketing contact state)
+ */
+export const getAdminGetWishlistUrl = (customerId: number) => {
+  return `/api/admin/wishlists/${customerId}`;
+};
+
+export const adminGetWishlist = async (
+  customerId: number,
+  options?: RequestInit,
+): Promise<AdminWishlistDetail> => {
+  return customFetch<AdminWishlistDetail>(getAdminGetWishlistUrl(customerId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAdminGetWishlistQueryKey = (customerId: number) => {
+  return [`/api/admin/wishlists/${customerId}`] as const;
+};
+
+export const getAdminGetWishlistQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminGetWishlist>>,
+  TError = ErrorType<Error>,
+>(
+  customerId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminGetWishlist>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getAdminGetWishlistQueryKey(customerId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminGetWishlist>>
+  > = ({ signal }) =>
+    adminGetWishlist(customerId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!customerId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetWishlist>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminGetWishlistQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminGetWishlist>>
+>;
+export type AdminGetWishlistQueryError = ErrorType<Error>;
+
+/**
+ * @summary Wishlist detail for a customer (items, live pricing, marketing contact state)
+ */
+
+export function useAdminGetWishlist<
+  TData = Awaited<ReturnType<typeof adminGetWishlist>>,
+  TError = ErrorType<Error>,
+>(
+  customerId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminGetWishlist>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminGetWishlistQueryOptions(customerId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Generate the printable "Wishlist Copy" PDF for a customer's wishlist (staff)
+ */
+export const getAdminGetWishlistPdfUrl = (customerId: number) => {
+  return `/api/admin/wishlists/${customerId}/pdf`;
+};
+
+export const adminGetWishlistPdf = async (
+  customerId: number,
+  options?: RequestInit,
+): Promise<Blob> => {
+  return customFetch<Blob>(getAdminGetWishlistPdfUrl(customerId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAdminGetWishlistPdfQueryKey = (customerId: number) => {
+  return [`/api/admin/wishlists/${customerId}/pdf`] as const;
+};
+
+export const getAdminGetWishlistPdfQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminGetWishlistPdf>>,
+  TError = ErrorType<Error>,
+>(
+  customerId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminGetWishlistPdf>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getAdminGetWishlistPdfQueryKey(customerId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminGetWishlistPdf>>
+  > = ({ signal }) =>
+    adminGetWishlistPdf(customerId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!customerId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetWishlistPdf>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminGetWishlistPdfQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminGetWishlistPdf>>
+>;
+export type AdminGetWishlistPdfQueryError = ErrorType<Error>;
+
+/**
+ * @summary Generate the printable "Wishlist Copy" PDF for a customer's wishlist (staff)
+ */
+
+export function useAdminGetWishlistPdf<
+  TData = Awaited<ReturnType<typeof adminGetWishlistPdf>>,
+  TError = ErrorType<Error>,
+>(
+  customerId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminGetWishlistPdf>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminGetWishlistPdfQueryOptions(customerId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Create a custom or stock cushion order on behalf of a customer (staff)

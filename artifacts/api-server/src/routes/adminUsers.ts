@@ -6,6 +6,7 @@ import {
   usersTable,
   agentPrivilegesTable,
   sessionsTable,
+  customersTable,
   type User,
   type AgentPrivileges,
 } from "@workspace/db";
@@ -142,9 +143,26 @@ router.get(
       .from(agentPrivilegesTable)
       .where(eq(agentPrivilegesTable.userId, user.id))
       .limit(1);
+
+    // Marketing contact opt-out lives on the separate `customers` record
+    // (Identity Model: users = auth, customers = contact info), so it's
+    // null for staff accounts or if this user has no linked customer row.
+    const [customer] = await db
+      .select({
+        marketingOptOut: customersTable.marketingOptOut,
+        marketingOptOutAt: customersTable.marketingOptOutAt,
+      })
+      .from(customersTable)
+      .where(eq(customersTable.userId, user.id))
+      .limit(1);
+
     res.json({
       ...userToSummary(user),
       agentPrivileges: privilegesToPayload(priv ?? null),
+      marketingOptOut: customer?.marketingOptOut ?? null,
+      marketingOptOutAt: customer?.marketingOptOutAt
+        ? customer.marketingOptOutAt.toISOString()
+        : null,
     });
   },
 );

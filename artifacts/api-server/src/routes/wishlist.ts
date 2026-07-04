@@ -3,6 +3,7 @@ import { and, count, desc, eq, isNull, sql } from "drizzle-orm";
 import {
   db,
   wishlistItemsTable,
+  wishlistsTable,
   productsTable,
   productImagesTable,
   manufacturersTable,
@@ -21,7 +22,20 @@ import { toPublicImageUrl } from "../lib/imageUrl";
 import { getOrCreateCustomer } from "./account";
 import { sendWishlistDisclosureEmail } from "../lib/email";
 import { signOptOutToken } from "../lib/marketingOptOutToken";
+import { generateWishlistNumber } from "../lib/wishlistNumber";
 import { logger } from "../lib/logger";
+
+// Wishlist parent record (Brief 7, Step 5): created the first time a
+// signed-in customer ever saves a wishlist item. One row per customer,
+// holding the shared WISH-XXXXXXXX-XXXX reference number. Safe to call
+// unconditionally — `onConflictDoNothing` handles the race where two
+// first-ever saves land concurrently for the same customer.
+async function ensureWishlistParent(customerId: number): Promise<void> {
+  await db
+    .insert(wishlistsTable)
+    .values({ customerId, wishlistNumber: generateWishlistNumber() })
+    .onConflictDoNothing({ target: wishlistsTable.customerId });
+}
 
 function getBaseUrl(): string {
   const baseUrl = process.env["BASE_URL"];
@@ -274,6 +288,8 @@ router.post(
           productId,
           ...config,
         });
+
+        await ensureWishlistParent(customer.id);
 
         await maybeSendWishlistDisclosureEmail(
           customer.id,

@@ -10,4 +10,7 @@ import type { AdminUserSummary } from "./adminUserSummary";
 
 export type AdminUserDetail = AdminUserSummary & {
   agentPrivileges: AdminAgentPrivileges | null;
+  /** Null when this user has no linked customer record (e.g. staff accounts). */
+  marketingOptOut: boolean | null;
+  marketingOptOutAt: Date | null;
 };

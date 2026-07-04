@@ -7595,6 +7595,13 @@ export const AdminGetUserResponse = zod
             .nullable(),
         })
         .nullable(),
+      marketingOptOut: zod
+        .boolean()
+        .nullable()
+        .describe(
+          "Null when this user has no linked customer record (e.g. staff accounts).",
+        ),
+      marketingOptOutAt: zod.coerce.date().nullable(),
     }),
   );
 
@@ -11989,6 +11996,87 @@ export const AdminUpdateCustomerAddressResponse = zod.object({
   isDefault: zod.boolean(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary List customer wishlists with at least one item (most recent save first)
+ */
+export const adminListWishlistsQueryLimitMax = 200;
+
+export const adminListWishlistsQueryOffsetMin = 0;
+
+export const AdminListWishlistsQueryParams = zod.object({
+  q: zod.coerce
+    .string()
+    .optional()
+    .describe("Match wishlist number, customer email, or customer name"),
+  limit: zod.coerce
+    .number()
+    .min(1)
+    .max(adminListWishlistsQueryLimitMax)
+    .optional(),
+  offset: zod.coerce.number().min(adminListWishlistsQueryOffsetMin).optional(),
+});
+
+export const AdminListWishlistsResponse = zod.object({
+  rows: zod.array(
+    zod.object({
+      customerId: zod.number(),
+      wishlistNumber: zod.string(),
+      customerName: zod.string(),
+      customerEmail: zod.string(),
+      itemCount: zod.number(),
+      mostRecentSaveAt: zod.coerce.date(),
+      marketingOptOut: zod.boolean(),
+      marketingOptOutAt: zod.coerce.date().nullable(),
+    }),
+  ),
+  total: zod.number(),
+});
+
+/**
+ * @summary Wishlist detail for a customer (items, live pricing, marketing contact state)
+ */
+export const AdminGetWishlistParams = zod.object({
+  customerId: zod.coerce.number(),
+});
+
+export const AdminGetWishlistResponse = zod.object({
+  customerId: zod.number(),
+  wishlistNumber: zod.string(),
+  createdAt: zod.coerce.date(),
+  customerName: zod.string(),
+  customerEmail: zod.string(),
+  customerPhone: zod.string().nullable(),
+  marketingOptOut: zod.boolean(),
+  marketingOptOutAt: zod.coerce.date().nullable(),
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      productId: zod.number().nullable(),
+      description: zod.string(),
+      sku: zod.string().nullable(),
+      variantLabel: zod.string().nullable(),
+      quantity: zod.number(),
+      unitPrice: zod
+        .number()
+        .nullable()
+        .describe(
+          "Live sale-or-MSRP price read from the product at request time. Null if the product no longer exists or has no price on file.",
+        ),
+      amount: zod.number().nullable(),
+      addedAt: zod.coerce.date(),
+    }),
+  ),
+  subtotal: zod.number(),
+  hasUnpricedItems: zod.boolean(),
+});
+
+/**
+ * @summary Generate the printable "Wishlist Copy" PDF for a customer's wishlist (staff)
+ */
+export const AdminGetWishlistPdfParams = zod.object({
+  customerId: zod.coerce.number(),
 });
 
 /**

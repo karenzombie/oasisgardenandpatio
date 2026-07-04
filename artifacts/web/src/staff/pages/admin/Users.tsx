@@ -40,6 +40,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { PageBody, PageHeader } from "../../StaffShell";
 import { useAuth } from "@/lib/auth";
+import { WishlistOptOutBadge } from "../../components/WishlistOptOutBadge";
 
 type Group = "customers" | "staff";
 
@@ -723,6 +724,20 @@ function UserManageDialog({
             )}
           </div>
         )}
+
+        {role === "customer" &&
+          detailQ.data &&
+          detailQ.data.marketingOptOut !== null && (
+            <div className="border-t pt-3">
+              <div className="flex items-center justify-between">
+                <div className="text-sm font-medium">Marketing contact</div>
+                <WishlistOptOutBadge
+                  optedOut={detailQ.data.marketingOptOut}
+                  size="sm"
+                />
+              </div>
+            </div>
+          )}
 
         {error && <div className="text-sm text-rose-600">{error}</div>}
 

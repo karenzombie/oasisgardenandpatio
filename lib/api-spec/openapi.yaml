@@ -30,6 +30,8 @@ tags:
     description: Admin CRUD for manufacturers
   - name: admin-categories
     description: Admin CRUD for product categories
+  - name: admin-wishlists
+    description: Staff view of customer wishlists (Brief 7)
   - name: cushions
     description: Custom cushion orders created by staff on behalf of customers
   - name: analytics
@@ -5410,6 +5412,65 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/AdminAddress" }
         "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+  /admin/wishlists:
+    get:
+      operationId: adminListWishlists
+      tags: [admin-wishlists]
+      summary: List customer wishlists with at least one item (most recent save first)
+      parameters:
+        - name: q
+          in: query
+          required: false
+          description: Match wishlist number, customer email, or customer name
+          schema: { type: string }
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 200 }
+        - name: offset
+          in: query
+          required: false
+          schema: { type: integer, minimum: 0 }
+      responses:
+        "200":
+          description: Wishlists page
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminWishlistPage" }
+  /admin/wishlists/{customerId}:
+    get:
+      operationId: adminGetWishlist
+      tags: [admin-wishlists]
+      summary: Wishlist detail for a customer (items, live pricing, marketing contact state)
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Wishlist detail
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminWishlistDetail" }
+        "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+  /admin/wishlists/{customerId}/pdf:
+    get:
+      operationId: adminGetWishlistPdf
+      tags: [admin-wishlists]
+      summary: Generate the printable "Wishlist Copy" PDF for a customer's wishlist (staff)
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: PDF bytes
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+        "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
   /cushions/orders:
     post:
       operationId: submitCushionOrder
@@ -5617,6 +5678,61 @@ components:
           items: { $ref: "#/components/schemas/AdminOrderSummary" }
         total: { type: integer }
       required: [rows, total]
+    AdminWishlistSummary:
+      type: object
+      properties:
+        customerId: { type: integer }
+        wishlistNumber: { type: string }
+        customerName: { type: string }
+        customerEmail: { type: string }
+        itemCount: { type: integer }
+        mostRecentSaveAt: { type: string, format: date-time }
+        marketingOptOut: { type: boolean }
+        marketingOptOutAt: { type: string, format: date-time, nullable: true }
+      required:
+        [customerId, wishlistNumber, customerName, customerEmail, itemCount, mostRecentSaveAt, marketingOptOut, marketingOptOutAt]
+    AdminWishlistPage:
+      type: object
+      properties:
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/AdminWishlistSummary" }
+        total: { type: integer }
+      required: [rows, total]
+    AdminWishlistItem:
+      type: object
+      properties:
+        id: { type: integer }
+        productId: { type: integer, nullable: true }
+        description: { type: string }
+        sku: { type: string, nullable: true }
+        variantLabel: { type: string, nullable: true }
+        quantity: { type: integer }
+        unitPrice:
+          type: number
+          nullable: true
+          description: "Live sale-or-MSRP price read from the product at request time. Null if the product no longer exists or has no price on file."
+        amount: { type: number, nullable: true }
+        addedAt: { type: string, format: date-time }
+      required: [id, productId, description, sku, variantLabel, quantity, unitPrice, amount, addedAt]
+    AdminWishlistDetail:
+      type: object
+      properties:
+        customerId: { type: integer }
+        wishlistNumber: { type: string }
+        createdAt: { type: string, format: date-time }
+        customerName: { type: string }
+        customerEmail: { type: string }
+        customerPhone: { type: string, nullable: true }
+        marketingOptOut: { type: boolean }
+        marketingOptOutAt: { type: string, format: date-time, nullable: true }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/AdminWishlistItem" }
+        subtotal: { type: number }
+        hasUnpricedItems: { type: boolean }
+      required:
+        [customerId, wishlistNumber, createdAt, customerName, customerEmail, customerPhone, marketingOptOut, marketingOptOutAt, items, subtotal, hasUnpricedItems]
     AdminLocalDeliverySummary:
       allOf:
         - $ref: "#/components/schemas/AdminOrderSummary"
@@ -9850,7 +9966,12 @@ components:
             agentPrivileges:
               nullable: true
               allOf: [{ $ref: "#/components/schemas/AdminAgentPrivileges" }]
-          required: [agentPrivileges]
+            marketingOptOut:
+              type: boolean
+              nullable: true
+              description: Null when this user has no linked customer record (e.g. staff accounts).
+            marketingOptOutAt: { type: string, format: date-time, nullable: true }
+          required: [agentPrivileges, marketingOptOut, marketingOptOutAt]
     CreateStaffUserRequest:
       type: object
       properties:
