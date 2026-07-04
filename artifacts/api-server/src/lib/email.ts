@@ -84,7 +84,7 @@ export function emailLayout(title: string, body: string, titleColor = "#1a3c5e")
         <h1 style="font-size:22px;color:${titleColor};margin:0 0 16px 0;">${title}</h1>
         ${body}
       </div>
-      <div style="text-align:center;margin-top:24px;font-size:12px;color:#8a8a8a;">
+      <div style="text-align:center;margin-top:24px;font-size:14px;color:#000000;">
         <p style="margin:4px 0;">${BRAND_NAME}</p>
         <p style="margin:4px 0;">21182 Centre Pointe Pkwy #100, Santa Clarita, CA 91350</p>
         <p style="margin:4px 0;">(661) 255-9909 &middot; sales@oasisgardenandpatio.com</p>
