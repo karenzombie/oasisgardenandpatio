@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "wouter";
 import { ArrowLeft, Loader2, Mail, Printer } from "lucide-react";
 import {
@@ -37,6 +37,31 @@ function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString();
 }
 
+function parseInlineStyle(styleStr: string): React.CSSProperties {
+  const result: Record<string, string> = {};
+  styleStr.split(";").forEach((decl) => {
+    const idx = decl.indexOf(":");
+    if (idx === -1) return;
+    const prop = decl.slice(0, idx).trim();
+    const value = decl.slice(idx + 1).trim();
+    if (!prop || !value) return;
+    const camel = prop.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase());
+    result[camel] = value;
+  });
+  return result as React.CSSProperties;
+}
+
+function parseEmailPreview(html: string): {
+  style: React.CSSProperties;
+  innerHtml: string;
+} {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  return {
+    style: parseInlineStyle(doc.body.getAttribute("style") ?? ""),
+    innerHtml: doc.body.innerHTML,
+  };
+}
+
 export default function WishlistDetail() {
   const params = useParams<{ id: string }>();
   const customerId = Number(params.id);
@@ -57,6 +82,11 @@ export default function WishlistDetail() {
 
   const previewMutation = useAdminPreviewWishlistReachOutEmail();
   const sendMutation = useAdminSendWishlistReachOutEmail();
+
+  const parsedPreview = useMemo(
+    () => (previewHtml ? parseEmailPreview(previewHtml) : null),
+    [previewHtml],
+  );
 
   useEffect(() => {
     if (!composeOpen || !Number.isFinite(customerId)) return;
@@ -311,11 +341,13 @@ export default function WishlistDetail() {
                       <div className="p-4 text-sm text-red-600">
                         Failed to load preview.
                       </div>
-                    ) : previewHtml ? (
-                      <iframe
-                        title="Email preview"
-                        srcDoc={previewHtml}
-                        className="w-full h-80 bg-white"
+                    ) : parsedPreview ? (
+                      <div
+                        className="w-full h-80 overflow-y-auto bg-white"
+                        style={parsedPreview.style}
+                        dangerouslySetInnerHTML={{
+                          __html: parsedPreview.innerHtml,
+                        }}
                       />
                     ) : null}
                   </div>
