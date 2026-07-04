@@ -4,16 +4,25 @@ import {
   db,
   wishlistsTable,
   wishlistItemsTable,
+  wishlistOutreachLogTable,
   customersTable,
   productsTable,
 } from "@workspace/db";
 import {
   AdminListWishlistsQueryParams,
   AdminGetWishlistParams,
+  AdminPreviewWishlistReachOutEmailBody,
+  AdminSendWishlistReachOutEmailBody,
 } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import { logger } from "../lib/logger";
 import { generateWishlistPdf } from "../lib/wishlistPdf";
+import {
+  emailLayout,
+  renderWishlistReachOutEmailBody,
+  sendWishlistReachOutEmail,
+} from "../lib/email";
+import { getBaseUrl } from "../lib/baseUrl";
 
 const router: IRouter = Router();
 
@@ -245,6 +254,147 @@ router.get(
       );
       res.status(500).json({ error: "Failed to generate PDF" });
     }
+  },
+);
+
+interface ReachOutRecipient {
+  email: string;
+  firstName: string | null;
+  marketingOptOut: boolean;
+}
+
+async function loadReachOutRecipient(
+  customerId: number,
+): Promise<ReachOutRecipient | null> {
+  const [row] = await db
+    .select({
+      email: customersTable.email,
+      firstName: customersTable.firstName,
+      marketingOptOut: customersTable.marketingOptOut,
+    })
+    .from(customersTable)
+    .where(eq(customersTable.id, customerId))
+    .limit(1);
+  return row ?? null;
+}
+
+// Customer-facing pricing rule (Brief 7, Step 6): only include a price when
+// the product is visibly priced on the storefront. Distinct from the staff
+// UI's livePrice(), which always shows price data regardless of
+// show_price_online.
+async function loadReachOutItems(customerId: number) {
+  const rows = await db
+    .select({
+      productName: productsTable.name,
+      variantLabel: wishlistItemsTable.variantLabel,
+      price: productsTable.price,
+      salePrice: productsTable.salePrice,
+      showPriceOnline: productsTable.showPriceOnline,
+    })
+    .from(wishlistItemsTable)
+    .innerJoin(
+      productsTable,
+      eq(productsTable.id, wishlistItemsTable.productId),
+    )
+    .where(eq(wishlistItemsTable.customerId, customerId))
+    .orderBy(desc(wishlistItemsTable.createdAt));
+
+  return rows.map((r) => ({
+    name: r.productName,
+    variantLabel: r.variantLabel,
+    price: r.showPriceOnline
+      ? (money(r.salePrice) ?? money(r.price))
+      : null,
+  }));
+}
+
+router.post(
+  "/admin/wishlists/:customerId/reach-out-email/preview",
+  requireAuth,
+  requireRole("admin", "agent"),
+  async (req: Request, res: Response): Promise<void> => {
+    const params = AdminGetWishlistParams.safeParse(req.params);
+    const body = AdminPreviewWishlistReachOutEmailBody.safeParse(req.body);
+    if (!params.success || !body.success) {
+      res.status(400).json({ error: "Invalid request" });
+      return;
+    }
+    const recipient = await loadReachOutRecipient(params.data.customerId);
+    if (!recipient) {
+      res.status(404).json({ error: "Wishlist not found" });
+      return;
+    }
+    const items = await loadReachOutItems(params.data.customerId);
+    const html = emailLayout(
+      "Your Wishlist",
+      renderWishlistReachOutEmailBody({
+        firstName: recipient.firstName,
+        items,
+        personalNote: body.data.personalNote,
+        accountSettingsUrl: `${getBaseUrl()}/account`,
+      }),
+    );
+    res.json({ html });
+  },
+);
+
+router.post(
+  "/admin/wishlists/:customerId/reach-out-email/send",
+  requireAuth,
+  requireRole("admin", "agent"),
+  async (req: Request, res: Response): Promise<void> => {
+    const params = AdminGetWishlistParams.safeParse(req.params);
+    const body = AdminSendWishlistReachOutEmailBody.safeParse(req.body);
+    if (!params.success || !body.success) {
+      res.status(400).json({ error: "Invalid request" });
+      return;
+    }
+    const { customerId } = params.data;
+    const recipient = await loadReachOutRecipient(customerId);
+    if (!recipient) {
+      res.status(404).json({ error: "Wishlist not found" });
+      return;
+    }
+    if (recipient.marketingOptOut) {
+      res
+        .status(409)
+        .json({ error: "Customer has opted out of marketing contact" });
+      return;
+    }
+
+    const items = await loadReachOutItems(customerId);
+    const personalNote = body.data.personalNote?.trim() || null;
+
+    try {
+      await sendWishlistReachOutEmail({
+        to: recipient.email,
+        firstName: recipient.firstName,
+        items,
+        personalNote,
+        accountSettingsUrl: `${getBaseUrl()}/account`,
+      });
+    } catch (err) {
+      logger.error(
+        { err, customerId },
+        "Failed to send wishlist reach-out email",
+      );
+      res.status(500).json({ error: "Failed to send email" });
+      return;
+    }
+
+    const [logRow] = await db
+      .insert(wishlistOutreachLogTable)
+      .values({
+        customerId,
+        sentByStaffId: req.user!.id,
+        personalNote,
+      })
+      .returning({ sentAt: wishlistOutreachLogTable.sentAt });
+
+    res.json({
+      customerEmail: recipient.email,
+      sentAt: (logRow?.sentAt ?? new Date()).toISOString(),
+    });
   },
 );
 

@@ -137,6 +137,21 @@ export interface AdminWishlistDetail {
   hasUnpricedItems: boolean;
 }
 
+export interface AdminWishlistReachOutEmailBody {
+  /** Optional free-text note appended to the bottom of the email. Trimmed; blank/whitespace-only is treated as no note. */
+  personalNote: string | null;
+}
+
+export interface AdminWishlistReachOutPreviewResponse {
+  /** Fully-rendered HTML of the email exactly as it will be sent, including the base template wrapper. */
+  html: string;
+}
+
+export interface AdminWishlistReachOutSendResponse {
+  customerEmail: string;
+  sentAt: string;
+}
+
 export type AdminLocalDeliverySummary = AdminOrderSummary & {
   scheduledDeliveryDate: string | null;
   scheduledDeliveryTime: string | null;

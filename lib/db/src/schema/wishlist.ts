@@ -119,3 +119,37 @@ export const insertWishlistSchema = createInsertSchema(wishlistsTable).omit({
 });
 export type InsertWishlist = z.infer<typeof insertWishlistSchema>;
 export type Wishlist = typeof wishlistsTable.$inferSelect;
+
+// Audit-only record of every staff reach-out email sent for a customer's
+// wishlist (Brief 7, Step 6). Never surfaced in a log viewer — write-only
+// from the admin send route.
+export const wishlistOutreachLogTable = pgTable(
+  "wishlist_outreach_log",
+  {
+    id: serial("id").primaryKey(),
+    customerId: integer("customer_id")
+      .notNull()
+      .references(() => customersTable.id, { onDelete: "cascade" }),
+    // References the single `users` table (staff share it with customers,
+    // distinguished by `role`), per Step 1's identity model.
+    sentByStaffId: integer("sent_by_staff_id")
+      .notNull()
+      .references(() => usersTable.id, { onDelete: "restrict" }),
+    sentAt: timestamp("sent_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    personalNote: text("personal_note"),
+  },
+  (t) => [index("wishlist_outreach_log_customer_id_idx").on(t.customerId)],
+);
+
+export const insertWishlistOutreachLogSchema = createInsertSchema(
+  wishlistOutreachLogTable,
+).omit({
+  id: true,
+  sentAt: true,
+});
+export type InsertWishlistOutreachLog = z.infer<
+  typeof insertWishlistOutreachLogSchema
+>;
+export type WishlistOutreachLog = typeof wishlistOutreachLogTable.$inferSelect;

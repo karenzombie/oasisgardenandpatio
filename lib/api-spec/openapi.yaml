@@ -5471,6 +5471,55 @@ paths:
             application/pdf:
               schema: { type: string, format: binary }
         "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+  /admin/wishlists/{customerId}/reach-out-email/preview:
+    post:
+      operationId: adminPreviewWishlistReachOutEmail
+      tags: [admin-wishlists]
+      summary: Render the staff reach-out email HTML for preview, without sending it (staff)
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdminWishlistReachOutEmailBody" }
+      responses:
+        "200":
+          description: Rendered email HTML
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminWishlistReachOutPreviewResponse" }
+        "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+  /admin/wishlists/{customerId}/reach-out-email/send:
+    post:
+      operationId: adminSendWishlistReachOutEmail
+      tags: [admin-wishlists]
+      summary: Send the staff reach-out email for a customer's wishlist and log it for audit (staff)
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdminWishlistReachOutEmailBody" }
+      responses:
+        "200":
+          description: Email sent
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminWishlistReachOutSendResponse" }
+        "404": { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+        "409":
+          description: Customer has opted out of marketing contact
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
   /cushions/orders:
     post:
       operationId: submitCushionOrder
@@ -5733,6 +5782,27 @@ components:
         hasUnpricedItems: { type: boolean }
       required:
         [customerId, wishlistNumber, createdAt, customerName, customerEmail, customerPhone, marketingOptOut, marketingOptOutAt, items, subtotal, hasUnpricedItems]
+    AdminWishlistReachOutEmailBody:
+      type: object
+      properties:
+        personalNote:
+          type: string
+          nullable: true
+          description: "Optional free-text note appended to the bottom of the email. Trimmed; blank/whitespace-only is treated as no note."
+      required: [personalNote]
+    AdminWishlistReachOutPreviewResponse:
+      type: object
+      properties:
+        html:
+          type: string
+          description: "Fully-rendered HTML of the email exactly as it will be sent, including the base template wrapper."
+      required: [html]
+    AdminWishlistReachOutSendResponse:
+      type: object
+      properties:
+        customerEmail: { type: string }
+        sentAt: { type: string, format: date-time }
+      required: [customerEmail, sentAt]
     AdminLocalDeliverySummary:
       allOf:
         - $ref: "#/components/schemas/AdminOrderSummary"

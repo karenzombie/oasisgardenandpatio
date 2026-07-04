@@ -1,18 +1,23 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "wouter";
-import { ArrowLeft, Mail, Printer } from "lucide-react";
+import { ArrowLeft, Loader2, Mail, Printer } from "lucide-react";
 import {
   useAdminGetWishlist,
   getAdminGetWishlistQueryKey,
+  useAdminPreviewWishlistReachOutEmail,
+  useAdminSendWishlistReachOutEmail,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { PageBody, PageHeader } from "../../StaffShell";
 import {
@@ -35,7 +40,13 @@ function fmtDate(iso: string): string {
 export default function WishlistDetail() {
   const params = useParams<{ id: string }>();
   const customerId = Number(params.id);
-  const [comingSoonOpen, setComingSoonOpen] = useState(false);
+  const [composeOpen, setComposeOpen] = useState(false);
+  const [personalNote, setPersonalNote] = useState("");
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+  const [sendResult, setSendResult] = useState<{
+    customerEmail: string;
+    sentAt: string;
+  } | null>(null);
 
   const q = useAdminGetWishlist(customerId, {
     query: {
@@ -43,6 +54,42 @@ export default function WishlistDetail() {
       enabled: Number.isFinite(customerId),
     },
   });
+
+  const previewMutation = useAdminPreviewWishlistReachOutEmail();
+  const sendMutation = useAdminSendWishlistReachOutEmail();
+
+  useEffect(() => {
+    if (!composeOpen || !Number.isFinite(customerId)) return;
+    const timer = setTimeout(() => {
+      previewMutation.mutate(
+        { customerId, data: { personalNote: personalNote.trim() || null } },
+        {
+          onSuccess: (res) => setPreviewHtml(res.html),
+        },
+      );
+    }, 300);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [composeOpen, customerId, personalNote]);
+
+  function openCompose() {
+    setPersonalNote("");
+    setPreviewHtml(null);
+    setSendResult(null);
+    previewMutation.reset();
+    sendMutation.reset();
+    setComposeOpen(true);
+  }
+
+  function handleSend() {
+    if (!Number.isFinite(customerId)) return;
+    sendMutation.mutate(
+      { customerId, data: { personalNote: personalNote.trim() || null } },
+      {
+        onSuccess: (res) => setSendResult(res),
+      },
+    );
+  }
 
   if (q.isLoading) {
     return (
@@ -77,7 +124,7 @@ export default function WishlistDetail() {
             <Button
               variant={data.marketingOptOut ? "outline" : "default"}
               disabled={data.marketingOptOut}
-              onClick={() => setComingSoonOpen(true)}
+              onClick={openCompose}
               title={
                 data.marketingOptOut ? "Opted out -- cannot send" : undefined
               }
@@ -98,7 +145,7 @@ export default function WishlistDetail() {
       />
       <PageBody>
         <Link
-          href="/admin/wishlists"
+          href="/admin/customers?tab=wishlists"
           className="inline-flex items-center gap-1 text-sm text-slate-600 hover:underline mb-3"
         >
           <ArrowLeft className="size-3.5" />
@@ -197,18 +244,111 @@ export default function WishlistDetail() {
         </div>
       </PageBody>
 
-      <Dialog open={comingSoonOpen} onOpenChange={setComingSoonOpen}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Coming in Step 6</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-slate-600">
-            Sending the reach-out email is not wired up yet -- this will be
-            completed in Step 6.
-          </p>
-          <DialogFooter>
-            <Button onClick={() => setComingSoonOpen(false)}>Close</Button>
-          </DialogFooter>
+      <Dialog open={composeOpen} onOpenChange={setComposeOpen}>
+        <DialogContent className="sm:max-w-2xl">
+          {sendResult ? (
+            <>
+              <DialogHeader>
+                <DialogTitle>Email sent</DialogTitle>
+              </DialogHeader>
+              <div className="rounded-md border border-green-300 bg-green-50 p-3 text-sm text-green-900">
+                Sent to {sendResult.customerEmail} at{" "}
+                {new Date(sendResult.sentAt).toLocaleString()}.
+              </div>
+              <DialogFooter>
+                <Button onClick={() => setComposeOpen(false)}>Close</Button>
+              </DialogFooter>
+            </>
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle>Send Reach-Out Email</DialogTitle>
+                <DialogDescription>
+                  Review the email below before sending. This does not create
+                  an order.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <div className="text-slate-500">To</div>
+                    <div className="font-medium">{data.customerEmail}</div>
+                  </div>
+                  <div>
+                    <div className="text-slate-500">Subject</div>
+                    <div className="font-medium">
+                      Your Oasis Garden & Patio Wishlist
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="personal-note">
+                    Personal note (optional)
+                  </Label>
+                  <Textarea
+                    id="personal-note"
+                    className="mt-1"
+                    rows={3}
+                    value={personalNote}
+                    onChange={(e) => setPersonalNote(e.target.value)}
+                    placeholder="Add a short note to include at the bottom of the email..."
+                  />
+                </div>
+
+                <div>
+                  <div className="text-sm font-medium text-slate-700 mb-1">
+                    Preview
+                  </div>
+                  <div className="rounded-md border bg-slate-50 max-h-80 overflow-y-auto">
+                    {previewMutation.isPending && !previewHtml ? (
+                      <div className="flex items-center justify-center py-10 text-slate-500">
+                        <Loader2 className="size-4 mr-2 animate-spin" />
+                        Loading preview...
+                      </div>
+                    ) : previewMutation.isError ? (
+                      <div className="p-4 text-sm text-red-600">
+                        Failed to load preview.
+                      </div>
+                    ) : previewHtml ? (
+                      <iframe
+                        title="Email preview"
+                        srcDoc={previewHtml}
+                        className="w-full h-80 bg-white"
+                      />
+                    ) : null}
+                  </div>
+                </div>
+
+                {sendMutation.isError && (
+                  <div className="text-sm text-red-600">
+                    {(sendMutation.error as { message?: string })?.message ??
+                      "Failed to send email."}
+                  </div>
+                )}
+              </div>
+
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setComposeOpen(false)}
+                  disabled={sendMutation.isPending}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSend}
+                  disabled={sendMutation.isPending || !previewHtml}
+                >
+                  {sendMutation.isPending && (
+                    <Loader2 className="size-4 mr-1.5 animate-spin" />
+                  )}
+                  Send Email
+                </Button>
+              </DialogFooter>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </>

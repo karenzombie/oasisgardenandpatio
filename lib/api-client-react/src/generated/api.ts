@@ -132,6 +132,9 @@ import type {
   AdminVendorOrderPage,
   AdminWishlistDetail,
   AdminWishlistPage,
+  AdminWishlistReachOutEmailBody,
+  AdminWishlistReachOutPreviewResponse,
+  AdminWishlistReachOutSendResponse,
   AuditLogPage,
   Banner,
   CancelPendingVendorOrderRequest,
@@ -19870,6 +19873,190 @@ export function useAdminGetWishlistPdf<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Render the staff reach-out email HTML for preview, without sending it (staff)
+ */
+export const getAdminPreviewWishlistReachOutEmailUrl = (customerId: number) => {
+  return `/api/admin/wishlists/${customerId}/reach-out-email/preview`;
+};
+
+export const adminPreviewWishlistReachOutEmail = async (
+  customerId: number,
+  adminWishlistReachOutEmailBody: AdminWishlistReachOutEmailBody,
+  options?: RequestInit,
+): Promise<AdminWishlistReachOutPreviewResponse> => {
+  return customFetch<AdminWishlistReachOutPreviewResponse>(
+    getAdminPreviewWishlistReachOutEmailUrl(customerId),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(adminWishlistReachOutEmailBody),
+    },
+  );
+};
+
+export const getAdminPreviewWishlistReachOutEmailMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminPreviewWishlistReachOutEmail>>,
+    TError,
+    { customerId: number; data: BodyType<AdminWishlistReachOutEmailBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminPreviewWishlistReachOutEmail>>,
+  TError,
+  { customerId: number; data: BodyType<AdminWishlistReachOutEmailBody> },
+  TContext
+> => {
+  const mutationKey = ["adminPreviewWishlistReachOutEmail"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminPreviewWishlistReachOutEmail>>,
+    { customerId: number; data: BodyType<AdminWishlistReachOutEmailBody> }
+  > = (props) => {
+    const { customerId, data } = props ?? {};
+
+    return adminPreviewWishlistReachOutEmail(customerId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminPreviewWishlistReachOutEmailMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminPreviewWishlistReachOutEmail>>
+>;
+export type AdminPreviewWishlistReachOutEmailMutationBody =
+  BodyType<AdminWishlistReachOutEmailBody>;
+export type AdminPreviewWishlistReachOutEmailMutationError = ErrorType<Error>;
+
+/**
+ * @summary Render the staff reach-out email HTML for preview, without sending it (staff)
+ */
+export const useAdminPreviewWishlistReachOutEmail = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminPreviewWishlistReachOutEmail>>,
+    TError,
+    { customerId: number; data: BodyType<AdminWishlistReachOutEmailBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminPreviewWishlistReachOutEmail>>,
+  TError,
+  { customerId: number; data: BodyType<AdminWishlistReachOutEmailBody> },
+  TContext
+> => {
+  return useMutation(
+    getAdminPreviewWishlistReachOutEmailMutationOptions(options),
+  );
+};
+
+/**
+ * @summary Send the staff reach-out email for a customer's wishlist and log it for audit (staff)
+ */
+export const getAdminSendWishlistReachOutEmailUrl = (customerId: number) => {
+  return `/api/admin/wishlists/${customerId}/reach-out-email/send`;
+};
+
+export const adminSendWishlistReachOutEmail = async (
+  customerId: number,
+  adminWishlistReachOutEmailBody: AdminWishlistReachOutEmailBody,
+  options?: RequestInit,
+): Promise<AdminWishlistReachOutSendResponse> => {
+  return customFetch<AdminWishlistReachOutSendResponse>(
+    getAdminSendWishlistReachOutEmailUrl(customerId),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(adminWishlistReachOutEmailBody),
+    },
+  );
+};
+
+export const getAdminSendWishlistReachOutEmailMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminSendWishlistReachOutEmail>>,
+    TError,
+    { customerId: number; data: BodyType<AdminWishlistReachOutEmailBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminSendWishlistReachOutEmail>>,
+  TError,
+  { customerId: number; data: BodyType<AdminWishlistReachOutEmailBody> },
+  TContext
+> => {
+  const mutationKey = ["adminSendWishlistReachOutEmail"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminSendWishlistReachOutEmail>>,
+    { customerId: number; data: BodyType<AdminWishlistReachOutEmailBody> }
+  > = (props) => {
+    const { customerId, data } = props ?? {};
+
+    return adminSendWishlistReachOutEmail(customerId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminSendWishlistReachOutEmailMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminSendWishlistReachOutEmail>>
+>;
+export type AdminSendWishlistReachOutEmailMutationBody =
+  BodyType<AdminWishlistReachOutEmailBody>;
+export type AdminSendWishlistReachOutEmailMutationError = ErrorType<Error>;
+
+/**
+ * @summary Send the staff reach-out email for a customer's wishlist and log it for audit (staff)
+ */
+export const useAdminSendWishlistReachOutEmail = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminSendWishlistReachOutEmail>>,
+    TError,
+    { customerId: number; data: BodyType<AdminWishlistReachOutEmailBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminSendWishlistReachOutEmail>>,
+  TError,
+  { customerId: number; data: BodyType<AdminWishlistReachOutEmailBody> },
+  TContext
+> => {
+  return useMutation(getAdminSendWishlistReachOutEmailMutationOptions(options));
+};
 
 /**
  * @summary Create a custom or stock cushion order on behalf of a customer (staff)

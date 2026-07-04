@@ -262,6 +262,100 @@ export async function sendWishlistDisclosureEmail({
   }
 }
 
+function escapeHtml(input: string): string {
+  return input
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function formatUsd(n: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(n);
+}
+
+export interface WishlistReachOutItem {
+  name: string;
+  variantLabel: string | null;
+  // Live sale-or-MSRP price, already gated on show_price_online = true by the
+  // caller. Null items never render a price (inquiry/call-for-pricing mode).
+  price: number | null;
+}
+
+export interface WishlistReachOutEmailBodyArgs {
+  firstName: string | null;
+  items: WishlistReachOutItem[];
+  personalNote: string | null;
+  accountSettingsUrl: string;
+}
+
+// Shared by both the staff preview endpoint and the actual send, so what
+// staff preview is exactly what gets emailed (Brief 7, Step 6).
+export function renderWishlistReachOutEmailBody({
+  firstName,
+  items,
+  personalNote,
+  accountSettingsUrl,
+}: WishlistReachOutEmailBodyArgs): string {
+  const greeting = firstName ? `Hi ${escapeHtml(firstName)},` : "Hi there,";
+
+  const itemsHtml = items
+    .map((item) => {
+      const variantHtml = item.variantLabel
+        ? `<div style="font-size:13px;color:#666;">${escapeHtml(item.variantLabel)}</div>`
+        : "";
+      const priceHtml =
+        item.price !== null
+          ? ` &mdash; ${formatUsd(item.price)}`
+          : "";
+      return `<li style="margin-bottom:12px;"><strong>${escapeHtml(item.name)}</strong>${priceHtml}${variantHtml}</li>`;
+    })
+    .join("");
+
+  const trimmedNote = personalNote?.trim() ?? "";
+  const noteHtml = trimmedNote
+    ? `
+    <hr style="border:none;border-top:1px solid #e8e2d6;margin:24px 0;" />
+    <p><strong>A note from our team:</strong></p>
+    <p>${escapeHtml(trimmedNote).replace(/\n/g, "<br />")}</p>
+  `
+    : "";
+
+  return `
+    <p>${greeting}</p>
+    <p>Your outdoor space is about to get a whole lot better! We noticed you have been saving some beautiful pieces to your wishlist at ${BRAND_NAME}, and we could not wait to reach out.</p>
+    <p>Here is what you have been eyeing:</p>
+    <ul style="padding-left:20px;margin:16px 0;">${itemsHtml}</ul>
+    <p>Great taste! Whether you want to see any of these pieces in person at our showroom, have questions about options and customization, or are ready to make it happen, we are here and excited to help you bring it all together.</p>
+    <p>Phone: (661) 255-9909<br />Email: sales@oasisgardenandpatio.com</p>
+    ${noteHtml}
+    <hr style="border:none;border-top:1px solid #e8e2d6;margin:24px 0;" />
+    <p style="font-size:13px;color:#666;">Please note that wishlist prices reflect current pricing and are not guaranteed. Product availability is subject to change at the manufacturer's discretion. For a firm price quote, contact us -- quotes are honored for 30 days from the date of issue.</p>
+    <p style="font-size:13px;color:#666;">If you would prefer not to receive messages like this, you can update your marketing contact preference at any time in your <a href="${accountSettingsUrl}">account settings</a>.</p>
+  `;
+}
+
+export interface SendWishlistReachOutEmailArgs
+  extends WishlistReachOutEmailBodyArgs {
+  to: string;
+}
+
+export async function sendWishlistReachOutEmail({
+  to,
+  ...bodyArgs
+}: SendWishlistReachOutEmailArgs): Promise<void> {
+  await sendEmail({
+    to,
+    subject: `Your ${BRAND_NAME} Wishlist`,
+    title: "Your Wishlist",
+    bodyHtml: renderWishlistReachOutEmailBody(bodyArgs),
+  });
+}
+
 export interface SendPasswordResetEmailArgs {
   to: string;
   firstName: string | null;

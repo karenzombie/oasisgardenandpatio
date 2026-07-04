@@ -23,6 +23,7 @@ import { getOrCreateCustomer } from "./account";
 import { sendWishlistDisclosureEmail } from "../lib/email";
 import { signOptOutToken } from "../lib/marketingOptOutToken";
 import { generateWishlistNumber } from "../lib/wishlistNumber";
+import { getBaseUrl } from "../lib/baseUrl";
 import { logger } from "../lib/logger";
 
 // Wishlist parent record (Brief 7, Step 5): created the first time a
@@ -35,14 +36,6 @@ async function ensureWishlistParent(customerId: number): Promise<void> {
     .insert(wishlistsTable)
     .values({ customerId, wishlistNumber: generateWishlistNumber() })
     .onConflictDoNothing({ target: wishlistsTable.customerId });
-}
-
-function getBaseUrl(): string {
-  const baseUrl = process.env["BASE_URL"];
-  if (!baseUrl) {
-    throw new Error("BASE_URL environment variable is required");
-  }
-  return baseUrl.replace(/\/$/, "");
 }
 
 // Fires the one-time wishlist disclosure email (Brief 7, Step 4) the first

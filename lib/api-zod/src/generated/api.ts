@@ -12080,6 +12080,51 @@ export const AdminGetWishlistPdfParams = zod.object({
 });
 
 /**
+ * @summary Render the staff reach-out email HTML for preview, without sending it (staff)
+ */
+export const AdminPreviewWishlistReachOutEmailParams = zod.object({
+  customerId: zod.coerce.number(),
+});
+
+export const AdminPreviewWishlistReachOutEmailBody = zod.object({
+  personalNote: zod
+    .string()
+    .nullable()
+    .describe(
+      "Optional free-text note appended to the bottom of the email. Trimmed; blank\/whitespace-only is treated as no note.",
+    ),
+});
+
+export const AdminPreviewWishlistReachOutEmailResponse = zod.object({
+  html: zod
+    .string()
+    .describe(
+      "Fully-rendered HTML of the email exactly as it will be sent, including the base template wrapper.",
+    ),
+});
+
+/**
+ * @summary Send the staff reach-out email for a customer's wishlist and log it for audit (staff)
+ */
+export const AdminSendWishlistReachOutEmailParams = zod.object({
+  customerId: zod.coerce.number(),
+});
+
+export const AdminSendWishlistReachOutEmailBody = zod.object({
+  personalNote: zod
+    .string()
+    .nullable()
+    .describe(
+      "Optional free-text note appended to the bottom of the email. Trimmed; blank\/whitespace-only is treated as no note.",
+    ),
+});
+
+export const AdminSendWishlistReachOutEmailResponse = zod.object({
+  customerEmail: zod.string(),
+  sentAt: zod.coerce.date(),
+});
+
+/**
  * @summary Create a custom or stock cushion order on behalf of a customer (staff)
  */
 
