@@ -47,7 +47,6 @@ import RecoveryRequests from "./pages/admin/RecoveryRequests";
 import Reports from "./pages/admin/Reports";
 import Notifications from "./pages/admin/Notifications";
 import Deliveries from "./pages/admin/Deliveries";
-import Wishlists from "./pages/admin/Wishlists";
 import WishlistDetail from "./pages/admin/WishlistDetail";
 import { PagePlaceholder } from "./pages/PagePlaceholder";
 
@@ -96,7 +95,6 @@ export default function StaffRouter() {
                 <Route path="/admin/discounts" component={Discounts} />
                 <Route path="/admin/users" component={StaffAccountsPage} />
                 <Route path="/admin/customers" component={CustomerUsers} />
-                <Route path="/admin/wishlists" component={Wishlists} />
                 <Route path="/admin/wishlists/:id" component={WishlistDetail} />
                 <Route path="/admin/audit-log" component={AuditLog} />
                 <Route path="/admin/recovery-requests" component={RecoveryRequests} />

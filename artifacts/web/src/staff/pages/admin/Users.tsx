@@ -41,6 +41,8 @@ import { useToast } from "@/hooks/use-toast";
 import { PageBody, PageHeader } from "../../StaffShell";
 import { useAuth } from "@/lib/auth";
 import { WishlistOptOutBadge } from "../../components/WishlistOptOutBadge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { WishlistsPanel } from "./Wishlists";
 
 type Group = "customers" | "staff";
 
@@ -65,11 +67,29 @@ export function StaffAccountsPage() {
 }
 
 export default function CustomersPage() {
+  const initialTab =
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("tab") === "wishlists"
+      ? "wishlists"
+      : "customers";
+  const [tab, setTab] = useState<"customers" | "wishlists">(initialTab);
+
   return (
     <>
       <PageHeader title="Customers" />
       <PageBody>
-        <UsersPanel group="customers" />
+        <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
+          <TabsList className="mb-3">
+            <TabsTrigger value="customers">Customers</TabsTrigger>
+            <TabsTrigger value="wishlists">Wishlists</TabsTrigger>
+          </TabsList>
+          <TabsContent value="customers">
+            <UsersPanel group="customers" />
+          </TabsContent>
+          <TabsContent value="wishlists">
+            <WishlistsPanel />
+          </TabsContent>
+        </Tabs>
       </PageBody>
     </>
   );

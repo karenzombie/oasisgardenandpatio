@@ -20,7 +20,6 @@ import {
   ShoppingCart,
   Palette,
   Paintbrush,
-  Heart,
   type LucideIcon,
 } from "lucide-react";
 
@@ -53,7 +52,6 @@ export const ADMIN_NAV: NavGroup[] = [
       { label: "Cushion Orders", path: "/admin/cushion-orders", icon: Layers },
       { label: "Shipping", path: "/admin/shipping", icon: Truck },
       { label: "Customers", path: "/admin/customers", icon: Users },
-      { label: "Wishlists", path: "/admin/wishlists", icon: Heart },
       { label: "Discounts", path: "/admin/discounts", icon: Percent },
     ],
   },
