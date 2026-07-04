@@ -7,6 +7,7 @@ import {
   Package,
   Users,
   AlertCircle,
+  BookOpen,
   type LucideIcon,
 } from "lucide-react";
 
@@ -57,26 +58,19 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
           />
         </div>
 
-        <div className="mt-6 bg-white border border-slate-200 rounded-md p-6">
-          <h2 className="text-sm font-semibold text-slate-900 mb-2">
-            Getting started
-          </h2>
-          <ol className="text-sm text-slate-700 space-y-2 list-decimal pl-5">
-            <li>
-              Add vendors in <strong>Catalog → Vendors</strong>.
-            </li>
-            <li>
-              Build your category tree in <strong>Catalog → Categories</strong>.
-            </li>
-            <li>
-              Add products one-by-one in <strong>Catalog → Products</strong>, or
-              use the CSV importer to bulk-load from a vendor sheet.
-            </li>
-            <li>
-              Configure tax, shipping, and store settings in{" "}
-              <strong>System → Settings</strong>.
-            </li>
-          </ol>
+        <div className="mt-6 bg-white border border-slate-200 rounded-md p-6 flex items-start gap-4">
+          <div className="size-10 rounded bg-[#1A3C5E]/10 text-[#1A3C5E] flex items-center justify-center shrink-0">
+            <BookOpen className="size-5" />
+          </div>
+          <div>
+            <h2 className="text-sm font-semibold text-slate-900 mb-1">
+              User Guide
+            </h2>
+            <p className="text-sm text-slate-500">
+              Coming soon — step-by-step guidance for using the staff portal
+              will appear here.
+            </p>
+          </div>
         </div>
       </PageBody>
     </>
