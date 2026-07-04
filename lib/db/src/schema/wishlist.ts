@@ -1,7 +1,9 @@
 import {
   pgTable,
   serial,
+  text,
   varchar,
+  numeric,
   timestamp,
   integer,
   index,
@@ -11,6 +13,7 @@ import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./users";
+import { customersTable } from "./customers";
 import { productsTable } from "./products";
 import { finishesTable } from "./finishes";
 import { fabricsTable } from "./variants";
@@ -22,6 +25,13 @@ export const wishlistItemsTable = pgTable(
     // Nullable: guest wishlist rows are keyed by deviceToken and have no
     // user_id until the guest signs in and their rows are merged.
     userId: integer("user_id").references(() => usersTable.id, {
+      onDelete: "cascade",
+    }),
+    // Nullable: only set for signed-in-customer rows (Brief 7). Pure guest
+    // rows that never merged into a signed-in user stay null forever — the
+    // brief's "not null" spec doesn't hold because this table is shared with
+    // the pre-existing guest/localStorage wishlist, which must not change.
+    customerId: integer("customer_id").references(() => customersTable.id, {
       onDelete: "cascade",
     }),
     productId: integer("product_id")
@@ -45,6 +55,18 @@ export const wishlistItemsTable = pgTable(
       () => finishesTable.id,
       { onDelete: "set null" },
     ),
+    // Human-readable snapshot of the selected finish/fabric/table-top-tile at
+    // save time (e.g. "Finish: Aged Bronze / Fabric: Canvas Navy"), so it
+    // still displays correctly even if the underlying option data changes
+    // later. Brief 7, Step 2A.
+    variantLabel: text("variant_label"),
+    quantity: integer("quantity").notNull().default(1),
+    // Sale price (or MSRP if no sale price) at save time, captured only when
+    // the product had a visible storefront price at that moment
+    // (available_online && show_price_online). Null for inquiry/call-for-
+    // pricing products. Reserved for a future order-conversion feature —
+    // never displayed in the staff or customer-facing UI. Brief 7, Step 2A.
+    priceAtSave: numeric("price_at_save", { precision: 10, scale: 2 }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -57,6 +79,7 @@ export const wishlistItemsTable = pgTable(
       .on(t.deviceToken, t.productId)
       .where(sql`${t.userId} is null`),
     index("wishlist_items_user_id_idx").on(t.userId),
+    index("wishlist_items_customer_id_idx").on(t.customerId),
     index("wishlist_items_device_token_idx").on(t.deviceToken),
   ],
 );
@@ -69,3 +92,30 @@ export const insertWishlistItemSchema = createInsertSchema(
 });
 export type InsertWishlistItem = z.infer<typeof insertWishlistItemSchema>;
 export type WishlistItem = typeof wishlistItemsTable.$inferSelect;
+
+// Wishlist parent record (Brief 7, Step 1 Q8 / Step 5). One row per customer,
+// created the first time they save any wishlist item. Holds the shared
+// WISH-XXXXXXXX-XXXX reference number all of that customer's wishlist_items
+// rows share, mirroring the orders/vendor_orders numbering pattern.
+export const wishlistsTable = pgTable(
+  "wishlists",
+  {
+    id: serial("id").primaryKey(),
+    customerId: integer("customer_id")
+      .notNull()
+      .unique()
+      .references(() => customersTable.id, { onDelete: "cascade" }),
+    wishlistNumber: text("wishlist_number").notNull().unique(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index("wishlists_customer_id_idx").on(t.customerId)],
+);
+
+export const insertWishlistSchema = createInsertSchema(wishlistsTable).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertWishlist = z.infer<typeof insertWishlistSchema>;
+export type Wishlist = typeof wishlistsTable.$inferSelect;

@@ -30,6 +30,14 @@ export const customersTable = pgTable(
       { onDelete: "set null" },
     ),
     notes: text("notes"),
+    // Marketing contact preference (Brief 7). Controls the automated
+    // wishlist disclosure email, staff wishlist reach-out emails, and future
+    // marketing blasts only — never order/shipping/delivery transactional
+    // emails. Defaults to opted IN (false = contact permitted).
+    marketingOptOut: boolean("marketing_opt_out").notNull().default(false),
+    marketingOptOutAt: timestamp("marketing_opt_out_at", {
+      withTimezone: true,
+    }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
