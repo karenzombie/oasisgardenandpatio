@@ -15,13 +15,13 @@ export function StaffShell({ user, children }: StaffShellProps) {
   return (
     <div className="min-h-[100dvh] flex bg-[#F5F7FA] text-foreground">
       {/* Desktop sidebar */}
-      <div className="hidden lg:flex h-[100dvh] sticky top-0">
+      <div className="hidden lg:flex h-[100dvh] sticky top-0 print:hidden">
         <Sidebar role={role} />
       </div>
 
       {/* Mobile sidebar overlay */}
       {mobileOpen && (
-        <div className="lg:hidden fixed inset-0 z-40 flex">
+        <div className="lg:hidden fixed inset-0 z-40 flex print:hidden">
           <div
             className="absolute inset-0 bg-black/40"
             onClick={() => setMobileOpen(false)}
@@ -33,9 +33,11 @@ export function StaffShell({ user, children }: StaffShellProps) {
         </div>
       )}
 
-      <div className="flex-1 flex flex-col min-w-0">
-        <Topbar user={user} onMenu={() => setMobileOpen(true)} />
-        <main className="flex-1 overflow-auto">{children}</main>
+      <div className="flex-1 flex flex-col min-w-0 print:block">
+        <div className="print:hidden">
+          <Topbar user={user} onMenu={() => setMobileOpen(true)} />
+        </div>
+        <main className="flex-1 overflow-auto print:overflow-visible">{children}</main>
       </div>
     </div>
   );

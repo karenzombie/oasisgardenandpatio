@@ -48,6 +48,7 @@ import Reports from "./pages/admin/Reports";
 import Notifications from "./pages/admin/Notifications";
 import Deliveries from "./pages/admin/Deliveries";
 import WishlistDetail from "./pages/admin/WishlistDetail";
+import WishlistPrint from "./pages/admin/WishlistPrint";
 import { PagePlaceholder } from "./pages/PagePlaceholder";
 
 const ADMIN_PLACEHOLDERS: Array<{ path: string; title: string; comingIn: string }> = [];
@@ -96,6 +97,7 @@ export default function StaffRouter() {
                 <Route path="/admin/users" component={StaffAccountsPage} />
                 <Route path="/admin/customers" component={CustomerUsers} />
                 <Route path="/admin/wishlists/:id" component={WishlistDetail} />
+                <Route path="/admin/wishlists/:id/print" component={WishlistPrint} />
                 <Route path="/admin/audit-log" component={AuditLog} />
                 <Route path="/admin/recovery-requests" component={RecoveryRequests} />
                 <Route path="/admin/orders" component={Orders} />

@@ -1,4 +1,5 @@
 - [Staff/customer session cookie collision](staff-customer-session-collision.md) — customer Clerk sign-in regenerates the shared oasis.sid cookie, silently evicting a concurrent staff admin session (403s, not 401s).
+- [New tab loses session cookie](new-tab-loses-session-cookie.md) — window.open()/target=_blank to an auth-gated same-origin endpoint 401s in this embedded-preview env; render print views as same-tab in-app pages + window.print() instead.
 - [Running seed scripts against prod](seed-scripts-prod.md) — override DATABASE_URL with $PROD_DATABASE_URL; bulk-insert junction tables (onConflictDoNothing) or per-row inserts time out on prod.
 - [Task agent claimed verification without running the mutation](task-agent-unverified-completion.md) — a "completed" data-script commit had no DB rows to show for it; always spot-check target rows exist post-merge, don't trust the commit narrative.
 - [Prod catalog full-sync](prod-catalog-full-sync.md) — post-merge mirrors dev catalog to prod via dump+apply (17-table TRUNCATE+batched reload), NOT per-mfr seeds; batch inserts, run foreground, exclude transactional/inventory.

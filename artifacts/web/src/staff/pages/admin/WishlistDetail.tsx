@@ -88,14 +88,10 @@ export default function WishlistDetail() {
                 : "Send Reach-Out Email"}
             </Button>
             <Button asChild variant="outline">
-              <a
-                href={`/api/admin/wishlists/${customerId}/pdf`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <Link href={`/admin/wishlists/${customerId}/print`}>
                 <Printer className="size-4 mr-1.5" />
                 Print Wishlist
-              </a>
+              </Link>
             </Button>
           </div>
         }
