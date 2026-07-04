@@ -131,13 +131,16 @@ export default function StaffLogin() {
           )}
         </Button>
 
-        <div className="text-center text-xs text-slate-500 pt-2">
-          <Link
-            href="/staff/recover"
-            className="underline hover:text-slate-700"
-          >
-            Locked out? Recover staff access
-          </Link>
+        <div className="text-center text-xs text-slate-500 pt-2 space-y-1">
+          <p>
+            Lost your device or forgot your password?{" "}
+            <Link
+              href="/staff/recover"
+              className="underline hover:text-slate-700"
+            >
+              Recover staff access
+            </Link>
+          </p>
         </div>
       </form>
     </StaffAuthShell>

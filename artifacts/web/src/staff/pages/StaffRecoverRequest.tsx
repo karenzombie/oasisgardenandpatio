@@ -35,15 +35,15 @@ export default function StaffRecoverRequest() {
       >
         <div className="space-y-4 text-sm leading-relaxed text-slate-700">
           <p>
-            For security, the link <strong>will not work for the first hour</strong>.
-            During that time, every other administrator is notified and can
-            cancel the request. After the cooldown, the link remains valid for
-            24 hours and lets you set a new password and re-enroll
-            two-factor authentication.
+            The link is <strong>usable immediately</strong> and stays valid for
+            24 hours, letting you set a new password and re-enroll
+            two-factor authentication. For security, a notification is sent to{" "}
+            <strong>sales@oasisgardenandpatio.com</strong> as soon as the
+            request is made.
           </p>
           <p>
             If you did not request this, no action is needed — but please tell
-            another administrator so they can cancel it from the admin portal.
+            an administrator so they can cancel it from the admin portal.
           </p>
         </div>
       </StaffAuthShell>
@@ -53,7 +53,7 @@ export default function StaffRecoverRequest() {
   return (
     <StaffAuthShell
       title="Recover staff access"
-      subtitle="Use this only if you have lost access to your staff password or authenticator. A 1-hour security delay applies."
+      subtitle="Use this only if you have lost access to your staff password or authenticator. The link works immediately."
       footer={
         <Link href="/staff" className="underline hover:text-slate-700">
           Back to sign in
@@ -88,9 +88,9 @@ export default function StaffRecoverRequest() {
           )}
         </Button>
         <p className="text-xs text-slate-500 leading-relaxed">
-          To prevent abuse, the link in the email is delayed by one hour and
-          all other admins are notified so they can cancel it before it can
-          be used.
+          To prevent abuse, sales@oasisgardenandpatio.com is notified the
+          moment a recovery link is requested, so a suspicious request can be
+          cancelled from the admin portal.
         </p>
       </form>
     </StaffAuthShell>
