@@ -17,6 +17,7 @@ import {
 import {
   CreateAccountAddressBody,
   UpdateAccountProfileBody,
+  UpdateAccountMarketingPreferenceBody,
   UpsertAccountRoleAddressBody,
   RequestAccountEmailChangeBody,
   VerifyAccountEmailChangeBody,
@@ -355,6 +356,7 @@ async function loadProfile(userId: number) {
     pendingEmail: pending ? pending.newEmail : null,
     billingAddress: await loadRoleAddress(customer.id, "billing"),
     shippingAddress: await loadRoleAddress(customer.id, "shipping"),
+    marketingOptOut: customer.marketingOptOut,
   });
 }
 
@@ -394,6 +396,32 @@ router.put(
         .set({ firstName, lastName, phone })
         .where(eq(customersTable.id, customer.id));
     });
+
+    res.json(await loadProfile(req.user!.id));
+  },
+);
+
+router.put(
+  "/account/marketing-preference",
+  requireAuth,
+  async (req: Request, res: Response): Promise<void> => {
+    const parsed = UpdateAccountMarketingPreferenceBody.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: parsed.error.issues[0]?.message ?? "Invalid body" });
+      return;
+    }
+    const marketingOptOut = parsed.data.marketingOptOut;
+    const customer = await getOrCreateCustomer(req.user!.id);
+
+    await db
+      .update(customersTable)
+      .set({
+        marketingOptOut,
+        marketingOptOutAt: marketingOptOut ? new Date() : null,
+      })
+      .where(eq(customersTable.id, customer.id));
 
     res.json(await loadProfile(req.user!.id));
   },

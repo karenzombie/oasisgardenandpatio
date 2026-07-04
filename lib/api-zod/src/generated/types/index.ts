@@ -411,6 +411,7 @@ export * from "./updateInventoryLocationRequest";
 export * from "./updateInventoryRequest";
 export * from "./updateManufacturerRequest";
 export * from "./updateManufacturerRequestOrderMethod";
+export * from "./updateMarketingPreferenceBody";
 export * from "./updateOrderNotesRequest";
 export * from "./updateOrderStatusRequest";
 export * from "./updateProductRequest";

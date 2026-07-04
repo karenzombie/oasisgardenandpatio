@@ -1170,6 +1170,11 @@ export const GetAccountProfileResponse = zod.object({
     }),
     zod.null(),
   ]),
+  marketingOptOut: zod
+    .boolean()
+    .describe(
+      "True if the customer has opted out of wishlist\/promotional contact. Never affects order\/shipping\/delivery emails.",
+    ),
 });
 
 /**
@@ -1224,6 +1229,67 @@ export const UpdateAccountProfileResponse = zod.object({
     }),
     zod.null(),
   ]),
+  marketingOptOut: zod
+    .boolean()
+    .describe(
+      "True if the customer has opted out of wishlist\/promotional contact. Never affects order\/shipping\/delivery emails.",
+    ),
+});
+
+/**
+ * @summary Update the signed-in customer's marketing contact preference (wishlist follow-ups + promotional emails only)
+ */
+export const UpdateAccountMarketingPreferenceBody = zod.object({
+  marketingOptOut: zod.boolean(),
+});
+
+export const UpdateAccountMarketingPreferenceResponse = zod.object({
+  firstName: zod.string().nullable(),
+  lastName: zod.string().nullable(),
+  email: zod.string(),
+  emailVerified: zod.boolean(),
+  phone: zod.string().nullable(),
+  pendingEmail: zod
+    .string()
+    .nullable()
+    .describe("New email awaiting code verification, if any."),
+  billingAddress: zod.union([
+    zod.object({
+      id: zod.number(),
+      type: zod.string(),
+      recipientName: zod.string().nullable(),
+      street1: zod.string(),
+      street2: zod.string().nullable(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullable(),
+      isDefault: zod.boolean(),
+    }),
+    zod.null(),
+  ]),
+  shippingAddress: zod.union([
+    zod.object({
+      id: zod.number(),
+      type: zod.string(),
+      recipientName: zod.string().nullable(),
+      street1: zod.string(),
+      street2: zod.string().nullable(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullable(),
+      isDefault: zod.boolean(),
+    }),
+    zod.null(),
+  ]),
+  marketingOptOut: zod
+    .boolean()
+    .describe(
+      "True if the customer has opted out of wishlist\/promotional contact. Never affects order\/shipping\/delivery emails.",
+    ),
 });
 
 /**
@@ -1306,6 +1372,11 @@ export const UpsertAccountRoleAddressResponse = zod.object({
     }),
     zod.null(),
   ]),
+  marketingOptOut: zod
+    .boolean()
+    .describe(
+      "True if the customer has opted out of wishlist\/promotional contact. Never affects order\/shipping\/delivery emails.",
+    ),
 });
 
 /**
@@ -1366,6 +1437,11 @@ export const CancelAccountEmailChangeResponse = zod.object({
     }),
     zod.null(),
   ]),
+  marketingOptOut: zod
+    .boolean()
+    .describe(
+      "True if the customer has opted out of wishlist\/promotional contact. Never affects order\/shipping\/delivery emails.",
+    ),
 });
 
 /**
@@ -1419,6 +1495,11 @@ export const VerifyAccountEmailChangeResponse = zod.object({
     }),
     zod.null(),
   ]),
+  marketingOptOut: zod
+    .boolean()
+    .describe(
+      "True if the customer has opted out of wishlist\/promotional contact. Never affects order\/shipping\/delivery emails.",
+    ),
 });
 
 /**

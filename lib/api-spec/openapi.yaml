@@ -591,6 +591,36 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /account/marketing-preference:
+    put:
+      operationId: updateAccountMarketingPreference
+      tags: [account]
+      summary: Update the signed-in customer's marketing contact preference (wishlist follow-ups + promotional emails only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateMarketingPreferenceBody"
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountProfileResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /account/addresses/role/{role}:
     put:
       operationId: upsertAccountRoleAddress
@@ -8343,6 +8373,9 @@ components:
           oneOf:
             - $ref: "#/components/schemas/AccountAddress"
             - type: "null"
+        marketingOptOut:
+          type: boolean
+          description: True if the customer has opted out of wishlist/promotional contact. Never affects order/shipping/delivery emails.
       required:
         - firstName
         - lastName
@@ -8352,6 +8385,7 @@ components:
         - pendingEmail
         - billingAddress
         - shippingAddress
+        - marketingOptOut
     AccountProfileInput:
       type: object
       properties:
@@ -8366,6 +8400,13 @@ components:
       required:
         - firstName
         - lastName
+    UpdateMarketingPreferenceBody:
+      type: object
+      properties:
+        marketingOptOut:
+          type: boolean
+      required:
+        - marketingOptOut
     RequestEmailChangeBody:
       type: object
       properties:

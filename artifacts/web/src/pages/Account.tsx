@@ -7,6 +7,7 @@ import {
   useGetWishlist,
   useGetAccountProfile,
   useUpdateAccountProfile,
+  useUpdateAccountMarketingPreference,
   useUpsertAccountRoleAddress,
   useRequestAccountEmailChange,
   useVerifyAccountEmailChange,
@@ -24,6 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
+import { Switch } from "@/components/ui/switch";
 import {
   MailWarning,
   CheckCircle2,
@@ -376,6 +378,20 @@ export default function Account() {
         toast({
           title: "Error",
           description: errorMessage(err, "Could not cancel email change."),
+        }),
+    },
+  });
+
+  const marketingPreferenceM = useUpdateAccountMarketingPreference({
+    mutation: {
+      onSuccess: (p) => {
+        setProfile(p);
+        toast({ title: "Preference saved" });
+      },
+      onError: (err) =>
+        toast({
+          title: "Error",
+          description: errorMessage(err, "Could not save preference."),
         }),
     },
   });
@@ -855,6 +871,36 @@ export default function Account() {
                 ))}
               </ul>
             )}
+          </div>
+
+          {/* Marketing contact preference */}
+          <div className="border-t border-border pt-8 mb-8">
+            <h2 className="font-serif text-xl mb-4">
+              Marketing contact preference
+            </h2>
+            <div className="border border-border bg-card p-5 flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <Label htmlFor="marketing-opt-out" className="text-sm font-medium">
+                  Allow Oasis Garden &amp; Patio to contact me about my
+                  wishlist and send me promotional emails.
+                </Label>
+                <p className="text-xs text-muted-foreground mt-2">
+                  This applies to wishlist follow-ups and promotional emails.
+                  It does not affect your order confirmations, shipping
+                  updates, or delivery notifications.
+                </p>
+              </div>
+              <Switch
+                id="marketing-opt-out"
+                checked={!(profile?.marketingOptOut ?? false)}
+                disabled={marketingPreferenceM.isPending}
+                onCheckedChange={(checked) =>
+                  marketingPreferenceM.mutate({
+                    data: { marketingOptOut: !checked },
+                  })
+                }
+              />
+            </div>
           </div>
 
           <div className="border-t border-border pt-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">

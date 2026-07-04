@@ -23,4 +23,6 @@ export interface AccountProfileResponse {
   pendingEmail: string | null;
   billingAddress: AccountAddress | null;
   shippingAddress: AccountAddress | null;
+  /** True if the customer has opted out of wishlist/promotional contact. Never affects order/shipping/delivery emails. */
+  marketingOptOut: boolean;
 }

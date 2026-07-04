@@ -245,6 +245,7 @@ import type {
   UpdateInventoryLocationRequest,
   UpdateInventoryRequest,
   UpdateManufacturerRequest,
+  UpdateMarketingPreferenceBody,
   UpdateOrderNotesRequest,
   UpdateOrderStatusRequest,
   UpdateProductRequest,
@@ -2150,6 +2151,98 @@ export const useUpdateAccountProfile = <
   TContext
 > => {
   return useMutation(getUpdateAccountProfileMutationOptions(options));
+};
+
+/**
+ * @summary Update the signed-in customer's marketing contact preference (wishlist follow-ups + promotional emails only)
+ */
+export const getUpdateAccountMarketingPreferenceUrl = () => {
+  return `/api/account/marketing-preference`;
+};
+
+export const updateAccountMarketingPreference = async (
+  updateMarketingPreferenceBody: UpdateMarketingPreferenceBody,
+  options?: RequestInit,
+): Promise<AccountProfileResponse> => {
+  return customFetch<AccountProfileResponse>(
+    getUpdateAccountMarketingPreferenceUrl(),
+    {
+      ...options,
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateMarketingPreferenceBody),
+    },
+  );
+};
+
+export const getUpdateAccountMarketingPreferenceMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateAccountMarketingPreference>>,
+    TError,
+    { data: BodyType<UpdateMarketingPreferenceBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateAccountMarketingPreference>>,
+  TError,
+  { data: BodyType<UpdateMarketingPreferenceBody> },
+  TContext
+> => {
+  const mutationKey = ["updateAccountMarketingPreference"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateAccountMarketingPreference>>,
+    { data: BodyType<UpdateMarketingPreferenceBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return updateAccountMarketingPreference(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateAccountMarketingPreferenceMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateAccountMarketingPreference>>
+>;
+export type UpdateAccountMarketingPreferenceMutationBody =
+  BodyType<UpdateMarketingPreferenceBody>;
+export type UpdateAccountMarketingPreferenceMutationError = ErrorType<Error>;
+
+/**
+ * @summary Update the signed-in customer's marketing contact preference (wishlist follow-ups + promotional emails only)
+ */
+export const useUpdateAccountMarketingPreference = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateAccountMarketingPreference>>,
+    TError,
+    { data: BodyType<UpdateMarketingPreferenceBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateAccountMarketingPreference>>,
+  TError,
+  { data: BodyType<UpdateMarketingPreferenceBody> },
+  TContext
+> => {
+  return useMutation(
+    getUpdateAccountMarketingPreferenceMutationOptions(options),
+  );
 };
 
 /**
