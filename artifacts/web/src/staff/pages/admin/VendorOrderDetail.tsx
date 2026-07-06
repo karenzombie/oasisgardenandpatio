@@ -678,10 +678,15 @@ export default function VendorOrderDetail() {
     serializeEdit(editRows, notesDraft, noteToVendorDraft, etaDraft) !==
       editBaselineRef.current;
 
-  // Merge sends + edits into one reverse-chronological activity timeline.
+  // Merge sends + edits + status changes into one reverse-chronological activity timeline.
   const activity = [
     ...vo.sends.map((s) => ({ type: "send" as const, at: s.sentAt, send: s })),
     ...vo.edits.map((e) => ({ type: "edit" as const, at: e.editedAt, edit: e })),
+    ...vo.statusChanges.map((c) => ({
+      type: "status" as const,
+      at: c.changedAt,
+      statusChange: c,
+    })),
   ].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
 
   return (
@@ -1203,7 +1208,26 @@ export default function VendorOrderDetail() {
               ) : (
                 <ul className="divide-y">
                   {activity.map((entry) =>
-                    entry.type === "send" ? (
+                    entry.type === "status" ? (
+                      <li
+                        key={`c${entry.statusChange.id}`}
+                        className="px-4 py-2 text-sm"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline">
+                            {entry.statusChange.note ?? "status change"}
+                          </Badge>
+                          <span className="ml-auto text-xs text-slate-500">
+                            {fmtDateTime(entry.statusChange.changedAt)}
+                          </span>
+                        </div>
+                        {entry.statusChange.changedByEmail && (
+                          <div className="text-xs text-slate-500 mt-0.5">
+                            by {entry.statusChange.changedByEmail}
+                          </div>
+                        )}
+                      </li>
+                    ) : entry.type === "send" ? (
                       <li key={`s${entry.send.id}`} className="px-4 py-2 text-sm">
                         <div className="flex items-center gap-2">
                           <Badge

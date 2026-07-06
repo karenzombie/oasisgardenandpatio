@@ -106,9 +106,18 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
           <DashboardCard label="Vendor orders" icon={Store} href="/admin/vendor-orders">
             <RowList
               rows={[
-                { label: "Not sent to vendor", value: 3 },
-                { label: "Sent to vendor", value: 8 },
-                { label: "Acknowledged by vendor", value: 14 },
+                {
+                  label: "Not sent to vendor",
+                  value: orderCount(stats.data?.pendingVendorOrders),
+                },
+                {
+                  label: "Sent to vendor",
+                  value: orderCount(stats.data?.sentToVendor),
+                },
+                {
+                  label: "Acknowledged by vendor",
+                  value: orderCount(stats.data?.acknowledgedByVendor),
+                },
               ]}
             />
           </DashboardCard>

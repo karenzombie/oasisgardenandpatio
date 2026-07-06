@@ -6121,6 +6121,15 @@ components:
         correctionNote: { type: string, nullable: true }
         pdfStorageUrl: { type: string, nullable: true }
       required: [id, sentByUserId, sentByEmail, sentAt, sentToEmail, isResend, resendNote, correctionNote, pdfStorageUrl]
+    AdminVendorOrderStatusChange:
+      type: object
+      properties:
+        id: { type: integer }
+        changedByUserId: { type: integer, nullable: true }
+        changedByEmail: { type: string, nullable: true }
+        changedAt: { type: string, format: date-time }
+        note: { type: string, nullable: true }
+      required: [id, changedByUserId, changedByEmail, changedAt, note]
     AdminVendorOrderDetail:
       type: object
       properties:
@@ -6172,6 +6181,9 @@ components:
         edits:
           type: array
           items: { $ref: "#/components/schemas/AdminVendorOrderEdit" }
+        statusChanges:
+          type: array
+          items: { $ref: "#/components/schemas/AdminVendorOrderStatusChange" }
         cancellations:
           type: array
           items: { $ref: "#/components/schemas/AdminVendorOrderCancellation" }
@@ -6179,7 +6191,7 @@ components:
           type: array
           items: { $ref: "#/components/schemas/AdminVendorOrderReceive" }
       required:
-        [id, vendorOrderNumber, status, notes, noteToVendor, vendorEstimatedDeliveryDate, sentAt, acknowledgedAt, fulfilledAt, receivedAt, receivedByUserId, receivedByEmail, itemsReceived, createdByUserId, createdByEmail, createdAt, updatedAt, manufacturerId, manufacturerName, manufacturerOrderEmail, manufacturerAddressLine1, manufacturerAddressLine2, manufacturerCity, manufacturerState, manufacturerPostalCode, manufacturerPhone, manufacturerFax, customerOrderId, customerOrderNumber, customerOrderStatus, customerName, shipToStore, shipToName, shipToLine1, shipToLine2, shipToCity, shipToState, shipToPostalCode, shipToPhone, items, sends, edits, cancellations, receives]
+        [id, vendorOrderNumber, status, notes, noteToVendor, vendorEstimatedDeliveryDate, sentAt, acknowledgedAt, fulfilledAt, receivedAt, receivedByUserId, receivedByEmail, itemsReceived, createdByUserId, createdByEmail, createdAt, updatedAt, manufacturerId, manufacturerName, manufacturerOrderEmail, manufacturerAddressLine1, manufacturerAddressLine2, manufacturerCity, manufacturerState, manufacturerPostalCode, manufacturerPhone, manufacturerFax, customerOrderId, customerOrderNumber, customerOrderStatus, customerName, shipToStore, shipToName, shipToLine1, shipToLine2, shipToCity, shipToState, shipToPostalCode, shipToPhone, items, sends, edits, statusChanges, cancellations, receives]
     CreateStandaloneVendorOrderItem:
       type: object
       properties:
@@ -6412,6 +6424,16 @@ components:
             type: integer,
             description: "Orders with status carrier_delivery_update that have at least one shipment with a tracking number",
           }
+        sentToVendor:
+          {
+            type: integer,
+            description: "Vendor orders with status sent",
+          }
+        acknowledgedByVendor:
+          {
+            type: integer,
+            description: "Vendor orders with status acknowledged",
+          }
       required:
         [
           openOrders,
@@ -6425,6 +6447,8 @@ components:
           localDeliveryToday,
           localDeliveriesThisWeek,
           carrierDeliveryUpdated,
+          sentToVendor,
+          acknowledgedByVendor,
         ]
     AdminAgentDashboardStats:
       type: object

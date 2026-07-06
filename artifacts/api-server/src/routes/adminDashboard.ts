@@ -164,6 +164,8 @@ router.get(
       localDeliveryToday,
       localDeliveriesThisWeek,
       carrierDeliveryUpdated,
+      sentToVendor,
+      acknowledgedByVendor,
     ] = await Promise.all([
       db
         .select({ count: sql<number>`count(*)::int` })
@@ -192,6 +194,16 @@ router.get(
       loadLocalDeliveryToday(),
       loadLocalDeliveriesThisWeek(),
       loadCarrierDeliveryUpdated(),
+      db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(vendorOrdersTable)
+        .where(eq(vendorOrdersTable.status, "sent"))
+        .then((r) => r[0]?.count ?? 0),
+      db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(vendorOrdersTable)
+        .where(eq(vendorOrdersTable.status, "acknowledged"))
+        .then((r) => r[0]?.count ?? 0),
     ]);
 
     res.json({
@@ -206,6 +218,8 @@ router.get(
       localDeliveryToday,
       localDeliveriesThisWeek,
       carrierDeliveryUpdated,
+      sentToVendor,
+      acknowledgedByVendor,
     });
   },
 );

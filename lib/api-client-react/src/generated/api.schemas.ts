@@ -428,6 +428,14 @@ export interface AdminVendorOrderSend {
   pdfStorageUrl: string | null;
 }
 
+export interface AdminVendorOrderStatusChange {
+  id: number;
+  changedByUserId: number | null;
+  changedByEmail: string | null;
+  changedAt: string;
+  note: string | null;
+}
+
 export type AdminVendorOrderCancellationScope =
   (typeof AdminVendorOrderCancellationScope)[keyof typeof AdminVendorOrderCancellationScope];
 
@@ -508,6 +516,7 @@ export interface AdminVendorOrderDetail {
   items: AdminVendorOrderItem[];
   sends: AdminVendorOrderSend[];
   edits: AdminVendorOrderEdit[];
+  statusChanges: AdminVendorOrderStatusChange[];
   cancellations: AdminVendorOrderCancellation[];
   receives: AdminVendorOrderReceive[];
 }
@@ -690,6 +699,10 @@ export interface AdminDashboardStats {
   localDeliveriesThisWeek: number;
   /** Orders with status carrier_delivery_update that have at least one shipment with a tracking number */
   carrierDeliveryUpdated: number;
+  /** Vendor orders with status sent */
+  sentToVendor: number;
+  /** Vendor orders with status acknowledged */
+  acknowledgedByVendor: number;
 }
 
 export interface AdminAgentDashboardStats {

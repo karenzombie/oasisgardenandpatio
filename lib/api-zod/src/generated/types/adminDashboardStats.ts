@@ -29,4 +29,8 @@ export interface AdminDashboardStats {
   localDeliveriesThisWeek: number;
   /** Orders with status carrier_delivery_update that have at least one shipment with a tracking number */
   carrierDeliveryUpdated: number;
+  /** Vendor orders with status sent */
+  sentToVendor: number;
+  /** Vendor orders with status acknowledged */
+  acknowledgedByVendor: number;
 }

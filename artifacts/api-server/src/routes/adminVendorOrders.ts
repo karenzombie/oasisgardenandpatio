@@ -19,6 +19,7 @@ import {
   inventoryAdjustmentsTable,
   inventoryLocationsTable,
   inventoryTable,
+  entityHistoryTable,
   type VendorOrder,
   type OrderItem,
 } from "@workspace/db";
@@ -595,6 +596,19 @@ async function loadVendorOrderDetail(id: number) {
     .where(eq(vendorOrderSendsTable.vendorOrderId, id))
     .orderBy(desc(vendorOrderSendsTable.sentAt));
 
+  const statusChangeHistory = await db
+    .select({ h: entityHistoryTable, actor: usersTable })
+    .from(entityHistoryTable)
+    .leftJoin(usersTable, eq(usersTable.id, entityHistoryTable.changedByUserId))
+    .where(
+      and(
+        eq(entityHistoryTable.entityType, "vendor_order"),
+        eq(entityHistoryTable.entityId, id),
+        ilike(entityHistoryTable.notes, "status →%"),
+      ),
+    )
+    .orderBy(desc(entityHistoryTable.createdAt));
+
   const cancellations = await db
     .select({ c: vendorOrderCancellationsTable, canceller: usersTable })
     .from(vendorOrderCancellationsTable)
@@ -727,6 +741,13 @@ async function loadVendorOrderDetail(id: number) {
       editedByEmail: row.editor?.email ?? null,
       editedAt: row.e.editedAt.toISOString(),
       note: row.e.note,
+    })),
+    statusChanges: statusChangeHistory.map((row) => ({
+      id: row.h.id,
+      changedByUserId: row.h.changedByUserId,
+      changedByEmail: row.h.changedByEmail ?? row.actor?.email ?? null,
+      changedAt: row.h.createdAt.toISOString(),
+      note: row.h.notes,
     })),
     cancellations: cancellations.map((row) => ({
       id: row.c.id,

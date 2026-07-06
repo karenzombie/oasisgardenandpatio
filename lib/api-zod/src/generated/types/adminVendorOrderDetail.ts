@@ -10,6 +10,7 @@ import type { AdminVendorOrderEdit } from "./adminVendorOrderEdit";
 import type { AdminVendorOrderItem } from "./adminVendorOrderItem";
 import type { AdminVendorOrderReceive } from "./adminVendorOrderReceive";
 import type { AdminVendorOrderSend } from "./adminVendorOrderSend";
+import type { AdminVendorOrderStatusChange } from "./adminVendorOrderStatusChange";
 
 export interface AdminVendorOrderDetail {
   id: number;
@@ -54,6 +55,7 @@ export interface AdminVendorOrderDetail {
   items: AdminVendorOrderItem[];
   sends: AdminVendorOrderSend[];
   edits: AdminVendorOrderEdit[];
+  statusChanges: AdminVendorOrderStatusChange[];
   cancellations: AdminVendorOrderCancellation[];
   receives: AdminVendorOrderReceive[];
 }

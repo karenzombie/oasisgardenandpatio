@@ -202,6 +202,7 @@ export * from "./adminVendorOrderPage";
 export * from "./adminVendorOrderReceive";
 export * from "./adminVendorOrderReceiveItemsItem";
 export * from "./adminVendorOrderSend";
+export * from "./adminVendorOrderStatusChange";
 export * from "./adminVendorOrderSummary";
 export * from "./adminWishlistDetail";
 export * from "./adminWishlistItem";

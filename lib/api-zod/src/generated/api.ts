@@ -9748,6 +9748,15 @@ export const AdminGetVendorOrderResponse = zod.object({
       note: zod.string(),
     }),
   ),
+  statusChanges: zod.array(
+    zod.object({
+      id: zod.number(),
+      changedByUserId: zod.number().nullable(),
+      changedByEmail: zod.string().nullable(),
+      changedAt: zod.coerce.date(),
+      note: zod.string().nullable(),
+    }),
+  ),
   cancellations: zod.array(
     zod.object({
       id: zod.number(),
@@ -9914,6 +9923,15 @@ export const AdminUpdateVendorOrderResponse = zod.object({
       editedByEmail: zod.string().nullable(),
       editedAt: zod.coerce.date(),
       note: zod.string(),
+    }),
+  ),
+  statusChanges: zod.array(
+    zod.object({
+      id: zod.number(),
+      changedByUserId: zod.number().nullable(),
+      changedByEmail: zod.string().nullable(),
+      changedAt: zod.coerce.date(),
+      note: zod.string().nullable(),
     }),
   ),
   cancellations: zod.array(
@@ -10122,6 +10140,15 @@ export const AdminEditVendorOrderResponse = zod.object({
       editedByEmail: zod.string().nullable(),
       editedAt: zod.coerce.date(),
       note: zod.string(),
+    }),
+  ),
+  statusChanges: zod.array(
+    zod.object({
+      id: zod.number(),
+      changedByUserId: zod.number().nullable(),
+      changedByEmail: zod.string().nullable(),
+      changedAt: zod.coerce.date(),
+      note: zod.string().nullable(),
     }),
   ),
   cancellations: zod.array(
@@ -10391,6 +10418,15 @@ export const AdminSendVendorOrderResponse = zod.object({
       note: zod.string(),
     }),
   ),
+  statusChanges: zod.array(
+    zod.object({
+      id: zod.number(),
+      changedByUserId: zod.number().nullable(),
+      changedByEmail: zod.string().nullable(),
+      changedAt: zod.coerce.date(),
+      note: zod.string().nullable(),
+    }),
+  ),
   cancellations: zod.array(
     zod.object({
       id: zod.number(),
@@ -10556,6 +10592,15 @@ export const AdminUpdateVendorOrderStatusResponse = zod.object({
       editedByEmail: zod.string().nullable(),
       editedAt: zod.coerce.date(),
       note: zod.string(),
+    }),
+  ),
+  statusChanges: zod.array(
+    zod.object({
+      id: zod.number(),
+      changedByUserId: zod.number().nullable(),
+      changedByEmail: zod.string().nullable(),
+      changedAt: zod.coerce.date(),
+      note: zod.string().nullable(),
     }),
   ),
   cancellations: zod.array(
@@ -10735,6 +10780,15 @@ export const AdminReceiveVendorOrderResponse = zod.object({
       note: zod.string(),
     }),
   ),
+  statusChanges: zod.array(
+    zod.object({
+      id: zod.number(),
+      changedByUserId: zod.number().nullable(),
+      changedByEmail: zod.string().nullable(),
+      changedAt: zod.coerce.date(),
+      note: zod.string().nullable(),
+    }),
+  ),
   cancellations: zod.array(
     zod.object({
       id: zod.number(),
@@ -10908,6 +10962,15 @@ export const AdminCancelPendingVendorOrderResponse = zod.object({
       editedByEmail: zod.string().nullable(),
       editedAt: zod.coerce.date(),
       note: zod.string(),
+    }),
+  ),
+  statusChanges: zod.array(
+    zod.object({
+      id: zod.number(),
+      changedByUserId: zod.number().nullable(),
+      changedByEmail: zod.string().nullable(),
+      changedAt: zod.coerce.date(),
+      note: zod.string().nullable(),
     }),
   ),
   cancellations: zod.array(
@@ -11099,6 +11162,15 @@ export const AdminCancelVendorOrderResponse = zod.object({
       note: zod.string(),
     }),
   ),
+  statusChanges: zod.array(
+    zod.object({
+      id: zod.number(),
+      changedByUserId: zod.number().nullable(),
+      changedByEmail: zod.string().nullable(),
+      changedAt: zod.coerce.date(),
+      note: zod.string().nullable(),
+    }),
+  ),
   cancellations: zod.array(
     zod.object({
       id: zod.number(),
@@ -11184,6 +11256,10 @@ export const AdminGetDashboardStatsResponse = zod.object({
     .describe(
       "Orders with status carrier_delivery_update that have at least one shipment with a tracking number",
     ),
+  sentToVendor: zod.number().describe("Vendor orders with status sent"),
+  acknowledgedByVendor: zod
+    .number()
+    .describe("Vendor orders with status acknowledged"),
 });
 
 /**
