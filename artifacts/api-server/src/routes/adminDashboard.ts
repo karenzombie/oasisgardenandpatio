@@ -1,11 +1,13 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { and, countDistinct, eq, gte, notInArray, sql } from "drizzle-orm";
+import { and, countDistinct, eq, gte, isNull, notInArray, sql } from "drizzle-orm";
 import {
   db,
   ordersTable,
   productsTable,
   customersTable,
   vendorOrdersTable,
+  wishlistItemsTable,
+  wishlistOutreachLogItemsTable,
 } from "@workspace/db";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 
@@ -45,34 +47,76 @@ async function loadOrdersByStatus(): Promise<Record<(typeof ORDER_STATUSES)[numb
   return counts;
 }
 
+async function loadNewCustomersLast48h(): Promise<number> {
+  const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000);
+  const [row] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(customersTable)
+    .where(gte(customersTable.createdAt, cutoff));
+  return row?.count ?? 0;
+}
+
+async function loadWishlistItemsNeedingReachOut(): Promise<number> {
+  const [row] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(wishlistItemsTable)
+    .innerJoin(
+      customersTable,
+      eq(customersTable.id, wishlistItemsTable.customerId),
+    )
+    .leftJoin(
+      wishlistOutreachLogItemsTable,
+      eq(
+        wishlistOutreachLogItemsTable.wishlistItemId,
+        wishlistItemsTable.id,
+      ),
+    )
+    .where(
+      and(
+        eq(customersTable.marketingOptOut, false),
+        isNull(wishlistOutreachLogItemsTable.id),
+      ),
+    );
+  return row?.count ?? 0;
+}
+
 router.get(
   "/admin/dashboard/stats",
   requireAuth,
   requireRole("admin"),
   async (_req: Request, res: Response): Promise<void> => {
-    const [openOrders, activeProducts, totalCustomers, pendingVendorOrders, ordersByStatus] =
-      await Promise.all([
-        db
-          .select({ count: sql<number>`count(*)::int` })
-          .from(ordersTable)
-          .where(notInArray(ordersTable.status, OPEN_ORDER_EXCLUDED))
-          .then((r) => r[0]?.count ?? 0),
-        db
-          .select({ count: sql<number>`count(*)::int` })
-          .from(productsTable)
-          .where(eq(productsTable.isActive, true))
-          .then((r) => r[0]?.count ?? 0),
-        db
-          .select({ count: sql<number>`count(*)::int` })
-          .from(customersTable)
-          .then((r) => r[0]?.count ?? 0),
-        db
-          .select({ count: sql<number>`count(*)::int` })
-          .from(vendorOrdersTable)
-          .where(eq(vendorOrdersTable.status, "pending"))
-          .then((r) => r[0]?.count ?? 0),
-        loadOrdersByStatus(),
-      ]);
+    const [
+      openOrders,
+      activeProducts,
+      totalCustomers,
+      pendingVendorOrders,
+      ordersByStatus,
+      newCustomersLast48h,
+      wishlistItemsNeedingReachOut,
+    ] = await Promise.all([
+      db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(ordersTable)
+        .where(notInArray(ordersTable.status, OPEN_ORDER_EXCLUDED))
+        .then((r) => r[0]?.count ?? 0),
+      db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(productsTable)
+        .where(eq(productsTable.isActive, true))
+        .then((r) => r[0]?.count ?? 0),
+      db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(customersTable)
+        .then((r) => r[0]?.count ?? 0),
+      db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(vendorOrdersTable)
+        .where(eq(vendorOrdersTable.status, "pending"))
+        .then((r) => r[0]?.count ?? 0),
+      loadOrdersByStatus(),
+      loadNewCustomersLast48h(),
+      loadWishlistItemsNeedingReachOut(),
+    ]);
 
     res.json({
       openOrders,
@@ -80,6 +124,8 @@ router.get(
       totalCustomers,
       pendingVendorOrders,
       ordersByStatus,
+      newCustomersLast48h,
+      wishlistItemsNeedingReachOut,
     });
   },
 );

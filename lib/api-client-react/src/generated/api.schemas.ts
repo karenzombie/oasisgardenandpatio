@@ -678,6 +678,10 @@ export interface AdminDashboardStats {
   /** Vendor orders awaiting dispatch */
   pendingVendorOrders: number;
   ordersByStatus: AdminOrderStatusCounts;
+  /** Customers created within the last 48 hours */
+  newCustomersLast48h: number;
+  /** Wishlist items whose customer has marketing_opt_out = false and that have never appeared in a sent reach-out email */
+  wishlistItemsNeedingReachOut: number;
 }
 
 export interface AdminAgentDashboardStats {

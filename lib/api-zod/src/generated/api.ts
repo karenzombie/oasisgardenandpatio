@@ -11158,6 +11158,14 @@ export const AdminGetDashboardStatsResponse = zod.object({
     .describe(
       "Live count of orders currently in each status, for the dashboard Orders card.",
     ),
+  newCustomersLast48h: zod
+    .number()
+    .describe("Customers created within the last 48 hours"),
+  wishlistItemsNeedingReachOut: zod
+    .number()
+    .describe(
+      "Wishlist items whose customer has marketing_opt_out = false and that have never appeared in a sent reach-out email",
+    ),
 });
 
 /**

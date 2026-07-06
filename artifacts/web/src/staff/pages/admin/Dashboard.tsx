@@ -67,9 +67,15 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
           <DashboardCard label="Customers" icon={Users} href="/admin/customers">
             <RowList
               rows={[
-                { label: "Total customers", value: 214 },
-                { label: "New customers (48 hrs)", value: 3 },
-                { label: "New wishlist items to reach out", value: 6 },
+                { label: "Total customers", value: orderCount(stats.data?.totalCustomers) },
+                {
+                  label: "New customers (48 hrs)",
+                  value: orderCount(stats.data?.newCustomersLast48h),
+                },
+                {
+                  label: "New wishlist items to reach out",
+                  value: orderCount(stats.data?.wishlistItemsNeedingReachOut),
+                },
               ]}
             />
           </DashboardCard>
