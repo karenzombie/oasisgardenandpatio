@@ -10,6 +10,7 @@ import {
   wishlistItemsTable,
   wishlistOutreachLogItemsTable,
   shipmentsTable,
+  manufacturersTable,
 } from "@workspace/db";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 
@@ -167,6 +168,7 @@ router.get(
       carrierDeliveryUpdated,
       sentToVendor,
       acknowledgedByVendor,
+      totalManufacturers,
     ] = await Promise.all([
       db
         .select({ count: sql<number>`count(*)::int` })
@@ -209,6 +211,10 @@ router.get(
         .from(vendorOrdersTable)
         .where(eq(vendorOrdersTable.status, "acknowledged"))
         .then((r) => r[0]?.count ?? 0),
+      db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(manufacturersTable)
+        .then((r) => r[0]?.count ?? 0),
     ]);
 
     res.json({
@@ -226,6 +232,7 @@ router.get(
       carrierDeliveryUpdated,
       sentToVendor,
       acknowledgedByVendor,
+      totalManufacturers,
     });
   },
 );

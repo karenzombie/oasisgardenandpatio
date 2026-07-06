@@ -11263,6 +11263,7 @@ export const AdminGetDashboardStatsResponse = zod.object({
   acknowledgedByVendor: zod
     .number()
     .describe("Vendor orders with status acknowledged"),
+  totalManufacturers: zod.number().describe("Total manufacturer records"),
 });
 
 /**

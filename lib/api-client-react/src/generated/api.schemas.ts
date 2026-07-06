@@ -705,6 +705,8 @@ export interface AdminDashboardStats {
   sentToVendor: number;
   /** Vendor orders with status acknowledged */
   acknowledgedByVendor: number;
+  /** Total manufacturer records */
+  totalManufacturers: number;
 }
 
 export interface AdminAgentDashboardStats {

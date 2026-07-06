@@ -130,7 +130,10 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
           </DashboardCard>
 
           <DashboardCard label="Vendors" icon={Tag} href="/admin/manufacturers">
-            <BigNumber value={18} label="Manufacturers" />
+            <BigNumber
+              value={orderCount(stats.data?.totalManufacturers)}
+              label="Manufacturers"
+            />
           </DashboardCard>
 
           <DashboardCard label="Inventory" icon={Package} href="/admin/inventory">

@@ -6435,6 +6435,11 @@ components:
             type: integer,
             description: "Vendor orders with status acknowledged",
           }
+        totalManufacturers:
+          {
+            type: integer,
+            description: "Total manufacturer records",
+          }
       required:
         [
           openOrders,
@@ -6451,6 +6456,7 @@ components:
           carrierDeliveryUpdated,
           sentToVendor,
           acknowledgedByVendor,
+          totalManufacturers,
         ]
     AdminAgentDashboardStats:
       type: object
