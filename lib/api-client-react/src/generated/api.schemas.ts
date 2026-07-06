@@ -682,6 +682,14 @@ export interface AdminDashboardStats {
   newCustomersLast48h: number;
   /** Wishlist items whose customer has marketing_opt_out = false and that have never appeared in a sent reach-out email */
   wishlistItemsNeedingReachOut: number;
+  /** Orders with status ready_for_store_delivery that have no scheduled delivery date */
+  readyNotScheduled: number;
+  /** Orders with a scheduled local delivery date of today */
+  localDeliveryToday: number;
+  /** Orders with a scheduled local delivery date within the current calendar week (Monday-Sunday) */
+  localDeliveriesThisWeek: number;
+  /** Orders with status carrier_delivery_update that have at least one shipment with a tracking number */
+  carrierDeliveryUpdated: number;
 }
 
 export interface AdminAgentDashboardStats {

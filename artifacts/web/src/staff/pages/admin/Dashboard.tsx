@@ -67,9 +67,9 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
           <DashboardCard label="Customers" icon={Users} href="/admin/customers">
             <RowList
               rows={[
-                { label: "Total customers", value: orderCount(stats.data?.totalCustomers) },
+                { label: "Total online customers", value: orderCount(stats.data?.totalCustomers) },
                 {
-                  label: "New customers (48 hrs)",
+                  label: "New online customers (48 hrs)",
                   value: orderCount(stats.data?.newCustomersLast48h),
                 },
                 {
@@ -83,10 +83,22 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
           <DashboardCard label="Deliveries" icon={Truck} href="/admin/deliveries">
             <RowList
               rows={[
-                { label: "Ready, not scheduled", value: 5 },
-                { label: "Local delivery today", value: 2 },
-                { label: "Local deliveries this week", value: 7 },
-                { label: "Carrier delivery updated", value: 1 },
+                {
+                  label: "Ready, not scheduled",
+                  value: orderCount(stats.data?.readyNotScheduled),
+                },
+                {
+                  label: "Local delivery today",
+                  value: orderCount(stats.data?.localDeliveryToday),
+                },
+                {
+                  label: "Local deliveries this week",
+                  value: orderCount(stats.data?.localDeliveriesThisWeek),
+                },
+                {
+                  label: "Carrier delivery updated",
+                  value: orderCount(stats.data?.carrierDeliveryUpdated),
+                },
               ]}
             />
           </DashboardCard>

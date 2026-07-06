@@ -9,6 +9,7 @@ import {
   vendorOrdersTable,
   wishlistItemsTable,
   wishlistOutreachLogItemsTable,
+  shipmentsTable,
 } from "@workspace/db";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 
@@ -81,6 +82,71 @@ async function loadWishlistItemsNeedingReachOut(): Promise<number> {
   return row?.count ?? 0;
 }
 
+async function loadReadyNotScheduled(): Promise<number> {
+  const [row] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(ordersTable)
+    .where(
+      and(
+        eq(ordersTable.status, "ready_for_store_delivery"),
+        isNull(ordersTable.scheduledDeliveryDate),
+        eq(ordersTable.isInternalRestock, false),
+      ),
+    );
+  return row?.count ?? 0;
+}
+
+const LOCAL_DELIVERY_STATUSES = [
+  "ready_for_store_delivery",
+  "out_for_local_delivery",
+] as const;
+
+async function loadLocalDeliveryToday(): Promise<number> {
+  const [row] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(ordersTable)
+    .where(
+      and(
+        sql`${ordersTable.status} IN ${LOCAL_DELIVERY_STATUSES}`,
+        eq(ordersTable.isInternalRestock, false),
+        sql`${ordersTable.scheduledDeliveryDate} = CURRENT_DATE`,
+      ),
+    );
+  return row?.count ?? 0;
+}
+
+async function loadLocalDeliveriesThisWeek(): Promise<number> {
+  const [row] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(ordersTable)
+    .where(
+      and(
+        sql`${ordersTable.status} IN ${LOCAL_DELIVERY_STATUSES}`,
+        eq(ordersTable.isInternalRestock, false),
+        sql`${ordersTable.scheduledDeliveryDate} >= date_trunc('week', CURRENT_DATE)::date`,
+        sql`${ordersTable.scheduledDeliveryDate} < (date_trunc('week', CURRENT_DATE) + interval '7 days')::date`,
+      ),
+    );
+  return row?.count ?? 0;
+}
+
+async function loadCarrierDeliveryUpdated(): Promise<number> {
+  const [row] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(ordersTable)
+    .where(
+      and(
+        eq(ordersTable.status, "carrier_delivery_update"),
+        sql`EXISTS (
+          SELECT 1 FROM ${shipmentsTable} s2
+          WHERE s2.order_id = ${ordersTable.id}
+            AND s2.tracking_number IS NOT NULL
+        )`,
+      ),
+    );
+  return row?.count ?? 0;
+}
+
 router.get(
   "/admin/dashboard/stats",
   requireAuth,
@@ -94,6 +160,10 @@ router.get(
       ordersByStatus,
       newCustomersLast48h,
       wishlistItemsNeedingReachOut,
+      readyNotScheduled,
+      localDeliveryToday,
+      localDeliveriesThisWeek,
+      carrierDeliveryUpdated,
     ] = await Promise.all([
       db
         .select({ count: sql<number>`count(*)::int` })
@@ -118,6 +188,10 @@ router.get(
       loadOrdersByStatus(),
       loadNewCustomersLast48h(),
       loadWishlistItemsNeedingReachOut(),
+      loadReadyNotScheduled(),
+      loadLocalDeliveryToday(),
+      loadLocalDeliveriesThisWeek(),
+      loadCarrierDeliveryUpdated(),
     ]);
 
     res.json({
@@ -128,6 +202,10 @@ router.get(
       ordersByStatus,
       newCustomersLast48h,
       wishlistItemsNeedingReachOut,
+      readyNotScheduled,
+      localDeliveryToday,
+      localDeliveriesThisWeek,
+      carrierDeliveryUpdated,
     });
   },
 );

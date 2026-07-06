@@ -11166,6 +11166,24 @@ export const AdminGetDashboardStatsResponse = zod.object({
     .describe(
       "Wishlist items whose customer has marketing_opt_out = false and that have never appeared in a sent reach-out email",
     ),
+  readyNotScheduled: zod
+    .number()
+    .describe(
+      "Orders with status ready_for_store_delivery that have no scheduled delivery date",
+    ),
+  localDeliveryToday: zod
+    .number()
+    .describe("Orders with a scheduled local delivery date of today"),
+  localDeliveriesThisWeek: zod
+    .number()
+    .describe(
+      "Orders with a scheduled local delivery date within the current calendar week (Monday-Sunday)",
+    ),
+  carrierDeliveryUpdated: zod
+    .number()
+    .describe(
+      "Orders with status carrier_delivery_update that have at least one shipment with a tracking number",
+    ),
 });
 
 /**

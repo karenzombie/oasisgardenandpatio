@@ -6392,6 +6392,26 @@ components:
             type: integer,
             description: "Wishlist items whose customer has marketing_opt_out = false and that have never appeared in a sent reach-out email",
           }
+        readyNotScheduled:
+          {
+            type: integer,
+            description: "Orders with status ready_for_store_delivery that have no scheduled delivery date",
+          }
+        localDeliveryToday:
+          {
+            type: integer,
+            description: "Orders with a scheduled local delivery date of today",
+          }
+        localDeliveriesThisWeek:
+          {
+            type: integer,
+            description: "Orders with a scheduled local delivery date within the current calendar week (Monday-Sunday)",
+          }
+        carrierDeliveryUpdated:
+          {
+            type: integer,
+            description: "Orders with status carrier_delivery_update that have at least one shipment with a tracking number",
+          }
       required:
         [
           openOrders,
@@ -6401,6 +6421,10 @@ components:
           ordersByStatus,
           newCustomersLast48h,
           wishlistItemsNeedingReachOut,
+          readyNotScheduled,
+          localDeliveryToday,
+          localDeliveriesThisWeek,
+          carrierDeliveryUpdated,
         ]
     AdminAgentDashboardStats:
       type: object
