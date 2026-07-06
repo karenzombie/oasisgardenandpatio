@@ -5,6 +5,7 @@ import {
   ordersTable,
   productsTable,
   customersTable,
+  usersTable,
   vendorOrdersTable,
   wishlistItemsTable,
   wishlistOutreachLogItemsTable,
@@ -51,8 +52,8 @@ async function loadNewCustomersLast48h(): Promise<number> {
   const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000);
   const [row] = await db
     .select({ count: sql<number>`count(*)::int` })
-    .from(customersTable)
-    .where(gte(customersTable.createdAt, cutoff));
+    .from(usersTable)
+    .where(and(eq(usersTable.role, "customer"), gte(usersTable.createdAt, cutoff)));
   return row?.count ?? 0;
 }
 
@@ -106,7 +107,8 @@ router.get(
         .then((r) => r[0]?.count ?? 0),
       db
         .select({ count: sql<number>`count(*)::int` })
-        .from(customersTable)
+        .from(usersTable)
+        .where(eq(usersTable.role, "customer"))
         .then((r) => r[0]?.count ?? 0),
       db
         .select({ count: sql<number>`count(*)::int` })
