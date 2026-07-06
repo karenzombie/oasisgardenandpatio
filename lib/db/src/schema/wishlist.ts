@@ -153,3 +153,79 @@ export type InsertWishlistOutreachLog = z.infer<
   typeof insertWishlistOutreachLogSchema
 >;
 export type WishlistOutreachLog = typeof wishlistOutreachLogTable.$inferSelect;
+
+// Per-item breakdown of a wishlist_outreach_log send event (Brief 07B, Step
+// 2A). One row per item included in a given send, so staff can see which
+// specific items have been reached out about and when. No own timestamp —
+// the send time is always wishlist_outreach_log.sentAt via outreachLogId, to
+// avoid two competing timestamps for the same event.
+export const wishlistOutreachLogItemsTable = pgTable(
+  "wishlist_outreach_log_items",
+  {
+    id: serial("id").primaryKey(),
+    outreachLogId: integer("outreach_log_id")
+      .notNull()
+      .references(() => wishlistOutreachLogTable.id, { onDelete: "cascade" }),
+    wishlistItemId: integer("wishlist_item_id")
+      .notNull()
+      .references(() => wishlistItemsTable.id, { onDelete: "cascade" }),
+  },
+  (t) => [
+    index("wishlist_outreach_log_items_outreach_log_idx").on(t.outreachLogId),
+    index("wishlist_outreach_log_items_wishlist_item_idx").on(
+      t.wishlistItemId,
+    ),
+  ],
+);
+
+export const insertWishlistOutreachLogItemSchema = createInsertSchema(
+  wishlistOutreachLogItemsTable,
+).omit({ id: true });
+export type InsertWishlistOutreachLogItem = z.infer<
+  typeof insertWishlistOutreachLogItemSchema
+>;
+export type WishlistOutreachLogItem =
+  typeof wishlistOutreachLogItemsTable.$inferSelect;
+
+// Chronological, typed event log for a wishlist (Brief 07B, Step 2B). Mirrors
+// the order_status_history pattern (typed events + bordered-card timeline on
+// the detail page) rather than the generic entity_history snapshot log.
+// staffUserId is null for customer-triggered events (item_added, opt_out,
+// opt_in) and set for staff-triggered events (reach_out_sent).
+export const wishlistStatusHistoryTable = pgTable(
+  "wishlist_status_history",
+  {
+    id: serial("id").primaryKey(),
+    wishlistId: integer("wishlist_id")
+      .notNull()
+      .references(() => wishlistsTable.id, { onDelete: "cascade" }),
+    eventType: text("event_type").notNull(),
+    // Set for item_added events; identifies which product was added.
+    productId: integer("product_id").references(() => productsTable.id, {
+      onDelete: "set null",
+    }),
+    // Set for reach_out_sent events; join to wishlist_outreach_log (and its
+    // wishlist_outreach_log_items) to derive included items / personal-note
+    // presence rather than duplicating that data here.
+    outreachLogId: integer("outreach_log_id").references(
+      () => wishlistOutreachLogTable.id,
+      { onDelete: "set null" },
+    ),
+    staffUserId: integer("staff_user_id").references(() => usersTable.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index("wishlist_status_history_wishlist_id_idx").on(t.wishlistId)],
+);
+
+export const insertWishlistStatusHistorySchema = createInsertSchema(
+  wishlistStatusHistoryTable,
+).omit({ id: true, createdAt: true });
+export type InsertWishlistStatusHistory = z.infer<
+  typeof insertWishlistStatusHistorySchema
+>;
+export type WishlistStatusHistory =
+  typeof wishlistStatusHistoryTable.$inferSelect;
