@@ -208,6 +208,8 @@ export * from "./adminWishlistPage";
 export * from "./adminWishlistReachOutEmailBody";
 export * from "./adminWishlistReachOutPreviewResponse";
 export * from "./adminWishlistReachOutSendResponse";
+export * from "./adminWishlistStatusEvent";
+export * from "./adminWishlistStatusEventEventType";
 export * from "./adminWishlistSummary";
 export * from "./auditLogEntry";
 export * from "./auditLogPage";

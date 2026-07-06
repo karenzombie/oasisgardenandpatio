@@ -6,6 +6,7 @@ import {
   getAdminGetWishlistQueryKey,
   useAdminPreviewWishlistReachOutEmail,
   useAdminSendWishlistReachOutEmail,
+  type AdminWishlistStatusEvent,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -45,6 +46,37 @@ function fmtPacificDate(iso: string): string {
     day: "numeric",
     year: "numeric",
   });
+}
+
+function fmtPacificDateTime(iso: string): string {
+  return new Date(iso).toLocaleString("en-US", {
+    timeZone: "America/Los_Angeles",
+  });
+}
+
+function statusHistoryText(h: AdminWishlistStatusEvent): string {
+  switch (h.eventType) {
+    case "item_added":
+      return `${h.productName ?? "Item"} added to wishlist`;
+    case "reach_out_sent": {
+      const count = h.itemCount ?? 0;
+      const label = count === 1 ? `${count} item` : `${count} items`;
+      const names = h.itemNames ?? [];
+      const shown = names.slice(0, 3);
+      const remaining = names.length - shown.length;
+      const namesText =
+        remaining > 0
+          ? `${shown.join(", ")}, and ${remaining} more`
+          : shown.join(", ");
+      return `Reach-out email sent (${label}): ${namesText}`;
+    }
+    case "opt_out":
+      return "Customer opted out of marketing contact";
+    case "opt_in":
+      return "Customer opted back in to marketing contact";
+    default:
+      return h.eventType;
+  }
 }
 
 function ReachOutStatusBadge({ lastSentAt }: { lastSentAt: string | null }) {
@@ -415,6 +447,30 @@ export default function WishlistDetail() {
               </div>
             )}
           </div>
+        </div>
+
+        <div className="rounded-md border bg-white mt-4">
+          <div className="px-4 py-3 border-b font-medium">Status history</div>
+          <ul className="divide-y">
+            {data.statusHistory.length === 0 && (
+              <li className="px-4 py-3 text-sm text-slate-500">
+                No activity recorded yet.
+              </li>
+            )}
+            {data.statusHistory.map((h) => (
+              <li key={h.id} className="px-4 py-2 text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">{statusHistoryText(h)}</span>
+                  <span className="ml-auto text-xs text-slate-500 whitespace-nowrap">
+                    {fmtPacificDateTime(h.createdAt)}
+                  </span>
+                </div>
+                <div className="text-xs text-slate-500 mt-0.5">
+                  by {h.staffEmail ?? "Customer"}
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
       </PageBody>
 

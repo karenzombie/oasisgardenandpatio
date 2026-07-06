@@ -9,6 +9,7 @@ import {
   wishlistStatusHistoryTable,
   customersTable,
   productsTable,
+  usersTable,
 } from "@workspace/db";
 import {
   AdminListWishlistsQueryParams,
@@ -127,9 +128,92 @@ router.get(
   },
 );
 
+type WishlistStatusEventType =
+  | "item_added"
+  | "reach_out_sent"
+  | "opt_out"
+  | "opt_in";
+
+async function loadWishlistStatusHistory(wishlistId: number) {
+  const rows = await db
+    .select({
+      id: wishlistStatusHistoryTable.id,
+      eventType: wishlistStatusHistoryTable.eventType,
+      createdAt: wishlistStatusHistoryTable.createdAt,
+      outreachLogId: wishlistStatusHistoryTable.outreachLogId,
+      productName: productsTable.name,
+      staffEmail: usersTable.email,
+    })
+    .from(wishlistStatusHistoryTable)
+    .leftJoin(
+      productsTable,
+      eq(productsTable.id, wishlistStatusHistoryTable.productId),
+    )
+    .leftJoin(
+      usersTable,
+      eq(usersTable.id, wishlistStatusHistoryTable.staffUserId),
+    )
+    .where(eq(wishlistStatusHistoryTable.wishlistId, wishlistId))
+    .orderBy(desc(wishlistStatusHistoryTable.createdAt));
+
+  const outreachLogIds = Array.from(
+    new Set(
+      rows
+        .filter(
+          (r) => r.eventType === "reach_out_sent" && r.outreachLogId != null,
+        )
+        .map((r) => r.outreachLogId as number),
+    ),
+  );
+
+  const itemNamesByLogId = new Map<number, string[]>();
+  if (outreachLogIds.length > 0) {
+    const itemRows = await db
+      .select({
+        outreachLogId: wishlistOutreachLogItemsTable.outreachLogId,
+        id: wishlistOutreachLogItemsTable.id,
+        productName: productsTable.name,
+      })
+      .from(wishlistOutreachLogItemsTable)
+      .innerJoin(
+        wishlistItemsTable,
+        eq(wishlistItemsTable.id, wishlistOutreachLogItemsTable.wishlistItemId),
+      )
+      .leftJoin(
+        productsTable,
+        eq(productsTable.id, wishlistItemsTable.productId),
+      )
+      .where(inArray(wishlistOutreachLogItemsTable.outreachLogId, outreachLogIds))
+      .orderBy(wishlistOutreachLogItemsTable.id);
+    for (const r of itemRows) {
+      const name = r.productName ?? "(product no longer available)";
+      const list = itemNamesByLogId.get(r.outreachLogId) ?? [];
+      list.push(name);
+      itemNamesByLogId.set(r.outreachLogId, list);
+    }
+  }
+
+  return rows.map((r) => {
+    const isReachOut = r.eventType === "reach_out_sent";
+    const itemNames = isReachOut
+      ? (itemNamesByLogId.get(r.outreachLogId ?? -1) ?? [])
+      : null;
+    return {
+      id: r.id,
+      eventType: r.eventType as WishlistStatusEventType,
+      createdAt: r.createdAt.toISOString(),
+      staffEmail: r.staffEmail ?? null,
+      productName: r.eventType === "item_added" ? (r.productName ?? null) : null,
+      itemCount: isReachOut ? (itemNames?.length ?? 0) : null,
+      itemNames,
+    };
+  });
+}
+
 async function loadWishlistDetail(customerId: number) {
   const [wishlist] = await db
     .select({
+      id: wishlistsTable.id,
       wishlistNumber: wishlistsTable.wishlistNumber,
       createdAt: wishlistsTable.createdAt,
       customerFirstName: customersTable.firstName,
@@ -214,6 +298,8 @@ async function loadWishlistDetail(customerId: number) {
     };
   });
 
+  const statusHistory = await loadWishlistStatusHistory(wishlist.id);
+
   return {
     customerId,
     wishlistNumber: wishlist.wishlistNumber,
@@ -228,6 +314,7 @@ async function loadWishlistDetail(customerId: number) {
     items,
     subtotal: Math.round(subtotal * 100) / 100,
     hasUnpricedItems,
+    statusHistory,
   };
 }
 

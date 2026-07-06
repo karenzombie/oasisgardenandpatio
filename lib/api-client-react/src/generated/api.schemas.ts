@@ -125,6 +125,30 @@ export interface AdminWishlistItem {
   lastReachOutSentAt: string | null;
 }
 
+export type AdminWishlistStatusEventEventType =
+  (typeof AdminWishlistStatusEventEventType)[keyof typeof AdminWishlistStatusEventEventType];
+
+export const AdminWishlistStatusEventEventType = {
+  item_added: "item_added",
+  reach_out_sent: "reach_out_sent",
+  opt_out: "opt_out",
+  opt_in: "opt_in",
+} as const;
+
+export interface AdminWishlistStatusEvent {
+  id: number;
+  eventType: AdminWishlistStatusEventEventType;
+  createdAt: string;
+  /** Staff email for staff-triggered events; null for customer-triggered events (item_added, opt_out, opt_in). */
+  staffEmail: string | null;
+  /** Populated for item_added events. */
+  productName: string | null;
+  /** Populated for reach_out_sent events. */
+  itemCount: number | null;
+  /** Populated for reach_out_sent events; full list of item names included in that send, in send order. */
+  itemNames: string[] | null;
+}
+
 export interface AdminWishlistDetail {
   customerId: number;
   wishlistNumber: string;
@@ -137,6 +161,7 @@ export interface AdminWishlistDetail {
   items: AdminWishlistItem[];
   subtotal: number;
   hasUnpricedItems: boolean;
+  statusHistory: AdminWishlistStatusEvent[];
 }
 
 export interface AdminWishlistReachOutEmailBody {

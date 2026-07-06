@@ -5785,8 +5785,37 @@ components:
           items: { $ref: "#/components/schemas/AdminWishlistItem" }
         subtotal: { type: number }
         hasUnpricedItems: { type: boolean }
+        statusHistory:
+          type: array
+          items: { $ref: "#/components/schemas/AdminWishlistStatusEvent" }
       required:
-        [customerId, wishlistNumber, createdAt, customerName, customerEmail, customerPhone, marketingOptOut, marketingOptOutAt, items, subtotal, hasUnpricedItems]
+        [customerId, wishlistNumber, createdAt, customerName, customerEmail, customerPhone, marketingOptOut, marketingOptOutAt, items, subtotal, hasUnpricedItems, statusHistory]
+    AdminWishlistStatusEvent:
+      type: object
+      properties:
+        id: { type: integer }
+        eventType:
+          type: string
+          enum: [item_added, reach_out_sent, opt_out, opt_in]
+        createdAt: { type: string, format: date-time }
+        staffEmail:
+          type: string
+          nullable: true
+          description: "Staff email for staff-triggered events; null for customer-triggered events (item_added, opt_out, opt_in)."
+        productName:
+          type: string
+          nullable: true
+          description: "Populated for item_added events."
+        itemCount:
+          type: integer
+          nullable: true
+          description: "Populated for reach_out_sent events."
+        itemNames:
+          type: array
+          items: { type: string }
+          nullable: true
+          description: "Populated for reach_out_sent events; full list of item names included in that send, in send order."
+      required: [id, eventType, createdAt, staffEmail, productName, itemCount, itemNames]
     AdminWishlistReachOutEmailBody:
       type: object
       properties:

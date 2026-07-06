@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { AdminWishlistItem } from "./adminWishlistItem";
+import type { AdminWishlistStatusEvent } from "./adminWishlistStatusEvent";
 
 export interface AdminWishlistDetail {
   customerId: number;
@@ -19,4 +20,5 @@ export interface AdminWishlistDetail {
   items: AdminWishlistItem[];
   subtotal: number;
   hasUnpricedItems: boolean;
+  statusHistory: AdminWishlistStatusEvent[];
 }

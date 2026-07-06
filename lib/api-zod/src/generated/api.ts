@@ -12076,6 +12076,38 @@ export const AdminGetWishlistResponse = zod.object({
   ),
   subtotal: zod.number(),
   hasUnpricedItems: zod.boolean(),
+  statusHistory: zod.array(
+    zod.object({
+      id: zod.number(),
+      eventType: zod.enum([
+        "item_added",
+        "reach_out_sent",
+        "opt_out",
+        "opt_in",
+      ]),
+      createdAt: zod.coerce.date(),
+      staffEmail: zod
+        .string()
+        .nullable()
+        .describe(
+          "Staff email for staff-triggered events; null for customer-triggered events (item_added, opt_out, opt_in).",
+        ),
+      productName: zod
+        .string()
+        .nullable()
+        .describe("Populated for item_added events."),
+      itemCount: zod
+        .number()
+        .nullable()
+        .describe("Populated for reach_out_sent events."),
+      itemNames: zod
+        .array(zod.string())
+        .nullable()
+        .describe(
+          "Populated for reach_out_sent events; full list of item names included in that send, in send order.",
+        ),
+    }),
+  ),
 });
 
 /**
