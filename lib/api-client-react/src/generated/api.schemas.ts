@@ -682,6 +682,8 @@ export interface AdminDashboardStats {
   openOrders: number;
   /** Products with isActive = true */
   activeProducts: number;
+  /** All product records regardless of active/inactive status */
+  totalProducts: number;
   /** Total customer records */
   totalCustomers: number;
   /** Vendor orders awaiting dispatch */

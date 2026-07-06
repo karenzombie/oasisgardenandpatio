@@ -123,7 +123,10 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
           </DashboardCard>
 
           <DashboardCard label="Products" icon={Armchair} href="/admin/products">
-            <BigNumber value={1042} label="Total products in system" />
+            <BigNumber
+              value={orderCount(stats.data?.totalProducts)}
+              label="Total products in system"
+            />
           </DashboardCard>
 
           <DashboardCard label="Vendors" icon={Tag} href="/admin/manufacturers">
@@ -218,7 +221,13 @@ function RowList({
   );
 }
 
-function BigNumber({ value, label }: { value: number; label: string }) {
+function BigNumber({
+  value,
+  label,
+}: {
+  value: string | number;
+  label: string;
+}) {
   return (
     <div>
       <div className="text-3xl font-semibold text-slate-900 leading-tight">

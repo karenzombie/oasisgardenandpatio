@@ -155,6 +155,7 @@ router.get(
     const [
       openOrders,
       activeProducts,
+      totalProducts,
       totalCustomers,
       pendingVendorOrders,
       ordersByStatus,
@@ -176,6 +177,10 @@ router.get(
         .select({ count: sql<number>`count(*)::int` })
         .from(productsTable)
         .where(eq(productsTable.isActive, true))
+        .then((r) => r[0]?.count ?? 0),
+      db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(productsTable)
         .then((r) => r[0]?.count ?? 0),
       db
         .select({ count: sql<number>`count(*)::int` })
@@ -209,6 +214,7 @@ router.get(
     res.json({
       openOrders,
       activeProducts,
+      totalProducts,
       totalCustomers,
       pendingVendorOrders,
       ordersByStatus,

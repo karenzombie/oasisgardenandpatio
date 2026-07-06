@@ -11212,6 +11212,9 @@ export const AdminGetDashboardStatsResponse = zod.object({
     .number()
     .describe("Orders not yet completed, canceled, or refunded"),
   activeProducts: zod.number().describe("Products with isActive = true"),
+  totalProducts: zod
+    .number()
+    .describe("All product records regardless of active\/inactive status"),
   totalCustomers: zod.number().describe("Total customer records"),
   pendingVendorOrders: zod.number().describe("Vendor orders awaiting dispatch"),
   ordersByStatus: zod

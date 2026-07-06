@@ -6393,6 +6393,7 @@ components:
       properties:
         openOrders: { type: integer, description: "Orders not yet completed, canceled, or refunded" }
         activeProducts: { type: integer, description: "Products with isActive = true" }
+        totalProducts: { type: integer, description: "All product records regardless of active/inactive status" }
         totalCustomers: { type: integer, description: "Total customer records" }
         pendingVendorOrders: { type: integer, description: "Vendor orders awaiting dispatch" }
         ordersByStatus:
@@ -6438,6 +6439,7 @@ components:
         [
           openOrders,
           activeProducts,
+          totalProducts,
           totalCustomers,
           pendingVendorOrders,
           ordersByStatus,
