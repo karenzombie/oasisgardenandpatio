@@ -31,7 +31,7 @@ export function Sidebar({ role, onNavigate }: SidebarProps) {
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-5">
         {groups.map((group, index) => (
           <div key={group.heading}>
-            {index > 0 && <div className="border-t-2 border-white/10 my-3" />}
+            {index > 0 && <div className="border-t-[5px] border-white/10 my-3" />}
             <div className="px-2 mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-white/50">
               {group.heading}
             </div>
