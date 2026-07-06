@@ -5,6 +5,7 @@
  * Oasis Garden & Patio API
  * OpenAPI spec version: 0.1.0
  */
+import type { AdminOrderStatusCounts } from "./adminOrderStatusCounts";
 
 export interface AdminDashboardStats {
   /** Orders not yet completed, canceled, or refunded */
@@ -15,4 +16,5 @@ export interface AdminDashboardStats {
   totalCustomers: number;
   /** Vendor orders awaiting dispatch */
   pendingVendorOrders: number;
+  ordersByStatus: AdminOrderStatusCounts;
 }

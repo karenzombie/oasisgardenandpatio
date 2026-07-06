@@ -6349,6 +6349,33 @@ components:
         dateTo: { type: string, format: date-time }
         includeCanceled: { type: boolean }
       required: [dateFrom, dateTo, includeCanceled]
+    AdminOrderStatusCounts:
+      type: object
+      description: Live count of orders currently in each status, for the dashboard Orders card.
+      properties:
+        pending: { type: integer }
+        confirmed: { type: integer }
+        in_production: { type: integer }
+        ready_for_store_delivery: { type: integer }
+        carrier_delivery_update: { type: integer }
+        out_for_local_delivery: { type: integer }
+        delivered: { type: integer }
+        completed: { type: integer }
+        canceled: { type: integer }
+        refunded: { type: integer }
+      required:
+        [
+          pending,
+          confirmed,
+          in_production,
+          ready_for_store_delivery,
+          carrier_delivery_update,
+          out_for_local_delivery,
+          delivered,
+          completed,
+          canceled,
+          refunded,
+        ]
     AdminDashboardStats:
       type: object
       properties:
@@ -6356,7 +6383,9 @@ components:
         activeProducts: { type: integer, description: "Products with isActive = true" }
         totalCustomers: { type: integer, description: "Total customer records" }
         pendingVendorOrders: { type: integer, description: "Vendor orders awaiting dispatch" }
-      required: [openOrders, activeProducts, totalCustomers, pendingVendorOrders]
+        ordersByStatus:
+          $ref: "#/components/schemas/AdminOrderStatusCounts"
+      required: [openOrders, activeProducts, totalCustomers, pendingVendorOrders, ordersByStatus]
     AdminAgentDashboardStats:
       type: object
       properties:

@@ -1,4 +1,5 @@
 import type { StaffUser } from "@workspace/api-client-react";
+import { useAdminGetDashboardStats } from "@workspace/api-client-react";
 import { PageBody, PageHeader } from "../../StaffShell";
 import { Link } from "wouter";
 import {
@@ -21,6 +22,10 @@ interface AdminDashboardProps {
 
 export default function AdminDashboard({ user }: AdminDashboardProps) {
   const greeting = user.firstName ? `Welcome back, ${user.firstName}` : "Welcome back";
+  const stats = useAdminGetDashboardStats();
+  const ordersByStatus = stats.data?.ordersByStatus;
+  const orderCount = (value: number | undefined) =>
+    stats.isLoading ? "—" : (value ?? 0);
 
   return (
     <>
@@ -36,16 +41,25 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
           <DashboardCard label="Orders" icon={ShoppingCart} href="/admin/orders">
             <RowList
               rows={[
-                { label: "Pending", value: 4 },
-                { label: "Confirmed", value: 9 },
-                { label: "In production", value: 12 },
-                { label: "Ready for store delivery", value: 3 },
-                { label: "Carrier delivery update", value: 2 },
-                { label: "Out for local delivery", value: 1 },
-                { label: "Delivered", value: 27 },
-                { label: "Completed", value: 58 },
-                { label: "Canceled", value: 2 },
-                { label: "Refunded", value: 1 },
+                { label: "Pending", value: orderCount(ordersByStatus?.pending) },
+                { label: "Confirmed", value: orderCount(ordersByStatus?.confirmed) },
+                { label: "In production", value: orderCount(ordersByStatus?.in_production) },
+                {
+                  label: "Ready for store delivery",
+                  value: orderCount(ordersByStatus?.ready_for_store_delivery),
+                },
+                {
+                  label: "Carrier delivery update",
+                  value: orderCount(ordersByStatus?.carrier_delivery_update),
+                },
+                {
+                  label: "Out for local delivery",
+                  value: orderCount(ordersByStatus?.out_for_local_delivery),
+                },
+                { label: "Delivered", value: orderCount(ordersByStatus?.delivered) },
+                { label: "Completed", value: orderCount(ordersByStatus?.completed) },
+                { label: "Canceled", value: orderCount(ordersByStatus?.canceled) },
+                { label: "Refunded", value: orderCount(ordersByStatus?.refunded) },
               ]}
             />
           </DashboardCard>

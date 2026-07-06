@@ -652,6 +652,22 @@ export interface AdminReportsRange {
   includeCanceled: boolean;
 }
 
+/**
+ * Live count of orders currently in each status, for the dashboard Orders card.
+ */
+export interface AdminOrderStatusCounts {
+  pending: number;
+  confirmed: number;
+  in_production: number;
+  ready_for_store_delivery: number;
+  carrier_delivery_update: number;
+  out_for_local_delivery: number;
+  delivered: number;
+  completed: number;
+  canceled: number;
+  refunded: number;
+}
+
 export interface AdminDashboardStats {
   /** Orders not yet completed, canceled, or refunded */
   openOrders: number;
@@ -661,6 +677,7 @@ export interface AdminDashboardStats {
   totalCustomers: number;
   /** Vendor orders awaiting dispatch */
   pendingVendorOrders: number;
+  ordersByStatus: AdminOrderStatusCounts;
 }
 
 export interface AdminAgentDashboardStats {

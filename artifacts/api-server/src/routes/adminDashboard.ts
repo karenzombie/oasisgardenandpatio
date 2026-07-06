@@ -13,12 +13,44 @@ const router: IRouter = Router();
 
 const OPEN_ORDER_EXCLUDED = ["completed", "canceled", "refunded"];
 
+const ORDER_STATUSES = [
+  "pending",
+  "confirmed",
+  "in_production",
+  "ready_for_store_delivery",
+  "carrier_delivery_update",
+  "out_for_local_delivery",
+  "delivered",
+  "completed",
+  "canceled",
+  "refunded",
+] as const;
+
+async function loadOrdersByStatus(): Promise<Record<(typeof ORDER_STATUSES)[number], number>> {
+  const rows = await db
+    .select({ status: ordersTable.status, count: sql<number>`count(*)::int` })
+    .from(ordersTable)
+    .groupBy(ordersTable.status);
+
+  const counts = Object.fromEntries(
+    ORDER_STATUSES.map((status) => [status, 0]),
+  ) as Record<(typeof ORDER_STATUSES)[number], number>;
+
+  for (const row of rows) {
+    if ((ORDER_STATUSES as readonly string[]).includes(row.status)) {
+      counts[row.status as (typeof ORDER_STATUSES)[number]] = row.count;
+    }
+  }
+
+  return counts;
+}
+
 router.get(
   "/admin/dashboard/stats",
   requireAuth,
   requireRole("admin"),
   async (_req: Request, res: Response): Promise<void> => {
-    const [openOrders, activeProducts, totalCustomers, pendingVendorOrders] =
+    const [openOrders, activeProducts, totalCustomers, pendingVendorOrders, ordersByStatus] =
       await Promise.all([
         db
           .select({ count: sql<number>`count(*)::int` })
@@ -39,9 +71,16 @@ router.get(
           .from(vendorOrdersTable)
           .where(eq(vendorOrdersTable.status, "pending"))
           .then((r) => r[0]?.count ?? 0),
+        loadOrdersByStatus(),
       ]);
 
-    res.json({ openOrders, activeProducts, totalCustomers, pendingVendorOrders });
+    res.json({
+      openOrders,
+      activeProducts,
+      totalCustomers,
+      pendingVendorOrders,
+      ordersByStatus,
+    });
   },
 );
 

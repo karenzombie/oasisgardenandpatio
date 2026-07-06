@@ -114,6 +114,7 @@ export * from "./adminOrderItem";
 export * from "./adminOrderPage";
 export * from "./adminOrderPayment";
 export * from "./adminOrderShipment";
+export * from "./adminOrderStatusCounts";
 export * from "./adminOrderStatusEvent";
 export * from "./adminOrderSummary";
 export * from "./adminOrderVendorOrder";

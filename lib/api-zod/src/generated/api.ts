@@ -11142,6 +11142,22 @@ export const AdminGetDashboardStatsResponse = zod.object({
   activeProducts: zod.number().describe("Products with isActive = true"),
   totalCustomers: zod.number().describe("Total customer records"),
   pendingVendorOrders: zod.number().describe("Vendor orders awaiting dispatch"),
+  ordersByStatus: zod
+    .object({
+      pending: zod.number(),
+      confirmed: zod.number(),
+      in_production: zod.number(),
+      ready_for_store_delivery: zod.number(),
+      carrier_delivery_update: zod.number(),
+      out_for_local_delivery: zod.number(),
+      delivered: zod.number(),
+      completed: zod.number(),
+      canceled: zod.number(),
+      refunded: zod.number(),
+    })
+    .describe(
+      "Live count of orders currently in each status, for the dashboard Orders card.",
+    ),
 });
 
 /**
