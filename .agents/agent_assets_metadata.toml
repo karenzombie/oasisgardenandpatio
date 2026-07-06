@@ -65,3 +65,9 @@ id = "EX6lsrAlJfZvBI3bQ-zlr"
 uri = "file://.local/exports/email_templates_raw_source.md"
 type = "text"
 title = "Email Templates — Raw Source Export"
+
+[[outputs]]
+id = "tRWQCjBJfdOX_3-zs8QJ6"
+uri = "file://shoreline_sku_name.csv"
+type = "table"
+title = "shoreline_sku_name.csv"
