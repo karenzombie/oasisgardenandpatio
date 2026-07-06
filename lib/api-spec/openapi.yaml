@@ -6440,6 +6440,11 @@ components:
             type: integer,
             description: "Total manufacturer records",
           }
+        totalOnHand:
+          {
+            type: integer,
+            description: "Sum of on-hand inventory quantity across all products (not split by location; per-location tracking is not currently modeled)",
+          }
       required:
         [
           openOrders,
@@ -6457,6 +6462,7 @@ components:
           sentToVendor,
           acknowledgedByVendor,
           totalManufacturers,
+          totalOnHand,
         ]
     AdminAgentDashboardStats:
       type: object

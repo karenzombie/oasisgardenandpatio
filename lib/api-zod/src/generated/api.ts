@@ -11264,6 +11264,11 @@ export const AdminGetDashboardStatsResponse = zod.object({
     .number()
     .describe("Vendor orders with status acknowledged"),
   totalManufacturers: zod.number().describe("Total manufacturer records"),
+  totalOnHand: zod
+    .number()
+    .describe(
+      "Sum of on-hand inventory quantity across all products (not split by location; per-location tracking is not currently modeled)",
+    ),
 });
 
 /**

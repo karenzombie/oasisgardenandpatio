@@ -37,4 +37,6 @@ export interface AdminDashboardStats {
   acknowledgedByVendor: number;
   /** Total manufacturer records */
   totalManufacturers: number;
+  /** Sum of on-hand inventory quantity across all products (not split by location; per-location tracking is not currently modeled) */
+  totalOnHand: number;
 }

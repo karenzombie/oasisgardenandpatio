@@ -11,6 +11,7 @@ import {
   wishlistOutreachLogItemsTable,
   shipmentsTable,
   manufacturersTable,
+  inventoryTable,
 } from "@workspace/db";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 
@@ -169,6 +170,7 @@ router.get(
       sentToVendor,
       acknowledgedByVendor,
       totalManufacturers,
+      totalOnHand,
     ] = await Promise.all([
       db
         .select({ count: sql<number>`count(*)::int` })
@@ -215,6 +217,10 @@ router.get(
         .select({ count: sql<number>`count(*)::int` })
         .from(manufacturersTable)
         .then((r) => r[0]?.count ?? 0),
+      db
+        .select({ sum: sql<number>`COALESCE(SUM(${inventoryTable.onHand}), 0)::int` })
+        .from(inventoryTable)
+        .then((r) => r[0]?.sum ?? 0),
     ]);
 
     res.json({
@@ -233,6 +239,7 @@ router.get(
       sentToVendor,
       acknowledgedByVendor,
       totalManufacturers,
+      totalOnHand,
     });
   },
 );

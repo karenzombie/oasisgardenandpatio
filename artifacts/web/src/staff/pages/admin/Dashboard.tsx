@@ -137,11 +137,9 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
           </DashboardCard>
 
           <DashboardCard label="Inventory" icon={Package} href="/admin/inventory">
-            <RowList
-              rows={[
-                { label: "On store display", value: 86 },
-                { label: "In warehouse", value: 512 },
-              ]}
+            <BigNumber
+              value={orderCount(stats.data?.totalOnHand)}
+              label="Total on hand"
             />
           </DashboardCard>
 
