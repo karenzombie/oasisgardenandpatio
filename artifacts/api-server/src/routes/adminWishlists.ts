@@ -1,10 +1,12 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { and, desc, eq, ilike, max, or, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, inArray, max, or, sql } from "drizzle-orm";
 import {
   db,
   wishlistsTable,
   wishlistItemsTable,
   wishlistOutreachLogTable,
+  wishlistOutreachLogItemsTable,
+  wishlistStatusHistoryTable,
   customersTable,
   productsTable,
 } from "@workspace/db";
@@ -164,6 +166,30 @@ async function loadWishlistDetail(customerId: number) {
     .where(eq(wishlistItemsTable.customerId, customerId))
     .orderBy(desc(wishlistItemsTable.createdAt));
 
+  const lastSentByItemId = new Map<number, Date>();
+  if (itemRows.length > 0) {
+    const lastSentRows = await db
+      .select({
+        wishlistItemId: wishlistOutreachLogItemsTable.wishlistItemId,
+        lastSentAt: max(wishlistOutreachLogTable.sentAt),
+      })
+      .from(wishlistOutreachLogItemsTable)
+      .innerJoin(
+        wishlistOutreachLogTable,
+        eq(wishlistOutreachLogTable.id, wishlistOutreachLogItemsTable.outreachLogId),
+      )
+      .where(
+        inArray(
+          wishlistOutreachLogItemsTable.wishlistItemId,
+          itemRows.map((r) => r.id),
+        ),
+      )
+      .groupBy(wishlistOutreachLogItemsTable.wishlistItemId);
+    for (const r of lastSentRows) {
+      if (r.lastSentAt) lastSentByItemId.set(r.wishlistItemId, r.lastSentAt);
+    }
+  }
+
   let subtotal = 0;
   let hasUnpricedItems = false;
   const items = itemRows.map((r) => {
@@ -173,6 +199,7 @@ async function loadWishlistDetail(customerId: number) {
     const amount = unitPrice !== null ? unitPrice * r.quantity : null;
     if (amount === null) hasUnpricedItems = true;
     else subtotal += amount;
+    const lastSentAt = lastSentByItemId.get(r.id) ?? null;
     return {
       id: r.id,
       productId: r.productId,
@@ -183,6 +210,7 @@ async function loadWishlistDetail(customerId: number) {
       unitPrice,
       amount,
       addedAt: r.createdAt.toISOString(),
+      lastReachOutSentAt: lastSentAt ? lastSentAt.toISOString() : null,
     };
   });
 
@@ -278,11 +306,31 @@ async function loadReachOutRecipient(
   return row ?? null;
 }
 
+// Confirms every requested itemId actually belongs to this customer's
+// wishlist, so a stale/tampered client payload can never scope an email
+// (or the status-history write) to another customer's items.
+async function validateItemIdsBelongToCustomer(
+  customerId: number,
+  itemIds: number[],
+): Promise<boolean> {
+  if (itemIds.length === 0) return false;
+  const rows = await db
+    .select({ id: wishlistItemsTable.id })
+    .from(wishlistItemsTable)
+    .where(
+      and(
+        eq(wishlistItemsTable.customerId, customerId),
+        inArray(wishlistItemsTable.id, itemIds),
+      ),
+    );
+  return rows.length === new Set(itemIds).size;
+}
+
 // Customer-facing pricing rule (Brief 7, Step 6): only include a price when
 // the product is visibly priced on the storefront. Distinct from the staff
 // UI's livePrice(), which always shows price data regardless of
 // show_price_online.
-async function loadReachOutItems(customerId: number) {
+async function loadReachOutItems(customerId: number, itemIds: number[]) {
   const rows = await db
     .select({
       productName: productsTable.name,
@@ -296,7 +344,12 @@ async function loadReachOutItems(customerId: number) {
       productsTable,
       eq(productsTable.id, wishlistItemsTable.productId),
     )
-    .where(eq(wishlistItemsTable.customerId, customerId))
+    .where(
+      and(
+        eq(wishlistItemsTable.customerId, customerId),
+        inArray(wishlistItemsTable.id, itemIds),
+      ),
+    )
     .orderBy(desc(wishlistItemsTable.createdAt));
 
   return rows.map((r) => ({
@@ -324,7 +377,18 @@ router.post(
       res.status(404).json({ error: "Wishlist not found" });
       return;
     }
-    const items = await loadReachOutItems(params.data.customerId);
+    const validItems = await validateItemIdsBelongToCustomer(
+      params.data.customerId,
+      body.data.itemIds,
+    );
+    if (!validItems) {
+      res.status(400).json({ error: "Invalid item selection" });
+      return;
+    }
+    const items = await loadReachOutItems(
+      params.data.customerId,
+      body.data.itemIds,
+    );
     const html = emailLayout(
       "Your Wishlist",
       renderWishlistReachOutEmailBody({
@@ -362,7 +426,27 @@ router.post(
       return;
     }
 
-    const items = await loadReachOutItems(customerId);
+    const { itemIds } = body.data;
+    const validItems = await validateItemIdsBelongToCustomer(
+      customerId,
+      itemIds,
+    );
+    if (!validItems) {
+      res.status(400).json({ error: "Invalid item selection" });
+      return;
+    }
+
+    const [wishlistRow] = await db
+      .select({ id: wishlistsTable.id })
+      .from(wishlistsTable)
+      .where(eq(wishlistsTable.customerId, customerId))
+      .limit(1);
+    if (!wishlistRow) {
+      res.status(404).json({ error: "Wishlist not found" });
+      return;
+    }
+
+    const items = await loadReachOutItems(customerId, itemIds);
     const personalNote = body.data.personalNote?.trim() || null;
 
     try {
@@ -389,11 +473,29 @@ router.post(
         sentByStaffId: req.user!.id,
         personalNote,
       })
-      .returning({ sentAt: wishlistOutreachLogTable.sentAt });
+      .returning({
+        id: wishlistOutreachLogTable.id,
+        sentAt: wishlistOutreachLogTable.sentAt,
+      });
+
+    const outreachLogId = logRow!.id;
+    await db.insert(wishlistOutreachLogItemsTable).values(
+      itemIds.map((wishlistItemId) => ({
+        outreachLogId,
+        wishlistItemId,
+      })),
+    );
+    await db.insert(wishlistStatusHistoryTable).values({
+      wishlistId: wishlistRow.id,
+      eventType: "reach_out_sent",
+      outreachLogId,
+      staffUserId: req.user!.id,
+    });
 
     res.json({
       customerEmail: recipient.email,
       sentAt: (logRow?.sentAt ?? new Date()).toISOString(),
+      itemIds,
     });
   },
 );

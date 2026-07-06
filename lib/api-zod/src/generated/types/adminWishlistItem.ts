@@ -17,4 +17,6 @@ export interface AdminWishlistItem {
   unitPrice: number | null;
   amount: number | null;
   addedAt: Date;
+  /** Most recent time a reach-out email that included this item was sent. Null if never included in a send. */
+  lastReachOutSentAt: Date | null;
 }

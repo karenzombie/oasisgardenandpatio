@@ -9,4 +9,9 @@
 export interface AdminWishlistReachOutEmailBody {
   /** Optional free-text note appended to the bottom of the email. Trimmed; blank/whitespace-only is treated as no note. */
   personalNote: string | null;
+  /**
+   * Wishlist item row ids to include in the email. Must be a non-empty subset of the customer's current wishlist items.
+   * @minItems 1
+   */
+  itemIds: number[];
 }

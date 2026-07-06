@@ -9,4 +9,6 @@
 export interface AdminWishlistReachOutSendResponse {
   customerEmail: string;
   sentAt: Date;
+  /** Wishlist item row ids that were included in this send, for client-side status updates. */
+  itemIds: number[];
 }

@@ -12066,6 +12066,12 @@ export const AdminGetWishlistResponse = zod.object({
         ),
       amount: zod.number().nullable(),
       addedAt: zod.coerce.date(),
+      lastReachOutSentAt: zod.coerce
+        .date()
+        .nullable()
+        .describe(
+          "Most recent time a reach-out email that included this item was sent. Null if never included in a send.",
+        ),
     }),
   ),
   subtotal: zod.number(),
@@ -12093,6 +12099,12 @@ export const AdminPreviewWishlistReachOutEmailBody = zod.object({
     .describe(
       "Optional free-text note appended to the bottom of the email. Trimmed; blank\/whitespace-only is treated as no note.",
     ),
+  itemIds: zod
+    .array(zod.number())
+    .min(1)
+    .describe(
+      "Wishlist item row ids to include in the email. Must be a non-empty subset of the customer's current wishlist items.",
+    ),
 });
 
 export const AdminPreviewWishlistReachOutEmailResponse = zod.object({
@@ -12117,11 +12129,22 @@ export const AdminSendWishlistReachOutEmailBody = zod.object({
     .describe(
       "Optional free-text note appended to the bottom of the email. Trimmed; blank\/whitespace-only is treated as no note.",
     ),
+  itemIds: zod
+    .array(zod.number())
+    .min(1)
+    .describe(
+      "Wishlist item row ids to include in the email. Must be a non-empty subset of the customer's current wishlist items.",
+    ),
 });
 
 export const AdminSendWishlistReachOutEmailResponse = zod.object({
   customerEmail: zod.string(),
   sentAt: zod.coerce.date(),
+  itemIds: zod
+    .array(zod.number())
+    .describe(
+      "Wishlist item row ids that were included in this send, for client-side status updates.",
+    ),
 });
 
 /**

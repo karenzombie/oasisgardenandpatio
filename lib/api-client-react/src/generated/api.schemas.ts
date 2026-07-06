@@ -121,6 +121,8 @@ export interface AdminWishlistItem {
   unitPrice: number | null;
   amount: number | null;
   addedAt: string;
+  /** Most recent time a reach-out email that included this item was sent. Null if never included in a send. */
+  lastReachOutSentAt: string | null;
 }
 
 export interface AdminWishlistDetail {
@@ -140,6 +142,11 @@ export interface AdminWishlistDetail {
 export interface AdminWishlistReachOutEmailBody {
   /** Optional free-text note appended to the bottom of the email. Trimmed; blank/whitespace-only is treated as no note. */
   personalNote: string | null;
+  /**
+   * Wishlist item row ids to include in the email. Must be a non-empty subset of the customer's current wishlist items.
+   * @minItems 1
+   */
+  itemIds: number[];
 }
 
 export interface AdminWishlistReachOutPreviewResponse {
@@ -150,6 +157,8 @@ export interface AdminWishlistReachOutPreviewResponse {
 export interface AdminWishlistReachOutSendResponse {
   customerEmail: string;
   sentAt: string;
+  /** Wishlist item row ids that were included in this send, for client-side status updates. */
+  itemIds: number[];
 }
 
 export type AdminLocalDeliverySummary = AdminOrderSummary & {
