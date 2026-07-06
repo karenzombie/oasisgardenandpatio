@@ -45,7 +45,6 @@ import CushionOrderDetail from "./pages/admin/CushionOrderDetail";
 import CushionOrderNew from "./pages/admin/CushionOrderNew";
 import RecoveryRequests from "./pages/admin/RecoveryRequests";
 import Reports from "./pages/admin/Reports";
-import Notifications from "./pages/admin/Notifications";
 import Deliveries from "./pages/admin/Deliveries";
 import WishlistDetail from "./pages/admin/WishlistDetail";
 import WishlistPrint from "./pages/admin/WishlistPrint";
@@ -112,7 +111,6 @@ export default function StaffRouter() {
                 <Route path="/admin/cushion-orders/new" component={CushionOrderNew} />
                 <Route path="/admin/cushion-orders/:id" component={CushionOrderDetail} />
                 <Route path="/admin/reports" component={Reports} />
-                <Route path="/admin/notifications" component={Notifications} />
                 {ADMIN_PLACEHOLDERS.map(({ path, title, comingIn }) => (
                   <Route key={path} path={`/admin${path}`}>
                     {() => <PagePlaceholder title={title} comingIn={comingIn} />}

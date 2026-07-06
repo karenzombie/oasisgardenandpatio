@@ -39,7 +39,6 @@ export const ADMIN_NAV: NavGroup[] = [
     heading: "Overview",
     items: [
       { label: "Dashboard", path: "/admin", icon: LayoutDashboard },
-      { label: "Notifications", path: "/admin/notifications", icon: ClipboardList },
     ],
   },
   {
