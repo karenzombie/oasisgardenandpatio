@@ -12,7 +12,7 @@ export function Sidebar({ role, onNavigate }: SidebarProps) {
   const groups = navForRole(role);
 
   return (
-    <aside className="h-full w-64 bg-[#1A3C5E] text-white flex flex-col">
+    <aside className="h-full w-64 bg-primary text-primary-foreground flex flex-col">
       <div className="h-16 px-5 flex items-center gap-3 border-b border-white/10">
         <div className="bg-white rounded p-1 flex items-center justify-center">
           <img

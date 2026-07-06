@@ -40,7 +40,7 @@ export function Topbar({ user, onMenu }: TopbarProps) {
   ).toUpperCase() || user.email[0]?.toUpperCase() || "?";
 
   return (
-    <header className="h-16 bg-[#1A3C5E] text-white border-b border-white/10 flex items-center px-4 gap-3">
+    <header className="h-16 bg-primary text-primary-foreground border-b border-white/10 flex items-center px-4 gap-3">
       {onMenu && (
         <button
           type="button"
