@@ -13,6 +13,8 @@ import {
   productsTable,
   fabricsTable,
   finishesTable,
+  wishlistsTable,
+  wishlistStatusHistoryTable,
 } from "@workspace/db";
 import {
   CreateAccountAddressBody,
@@ -424,6 +426,22 @@ router.put(
         marketingOptOutAt: marketingOptOut ? new Date() : null,
       })
       .where(eq(customersTable.id, customer.id));
+
+    // Brief 07B, Step 2B: log opt_out / opt_in. Only meaningful if this
+    // customer already has a wishlist parent row (i.e. has ever saved a
+    // wishlist item) — otherwise there is no wishlist to log the event
+    // against, so skip silently rather than creating one.
+    const [wishlistRow] = await db
+      .select({ id: wishlistsTable.id })
+      .from(wishlistsTable)
+      .where(eq(wishlistsTable.customerId, customer.id))
+      .limit(1);
+    if (wishlistRow) {
+      await db.insert(wishlistStatusHistoryTable).values({
+        wishlistId: wishlistRow.id,
+        eventType: marketingOptOut ? "opt_out" : "opt_in",
+      });
+    }
 
     res.json(await loadProfile(req.user!.id));
   },

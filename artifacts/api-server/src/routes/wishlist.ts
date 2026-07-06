@@ -4,6 +4,7 @@ import {
   db,
   wishlistItemsTable,
   wishlistsTable,
+  wishlistStatusHistoryTable,
   productsTable,
   productImagesTable,
   manufacturersTable,
@@ -30,12 +31,21 @@ import { logger } from "../lib/logger";
 // signed-in customer ever saves a wishlist item. One row per customer,
 // holding the shared WISH-XXXXXXXX-XXXX reference number. Safe to call
 // unconditionally — `onConflictDoNothing` handles the race where two
-// first-ever saves land concurrently for the same customer.
-async function ensureWishlistParent(customerId: number): Promise<void> {
+// first-ever saves land concurrently for the same customer. Returns the
+// wishlist's id so callers can log status-history events against it
+// (Brief 07B, Step 2B).
+async function ensureWishlistParent(customerId: number): Promise<number> {
   await db
     .insert(wishlistsTable)
     .values({ customerId, wishlistNumber: generateWishlistNumber() })
     .onConflictDoNothing({ target: wishlistsTable.customerId });
+
+  const [row] = await db
+    .select({ id: wishlistsTable.id })
+    .from(wishlistsTable)
+    .where(eq(wishlistsTable.customerId, customerId))
+    .limit(1);
+  return row!.id;
 }
 
 // Fires the one-time wishlist disclosure email (Brief 7, Step 4) the first
@@ -282,7 +292,15 @@ router.post(
           ...config,
         });
 
-        await ensureWishlistParent(customer.id);
+        const wishlistId = await ensureWishlistParent(customer.id);
+
+        // Brief 07B, Step 2B: log the item_added event. Customer-triggered,
+        // so staffUserId stays null.
+        await db.insert(wishlistStatusHistoryTable).values({
+          wishlistId,
+          eventType: "item_added",
+          productId,
+        });
 
         await maybeSendWishlistDisclosureEmail(
           customer.id,
