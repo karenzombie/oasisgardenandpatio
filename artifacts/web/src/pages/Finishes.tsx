@@ -55,6 +55,16 @@ const SUBGROUP_ORDER: Record<string, Record<string, number>> = {
   },
 };
 
+// Manufacturers whose no-image finish swatches show a custom explanatory
+// message instead of the default "Sample coming soon" placeholder — used
+// when the manufacturer's colors vary by product rather than being a fixed
+// swatch (e.g. Shoreline, where the same color name renders differently
+// per item).
+const CUSTOM_NO_IMAGE_MESSAGE: Record<string, string> = {
+  Shoreline:
+    "Available colors differ from item to item. Visit a product's page to see its specific color options.",
+};
+
 function FinishSwatch({
   finish,
   onClick,
@@ -62,6 +72,7 @@ function FinishSwatch({
   finish: FinishItem;
   onClick: () => void;
 }) {
+  const customMessage = CUSTOM_NO_IMAGE_MESSAGE[finish.manufacturerName];
   return (
     <button
       type="button"
@@ -76,6 +87,13 @@ function FinishSwatch({
             alt={finish.name}
             className="w-full h-full object-cover object-left"
           />
+        ) : customMessage ? (
+          <div
+            className="w-full h-full flex items-center justify-center text-[10px] uppercase tracking-widest text-muted-foreground/70 text-center px-2"
+            aria-label={customMessage}
+          >
+            {customMessage}
+          </div>
         ) : (
           <div
             className="w-full h-full flex items-center justify-center text-[10px] uppercase tracking-widest text-muted-foreground/70 text-center px-2"
