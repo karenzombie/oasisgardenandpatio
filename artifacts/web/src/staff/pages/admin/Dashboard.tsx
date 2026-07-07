@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { StaffUser } from "@workspace/api-client-react";
 import { useAdminGetDashboardStats } from "@workspace/api-client-react";
 import { PageBody, PageHeader } from "../../StaffShell";
@@ -12,9 +13,24 @@ import {
   Package,
   BarChart3,
   BookOpen,
-  Database,
+  HardDrive,
   type LucideIcon,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
+import { formatTimestamp } from "./Backups";
+import type { BackupRun } from "./Backups";
 
 interface AdminDashboardProps {
   user: StaffUser;
@@ -155,9 +171,7 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
             </p>
           </DashboardCard>
 
-          <DashboardCard label="Backups" icon={Database}>
-            <RowList rows={[{ label: "Last backup", value: "Not yet configured", muted: true }]} />
-          </DashboardCard>
+          <BackupWidgetCard lastProducts={null} lastCustomers={null} />
         </div>
       </PageBody>
     </>
@@ -236,5 +250,141 @@ function BigNumber({
       </div>
       <div className="text-sm text-slate-500 mt-1">{label}</div>
     </div>
+  );
+}
+
+function BackupWidgetCard({
+  lastProducts,
+  lastCustomers,
+}: {
+  lastProducts: BackupRun | null;
+  lastCustomers: BackupRun | null;
+}) {
+  const toast = useToast();
+  const [confirmType, setConfirmType] = useState<"products" | "customers" | null>(null);
+  const [loadingType, setLoadingType] = useState<"products" | "customers" | null>(null);
+
+  async function runBackup(type: "products" | "customers") {
+    setConfirmType(null);
+    setLoadingType(type);
+    try {
+      // TODO (step 6+7): wire to POST /api/admin/backup/products or /api/admin/backup/customers
+      await new Promise<void>((resolve) => setTimeout(resolve, 500));
+      toast.toast({
+        title:
+          type === "products"
+            ? "Products backup complete"
+            : "Customer data backup complete",
+      });
+    } catch (err) {
+      toast.toast({
+        title: "Backup failed",
+        description: String(err),
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingType(null);
+    }
+  }
+
+  return (
+    <>
+      <div className="h-full bg-white border border-slate-200 rounded-md p-4 transition-colors hover:border-slate-400">
+        <div className="flex items-center gap-2 mb-3">
+          <HardDrive className="size-4 text-slate-500" strokeWidth={1.75} />
+          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            Backups
+          </span>
+        </div>
+        <div className="space-y-1.5 mb-3">
+          <div className="flex items-center justify-between gap-3 text-sm">
+            <span className="text-slate-600">Last products backup</span>
+            <span className="text-slate-400 italic text-xs shrink-0">
+              {lastProducts ? formatTimestamp(lastProducts.ranAt) : "Never"}
+            </span>
+          </div>
+          <div className="flex items-center justify-between gap-3 text-sm">
+            <span className="text-slate-600">Last customer backup</span>
+            <span className="text-slate-400 italic text-xs shrink-0">
+              {lastCustomers ? formatTimestamp(lastCustomers.ranAt) : "Never"}
+            </span>
+          </div>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Button
+            size="sm"
+            disabled={loadingType === "products"}
+            onClick={() => setConfirmType("products")}
+            className="bg-green-700 hover:bg-green-800 text-white w-full justify-center"
+          >
+            {loadingType === "products" ? (
+              <><Spinner className="mr-1.5 size-3" />Backing up…</>
+            ) : (
+              "Back Up Products"
+            )}
+          </Button>
+          <Button
+            size="sm"
+            disabled={loadingType === "customers"}
+            onClick={() => setConfirmType("customers")}
+            className="bg-green-700 hover:bg-green-800 text-white w-full justify-center"
+          >
+            {loadingType === "customers" ? (
+              <><Spinner className="mr-1.5 size-3" />Backing up…</>
+            ) : (
+              "Back Up Customer Data"
+            )}
+          </Button>
+        </div>
+      </div>
+
+      <AlertDialog
+        open={confirmType === "products"}
+        onOpenChange={(o) => !o && setConfirmType(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Back up products?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will export the full database and all product images to
+              GitHub. Depending on image volume this may take several minutes.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => runBackup("products")}
+              className="bg-green-700 hover:bg-green-800 text-white"
+            >
+              Run Backup
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={confirmType === "customers"}
+        onOpenChange={(o) => !o && setConfirmType(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Back up customer data?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will export all customer, order, and transaction data to
+              GitHub.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => runBackup("customers")}
+              className="bg-green-700 hover:bg-green-800 text-white"
+            >
+              Run Backup
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

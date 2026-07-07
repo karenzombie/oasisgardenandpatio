@@ -20,6 +20,7 @@ import {
   ShoppingCart,
   Palette,
   Paintbrush,
+  HardDrive,
   type LucideIcon,
 } from "lucide-react";
 
@@ -87,6 +88,7 @@ export const ADMIN_NAV: NavGroup[] = [
         icon: ShieldAlert,
       },
       { label: "Settings", path: "/admin/settings", icon: Settings },
+      { label: "Backups", path: "/admin/backups", icon: HardDrive },
     ],
   },
 ];

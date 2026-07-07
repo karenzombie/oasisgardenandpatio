@@ -45,6 +45,7 @@ import CushionOrderDetail from "./pages/admin/CushionOrderDetail";
 import CushionOrderNew from "./pages/admin/CushionOrderNew";
 import RecoveryRequests from "./pages/admin/RecoveryRequests";
 import Reports from "./pages/admin/Reports";
+import Backups from "./pages/admin/Backups";
 import Deliveries from "./pages/admin/Deliveries";
 import WishlistDetail from "./pages/admin/WishlistDetail";
 import WishlistPrint from "./pages/admin/WishlistPrint";
@@ -99,6 +100,7 @@ export default function StaffRouter() {
                 <Route path="/admin/wishlists/:id/print" component={WishlistPrint} />
                 <Route path="/admin/audit-log" component={AuditLog} />
                 <Route path="/admin/recovery-requests" component={RecoveryRequests} />
+                <Route path="/admin/backups" component={Backups} />
                 <Route path="/admin/orders" component={Orders} />
                 <Route path="/admin/new-order" component={AgentNewOrder} />
                 <Route path="/admin/orders/:id" component={OrderDetail} />
