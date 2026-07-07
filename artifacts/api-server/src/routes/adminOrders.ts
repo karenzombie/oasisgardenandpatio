@@ -960,6 +960,409 @@ router.post(
   },
 );
 
+// ──────────────────────────────────────────────────────────────────────────
+// Edit order items  (staff-created orders only)
+// ──────────────────────────────────────────────────────────────────────────
+
+const EditOrderItemsBody = z.object({
+  keepItems: z.array(
+    z.object({
+      id: z.number().int().positive(),
+      quantity: z.number().int().min(1),
+    }),
+  ),
+  newItems: z
+    .array(
+      z.object({
+        productId: z.number().int().positive().nullable().optional(),
+        variantId: z.number().int().positive().nullable().optional(),
+        finishId: z.number().int().positive().nullable().optional(),
+        finialId: z.number().int().positive().nullable().optional(),
+        grade: z.string().nullable().optional(),
+        fabricId: z.number().int().positive().nullable().optional(),
+        fabricVendorId: z.number().int().positive().nullable().optional(),
+        description: z.string().min(1),
+        quantity: z.number().int().min(1),
+        unitPrice: z.number().min(0),
+        discountAmount: z.number().min(0).optional().default(0),
+        discountReason: z.string().nullable().optional(),
+        notes: z.string().nullable().optional(),
+        useInventory: z.boolean().optional().default(false),
+        parentItemIndex: z.number().int().nullable().optional(),
+      }),
+    )
+    .default([]),
+});
+
+router.put(
+  "/admin/orders/:id/items",
+  requireAuth,
+  requireRole("admin", "agent"),
+  async (req: Request, res: Response): Promise<void> => {
+    const params = AdminGetOrderParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: "Invalid id" });
+      return;
+    }
+    const orderId = params.data.id;
+
+    const body = EditOrderItemsBody.safeParse(req.body);
+    if (!body.success) {
+      res
+        .status(400)
+        .json({ error: body.error.issues[0]?.message ?? "Invalid body" });
+      return;
+    }
+    const { keepItems, newItems } = body.data;
+
+    if (keepItems.length === 0 && newItems.length === 0) {
+      res.status(400).json({ error: "An order must have at least one item." });
+      return;
+    }
+
+    const [existing] = await db
+      .select()
+      .from(ordersTable)
+      .where(eq(ordersTable.id, orderId))
+      .limit(1);
+    if (!existing) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+    if (existing.orderType === "online") {
+      res.status(403).json({ error: "Online orders cannot be edited" });
+      return;
+    }
+    if (
+      req.user?.role === "agent" &&
+      existing.createdByAgentId !== req.user.id
+    ) {
+      res.status(403).json({ error: "Not authorized" });
+      return;
+    }
+
+    try {
+      await db.transaction(async (tx) => {
+        // Lock order row for the duration of this transaction
+        await tx
+          .select({ id: ordersTable.id })
+          .from(ordersTable)
+          .where(eq(ordersTable.id, orderId))
+          .for("update")
+          .limit(1);
+
+        // Validate all keepItem IDs belong to this order
+        const currentItems = await tx
+          .select({ id: orderItemsTable.id })
+          .from(orderItemsTable)
+          .where(eq(orderItemsTable.orderId, orderId));
+        const currentItemIds = new Set(currentItems.map((it) => it.id));
+
+        for (const k of keepItems) {
+          if (!currentItemIds.has(k.id)) {
+            throw new Error(
+              `Item ${k.id} does not belong to order ${orderId}`,
+            );
+          }
+        }
+
+        const keepIdSet = new Set(keepItems.map((k) => k.id));
+
+        // Delete items not in keepIdSet
+        // (ON DELETE CASCADE on parentOrderItemId handles cover children)
+        const toDeleteIds = Array.from(currentItemIds).filter(
+          (id) => !keepIdSet.has(id),
+        );
+        if (toDeleteIds.length > 0) {
+          await tx
+            .delete(orderItemsTable)
+            .where(inArray(orderItemsTable.id, toDeleteIds));
+        }
+
+        // Update quantity + gross amount for kept items
+        for (const k of keepItems) {
+          const [row] = await tx
+            .select({
+              unitPrice: orderItemsTable.unitPrice,
+            })
+            .from(orderItemsTable)
+            .where(eq(orderItemsTable.id, k.id))
+            .limit(1);
+          if (!row) continue; // cascade may have removed a cover child
+          const unitPriceNum = Number(row.unitPrice);
+          const newGrossAmount = k.quantity * unitPriceNum;
+          await tx
+            .update(orderItemsTable)
+            .set({ quantity: k.quantity, amount: money(newGrossAmount) })
+            .where(eq(orderItemsTable.id, k.id));
+        }
+
+        // Prepare and insert new items — same snapshot resolution as POST /admin/orders
+        type PreparedItem = {
+          productId: number | null;
+          variantId: number | null;
+          fabricId: number | null;
+          fabricVendorId: number | null;
+          finishId: number | null;
+          finialId: number | null;
+          productSkuSnapshot: string | null;
+          variantSkuSnapshot: string | null;
+          variantNameSnapshot: string | null;
+          finishCodeSnapshot: string | null;
+          finishNameSnapshot: string | null;
+          finialCodeSnapshot: string | null;
+          finialNameSnapshot: string | null;
+          fabricItemNumberSnapshot: string | null;
+          fabricNameSnapshot: string | null;
+          fabricBrandSnapshot: string | null;
+          fabricGradeSnapshot: string | null;
+          unitMsrpSnapshot: string | null;
+          weightSnapshot: string | null;
+          description: string;
+          quantity: number;
+          unitPrice: string;
+          amount: string;
+          discountAmount: string;
+          discountReason: string | null;
+          notes: string | null;
+          useInventory: boolean;
+          inventoryQtyUsed: number;
+        };
+        const parentRefs: Array<number | null> = [];
+        const prepared: PreparedItem[] = [];
+
+        for (const it of newItems) {
+          let productSku: string | null = null;
+          let variantSku: string | null = null;
+          let variantName: string | null = null;
+          let fabricItem: string | null = null;
+          let fabricName: string | null = null;
+          let fabricBrand: string | null = null;
+          let fabricGrade: string | null = null;
+          let finishCode: string | null = null;
+          let finishName: string | null = null;
+          let finialCode: string | null = null;
+          let finialName: string | null = null;
+          let unitMsrp: string | null = null;
+          let productWeight: string | null = null;
+          let variantWeight: string | null = null;
+
+          if (it.productId != null) {
+            const [p] = await tx
+              .select({ sku: productsTable.sku, weight: productsTable.weight })
+              .from(productsTable)
+              .where(eq(productsTable.id, it.productId))
+              .limit(1);
+            if (!p) throw new Error(`Product ${it.productId} not found`);
+            productSku = p.sku;
+            productWeight = p.weight == null ? null : String(p.weight);
+          }
+          if (it.variantId != null) {
+            const [v] = await tx
+              .select({
+                sku: productVariantsTable.variantSku,
+                name: productVariantsTable.variantName,
+                productId: productVariantsTable.productId,
+                weight: productVariantsTable.weight,
+              })
+              .from(productVariantsTable)
+              .where(eq(productVariantsTable.id, it.variantId))
+              .limit(1);
+            if (!v) throw new Error(`Variant ${it.variantId} not found`);
+            if (it.productId != null && v.productId !== it.productId)
+              throw new Error("Variant does not belong to product");
+            variantSku = v.sku;
+            variantName = v.name;
+            variantWeight = v.weight == null ? null : String(v.weight);
+          }
+          if (it.finishId != null) {
+            const [fin] = await tx
+              .select({
+                code: finishesTable.itemNumber,
+                name: finishesTable.name,
+              })
+              .from(finishesTable)
+              .where(eq(finishesTable.id, it.finishId))
+              .limit(1);
+            if (!fin) throw new Error(`Finish ${it.finishId} not found`);
+            finishCode = fin.code;
+            finishName = fin.name;
+          }
+          if (it.finialId != null) {
+            const [fnl] = await tx
+              .select({
+                code: productFinialOptionsTable.code,
+                name: productFinialOptionsTable.name,
+              })
+              .from(productFinialOptionsTable)
+              .where(eq(productFinialOptionsTable.id, it.finialId))
+              .limit(1);
+            if (!fnl) throw new Error(`Finial ${it.finialId} not found`);
+            finialCode = fnl.code;
+            finialName = fnl.name;
+          }
+          if (it.fabricId != null) {
+            const [f] = await tx
+              .select({
+                itemNumber: fabricsTable.itemNumber,
+                name: fabricsTable.name,
+                grade: fabricsTable.grade,
+                brand: manufacturersTable.name,
+              })
+              .from(fabricsTable)
+              .leftJoin(
+                manufacturersTable,
+                eq(manufacturersTable.id, fabricsTable.manufacturerId),
+              )
+              .where(eq(fabricsTable.id, it.fabricId))
+              .limit(1);
+            if (!f) throw new Error(`Fabric ${it.fabricId} not found`);
+            fabricItem = f.itemNumber;
+            fabricName = f.name;
+            fabricBrand = f.brand ?? null;
+            fabricGrade = it.grade ?? f.grade ?? null;
+          }
+          if (it.variantId != null && it.grade != null) {
+            const [gp] = await tx
+              .select({ msrp: variantGradePricesTable.msrp })
+              .from(variantGradePricesTable)
+              .where(
+                and(
+                  eq(variantGradePricesTable.variantId, it.variantId),
+                  eq(variantGradePricesTable.grade, it.grade),
+                ),
+              )
+              .limit(1);
+            if (gp) unitMsrp = gp.msrp;
+          }
+          if (it.fabricVendorId != null) {
+            if (it.fabricId == null) {
+              throw new Error(
+                "fabricVendorId requires fabricId on the same line",
+              );
+            }
+            const [m] = await tx
+              .select({ id: manufacturersTable.id })
+              .from(manufacturersTable)
+              .where(eq(manufacturersTable.id, it.fabricVendorId))
+              .limit(1);
+            if (!m)
+              throw new Error(
+                `Fabric vendor ${it.fabricVendorId} not found`,
+              );
+          }
+
+          const discountAmt = it.discountAmount ?? 0;
+          const lineGrossAmount = it.quantity * it.unitPrice;
+
+          prepared.push({
+            productId: it.productId ?? null,
+            variantId: it.variantId ?? null,
+            fabricId: it.fabricId ?? null,
+            fabricVendorId: it.fabricVendorId ?? null,
+            finishId: it.finishId ?? null,
+            finialId: it.finialId ?? null,
+            productSkuSnapshot: productSku,
+            variantSkuSnapshot: stripVentSuffix(variantSku),
+            variantNameSnapshot: variantName,
+            finishCodeSnapshot: finishCode,
+            finishNameSnapshot: finishName,
+            finialCodeSnapshot: finialCode,
+            finialNameSnapshot: finialName,
+            fabricItemNumberSnapshot: fabricItem,
+            fabricNameSnapshot: fabricName,
+            fabricBrandSnapshot: fabricBrand,
+            fabricGradeSnapshot: fabricGrade,
+            unitMsrpSnapshot: unitMsrp,
+            weightSnapshot: variantWeight ?? productWeight,
+            description: it.description,
+            quantity: it.quantity,
+            unitPrice: money(it.unitPrice),
+            amount: money(lineGrossAmount),
+            discountAmount: money(discountAmt),
+            discountReason: it.discountReason ?? null,
+            notes: it.notes ?? null,
+            useInventory: false,
+            inventoryQtyUsed: 0,
+          });
+
+          const pIdx = it.parentItemIndex ?? null;
+          parentRefs.push(
+            pIdx != null &&
+              Number.isInteger(pIdx) &&
+              pIdx >= 0 &&
+              pIdx < newItems.length &&
+              pIdx !== prepared.length - 1
+              ? pIdx
+              : null,
+          );
+        }
+
+        // Insert new items
+        if (prepared.length > 0) {
+          const insertValues = prepared.map((p) => ({ ...p, orderId }));
+          const insertedItems = await tx
+            .insert(orderItemsTable)
+            .values(insertValues)
+            .returning();
+
+          // Wire cover accessories to their parent line
+          for (let i = 0; i < insertedItems.length; i++) {
+            const parentIdx = parentRefs[i];
+            if (parentIdx == null) continue;
+            const parent = insertedItems[parentIdx];
+            const child = insertedItems[i];
+            if (!parent || !child) continue;
+            await tx
+              .update(orderItemsTable)
+              .set({ parentOrderItemId: parent.id })
+              .where(eq(orderItemsTable.id, child.id));
+          }
+        }
+
+        // Recalculate subtotal = Σ(gross_amount - discount) across all remaining items
+        const allItems = await tx
+          .select({
+            amount: orderItemsTable.amount,
+            discountAmount: orderItemsTable.discountAmount,
+          })
+          .from(orderItemsTable)
+          .where(eq(orderItemsTable.orderId, orderId));
+
+        const newSubtotal = allItems.reduce(
+          (sum, it) => sum + Number(it.amount) - Number(it.discountAmount),
+          0,
+        );
+        const newTotal =
+          newSubtotal +
+          Number(existing.taxAmount) +
+          Number(existing.deliveryAmount);
+        const newBalanceDue = newTotal - Number(existing.depositAmount);
+
+        await tx
+          .update(ordersTable)
+          .set({
+            subtotal: money(newSubtotal),
+            total: money(newTotal),
+            balanceDue: money(newBalanceDue),
+          })
+          .where(eq(ordersTable.id, orderId));
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      res.status(400).json({ error: msg });
+      return;
+    }
+
+    const detail = await loadOrderDetail(orderId);
+    if (!detail) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+    res.json(detail);
+  },
+);
+
 router.post(
   "/admin/orders/:id/notes",
   requireAuth,

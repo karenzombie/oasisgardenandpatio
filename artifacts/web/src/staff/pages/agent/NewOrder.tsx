@@ -1494,7 +1494,7 @@ function CustomerPicker({ onPick }: { onPick: (c: AdminCustomer) => void }) {
   );
 }
 
-function ProductPickerDialog({
+export function ProductPickerDialog({
   open, initialProduct, onOpenChange, onApply,
 }: {
   open: boolean;

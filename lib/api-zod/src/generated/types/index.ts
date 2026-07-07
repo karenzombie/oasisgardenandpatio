@@ -302,6 +302,8 @@ export * from "./cushionOrderListRowOrderKind";
 export * from "./cushionOrderListRowStatus";
 export * from "./cushionOrderPage";
 export * from "./cushionOrderSubmitted";
+export * from "./editOrderItemsRequest";
+export * from "./editOrderItemsRequestKeepItemsItem";
 export * from "./editVendorOrderItem";
 export * from "./editVendorOrderRequest";
 export * from "./entityHistoryEntry";

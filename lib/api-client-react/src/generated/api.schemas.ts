@@ -4002,6 +4002,22 @@ export interface CreateOrderRequest {
   shipToStore?: boolean;
 }
 
+export type EditOrderItemsRequestKeepItemsItem = {
+  id: number;
+  /** @minimum 1 */
+  quantity: number;
+};
+
+/**
+ * Replace the line items on a staff-created order.
+ */
+export interface EditOrderItemsRequest {
+  /** Existing line items to retain. Items on the order whose id is not listed here will be deleted. */
+  keepItems: EditOrderItemsRequestKeepItemsItem[];
+  /** New items to add to the order, resolved the same way as order creation. */
+  newItems: CreateOrderItemRequest[];
+}
+
 export type QuoteOrderPricingRequestItemsItem = {
   /** @minimum 1 */
   quantity: number;

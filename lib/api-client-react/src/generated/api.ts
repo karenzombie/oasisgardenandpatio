@@ -175,6 +175,7 @@ import type {
   CushionOrderDetail,
   CushionOrderPage,
   CushionOrderSubmitted,
+  EditOrderItemsRequest,
   EditVendorOrderRequest,
   Error,
   FeaturedProduct,
@@ -14419,6 +14420,94 @@ export const useAdminUpdateOrderTotals = <
   TContext
 > => {
   return useMutation(getAdminUpdateOrderTotalsMutationOptions(options));
+};
+
+/**
+ * Replaces the items on a staff-created order (orderType != "online"). keepItems lists existing item IDs to retain with updated quantities; items not listed are deleted. newItems are added using the same snapshot resolution as order creation. Subtotal, total, and balance due are recomputed; tax, delivery, and deposit are preserved.
+ * @summary Edit line items on a staff-created order
+ */
+export const getAdminEditOrderItemsUrl = (id: number) => {
+  return `/api/admin/orders/${id}/items`;
+};
+
+export const adminEditOrderItems = async (
+  id: number,
+  editOrderItemsRequest: EditOrderItemsRequest,
+  options?: RequestInit,
+): Promise<AdminOrderDetail> => {
+  return customFetch<AdminOrderDetail>(getAdminEditOrderItemsUrl(id), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(editOrderItemsRequest),
+  });
+};
+
+export const getAdminEditOrderItemsMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminEditOrderItems>>,
+    TError,
+    { id: number; data: BodyType<EditOrderItemsRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminEditOrderItems>>,
+  TError,
+  { id: number; data: BodyType<EditOrderItemsRequest> },
+  TContext
+> => {
+  const mutationKey = ["adminEditOrderItems"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminEditOrderItems>>,
+    { id: number; data: BodyType<EditOrderItemsRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminEditOrderItems(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminEditOrderItemsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminEditOrderItems>>
+>;
+export type AdminEditOrderItemsMutationBody = BodyType<EditOrderItemsRequest>;
+export type AdminEditOrderItemsMutationError = ErrorType<Error>;
+
+/**
+ * @summary Edit line items on a staff-created order
+ */
+export const useAdminEditOrderItems = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminEditOrderItems>>,
+    TError,
+    { id: number; data: BodyType<EditOrderItemsRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminEditOrderItems>>,
+  TError,
+  { id: number; data: BodyType<EditOrderItemsRequest> },
+  TContext
+> => {
+  return useMutation(getAdminEditOrderItemsMutationOptions(options));
 };
 
 /**

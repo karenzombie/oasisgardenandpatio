@@ -8918,6 +8918,311 @@ export const AdminUpdateOrderTotalsResponse = zod.object({
 });
 
 /**
+ * Replaces the items on a staff-created order (orderType != "online"). keepItems lists existing item IDs to retain with updated quantities; items not listed are deleted. newItems are added using the same snapshot resolution as order creation. Subtotal, total, and balance due are recomputed; tax, delivery, and deposit are preserved.
+ * @summary Edit line items on a staff-created order
+ */
+export const AdminEditOrderItemsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const adminEditOrderItemsBodyNewItemsItemUnitPriceMin = 0;
+
+export const adminEditOrderItemsBodyNewItemsItemDiscountAmountDefault = 0;
+export const adminEditOrderItemsBodyNewItemsItemDiscountAmountMin = 0;
+
+export const adminEditOrderItemsBodyNewItemsItemUseInventoryDefault = false;
+
+export const AdminEditOrderItemsBody = zod
+  .object({
+    keepItems: zod
+      .array(
+        zod.object({
+          id: zod.number(),
+          quantity: zod.number().min(1),
+        }),
+      )
+      .describe(
+        "Existing line items to retain. Items on the order whose id is not listed here will be deleted.",
+      ),
+    newItems: zod
+      .array(
+        zod.object({
+          productId: zod.number().nullish(),
+          variantId: zod.number().nullish(),
+          finishId: zod
+            .number()
+            .nullish()
+            .describe(
+              "Frame-finish choice for grade-priced (3-step) products. Recovers the finish code\/name snapshots for the order line and vendor PO.",
+            ),
+          finialId: zod
+            .number()
+            .nullish()
+            .describe(
+              "Finial (umbrella pole-cap) choice. Recovers the finial code\/name snapshots for the order line and vendor PO.",
+            ),
+          grade: zod
+            .string()
+            .nullish()
+            .describe(
+              "Fabric grade for grade-priced products (e.g. A, B, C). Used to snapshot the fabric grade + unit MSRP from variant_grade_prices.",
+            ),
+          fabricId: zod.number().nullish(),
+          fabricVendorId: zod
+            .number()
+            .nullish()
+            .describe(
+              "Staff-portal only. When set, this line's fabric ships from a separate vendor on its own PO instead of bundled with the product vendor's PO. Requires fabricId.",
+            ),
+          description: zod.string().min(1),
+          quantity: zod.number().min(1),
+          unitPrice: zod
+            .number()
+            .min(adminEditOrderItemsBodyNewItemsItemUnitPriceMin),
+          discountAmount: zod
+            .number()
+            .min(adminEditOrderItemsBodyNewItemsItemDiscountAmountMin)
+            .default(adminEditOrderItemsBodyNewItemsItemDiscountAmountDefault),
+          discountReason: zod.string().nullish(),
+          notes: zod.string().nullish(),
+          useInventory: zod
+            .boolean()
+            .default(adminEditOrderItemsBodyNewItemsItemUseInventoryDefault)
+            .describe(
+              "When true, units are sourced from store inventory at order creation. Vendor order only covers the balance beyond what is on hand.",
+            ),
+          parentItemIndex: zod
+            .number()
+            .nullish()
+            .describe(
+              "Zero-based index (within this request's items array) of the base line this accessory line is tied to. Used to set parent_order_item_id on Aluminum Top Cover lines so they group under their base. Null for independent lines (including stems).",
+            ),
+        }),
+      )
+      .describe(
+        "New items to add to the order, resolved the same way as order creation.",
+      ),
+  })
+  .describe("Replace the line items on a staff-created order.");
+
+export const AdminEditOrderItemsResponse = zod.object({
+  id: zod.number(),
+  orderNumber: zod.string(),
+  status: zod.string(),
+  orderType: zod.string(),
+  subtotal: zod.number(),
+  taxAmount: zod.number(),
+  deliveryAmount: zod.number(),
+  total: zod.number(),
+  depositAmount: zod.number(),
+  balanceDue: zod.number(),
+  customerId: zod.number().nullable(),
+  customerName: zod.string().nullable(),
+  customerEmail: zod.string().nullable(),
+  agentId: zod.number().nullable(),
+  agentName: zod.string().nullable(),
+  salespersonName: zod.string().nullable(),
+  shippingMethod: zod.string().nullable(),
+  scheduledDeliveryDate: zod
+    .string()
+    .nullish()
+    .describe("Store-delivery scheduled date (YYYY-MM-DD)."),
+  scheduledDeliveryTime: zod
+    .string()
+    .nullish()
+    .describe(
+      "Store-delivery time window start (HH:MM:SS, e.g. '14:00:00' for the 2-3 PM window). See the fixed 1-hour window mapping.",
+    ),
+  specialInstructions: zod.string().nullable(),
+  notes: zod.string().nullable(),
+  merchandiseReceived: zod.boolean(),
+  placedAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+  shippingAddress: zod.union([
+    zod.object({
+      id: zod.number(),
+      recipientName: zod.string().nullish(),
+      street1: zod.string(),
+      street2: zod.string().nullish(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullish(),
+    }),
+    zod.null(),
+  ]),
+  billingAddress: zod.union([
+    zod.object({
+      id: zod.number(),
+      recipientName: zod.string().nullish(),
+      street1: zod.string(),
+      street2: zod.string().nullish(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullish(),
+    }),
+    zod.null(),
+  ]),
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      productId: zod.number().nullable(),
+      productSkuSnapshot: zod.string().nullable(),
+      variantSkuSnapshot: zod.string().nullable(),
+      variantNameSnapshot: zod.string().nullable(),
+      finishId: zod.number().nullable(),
+      finishCodeSnapshot: zod.string().nullable(),
+      finishNameSnapshot: zod.string().nullable(),
+      finialId: zod.number().nullable(),
+      finialCodeSnapshot: zod.string().nullable(),
+      finialNameSnapshot: zod.string().nullable(),
+      fabricId: zod.number().nullable(),
+      fabricNameSnapshot: zod.string().nullable(),
+      fabricItemNumberSnapshot: zod.string().nullable(),
+      fabricBrandSnapshot: zod.string().nullable(),
+      fabricGradeSnapshot: zod.string().nullable(),
+      unitMsrpSnapshot: zod.string().nullable(),
+      weightSnapshot: zod.string().nullable(),
+      fabricVendorId: zod
+        .number()
+        .nullable()
+        .describe(
+          "Optional alternate vendor for this line's fabric. Null = fabric ships with the product vendor (the default).",
+        ),
+      fabricVendorName: zod.string().nullable(),
+      fabricVendorOrderId: zod
+        .number()
+        .nullable()
+        .describe(
+          "When fabricVendorId is set, this is the id of the separate vendor PO that the fabric was assigned to.",
+        ),
+      department: zod.string().nullable(),
+      description: zod.string(),
+      quantity: zod.number(),
+      unitPrice: zod.number(),
+      amount: zod.number(),
+      discountAmount: zod.number(),
+      discountReason: zod.string().nullable(),
+      notes: zod.string().nullable(),
+      manufacturerName: zod
+        .string()
+        .nullable()
+        .describe(
+          "Manufacturer of the product on this line item. Derived from products.manufacturerId at response time.",
+        ),
+      vendorOrderId: zod.number().nullable(),
+      useInventory: zod
+        .boolean()
+        .describe(
+          "When true this line is sourced from store inventory (staff orders only).",
+        ),
+      inventoryQtyUsed: zod
+        .number()
+        .describe(
+          "Units drawn from store inventory at order creation time. 0 when useInventory is false.",
+        ),
+    }),
+  ),
+  statusHistory: zod.array(
+    zod.object({
+      id: zod.number(),
+      fromStatus: zod.string().nullable(),
+      toStatus: zod.string(),
+      changedByUserId: zod.number().nullable(),
+      changedByEmail: zod.string().nullable(),
+      note: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  vendorOrders: zod.array(
+    zod.object({
+      id: zod.number(),
+      vendorOrderNumber: zod.string(),
+      status: zod.string(),
+      manufacturerId: zod.number().nullable(),
+      manufacturerName: zod.string().nullable(),
+      sentAt: zod.coerce.date().nullable(),
+      receivedAt: zod.coerce.date().nullable(),
+      itemsReceived: zod.boolean(),
+    }),
+  ),
+  cancellationRequests: zod.array(
+    zod.object({
+      id: zod.number(),
+      orderId: zod.number(),
+      orderNumber: zod.string().nullable(),
+      requestedByUserId: zod.number().nullable(),
+      requestedByEmail: zod.string().nullable(),
+      reason: zod.string().nullable(),
+      status: zod.string(),
+      reviewedByUserId: zod.number().nullable(),
+      reviewedByEmail: zod.string().nullable(),
+      reviewedAt: zod.coerce.date().nullable(),
+      reviewNote: zod.string().nullable(),
+      refundAmount: zod.number().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  isQuickOrder: zod.boolean(),
+  skipVendorOrder: zod.boolean(),
+  walkInName: zod.string().nullable(),
+  walkInEmail: zod.string().nullable(),
+  walkInPhone: zod.string().nullable(),
+  isInternalRestock: zod.boolean(),
+  shipToStore: zod.boolean(),
+  shipments: zod.array(
+    zod.object({
+      id: zod.number(),
+      orderId: zod.number(),
+      carrierId: zod.number().nullable(),
+      carrierName: zod.string().nullable(),
+      carrierCode: zod.string().nullable(),
+      trackingNumber: zod.string().nullable(),
+      trackingUrl: zod.string().nullable(),
+      notes: zod.string().nullable(),
+      items: zod.array(
+        zod
+          .object({
+            orderItemId: zod.number(),
+            quantity: zod.number(),
+            description: zod
+              .string()
+              .describe(
+                "Snapshot description of the order line (product + variant\/finish\/fabric).",
+              ),
+          })
+          .describe(
+            "A single order line assigned to a shipment, with the quantity included in that shipment.",
+          ),
+      ),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  payments: zod.array(
+    zod.object({
+      id: zod.number(),
+      orderId: zod.number(),
+      amount: zod.number(),
+      paymentMethod: zod.string(),
+      status: zod.string(),
+      transactionId: zod.string().nullable(),
+      cardLast4: zod.string().nullable(),
+      cardType: zod.string().nullable(),
+      notes: zod.string().nullable(),
+      receivedAt: zod.coerce.date().nullable(),
+      recordedByUserId: zod.number().nullable(),
+      recordedByEmail: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  amountPaid: zod.number(),
+  paidInFull: zod.boolean(),
+});
+
+/**
  * Orders with status ready_for_store_delivery or out_for_local_delivery, sorted by scheduled_delivery_date ascending (NULLs last), then scheduled_delivery_time ascending (NULLs last).
  * @summary List incomplete local-delivery orders for the Deliveries > Local Deliveries tab
  */
