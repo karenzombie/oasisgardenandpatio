@@ -330,7 +330,7 @@ function BackupWidgetCard() {
             size="sm"
             disabled={loadingType === "products"}
             onClick={() => setConfirmType("products")}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground w-full justify-center"
+            className="bg-secondary hover:bg-secondary/80 text-secondary-foreground w-full justify-center"
           >
             {loadingType === "products" ? (
               <><Spinner className="mr-1.5 size-3" />Backing up…</>
@@ -342,7 +342,7 @@ function BackupWidgetCard() {
             size="sm"
             disabled={loadingType === "customers"}
             onClick={() => setConfirmType("customers")}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground w-full justify-center"
+            className="bg-secondary hover:bg-secondary/80 text-secondary-foreground w-full justify-center"
           >
             {loadingType === "customers" ? (
               <><Spinner className="mr-1.5 size-3" />Backing up…</>
@@ -369,7 +369,7 @@ function BackupWidgetCard() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => runBackup("products")}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground"
+              className="bg-secondary hover:bg-secondary/80 text-secondary-foreground"
             >
               Run Backup
             </AlertDialogAction>
@@ -393,7 +393,7 @@ function BackupWidgetCard() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => runBackup("customers")}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground"
+              className="bg-secondary hover:bg-secondary/80 text-secondary-foreground"
             >
               Run Backup
             </AlertDialogAction>

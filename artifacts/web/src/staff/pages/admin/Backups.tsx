@@ -110,7 +110,7 @@ function BackupPanel({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction className="bg-primary hover:bg-primary/90 text-primary-foreground">
+            <AlertDialogAction className="bg-secondary hover:bg-secondary/80 text-secondary-foreground">
               Run Backup
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -292,7 +292,7 @@ export default function Backups() {
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={() => runBackup("products")}
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                  className="bg-secondary hover:bg-secondary/80 text-secondary-foreground"
                 >
                   Run Backup
                 </AlertDialogAction>
@@ -316,7 +316,7 @@ export default function Backups() {
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={() => runBackup("customers")}
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                  className="bg-secondary hover:bg-secondary/80 text-secondary-foreground"
                 >
                   Run Backup
                 </AlertDialogAction>
