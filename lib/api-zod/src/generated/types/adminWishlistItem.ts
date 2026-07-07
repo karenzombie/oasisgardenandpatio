@@ -17,6 +17,8 @@ export interface AdminWishlistItem {
   unitPrice: number | null;
   amount: number | null;
   addedAt: Date;
+  /** Manufacturer of the product on this wishlist item. Derived from products.manufacturerId at response time. */
+  manufacturerName: string | null;
   /** Most recent time a reach-out email that included this item was sent. Null if never included in a send. */
   lastReachOutSentAt: Date | null;
 }

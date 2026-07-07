@@ -142,7 +142,8 @@ const s = StyleSheet.create({
 
   colSku: { width: "15%" },
   colQty: { width: "8%", textAlign: "center" },
-  colDesc: { width: "47%" },
+  colDesc: { width: "32%" },
+  colMfg: { width: "15%" },
   colPrice: { width: "15%", textAlign: "right" },
   colAmt: { width: "15%", textAlign: "right" },
 
@@ -224,6 +225,7 @@ export interface PdfWishlistItem {
   quantity: number;
   unitPrice: number | null;
   amount: number | null;
+  manufacturerName: string | null;
 }
 
 export interface PdfWishlistArgs {
@@ -264,6 +266,7 @@ function ItemsTable({ items }: { items: PdfWishlistItem[] }) {
     <View style={s.itemsTable}>
       <View style={s.thRow} fixed>
         <Text style={[s.th, s.colDesc]}>Description</Text>
+        <Text style={[s.th, s.colMfg]}>Manufacturer</Text>
         <Text style={[s.th, s.colSku]}>SKU</Text>
         <Text style={[s.th, s.colQty]}>Qty</Text>
         <Text style={[s.th, s.colPrice]}>Price</Text>
@@ -277,6 +280,7 @@ function ItemsTable({ items }: { items: PdfWishlistItem[] }) {
               <Text style={s.itemSub}>{it.variantLabel}</Text>
             )}
           </View>
+          <Text style={[s.td, s.colMfg]}>{it.manufacturerName ?? "—"}</Text>
           <Text style={[s.td, s.colSku]}>{it.sku ?? "—"}</Text>
           <Text style={[s.td, s.colQty]}>{it.quantity}</Text>
           <Text style={[s.td, s.colPrice]}>{fmtMoney(it.unitPrice)}</Text>

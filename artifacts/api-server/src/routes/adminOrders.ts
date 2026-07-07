@@ -105,6 +105,7 @@ function addressToPayload(a: Address | null) {
 function itemToPayload(
   it: OrderItem,
   fabricVendorName: string | null = null,
+  manufacturerName: string | null = null,
 ) {
   return {
     id: it.id,
@@ -136,6 +137,7 @@ function itemToPayload(
     discountAmount: Number(it.discountAmount),
     discountReason: it.discountReason,
     notes: it.notes,
+    manufacturerName,
     vendorOrderId: it.vendorOrderId,
     useInventory: it.useInventory,
     inventoryQtyUsed: it.inventoryQtyUsed,
@@ -293,6 +295,30 @@ export async function loadOrderDetail(orderId: number) {
     fabricVendors.map((m) => [m.id, m.name]),
   );
 
+  const orderProductIds = Array.from(
+    new Set(
+      items
+        .map((it) => it.productId)
+        .filter((id): id is number => id !== null),
+    ),
+  );
+  const orderProductMfgRows = orderProductIds.length
+    ? await db
+        .select({
+          productId: productsTable.id,
+          manufacturerName: manufacturersTable.name,
+        })
+        .from(productsTable)
+        .leftJoin(
+          manufacturersTable,
+          eq(manufacturersTable.id, productsTable.manufacturerId),
+        )
+        .where(inArray(productsTable.id, orderProductIds))
+    : [];
+  const productManufacturerById = new Map<number, string | null>(
+    orderProductMfgRows.map((r) => [r.productId, r.manufacturerName ?? null]),
+  );
+
   const history = await db
     .select({
       h: orderStatusHistoryTable,
@@ -384,6 +410,9 @@ export async function loadOrderDetail(orderId: number) {
         it.fabricVendorId == null
           ? null
           : (fabricVendorNameById.get(it.fabricVendorId) ?? null),
+        it.productId != null
+          ? (productManufacturerById.get(it.productId) ?? null)
+          : null,
       ),
     ),
     statusHistory: history.map((h) => ({
@@ -2181,6 +2210,10 @@ export async function loadOrderPdfArgs(
       (it.productId != null
         ? (productVendorById.get(it.productId) ?? null)
         : null),
+    manufacturerName:
+      it.productId != null
+        ? (productVendorById.get(it.productId) ?? null)
+        : null,
   }));
 
   const pdfPayments: PdfCustomerOrderPayment[] = payments.map((p) => ({

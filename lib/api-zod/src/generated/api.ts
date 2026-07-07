@@ -6255,6 +6255,12 @@ export const AdminUpdateOrderShippingMethodResponse = zod.object({
       discountAmount: zod.number(),
       discountReason: zod.string().nullable(),
       notes: zod.string().nullable(),
+      manufacturerName: zod
+        .string()
+        .nullable()
+        .describe(
+          "Manufacturer of the product on this line item. Derived from products.manufacturerId at response time.",
+        ),
       vendorOrderId: zod.number().nullable(),
       useInventory: zod
         .boolean()
@@ -6486,6 +6492,12 @@ export const AdminUpdateOrderScheduledDeliveryResponse = zod.object({
       discountAmount: zod.number(),
       discountReason: zod.string().nullable(),
       notes: zod.string().nullable(),
+      manufacturerName: zod
+        .string()
+        .nullable()
+        .describe(
+          "Manufacturer of the product on this line item. Derived from products.manufacturerId at response time.",
+        ),
       vendorOrderId: zod.number().nullable(),
       useInventory: zod
         .boolean()
@@ -6868,6 +6880,12 @@ export const AdminMarkOrderPaidInFullResponse = zod.object({
       discountAmount: zod.number(),
       discountReason: zod.string().nullable(),
       notes: zod.string().nullable(),
+      manufacturerName: zod
+        .string()
+        .nullable()
+        .describe(
+          "Manufacturer of the product on this line item. Derived from products.manufacturerId at response time.",
+        ),
       vendorOrderId: zod.number().nullable(),
       useInventory: zod
         .boolean()
@@ -7098,6 +7116,12 @@ export const AdminUpdateOrderPaymentResponse = zod.object({
       discountAmount: zod.number(),
       discountReason: zod.string().nullable(),
       notes: zod.string().nullable(),
+      manufacturerName: zod
+        .string()
+        .nullable()
+        .describe(
+          "Manufacturer of the product on this line item. Derived from products.manufacturerId at response time.",
+        ),
       vendorOrderId: zod.number().nullable(),
       useInventory: zod
         .boolean()
@@ -7317,6 +7341,12 @@ export const AdminDeleteOrderPaymentResponse = zod.object({
       discountAmount: zod.number(),
       discountReason: zod.string().nullable(),
       notes: zod.string().nullable(),
+      manufacturerName: zod
+        .string()
+        .nullable()
+        .describe(
+          "Manufacturer of the product on this line item. Derived from products.manufacturerId at response time.",
+        ),
       vendorOrderId: zod.number().nullable(),
       useInventory: zod
         .boolean()
@@ -8057,6 +8087,12 @@ export const AdminGetOrderResponse = zod.object({
       discountAmount: zod.number(),
       discountReason: zod.string().nullable(),
       notes: zod.string().nullable(),
+      manufacturerName: zod
+        .string()
+        .nullable()
+        .describe(
+          "Manufacturer of the product on this line item. Derived from products.manufacturerId at response time.",
+        ),
       vendorOrderId: zod.number().nullable(),
       useInventory: zod
         .boolean()
@@ -8280,6 +8316,12 @@ export const AdminUpdateOrderStatusResponse = zod.object({
       discountAmount: zod.number(),
       discountReason: zod.string().nullable(),
       notes: zod.string().nullable(),
+      manufacturerName: zod
+        .string()
+        .nullable()
+        .describe(
+          "Manufacturer of the product on this line item. Derived from products.manufacturerId at response time.",
+        ),
       vendorOrderId: zod.number().nullable(),
       useInventory: zod
         .boolean()
@@ -8511,6 +8553,12 @@ export const AdminRefundOrderResponse = zod.object({
       discountAmount: zod.number(),
       discountReason: zod.string().nullable(),
       notes: zod.string().nullable(),
+      manufacturerName: zod
+        .string()
+        .nullable()
+        .describe(
+          "Manufacturer of the product on this line item. Derived from products.manufacturerId at response time.",
+        ),
       vendorOrderId: zod.number().nullable(),
       useInventory: zod
         .boolean()
@@ -8751,6 +8799,12 @@ export const AdminUpdateOrderTotalsResponse = zod.object({
       discountAmount: zod.number(),
       discountReason: zod.string().nullable(),
       notes: zod.string().nullable(),
+      manufacturerName: zod
+        .string()
+        .nullable()
+        .describe(
+          "Manufacturer of the product on this line item. Derived from products.manufacturerId at response time.",
+        ),
       vendorOrderId: zod.number().nullable(),
       useInventory: zod
         .boolean()
@@ -9145,6 +9199,12 @@ export const AdminUpdateOrderItemFabricVendorResponse = zod.object({
       discountAmount: zod.number(),
       discountReason: zod.string().nullable(),
       notes: zod.string().nullable(),
+      manufacturerName: zod
+        .string()
+        .nullable()
+        .describe(
+          "Manufacturer of the product on this line item. Derived from products.manufacturerId at response time.",
+        ),
       vendorOrderId: zod.number().nullable(),
       useInventory: zod
         .boolean()
@@ -9367,6 +9427,12 @@ export const AdminUpdateOrderNotesResponse = zod.object({
       discountAmount: zod.number(),
       discountReason: zod.string().nullable(),
       notes: zod.string().nullable(),
+      manufacturerName: zod
+        .string()
+        .nullable()
+        .describe(
+          "Manufacturer of the product on this line item. Derived from products.manufacturerId at response time.",
+        ),
       vendorOrderId: zod.number().nullable(),
       useInventory: zod
         .boolean()
@@ -12199,6 +12265,12 @@ export const AdminGetWishlistResponse = zod.object({
         ),
       amount: zod.number().nullable(),
       addedAt: zod.coerce.date(),
+      manufacturerName: zod
+        .string()
+        .nullable()
+        .describe(
+          "Manufacturer of the product on this wishlist item. Derived from products.manufacturerId at response time.",
+        ),
       lastReachOutSentAt: zod.coerce
         .date()
         .nullable()

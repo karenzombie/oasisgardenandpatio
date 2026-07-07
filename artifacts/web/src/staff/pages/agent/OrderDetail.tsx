@@ -189,6 +189,7 @@ export default function AgentOrderDetail() {
                 <thead className="bg-slate-50 text-left">
                   <tr>
                     <th className="px-3 py-2 font-medium">Description</th>
+                    <th className="px-3 py-2 font-medium">Manufacturer</th>
                     <th className="px-3 py-2 font-medium">SKU</th>
                     <th className="px-3 py-2 font-medium text-right">Qty</th>
                     <th className="px-3 py-2 font-medium text-right">Unit</th>
@@ -204,6 +205,9 @@ export default function AgentOrderDetail() {
                           <div className="text-xs text-slate-500">Fabric: {it.fabricNameSnapshot}</div>
                         )}
                       </td>
+                      <td className="px-3 py-2 text-slate-600 text-sm">
+                        {it.manufacturerName ?? "—"}
+                      </td>
                       <td className="px-3 py-2 text-slate-500">
                         {it.variantSkuSnapshot ?? it.productSkuSnapshot ?? "—"}
                       </td>
@@ -214,12 +218,12 @@ export default function AgentOrderDetail() {
                   ))}
                 </tbody>
                 <tfoot className="bg-slate-50 text-sm">
-                  <tr className="border-t"><td className="px-3 py-2 text-right" colSpan={4}>Subtotal</td><td className="px-3 py-2 text-right">{fmtMoney(order.subtotal)}</td></tr>
-                  <tr><td className="px-3 py-2 text-right" colSpan={4}>Tax</td><td className="px-3 py-2 text-right">{fmtMoney(order.taxAmount)}</td></tr>
-                  <tr><td className="px-3 py-2 text-right" colSpan={4}>Delivery</td><td className="px-3 py-2 text-right">{fmtMoney(order.deliveryAmount)}</td></tr>
-                  <tr className="font-medium"><td className="px-3 py-2 text-right" colSpan={4}>Total</td><td className="px-3 py-2 text-right">{fmtMoney(order.total)}</td></tr>
-                  <tr><td className="px-3 py-2 text-right" colSpan={4}>Deposit</td><td className="px-3 py-2 text-right">{fmtMoney(order.depositAmount)}</td></tr>
-                  <tr className="font-medium"><td className="px-3 py-2 text-right" colSpan={4}>Balance due</td><td className="px-3 py-2 text-right">{fmtMoney(order.balanceDue)}</td></tr>
+                  <tr className="border-t"><td className="px-3 py-2 text-right" colSpan={5}>Subtotal</td><td className="px-3 py-2 text-right">{fmtMoney(order.subtotal)}</td></tr>
+                  <tr><td className="px-3 py-2 text-right" colSpan={5}>Tax</td><td className="px-3 py-2 text-right">{fmtMoney(order.taxAmount)}</td></tr>
+                  <tr><td className="px-3 py-2 text-right" colSpan={5}>Delivery</td><td className="px-3 py-2 text-right">{fmtMoney(order.deliveryAmount)}</td></tr>
+                  <tr className="font-medium"><td className="px-3 py-2 text-right" colSpan={5}>Total</td><td className="px-3 py-2 text-right">{fmtMoney(order.total)}</td></tr>
+                  <tr><td className="px-3 py-2 text-right" colSpan={5}>Deposit</td><td className="px-3 py-2 text-right">{fmtMoney(order.depositAmount)}</td></tr>
+                  <tr className="font-medium"><td className="px-3 py-2 text-right" colSpan={5}>Balance due</td><td className="px-3 py-2 text-right">{fmtMoney(order.balanceDue)}</td></tr>
                 </tfoot>
               </table>
             </div>

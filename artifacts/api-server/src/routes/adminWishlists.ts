@@ -9,6 +9,7 @@ import {
   wishlistStatusHistoryTable,
   customersTable,
   productsTable,
+  manufacturersTable,
   usersTable,
 } from "@workspace/db";
 import {
@@ -244,9 +245,14 @@ async function loadWishlistDetail(customerId: number) {
       productSku: productsTable.sku,
       price: productsTable.price,
       salePrice: productsTable.salePrice,
+      manufacturerName: manufacturersTable.name,
     })
     .from(wishlistItemsTable)
     .leftJoin(productsTable, eq(productsTable.id, wishlistItemsTable.productId))
+    .leftJoin(
+      manufacturersTable,
+      eq(manufacturersTable.id, productsTable.manufacturerId),
+    )
     .where(eq(wishlistItemsTable.customerId, customerId))
     .orderBy(desc(wishlistItemsTable.createdAt));
 
@@ -293,6 +299,7 @@ async function loadWishlistDetail(customerId: number) {
       quantity: r.quantity,
       unitPrice,
       amount,
+      manufacturerName: r.manufacturerName ?? null,
       addedAt: r.createdAt.toISOString(),
       lastReachOutSentAt: lastSentAt ? lastSentAt.toISOString() : null,
     };

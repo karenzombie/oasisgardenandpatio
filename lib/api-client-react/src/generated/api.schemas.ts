@@ -121,6 +121,8 @@ export interface AdminWishlistItem {
   unitPrice: number | null;
   amount: number | null;
   addedAt: string;
+  /** Manufacturer of the product on this wishlist item. Derived from products.manufacturerId at response time. */
+  manufacturerName: string | null;
   /** Most recent time a reach-out email that included this item was sent. Null if never included in a send. */
   lastReachOutSentAt: string | null;
 }
@@ -272,6 +274,8 @@ export interface AdminOrderItem {
   discountAmount: number;
   discountReason: string | null;
   notes: string | null;
+  /** Manufacturer of the product on this line item. Derived from products.manufacturerId at response time. */
+  manufacturerName: string | null;
   vendorOrderId: number | null;
   /** When true this line is sourced from store inventory (staff orders only). */
   useInventory: boolean;

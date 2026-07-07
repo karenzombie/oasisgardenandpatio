@@ -38,6 +38,8 @@ export interface AdminOrderItem {
   discountAmount: number;
   discountReason: string | null;
   notes: string | null;
+  /** Manufacturer of the product on this line item. Derived from products.manufacturerId at response time. */
+  manufacturerName: string | null;
   vendorOrderId: number | null;
   /** When true this line is sourced from store inventory (staff orders only). */
   useInventory: boolean;

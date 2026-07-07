@@ -132,7 +132,8 @@ const s = StyleSheet.create({
 
   colDept: { width: "10%" },
   colQty: { width: "8%", textAlign: "center" },
-  colDesc: { width: "55%" },
+  colDesc: { width: "40%" },
+  colMfg: { width: "15%" },
   colPrice: { width: "13.5%", textAlign: "right" },
   colAmt: { width: "13.5%", textAlign: "right" },
 
@@ -314,6 +315,7 @@ export interface PdfCustomerOrderItem {
   unitPrice: number;
   amount: number;
   vendorName: string | null;
+  manufacturerName: string | null;
 }
 
 export interface PdfCustomerOrderPayment {
@@ -415,6 +417,7 @@ function ItemsTable({
         <Text style={[s.th, s.colDept]}>Dept</Text>
         <Text style={[s.th, s.colQty]}>Qty</Text>
         <Text style={[s.th, s.colDesc]}>Description</Text>
+        <Text style={[s.th, s.colMfg]}>Manufacturer</Text>
         <Text style={[s.th, s.colPrice]}>Price</Text>
         <Text style={[s.th, s.colAmt]}>Amount</Text>
       </View>
@@ -440,6 +443,7 @@ function ItemsTable({
                 <Text style={s.itemSub}>{subBits.join(" • ")}</Text>
               )}
             </View>
+            <Text style={[s.td, s.colMfg]}>{it.manufacturerName ?? "—"}</Text>
             <Text style={[s.td, s.colPrice]}>{fmtMoney(it.unitPrice)}</Text>
             <Text style={[s.td, s.colAmt]}>{fmtMoney(it.amount)}</Text>
           </View>

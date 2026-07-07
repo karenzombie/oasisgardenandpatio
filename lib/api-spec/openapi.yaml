@@ -5763,12 +5763,16 @@ components:
           description: "Live sale-or-MSRP price read from the product at request time. Null if the product no longer exists or has no price on file."
         amount: { type: number, nullable: true }
         addedAt: { type: string, format: date-time }
+        manufacturerName:
+          type: string
+          nullable: true
+          description: "Manufacturer of the product on this wishlist item. Derived from products.manufacturerId at response time."
         lastReachOutSentAt:
           type: string
           format: date-time
           nullable: true
           description: "Most recent time a reach-out email that included this item was sent. Null if never included in a send."
-      required: [id, productId, description, sku, variantLabel, quantity, unitPrice, amount, addedAt, lastReachOutSentAt]
+      required: [id, productId, description, sku, variantLabel, quantity, unitPrice, amount, addedAt, manufacturerName, lastReachOutSentAt]
     AdminWishlistDetail:
       type: object
       properties:
@@ -5950,11 +5954,15 @@ components:
         discountAmount: { type: number }
         discountReason: { type: string, nullable: true }
         notes: { type: string, nullable: true }
+        manufacturerName:
+          type: string
+          nullable: true
+          description: "Manufacturer of the product on this line item. Derived from products.manufacturerId at response time."
         vendorOrderId: { type: integer, nullable: true }
         useInventory: { type: boolean, description: "When true this line is sourced from store inventory (staff orders only)." }
         inventoryQtyUsed: { type: integer, description: "Units drawn from store inventory at order creation time. 0 when useInventory is false." }
       required:
-        [id, productId, productSkuSnapshot, variantSkuSnapshot, variantNameSnapshot, finishId, finishCodeSnapshot, finishNameSnapshot, finialId, finialCodeSnapshot, finialNameSnapshot, fabricId, fabricNameSnapshot, fabricItemNumberSnapshot, fabricBrandSnapshot, fabricGradeSnapshot, unitMsrpSnapshot, weightSnapshot, fabricVendorId, fabricVendorName, fabricVendorOrderId, department, description, quantity, unitPrice, amount, discountAmount, discountReason, notes, vendorOrderId, useInventory, inventoryQtyUsed]
+        [id, productId, productSkuSnapshot, variantSkuSnapshot, variantNameSnapshot, finishId, finishCodeSnapshot, finishNameSnapshot, finialId, finialCodeSnapshot, finialNameSnapshot, fabricId, fabricNameSnapshot, fabricItemNumberSnapshot, fabricBrandSnapshot, fabricGradeSnapshot, unitMsrpSnapshot, weightSnapshot, fabricVendorId, fabricVendorName, fabricVendorOrderId, department, description, quantity, unitPrice, amount, discountAmount, discountReason, notes, manufacturerName, vendorOrderId, useInventory, inventoryQtyUsed]
     AdminOrderAddress:
       type: object
       properties:
