@@ -5,6 +5,7 @@ import {
   text,
   timestamp,
   integer,
+  bigint,
   jsonb,
   index,
   check,
@@ -121,3 +122,34 @@ export const insertEmailLogSchema = createInsertSchema(emailLogTable).omit({
 });
 export type InsertEmailLog = z.infer<typeof insertEmailLogSchema>;
 export type EmailLog = typeof emailLogTable.$inferSelect;
+
+export const backupLogTable = pgTable(
+  "backup_log",
+  {
+    id: serial("id").primaryKey(),
+    backupType: text("backup_type").notNull(),
+    ranAt: timestamp("ran_at", { withTimezone: true }).notNull(),
+    triggeredBy: text("triggered_by"),
+    status: text("status").notNull(),
+    errorMessage: text("error_message"),
+    databaseDumpSizeBytes: bigint("database_dump_size_bytes", {
+      mode: "number",
+    }),
+    imageCount: integer("image_count"),
+  },
+  (t) => [
+    index("backup_log_type_idx").on(t.backupType),
+    index("backup_log_ran_at_idx").on(t.ranAt),
+    check("backup_log_type_chk", sql`backup_type IN ('products','customers')`),
+    check(
+      "backup_log_status_chk",
+      sql`status IN ('success','failure')`,
+    ),
+  ],
+);
+
+export const insertBackupLogSchema = createInsertSchema(backupLogTable).omit({
+  id: true,
+});
+export type InsertBackupLog = z.infer<typeof insertBackupLogSchema>;
+export type BackupLog = typeof backupLogTable.$inferSelect;
