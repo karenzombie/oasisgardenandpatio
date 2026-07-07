@@ -5,7 +5,10 @@ import { clerkMiddleware } from "@clerk/express";
 import { publishableKeyFromHost } from "@clerk/shared/keys";
 import router from "./routes";
 import { logger } from "./lib/logger";
-import { buildSessionMiddleware } from "./lib/session";
+import {
+  buildCustomerSessionMiddleware,
+  buildStaffSessionMiddleware,
+} from "./lib/session";
 import {
   CLERK_PROXY_PATH,
   clerkProxyMiddleware,
@@ -90,7 +93,38 @@ app.use((_req, res, next) => {
   next();
 });
 
-app.use(buildSessionMiddleware());
+// Session isolation: staff and customer sessions use separate cookie names
+// (oasis.staff vs oasis.sid) so a Clerk customer sign-in regenerating the
+// customer cookie can never evict a concurrent staff admin session.
+//
+// A path-based dispatcher applies the correct middleware per request:
+//   - Staff paths  → oasis.staff session (admin portal + staff auth)
+//   - Everything else → oasis.sid session (customer storefront)
+//
+// Staff paths are those exclusively used by the admin portal:
+//   /api/admin/**           all admin CRUD and portal routes
+//   /api/staff/**           staff notifications
+//   /api/auth/staff/**      staff login, 2FA, password change, recovery
+//   /api/storage/uploads/** presigned upload URLs (admin-only)
+//   /api/storage/objects/** object-storage proxy (admin-only)
+//   /api/cushions/**        cushion order management (admin/agent)
+//
+// NOTE: /api/storage/public-objects/** is intentionally excluded (public
+// image serving with no session requirement). The regex matches
+// /storage/objects but NOT /storage/public-objects because "public" ≠
+// "uploads"|"objects" as the next path segment.
+const STAFF_PATH =
+  /^\/api\/(?:admin(?:\/|$)|staff(?:\/|$)|auth\/staff|storage\/(?:uploads|objects)(?:\/|$)|cushions(?:\/|$))/;
+
+const customerSession = buildCustomerSessionMiddleware();
+const staffSession = buildStaffSessionMiddleware();
+
+app.use((req, res, next) => {
+  if (STAFF_PATH.test(req.originalUrl)) {
+    return staffSession(req, res, next);
+  }
+  return customerSession(req, res, next);
+});
 
 // Attach Clerk auth context (Authorization header / __session cookie) to
 // every request. Routes that opt in read it via getAuth(req).

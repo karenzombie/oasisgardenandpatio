@@ -54,21 +54,7 @@ function buildSessionPool(): pg.Pool {
   return pool;
 }
 
-export function buildSessionMiddleware(): RequestHandler {
-  const secret = process.env["SESSION_SECRET"];
-  if (!secret) {
-    throw new Error("SESSION_SECRET environment variable is required");
-  }
-
-  // The app is always served over HTTPS in Replit (dev preview uses the
-  // worf.replit.dev TLS proxy; production is published behind HTTPS too).
-  // SameSite=None + Secure is required for the session cookie to be
-  // accepted by browsers when the app runs inside Replit's cross-site
-  // workspace canvas iframe; SameSite=Lax silently drops the cookie there
-  // and every /auth/me check fails immediately after login.
-  const isHttps = process.env["NODE_ENV"] === "production"
-    || Boolean(process.env["REPLIT_DOMAINS"]);
-
+function buildSessionStore(): InstanceType<typeof PgStore> {
   const store = new PgStore({
     pool: buildSessionPool(),
     tableName: "sessions",
@@ -79,10 +65,43 @@ export function buildSessionMiddleware(): RequestHandler {
     // the schema declared in lib/db/src/schema/users.ts.
     createTableIfMissing: true,
   });
-
   store.on("error", (err: Error) => {
     logger.error({ err }, "session-store error");
   });
+  return store;
+}
+
+function buildCookieOptions(isHttps: boolean) {
+  return {
+    httpOnly: true,
+    secure: isHttps,
+    sameSite: (isHttps ? "none" : "lax") as "none" | "lax",
+    maxAge: SESSION_TTL_MS,
+    path: "/",
+  };
+}
+
+/**
+ * Session middleware for the customer-facing storefront.
+ *
+ * Cookie name: oasis.sid
+ *
+ * Used by all customer routes: /auth/*, /cart/*, /checkout/*, /account/*,
+ * /wishlist/*, and public catalog routes that optionally read session state.
+ */
+export function buildCustomerSessionMiddleware(): RequestHandler {
+  const secret = process.env["SESSION_SECRET"];
+  if (!secret) {
+    throw new Error("SESSION_SECRET environment variable is required");
+  }
+  // The app is always served over HTTPS in Replit (dev preview uses the
+  // worf.replit.dev TLS proxy; production is published behind HTTPS too).
+  // SameSite=None + Secure is required for the session cookie to be
+  // accepted by browsers when the app runs inside Replit's cross-site
+  // workspace canvas iframe; SameSite=Lax silently drops the cookie there
+  // and every /auth/me check fails immediately after login.
+  const isHttps = process.env["NODE_ENV"] === "production"
+    || Boolean(process.env["REPLIT_DOMAINS"]);
 
   return session({
     name: "oasis.sid",
@@ -90,13 +109,47 @@ export function buildSessionMiddleware(): RequestHandler {
     resave: false,
     saveUninitialized: false,
     rolling: true,
-    store,
-    cookie: {
-      httpOnly: true,
-      secure: isHttps,
-      sameSite: isHttps ? "none" : "lax",
-      maxAge: SESSION_TTL_MS,
-      path: "/",
-    },
+    store: buildSessionStore(),
+    cookie: buildCookieOptions(isHttps),
   });
+}
+
+/**
+ * Session middleware for the staff/admin portal.
+ *
+ * Cookie name: oasis.staff  ← deliberately different from the customer cookie
+ *
+ * Used by all staff routes: /auth/staff/*, /admin/*, /staff/notifications/*,
+ * /storage/uploads/*, /storage/objects/*, /cushions/*.
+ *
+ * A separate cookie name means that a customer Clerk sign-in regenerating
+ * oasis.sid has ZERO effect on an active staff session — the two cookies
+ * live in separate slots in the browser's cookie jar and can never
+ * overwrite each other.
+ */
+export function buildStaffSessionMiddleware(): RequestHandler {
+  const secret = process.env["SESSION_SECRET"];
+  if (!secret) {
+    throw new Error("SESSION_SECRET environment variable is required");
+  }
+  const isHttps = process.env["NODE_ENV"] === "production"
+    || Boolean(process.env["REPLIT_DOMAINS"]);
+
+  return session({
+    name: "oasis.staff",
+    secret,
+    resave: false,
+    saveUninitialized: false,
+    rolling: true,
+    store: buildSessionStore(),
+    cookie: buildCookieOptions(isHttps),
+  });
+}
+
+/**
+ * @deprecated Use buildCustomerSessionMiddleware() or buildStaffSessionMiddleware().
+ * Kept for backward compatibility; resolves to the customer session.
+ */
+export function buildSessionMiddleware(): RequestHandler {
+  return buildCustomerSessionMiddleware();
 }
