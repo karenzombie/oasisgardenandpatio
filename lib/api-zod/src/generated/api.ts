@@ -7570,6 +7570,7 @@ export const AdminListUsersResponseItem = zod.object({
   twoFactorEnabled: zod.boolean(),
   lastLoginAt: zod.coerce.date().nullable(),
   createdAt: zod.coerce.date(),
+  clerkUserId: zod.string().nullable(),
 });
 export const AdminListUsersResponse = zod.array(AdminListUsersResponseItem);
 
@@ -7609,6 +7610,7 @@ export const AdminGetUserResponse = zod
     twoFactorEnabled: zod.boolean(),
     lastLoginAt: zod.coerce.date().nullable(),
     createdAt: zod.coerce.date(),
+    clerkUserId: zod.string().nullable(),
   })
   .and(
     zod.object({
@@ -7667,6 +7669,7 @@ export const AdminUpdateUserResponse = zod.object({
   twoFactorEnabled: zod.boolean(),
   lastLoginAt: zod.coerce.date().nullable(),
   createdAt: zod.coerce.date(),
+  clerkUserId: zod.string().nullable(),
 });
 
 /**

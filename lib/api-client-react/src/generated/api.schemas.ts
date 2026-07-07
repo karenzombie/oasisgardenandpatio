@@ -3635,6 +3635,7 @@ export interface AdminUserSummary {
   twoFactorEnabled: boolean;
   lastLoginAt: string | null;
   createdAt: string;
+  clerkUserId: string | null;
 }
 
 export interface AdminAgentPrivileges {

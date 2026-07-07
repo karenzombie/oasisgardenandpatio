@@ -51,6 +51,7 @@ function userToSummary(row: User) {
     twoFactorEnabled: row.twoFactorEnabled,
     lastLoginAt: row.lastLoginAt ? row.lastLoginAt.toISOString() : null,
     createdAt: row.createdAt.toISOString(),
+    clerkUserId: row.clerkUserId ?? null,
   };
 }
 

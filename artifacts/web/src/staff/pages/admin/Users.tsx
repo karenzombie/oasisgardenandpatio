@@ -546,6 +546,8 @@ function UserManageDialog({
 
   if (!user) return null;
 
+  const isClerkManaged = !!user.clerkUserId;
+
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
@@ -558,6 +560,13 @@ function UserManageDialog({
         </DialogHeader>
 
         <form onSubmit={handleSaveDetails} className="space-y-3">
+          {isClerkManaged && (
+            <p className="text-xs text-slate-500 rounded border border-slate-200 bg-slate-50 px-3 py-2">
+              This customer created their account online. First and last name are
+              managed by the customer from their account portal and cannot be
+              changed here.
+            </p>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label htmlFor="mu-fn">First name</Label>
@@ -565,6 +574,9 @@ function UserManageDialog({
                 id="mu-fn"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
+                readOnly={isClerkManaged}
+                disabled={isClerkManaged}
+                className={isClerkManaged ? "bg-slate-100 cursor-not-allowed" : ""}
               />
             </div>
             <div>
@@ -573,6 +585,9 @@ function UserManageDialog({
                 id="mu-ln"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
+                readOnly={isClerkManaged}
+                disabled={isClerkManaged}
+                className={isClerkManaged ? "bg-slate-100 cursor-not-allowed" : ""}
               />
             </div>
           </div>

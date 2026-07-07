@@ -10178,7 +10178,8 @@ components:
         twoFactorEnabled: { type: boolean }
         lastLoginAt: { type: string, format: date-time, nullable: true }
         createdAt: { type: string, format: date-time }
-      required: [id, email, firstName, lastName, role, isActive, emailVerified, mustChangePassword, twoFactorEnabled, lastLoginAt, createdAt]
+        clerkUserId: { type: string, nullable: true }
+      required: [id, email, firstName, lastName, role, isActive, emailVerified, mustChangePassword, twoFactorEnabled, lastLoginAt, createdAt, clerkUserId]
     AdminAgentPrivileges:
       type: object
       properties:

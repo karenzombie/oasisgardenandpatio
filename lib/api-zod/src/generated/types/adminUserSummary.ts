@@ -19,4 +19,5 @@ export interface AdminUserSummary {
   twoFactorEnabled: boolean;
   lastLoginAt: Date | null;
   createdAt: Date;
+  clerkUserId: string | null;
 }
