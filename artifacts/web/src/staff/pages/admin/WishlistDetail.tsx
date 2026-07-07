@@ -372,6 +372,7 @@ export default function WishlistDetail() {
                   </th>
                 )}
                 <th className="px-3 py-2 font-medium">Description</th>
+                <th className="px-3 py-2 font-medium">Manufacturer</th>
                 <th className="px-3 py-2 font-medium">SKU</th>
                 <th className="px-3 py-2 font-medium">Added</th>
                 <th className="px-3 py-2 font-medium">Reach-out status</th>
@@ -411,6 +412,9 @@ export default function WishlistDetail() {
                           {it.variantLabel}
                         </div>
                       )}
+                    </td>
+                    <td className="px-3 py-2 text-slate-600 text-sm">
+                      {it.manufacturerName ?? "—"}
                     </td>
                     <td className="px-3 py-2 text-slate-600">
                       {it.sku ?? "—"}
