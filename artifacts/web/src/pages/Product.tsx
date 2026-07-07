@@ -138,6 +138,13 @@ export default function Product() {
   const [frameOnly, setFrameOnly] = useState(false);
   const requiresFabric = hasFabrics && !frameOnly;
 
+  // Reset the gallery to the first image whenever the selected finish changes
+  // so the image for the chosen colour is immediately visible.
+  // quoteOnly products use wlFinishId; purchasable products use finishId.
+  useEffect(() => {
+    setActiveImageIdx(0);
+  }, [finishId, wlFinishId]);
+
   // Reset selections when the user navigates between products so a stale
   // variantId/fabricId from a previous PDP can't unlock the gate here.
   useEffect(() => {
@@ -625,7 +632,21 @@ export default function Product() {
     );
   }
 
-  const galleryImages = data.images.filter((i) => i.imageKind === "gallery");
+  // When a finish is selected and some images are tagged to that finish, show
+  // only those images. Untagged images (finishId === null) are always shown
+  // when no finish is selected (or as the fallback if a finish has no tagged
+  // images, which shouldn't happen but is handled gracefully).
+  // quoteOnly products use wlFinishId for selection; purchasable products use finishId.
+  const effectiveFinishId = data.quoteOnly ? wlFinishId : finishId;
+  const allGalleryImages = data.images.filter((i) => i.imageKind === "gallery");
+  const hasFinishTaggedImages = allGalleryImages.some((i) => i.finishId !== null);
+  const galleryImages =
+    effectiveFinishId !== null && hasFinishTaggedImages
+      ? (() => {
+          const tagged = allGalleryImages.filter((i) => i.finishId === effectiveFinishId);
+          return tagged.length > 0 ? tagged : allGalleryImages;
+        })()
+      : allGalleryImages;
   const specImages = data.images.filter((i) => i.imageKind === "spec");
   const activeImage = galleryImages[activeImageIdx] ?? galleryImages[0] ?? null;
   const onSale = data.salePrice && data.price && Number(data.salePrice) < Number(data.price);
@@ -855,9 +876,11 @@ export default function Product() {
               ))}
             </div>
           ) : null}
-          <p className="mt-3 text-xs font-bold italic text-destructive">
-            NOTE: Image does not update with your fabric/finish selections.
-          </p>
+          {!hasFinishTaggedImages && (
+            <p className="mt-3 text-xs font-bold italic text-destructive">
+              NOTE: Image does not update with your fabric/finish selections.
+            </p>
+          )}
         </div>
 
         {/* Info */}

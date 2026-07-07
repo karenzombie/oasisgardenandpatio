@@ -227,6 +227,11 @@ export const productImagesTable = pgTable(
       () => productVariantsTable.id,
       { onDelete: "cascade" },
     ),
+    // When set, image belongs to a specific finish color (e.g. Shoreline Black).
+    // Defined as plain integer (no .references()) to avoid a circular dep
+    // with finishes.ts which already imports productsTable. The DB FK is
+    // enforced at the DB level (finish_id REFERENCES finishes(id) ON DELETE SET NULL).
+    finishId: integer("finish_id"),
     url: text("url").notNull(),
     altText: text("alt_text"),
     isPrimary: boolean("is_primary").notNull().default(false),

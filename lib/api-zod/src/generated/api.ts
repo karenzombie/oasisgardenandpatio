@@ -588,6 +588,12 @@ export const GetCatalogProductBySlugResponse = zod
           isPrimary: zod.boolean(),
           displayOrder: zod.number(),
           imageKind: zod.enum(["gallery", "spec"]),
+          finishId: zod
+            .number()
+            .nullable()
+            .describe(
+              "When set, this image belongs to a specific finish\/color (e.g. Shoreline Black). The PDP filters the gallery to matching images when a finish is selected.",
+            ),
         }),
       ),
       variants: zod

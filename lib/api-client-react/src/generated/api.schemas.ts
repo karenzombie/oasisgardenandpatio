@@ -1743,6 +1743,11 @@ export interface CatalogProductImage {
   isPrimary: boolean;
   displayOrder: number;
   imageKind: CatalogProductImageImageKind;
+  /**
+   * When set, this image belongs to a specific finish/color (e.g. Shoreline Black). The PDP filters the gallery to matching images when a finish is selected.
+   * @nullable
+   */
+  finishId: number | null;
 }
 
 export interface CatalogVariantGradePrice {

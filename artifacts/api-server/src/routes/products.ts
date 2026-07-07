@@ -687,6 +687,7 @@ router.get(
         isPrimary: productImagesTable.isPrimary,
         displayOrder: productImagesTable.displayOrder,
         imageKind: productImagesTable.imageKind,
+        finishId: productImagesTable.finishId,
       })
       .from(productImagesTable)
       .where(eq(productImagesTable.productId, row.id))

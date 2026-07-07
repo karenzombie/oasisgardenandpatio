@@ -7838,6 +7838,9 @@ components:
         imageKind:
           type: string
           enum: [gallery, spec]
+        finishId:
+          type: ["integer", "null"]
+          description: When set, this image belongs to a specific finish/color (e.g. Shoreline Black). The PDP filters the gallery to matching images when a finish is selected.
       required:
         - id
         - url
@@ -7845,6 +7848,7 @@ components:
         - isPrimary
         - displayOrder
         - imageKind
+        - finishId
     CatalogProductVariant:
       type: object
       properties:
