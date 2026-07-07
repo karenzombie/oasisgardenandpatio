@@ -89,7 +89,7 @@ function BackupPanel({
         <Button
           onClick={onTrigger}
           disabled={isLoading}
-          className="bg-green-700 hover:bg-green-800 text-white w-full sm:w-auto"
+          className="bg-primary hover:bg-primary/90 text-primary-foreground w-full sm:w-auto"
         >
           {isLoading ? (
             <>
@@ -110,7 +110,7 @@ function BackupPanel({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction className="bg-green-700 hover:bg-green-800 text-white">
+            <AlertDialogAction className="bg-primary hover:bg-primary/90 text-primary-foreground">
               Run Backup
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -292,7 +292,7 @@ export default function Backups() {
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={() => runBackup("products")}
-                  className="bg-green-700 hover:bg-green-800 text-white"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
                   Run Backup
                 </AlertDialogAction>
@@ -316,7 +316,7 @@ export default function Backups() {
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={() => runBackup("customers")}
-                  className="bg-green-700 hover:bg-green-800 text-white"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
                   Run Backup
                 </AlertDialogAction>
