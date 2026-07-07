@@ -85,7 +85,7 @@ function FinishSwatch({
           <img
             src={finish.imageUrl}
             alt={finish.name}
-            className="w-full h-full object-cover object-left"
+            className="w-full h-full object-cover object-top"
           />
         ) : customMessage ? (
           <div
@@ -154,11 +154,11 @@ function FinishProductsDialog({
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-start gap-4">
-            {finish?.imageUrl && !finish.collection && (
+            {finish?.imageUrl && (
               <img
                 src={finish.imageUrl}
                 alt={finish.name}
-                className="w-20 h-20 object-cover object-left bg-muted border border-border rounded-sm shrink-0"
+                className="w-20 h-20 object-cover object-top bg-muted border border-border rounded-sm shrink-0"
               />
             )}
             <div className="min-w-0">
@@ -232,7 +232,7 @@ function FinishProductsDialog({
           )}
         </div>
 
-        {finish?.collection && finish.imageUrl && (
+        {finish?.collection && finish.imageUrl && finish?.manufacturerName === "Couture Jardin" && (
           <div className="mt-4 border-t border-border pt-4">
             {finish.itemNumber && (
               <p className="text-xs uppercase tracking-widest text-muted-foreground mb-3">
