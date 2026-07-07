@@ -1791,7 +1791,10 @@ function ProductPickerDialog({
                     <div className="flex justify-between items-center">
                       <div>
                         <div className="font-medium text-sm">{p.name}</div>
-                        <div className="text-xs text-slate-500 font-mono">{p.sku}</div>
+                        <div className="text-xs text-slate-500 font-mono">
+                          {p.sku}
+                          {p.manufacturerName ? ` · ${p.manufacturerName}` : ""}
+                        </div>
                       </div>
                       <div className="text-sm tabular-nums">{p.price != null ? fmtMoney(Number(p.price)) : "—"}</div>
                     </div>
@@ -1805,7 +1808,10 @@ function ProductPickerDialog({
             <div className="rounded border bg-slate-50 p-3 flex justify-between items-start">
               <div>
                 <div className="font-medium">{picked.name}</div>
-                <div className="text-xs text-slate-500 font-mono">{picked.sku}</div>
+                <div className="text-xs text-slate-500 font-mono">
+                  {picked.sku}
+                  {picked.manufacturerName ? ` · ${picked.manufacturerName}` : ""}
+                </div>
                 <div className="text-sm tabular-nums mt-1">
                   {effectivePrice != null ? fmtMoney(effectivePrice) : "—"}
                   {supportsFrameOnly && !includeFabric && (
