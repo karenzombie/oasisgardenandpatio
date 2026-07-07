@@ -50,7 +50,7 @@ async function main() {
         eq(finishCollectionsTable.collectionName, COLLECTION_NAME),
       ),
     );
-  console.log(`Deleted ${deleted.length} finish_collections row(s) for "${COLLECTION_NAME}"`);
+  console.log(`Deleted finish_collections row(s) for "${COLLECTION_NAME}"`);
 
   // 2. Update itemNumber for each new finish
   let updated = 0;
@@ -79,7 +79,7 @@ async function main() {
     console.log(`  Updated itemNumber: ${oldItemNumber} → ${newItemNumber}`);
   }
 
-  console.log(`\nDone. deleted=${deleted.length} updated=${updated}`);
+  console.log(`\nDone. updated=${updated}`);
 }
 
 main()
