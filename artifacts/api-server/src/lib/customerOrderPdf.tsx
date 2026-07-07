@@ -130,12 +130,11 @@ const s = StyleSheet.create({
   },
   td: { fontSize: 8.5, paddingHorizontal: 4 },
 
-  colDept: { width: "10%" },
-  colQty: { width: "8%", textAlign: "center" },
-  colDesc: { width: "40%" },
-  colMfg: { width: "15%" },
-  colPrice: { width: "13.5%", textAlign: "right" },
-  colAmt: { width: "13.5%", textAlign: "right" },
+  colQty: { width: "9%", textAlign: "center" },
+  colDesc: { width: "45%" },
+  colMfg: { width: "18%" },
+  colPrice: { width: "14%", textAlign: "right" },
+  colAmt: { width: "14%", textAlign: "right" },
 
   itemSub: { fontSize: 7, color: LABEL, marginTop: 1 },
 
@@ -305,7 +304,6 @@ function methodLabel(m: string): string {
 }
 
 export interface PdfCustomerOrderItem {
-  department: string | null;
   description: string | null;
   variantNameSnapshot: string | null;
   fabricNameSnapshot: string | null;
@@ -414,7 +412,6 @@ function ItemsTable({
   return (
     <View style={s.itemsTable}>
       <View style={s.thRow} fixed>
-        <Text style={[s.th, s.colDept]}>Dept</Text>
         <Text style={[s.th, s.colQty]}>Qty</Text>
         <Text style={[s.th, s.colDesc]}>Description</Text>
         <Text style={[s.th, s.colMfg]}>Manufacturer</Text>
@@ -435,7 +432,6 @@ function ItemsTable({
             key={idx}
             wrap={false}
           >
-            <Text style={[s.td, s.colDept]}>{it.department ?? ""}</Text>
             <Text style={[s.td, s.colQty]}>{it.quantity}</Text>
             <View style={[s.colDesc, { paddingHorizontal: 4 }]}>
               <Text style={{ fontSize: 8.5 }}>{desc}</Text>

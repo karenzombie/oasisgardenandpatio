@@ -129,7 +129,6 @@ function itemToPayload(
     fabricVendorId: it.fabricVendorId,
     fabricVendorName,
     fabricVendorOrderId: it.fabricVendorOrderId,
-    department: it.department,
     description: it.description,
     quantity: it.quantity,
     unitPrice: Number(it.unitPrice),
@@ -2194,7 +2193,6 @@ export async function loadOrderPdfArgs(
   }
 
   const pdfItems: PdfCustomerOrderItem[] = items.map((it) => ({
-    department: it.department,
     description: it.description,
     variantNameSnapshot: it.variantNameSnapshot,
     fabricNameSnapshot: it.fabricNameSnapshot,
