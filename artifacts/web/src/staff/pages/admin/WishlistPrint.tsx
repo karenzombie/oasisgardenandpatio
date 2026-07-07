@@ -130,6 +130,7 @@ export default function WishlistPrint() {
           <thead>
             <tr className="bg-slate-900 text-left text-[10px] uppercase tracking-wide text-white">
               <th className="px-2 py-1.5 font-bold">Description</th>
+              <th className="px-2 py-1.5 font-bold">Manufacturer</th>
               <th className="px-2 py-1.5 font-bold">SKU</th>
               <th className="px-2 py-1.5 text-center font-bold">Qty</th>
               <th className="px-2 py-1.5 text-right font-bold">Price</th>
@@ -146,6 +147,9 @@ export default function WishlistPrint() {
                       {it.variantLabel}
                     </div>
                   )}
+                </td>
+                <td className="px-2 py-1.5 align-top text-slate-600">
+                  {it.manufacturerName ?? "—"}
                 </td>
                 <td className="px-2 py-1.5 align-top text-slate-600">
                   {it.sku ?? "—"}
