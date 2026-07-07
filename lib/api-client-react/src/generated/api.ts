@@ -56,6 +56,7 @@ import type {
   AdminFinishCollection,
   AdminFinishCollectionsResponse,
   AdminFinishProductsResponse,
+  AdminGetBackupLogParams,
   AdminGetDeliveryManifestCopiesPdfParams,
   AdminGetDeliveryManifestSummaryPdfParams,
   AdminGetShippingSubcategoriesParams,
@@ -136,6 +137,8 @@ import type {
   AdminWishlistReachOutPreviewResponse,
   AdminWishlistReachOutSendResponse,
   AuditLogPage,
+  BackupLogPage,
+  BackupRun,
   Banner,
   CancelPendingVendorOrderRequest,
   CancelVendorOrderRequest,
@@ -13792,6 +13795,265 @@ export const useAdminUpdateAgentPrivileges = <
 > => {
   return useMutation(getAdminUpdateAgentPrivilegesMutationOptions(options));
 };
+
+/**
+ * @summary Run a products backup — DB dump + manifest pushed to GitHub
+ */
+export const getAdminRunProductsBackupUrl = () => {
+  return `/api/admin/backup/products`;
+};
+
+export const adminRunProductsBackup = async (
+  options?: RequestInit,
+): Promise<BackupRun> => {
+  return customFetch<BackupRun>(getAdminRunProductsBackupUrl(), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getAdminRunProductsBackupMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminRunProductsBackup>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminRunProductsBackup>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["adminRunProductsBackup"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminRunProductsBackup>>,
+    void
+  > = () => {
+    return adminRunProductsBackup(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminRunProductsBackupMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminRunProductsBackup>>
+>;
+
+export type AdminRunProductsBackupMutationError = ErrorType<Error>;
+
+/**
+ * @summary Run a products backup — DB dump + manifest pushed to GitHub
+ */
+export const useAdminRunProductsBackup = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminRunProductsBackup>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminRunProductsBackup>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getAdminRunProductsBackupMutationOptions(options));
+};
+
+/**
+ * @summary Run a customers backup — DB dump + manifest pushed to GitHub
+ */
+export const getAdminRunCustomersBackupUrl = () => {
+  return `/api/admin/backup/customers`;
+};
+
+export const adminRunCustomersBackup = async (
+  options?: RequestInit,
+): Promise<BackupRun> => {
+  return customFetch<BackupRun>(getAdminRunCustomersBackupUrl(), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getAdminRunCustomersBackupMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminRunCustomersBackup>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminRunCustomersBackup>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["adminRunCustomersBackup"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminRunCustomersBackup>>,
+    void
+  > = () => {
+    return adminRunCustomersBackup(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminRunCustomersBackupMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminRunCustomersBackup>>
+>;
+
+export type AdminRunCustomersBackupMutationError = ErrorType<Error>;
+
+/**
+ * @summary Run a customers backup — DB dump + manifest pushed to GitHub
+ */
+export const useAdminRunCustomersBackup = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminRunCustomersBackup>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminRunCustomersBackup>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getAdminRunCustomersBackupMutationOptions(options));
+};
+
+/**
+ * @summary List recent backup log entries (newest first)
+ */
+export const getAdminGetBackupLogUrl = (params?: AdminGetBackupLogParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/admin/backup/log?${stringifiedParams}`
+    : `/api/admin/backup/log`;
+};
+
+export const adminGetBackupLog = async (
+  params?: AdminGetBackupLogParams,
+  options?: RequestInit,
+): Promise<BackupLogPage> => {
+  return customFetch<BackupLogPage>(getAdminGetBackupLogUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAdminGetBackupLogQueryKey = (
+  params?: AdminGetBackupLogParams,
+) => {
+  return [`/api/admin/backup/log`, ...(params ? [params] : [])] as const;
+};
+
+export const getAdminGetBackupLogQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminGetBackupLog>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: AdminGetBackupLogParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminGetBackupLog>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getAdminGetBackupLogQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminGetBackupLog>>
+  > = ({ signal }) => adminGetBackupLog(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetBackupLog>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminGetBackupLogQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminGetBackupLog>>
+>;
+export type AdminGetBackupLogQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List recent backup log entries (newest first)
+ */
+
+export function useAdminGetBackupLog<
+  TData = Awaited<ReturnType<typeof adminGetBackupLog>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: AdminGetBackupLogParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminGetBackupLog>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminGetBackupLogQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Search audit log entries (newest first)

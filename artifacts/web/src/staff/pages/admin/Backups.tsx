@@ -1,5 +1,13 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { HardDrive, CheckCircle, XCircle } from "lucide-react";
+import {
+  useAdminRunProductsBackup,
+  useAdminRunCustomersBackup,
+  useAdminGetBackupLog,
+  getAdminGetBackupLogQueryKey,
+  type BackupRun,
+} from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
@@ -15,32 +23,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { PageBody, PageHeader } from "../../StaffShell";
+import { formatTimestamp } from "./backupUtils";
 
 type BackupType = "products" | "customers";
-
-interface BackupRun {
-  id: number;
-  backupType: BackupType;
-  ranAt: string;
-  triggeredBy: string | null;
-  status: "success" | "failure";
-  errorMessage: string | null;
-  databaseDumpSizeBytes: number | null;
-  imageCount: number | null;
-}
-
-function formatTimestamp(iso: string): string {
-  const d = new Date(iso);
-  return (
-    d.toLocaleDateString("en-US", {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    }) +
-    " at " +
-    d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
-  );
-}
 
 function formatBytes(bytes: number | null): string {
   if (bytes == null) return "—";
@@ -89,9 +74,8 @@ function BackupPanel({
                 Triggered by {lastRun.triggeredBy}
               </div>
             )}
-            {lastRun.imageCount != null && (
+            {lastRun.databaseDumpSizeBytes != null && (
               <div className="text-slate-500 text-xs">
-                {lastRun.imageCount.toLocaleString()} images ·{" "}
                 {formatBytes(lastRun.databaseDumpSizeBytes)} database dump
               </div>
             )}
@@ -168,9 +152,6 @@ function HistoryTable({ rows }: HistoryTableProps) {
                   Status
                 </th>
                 <th className="text-right px-5 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  Images
-                </th>
-                <th className="text-right px-5 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                   DB Size
                 </th>
               </tr>
@@ -209,11 +190,6 @@ function HistoryTable({ rows }: HistoryTableProps) {
                     )}
                   </td>
                   <td className="px-5 py-3 text-right text-slate-600">
-                    {row.imageCount != null
-                      ? row.imageCount.toLocaleString()
-                      : "—"}
-                  </td>
-                  <td className="px-5 py-3 text-right text-slate-600">
                     {formatBytes(row.databaseDumpSizeBytes)}
                   </td>
                 </tr>
@@ -228,20 +204,30 @@ function HistoryTable({ rows }: HistoryTableProps) {
 
 export default function Backups() {
   const toast = useToast();
+  const queryClient = useQueryClient();
   const [confirmType, setConfirmType] = useState<BackupType | null>(null);
   const [loadingType, setLoadingType] = useState<BackupType | null>(null);
 
-  // Placeholder state — will be replaced with real API queries after Gate 2 approval.
-  const lastProducts: BackupRun | null = null;
-  const lastCustomers: BackupRun | null = null;
-  const history: BackupRun[] = [];
+  const logQuery = useAdminGetBackupLog();
+  const items = logQuery.data?.items ?? [];
+  const lastProducts = items.find((r) => r.backupType === "products") ?? null;
+  const lastCustomers = items.find((r) => r.backupType === "customers") ?? null;
+
+  const productsMut = useAdminRunProductsBackup();
+  const customersMut = useAdminRunCustomersBackup();
 
   async function runBackup(type: BackupType) {
     setConfirmType(null);
     setLoadingType(type);
     try {
-      // TODO (step 6+7): wire to POST /api/admin/backup/products or /api/admin/backup/customers
-      await new Promise<void>((resolve) => setTimeout(resolve, 500));
+      if (type === "products") {
+        await productsMut.mutateAsync();
+      } else {
+        await customersMut.mutateAsync();
+      }
+      await queryClient.invalidateQueries({
+        queryKey: getAdminGetBackupLogQueryKey(),
+      });
       toast.toast({
         title:
           type === "products"
@@ -270,10 +256,10 @@ export default function Backups() {
           <div className="grid gap-4 md:grid-cols-2">
             <BackupPanel
               title="Products Backup"
-              description="Exports the full database and all product images from object storage to GitHub."
+              description="Exports the full database and a manifest (with object storage location) to GitHub."
               buttonLabel="Back Up Products Now"
               confirmTitle="Back up products?"
-              confirmBody="This will export the full database and all product images to GitHub. Depending on image volume this may take several minutes."
+              confirmBody="This will export the full database and a manifest to GitHub. This may take several minutes."
               lastRun={lastProducts}
               isLoading={loadingType === "products"}
               onTrigger={() => setConfirmType("products")}
@@ -298,9 +284,8 @@ export default function Backups() {
               <AlertDialogHeader>
                 <AlertDialogTitle>Back up products?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This will export the full database and all product images to
-                  GitHub. Depending on image volume this may take several
-                  minutes.
+                  This will export the full database and a manifest to GitHub.
+                  This may take several minutes.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -339,7 +324,7 @@ export default function Backups() {
             </AlertDialogContent>
           </AlertDialog>
 
-          <HistoryTable rows={history} />
+          <HistoryTable rows={items} />
         </div>
       </PageBody>
     </>

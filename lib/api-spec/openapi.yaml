@@ -4067,6 +4067,50 @@ paths:
         "404":
           description: Not found
           content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/backup/products:
+    post:
+      operationId: adminRunProductsBackup
+      tags: [admin-backup]
+      summary: Run a products backup — DB dump + manifest pushed to GitHub
+      responses:
+        "200":
+          description: Backup completed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BackupRun" }
+        "503":
+          description: Backup failed
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/backup/customers:
+    post:
+      operationId: adminRunCustomersBackup
+      tags: [admin-backup]
+      summary: Run a customers backup — DB dump + manifest pushed to GitHub
+      responses:
+        "200":
+          description: Backup completed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BackupRun" }
+        "503":
+          description: Backup failed
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/backup/log:
+    get:
+      operationId: adminGetBackupLog
+      tags: [admin-backup]
+      summary: List recent backup log entries (newest first)
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 100 }
+      responses:
+        "200":
+          description: Backup log entries
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BackupLogPage" }
   /admin/audit-log:
     get:
       operationId: adminListAuditLog
@@ -11471,3 +11515,35 @@ components:
         - changedByEmail
         - notes
         - createdAt
+    BackupRun:
+      type: object
+      properties:
+        id: { type: integer }
+        backupType:
+          type: string
+          enum: [products, customers]
+        ranAt: { type: string, format: date-time }
+        triggeredBy: { type: ["string", "null"] }
+        status:
+          type: string
+          enum: [success, failure]
+        errorMessage: { type: ["string", "null"] }
+        databaseDumpSizeBytes: { type: ["integer", "null"], format: int64 }
+        imageCount: { type: ["integer", "null"] }
+      required:
+        - id
+        - backupType
+        - ranAt
+        - triggeredBy
+        - status
+        - errorMessage
+        - databaseDumpSizeBytes
+        - imageCount
+    BackupLogPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/BackupRun" }
+        total: { type: integer }
+      required: [items, total]

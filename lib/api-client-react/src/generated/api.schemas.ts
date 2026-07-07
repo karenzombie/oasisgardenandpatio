@@ -5076,6 +5076,42 @@ export interface EntityHistoryEntry {
   createdAt: string;
 }
 
+export type BackupRunBackupType =
+  (typeof BackupRunBackupType)[keyof typeof BackupRunBackupType];
+
+export const BackupRunBackupType = {
+  products: "products",
+  customers: "customers",
+} as const;
+
+export type BackupRunStatus =
+  (typeof BackupRunStatus)[keyof typeof BackupRunStatus];
+
+export const BackupRunStatus = {
+  success: "success",
+  failure: "failure",
+} as const;
+
+export interface BackupRun {
+  id: number;
+  backupType: BackupRunBackupType;
+  ranAt: string;
+  /** @nullable */
+  triggeredBy: string | null;
+  status: BackupRunStatus;
+  /** @nullable */
+  errorMessage: string | null;
+  /** @nullable */
+  databaseDumpSizeBytes: number | null;
+  /** @nullable */
+  imageCount: number | null;
+}
+
+export interface BackupLogPage {
+  items: BackupRun[];
+  total: number;
+}
+
 export type ListManufacturersParams = {
   /**
    * When true, only return manufacturers that have at least one directly purchasable online product (excludes quote-only and in-store-only products)
@@ -5351,6 +5387,14 @@ export const AdminListUsersGroup = {
   customers: "customers",
   staff: "staff",
 } as const;
+
+export type AdminGetBackupLogParams = {
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+};
 
 export type AdminListAuditLogParams = {
   userId?: number;

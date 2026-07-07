@@ -1,6 +1,13 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import type { StaffUser } from "@workspace/api-client-react";
-import { useAdminGetDashboardStats } from "@workspace/api-client-react";
+import {
+  useAdminGetDashboardStats,
+  useAdminRunProductsBackup,
+  useAdminRunCustomersBackup,
+  useAdminGetBackupLog,
+  getAdminGetBackupLogQueryKey,
+} from "@workspace/api-client-react";
 import { PageBody, PageHeader } from "../../StaffShell";
 import { Link } from "wouter";
 import {
@@ -29,8 +36,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { formatTimestamp } from "./Backups";
-import type { BackupRun } from "./Backups";
+import { formatTimestamp } from "./backupUtils";
 
 interface AdminDashboardProps {
   user: StaffUser;
@@ -171,7 +177,7 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
             </p>
           </DashboardCard>
 
-          <BackupWidgetCard lastProducts={null} lastCustomers={null} />
+          <BackupWidgetCard />
         </div>
       </PageBody>
     </>
@@ -253,23 +259,32 @@ function BigNumber({
   );
 }
 
-function BackupWidgetCard({
-  lastProducts,
-  lastCustomers,
-}: {
-  lastProducts: BackupRun | null;
-  lastCustomers: BackupRun | null;
-}) {
+function BackupWidgetCard() {
   const toast = useToast();
+  const queryClient = useQueryClient();
   const [confirmType, setConfirmType] = useState<"products" | "customers" | null>(null);
   const [loadingType, setLoadingType] = useState<"products" | "customers" | null>(null);
+
+  const logQuery = useAdminGetBackupLog();
+  const items = logQuery.data?.items ?? [];
+  const lastProducts = items.find((r) => r.backupType === "products") ?? null;
+  const lastCustomers = items.find((r) => r.backupType === "customers") ?? null;
+
+  const productsMut = useAdminRunProductsBackup();
+  const customersMut = useAdminRunCustomersBackup();
 
   async function runBackup(type: "products" | "customers") {
     setConfirmType(null);
     setLoadingType(type);
     try {
-      // TODO (step 6+7): wire to POST /api/admin/backup/products or /api/admin/backup/customers
-      await new Promise<void>((resolve) => setTimeout(resolve, 500));
+      if (type === "products") {
+        await productsMut.mutateAsync();
+      } else {
+        await customersMut.mutateAsync();
+      }
+      await queryClient.invalidateQueries({
+        queryKey: getAdminGetBackupLogQueryKey(),
+      });
       toast.toast({
         title:
           type === "products"
@@ -346,8 +361,8 @@ function BackupWidgetCard({
           <AlertDialogHeader>
             <AlertDialogTitle>Back up products?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will export the full database and all product images to
-              GitHub. Depending on image volume this may take several minutes.
+              This will export the full database and a manifest to GitHub.
+              This may take several minutes.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

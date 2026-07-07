@@ -7725,6 +7725,63 @@ export const AdminUpdateAgentPrivilegesResponse = zod.object({
 });
 
 /**
+ * @summary Run a products backup — DB dump + manifest pushed to GitHub
+ */
+export const AdminRunProductsBackupResponse = zod.object({
+  id: zod.number(),
+  backupType: zod.enum(["products", "customers"]),
+  ranAt: zod.coerce.date(),
+  triggeredBy: zod.string().nullable(),
+  status: zod.enum(["success", "failure"]),
+  errorMessage: zod.string().nullable(),
+  databaseDumpSizeBytes: zod.number().nullable(),
+  imageCount: zod.number().nullable(),
+});
+
+/**
+ * @summary Run a customers backup — DB dump + manifest pushed to GitHub
+ */
+export const AdminRunCustomersBackupResponse = zod.object({
+  id: zod.number(),
+  backupType: zod.enum(["products", "customers"]),
+  ranAt: zod.coerce.date(),
+  triggeredBy: zod.string().nullable(),
+  status: zod.enum(["success", "failure"]),
+  errorMessage: zod.string().nullable(),
+  databaseDumpSizeBytes: zod.number().nullable(),
+  imageCount: zod.number().nullable(),
+});
+
+/**
+ * @summary List recent backup log entries (newest first)
+ */
+export const adminGetBackupLogQueryLimitMax = 100;
+
+export const AdminGetBackupLogQueryParams = zod.object({
+  limit: zod.coerce
+    .number()
+    .min(1)
+    .max(adminGetBackupLogQueryLimitMax)
+    .optional(),
+});
+
+export const AdminGetBackupLogResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      backupType: zod.enum(["products", "customers"]),
+      ranAt: zod.coerce.date(),
+      triggeredBy: zod.string().nullable(),
+      status: zod.enum(["success", "failure"]),
+      errorMessage: zod.string().nullable(),
+      databaseDumpSizeBytes: zod.number().nullable(),
+      imageCount: zod.number().nullable(),
+    }),
+  ),
+  total: zod.number(),
+});
+
+/**
  * @summary Search audit log entries (newest first)
  */
 export const adminListAuditLogQueryLimitMax = 200;
