@@ -669,10 +669,7 @@ router.get(
       .where(eq(productsTable.slug, slug))
       .limit(1);
 
-    // Public PDP must match PLP visibility: only show active products that
-    // are flagged for online catalog. Otherwise direct-link access could
-    // expose hidden/in-store-only items.
-    if (!row || !row.isActive || !row.availableOnline) {
+    if (!row || !row.isActive) {
       res.status(404).json({ error: "Product not found" });
       return;
     }
