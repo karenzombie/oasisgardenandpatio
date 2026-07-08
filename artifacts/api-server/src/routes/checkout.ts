@@ -345,16 +345,20 @@ router.post(
 
         if (lines.length === 0)
           return { error: "Cart is empty", status: 400 };
-        if (
-          lines.some(
-            (l) =>
-              !l.isActive ||
-              l.quoteOnly,
-          )
-        ) {
+        if (lines.some((l) => !l.isActive || l.quoteOnly)) {
           return {
             error:
               "One or more items in your cart are no longer available. Please update your cart and try again.",
+            status: 400,
+          };
+        }
+        // Tied accessory lines (e.g. top covers) may have available_online=false
+        // and are valid as child items attached to a base. Standalone items that
+        // are inquiry-only should not reach checkout.
+        if (lines.some((l) => !l.availableOnline && l.parentCartItemId == null)) {
+          return {
+            error:
+              "One or more items in your cart are available by inquiry only and cannot be purchased online. Please contact us or update your cart.",
             status: 400,
           };
         }

@@ -351,6 +351,7 @@ router.post(
         salePrice: productsTable.salePrice,
         frameOnlyPrice: productsTable.frameOnlyPrice,
         quoteOnly: productsTable.quoteOnly,
+        availableOnline: productsTable.availableOnline,
         manufacturerName: manufacturersTable.name,
       })
       .from(productsTable)
@@ -368,6 +369,13 @@ router.post(
 
     if (!product) {
       res.status(404).json({ error: "Product not found" });
+      return;
+    }
+    if (!product.availableOnline) {
+      res.status(400).json({
+        error:
+          "This product is available by inquiry only and cannot be added to the cart. Please contact us for pricing and availability.",
+      });
       return;
     }
     if (product.quoteOnly) {
