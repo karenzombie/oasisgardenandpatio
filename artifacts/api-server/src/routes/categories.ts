@@ -29,7 +29,6 @@ router.get("/categories", async (req, res): Promise<void> => {
   const productConditions = [
     eq(productsTable.categoryId, categoriesTable.id),
     eq(productsTable.isActive, true),
-    eq(productsTable.availableOnline, true),
   ];
   if (onlineOnly) {
     productConditions.push(eq(productsTable.quoteOnly, false));

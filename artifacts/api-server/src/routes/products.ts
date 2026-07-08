@@ -86,7 +86,6 @@ router.get("/products/featured", async (_req, res): Promise<void> => {
     .where(
       and(
         eq(productsTable.isActive, true),
-        eq(productsTable.availableOnline, true),
         eq(productsTable.featured, true),
       ),
     )
@@ -117,11 +116,8 @@ router.get("/products/featured", async (_req, res): Promise<void> => {
 
 // Compatible Recommendations for a product detail page. Generic + data-driven:
 // the mapping lives in `product_recommendations` (source SKU -> compatible SKU)
-// and is extended by adding rows, not code. The governing rule for the whole
-// feature is online availability — we only return compatible items whose
-// product is active AND availableOnline, so a not-yet-online (or not-yet-
-// created) SKU in the mapping simply stays hidden. Recommended pick sorts
-// first; the caller renders nothing when the array is empty.
+// and is extended by adding rows, not code. Only active products are returned;
+// the caller renders nothing when the array is empty.
 router.get(
   "/products/:sku/recommendations",
   async (req: Request, res: Response): Promise<void> => {
@@ -152,7 +148,6 @@ router.get(
         and(
           eq(productRecommendationsTable.sourceSku, sku),
           eq(productsTable.isActive, true),
-          eq(productsTable.availableOnline, true),
         ),
       )
       .orderBy(
@@ -379,7 +374,6 @@ router.get(
 
     const conditions = [
       eq(productsTable.isActive, true),
-      eq(productsTable.availableOnline, true),
       sql`${productsTable.collection} is not null`,
       sql`${productsTable.collection} <> ''`,
     ];

@@ -151,10 +151,7 @@ router.get(
         limit 1
       )`,
     };
-    const visibility = and(
-      eq(productsTable.isActive, true),
-      eq(productsTable.availableOnline, true),
-    );
+    const visibility = eq(productsTable.isActive, true);
 
     const [directRows, poolRows] = await Promise.all([
       db

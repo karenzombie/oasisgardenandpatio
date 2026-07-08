@@ -345,14 +345,10 @@ router.post(
 
         if (lines.length === 0)
           return { error: "Cart is empty", status: 400 };
-        // Tied accessory lines (top covers) are intentionally hidden products
-        // (available_online=false); they're valid only as a child of a base
-        // line, so exempt them from the storefront-availability guard.
         if (
           lines.some(
             (l) =>
               !l.isActive ||
-              (!l.availableOnline && l.parentCartItemId == null) ||
               l.quoteOnly,
           )
         ) {

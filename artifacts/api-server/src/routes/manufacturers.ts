@@ -24,7 +24,6 @@ router.get("/manufacturers", async (req, res): Promise<void> => {
   const productConditions = [
     eq(productsTable.manufacturerId, manufacturersTable.id),
     eq(productsTable.isActive, true),
-    eq(productsTable.availableOnline, true),
   ];
   if (onlineOnly) {
     productConditions.push(eq(productsTable.quoteOnly, false));

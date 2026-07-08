@@ -362,7 +362,6 @@ router.post(
         and(
           eq(productsTable.id, productId),
           eq(productsTable.isActive, true),
-          eq(productsTable.availableOnline, true),
         ),
       )
       .limit(1);
