@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, eq, ilike, inArray, isNull, sql } from "drizzle-orm";
 import {
   db,
   cartsTable,
@@ -549,6 +549,7 @@ router.post(
                 and(
                   inArray(finishesTable.manufacturerId, poolMfrIds),
                   eq(finishesTable.isActive, true),
+                  ilike(finishesTable.description, "%frame%finish%"),
                 ),
               )
           ).map((f) => f.id)

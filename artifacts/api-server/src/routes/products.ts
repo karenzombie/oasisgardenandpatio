@@ -848,6 +848,7 @@ router.get(
             and(
               inArray(finishesTable.manufacturerId, poolMfrIds),
               eq(finishesTable.isActive, true),
+              ilike(finishesTable.description, "%frame%finish%"),
             ),
           )
       : [];
