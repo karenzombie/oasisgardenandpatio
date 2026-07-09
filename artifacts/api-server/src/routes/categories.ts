@@ -31,6 +31,7 @@ router.get("/categories", async (req, res): Promise<void> => {
     eq(productsTable.isActive, true),
   ];
   if (onlineOnly) {
+    productConditions.push(eq(productsTable.availableOnline, true));
     productConditions.push(eq(productsTable.quoteOnly, false));
     productConditions.push(eq(productsTable.inStoreOnly, false));
   }

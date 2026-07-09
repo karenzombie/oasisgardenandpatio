@@ -199,6 +199,7 @@ router.get(
       eq(productsTable.isActive, true),
     ];
     if (onlineOnly) {
+      conditions.push(eq(productsTable.availableOnline, true));
       conditions.push(eq(productsTable.quoteOnly, false));
       conditions.push(eq(productsTable.inStoreOnly, false));
     }
@@ -439,6 +440,7 @@ router.get(
         eq(productsTable.isActive, true),
       ];
       if (onlineOnly) {
+        conds.push(eq(productsTable.availableOnline, true));
         conds.push(eq(productsTable.quoteOnly, false));
         conds.push(eq(productsTable.inStoreOnly, false));
       }
