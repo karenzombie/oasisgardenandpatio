@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { asc, eq, ilike, inArray, sql, count } from "drizzle-orm";
+import { asc, eq, inArray, sql, count } from "drizzle-orm";
 import {
   db,
   fabricsTable,
@@ -728,7 +728,6 @@ async function loadFinishesConfig(productId: number) {
         SELECT COUNT(*)::int FROM finishes f
         WHERE f.manufacturer_id = ${productFinishPoolsTable.manufacturerId}
           AND f.is_active = true
-          AND f.description ILIKE '%frame%finish%'
       )`,
     })
     .from(productFinishPoolsTable)

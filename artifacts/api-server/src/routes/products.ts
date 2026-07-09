@@ -823,36 +823,14 @@ router.get(
           .orderBy(asc(finishCollectionsTable.displayOrder))
       : [];
 
-    // Discrete frame-finish choices for grade-priced products. The effective
-    // set is the UNION of pool-expanded manufacturer finishes (every active
-    // finish from a pooled manufacturer) and individually-picked finish
-    // options. Legacy products carry neither, so this resolves to [].
-    const poolMfrRows = await db
-      .select({ manufacturerId: productFinishPoolsTable.manufacturerId })
-      .from(productFinishPoolsTable)
-      .where(eq(productFinishPoolsTable.productId, row.id));
-    const poolMfrIds = poolMfrRows.map((p) => p.manufacturerId);
-
-    const pooledFinishRows = poolMfrIds.length
-      ? await db
-          .select({
-            id: finishesTable.id,
-            code: finishesTable.itemNumber,
-            name: finishesTable.name,
-            imageUrl: finishesTable.imageUrl,
-            description: finishesTable.description,
-            displayOrder: finishesTable.displayOrder,
-          })
-          .from(finishesTable)
-          .where(
-            and(
-              inArray(finishesTable.manufacturerId, poolMfrIds),
-              eq(finishesTable.isActive, true),
-              ilike(finishesTable.description, "%frame%finish%"),
-            ),
-          )
-      : [];
-
+    // Discrete frame-finish choices for grade-priced products. When a product
+    // has explicit product_finish_options rows, those are the full and only
+    // set (e.g. Homecrest Mode's 11 wired frame finishes) — a manufacturer's
+    // finish pool is a fallback used ONLY when the product has no explicit
+    // options wired, since a pool expands to EVERY active finish for that
+    // manufacturer (which may include unrelated finish types, e.g. table/tile
+    // finishes for other collections from the same manufacturer). Legacy
+    // products carry neither, so this resolves to [].
     const optionFinishRows = await db
       .select({
         id: finishesTable.id,
@@ -876,6 +854,41 @@ router.get(
           eq(finishesTable.isActive, true),
         ),
       );
+
+    let pooledFinishRows: {
+      id: number;
+      code: string | null;
+      name: string;
+      imageUrl: string | null;
+      description: string | null;
+      displayOrder: number;
+    }[] = [];
+    if (optionFinishRows.length === 0) {
+      const poolMfrRows = await db
+        .select({ manufacturerId: productFinishPoolsTable.manufacturerId })
+        .from(productFinishPoolsTable)
+        .where(eq(productFinishPoolsTable.productId, row.id));
+      const poolMfrIds = poolMfrRows.map((p) => p.manufacturerId);
+
+      pooledFinishRows = poolMfrIds.length
+        ? await db
+            .select({
+              id: finishesTable.id,
+              code: finishesTable.itemNumber,
+              name: finishesTable.name,
+              imageUrl: finishesTable.imageUrl,
+              description: finishesTable.description,
+              displayOrder: finishesTable.displayOrder,
+            })
+            .from(finishesTable)
+            .where(
+              and(
+                inArray(finishesTable.manufacturerId, poolMfrIds),
+                eq(finishesTable.isActive, true),
+              ),
+            )
+        : [];
+    }
 
     const finishByIdMap = new Map<
       number,

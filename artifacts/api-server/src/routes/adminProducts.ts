@@ -1060,32 +1060,12 @@ router.get(
       gradePricesByVariant.set(gp.variantId, list);
     }
 
-    // Discrete frame-finish choices: UNION of pool-expanded manufacturer
-    // finishes and individually-picked finish options (mirrors detail route).
-    const poolMfrRows = await db
-      .select({ manufacturerId: productFinishPoolsTable.manufacturerId })
-      .from(productFinishPoolsTable)
-      .where(eq(productFinishPoolsTable.productId, product.id));
-    const poolMfrIds = poolMfrRows.map((p) => p.manufacturerId);
-    const pooledFinishRows = poolMfrIds.length
-      ? await db
-          .select({
-            id: finishesTable.id,
-            code: finishesTable.itemNumber,
-            name: finishesTable.name,
-            imageUrl: finishesTable.imageUrl,
-            description: finishesTable.description,
-            displayOrder: finishesTable.displayOrder,
-          })
-          .from(finishesTable)
-          .where(
-            and(
-              inArray(finishesTable.manufacturerId, poolMfrIds),
-              eq(finishesTable.isActive, true),
-              ilike(finishesTable.description, "%frame%finish%"),
-            ),
-          )
-      : [];
+    // Discrete frame-finish choices (mirrors detail route): explicit
+    // product_finish_options rows are the full and only set when present; the
+    // manufacturer's finish pool is used ONLY as a fallback when the product
+    // has no explicit options wired, since a pool expands to EVERY active
+    // finish for that manufacturer (which may include unrelated finish types
+    // from other collections).
     const optionFinishRows = await db
       .select({
         id: finishesTable.id,
@@ -1109,6 +1089,40 @@ router.get(
           eq(finishesTable.isActive, true),
         ),
       );
+
+    let pooledFinishRows: {
+      id: number;
+      code: string | null;
+      name: string;
+      imageUrl: string | null;
+      description: string | null;
+      displayOrder: number;
+    }[] = [];
+    if (optionFinishRows.length === 0) {
+      const poolMfrRows = await db
+        .select({ manufacturerId: productFinishPoolsTable.manufacturerId })
+        .from(productFinishPoolsTable)
+        .where(eq(productFinishPoolsTable.productId, product.id));
+      const poolMfrIds = poolMfrRows.map((p) => p.manufacturerId);
+      pooledFinishRows = poolMfrIds.length
+        ? await db
+            .select({
+              id: finishesTable.id,
+              code: finishesTable.itemNumber,
+              name: finishesTable.name,
+              imageUrl: finishesTable.imageUrl,
+              description: finishesTable.description,
+              displayOrder: finishesTable.displayOrder,
+            })
+            .from(finishesTable)
+            .where(
+              and(
+                inArray(finishesTable.manufacturerId, poolMfrIds),
+                eq(finishesTable.isActive, true),
+              ),
+            )
+        : [];
+    }
     const finishByIdMap = new Map<
       number,
       {

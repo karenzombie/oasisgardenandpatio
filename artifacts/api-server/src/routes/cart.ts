@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { and, asc, eq, ilike, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import {
   db,
   cartsTable,
@@ -533,33 +533,39 @@ router.post(
     // umbrellas) carry the finish in the chosen variant, so no separate finishId
     // applies — it is rejected if sent. Non-grade products never take a finish.
     if (isGradeMode) {
-      // Resolve the product's allowed finish set = pool-expanded mfr finishes
-      // UNION individually-picked finish options.
-      const poolMfrRows = await db
-        .select({ manufacturerId: productFinishPoolsTable.manufacturerId })
-        .from(productFinishPoolsTable)
-        .where(eq(productFinishPoolsTable.productId, productId));
-      const poolMfrIds = poolMfrRows.map((p) => p.manufacturerId);
-      const pooledIds = poolMfrIds.length
-        ? (
-            await db
-              .select({ id: finishesTable.id })
-              .from(finishesTable)
-              .where(
-                and(
-                  inArray(finishesTable.manufacturerId, poolMfrIds),
-                  eq(finishesTable.isActive, true),
-                  ilike(finishesTable.description, "%frame%finish%"),
-                ),
-              )
-          ).map((f) => f.id)
-        : [];
+      // Resolve the product's allowed finish set. Explicit product_finish_options
+      // rows are the full and only set when present; the manufacturer's finish
+      // pool is used ONLY as a fallback when the product has no explicit options
+      // wired, since a pool expands to EVERY active finish for that manufacturer
+      // (which may include unrelated finish types from other collections).
       const optionIds = (
         await db
           .select({ finishId: productFinishOptionsTable.finishId })
           .from(productFinishOptionsTable)
           .where(eq(productFinishOptionsTable.productId, productId))
       ).map((o) => o.finishId);
+
+      let pooledIds: number[] = [];
+      if (optionIds.length === 0) {
+        const poolMfrRows = await db
+          .select({ manufacturerId: productFinishPoolsTable.manufacturerId })
+          .from(productFinishPoolsTable)
+          .where(eq(productFinishPoolsTable.productId, productId));
+        const poolMfrIds = poolMfrRows.map((p) => p.manufacturerId);
+        pooledIds = poolMfrIds.length
+          ? (
+              await db
+                .select({ id: finishesTable.id })
+                .from(finishesTable)
+                .where(
+                  and(
+                    inArray(finishesTable.manufacturerId, poolMfrIds),
+                    eq(finishesTable.isActive, true),
+                  ),
+                )
+            ).map((f) => f.id)
+          : [];
+      }
       const allowedFinishIds = new Set([...pooledIds, ...optionIds]);
       const hasDiscreteFinishes = allowedFinishIds.size > 0;
       if (hasDiscreteFinishes) {
