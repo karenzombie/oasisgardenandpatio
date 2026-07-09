@@ -8,6 +8,7 @@ A full-stack e-commerce platform for a luxury outdoor furniture retailer, suppor
 - `pnpm --filter @workspace/api-spec run codegen`: Regenerate API hooks and Zod schemas after editing `lib/api-spec/openapi.yaml`.
 - `pnpm --filter @workspace/db run push`: Push DB schema changes (development only).
 - `pnpm --filter @workspace/scripts exec tsx src/seed.ts`: Run the idempotent seed script.
+- **DB guard**: `lib/db` refuses remote (non-local-host) DB connections outside real deployments unless `ALLOW_PROD=1` is set in the shell. To run a script against prod: `ALLOW_PROD=1 DATABASE_URL="$PROD_DATABASE_URL" tsx <script>`. Never override `DATABASE_URL` via `process.env` inside a script — ESM import hoisting makes it a silent no-op.
 - **Required Env Vars**: `RESEND_API`, `RESEND_FROM_EMAIL` (for transactional emails).
 
 ## Stack
