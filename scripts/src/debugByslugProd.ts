@@ -3,13 +3,12 @@ import { db } from "@workspace/db";
 import { sql } from "drizzle-orm";
 
 async function main() {
-  const byId = await db.execute(sql`SELECT id, slug, sku, is_active FROM products WHERE id = 6113`);
-  console.log("by id:", JSON.stringify(byId.rows));
-  const bySku = await db.execute(sql`SELECT id, slug, sku, is_active FROM products WHERE sku = '134444F'`);
-  console.log("by sku:", JSON.stringify(bySku.rows));
-  const countAll = await db.execute(sql`SELECT count(*) FROM products`);
-  console.log("total products:", JSON.stringify(countAll.rows));
-  const dbName = await db.execute(sql`SELECT current_database(), inet_server_addr()`);
-  console.log("db info:", JSON.stringify(dbName.rows));
+  const tables = ['products','product_variants','product_finish_options','product_finish_pools','finishes','orders','customers','users','vendor_orders'];
+  for (const t of tables) {
+    const r = await db.execute(sql.raw(`SELECT count(*) FROM ${t}`));
+    console.log(`heliumdb ${t}:`, JSON.stringify(r.rows));
+  }
+  const maxc = await db.execute(sql`SELECT max(created_at) as max_created, max(updated_at) as max_updated FROM products`);
+  console.log("heliumdb max created/updated:", JSON.stringify(maxc.rows));
 }
 main().then(() => process.exit(0)).catch((e) => { console.error("ERROR:", e); process.exit(1); });
