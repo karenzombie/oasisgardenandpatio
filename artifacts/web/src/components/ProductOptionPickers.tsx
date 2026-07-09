@@ -51,14 +51,14 @@ export function ProductOptionPickers({
   const frameFinishes = useMemo(
     () =>
       finishes
-        .filter((f) => f.description === "Frame Finish")
+        .filter((f) => /frame\s*finish/i.test(f.description ?? ""))
         .sort((a, b) => a.displayOrder - b.displayOrder),
     [finishes],
   );
   const tileFinishes = useMemo(
     () =>
       finishes
-        .filter((f) => f.description === "Table Top Tile")
+        .filter((f) => /table\s*(?:top\s*)?tile|table\s*finish/i.test(f.description ?? ""))
         .sort((a, b) => a.displayOrder - b.displayOrder),
     [finishes],
   );
