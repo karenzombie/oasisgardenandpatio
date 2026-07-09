@@ -16,47 +16,12 @@ if (!url) {
 
 const rawSql = readFileSync("./dev-data-for-prod.sql", "utf8");
 
-// Prepend a TRUNCATE CASCADE so dev IDs can be inserted cleanly.
-// User confirmed prod has no real customer/inventory data to preserve.
-// CASCADE wipes dependent transactional/user/inventory rows (inventory,
-// cart_items, order_items, orders, wishlist_items, vendor_orders, etc.).
-// Table list MUST match TABLES_IN_ORDER in dumpDevDataForProd.ts.
-const truncate = `
-TRUNCATE
-  manufacturers,
-  materials,
-  categories,
-  fabrics,
-  finish_collections,
-  finishes,
-  products,
-  product_materials,
-  product_variants,
-  product_images,
-  product_attributes,
-  product_fabric_pools,
-  product_fabric_options,
-  product_finish_pools,
-  product_finish_options,
-  product_finial_options,
-  product_cover_options,
-  product_cover_finish_prices,
-  product_stem_options,
-  product_recommendations,
-  variant_grade_prices,
-  product_sets,
-  product_set_items,
-  product_addon_options,
-  product_addon_grade_prices,
-  shipping_rules,
-  shipping_rule_products,
-  shipping_weight_tiers
-RESTART IDENTITY CASCADE;
-`;
-
-// Insert the TRUNCATE right after the BEGIN; line of the dump.
-const sql = rawSql.replace("BEGIN;", `BEGIN;\n${truncate}`);
-console.log(`Loaded SQL: ${sql.length.toLocaleString()} bytes (TRUNCATE CASCADE prepended)`);
+// Upsert-only sync: INSERT ... ON CONFLICT (id) DO UPDATE.
+// No TRUNCATE — this preserves all production transactional data
+// (orders, order_items, carts, cart_items, customers, users, inventory, etc.).
+// The dump already wraps statements in BEGIN;/COMMIT; with ON CONFLICT.
+const sql = rawSql;
+console.log(`Loaded SQL: ${sql.length.toLocaleString()} bytes (upsert-only, no TRUNCATE)`);
 
 // Apply via psql -f rather than a single node-pg query: the full-catalog dump
 // is ~60k INSERT statements and streaming through psql is far more reliable
