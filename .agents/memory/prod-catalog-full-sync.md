@@ -3,42 +3,53 @@ name: Prod catalog full-sync (dump + apply)
 description: How production catalog data is mirrored from dev and the non-obvious constraints that keep the dump+apply safe and fast.
 ---
 
-# Production catalog sync = full dump + reload
+# Production catalog sync = dump + upsert reload
 
-`scripts/post-merge.sh` syncs the **catalog** to prod by dumping dev's exact rows and
-reloading them into prod (`dumpDevDataForProd.ts` → `applyDataToProd.ts`), NOT by replaying
-per-manufacturer seed/image scripts.
+`dumpDevDataForProd.ts` → `applyDataToProd.ts` mirrors the **catalog** allowlist
+(`TABLES_IN_ORDER`) from dev to prod. As of the pre-launch phase where prod holds real
+transactional data (customers/orders/vendor_orders/cart_items), this is **upsert-only**
+(`INSERT ... ON CONFLICT (id) DO UPDATE`), wrapped in one `BEGIN/COMMIT` — it never runs a
+blanket `TRUNCATE CASCADE`. Rows are never deleted from prod by this pipeline.
 
-**Why:** per-manufacturer seed replay drifted constantly — every new loader had to be
-remembered and added to post-merge, and several never were, causing large silent prod gaps.
-Copying dev's exact catalog state is drift-proof.
+**Why:** per-manufacturer seed replay drifted constantly (loaders silently omitted from
+post-merge). Copying dev's exact catalog rows is drift-proof, but once prod has live
+transactional data, a destructive TRUNCATE CASCADE approach is no longer safe — hence upsert.
 
-**How to apply / extend**
-- Adding a new catalog table? Add it to BOTH the dump `TABLES_IN_ORDER` and the apply
-  `TRUNCATE` list, parents before children (FK order). The two lists must stay in lockstep or
-  the apply leaves orphaned/missing rows.
-- Dump emits `INSERT ... ON CONFLICT (id) DO UPDATE`; apply prepends
-  `TRUNCATE ... RESTART IDENTITY CASCADE`, runs via `psql -f` (ON_ERROR_STOP) in one
-  transaction, then `setval`s sequences.
+**The id-drift problem (recurring root cause of apply failures)**
+Dev and prod catalog rows can carry the *same natural key* (SKU, or a composite
+product+fabric/finish/manufacturer key) under *different* surrogate `id`s, because catalog
+data evolved independently via reseeding on each side. `ON CONFLICT (id)` then fails on the
+table's OTHER unique constraint (e.g. `products_sku_unique`,
+`product_finish_pools_product_manufacturer_unique`), not on `id` — the insert never even
+reaches the id-conflict path.
 
-**Non-obvious constraints**
-- **Emit batched multi-row INSERTs (~1000 rows/stmt), not one-per-row.** One INSERT per row =
-  tens of thousands of statements; `psql -f` round-trips each to remote prod and blows the
-  120s tool limit. Batched = seconds.
-- **Run the apply in the foreground.** Replit reaps detached/`setsid` processes; the single
-  transaction then rolls back mid-load.
-- **Excluded on purpose:** transactional/user/inventory tables. TRUNCATE CASCADE wipes them in
-  prod on every run — safe ONLY while prod holds disposable test data. `inventory` does NOT
-  gate purchasing (`products.availableOnline` does), so empty prod inventory is functionally
-  safe; it's display/admin only. If prod ever holds real transactional data, this pipeline
-  becomes destructive and must be reworked.
-- **Prereq: prod schema must already match dev.** The reload inserts dev's exact columns; a
-  schema mismatch makes the apply fail hard (clean rollback, but blocks the sync).
-- **The allowlist + prod schema BOTH silently drift when new tables are added.** A new catalog
-  table is invisible to this pipeline until added to BOTH lists, AND its table must be created in
-  prod first (the apply only inserts rows, never DDL). Whole tables can be missing from prod
-  schema entirely (e.g. cover/stem/finial option tables, shipping_rules/_products/_weight_tiers).
-  **Before any publish, diff the FULL dev vs prod table list (information_schema), not just the
-  allowlist** — a feature can be live in merged code yet query a table that doesn't exist in prod,
-  500ing on republish. shipping_* tables are queried by loadShippingConfig (cart/checkout) and are
-  NOT catalog-synced, so they must be schema-created + data-loaded in prod independently.
+**Two fix patterns, chosen per table by whether its `id` is a live FK target:**
+1. **No incoming FK on `.id`** (verified via grep across `lib/db/src/schema/*.ts`) → add the
+   table to `FULL_REPLACE_TABLES`: `TRUNCATE ... RESTART IDENTITY` + plain INSERT, sidestepping
+   id conflicts entirely. Used for `product_images`, `product_fabric_pools`,
+   `product_finish_pools`.
+2. **`.id` IS a live FK target** (e.g. `cart_items`/`order_items` hold a composite FK against
+   `(product_id, fabric_id)` on `product_fabric_options`/`product_finish_options`) → TRUNCATE is
+   unsafe (fails outright, or CASCADE would wipe live cart/order rows). Instead: upsert keyed on
+   the table's natural unique constraint, **omit `id` from the INSERT list** so an existing
+   matched row keeps its current id (protecting the live FK) while its other columns update to
+   dev's values; unmatched rows get a fresh prod-assigned id.
+Before adding any table to either bucket, grep the whole schema dir for
+`referencesTableTable.id` / composite `foreignKey({...})` blocks naming it — don't assume from
+the table's apparent role.
+
+**How to extend**
+- Adding a new catalog table? Add it to `TABLES_IN_ORDER` (parents before children, FK order).
+  Decide id-safety per the above before assuming plain `ON CONFLICT (id)` upsert is fine.
+- Emit batched multi-row INSERTs (~1000 rows/stmt) — one-per-row blows the 120s tool limit on
+  remote prod round-trips.
+- Run the apply in the foreground — Replit reaps detached/`setsid` processes mid-transaction.
+- **Prereq: prod schema must already match dev** — the reload inserts dev's exact columns; a
+  schema mismatch fails the apply hard (clean rollback via the single transaction).
+- **Both allowlist AND prod schema silently drift when new tables/columns are added.** A table
+  invisible to `TABLES_IN_ORDER` never syncs; a table missing from prod schema entirely blocks
+  the apply. Before any publish, diff dev vs prod `information_schema` fully, not just the
+  allowlist.
+- After a full sync, spot-check row counts per table (dev vs prod) AND diff for prod-only rows
+  with no dev counterpart (`comm -13` on sorted id lists) — these are orphans from prod's
+  independent reseed history and must be flagged to the user, never silently deleted.
