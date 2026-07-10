@@ -8,6 +8,7 @@ import {
   integer,
   index,
   uniqueIndex,
+  unique,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
@@ -103,14 +104,17 @@ export const wishlistsTable = pgTable(
     id: serial("id").primaryKey(),
     customerId: integer("customer_id")
       .notNull()
-      .unique()
       .references(() => customersTable.id, { onDelete: "cascade" }),
-    wishlistNumber: text("wishlist_number").notNull().unique(),
+    wishlistNumber: text("wishlist_number").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
   },
-  (t) => [index("wishlists_customer_id_idx").on(t.customerId)],
+  (t) => [
+    unique("wishlists_customer_id_key").on(t.customerId),
+    unique("wishlists_wishlist_number_key").on(t.wishlistNumber),
+    index("wishlists_customer_id_idx").on(t.customerId),
+  ],
 );
 
 export const insertWishlistSchema = createInsertSchema(wishlistsTable).omit({

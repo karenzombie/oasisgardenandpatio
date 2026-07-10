@@ -9,6 +9,7 @@ import {
   integer,
   index,
   check,
+  unique,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
@@ -135,7 +136,7 @@ export const adminRecoveryTokensTable = pgTable(
     userId: integer("user_id")
       .notNull()
       .references(() => usersTable.id, { onDelete: "cascade" }),
-    tokenHash: text("token_hash").notNull().unique(),
+    tokenHash: text("token_hash").notNull(),
     requestedAt: timestamp("requested_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -150,6 +151,7 @@ export const adminRecoveryTokensTable = pgTable(
     requestUserAgent: text("request_user_agent"),
   },
   (t) => [
+    unique("admin_recovery_tokens_token_hash_key").on(t.tokenHash),
     index("admin_recovery_tokens_user_id_idx").on(t.userId),
     index("admin_recovery_tokens_expires_at_idx").on(t.expiresAt),
   ],
