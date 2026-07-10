@@ -156,7 +156,7 @@ export const productVariantsTable = pgTable(
     // tables can declare a *composite* foreign key that ensures variant_id
     // belongs to product_id (e.g., order_items can't pair UM810 with a
     // UM812 finish row).
-    unique("product_variants_product_id_id_unique").on(t.productId, t.id),
+    unique("product_variants_product_id_id_unique").on(t.id, t.productId),
   ],
 );
 
