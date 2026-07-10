@@ -46,6 +46,14 @@ export const fabricsTable = pgTable(
     // Color family (e.g. "Blue", "Beige", "Multicolor") used for storefront
     // search/filter. Plain text — values normalized at import time.
     colorFamily: text("color_family"),
+    // Pipe-delimited seating/product-type compatibility codes set by the
+    // manufacturer (e.g. "PS|C|V" = Padded Sling, Cushion, Vintage Wire).
+    // Codes: A=Air, S=Sling, PS=Padded Sling, C=Cushion, U=Umbrella,
+    // V=Vintage Wire, W=Welt. Null for manufacturers that don't classify
+    // fabrics this way. Admin-only, read-only display for now — not exposed
+    // on the public catalog response and not used to filter product wiring
+    // yet (that's a separate future step).
+    availabilityCodes: text("availability_codes"),
     // Stripe fabrics will eventually trigger a paired-umbrella ordering rule
     // (any umbrella ordered with a stripe fabric must ship in pairs). Surfaced
     // in staff/admin only — not exposed on the public catalog response.
