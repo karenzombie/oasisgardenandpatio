@@ -83,11 +83,16 @@ export async function setObjectAclPolicy(
   });
 }
 
+// Accepts already-fetched GCS metadata to avoid a redundant getMetadata()
+// network round trip when the caller (e.g. downloadObject) already has it.
 export async function getObjectAclPolicy(
   objectFile: File,
+  prefetchedMetadata?: Record<string, unknown>,
 ): Promise<ObjectAclPolicy | null> {
-  const [metadata] = await objectFile.getMetadata();
-  const aclPolicy = metadata?.metadata?.[ACL_POLICY_METADATA_KEY];
+  const metadata =
+    prefetchedMetadata ?? (await objectFile.getMetadata())[0];
+  const aclPolicy = (metadata as { metadata?: Record<string, unknown> })
+    ?.metadata?.[ACL_POLICY_METADATA_KEY];
   if (!aclPolicy) {
     return null;
   }

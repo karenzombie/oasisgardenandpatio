@@ -113,8 +113,22 @@ export class ObjectStorageService {
   }
 
   async downloadObject(file: File, cacheTtlSec: number = 3600): Promise<Response> {
-    const [metadata] = await file.getMetadata();
-    const aclPolicy = await getObjectAclPolicy(file);
+    let metadata: Record<string, unknown>;
+    try {
+      [metadata] = await file.getMetadata();
+    } catch (err: unknown) {
+      // getMetadata() 404s the same way exists() would have — this is now
+      // the sole existence check (see getObjectEntityFile), so translate a
+      // missing object into the same error the route already handles.
+      const code = (err as { code?: number })?.code;
+      if (code === 404) {
+        throw new ObjectNotFoundError();
+      }
+      throw err;
+    }
+    // Reuse the metadata we already fetched instead of letting
+    // getObjectAclPolicy issue a second, redundant GCS round trip.
+    const aclPolicy = await getObjectAclPolicy(file, metadata);
     const isPublic = aclPolicy?.visibility === "public";
 
     const nodeStream = file.createReadStream();
@@ -171,12 +185,11 @@ export class ObjectStorageService {
     const objectEntityPath = `${entityDir}${entityId}`;
     const { bucketName, objectName } = parseObjectPath(objectEntityPath);
     const bucket = objectStorageClient.bucket(bucketName);
-    const objectFile = bucket.file(objectName);
-    const [exists] = await objectFile.exists();
-    if (!exists) {
-      throw new ObjectNotFoundError();
-    }
-    return objectFile;
+    // No existence round trip here — the only caller (the /storage/objects
+    // route) immediately calls downloadObject(), whose getMetadata() call
+    // already 404s on a missing object. Doing a separate exists() check
+    // first would double the GCS round trips for every single image request.
+    return bucket.file(objectName);
   }
 
   normalizeObjectEntityPath(rawPath: string): string {
