@@ -58,3 +58,4 @@
 - [Legal document CMS end-to-end wiring](legal-document-cms-wiring.md) — audit the FULL chain (admin write → public route → customer render → footer links), not just admin CRUD; shared LegalDocument.tsx renders all 4 types.
 - [Guest cart session persistence](guest-cart-session-persistence.md) — every route that can be the FIRST guest write must call ensureSessionPersisted(req) or the cart/session id never reaches the browser and the cart is silently orphaned.
 - [CSV duplicate-SKU collisions during import](csv-duplicate-sku-collision.md) — one raw CSV SKU can represent 2+ distinct products; a seed's SKU_REMAP intent doesn't guarantee both rows landed — verify count in DB, don't assume.
+- [Homecrest finish/fabric wiring pattern](homecrest-finish-fabric-wiring-pattern.md) — canonical pool+options insert pattern (Allure Sling reference); pickers are fully data-driven, no frontend/API changes needed once rows exist.
