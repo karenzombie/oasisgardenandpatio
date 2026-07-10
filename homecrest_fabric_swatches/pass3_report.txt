@@ -1,0 +1,89 @@
+Still failing after pass 3 (21):
+
+  Beige
+    https://www.homecrest.com/data/fabrics/images/thumbs/Beige.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Beige.jpg
+
+  Captain Navy
+    https://www.homecrest.com/data/fabrics/images/thumbs/CaptainNavy.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Captain-Navy.jpg
+
+  Chestnut
+    https://www.homecrest.com/data/fabrics/images/thumbs/Chestnut.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Chestnut.jpg
+
+  Salmon
+    https://www.homecrest.com/data/fabrics/images/thumbs/Salmon.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Salmon.jpg
+
+  Yellow
+    https://www.homecrest.com/data/fabrics/images/thumbs/Yellow.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Yellow.jpg
+
+  Mason Forest Green Stripe
+    https://www.homecrest.com/data/fabrics/images/thumbs/Mason-Forest-Green-Stripe_5630-0000.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Mason-Forest-Green-Stripe_005630.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/MasonForestGreenStripe.jpg
+
+  Relate Ivy
+    https://www.homecrest.com/data/fabrics/images/thumbs/Relate-Ivy_57017-0002.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Relate-Ivy_0057017-0002.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/RelateIvy.jpg
+
+  Relate Persimmon
+    https://www.homecrest.com/data/fabrics/images/thumbs/Relate-Persimmon_57017-0003.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Relate-Persimmon_0057017-0003.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/RelatePersimmon.jpg
+
+  Caravaggio Dark Pewter
+    https://www.homecrest.com/data/fabrics/images/thumbs/CaravaggioDarkPewter-TH-51608_4.png
+    https://www.homecrest.com/data/fabrics/images/thumbs/CaravaggioDarkPewter-TH-0051608_4.png
+
+  Finestra Timber
+    https://www.homecrest.com/data/fabrics/images/thumbs/FinestraTimber-TH-5179_3.png
+    https://www.homecrest.com/data/fabrics/images/thumbs/FinestraTimber-TH-005179_3.png
+
+  Maestro Bloom
+    https://www.homecrest.com/data/fabrics/images/thumbs/MaestroBloom-TH-54671_5.png
+    https://www.homecrest.com/data/fabrics/images/thumbs/MaestroBloom-TH-0054671_5.png
+
+  Donatello Silver
+    https://www.homecrest.com/data/fabrics/images/thumbs/DonatelloSilver-TH-50963_17.png
+    https://www.homecrest.com/data/fabrics/images/thumbs/DonatelloSilver-TH-0050963_17.png
+
+  Donatello Taupe
+    https://www.homecrest.com/data/fabrics/images/thumbs/DonatelloTaupe-TH-50963_11.png
+    https://www.homecrest.com/data/fabrics/images/thumbs/DonatelloTaupe-TH-0050963_11.png
+
+  Novella Charcoal
+    https://www.homecrest.com/data/fabrics/images/thumbs/NovellaCharcoal-TH-5417_97.png
+    https://www.homecrest.com/data/fabrics/images/thumbs/NovellaCharcoal-TH-005417_97.png
+
+  Raffaello Pebble
+    https://www.homecrest.com/data/fabrics/images/thumbs/RaffaelloPebble-TH-50965_10.png
+    https://www.homecrest.com/data/fabrics/images/thumbs/RaffaelloPebble-TH-0050965_10.png
+
+  Sand White
+    https://www.homecrest.com/data/fabrics/images/thumbs/SandWhite-TH-10_4415.png
+    https://www.homecrest.com/data/fabrics/images/thumbs/SandWhite-TH-0010_4415.png
+
+  Tinta Unita Blue Tweed
+    https://www.homecrest.com/data/fabrics/images/thumbs/TintaUnitaBlueTweed-TH-986_92.png
+    https://www.homecrest.com/data/fabrics/images/thumbs/TintaUnitaBlueTweed-TH-00986_92.png
+
+  Tinta Unita Driftwood
+    https://www.homecrest.com/data/fabrics/images/thumbs/TintaUnitaDriftwood-TH-15_926.png
+    https://www.homecrest.com/data/fabrics/images/thumbs/TintaUnitaDriftwood-TH-0015_926.png
+
+  Tinta Unita Fog
+    https://www.homecrest.com/data/fabrics/images/thumbs/TintaUnitaFog-TH-15_79.png
+    https://www.homecrest.com/data/fabrics/images/thumbs/TintaUnitaFog-TH-0015_79.png
+
+  Tinta Unita Lead
+    https://www.homecrest.com/data/fabrics/images/thumbs/TintaUnitaLead-TH-15_94.png
+    https://www.homecrest.com/data/fabrics/images/thumbs/TintaUnitaLead-TH-0015_94.png
+
+  Tinta Unita Oyster
+    https://www.homecrest.com/data/fabrics/images/thumbs/TintaUnitaOyster-TH-15_151.png
+    https://www.homecrest.com/data/fabrics/images/thumbs/TintaUnitaOyster-TH-0015_151.png
+

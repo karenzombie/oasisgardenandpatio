@@ -1,0 +1,489 @@
+Homecrest Fabric Swatch Download Report
+==================================================
+Total:      389
+Downloaded: 274
+Skipped:    17
+FAILED:     98
+
+FAILURES (URLs tried):
+
+  Beige
+    https://www.homecrest.com/data/fabrics/images/thumbs/Beige.jpg
+
+  Captain Navy
+    https://www.homecrest.com/data/fabrics/images/thumbs/CaptainNavy.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Captain-Navy.jpg
+
+  Chestnut
+    https://www.homecrest.com/data/fabrics/images/thumbs/Chestnut.jpg
+
+  Salmon
+    https://www.homecrest.com/data/fabrics/images/thumbs/Salmon.jpg
+
+  Yellow
+    https://www.homecrest.com/data/fabrics/images/thumbs/Yellow.jpg
+
+  Black Onyx
+    https://www.homecrest.com/data/fabrics/images/thumbs/Black-Onyx_00393-5749.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Black-Onyx_393-5749.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Black-Onyx.jpg
+
+  Burnt Red
+    https://www.homecrest.com/data/fabrics/images/thumbs/Burnt-Red_00393-4331.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Burnt-Red_393-4331.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Burnt-Red.jpg
+
+  Michigan Blue
+    https://www.homecrest.com/data/fabrics/images/thumbs/Michigan-Blue_00393-2542.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Michigan-Blue_393-2542.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Michigan-Blue.jpg
+
+  Sea Green
+    https://www.homecrest.com/data/fabrics/images/thumbs/Sea-Green_00393-4528.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Sea-Green_393-4528.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Sea-Green.jpg
+
+  Action Ash
+    https://www.homecrest.com/data/fabrics/images/thumbs/Action-Ash_0044285-0001.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Action-Ash_44285-0001.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Action-Ash.jpg
+
+  Berenson Tuxedo
+    https://www.homecrest.com/data/fabrics/images/thumbs/Berenson-Tuxedo_008521.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Berenson-Tuxedo_8521.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Berenson-Tuxedo.jpg
+
+  Brannon Stripe Redwood
+    https://www.homecrest.com/data/fabrics/images/thumbs/Brannon-Stripe-Redwood_005612.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Brannon-Stripe-Redwood_5612.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Brannon-Stripe-Redwood.jpg
+
+  Brannon Whisper
+    https://www.homecrest.com/data/fabrics/images/thumbs/Brannon-Whisper_005621.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Brannon-Whisper_5621.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Brannon-Whisper.jpg
+
+  Canvas Air Blue
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Air-Blue_005410.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Air-Blue_5410.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Air-Blue.jpg
+
+  Canvas Antique Beige
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Antique-Beige_005422.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Antique-Beige_5422.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Antique-Beige.jpg
+
+  Canvas Aruba
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Aruba_005416.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Aruba_5416.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Aruba.jpg
+
+  Canvas Birds Eye
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Birds-Eye_005472.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Birds-Eye_5472.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Birds-Eye.jpg
+
+  Canvas Black
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Black_005408.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Black_5408.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Black.jpg
+
+  Canvas Brick
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Brick_005409.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Brick_5409.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Brick.jpg
+
+  Canvas Burgundy
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Burgundy_005436.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Burgundy_5436.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Burgundy.jpg
+
+  Canvas Buttercup
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Buttercup_005438.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Buttercup_5438.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Buttercup.jpg
+
+  Canvas Canvas
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Canvas_005453.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Canvas_5453.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Canvas.jpg
+
+  Canvas Capri
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Capri_005426.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Capri_5426.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Capri.jpg
+
+  Canvas Coal
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Coal_005489.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Coal_5489.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Coal.jpg
+
+  Canvas Cocoa
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Cocoa_005425.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Cocoa_5425.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Cocoa.jpg
+
+  Canvas Fern
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Fern_005487.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Fern_5487.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Fern.jpg
+
+  Canvas Forest Green
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Forest-Green_005446.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Forest-Green_5446.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Forest-Green.jpg
+
+  Canvas Heather Beige
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Heather-Beige_005476.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Heather-Beige_5476.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Heather-Beige.jpg
+
+  Canvas Henna
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Henna_005407.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Henna_5407.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Henna.jpg
+
+  Canvas Jockey Red
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Jockey-Red_005403.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Jockey-Red_5403.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Jockey-Red.jpg
+
+  Canvas Logo Red
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Logo-Red_005477.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Logo-Red_5477.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Logo-Red.jpg
+
+  Canvas Macaw
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Macaw_005429.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Macaw_5429.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Macaw.jpg
+
+  Canvas Melon
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Melon_005415.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Melon_5415.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Melon.jpg
+
+  Canvas Mineral Blue
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Mineral-Blue_005420.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Mineral-Blue_5420.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Mineral-Blue.jpg
+
+  Canvas Natural
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Natural_005404.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Natural_5404.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Natural.jpg
+
+  Canvas Navy
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Navy_005439.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Navy_5439.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Navy.jpg
+
+  Canvas Pacific Blue
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Pacific-Blue_005401.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Pacific-Blue_5401.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Pacific-Blue.jpg
+
+  Canvas Raven Black
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Raven-Black_005471.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Raven-Black_5471.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Raven-Black.jpg
+
+  Canvas Sapphire Blue
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Sapphire-Blue_005452.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Sapphire-Blue_5452.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Sapphire-Blue.jpg
+
+  Canvas Spa
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Spa_005413.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Spa_5413.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Spa.jpg
+
+  Canvas Sunflower Yellow
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Sunflower-Yellow_005457.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Sunflower-Yellow_5457.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Sunflower-Yellow.jpg
+
+  Canvas Tangerine
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Tangerine_005406.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Tangerine_5406.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Tangerine.jpg
+
+  Canvas Taupe
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Taupe_005461.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Taupe_5461.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Taupe.jpg
+
+  Canvas Teak
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Teak_005488.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Teak_5488.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Teak.jpg
+
+  Canvas Teal
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Teal_005456.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Teal_5456.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Teal.jpg
+
+  Canvas Terracotta
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Terracotta_005440.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Terracotta_5440.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Terracotta.jpg
+
+  Canvas True Blue
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-True-Blue_005499.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-True-Blue_5499.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-True-Blue.jpg
+
+  Canvas Tuscan
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Tuscan_005417.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Tuscan_5417.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Tuscan.jpg
+
+  Canvas Vellum
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Vellum_005498.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Vellum_5498.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Canvas-Vellum.jpg
+
+  Dolce Mango
+    https://www.homecrest.com/data/fabrics/images/thumbs/Dolce-Mango_0056000.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Dolce-Mango_56000.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Dolce-Mango.jpg
+
+  Dolce Oasis
+    https://www.homecrest.com/data/fabrics/images/thumbs/Dolce-Oasis_0056001.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Dolce-Oasis_56001.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Dolce-Oasis.jpg
+
+  Dupione Deep Sea
+    https://www.homecrest.com/data/fabrics/images/thumbs/Dupione-Deep-Sea_008019.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Dupione-Deep-Sea_8019.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Dupione-Deep-Sea.jpg
+
+  Dupione Sand
+    https://www.homecrest.com/data/fabrics/images/thumbs/Dupione-Sand_008011.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Dupione-Sand_8011.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Dupione-Sand.jpg
+
+  Harwood Crimson
+    https://www.homecrest.com/data/fabrics/images/thumbs/Harwood-Crimson_005603.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Harwood-Crimson_5603.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Harwood-Crimson.jpg
+
+  Linen Natural
+    https://www.homecrest.com/data/fabrics/images/thumbs/Linen-Natural_008304.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Linen-Natural_8304.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Linen-Natural.jpg
+
+  Linen Sesame
+    https://www.homecrest.com/data/fabrics/images/thumbs/Linen-Sesame_008318.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Linen-Sesame_8318.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Linen-Sesame.jpg
+
+  Linen Silver
+    https://www.homecrest.com/data/fabrics/images/thumbs/Linen-Silver_008351.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Linen-Silver_8351.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Linen-Silver.jpg
+
+  Linen Stone
+    https://www.homecrest.com/data/fabrics/images/thumbs/Linen-Stone_008319.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Linen-Stone_8319.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Linen-Stone.jpg
+
+  Mason Forest Green Stripe
+    https://www.homecrest.com/data/fabrics/images/thumbs/Mason-Forest-Green-Stripe_005630.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Mason-Forest-Green-Stripe_5630.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Mason-Forest-Green-Stripe.jpg
+
+  Maxim Heather Beige
+    https://www.homecrest.com/data/fabrics/images/thumbs/Maxim-Heather-Beige_005674.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Maxim-Heather-Beige_5674.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Maxim-Heather-Beige.jpg
+
+  Relate Ivy
+    https://www.homecrest.com/data/fabrics/images/thumbs/Relate-Ivy_0057017-0002.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Relate-Ivy_57017-0002.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Relate-Ivy.jpg
+
+  Relate Persimmon
+    https://www.homecrest.com/data/fabrics/images/thumbs/Relate-Persimmon_0057017-0003.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Relate-Persimmon_57017-0003.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Relate-Persimmon.jpg
+
+  Seville Seaside
+    https://www.homecrest.com/data/fabrics/images/thumbs/Seville-Seaside_005608.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Seville-Seaside_5608.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Seville-Seaside.jpg
+
+  Aria Blush
+    https://www.homecrest.com/data/fabrics/images/thumbs/Aria-Blush_0051598-7.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Aria-Blush_51598-7.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Aria-Blush.jpg
+
+  Aria Powder Blue
+    https://www.homecrest.com/data/fabrics/images/thumbs/Aria-Powder-Blue_0051598-8.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Aria-Powder-Blue_51598-8.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Aria-Powder-Blue.jpg
+
+  Bistro Granite
+    https://www.homecrest.com/data/fabrics/images/thumbs/Bistro-Granite_005435-24.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Bistro-Granite_5435-24.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Bistro-Granite.jpg
+
+  Caravaggio Dark Pewter
+    https://www.homecrest.com/data/fabrics/images/thumbs/Caravaggio-Dark-Pewter_0051608-4.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Caravaggio-Dark-Pewter_51608-4.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Caravaggio-Dark-Pewter.jpg
+
+  Casanova Gunmetal
+    https://www.homecrest.com/data/fabrics/images/thumbs/Casanova-Gunmetal_005436-94.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Casanova-Gunmetal_5436-94.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Casanova-Gunmetal.jpg
+
+  Casanova Timber
+    https://www.homecrest.com/data/fabrics/images/thumbs/Casanova-Timber_005436-926.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Casanova-Timber_5436-926.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Casanova-Timber.jpg
+
+  Finestra Timber
+    https://www.homecrest.com/data/fabrics/images/thumbs/Finestra-Timber_005179-3.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Finestra-Timber_5179-3.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Finestra-Timber.jpg
+
+  Fredda Brindle
+    https://www.homecrest.com/data/fabrics/images/thumbs/Fredda-Brindle_005420-926.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Fredda-Brindle_5420-926.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Fredda-Brindle.jpg
+
+  Grano Burnish
+    https://www.homecrest.com/data/fabrics/images/thumbs/Grano-Burnish_0051792-3.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Grano-Burnish_51792-3.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Grano-Burnish.jpg
+
+  Grano Desert Taupe
+    https://www.homecrest.com/data/fabrics/images/thumbs/Grano-Desert-Taupe_0051792-4.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Grano-Desert-Taupe_51792-4.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Grano-Desert-Taupe.jpg
+
+  Maestro Bloom
+    https://www.homecrest.com/data/fabrics/images/thumbs/Maestro-Bloom_0054671-5.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Maestro-Bloom_54671-5.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Maestro-Bloom.jpg
+
+  Michelangelo Mocha
+    https://www.homecrest.com/data/fabrics/images/thumbs/Michelangelo-Mocha_0050964-13.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Michelangelo-Mocha_50964-13.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Michelangelo-Mocha.jpg
+
+  Michelangelo Silver Beige
+    https://www.homecrest.com/data/fabrics/images/thumbs/Michelangelo-Silver-Beige_0050964-23.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Michelangelo-Silver-Beige_50964-23.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Michelangelo-Silver-Beige.jpg
+
+  Murano Burnish
+    https://www.homecrest.com/data/fabrics/images/thumbs/Murano-Burnish_0051685-5.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Murano-Burnish_51685-5.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Murano-Burnish.jpg
+
+  Murano Latte
+    https://www.homecrest.com/data/fabrics/images/thumbs/Murano-Latte_0051685-8.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Murano-Latte_51685-8.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Murano-Latte.jpg
+
+  Newport Coastal
+    https://www.homecrest.com/data/fabrics/images/thumbs/Newport-Coastal_005437-21.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Newport-Coastal_5437-21.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Newport-Coastal.jpg
+
+  Newport Hemp
+    https://www.homecrest.com/data/fabrics/images/thumbs/Newport-Hemp_005437-102.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Newport-Hemp_5437-102.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Newport-Hemp.jpg
+
+  Presidio Hemp
+    https://www.homecrest.com/data/fabrics/images/thumbs/Presidio-Hemp_005414-926.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Presidio-Hemp_5414-926.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Presidio-Hemp.jpg
+
+  Presidio Oceana
+    https://www.homecrest.com/data/fabrics/images/thumbs/Presidio-Oceana_005414-87.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Presidio-Oceana_5414-87.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Presidio-Oceana.jpg
+
+  Spumoni Conch
+    https://www.homecrest.com/data/fabrics/images/thumbs/Spumoni-Conch_005438-90.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Spumoni-Conch_5438-90.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Spumoni-Conch.jpg
+
+  Spumoni Tidewater
+    https://www.homecrest.com/data/fabrics/images/thumbs/Spumoni-Tidewater_005438-701.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Spumoni-Tidewater_5438-701.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Spumoni-Tidewater.jpg
+
+  Strada Hemp
+    https://www.homecrest.com/data/fabrics/images/thumbs/Strada-Hemp_0051665-3.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Strada-Hemp_51665-3.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Strada-Hemp.jpg
+
+  Tango Burnish
+    https://www.homecrest.com/data/fabrics/images/thumbs/Tango-Burnish_005416-102.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Tango-Burnish_5416-102.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Tango-Burnish.jpg
+
+  Tango Isle Of Palms
+    https://www.homecrest.com/data/fabrics/images/thumbs/Tango-Isle-Of-Palms_005416-21.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Tango-Isle-Of-Palms_5416-21.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Tango-Isle-Of-Palms.jpg
+
+  Tivoli Maritime
+    https://www.homecrest.com/data/fabrics/images/thumbs/Tivoli-Maritime_0051695-20.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Tivoli-Maritime_51695-20.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Tivoli-Maritime.jpg
+
+  Donatello Silver
+    https://www.homecrest.com/data/fabrics/images/thumbs/Donatello-Silver_0050963-17.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Donatello-Silver_50963-17.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Donatello-Silver.jpg
+
+  Donatello Taupe
+    https://www.homecrest.com/data/fabrics/images/thumbs/Donatello-Taupe_0050963-11.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Donatello-Taupe_50963-11.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Donatello-Taupe.jpg
+
+  Novella Charcoal
+    https://www.homecrest.com/data/fabrics/images/thumbs/Novella-Charcoal_005417-97.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Novella-Charcoal_5417-97.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Novella-Charcoal.jpg
+
+  Raffaello Pebble
+    https://www.homecrest.com/data/fabrics/images/thumbs/Raffaello-Pebble_0050965-10.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Raffaello-Pebble_50965-10.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Raffaello-Pebble.jpg
+
+  Sand White
+    https://www.homecrest.com/data/fabrics/images/thumbs/Sand-White_0010-4415.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Sand-White_10-4415.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Sand-White.jpg
+
+  Tinta Unita Blue Tweed
+    https://www.homecrest.com/data/fabrics/images/thumbs/Tinta-Unita-Blue-Tweed_00986-92.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Tinta-Unita-Blue-Tweed_986-92.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Tinta-Unita-Blue-Tweed.jpg
+
+  Tinta Unita Driftwood
+    https://www.homecrest.com/data/fabrics/images/thumbs/Tinta-Unita-Driftwood_0015-926.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Tinta-Unita-Driftwood_15-926.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Tinta-Unita-Driftwood.jpg
+
+  Tinta Unita Fog
+    https://www.homecrest.com/data/fabrics/images/thumbs/Tinta-Unita-Fog_0015-79.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Tinta-Unita-Fog_15-79.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Tinta-Unita-Fog.jpg
+
+  Tinta Unita Lead
+    https://www.homecrest.com/data/fabrics/images/thumbs/Tinta-Unita-Lead_0015-94.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Tinta-Unita-Lead_15-94.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Tinta-Unita-Lead.jpg
+
+  Tinta Unita Oyster
+    https://www.homecrest.com/data/fabrics/images/thumbs/Tinta-Unita-Oyster_0015-151.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Tinta-Unita-Oyster_15-151.jpg
+    https://www.homecrest.com/data/fabrics/images/thumbs/Tinta-Unita-Oyster.jpg
