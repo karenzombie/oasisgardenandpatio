@@ -61,6 +61,31 @@ const TABLES_IN_ORDER = [
   "shipping_weight_tiers",
 ];
 
+// Tables whose ids have drifted between dev and prod (rows re-seeded/recreated
+// independently on each side under different ids for the same natural key).
+// ON CONFLICT (id) can't reconcile that — it just collides on the table's
+// other unique constraints. These tables have no incoming FKs (verified via
+// schema grep), so a full TRUNCATE + reinsert of dev's exact rows is safe and
+// avoids id-remapping entirely. Must stay after their FK parents in
+// TABLES_IN_ORDER (e.g. product_images after products).
+const FULL_REPLACE_TABLES = new Set([
+  "product_images",
+  "product_fabric_pools",
+  "product_finish_pools",
+]);
+
+// Tables with the same id-drift problem, but their id IS load-bearing: it's
+// the target of a live FK (cart_items/order_items composite FK against
+// (product_id, fabric_id|finish_id)), so TRUNCATE would cascade-fail (or
+// cascade-delete transactional rows). Instead: upsert keyed on the natural
+// unique constraint, omit "id" from the insert entirely (let prod assign its
+// own), and never touch the id of an existing matched row — this updates
+// dev's content in place while leaving cart/order FK targets untouched.
+const NATURAL_KEY_TABLES: Record<string, string[]> = {
+  product_fabric_options: ["product_id", "fabric_id"],
+  product_finish_options: ["product_id", "finish_id"],
+};
+
 const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
 await client.connect();
 
@@ -97,21 +122,33 @@ for (const table of TABLES_IN_ORDER) {
     continue;
   }
 
+  const naturalKey = NATURAL_KEY_TABLES[table];
+  // For natural-key tables, drop "id" entirely — prod assigns its own, and an
+  // existing matched row's id (the live FK target) must never be overwritten.
+  const insertCols = naturalKey ? cols.filter((c) => c !== "id") : cols;
+
   const rowsRes = await client.query(
     `SELECT ${cols.map((c) => `"${c}"`).join(", ")} FROM "${table}" ORDER BY id`,
   );
 
   out.push(`-- ${table}: ${rowsRes.rows.length} rows`);
+  const fullReplace = FULL_REPLACE_TABLES.has(table);
+  if (fullReplace) {
+    out.push(`TRUNCATE TABLE "${table}" RESTART IDENTITY;`);
+  }
   if (rowsRes.rows.length === 0) {
     out.push("");
     continue;
   }
 
-  const colList = cols.map((c) => `"${c}"`).join(", ");
-  const updateList = cols
-    .filter((c) => c !== "id")
+  const colList = insertCols.map((c) => `"${c}"`).join(", ");
+  const updateList = insertCols
+    .filter((c) => c !== "id" && !(naturalKey ?? []).includes(c))
     .map((c) => `"${c}" = EXCLUDED."${c}"`)
     .join(", ");
+  const conflictClause = naturalKey
+    ? `ON CONFLICT (${naturalKey.map((c) => `"${c}"`).join(", ")}) DO UPDATE SET ${updateList}`
+    : `ON CONFLICT (id) DO UPDATE SET ${updateList}`;
 
   // Emit batched multi-row INSERTs (≈1000 rows/statement) so applying the dump
   // to a remote prod DB needs ~80 round-trips instead of one per row (~60k).
@@ -119,11 +156,16 @@ for (const table of TABLES_IN_ORDER) {
   for (let i = 0; i < rowsRes.rows.length; i += BATCH) {
     const chunk = rowsRes.rows.slice(i, i + BATCH);
     const tuples = chunk
-      .map((row) => `(${cols.map((c) => quote(row[c])).join(", ")})`)
+      .map((row) => `(${insertCols.map((c) => quote(row[c])).join(", ")})`)
       .join(",\n");
+    if (fullReplace) {
+      // Table was just truncated — plain insert, no conflict possible.
+      out.push(`INSERT INTO "${table}" (${colList}) VALUES\n${tuples};`);
+      continue;
+    }
     out.push(
       `INSERT INTO "${table}" (${colList}) VALUES\n${tuples}\n` +
-        `ON CONFLICT (id) DO UPDATE SET ${updateList};`,
+        `${conflictClause};`,
     );
   }
 
