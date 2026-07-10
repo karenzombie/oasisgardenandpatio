@@ -86,6 +86,14 @@ function FabricGroupContent({ list }: { list: FabricItem[] }) {
   );
 }
 
+// Homecrest generates system placeholder item numbers (prefix "HC-") for
+// fabrics with no real manufacturer catalog number. These must never be
+// shown to customers. Additive/conditional: only affects Homecrest rows —
+// no other manufacturer uses this prefix.
+function isPlaceholderItemNumber(itemNumber: string): boolean {
+  return itemNumber.startsWith("HC-");
+}
+
 function FabricSwatch({ fabric }: { fabric: FabricItem }) {
   return (
     <div className="group">
@@ -93,7 +101,9 @@ function FabricSwatch({ fabric }: { fabric: FabricItem }) {
       <p className="mt-2 text-sm text-foreground line-clamp-1" title={fabric.name}>
         {fabric.name}
       </p>
-      <p className="text-xs text-muted-foreground">{fabric.itemNumber}</p>
+      {!isPlaceholderItemNumber(fabric.itemNumber) && (
+        <p className="text-xs text-muted-foreground">{fabric.itemNumber}</p>
+      )}
       {fabric.grade && (
         <p className="text-[11px] uppercase tracking-wider text-muted-foreground/80 mt-0.5">
           Grade {fabric.grade}

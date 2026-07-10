@@ -76,6 +76,7 @@ router.get(
         isStripe: fabricsTable.isStripe,
         isActive: fabricsTable.isActive,
         displayOrder: fabricsTable.displayOrder,
+        availabilityCodes: fabricsTable.availabilityCodes,
       })
       .from(fabricsTable)
       .innerJoin(
@@ -152,6 +153,7 @@ router.post(
           isStripe: fabricsTable.isStripe,
           isActive: fabricsTable.isActive,
           displayOrder: fabricsTable.displayOrder,
+          availabilityCodes: fabricsTable.availabilityCodes,
         })
         .from(fabricsTable)
         .innerJoin(manufacturersTable, eq(manufacturersTable.id, fabricsTable.manufacturerId))
@@ -251,6 +253,7 @@ router.put(
         isStripe: fabricsTable.isStripe,
         isActive: fabricsTable.isActive,
         displayOrder: fabricsTable.displayOrder,
+        availabilityCodes: fabricsTable.availabilityCodes,
       })
       .from(fabricsTable)
       .innerJoin(manufacturersTable, eq(manufacturersTable.id, fabricsTable.manufacturerId))

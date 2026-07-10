@@ -4455,6 +4455,11 @@ export interface AdminFabric {
   isStripe: boolean;
   isActive: boolean;
   displayOrder: number;
+  /**
+   * Pipe-delimited seating/product-type compatibility codes (e.g. "PS|C|V"). Currently only populated for Homecrest fabrics; null for all other manufacturers. Read-only — not editable via the admin UI.
+   * @nullable
+   */
+  availabilityCodes: string | null;
 }
 
 export interface AdminCreateFabricRequest {

@@ -4495,6 +4495,12 @@ export const AdminListFabricsResponseItem = zod.object({
   isStripe: zod.boolean(),
   isActive: zod.boolean(),
   displayOrder: zod.number(),
+  availabilityCodes: zod
+    .string()
+    .nullable()
+    .describe(
+      'Pipe-delimited seating\/product-type compatibility codes (e.g. \"PS|C|V\"). Currently only populated for Homecrest fabrics; null for all other manufacturers. Read-only — not editable via the admin UI.',
+    ),
 });
 export const AdminListFabricsResponse = zod.array(AdminListFabricsResponseItem);
 
@@ -4548,6 +4554,12 @@ export const AdminUpdateFabricResponse = zod.object({
   isStripe: zod.boolean(),
   isActive: zod.boolean(),
   displayOrder: zod.number(),
+  availabilityCodes: zod
+    .string()
+    .nullable()
+    .describe(
+      'Pipe-delimited seating\/product-type compatibility codes (e.g. \"PS|C|V\"). Currently only populated for Homecrest fabrics; null for all other manufacturers. Read-only — not editable via the admin UI.',
+    ),
 });
 
 /**

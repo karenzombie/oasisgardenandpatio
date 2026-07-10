@@ -48,6 +48,38 @@ interface FabricFormState {
   swatchImageUrl: string;
   isActive: boolean;
   displayOrder: string;
+  // When the fabric's real itemNumber is a system-generated placeholder
+  // (Homecrest "HC-" prefix), we hide it from staff and blank the input.
+  // If staff leaves it blank on save, we fall back to this original value
+  // instead of failing "Item number is required."
+  placeholderItemNumber: string | null;
+  availabilityCodes: string | null;
+}
+
+// Homecrest generates system placeholder item numbers (prefix "HC-") for
+// fabrics with no real manufacturer catalog number. Never expose these to
+// staff — they could be mistakenly sent to a vendor. Additive/conditional:
+// only affects Homecrest rows, no other manufacturer uses this prefix.
+function isPlaceholderItemNumber(itemNumber: string): boolean {
+  return itemNumber.startsWith("HC-");
+}
+
+const AVAILABILITY_LABELS: Record<string, string> = {
+  A: "Air",
+  S: "Sling",
+  PS: "Padded Sling",
+  C: "Cushion",
+  U: "Umbrella",
+  V: "Vintage Wire",
+  W: "Welt",
+};
+
+function formatAvailabilityCodes(codes: string | null): string {
+  if (!codes) return "";
+  return codes
+    .split("|")
+    .map((c) => AVAILABILITY_LABELS[c.trim()] ?? c.trim())
+    .join(", ");
 }
 
 const GRADE_OPTIONS = ["A", "B", "C", "AA", "BB"] as const;
@@ -81,13 +113,16 @@ function emptyForm(mfgId?: string): FabricFormState {
     swatchImageUrl: "",
     isActive: true,
     displayOrder: "0",
+    placeholderItemNumber: null,
+    availabilityCodes: null,
   };
 }
 
 function formFromFabric(f: AdminFabric): FabricFormState {
+  const placeholder = isPlaceholderItemNumber(f.itemNumber) ? f.itemNumber : null;
   return {
     manufacturerId: String(f.manufacturerId),
-    itemNumber: f.itemNumber,
+    itemNumber: placeholder ? "" : f.itemNumber,
     name: f.name,
     grade: f.grade ?? "",
     colorFamily: f.colorFamily ?? "",
@@ -96,6 +131,8 @@ function formFromFabric(f: AdminFabric): FabricFormState {
     swatchImageUrl: f.swatchImageUrl ?? "",
     isActive: f.isActive,
     displayOrder: String(f.displayOrder),
+    placeholderItemNumber: placeholder,
+    availabilityCodes: f.availabilityCodes,
   };
 }
 
@@ -177,8 +214,15 @@ export default function Fabrics() {
       setFormError("Vendor is required.");
       return;
     }
-    const itemNumber = form.itemNumber.trim();
-    if (!itemNumber) {
+    const trimmedItemNumber = form.itemNumber.trim();
+    let itemNumber: string;
+    if (trimmedItemNumber) {
+      itemNumber = trimmedItemNumber;
+    } else if (form.placeholderItemNumber) {
+      // Staff left the hidden placeholder field blank — keep the original
+      // system-generated placeholder unchanged rather than failing.
+      itemNumber = form.placeholderItemNumber;
+    } else {
       setFormError("Item number is required.");
       return;
     }
@@ -333,7 +377,13 @@ export default function Fabrics() {
                         </div>
                       )}
                     </td>
-                    <td className="px-4 py-2.5 font-mono text-xs text-slate-600">{f.itemNumber}</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-slate-600">
+                      {isPlaceholderItemNumber(f.itemNumber) ? (
+                        <span className="text-slate-300">—</span>
+                      ) : (
+                        f.itemNumber
+                      )}
+                    </td>
                     <td className="px-4 py-2.5 font-medium text-slate-900">{f.name}</td>
                     <td className="px-4 py-2.5 text-slate-600">{f.manufacturerName}</td>
                     <td className="px-4 py-2.5 text-center">
@@ -442,7 +492,7 @@ export default function Fabrics() {
                   id="fab-item"
                   value={form.itemNumber}
                   onChange={(e) => setForm((f) => ({ ...f, itemNumber: e.target.value }))}
-                  placeholder="e.g. 5476-0000"
+                  placeholder={form.placeholderItemNumber ? "No catalog number — enter one if available" : "e.g. 5476-0000"}
                 />
               </div>
               <div className="space-y-1.5">
@@ -574,6 +624,15 @@ export default function Fabrics() {
                 </div>
               </div>
             </div>
+
+            {form.availabilityCodes && (
+              <div className="space-y-1.5">
+                <Label>Available For</Label>
+                <p className="text-sm text-slate-600 border border-slate-200 rounded-md bg-slate-50 px-3 py-2">
+                  {formatAvailabilityCodes(form.availabilityCodes)}
+                </p>
+              </div>
+            )}
 
             <div className="space-y-1.5">
               <Label htmlFor="fab-notes">Notes</Label>
