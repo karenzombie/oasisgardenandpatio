@@ -7,6 +7,7 @@ import {
   numeric,
   index,
   check,
+  unique,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
@@ -40,7 +41,7 @@ export const cushionOrdersTable = pgTable(
   "cushion_orders",
   {
     id: serial("id").primaryKey(),
-    orderNumber: text("order_number").notNull().unique(),
+    orderNumber: text("order_number").notNull(),
     orderKind: text("order_kind").notNull(),
     status: text("status").notNull().default("submitted"),
 
@@ -86,6 +87,7 @@ export const cushionOrdersTable = pgTable(
     ),
     index("cushion_orders_status_idx").on(t.status),
     index("cushion_orders_submitted_at_idx").on(t.submittedAt),
+    unique("cushion_orders_order_number_key").on(t.orderNumber),
   ],
 );
 
