@@ -53,6 +53,18 @@ const SUBGROUP_ORDER: Record<string, Record<string, number>> = {
     Valances: 1,
     "Base Plate Top Colors": 2,
   },
+  Homecrest: {
+    "Frame Finish": 0,
+    "Woven Finishes": 1,
+    "Table Finishes": 2,
+  },
+};
+
+// Sub-groups where each swatch belongs to a named pattern/weave (stored in
+// `description`) that should render above the color name, e.g. "ROWAN" /
+// "Fog Greige". Keyed by manufacturer name -> sub-group key (collection).
+const PATTERN_LABEL_SUBGROUPS: Record<string, string[]> = {
+  Homecrest: ["Woven Finishes"],
 };
 
 // Manufacturers whose no-image finish swatches show a custom explanatory
@@ -68,9 +80,11 @@ const CUSTOM_NO_IMAGE_MESSAGE: Record<string, string> = {
 function FinishSwatch({
   finish,
   onClick,
+  showPatternLabel,
 }: {
   finish: FinishItem;
   onClick: () => void;
+  showPatternLabel?: boolean;
 }) {
   const customMessage = CUSTOM_NO_IMAGE_MESSAGE[finish.manufacturerName];
   return (
@@ -114,8 +128,15 @@ function FinishSwatch({
         </div>
       )}
 
+      {showPatternLabel && finish.description && (
+        <p className="mt-1.5 text-xs font-medium uppercase tracking-widest text-foreground">
+          {finish.description}
+        </p>
+      )}
       <p
-        className="mt-1 text-sm text-foreground line-clamp-1 group-hover:text-primary transition-colors"
+        className={`text-sm text-foreground line-clamp-1 group-hover:text-primary transition-colors ${
+          showPatternLabel ? "" : "mt-1"
+        }`}
         title={finish.name}
       >
         {finish.name}
@@ -123,7 +144,7 @@ function FinishSwatch({
       {finish.itemNumber && (
         <p className="text-xs text-muted-foreground">{finish.itemNumber}</p>
       )}
-      {finish.description && !FINISH_TYPE_LABELS[finish.description] && !finish.collection && (
+      {!showPatternLabel && finish.description && !FINISH_TYPE_LABELS[finish.description] && !finish.collection && (
         <p className="text-xs text-muted-foreground/80 line-clamp-2 mt-0.5">
           {finish.description}
         </p>
@@ -437,6 +458,9 @@ export default function Finishes() {
                                 key={f.id}
                                 finish={f}
                                 onClick={() => setSelected(f)}
+                                showPatternLabel={
+                                  PATTERN_LABEL_SUBGROUPS[brand]?.includes(label) ?? false
+                                }
                               />
                             ))}
                           </div>
