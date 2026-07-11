@@ -42,6 +42,7 @@ type FinishItem = {
 const FINISH_TYPE_LABELS: Record<string, string> = {
   "Frame Finish": "Frame Finishes",
   "Table Top Tile": "Table Top Tiles",
+  "HDPE finish": "HDPE Finishes",
 };
 
 // Explicit sub-group ordering, scoped per manufacturer so it never disturbs
@@ -57,6 +58,7 @@ const SUBGROUP_ORDER: Record<string, Record<string, number>> = {
     "Frame Finish": 0,
     "Woven Finishes": 1,
     "Table Finishes": 2,
+    "HDPE finish": 3,
   },
 };
 
@@ -126,6 +128,12 @@ function FinishSwatch({
             className="h-full w-auto object-contain opacity-70"
           />
         </div>
+      )}
+
+      {finish.description === "HDPE finish" && (
+        <span className="inline-block mt-1 px-1.5 py-0.5 bg-primary/10 text-primary text-[10px] font-semibold uppercase tracking-wider rounded-sm">
+          HDPE
+        </span>
       )}
 
       {showPatternLabel && finish.description && (

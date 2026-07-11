@@ -58,10 +58,15 @@ export function ProductOptionPickers({
   const tileFinishes = useMemo(
     () =>
       finishes
-        .filter((f) => /table\s*(?:top\s*)?tile|table\s*finish/i.test(f.description ?? ""))
+        .filter((f) => /table\s*(?:top\s*)?tile|table\s*finish|HDPE\s*finish/i.test(f.description ?? ""))
         .sort((a, b) => a.displayOrder - b.displayOrder),
     [finishes],
   );
+  // HDPE finishes live in the same picker bucket as table finishes but get
+  // their own label/button text so customers know what they’re selecting.
+  const tileLabel = tileFinishes.some((f) => /HDPE\s*finish/i.test(f.description ?? ""))
+    ? "HDPE Finish"
+    : "Tile Color";
 
   const frameSwatches = useMemo(
     () => frameFinishes.map(finishToSwatch),
@@ -103,7 +108,7 @@ export function ProductOptionPickers({
 
       {tileFinishes.length > 0 ? (
         <BrowseButton
-          label="Tile Color"
+          label={tileLabel}
           complete={Boolean(selectedTile)}
           onClick={() => setTileOpen(true)}
         />
@@ -128,7 +133,7 @@ export function ProductOptionPickers({
           ) : null}
           {selectedTile ? (
             <RecapRow
-              label="Tile Color"
+              label={tileLabel}
               value={selectedTile.name}
               swatchImageUrl={selectedTile.swatchImageUrl ?? null}
             />
@@ -170,7 +175,7 @@ export function ProductOptionPickers({
           isGradeMode={false}
           linePriceForGrade={() => null}
           formatPrice={(v) => `$${v.toFixed(2)}`}
-          title="Choose a tile color"
+          title={`Choose a ${tileLabel.toLowerCase()}`}
           noun="tile"
           nounPlural="tiles"
           searchPlaceholder="Search tiles by name…"
