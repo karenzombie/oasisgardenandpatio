@@ -96,9 +96,9 @@ export default function Home() {
         </div>
 
         {/* Left: order online & ship direct panel — full-height column flush to the left edge */}
-        <aside className="w-full md:w-[300px] md:shrink-0 md:order-1 bg-primary/[0.06] text-foreground border-r border-border border-t-[3px] border-t-primary flex flex-col">
-          <div className="flex flex-col items-center px-5 py-2.5 border-b border-border text-center">
-            <h2 className="font-bodoni italic text-xl leading-tight">
+        <aside className="w-full md:w-[200px] lg:w-[260px] xl:w-[300px] md:shrink-0 md:order-1 bg-primary/[0.06] text-foreground border-r border-border border-t-[3px] border-t-primary flex flex-col">
+          <div className="flex flex-col items-center px-3 lg:px-5 py-2.5 border-b border-border text-center">
+            <h2 className="font-bodoni italic text-base lg:text-xl leading-tight">
               Order online &amp; ship direct:
             </h2>
           </div>
@@ -109,15 +109,15 @@ export default function Home() {
                 <Link
                   key={category.id}
                   href={`/shop/category/${category.slug}?online=true`}
-                  className="group flex flex-1 flex-col justify-center gap-3 px-5 py-4 hover:bg-primary/10 transition-colors"
+                  className="group flex flex-1 flex-col justify-center gap-2 lg:gap-3 px-3 lg:px-5 py-3 lg:py-4 hover:bg-primary/10 transition-colors"
                 >
-                  <div className="flex items-center justify-center gap-2">
-                    <span className="font-serif text-lg group-hover:text-primary transition-colors">
+                  <div className="flex items-center justify-center gap-1.5 lg:gap-2">
+                    <span className="font-serif text-sm md:text-base lg:text-lg group-hover:text-primary transition-colors">
                       {category.name}
                     </span>
-                    <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                    <ArrowRight className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
                   </div>
-                  <Icon className="w-12 h-12 text-primary mx-auto" />
+                  <Icon className="w-8 h-8 md:w-10 md:h-10 lg:w-12 lg:h-12 text-primary mx-auto" />
                 </Link>
               );
             })}

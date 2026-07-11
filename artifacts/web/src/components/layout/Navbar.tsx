@@ -280,14 +280,16 @@ export function Navbar() {
                     </Link>
                   )}
 
-                  {/* Mobile Menu Toggle */}
-                  <button
-                    className="md:hidden p-2 -mr-2 text-foreground z-50"
-                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                    aria-label="Toggle menu"
-                  >
-                    {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-                  </button>
+                  {/* Mobile Menu Toggle — hidden when drawer is open; drawer provides its own close */}
+                  {!isMobileMenuOpen && (
+                    <button
+                      className="md:hidden p-2 -mr-2 text-foreground"
+                      onClick={() => setIsMobileMenuOpen(true)}
+                      aria-label="Open menu"
+                    >
+                      <Menu className="h-6 w-6" />
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -314,7 +316,14 @@ export function Navbar() {
 
       {/* Mobile Menu Drawer */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-40 bg-background/95 backdrop-blur-lg pt-24 px-6 md:hidden animate-in fade-in slide-in-from-top-4 duration-200 overflow-y-auto">
+        <div className="fixed inset-0 z-[60] bg-background/95 backdrop-blur-lg pt-20 px-6 md:hidden animate-in fade-in slide-in-from-top-4 duration-200 overflow-y-auto">
+          <button
+            className="absolute top-4 right-4 p-2 text-foreground hover:text-primary z-[70]"
+            onClick={() => setIsMobileMenuOpen(false)}
+            aria-label="Close menu"
+          >
+            <X className="h-6 w-6" />
+          </button>
           <nav className="flex flex-col space-y-6 text-center">
             {NAV_LINKS.map((link) => (
               <Link
