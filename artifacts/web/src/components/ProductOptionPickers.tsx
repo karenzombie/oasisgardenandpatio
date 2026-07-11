@@ -16,14 +16,15 @@ import {
  * knows which finish/fabric/tile the customer was interested in. No pricing is
  * computed here.
  *
- * Every option type (Frame Finish, Fabric, Tile Color) uses the SAME pattern:
- * a labeled "Browse swatches" button that opens the shared FabricSwatchDialog
- * modal. Confirmed selections appear in a single recap block below the buttons,
- * matching the umbrella PDP recap. Pickers render only when the product offers
- * that option:
- * - Frame Finish: finishes whose description is "Frame Finish"
+ * Every option type uses the SAME pattern: a labeled "Browse swatches" button
+ * that opens the shared FabricSwatchDialog modal. Confirmed selections appear
+ * in a single recap block below the buttons. Pickers render only when the
+ * product offers that option:
+ * - Frame Finish: finishes whose description matches "Frame Finish"
+ * - Frame + Weave Color: finishes whose collection is "Woven Finishes"
+ *   (shares the selectedFinishId slot — products never have both simultaneously)
  * - Fabric: any fabric options
- * - Tile Color: finishes whose description is "Table Top Tile"
+ * - Tile Color / HDPE Finish: finishes whose description matches "Table Top Tile" or "HDPE finish"
  */
 export function ProductOptionPickers({
   finishes,
@@ -45,6 +46,7 @@ export function ProductOptionPickers({
   onTableTopTileChange: (id: number | null) => void;
 }) {
   const [frameOpen, setFrameOpen] = useState(false);
+  const [wovenOpen, setWovenOpen] = useState(false);
   const [fabricOpen, setFabricOpen] = useState(false);
   const [tileOpen, setTileOpen] = useState(false);
 
@@ -52,6 +54,18 @@ export function ProductOptionPickers({
     () =>
       finishes
         .filter((f) => /frame\s*finish/i.test(f.description ?? ""))
+        .sort((a, b) => a.displayOrder - b.displayOrder),
+    [finishes],
+  );
+  // Woven finishes (Homecrest woven collections). Identified by collection name
+  // rather than description because the unique constraint on (manufacturer_id,
+  // name, description) prevents two same-named finishes from sharing a single
+  // description value across collections. Shares the selectedFinishId slot with
+  // frame finishes — a product will never have both simultaneously.
+  const wovenFinishes = useMemo(
+    () =>
+      finishes
+        .filter((f) => f.collection === "Woven Finishes")
         .sort((a, b) => a.displayOrder - b.displayOrder),
     [finishes],
   );
@@ -63,7 +77,7 @@ export function ProductOptionPickers({
     [finishes],
   );
   // HDPE finishes live in the same picker bucket as table finishes but get
-  // their own label/button text so customers know what they’re selecting.
+  // their own label/button text so customers know what they're selecting.
   const tileLabel = tileFinishes.some((f) => /HDPE\s*finish/i.test(f.description ?? ""))
     ? "HDPE Finish"
     : "Tile Color";
@@ -71,6 +85,10 @@ export function ProductOptionPickers({
   const frameSwatches = useMemo(
     () => frameFinishes.map(finishToSwatch),
     [frameFinishes],
+  );
+  const wovenSwatches = useMemo(
+    () => wovenFinishes.map(finishToSwatch),
+    [wovenFinishes],
   );
   const tileSwatches = useMemo(
     () => tileFinishes.map(finishToSwatch),
@@ -80,6 +98,10 @@ export function ProductOptionPickers({
   const selectedFrame = useMemo(
     () => frameFinishes.find((f) => f.id === selectedFinishId) ?? null,
     [frameFinishes, selectedFinishId],
+  );
+  const selectedWoven = useMemo(
+    () => wovenFinishes.find((f) => f.id === selectedFinishId) ?? null,
+    [wovenFinishes, selectedFinishId],
   );
   const selectedTile = useMemo(
     () => tileFinishes.find((f) => f.id === selectedTableTopTileId) ?? null,
@@ -91,10 +113,15 @@ export function ProductOptionPickers({
   );
 
   const hasAny =
-    frameFinishes.length > 0 || fabrics.length > 0 || tileFinishes.length > 0;
+    frameFinishes.length > 0 ||
+    wovenFinishes.length > 0 ||
+    fabrics.length > 0 ||
+    tileFinishes.length > 0;
   if (!hasAny) return null;
 
-  const hasSelection = Boolean(selectedFrame || selectedTile || selectedFabric);
+  const hasSelection = Boolean(
+    selectedFrame || selectedWoven || selectedTile || selectedFabric,
+  );
 
   return (
     <div className="space-y-5 mb-6">
@@ -103,6 +130,14 @@ export function ProductOptionPickers({
           label="Frame Finish"
           complete={Boolean(selectedFrame)}
           onClick={() => setFrameOpen(true)}
+        />
+      ) : null}
+
+      {wovenFinishes.length > 0 ? (
+        <BrowseButton
+          label="Frame + Weave Color"
+          complete={Boolean(selectedWoven)}
+          onClick={() => setWovenOpen(true)}
         />
       ) : null}
 
@@ -129,6 +164,13 @@ export function ProductOptionPickers({
               label="Frame Finish"
               value={selectedFrame.name}
               swatchImageUrl={selectedFrame.swatchImageUrl ?? null}
+            />
+          ) : null}
+          {selectedWoven ? (
+            <RecapRow
+              label="Frame + Weave Color"
+              value={selectedWoven.name}
+              swatchImageUrl={selectedWoven.swatchImageUrl ?? null}
             />
           ) : null}
           {selectedTile ? (
@@ -159,6 +201,23 @@ export function ProductOptionPickers({
           linePriceForGrade={() => null}
           formatPrice={(v) => `$${v.toFixed(2)}`}
           title="Choose a frame finish"
+          noun="finish"
+          nounPlural="finishes"
+          searchPlaceholder="Search finishes by name…"
+        />
+      ) : null}
+
+      {wovenFinishes.length > 0 ? (
+        <FabricSwatchDialog
+          open={wovenOpen}
+          onOpenChange={setWovenOpen}
+          fabrics={wovenSwatches}
+          selectedFabricId={selectedFinishId}
+          onConfirm={(id) => onFinishChange(id)}
+          isGradeMode={false}
+          linePriceForGrade={() => null}
+          formatPrice={(v) => `$${v.toFixed(2)}`}
+          title="Choose a frame + weave color"
           noun="finish"
           nounPlural="finishes"
           searchPlaceholder="Search finishes by name…"
