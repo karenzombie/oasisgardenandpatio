@@ -1,13 +1,16 @@
 import { Link, useLocation, useSearch, useRoute } from "wouter";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, memo } from "react";
 import { SlidersHorizontal, X } from "lucide-react";
 import {
   useListCatalogProducts,
   useListCatalogFacets,
+  getListCatalogProductsQueryKey,
+  getListCatalogFacetsQueryKey,
 } from "@workspace/api-client-react";
 import type {
   ListCatalogProductsParams,
   ListCatalogFacetsParams,
+  CatalogProduct,
 } from "@workspace/api-client-react";
 import { getBrandLogo } from "@/lib/brandLogos";
 import { WishlistButton } from "@/components/WishlistButton";
@@ -31,11 +34,107 @@ function formatMoney(v: string | null | undefined): string {
   return `$${n.toFixed(2)}`;
 }
 
+const ProductCard = memo(function ProductCard({ product: p }: { product: CatalogProduct }) {
+  const varies = p.priceVaries && p.showPriceOnline;
+  const displayPrice = varies ? p.startingPrice : p.price;
+  const displaySale = varies ? p.startingSalePrice : p.salePrice;
+  const onSale =
+    displaySale &&
+    displayPrice &&
+    Number(displaySale) < Number(displayPrice);
+  const brandLogo = getBrandLogo(p.manufacturerName);
+
+  return (
+    <Link href={`/shop/${p.slug}`} className="group block border-2 border-primary bg-card hover:shadow-md transition-shadow duration-150">
+      <div className="relative aspect-square bg-card overflow-hidden">
+        {p.primaryImageUrl ? (
+          <img
+            src={p.primaryImageUrl}
+            alt={p.name}
+            loading="lazy"
+            className="absolute inset-0 w-full h-full object-contain p-6 mix-blend-multiply"
+          />
+        ) : (
+          <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground font-serif">
+            No image available
+          </div>
+        )}
+        {onSale ? (
+          <div className="absolute top-3 right-3 bg-primary text-primary-foreground px-3 py-1 text-xs uppercase tracking-widest font-semibold">
+            Sale
+          </div>
+        ) : p.quoteOnly ? (
+          <div className="absolute top-3 right-3 bg-foreground text-background px-3 py-1 text-xs uppercase tracking-widest font-semibold">
+            Call for Pricing
+          </div>
+        ) : null}
+        <div className="absolute bottom-3 right-3 z-10">
+          <WishlistButton productId={p.id} />
+        </div>
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent pt-10 pb-3 px-4">
+          <h3 className="font-serif text-base md:text-lg text-white drop-shadow line-clamp-2 pr-12">
+            {p.name}
+          </h3>
+        </div>
+      </div>
+      <div className="border-t border-primary/30 px-4 py-4 space-y-2 text-center">
+        {brandLogo ? (
+          <div className="flex justify-center">
+            <img
+              src={brandLogo}
+              alt={p.manufacturerName ?? ""}
+              loading="lazy"
+              className="h-6 w-auto object-contain"
+            />
+          </div>
+        ) : p.manufacturerName ? (
+          <p className="text-xs uppercase tracking-widest text-muted-foreground">
+            {p.manufacturerName}
+          </p>
+        ) : null}
+        {p.showPriceOnline && displayPrice ? (
+          onSale ? (
+            <p className="text-sm font-bold">
+              {varies && (
+                <span className="block text-xs font-normal uppercase tracking-widest text-muted-foreground">
+                  Starting at
+                </span>
+              )}
+              <span className="text-muted-foreground line-through mr-2">
+                {varies ? formatMoney(displayPrice) : `MSRP ${formatMoney(displayPrice)}`}
+              </span>
+              <span className="text-primary">
+                {varies ? formatMoney(displaySale) : `Sale ${formatMoney(displaySale)}`}
+              </span>
+            </p>
+          ) : (
+            <p className="text-sm font-bold">
+              {varies && (
+                <span className="block text-xs font-normal uppercase tracking-widest text-muted-foreground">
+                  Starting at
+                </span>
+              )}
+              {varies ? formatMoney(displayPrice) : `MSRP ${formatMoney(displayPrice)}`}
+            </p>
+          )
+        ) : null}
+        <div className="pt-1">
+          <span className="inline-block w-full border border-primary text-primary text-xs uppercase tracking-widest px-4 py-2.5 font-semibold group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-150">
+            Select Options
+          </span>
+        </div>
+      </div>
+    </Link>
+  );
+});
+
 export default function Shop() {
   const [, setLocation] = useLocation();
   const search = useSearch();
   const [, params] = useRoute<{ slug: string }>("/shop/category/:slug");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
   const q = useMemo(() => new URLSearchParams(search), [search]);
 
@@ -54,7 +153,26 @@ export default function Shop() {
   const activeMaterials = useMemo(() => parseListParam(q.get("material")), [q]);
   const activeCollections = useMemo(() => parseListParam(q.get("collection")), [q]);
   const activeSubCategories = useMemo(() => parseListParam(q.get("subcategory")), [q]);
-  const activeName = q.get("q") ?? "";
+  const activeName = debouncedSearch;
+
+  // Sync local search input from URL on mount / external changes
+  useEffect(() => {
+    const urlQ = q.get("q") ?? "";
+    setSearchInput(urlQ);
+    setDebouncedSearch(urlQ);
+  }, [search]);
+
+  // Debounce search input → API param
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setDebouncedSearch(searchInput);
+      if (searchInput !== (q.get("q") ?? "")) {
+        updateSearch({ q: searchInput || null, page: "1" });
+      }
+    }, 300);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchInput]);
 
   const queryParams = useMemo(() => {
     const out: ListCatalogProductsParams = {
@@ -83,7 +201,9 @@ export default function Shop() {
     isOnlineOnly,
   ]);
 
-  const { data, isLoading } = useListCatalogProducts(queryParams);
+  const { data, isLoading } = useListCatalogProducts(queryParams, {
+    query: { queryKey: getListCatalogProductsQueryKey(queryParams), staleTime: 60_000 },
+  });
 
   // All filter options are derived from the live catalog and narrowed to the
   // OTHER active selections, so options that would return zero products are
@@ -109,7 +229,9 @@ export default function Shop() {
     activeSubCategories,
     isOnlineOnly,
   ]);
-  const { data: facets } = useListCatalogFacets(facetParams);
+  const { data: facets } = useListCatalogFacets(facetParams, {
+    query: { queryKey: getListCatalogFacetsQueryKey(facetParams), staleTime: 60_000 },
+  });
 
   const total = data?.total ?? 0;
   const pageSize = queryParams.pageSize ?? 12;
@@ -223,14 +345,20 @@ export default function Shop() {
           <input
             type="text"
             placeholder="Search by name or SKU…"
-            value={activeName}
-            onChange={(e) => updateSearch({ q: e.target.value || null, page: "1" })}
+            value={searchInput}
+            onChange={(e) => {
+              setSearchInput(e.target.value);
+            }}
             className="w-full border border-input bg-background rounded-sm pl-3 pr-8 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
           />
-          {activeName && (
+          {searchInput && (
             <button
               type="button"
-              onClick={() => updateSearch({ q: null, page: "1" })}
+              onClick={() => {
+                setSearchInput("");
+                setDebouncedSearch("");
+                updateSearch({ q: null, page: "1" });
+              }}
               className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             >
               <X className="size-3.5" />
@@ -484,96 +612,9 @@ export default function Shop() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {data.products.map((p) => {
-                const varies = p.priceVaries && p.showPriceOnline;
-                const displayPrice = varies ? p.startingPrice : p.price;
-                const displaySale = varies ? p.startingSalePrice : p.salePrice;
-                const onSale =
-                  displaySale &&
-                  displayPrice &&
-                  Number(displaySale) < Number(displayPrice);
-                const brandLogo = getBrandLogo(p.manufacturerName);
-                return (
-                  <Link key={p.id} href={`/shop/${p.slug}`} className="group block border-2 border-primary bg-card hover:shadow-md transition-shadow duration-150">
-                    <div className="relative aspect-square bg-card overflow-hidden">
-                      {p.primaryImageUrl ? (
-                        <img
-                          src={p.primaryImageUrl}
-                          alt={p.name}
-                          className="absolute inset-0 w-full h-full object-contain p-6 mix-blend-multiply"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground font-serif">
-                          No image available
-                        </div>
-                      )}
-                      {onSale ? (
-                        <div className="absolute top-3 right-3 bg-primary text-primary-foreground px-3 py-1 text-xs uppercase tracking-widest font-semibold">
-                          Sale
-                        </div>
-                      ) : p.quoteOnly ? (
-                        <div className="absolute top-3 right-3 bg-foreground text-background px-3 py-1 text-xs uppercase tracking-widest font-semibold">
-                          Call for Pricing
-                        </div>
-                      ) : null}
-                      <div className="absolute bottom-3 right-3 z-10">
-                        <WishlistButton productId={p.id} />
-                      </div>
-                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent pt-10 pb-3 px-4">
-                        <h3 className="font-serif text-base md:text-lg text-white drop-shadow line-clamp-2 pr-12">
-                          {p.name}
-                        </h3>
-                      </div>
-                    </div>
-                    <div className="border-t border-primary/30 px-4 py-4 space-y-2 text-center">
-                      {brandLogo ? (
-                        <div className="flex justify-center">
-                          <img
-                            src={brandLogo}
-                            alt={p.manufacturerName ?? ""}
-                            className="h-6 w-auto object-contain"
-                          />
-                        </div>
-                      ) : p.manufacturerName ? (
-                        <p className="text-xs uppercase tracking-widest text-muted-foreground">
-                          {p.manufacturerName}
-                        </p>
-                      ) : null}
-                      {p.showPriceOnline && displayPrice ? (
-                        onSale ? (
-                          <p className="text-sm font-bold">
-                            {varies && (
-                              <span className="block text-xs font-normal uppercase tracking-widest text-muted-foreground">
-                                Starting at
-                              </span>
-                            )}
-                            <span className="text-muted-foreground line-through mr-2">
-                              {varies ? formatMoney(displayPrice) : `MSRP ${formatMoney(displayPrice)}`}
-                            </span>
-                            <span className="text-primary">
-                              {varies ? formatMoney(displaySale) : `Sale ${formatMoney(displaySale)}`}
-                            </span>
-                          </p>
-                        ) : (
-                          <p className="text-sm font-bold">
-                            {varies && (
-                              <span className="block text-xs font-normal uppercase tracking-widest text-muted-foreground">
-                                Starting at
-                              </span>
-                            )}
-                            {varies ? formatMoney(displayPrice) : `MSRP ${formatMoney(displayPrice)}`}
-                          </p>
-                        )
-                      ) : null}
-                      <div className="pt-1">
-                        <span className="inline-block w-full border border-primary text-primary text-xs uppercase tracking-widest px-4 py-2.5 font-semibold group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-150">
-                          Select Options
-                        </span>
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
+              {data.products.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
             </div>
           )}
 
