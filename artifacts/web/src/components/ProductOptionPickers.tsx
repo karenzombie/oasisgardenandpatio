@@ -49,6 +49,7 @@ export function ProductOptionPickers({
   const [wovenOpen, setWovenOpen] = useState(false);
   const [fabricOpen, setFabricOpen] = useState(false);
   const [tileOpen, setTileOpen] = useState(false);
+  const [otherOpen, setOtherOpen] = useState(false);
 
   const frameFinishes = useMemo(
     () =>
@@ -76,6 +77,21 @@ export function ProductOptionPickers({
         .sort((a, b) => a.displayOrder - b.displayOrder),
     [finishes],
   );
+  // Other finishes: anything that doesn't match the specific buckets above.
+  // Homecrest In-Pool polyethylene finishes use descriptions like
+  // "In-pool polyethylene body finish" and fall into this catch-all.
+  const otherFinishes = useMemo(
+    () =>
+      finishes
+        .filter(
+          (f) =>
+            !/frame\s*finish/i.test(f.description ?? "") &&
+            f.collection !== "Woven Finishes" &&
+            !/table\s*(?:top\s*)?tile|table\s*finish|HDPE\s*finish/i.test(f.description ?? ""),
+        )
+        .sort((a, b) => a.displayOrder - b.displayOrder),
+    [finishes],
+  );
   // HDPE finishes live in the same picker bucket as table finishes but get
   // their own label/button text so customers know what they're selecting.
   const tileLabel = tileFinishes.some((f) => /HDPE\s*finish/i.test(f.description ?? ""))
@@ -94,6 +110,10 @@ export function ProductOptionPickers({
     () => tileFinishes.map(finishToSwatch),
     [tileFinishes],
   );
+  const otherSwatches = useMemo(
+    () => otherFinishes.map(finishToSwatch),
+    [otherFinishes],
+  );
 
   const selectedFrame = useMemo(
     () => frameFinishes.find((f) => f.id === selectedFinishId) ?? null,
@@ -107,6 +127,10 @@ export function ProductOptionPickers({
     () => tileFinishes.find((f) => f.id === selectedTableTopTileId) ?? null,
     [tileFinishes, selectedTableTopTileId],
   );
+  const selectedOther = useMemo(
+    () => otherFinishes.find((f) => f.id === selectedFinishId) ?? null,
+    [otherFinishes, selectedFinishId],
+  );
   const selectedFabric = useMemo(
     () => fabrics.find((f) => f.id === selectedFabricId) ?? null,
     [fabrics, selectedFabricId],
@@ -116,11 +140,12 @@ export function ProductOptionPickers({
     frameFinishes.length > 0 ||
     wovenFinishes.length > 0 ||
     fabrics.length > 0 ||
-    tileFinishes.length > 0;
+    tileFinishes.length > 0 ||
+    otherFinishes.length > 0;
   if (!hasAny) return null;
 
   const hasSelection = Boolean(
-    selectedFrame || selectedWoven || selectedTile || selectedFabric,
+    selectedFrame || selectedWoven || selectedTile || selectedOther || selectedFabric,
   );
 
   return (
@@ -146,6 +171,14 @@ export function ProductOptionPickers({
           label={tileLabel}
           complete={Boolean(selectedTile)}
           onClick={() => setTileOpen(true)}
+        />
+      ) : null}
+
+      {otherFinishes.length > 0 ? (
+        <BrowseButton
+          label="Finish"
+          complete={Boolean(selectedOther)}
+          onClick={() => setOtherOpen(true)}
         />
       ) : null}
 
@@ -178,6 +211,13 @@ export function ProductOptionPickers({
               label={tileLabel}
               value={selectedTile.name}
               swatchImageUrl={selectedTile.swatchImageUrl ?? null}
+            />
+          ) : null}
+          {selectedOther ? (
+            <RecapRow
+              label="Finish"
+              value={selectedOther.name}
+              swatchImageUrl={selectedOther.swatchImageUrl ?? null}
             />
           ) : null}
           {selectedFabric ? (
@@ -238,6 +278,23 @@ export function ProductOptionPickers({
           noun="tile"
           nounPlural="tiles"
           searchPlaceholder="Search tiles by name…"
+        />
+      ) : null}
+
+      {otherFinishes.length > 0 ? (
+        <FabricSwatchDialog
+          open={otherOpen}
+          onOpenChange={setOtherOpen}
+          fabrics={otherSwatches}
+          selectedFabricId={selectedFinishId}
+          onConfirm={(id) => onFinishChange(id)}
+          isGradeMode={false}
+          linePriceForGrade={() => null}
+          formatPrice={(v) => `$${v.toFixed(2)}`}
+          title="Choose a finish"
+          noun="finish"
+          nounPlural="finishes"
+          searchPlaceholder="Search finishes by name…"
         />
       ) : null}
 
