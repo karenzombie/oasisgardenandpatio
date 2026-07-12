@@ -15,7 +15,7 @@ import { db, productImagesTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { uploadBufferToStorage } from "../../artifacts/api-server/src/lib/objectStorage.js";
 
-const IMAGE_DIR = resolve(process.cwd(), "attached_assets");
+const IMAGE_DIR = resolve(process.cwd(), "..", "attached_assets");
 
 const MAPPING = [
   {
