@@ -32,4 +32,9 @@ export interface CatalogFinishOption {
    * @nullable
    */
   minOrderQty: number | null;
+  /**
+   * Finish collection name from the finish row (e.g. "Woven Finishes"). Used to identify woven-finish options for the Frame + Weave Color picker.
+   * @nullable
+   */
+  collection: string | null;
 }

@@ -838,6 +838,7 @@ router.get(
         name: finishesTable.name,
         imageUrl: finishesTable.imageUrl,
         description: finishesTable.description,
+        collection: finishesTable.collection,
         displayOrder: productFinishOptionsTable.displayOrder,
         upchargeMsrp: productFinishOptionsTable.upchargeMsrp,
         upchargeSale: productFinishOptionsTable.upchargeSale,
@@ -861,6 +862,7 @@ router.get(
       name: string;
       imageUrl: string | null;
       description: string | null;
+      collection: string | null;
       displayOrder: number;
     }[] = [];
     if (optionFinishRows.length === 0) {
@@ -878,6 +880,7 @@ router.get(
               name: finishesTable.name,
               imageUrl: finishesTable.imageUrl,
               description: finishesTable.description,
+              collection: finishesTable.collection,
               displayOrder: finishesTable.displayOrder,
             })
             .from(finishesTable)
@@ -898,6 +901,7 @@ router.get(
         name: string;
         imageUrl: string | null;
         description: string | null;
+        collection: string | null;
         displayOrder: number;
         upchargeMsrp: string;
         upchargeSale: string;
@@ -1251,6 +1255,7 @@ router.get(
         code: f.code ?? "",
         name: f.name,
         description: f.description ?? null,
+        collection: f.collection ?? null,
         swatchImageUrl: toPublicImageUrl(f.imageUrl),
         displayOrder: f.displayOrder,
         upchargeMsrp: String(f.upchargeMsrp ?? "0"),

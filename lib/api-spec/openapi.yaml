@@ -8104,6 +8104,11 @@ components:
         minOrderQty:
           type: ["integer", "null"]
           description: Minimum order quantity enforced when this finish is selected (e.g. special-order finishes). Null means no finish-driven minimum.
+        collection:
+          type: ["string", "null"]
+          description: >-
+            Finish collection name from the finish row (e.g. "Woven Finishes").
+            Used to identify woven-finish options for the Frame + Weave Color picker.
       required:
         - id
         - code
@@ -8114,6 +8119,7 @@ components:
         - upchargeMsrp
         - upchargeSale
         - minOrderQty
+        - collection
     CatalogFinialOption:
       type: object
       description: A discrete finial (umbrella pole-cap) choice. Default-or-required selection like a finish; upcharge options add to the line price. Text-only (no swatch image).

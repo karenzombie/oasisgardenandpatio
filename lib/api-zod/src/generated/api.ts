@@ -796,6 +796,12 @@ export const GetCatalogProductBySlugResponse = zod
                 .describe(
                   "Minimum order quantity enforced when this finish is selected (e.g. special-order finishes). Null means no finish-driven minimum.",
                 ),
+              collection: zod
+                .string()
+                .nullable()
+                .describe(
+                  'Finish collection name from the finish row (e.g. \"Woven Finishes\"). Used to identify woven-finish options for the Frame + Weave Color picker.',
+                ),
             })
             .describe(
               "A discrete frame-finish choice for a grade-priced product (resolved from the product's finish pool\/options).",
@@ -4300,6 +4306,12 @@ export const AdminGetProductPickerResponse = zod
               .nullable()
               .describe(
                 "Minimum order quantity enforced when this finish is selected (e.g. special-order finishes). Null means no finish-driven minimum.",
+              ),
+            collection: zod
+              .string()
+              .nullable()
+              .describe(
+                'Finish collection name from the finish row (e.g. \"Woven Finishes\"). Used to identify woven-finish options for the Frame + Weave Color picker.',
               ),
           })
           .describe(
