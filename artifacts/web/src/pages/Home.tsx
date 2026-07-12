@@ -67,9 +67,11 @@ export default function Home() {
 
   return (
     <div className="w-full">
-      {/* Hero Section — split layout: ship-direct panel on the left, hero photo on the right */}
-      <section className="relative w-full flex flex-col md:flex-row md:h-[80vh] md:min-h-[600px]">
-        {/* Left: existing hero */}
+      {/* Hero Section — split layout: ship-direct panel on the left, hero photo on the right.
+          CSS Grid + clamp() keeps the sidebar width, text, icons and gaps scaling
+          *smoothly* with the viewport instead of jumping at rigid breakpoints. */}
+      <section className="relative w-full flex flex-col md:grid md:grid-cols-[minmax(220px,18%)_1fr] md:h-[80vh] md:min-h-[600px]">
+        {/* Hero image + copy — sits on the right on desktop */}
         <div className="relative flex-1 h-[70vh] min-h-[500px] md:h-auto md:min-h-0 flex items-center justify-center overflow-hidden md:order-2">
           <div className="absolute inset-0 z-0">
             <img
@@ -95,10 +97,13 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Left: order online & ship direct panel — full-height column flush to the left edge */}
-        <aside className="w-full md:w-[200px] lg:w-[260px] xl:w-[300px] md:shrink-0 md:order-1 bg-primary/[0.06] text-foreground border-r border-border border-t-[3px] border-t-primary flex flex-col">
-          <div className="flex flex-col items-center px-3 lg:px-5 py-2.5 border-b border-border text-center">
-            <h2 className="font-bodoni italic text-base lg:text-xl leading-tight">
+        {/* Ship-direct sidebar — fluid width, text, icons & padding via clamp() */}
+        <aside className="w-full md:w-auto md:order-1 bg-primary/[0.06] text-foreground border-r border-border border-t-[3px] border-t-primary flex flex-col">
+          <div className="flex flex-col items-center px-[clamp(0.5rem,1vw,1.25rem)] py-[clamp(0.5rem,0.8vw,0.75rem)] border-b border-border text-center">
+            <h2
+              className="font-bodoni italic leading-tight"
+              style={{ fontSize: "clamp(0.875rem, 1.1vw, 1.25rem)" }}
+            >
               Order online &amp; ship direct:
             </h2>
           </div>
@@ -109,15 +114,37 @@ export default function Home() {
                 <Link
                   key={category.id}
                   href={`/shop/category/${category.slug}?online=true`}
-                  className="group flex flex-1 flex-col justify-center gap-2 lg:gap-3 px-3 lg:px-5 py-3 lg:py-4 hover:bg-primary/10 transition-colors"
+                  className="group flex flex-1 flex-col justify-center items-center hover:bg-primary/10 transition-colors"
+                  style={{
+                    gap: "clamp(0.35rem, 0.6vw, 0.75rem)",
+                    padding: "clamp(0.5rem, 1.2vw, 1rem) clamp(0.5rem, 1vw, 1.25rem)",
+                  }}
                 >
-                  <div className="flex items-center justify-center gap-1.5 lg:gap-2">
-                    <span className="font-serif text-sm md:text-base lg:text-lg group-hover:text-primary transition-colors">
+                  <div
+                    className="flex items-center justify-center"
+                    style={{ gap: "clamp(0.25rem, 0.4vw, 0.5rem)" }}
+                  >
+                    <span
+                      className="font-serif group-hover:text-primary transition-colors"
+                      style={{ fontSize: "clamp(0.75rem, 0.95vw, 1.125rem)" }}
+                    >
                       {category.name}
                     </span>
-                    <ArrowRight className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                    <ArrowRight
+                      className="text-muted-foreground group-hover:text-primary transition-colors shrink-0"
+                      style={{
+                        width: "clamp(0.75rem, 1vw, 1rem)",
+                        height: "clamp(0.75rem, 1vw, 1rem)",
+                      }}
+                    />
                   </div>
-                  <Icon className="w-8 h-8 md:w-10 md:h-10 lg:w-12 lg:h-12 text-primary mx-auto" />
+                  <Icon
+                    className="text-primary mx-auto"
+                    style={{
+                      width: "clamp(1.5rem, 2.5vw, 3rem)",
+                      height: "clamp(1.5rem, 2.5vw, 3rem)",
+                    }}
+                  />
                 </Link>
               );
             })}
