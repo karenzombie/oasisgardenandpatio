@@ -63,7 +63,7 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
           <DashboardCard label="Orders" icon={ShoppingCart} href="/admin/orders">
             <RowList
               rows={[
-                { label: "New Online Order", value: orderCount(ordersByStatus?.new_online_order) },
+                { label: "New Online Order", value: orderCount(ordersByStatus?.new_online_order), labelClassName: "text-red-600 font-bold" },
                 { label: "Pending", value: orderCount(ordersByStatus?.pending) },
                 { label: "Confirmed", value: orderCount(ordersByStatus?.confirmed) },
                 { label: "In production", value: orderCount(ordersByStatus?.in_production) },
@@ -221,13 +221,13 @@ function DashboardCard({
 function RowList({
   rows,
 }: {
-  rows: Array<{ label: string; value: string | number; muted?: boolean }>;
+  rows: Array<{ label: string; value: string | number; muted?: boolean; labelClassName?: string }>;
 }) {
   return (
     <div className="space-y-1.5">
       {rows.map((row) => (
         <div key={row.label} className="flex items-center justify-between gap-3 text-sm">
-          <span className="text-slate-600">{row.label}</span>
+          <span className={row.labelClassName ?? "text-slate-600"}>{row.label}</span>
           <span
             className={
               row.muted
