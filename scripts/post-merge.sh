@@ -33,5 +33,11 @@ pnpm --filter db push
 # their associated option/junction rows; the sync below then repopulates from dev.
 pnpm --filter @workspace/scripts exec tsx src/cleanupProdOnlyRows.ts
 
+# Also clean junction tables (product_fabric_options / product_finish_options).
+# The upsert dump only inserts/updates — it never deletes old rows that were
+# removed or corrected in dev (e.g., Homecrest Air products going from 24
+# to 7 fabrics). This step ensures exact prod=dev parity.
+pnpm --filter @workspace/scripts exec tsx src/cleanupProdOnlyJunctionRows.ts
+
 pnpm --filter @workspace/scripts exec tsx src/dumpDevDataForProd.ts
 pnpm --filter @workspace/scripts exec tsx src/applyDataToProd.ts
