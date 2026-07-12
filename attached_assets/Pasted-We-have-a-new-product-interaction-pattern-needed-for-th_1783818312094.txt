@@ -1,0 +1,40 @@
+We have a new product interaction pattern needed for the Echo collection on Homecrest. Here is what we need:
+Products involved (already in DB):
+
+id=4007, SKU 94350, Echo Armless Dining Chair (Stackable)
+id=4008, SKU 94370, Echo Dining Chair (Stackable)
+id=4009, SKU 94580, Echo Armless Balcony Stool
+id=4010, SKU 94480, Echo Armless Bar Stool
+
+PDP behavior:
+On each of these product pages, the customer should first see a "Cushion" option with two choices: "No Cushion" (default) and "Cushion" (upgrade).
+
+When "No Cushion" is selected: show only the frame finish picker (11 standard Homecrest frame finishes). The active SKU is the base SKU (e.g. 94350).
+When "Cushion" is selected: show the frame finish picker AND a fabric picker (C cushion fabrics from the Homecrest fabric pool). The active SKU updates to the cushion variant SKU (e.g. 9435P).
+
+Cushion SKU mapping:
+
+94350 → 9435P
+94370 → 9437P
+94580 → 9458P
+94480 → 9448P
+
+Product data to update on all 4 base products:
+category_id = 44, sub_category as follows:
+
+94350, 94370 → "Dining Chair"
+94580, 94480 → "Bar & Counter Stools"
+
+description (same for all 4):
+Inspired by the organic shapes found in nature, Echo is an expansion of our popular Manhattan line. Make any outdoor setting more inviting with the addition of this beautiful and unique collection. Echo is available in dining, balcony, and bar heights with a metal seat, padded seat, or removable seat pad option. With its modern design and high-quality construction, this collection is a hospitality favorite.
+Our Echo collection's visual style is well-suited to homeowners looking for a refined visual style, as well as urbane environments such as fine dining, cafés, bars, or luxury rooftop experiences.
+short_description = null on all 4.
+Specs per product:
+
+94350: Height 35", Width 18.5", Depth 21", Seat Height 19", Stackable 2-6
+94370: Height 35", Width 20", Depth 21", Seat Height 19", Arm Height 25.75", Stackable 2-6
+94580: Height 40.5", Width 18.5", Depth 21", Seat Height 24"
+94480: Height 45.5", Width 18.5", Depth 21", Seat Height 29"
+
+Once implemented, please explain exactly how you set up the schema for the cushion toggle -- specifically how the cushion SKU mapping is stored, how the fabric pool is associated, and how the frontend knows which fabric pool to show -- so we can replicate the pattern via shell script for the 2-pack variants (94350-2, 9435P-2, 94370-2, 9437P-2) without agent involvement.
+Please check in before implementing so we can confirm the approach.
