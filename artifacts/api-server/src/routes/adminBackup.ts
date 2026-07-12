@@ -68,8 +68,8 @@ async function runBackupJob(
   const token = process.env.GITHUB_BACKUP_TOKEN;
   if (!token) throw new Error("GITHUB_BACKUP_TOKEN environment variable is not set");
 
-  const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) throw new Error("DATABASE_URL environment variable is not set");
+  const databaseUrl = process.env.PROD_DATABASE_URL;
+  if (!databaseUrl) throw new Error("PROD_DATABASE_URL environment variable is not set");
 
   const tempId = randomUUID();
   const cloneDir = path.join("/tmp", `oasis-backup-${tempId}`);
