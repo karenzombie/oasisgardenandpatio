@@ -28,5 +28,10 @@ pnpm --filter db push
 # Prerequisite: the prod schema must already match dev (the reload inserts dev's
 # exact columns). `pnpm --filter db push` above keeps dev current; apply the same
 # schema changes to prod before relying on this sync if a migration adds columns.
+# Pre-sync cleanup: remove prod-only catalog rows that no longer exist in dev
+# (e.g., merged duplicates, superseded series). ON DELETE CASCADE cleans up
+# their associated option/junction rows; the sync below then repopulates from dev.
+pnpm --filter @workspace/scripts exec tsx src/cleanupProdOnlyRows.ts
+
 pnpm --filter @workspace/scripts exec tsx src/dumpDevDataForProd.ts
 pnpm --filter @workspace/scripts exec tsx src/applyDataToProd.ts
