@@ -10,6 +10,7 @@ import {
   productMaterialsTable,
   productVariantsTable,
   productFabricOptionsTable,
+  productFabricPoolsTable,
   fabricsTable,
   finishCollectionsTable,
   finishesTable,
@@ -652,6 +653,7 @@ router.get(
         featured: productsTable.featured,
         finishMinQtyNote: productsTable.finishMinQtyNote,
         isActive: productsTable.isActive,
+        cushionUpgradeSku: productsTable.cushionUpgradeSku,
       })
       .from(productsTable)
       .leftJoin(
@@ -986,6 +988,57 @@ router.get(
         asc(fabricsTable.name),
       );
 
+    // Cushion-upgrade pool expansion: when a product has a cushion_upgrade_sku
+    // set and no explicit fabric options, expand the manufacturer fabric pool
+    // filtered to fabrics whose availability_codes contains 'C' (cushion).
+    // These fabrics are only shown when the customer selects the Cushion option.
+    if (fabricRows.length === 0 && row.cushionUpgradeSku) {
+      const poolMfrRows = await db
+        .select({ manufacturerId: productFabricPoolsTable.manufacturerId })
+        .from(productFabricPoolsTable)
+        .where(eq(productFabricPoolsTable.productId, row.id));
+      if (poolMfrRows.length > 0) {
+        const poolMfrIds = poolMfrRows.map((p) => p.manufacturerId);
+        const poolFabrics = await db
+          .select({
+            id: fabricsTable.id,
+            name: fabricsTable.name,
+            itemNumber: fabricsTable.itemNumber,
+            manufacturerName: manufacturersTable.name,
+            manufacturerLogoUrl: manufacturersTable.logoUrl,
+            swatchImageUrl: fabricsTable.swatchImageUrl,
+            grade: fabricsTable.grade,
+            colorFamily: fabricsTable.colorFamily,
+            notes: fabricsTable.notes,
+            isStripe: fabricsTable.isStripe,
+            displayOrder: fabricsTable.displayOrder,
+          })
+          .from(fabricsTable)
+          .innerJoin(manufacturersTable, eq(manufacturersTable.id, fabricsTable.manufacturerId))
+          .where(
+            and(
+              inArray(fabricsTable.manufacturerId, poolMfrIds),
+              eq(fabricsTable.isActive, true),
+              sql`${fabricsTable.availabilityCodes} LIKE '%C%'`,
+            ),
+          )
+          .orderBy(asc(manufacturersTable.name), asc(fabricsTable.name));
+        fabricRows.push(...poolFabrics);
+      }
+    }
+
+    // Resolve the cushion upgrade product ID so the frontend can add the
+    // correct product to the wishlist/cart when Cushion is selected.
+    let cushionUpgradeProductId: number | null = null;
+    if (row.cushionUpgradeSku) {
+      const [cushionProduct] = await db
+        .select({ id: productsTable.id })
+        .from(productsTable)
+        .where(eq(productsTable.sku, row.cushionUpgradeSku))
+        .limit(1);
+      cushionUpgradeProductId = cushionProduct?.id ?? null;
+    }
+
     // Add-ons (e.g. Marella privacy walls + replacement stem). Optional extras
     // priced additively on top of the base product. per_grade add-ons carry
     // per-fabric-grade rows; flat add-ons use flatMsrp/flatSalePrice.
@@ -1306,6 +1359,8 @@ router.get(
       stemOptions,
       coverOptions,
       finishMinQtyNote: row.finishMinQtyNote ?? null,
+      cushionUpgradeSku: row.cushionUpgradeSku ?? null,
+      cushionUpgradeProductId,
     };
 
     res.json(GetCatalogProductBySlugResponse.parse(payload));

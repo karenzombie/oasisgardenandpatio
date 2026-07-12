@@ -136,7 +136,12 @@ export default function Product() {
   // frameOnly toggle — only visible when the product has both fabrics and a
   // frame-only price configured. Default: frame + fabric (frameOnly = false).
   const [frameOnly, setFrameOnly] = useState(false);
-  const requiresFabric = hasFabrics && !frameOnly;
+  // cushionMode toggle — only shown when the product carries a cushion_upgrade_sku.
+  // When false (No Cushion), the fabric picker is hidden. When true (Cushion),
+  // the fabric picker appears and the displayed SKU switches to the cushion variant.
+  const [cushionMode, setCushionMode] = useState(false);
+  const offersCushion = !!data?.cushionUpgradeSku;
+  const requiresFabric = hasFabrics && !frameOnly && (!offersCushion || cushionMode);
 
   // Reset the gallery to the first image whenever the selected finish changes
   // so the image for the chosen colour is immediately visible.
@@ -152,6 +157,7 @@ export default function Product() {
     setFinishId(null);
     setFabricId(null);
     setFrameOnly(false);
+    setCushionMode(false);
     setActiveImageIdx(0);
     setQty(1);
     setWindFinishKey(null);
@@ -774,7 +780,9 @@ export default function Product() {
   // fabric item number so each unique selection has a traceable code. For
   // simple (non-grade) variant products like rugs, the variant IS the SKU
   // (e.g. each size has its own -35/-80 SKU), so show that variant's SKU.
-  const dynamicSku = finishVariantMode
+  const dynamicSku = (offersCushion && cushionMode && data?.cushionUpgradeSku)
+    ? data.cushionUpgradeSku
+    : finishVariantMode
     ? // Order/PO + display SKU = base + finish only (wind-vent suffix stripped).
       selectedVariant
       ? finishKeyOf(selectedVariant.sku)
@@ -981,9 +989,45 @@ export default function Product() {
                 .
               </p>
               <div className="mt-4">
+                {/* Cushion toggle for showroom-only products */}
+                {offersCushion ? (
+                  <div className="mb-4">
+                    <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">
+                      Cushion option
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCushionMode(false);
+                          setWlFabricId(null);
+                          setFabricId(null);
+                        }}
+                        className={`flex-1 px-3 py-2 border text-sm transition-colors ${
+                          !cushionMode
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-input hover:border-foreground"
+                        }`}
+                      >
+                        No Cushion
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCushionMode(true)}
+                        className={`flex-1 px-3 py-2 border text-sm transition-colors ${
+                          cushionMode
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-input hover:border-foreground"
+                        }`}
+                      >
+                        Cushion
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
                 <ProductOptionPickers
                   finishes={finishes}
-                  fabrics={fabricOptions}
+                  fabrics={requiresFabric ? fabricOptions : []}
                   selectedFinishId={wlFinishId}
                   selectedFabricId={wlFabricId}
                   selectedTableTopTileId={wlTileId}
@@ -992,7 +1036,7 @@ export default function Product() {
                   onTableTopTileChange={setWlTileId}
                 />
                 <WishlistButton
-                  productId={data.id}
+                  productId={(cushionMode && data.cushionUpgradeProductId) ? data.cushionUpgradeProductId : data.id}
                   variant="button"
                   mode="add"
                   selectedFinishId={wlFinishId}
@@ -1003,9 +1047,45 @@ export default function Product() {
             </div>
           ) : !canBuyOnline ? (
             <div className="mb-4">
+              {/* Cushion toggle for call-for-price products */}
+              {offersCushion ? (
+                <div className="mb-4">
+                  <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">
+                    Cushion option
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCushionMode(false);
+                        setWlFabricId(null);
+                        setFabricId(null);
+                      }}
+                      className={`flex-1 px-3 py-2 border text-sm transition-colors ${
+                        !cushionMode
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-input hover:border-foreground"
+                      }`}
+                    >
+                      No Cushion
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCushionMode(true)}
+                      className={`flex-1 px-3 py-2 border text-sm transition-colors ${
+                        cushionMode
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-input hover:border-foreground"
+                      }`}
+                    >
+                      Cushion
+                    </button>
+                  </div>
+                </div>
+              ) : null}
               <ProductOptionPickers
                 finishes={finishes}
-                fabrics={fabricOptions}
+                fabrics={requiresFabric ? fabricOptions : []}
                 selectedFinishId={wlFinishId}
                 selectedFabricId={wlFabricId}
                 selectedTableTopTileId={wlTileId}
@@ -1014,7 +1094,7 @@ export default function Product() {
                 onTableTopTileChange={setWlTileId}
               />
               <WishlistButton
-                productId={data.id}
+                productId={(cushionMode && data.cushionUpgradeProductId) ? data.cushionUpgradeProductId : data.id}
                 variant="button"
                 mode="add"
                 selectedFinishId={wlFinishId}
@@ -1423,6 +1503,43 @@ export default function Product() {
               {isGradeMode && selectedVariant?.notes ? (
                 <div className="mb-5 border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                   {selectedVariant.notes}
+                </div>
+              ) : null}
+
+              {/* No Cushion / Cushion toggle — shown for products with a cushion upgrade SKU */}
+              {offersCushion ? (
+                <div className="mb-5">
+                  <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">
+                    Cushion option
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCushionMode(false);
+                        setWlFabricId(null);
+                        setFabricId(null);
+                      }}
+                      className={`flex-1 px-3 py-2 border text-sm transition-colors ${
+                        !cushionMode
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-input hover:border-foreground"
+                      }`}
+                    >
+                      No Cushion
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCushionMode(true)}
+                      className={`flex-1 px-3 py-2 border text-sm transition-colors ${
+                        cushionMode
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-input hover:border-foreground"
+                      }`}
+                    >
+                      Cushion
+                    </button>
+                  </div>
                 </div>
               ) : null}
 

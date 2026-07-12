@@ -2086,6 +2086,16 @@ export type CatalogProductDetail = CatalogProduct & {
    * @nullable
    */
   finishMinQtyNote: string | null;
+  /**
+   * When set, the PDP shows a Cushion/No Cushion toggle. The value is the SKU of the cushion version. Selecting Cushion switches the displayed SKU and shows the fabric picker filtered to C-code fabrics from the manufacturer pool.
+   * @nullable
+   */
+  cushionUpgradeSku: string | null;
+  /**
+   * Product ID of the cushion upgrade product (resolved from cushionUpgradeSku). Used when adding to wishlist/cart with Cushion selected.
+   * @nullable
+   */
+  cushionUpgradeProductId: number | null;
 };
 
 export interface WishlistItem {

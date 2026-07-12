@@ -984,6 +984,18 @@ export const GetCatalogProductBySlugResponse = zod
         .describe(
           "Admin-editable note shown when a special (non-default) finish triggers a minimum order quantity.",
         ),
+      cushionUpgradeSku: zod
+        .string()
+        .nullable()
+        .describe(
+          "When set, the PDP shows a Cushion\/No Cushion toggle. The value is the SKU of the cushion version. Selecting Cushion switches the displayed SKU and shows the fabric picker filtered to C-code fabrics from the manufacturer pool.",
+        ),
+      cushionUpgradeProductId: zod
+        .number()
+        .nullable()
+        .describe(
+          "Product ID of the cushion upgrade product (resolved from cushionUpgradeSku). Used when adding to wishlist\/cart with Cushion selected.",
+        ),
     }),
   );
 

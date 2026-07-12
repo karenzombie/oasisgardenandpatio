@@ -117,6 +117,12 @@ export const productsTable = pgTable(
     displayOrder: integer("display_order").notNull().default(0),
     lowStockThreshold: integer("low_stock_threshold").notNull().default(0),
     isActive: boolean("is_active").notNull().default(true),
+    // When set, the PDP shows a Cushion/No Cushion toggle. The value is the
+    // SKU of the cushion variant (e.g. "9435P"). Selecting Cushion switches
+    // the displayed SKU to this value and shows the fabric picker filtered
+    // to "C" availability-code fabrics from the manufacturer pool. The
+    // cushion SKU must exist as a separate product row for order fulfillment.
+    cushionUpgradeSku: text("cushion_upgrade_sku"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

@@ -247,6 +247,7 @@ function baseSelect() {
       displayOrder: productsTable.displayOrder,
       lowStockThreshold: productsTable.lowStockThreshold,
       finishMinQtyNote: productsTable.finishMinQtyNote,
+      cushionUpgradeSku: productsTable.cushionUpgradeSku,
       isActive: productsTable.isActive,
       createdAt: productsTable.createdAt,
       updatedAt: productsTable.updatedAt,
