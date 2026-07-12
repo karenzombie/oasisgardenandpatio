@@ -454,7 +454,7 @@ router.post(
             orderNumber,
             customerId: customer.id,
             orderType: "online",
-            status: "pending_payment",
+            status: "new_online_order",
             subtotal: moneyFromCents(subtotalCents),
             taxAmount: moneyFromCents(taxCents),
             deliveryAmount: moneyFromCents(shippingCents),
@@ -559,10 +559,10 @@ router.post(
         await tx.insert(orderStatusHistoryTable).values({
           orderId: order.id,
           fromStatus: null,
-          toStatus: "pending_payment",
+          toStatus: "new_online_order",
           note: isGuest
-            ? "Order placed by guest (payment pending)"
-            : "Order placed by customer (payment pending)",
+            ? "Order placed by guest (online)"
+            : "Order placed by customer (online)",
         });
 
         // Auto-create pending vendor POs grouped by manufacturer so staff

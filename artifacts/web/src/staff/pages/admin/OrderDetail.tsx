@@ -85,6 +85,7 @@ interface DraftNewItem {
 }
 
 const ORDER_STATUSES = [
+  "new_online_order",
   "pending",
   "confirmed",
   "in_production",
@@ -195,7 +196,7 @@ export default function OrderDetail() {
   useEffect(() => {
     if (order) {
       setNotesDraft(order.notes ?? "");
-      setPendingStatus(order.status);
+      setPendingStatus(order.status === "new_online_order" ? "pending" : order.status);
       setShippingDraft(String(order.deliveryAmount));
       setTaxDraft(String(order.taxAmount));
       setTotalsNote("");
@@ -874,7 +875,7 @@ export default function OrderDetail() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {ORDER_STATUSES.map((s) => (
+                      {ORDER_STATUSES.filter((s) => s !== "new_online_order").map((s) => (
                         <SelectItem key={s} value={s}>
                           {s.replace(/_/g, " ")}
                         </SelectItem>

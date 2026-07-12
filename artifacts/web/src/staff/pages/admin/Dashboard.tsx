@@ -63,6 +63,7 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
           <DashboardCard label="Orders" icon={ShoppingCart} href="/admin/orders">
             <RowList
               rows={[
+                { label: "New Online Order", value: orderCount(ordersByStatus?.new_online_order) },
                 { label: "Pending", value: orderCount(ordersByStatus?.pending) },
                 { label: "Confirmed", value: orderCount(ordersByStatus?.confirmed) },
                 { label: "In production", value: orderCount(ordersByStatus?.in_production) },

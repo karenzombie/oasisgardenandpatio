@@ -64,6 +64,7 @@ interface DraftNewItem {
 }
 
 const ORDER_STATUSES = [
+  "new_online_order",
   "pending", "confirmed", "in_production", "ready_for_store_delivery",
   "carrier_delivery_update", "out_for_local_delivery", "delivered", "completed",
 ] as const;
@@ -120,7 +121,7 @@ export default function AgentOrderDetail() {
   useEffect(() => {
     if (order) {
       setNotesDraft(order.notes ?? "");
-      setPendingStatus(order.status);
+      setPendingStatus(order.status === "new_online_order" ? "pending" : order.status);
     }
   }, [order]);
 
@@ -372,7 +373,7 @@ export default function AgentOrderDetail() {
                   <Select value={pendingStatus} onValueChange={setPendingStatus}>
                     <SelectTrigger id="status"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {ORDER_STATUSES.map((s) => (
+                      {ORDER_STATUSES.filter((s) => s !== "new_online_order").map((s) => (
                         <SelectItem key={s} value={s}>{s.replace(/_/g, " ")}</SelectItem>
                       ))}
                     </SelectContent>

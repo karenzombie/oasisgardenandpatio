@@ -6447,6 +6447,7 @@ components:
       type: object
       description: Live count of orders currently in each status, for the dashboard Orders card.
       properties:
+        new_online_order: { type: integer }
         pending: { type: integer }
         confirmed: { type: integer }
         in_production: { type: integer }
@@ -6459,6 +6460,7 @@ components:
         refunded: { type: integer }
       required:
         [
+          new_online_order,
           pending,
           confirmed,
           in_production,

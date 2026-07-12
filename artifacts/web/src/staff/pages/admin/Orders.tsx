@@ -21,6 +21,7 @@ import { PageBody, PageHeader } from "../../StaffShell";
 const PAGE_SIZE = 50;
 
 const ORDER_STATUSES = [
+  "new_online_order",
   "pending",
   "confirmed",
   "in_production",
@@ -34,6 +35,7 @@ const ORDER_STATUSES = [
 ] as const;
 
 const STATUS_VARIANT: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
+  new_online_order: "default",
   pending: "secondary",
   confirmed: "default",
   in_production: "default",

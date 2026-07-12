@@ -20,6 +20,7 @@ const router: IRouter = Router();
 const OPEN_ORDER_EXCLUDED = ["completed", "canceled", "refunded"];
 
 const ORDER_STATUSES = [
+  "new_online_order",
   "pending",
   "confirmed",
   "in_production",

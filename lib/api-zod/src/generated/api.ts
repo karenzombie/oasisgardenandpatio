@@ -11680,6 +11680,7 @@ export const AdminGetDashboardStatsResponse = zod.object({
   pendingVendorOrders: zod.number().describe("Vendor orders awaiting dispatch"),
   ordersByStatus: zod
     .object({
+      new_online_order: zod.number(),
       pending: zod.number(),
       confirmed: zod.number(),
       in_production: zod.number(),

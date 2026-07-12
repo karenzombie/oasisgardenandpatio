@@ -10,6 +10,7 @@
  * Live count of orders currently in each status, for the dashboard Orders card.
  */
 export interface AdminOrderStatusCounts {
+  new_online_order: number;
   pending: number;
   confirmed: number;
   in_production: number;

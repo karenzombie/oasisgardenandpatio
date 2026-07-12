@@ -552,7 +552,7 @@ export default function DeliveryPanel({
           if (!open) closeEditor(false);
         }}
       >
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg overflow-y-auto max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>
               {editing?.mode === "edit" ? "Edit shipment" : "Add shipment"}
