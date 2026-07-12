@@ -265,7 +265,7 @@ export async function sendStoreNewOrderNotification(
       <p>Please complete the following steps to process this order:</p>
       <ol style="margin:0 0 16px 0;padding-left:20px;font-size:14px;">
         <li style="margin-bottom:4px;">Review the order for accuracy (items, address, and pricing)</li>
-        <li style="margin-bottom:4px;">Update the order status to Confirmed</li>
+        <li style="margin-bottom:4px;">Update the order status to Pending</li>
         <li>Review and send the purchase order to the vendor</li>
       </ol>
       <table style="width:100%;border-collapse:collapse;font-size:14px;margin:16px 0;background:#f9f7f4;border-radius:4px;padding:12px;">
