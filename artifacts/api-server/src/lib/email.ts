@@ -75,7 +75,7 @@ export function emailLayout(title: string, body: string, titleColor = "#1a3c5e")
         <div style="font-size:14px;font-style:italic;color:#5b8a72;">Garden &amp; Patio</div>`;
   return `<!DOCTYPE html>
 <html>
-  <body style="margin:0;padding:0;background-color:#aec4ba;background:#aec4ba;font-family:Georgia,'Times New Roman',serif;color:#3a3a3a;">
+  <body style="margin:0;padding:0;background-color:#aec4ba;background:#aec4ba;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#3a3a3a;">
     <div style="max-width:560px;margin:0 auto;padding:32px 24px;">
       <div style="text-align:center;margin-bottom:32px;">
         ${logoHtml}
