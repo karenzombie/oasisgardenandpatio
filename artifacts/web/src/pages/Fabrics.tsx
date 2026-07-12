@@ -34,6 +34,7 @@ type FabricItem = {
   swatchImageUrl: string | null;
   grade: string | null;
   colorFamily: string | null;
+  availabilityCodes?: string | null;
 };
 
 function FabricGrid({ list }: { list: FabricItem[] }) {
@@ -46,7 +47,31 @@ function FabricGrid({ list }: { list: FabricItem[] }) {
   );
 }
 
-function FabricGroupContent({ list }: { list: FabricItem[] }) {
+// Product-type code → human label (used for badge display + filter UI).
+const AVAILABILITY_LABELS: Record<string, string> = {
+  S: "Sling (S)",
+  A: "Air (A)",
+  PS: "Padded Sling (PS)",
+  C: "Cushion (C)",
+  U: "Umbrella (U)",
+  V: "Vintage Wire (V)",
+  W: "Welt (W)",
+};
+const AVAILABILITY_CODES = Object.keys(AVAILABILITY_LABELS);
+
+function FabricGroupContent({
+  list,
+  manufacturerName,
+}: {
+  list: FabricItem[];
+  manufacturerName: string;
+}) {
+  // Homecrest fabrics render as a single flat list — no collection sub-groups.
+  // All other manufacturers keep the existing collection-based sub-grouping.
+  if (manufacturerName === "Homecrest") {
+    return <FabricGrid list={list} />;
+  }
+
   // Sub-group by `collection` when any fabric in this manufacturer carries one
   // (e.g. NorthCape → Sunbrella / Belenos / Wicker). Fabrics without a
   // collection fall into an "Other" bucket rendered last.
@@ -95,6 +120,9 @@ function isPlaceholderItemNumber(itemNumber: string): boolean {
 }
 
 function FabricSwatch({ fabric }: { fabric: FabricItem }) {
+  const codes = fabric.availabilityCodes
+    ? fabric.availabilityCodes.split("|").filter(Boolean)
+    : [];
   return (
     <div className="group">
       <FabricSwatchImage fabric={fabric} />
@@ -109,6 +137,11 @@ function FabricSwatch({ fabric }: { fabric: FabricItem }) {
           Grade {fabric.grade}
         </p>
       )}
+      {codes.length > 0 && (
+        <p className="text-[11px] text-muted-foreground/70 mt-0.5 leading-relaxed">
+          {codes.map((c) => AVAILABILITY_LABELS[c] ?? c).join(", ")}
+        </p>
+      )}
     </div>
   );
 }
@@ -116,6 +149,10 @@ function FabricSwatch({ fabric }: { fabric: FabricItem }) {
 export default function Fabrics() {
   const [selectedColors, setSelectedColors] = useState<Set<string>>(new Set());
   const [open, setOpen] = useState(false);
+  const [selectedProductTypes, setSelectedProductTypes] = useState<
+    Set<string>
+  >(new Set());
+  const [openProductTypes, setOpenProductTypes] = useState(false);
   const search = useSearch();
   const brandParam = useMemo(() => {
     const raw = new URLSearchParams(search).get("brand");
@@ -142,6 +179,23 @@ export default function Fabrics() {
     });
   };
 
+  const toggleProductType = (code: string) => {
+    setSelectedProductTypes((prev) => {
+      const next = new Set(prev);
+      if (next.has(code)) next.delete(code);
+      else next.add(code);
+      return next;
+    });
+  };
+
+  const removeProductType = (code: string) => {
+    setSelectedProductTypes((prev) => {
+      const next = new Set(prev);
+      next.delete(code);
+      return next;
+    });
+  };
+
   const colorFamilies = useMemo(() => {
     const set = new Set<string>();
     for (const f of data?.fabrics ?? []) {
@@ -155,6 +209,7 @@ export default function Fabrics() {
     const activeColors = new Set(
       Array.from(selectedColors).map((c) => c.toLowerCase()),
     );
+    const activeTypes = new Set(selectedProductTypes);
     for (const f of data?.fabrics ?? []) {
       if (
         activeColors.size > 0 &&
@@ -162,13 +217,23 @@ export default function Fabrics() {
       ) {
         continue;
       }
+      // Product-type filter: OR logic — any selected code must be present
+      if (activeTypes.size > 0) {
+        const fabricCodes = new Set(
+          (f.availabilityCodes ?? "").split("|").filter(Boolean),
+        );
+        const hasMatch = Array.from(activeTypes).some((code) =>
+          fabricCodes.has(code),
+        );
+        if (!hasMatch) continue;
+      }
       const key = f.manufacturerName || "Other";
       const list = m.get(key) ?? [];
       list.push(f);
       m.set(key, list);
     }
     return Array.from(m.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-  }, [data, selectedColors]);
+  }, [data, selectedColors, selectedProductTypes]);
 
   // Deep-link: when arriving with ?brand=, auto-expand that manufacturer's
   // accordion (case-insensitive match) and scroll it into view.
@@ -286,6 +351,83 @@ export default function Fabrics() {
         </div>
       )}
 
+      {/* Product-type filter — only relevant when Homecrest fabrics exist */}
+      <div className="mb-8">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-xs uppercase tracking-widest text-muted-foreground shrink-0 mr-1">
+            Product type
+          </p>
+
+          <Popover open={openProductTypes} onOpenChange={setOpenProductTypes}>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className="flex items-center gap-1.5 h-8 px-3 text-xs border border-border hover:border-foreground/40 transition-colors bg-background text-foreground"
+              >
+                {selectedProductTypes.size === 0
+                  ? "Select types"
+                  : `${selectedProductTypes.size} selected`}
+                <ChevronDown className="size-3 text-muted-foreground" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-0" align="start">
+              <Command>
+                <CommandInput placeholder="Search types..." className="h-8 text-xs" />
+                <CommandList>
+                  <CommandEmpty>No types found.</CommandEmpty>
+                  <CommandGroup>
+                    {AVAILABILITY_CODES.map((code) => {
+                      const active = selectedProductTypes.has(code);
+                      return (
+                        <CommandItem
+                          key={code}
+                          value={code}
+                          onSelect={() => toggleProductType(code)}
+                          className="text-xs cursor-pointer"
+                        >
+                          <Check
+                            className={`size-3 mr-2 shrink-0 ${active ? "opacity-100" : "opacity-0"}`}
+                          />
+                          {AVAILABILITY_LABELS[code]}
+                        </CommandItem>
+                      );
+                    })}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+
+          {/* Active product-type tags */}
+          {Array.from(selectedProductTypes).map((code) => (
+            <span
+              key={code}
+              className="inline-flex items-center gap-1 h-8 px-2.5 text-xs bg-foreground text-background"
+            >
+              {AVAILABILITY_LABELS[code]}
+              <button
+                type="button"
+                onClick={() => removeProductType(code)}
+                className="ml-0.5 hover:opacity-70 transition-opacity"
+                aria-label={`Remove ${AVAILABILITY_LABELS[code]} filter`}
+              >
+                <X className="size-3" />
+              </button>
+            </span>
+          ))}
+
+          {selectedProductTypes.size > 1 && (
+            <button
+              type="button"
+              onClick={() => setSelectedProductTypes(new Set())}
+              className="text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground underline-offset-4 hover:underline ml-1"
+            >
+              Clear all
+            </button>
+          )}
+        </div>
+      </div>
+
       {isLoading ? (
         <div className="py-16 text-center">
           <Spinner className="size-8 text-primary mx-auto" />
@@ -296,9 +438,9 @@ export default function Fabrics() {
         </p>
       ) : grouped.length === 0 ? (
         <p className="text-muted-foreground">
-          {selectedColors.size === 0
+          {selectedColors.size === 0 && selectedProductTypes.size === 0
             ? "No fabrics available yet."
-            : `No fabrics match the selected color${selectedColors.size > 1 ? "s" : ""}.`}
+            : "No fabrics match the selected filters."}
         </p>
       ) : (
         <Accordion
@@ -333,7 +475,7 @@ export default function Fabrics() {
                 </div>
               </AccordionTrigger>
               <AccordionContent className="pb-8">
-                <FabricGroupContent list={list} />
+                <FabricGroupContent list={list} manufacturerName={brand} />
               </AccordionContent>
             </AccordionItem>
           ))}

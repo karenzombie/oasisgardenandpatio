@@ -48,6 +48,7 @@ router.get(
         colorFamily: fabricsTable.colorFamily,
         isStripe: fabricsTable.isStripe,
         notes: fabricsTable.notes,
+        availabilityCodes: fabricsTable.availabilityCodes,
         displayOrder: fabricsTable.displayOrder,
       })
       .from(fabricsTable)

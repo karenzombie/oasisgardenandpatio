@@ -410,6 +410,12 @@ export const ListCatalogFabricsResponse = zod.object({
         .describe(
           'Free-text vendor note for this fabric (e.g. \"Non-stock. Allow additional lead time.\"). Shown as an inline callout when the fabric is selected.',
         ),
+      availabilityCodes: zod
+        .string()
+        .nullable()
+        .describe(
+          'Pipe-delimited product-type availability codes (e.g. \"S|C|U\"). Used to show and filter fabrics by the product types they apply to (S=Sling, A=Air, PS=Padded Sling, C=Cushion, U=Umbrella, V=Vintage Wire, W=Welt).',
+        ),
       displayOrder: zod.number(),
     }),
   ),
@@ -736,6 +742,12 @@ export const GetCatalogProductBySlugResponse = zod
               .nullable()
               .describe(
                 'Free-text vendor note for this fabric (e.g. \"Non-stock. Allow additional lead time.\"). Shown as an inline callout when the fabric is selected.',
+              ),
+            availabilityCodes: zod
+              .string()
+              .nullable()
+              .describe(
+                'Pipe-delimited product-type availability codes (e.g. \"S|C|U\"). Used to show and filter fabrics by the product types they apply to (S=Sling, A=Air, PS=Padded Sling, C=Cushion, U=Umbrella, V=Vintage Wire, W=Welt).',
               ),
             displayOrder: zod.number(),
           }),
@@ -4278,6 +4290,12 @@ export const AdminGetProductPickerResponse = zod
           .nullable()
           .describe(
             'Free-text vendor note for this fabric (e.g. \"Non-stock. Allow additional lead time.\"). Shown as an inline callout when the fabric is selected.',
+          ),
+        availabilityCodes: zod
+          .string()
+          .nullable()
+          .describe(
+            'Pipe-delimited product-type availability codes (e.g. \"S|C|U\"). Used to show and filter fabrics by the product types they apply to (S=Sling, A=Air, PS=Padded Sling, C=Cushion, U=Umbrella, V=Vintage Wire, W=Welt).',
           ),
         displayOrder: zod.number(),
       }),

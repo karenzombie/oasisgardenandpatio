@@ -1946,6 +1946,11 @@ export interface CatalogFabricOption {
    * @nullable
    */
   notes: string | null;
+  /**
+   * Pipe-delimited product-type availability codes (e.g. "S|C|U"). Used to show and filter fabrics by the product types they apply to (S=Sling, A=Air, PS=Padded Sling, C=Cushion, U=Umbrella, V=Vintage Wire, W=Welt).
+   * @nullable
+   */
+  availabilityCodes: string | null;
   displayOrder: number;
 }
 
