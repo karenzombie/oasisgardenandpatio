@@ -34,6 +34,7 @@
     "patch-galtech-specs": "tsx ./src/patchGaltechSpecs.ts",
     "seed-frankford-finials": "tsx ./src/seedFrankfordFinials.ts",
     "import-homecrest-polyethylene-finishes": "tsx ./src/importHomecrestPolyethyleneFinishes.ts",
+    "fix-homecrest-polyethylene-ids": "tsx ./src/fixHomecrestPolyethyleneIds.ts",
     "seed-telescope-finishes": "tsx ./src/seedTelescopeFinishes.ts",
     "seed-telescope-products": "tsx ./src/seedTelescopeProducts.ts",
     "seed-homecrest-finishes": "tsx ./src/seedHomecrestFinishes.ts",
