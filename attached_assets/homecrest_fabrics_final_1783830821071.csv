@@ -1,0 +1,364 @@
+db_id,fabric_name,collection,grade,item_number,image_filename,S,A,PS,C,U,V,W
+2384,Agate II,Homecrest Slings,B,,Agate_II.jpg,YES,YES,NO,NO,NO,NO,NO
+2385,Aluminum,Homecrest Slings,A,,Aluminum.jpg,YES,NO,NO,NO,NO,NO,NO
+2386,Bark,Homecrest Slings,B,,Bark.jpg,YES,YES,NO,NO,NO,NO,NO
+2387,Battleplan,Homecrest Slings,A,,Battleplan.jpg,YES,NO,NO,NO,NO,NO,NO
+2388,Bisque,Homecrest Slings,B,,Bisque.jpg,YES,YES,NO,NO,NO,NO,NO
+2389,Cameo II,Homecrest Slings,B,,Cameo_II.jpg,YES,YES,NO,NO,NO,NO,NO
+2390,Carbon,Homecrest Slings,A,,Carbon.jpg,YES,NO,NO,NO,NO,NO,YES
+2391,Coral,Homecrest Slings,A,,Coral.jpg,YES,NO,NO,NO,NO,NO,NO
+2392,Gannon,Homecrest Slings,A,,Gannon.jpg,YES,NO,NO,NO,NO,NO,NO
+2393,Glacier,Homecrest Slings,A,,Glacier.jpg,YES,NO,NO,NO,NO,NO,YES
+2394,Glassblock,Homecrest Slings,A,,Glassblock.jpg,YES,NO,NO,NO,NO,NO,NO
+2395,Hickory,Homecrest Slings,A,,Hickory.jpg,YES,NO,NO,NO,NO,NO,YES
+2396,Indigo,Homecrest Slings,A,,Indigo.jpg,YES,NO,NO,NO,NO,NO,YES
+2397,Kamali,Homecrest Slings,A,,Kamali.jpg,YES,NO,NO,NO,NO,NO,NO
+2398,Kozo,Homecrest Slings,A,,Kozo.jpg,YES,NO,NO,NO,NO,NO,NO
+2399,Lagoon,Homecrest Slings,B,,Lagoon.jpg,YES,YES,NO,NO,NO,NO,NO
+2400,Millstone,Homecrest Slings,A,,Millstone.jpg,YES,NO,NO,NO,NO,NO,NO
+2401,Niko,Homecrest Slings,A,,Niko.jpg,YES,NO,NO,NO,NO,NO,YES
+2402,Nova,Homecrest Slings,A,,Nova.jpg,YES,NO,NO,NO,NO,NO,NO
+2403,Onyx,Homecrest Slings,A,,Onyx.jpg,YES,NO,NO,NO,NO,NO,YES
+2404,Rochester,Homecrest Slings,A,,Rochester.jpg,YES,NO,NO,NO,NO,NO,NO
+2405,Rose,Homecrest Slings,A,,Rose.jpg,YES,NO,NO,NO,NO,NO,NO
+2406,Salsa,Homecrest Slings,A,,Salsa.jpg,YES,NO,NO,NO,NO,NO,NO
+2407,Sandbar,Homecrest Slings,A,,Sandbar.jpg,YES,NO,NO,NO,NO,NO,YES
+2408,Seaglass,Homecrest Slings,A,,Seaglass.jpg,YES,NO,NO,NO,NO,NO,NO
+2409,Sedona,Homecrest Slings,A,,Sedona.jpg,YES,NO,NO,NO,NO,NO,YES
+2410,Shadows,Homecrest Slings,A,,Shadows.jpg,YES,NO,NO,NO,NO,NO,NO
+2411,Shelby,Homecrest Slings,A,,Shelby.jpg,YES,NO,NO,NO,NO,NO,NO
+2412,Storm,Homecrest Slings,A,,Storm.jpg,YES,NO,NO,NO,NO,NO,YES
+2413,Stratus,Homecrest Slings,B,,Stratus.jpg,YES,YES,NO,NO,NO,NO,NO
+2414,Umber,Homecrest Slings,A,,Umber.jpg,YES,NO,NO,NO,NO,NO,YES
+2415,Walnut,Homecrest Slings,A,,Walnut.jpg,YES,NO,NO,NO,NO,NO,NO
+2416,Windsor,Homecrest Slings,A,,Windsor.jpg,YES,NO,NO,NO,NO,NO,NO
+2417,Zinc II,Homecrest Slings,B,,Zinc_II.jpg,YES,YES,NO,NO,NO,NO,NO
+2435,Beige,Recacril,,,Beige-Recacril.jpg,NO,NO,NO,NO,YES,NO,NO
+2436,Black,Recacril,,,Black.jpg,NO,NO,NO,NO,YES,NO,NO
+2437,Black Stripe,Recacril,,,Black_Stripe.jpg,NO,NO,NO,NO,YES,NO,NO
+2438,Blue Stripe,Recacril,,,Blue_Stripe.jpg,NO,NO,NO,NO,YES,NO,NO
+2439,Brown,Recacril,,,Brown.jpg,NO,NO,NO,NO,YES,NO,NO
+2440,Burgundy,Recacril,,,Burgundy.jpg,NO,NO,NO,NO,YES,NO,NO
+2441,Cadet Grey,Recacril,,,Cadet_Grey.jpg,NO,NO,NO,NO,YES,NO,NO
+2442,Captain Navy,Recacril,,,Captain-Navy-Recacril.jpg,NO,NO,NO,NO,YES,NO,NO
+2443,Charcoal Grey,Recacril,,,Charcoal_Grey.jpg,NO,NO,NO,NO,YES,NO,NO
+2444,Chestnut,Recacril,,,Chestnut-Recacril.jpg,NO,NO,NO,NO,YES,NO,NO
+2445,Forest Green,Recacril,,,Forest_Green.jpg,NO,NO,NO,NO,YES,NO,NO
+2446,Linen,Recacril,,,Linen.jpg,NO,NO,NO,NO,YES,NO,NO
+2447,Logo Red,Recacril,,,Logo_Red.jpg,NO,NO,NO,NO,YES,NO,NO
+2448,Navy Stripe,Recacril,,,Navy_Stripe.jpg,NO,NO,NO,NO,YES,NO,NO
+2449,Orange,Recacril,,,Orange.jpg,NO,NO,NO,NO,YES,NO,NO
+2450,Orange Stripe,Recacril,,,Orange_Stripe.jpg,NO,NO,NO,NO,YES,NO,NO
+2451,Pacific Blue,Recacril,,,Pacific_Blue.jpg,NO,NO,NO,NO,YES,NO,NO
+2452,Pistachio,Recacril,,,Pistachio.jpg,NO,NO,NO,NO,YES,NO,NO
+2453,Pumpkin,Recacril,,,Pumpkin.jpg,NO,NO,NO,NO,YES,NO,NO
+2454,Red Stripe,Recacril,,,Red_Stripe.jpg,NO,NO,NO,NO,YES,NO,NO
+2455,Salmon,Recacril,,,Salmon-Recacril.jpg,NO,NO,NO,NO,YES,NO,NO
+2456,Sapphire,Recacril,,,Sapphire.jpg,NO,NO,NO,NO,YES,NO,NO
+2457,Steel Blue,Recacril,,,Steel_Blue.jpg,NO,NO,NO,NO,YES,NO,NO
+2458,Titanium,Recacril,,,Titanium.jpg,NO,NO,NO,NO,YES,NO,NO
+2459,Turquoise,Recacril,,,Turquoise.jpg,NO,NO,NO,NO,YES,NO,NO
+2460,Turquoise Stripe,Recacril,,,Turquoise_Stripe.jpg,NO,NO,NO,NO,YES,NO,NO
+2461,Vermillion,Recacril,,,Vermillion.jpg,NO,NO,NO,NO,YES,NO,NO
+2462,White,Recacril,,,White.jpg,NO,NO,NO,NO,YES,NO,NO
+2463,Yellow,Recacril,,,Yellow-Recacril.jpg,NO,NO,NO,NO,YES,NO,NO
+2464,Yellow Stripe,Recacril,,,Yellow_Stripe.jpg,NO,NO,NO,NO,YES,NO,NO
+2465,Black Onyx,Brisa Leather-Inspired,E,00393-5749,Black_Onyx.jpg,NO,NO,YES,YES,NO,YES,NO
+2466,Buckskin,Brisa Leather-Inspired,E,00396-3134,Buckskin.jpg,NO,NO,YES,YES,NO,YES,NO
+2467,Burnt Red,Brisa Leather-Inspired,E,00393-4331,Burnt_Red.jpg,NO,NO,YES,YES,NO,YES,NO
+2468,Chamois,Brisa Leather-Inspired,E,00396-3024,Chamois.jpg,NO,NO,YES,YES,NO,YES,NO
+2469,Glass,Brisa Leather-Inspired,E,00393-4529,Glass.jpg,NO,NO,YES,YES,NO,YES,NO
+2470,Greige,Brisa Leather-Inspired,E,00396-3733,Greige.jpg,NO,NO,YES,YES,NO,YES,NO
+2471,Jasper,Brisa Leather-Inspired,E,00393-5852,Jasper.jpg,NO,NO,YES,YES,NO,YES,NO
+2472,Lasso,Brisa Leather-Inspired,E,00396-3972,Lasso.jpg,NO,NO,YES,YES,NO,YES,NO
+2473,Michigan Blue,Brisa Leather-Inspired,E,00393-2542,Michigan_Blue.jpg,NO,NO,YES,YES,NO,YES,NO
+2474,Mohave,Brisa Leather-Inspired,E,00396-3361,Mohave.jpg,NO,NO,YES,YES,NO,YES,NO
+2475,Nimbus,Brisa Leather-Inspired,E,00393-5875,Nimbus.jpg,NO,NO,YES,YES,NO,YES,NO
+2476,Polar,Brisa Leather-Inspired,E,00393-5750,Polar.jpg,NO,NO,YES,YES,NO,YES,NO
+2477,Sea Green,Brisa Leather-Inspired,E,00393-4528,Sea_Green.jpg,NO,NO,YES,YES,NO,YES,NO
+2478,Waylan,Brisa Leather-Inspired,E,00396-3980,Waylan.jpg,NO,NO,YES,YES,NO,YES,NO
+2479,Captains Navy,Outdura Ovation 2.3,A,005403-1,Captains_Navy.jpg,NO,NO,YES,YES,YES,YES,NO
+2480,Crimson,Outdura Ovation 2.3,B,005451-1,Crimson.jpg,NO,NO,YES,YES,YES,YES,NO
+2481,Flurry Granite,Outdura Ovation 2.3,C,006930-1,Flurry_Granite.jpg,NO,NO,YES,YES,NO,YES,NO
+2482,Melody Lead,Outdura Ovation 2.3,C,008712,Melody_Lead.jpg,NO,NO,YES,YES,NO,YES,NO
+2483,Petrol,Outdura Ovation 2.3,A,005447-1,Petrol.jpg,NO,NO,YES,YES,YES,YES,NO
+2484,Reflections Snow,Outdura Ovation 2.3,B,009225,Reflections_Snow.jpg,NO,NO,YES,YES,NO,YES,NO
+2485,Sail Away Summer,Outdura Ovation 2.3,B,003817-1,Sail_Away_Summer.jpg,NO,NO,YES,YES,NO,NO,NO
+2486,Sparkle Navy Blue,Outdura Ovation 2.3,A,001726,Sparkle_Navy_Blue.jpg,NO,NO,YES,YES,NO,YES,NO
+2487,Spiro Graphite,Outdura Ovation 2.3,D,008530,Spiro_Graphite.jpg,NO,NO,YES,YES,NO,YES,NO
+2488,Static Coal,Outdura Ovation 2.3,B,008836,Static_Coal.jpg,NO,NO,YES,YES,NO,YES,NO
+2489,Static Icing,Outdura Ovation 2.3,B,008826,Static_Icing.jpg,NO,NO,YES,YES,NO,YES,NO
+2490,Static Pebble,Outdura Ovation 2.3,B,008829,Static_Pebble.jpg,NO,NO,YES,YES,NO,YES,NO
+2491,Taupe,Outdura Ovation 2.3,A,005412-1,Taupe.jpg,NO,NO,YES,YES,YES,YES,NO
+2492,Timbre Peat,Outdura Ovation 2.3,D,008176,Timbre_Peat.jpg,NO,NO,YES,YES,NO,YES,NO
+2493,Birk Chestnut,Bella-Dura,D,0099-48,Birk_Chestnut.jpg,NO,NO,YES,YES,NO,NO,NO
+2494,Birk Dove,Bella-Dura,D,0099-49,Birk_Dove.jpg,NO,NO,YES,YES,NO,NO,NO
+2495,Festoon Pewter,Bella-Dura,C,0099-47,Festoon_Pewter.jpg,NO,NO,YES,YES,NO,NO,NO
+2496,Firth Wheat,Bella-Dura,C,0099-18,Firth_Wheat.jpg,NO,NO,YES,YES,NO,NO,NO
+2497,Nye Ash,Bella-Dura,B,0099-30,Nye_Ash.jpg,NO,NO,YES,YES,NO,NO,NO
+2498,Nye Fog,Bella-Dura,B,0099-28,Nye_Fog.jpg,NO,NO,YES,YES,NO,NO,NO
+2499,Nye Nautical,Bella-Dura,B,0099-34,Nye_Nautical.jpg,NO,NO,YES,YES,NO,NO,NO
+2500,Nye Oat,Bella-Dura,B,0099-27,Nye_Oat.jpg,NO,NO,YES,YES,NO,NO,NO
+2501,Rustica Admiral,Bella-Dura,C,0099-6,Rustica_Admiral.jpg,NO,NO,YES,YES,NO,NO,NO
+2502,Solis Seaglass,Bella-Dura,C,0099-45,Solis_Seaglass.jpg,NO,NO,YES,YES,NO,NO,NO
+2503,Action Ash,Sunbrella Top In-Stock,D,0044285-0001,Action_Ash.jpg,NO,NO,YES,YES,YES,YES,NO
+2504,Array Dune,Sunbrella Top In-Stock,D,00145654-0001,Array_Dune.jpg,NO,NO,YES,YES,NO,YES,NO
+2505,Assemble II Teak,Sunbrella Top In-Stock,D,0047247-0001,Assemble_II_Teak.jpg,NO,NO,YES,YES,NO,YES,NO
+2506,Assemble Sand,Sunbrella Top In-Stock,D,0047246-0001,Assemble_Sand.jpg,NO,NO,YES,YES,NO,YES,NO
+2507,Astoria Sunset,Sunbrella Top In-Stock,B,0056095-0000,Astoria_Sunset.jpg,NO,NO,YES,YES,NO,NO,NO
+2508,Beaming Lagoon,Sunbrella Top In-Stock,B,0014118-0000,Beaming_Lagoon.jpg,NO,NO,YES,YES,YES,NO,NO
+2509,Beaming Mojave,Sunbrella Top In-Stock,B,0014119-0000,Beaming_Mojave.jpg,NO,NO,YES,YES,YES,NO,NO
+2510,Berenson Tuxedo,Sunbrella Top In-Stock,B,008521,Berenson_Tuxedo.jpg,NO,NO,YES,YES,NO,NO,NO
+2511,Blend Coal,Sunbrella Top In-Stock,C,0016001-0008,Blend_Coal.jpg,NO,NO,YES,YES,YES,YES,NO
+2512,Blend Indigo,Sunbrella Top In-Stock,C,0016001-0001,Blend_Indigo.jpg,NO,NO,YES,YES,YES,YES,NO
+2513,Blend Linen,Sunbrella Top In-Stock,C,0016001-0014,Blend_Linen.jpg,NO,NO,YES,YES,YES,YES,NO
+2514,Blend Sand,Sunbrella Top In-Stock,C,0016001-0012,Blend_Sand.jpg,NO,NO,YES,YES,YES,YES,NO
+2515,Bliss Aloe,Sunbrella Upholstery,A,0048135-0017,Bliss_Aloe.jpg,NO,NO,YES,YES,YES,YES,NO
+2516,Bliss Breeze,Sunbrella Upholstery,A,0048135-0016,Bliss_Breeze.jpg,NO,NO,YES,YES,YES,YES,NO
+2517,Bliss Dew,Sunbrella Upholstery,A,0048135-0014,Bliss_Dew.jpg,NO,NO,YES,YES,YES,YES,NO
+2518,Bliss Linen,Sunbrella Upholstery,A,0048135-0001,Bliss_Linen.jpg,NO,NO,YES,YES,YES,YES,NO
+2519,Bliss Sand,Sunbrella Upholstery,A,0048135-0002,Bliss_Sand.jpg,NO,NO,YES,YES,YES,YES,NO
+2520,Bliss Smoke,Sunbrella Upholstery,A,0048135-0003,Bliss_Smoke.jpg,NO,NO,YES,YES,YES,YES,NO
+2521,Brannon Stripe Redwood,Sunbrella Upholstery,B,005612,Brannon_Stripe_Redwood.jpg,NO,NO,YES,YES,YES,NO,NO
+2522,Brannon Whisper,Sunbrella Upholstery,B,005621,Brannon_Whisper.jpg,NO,NO,YES,YES,YES,NO,NO
+2523,Cabana Classic,Sunbrella Upholstery,B,0058030-0000,Cabana_Classic.jpg,NO,NO,YES,YES,YES,NO,NO
+2524,Cabana Regatta,Sunbrella Upholstery,B,0058029-0000,Cabana_Regatta.jpg,NO,NO,YES,YES,YES,NO,NO
+2525,Calm Graphite,Sunbrella Upholstery,C,00145854-0001,Calm_Graphite.jpg,NO,NO,YES,YES,YES,YES,NO
+2526,Calm Laurel,Sunbrella Upholstery,C,00145854-0002,Calm_Laurel.jpg,NO,NO,YES,YES,YES,YES,NO
+2527,Canvas Air Blue,Sunbrella Upholstery,B,005410,Canvas_Air_Blue.jpg,NO,NO,YES,YES,YES,YES,NO
+2528,Canvas Antique Beige,Sunbrella Upholstery,B,005422,Canvas_Antique_Beige.jpg,NO,NO,YES,YES,YES,YES,NO
+2529,Canvas Aruba,Sunbrella Upholstery,B,005416,Canvas_Aruba.jpg,NO,NO,YES,YES,YES,YES,NO
+2530,Canvas Birds Eye,Sunbrella Upholstery,B,005472,Canvas_Birds_Eye.jpg,NO,NO,YES,YES,YES,YES,NO
+2531,Canvas Black,Sunbrella Upholstery,B,005408,Canvas_Black.jpg,NO,NO,YES,YES,YES,YES,NO
+2532,Canvas Brick,Sunbrella Upholstery,B,005409,Canvas_Brick.jpg,NO,NO,YES,YES,YES,YES,NO
+2533,Canvas Burgundy,Sunbrella Upholstery,B,005436,Canvas_Burgundy.jpg,NO,NO,YES,YES,YES,YES,NO
+2534,Canvas Buttercup,Sunbrella Upholstery,B,005438,Canvas_Buttercup.jpg,NO,NO,YES,YES,YES,YES,NO
+2535,Canvas Canvas,Sunbrella Upholstery,B,005453,Canvas_Canvas.jpg,NO,NO,YES,YES,YES,YES,NO
+2536,Canvas Capri,Sunbrella Upholstery,B,005426,Canvas_Capri.jpg,NO,NO,YES,YES,YES,YES,NO
+2537,Canvas Charcoal,Sunbrella Upholstery,A,0054048-0000,Canvas_Charcoal.jpg,NO,NO,YES,YES,YES,YES,NO
+2538,Canvas Cloud,Sunbrella Upholstery,B,0057012-0000,Canvas_Cloud.jpg,NO,NO,YES,YES,YES,YES,NO
+2539,Canvas Coal,Sunbrella Upholstery,A,005489,Canvas_Coal.jpg,NO,NO,YES,YES,YES,YES,NO
+2540,Canvas Cocoa,Sunbrella Upholstery,B,005425,Canvas_Cocoa.jpg,NO,NO,YES,YES,YES,YES,NO
+2541,Canvas Fern,Sunbrella Upholstery,B,005487,Canvas_Fern.jpg,NO,NO,YES,YES,YES,YES,NO
+2542,Canvas Flax,Sunbrella Upholstery,A,005492-0000,Canvas_Flax.jpg,NO,NO,YES,YES,YES,YES,NO
+2543,Canvas Forest Green,Sunbrella Upholstery,B,005446,Canvas_Forest_Green.jpg,NO,NO,YES,YES,YES,YES,NO
+2544,Canvas Ginkgo,Sunbrella Upholstery,B,54011-0000,Canvas_Ginkgo.jpg,NO,NO,YES,YES,YES,YES,NO
+2545,Canvas Granite,Sunbrella Upholstery,A,005402-0000,Canvas_Granite.jpg,NO,NO,YES,YES,YES,YES,NO
+2546,Canvas Harvest,Sunbrella Upholstery,B,0014165-0000,Canvas_Harvest.jpg,NO,NO,YES,YES,YES,YES,NO
+2547,Canvas Haze,Sunbrella Upholstery,B,0014059-0054,Canvas_Haze.jpg,NO,NO,YES,YES,YES,YES,NO
+2548,Canvas Heather Beige,Sunbrella Upholstery,A,005476,Canvas_Heather_Beige.jpg,NO,NO,YES,YES,YES,YES,NO
+2549,Canvas Henna,Sunbrella Upholstery,B,005407,Canvas_Henna.jpg,NO,NO,YES,YES,YES,YES,NO
+2550,Canvas Hot Pink,Sunbrella Upholstery,B,005462-0000,Canvas_Hot_Pink.jpg,NO,NO,YES,YES,YES,YES,NO
+2551,Canvas Java,Sunbrella Upholstery,B,0057014-0000,Canvas_Java.jpg,NO,NO,YES,YES,YES,YES,NO
+2552,Canvas Jockey Red,Sunbrella Upholstery,B,005403,Canvas_Jockey_Red.jpg,NO,NO,YES,YES,YES,YES,NO
+2553,Canvas Logo Red,Sunbrella Upholstery,B,005477,Canvas_Logo_Red.jpg,NO,NO,YES,YES,YES,YES,NO
+2554,Canvas Macaw,Sunbrella Upholstery,B,005429,Canvas_Macaw.jpg,NO,NO,YES,YES,YES,YES,NO
+2555,Canvas Melon,Sunbrella Upholstery,B,005415,Canvas_Melon.jpg,NO,NO,YES,YES,YES,YES,NO
+2556,Canvas Mineral Blue,Sunbrella Upholstery,B,005420,Canvas_Mineral_Blue.jpg,NO,NO,YES,YES,YES,YES,NO
+2557,Canvas Natural,Sunbrella Upholstery,B,005404,Canvas_Natural.jpg,NO,NO,YES,YES,YES,YES,NO
+2558,Canvas Navy,Sunbrella Upholstery,B,005439,Canvas_Navy.jpg,NO,NO,YES,YES,YES,YES,NO
+2559,Canvas Pacific Blue,Sunbrella Upholstery,B,005401,Canvas_Pacific_Blue.jpg,NO,NO,YES,YES,YES,YES,NO
+2560,Canvas Persimmon,Sunbrella Upholstery,B,0057013-0000,Canvas_Persimmon.jpg,NO,NO,YES,YES,YES,YES,NO
+2561,Canvas Raffia,Sunbrella Upholstery,A,0014107-0000,Canvas_Raffia.jpg,NO,NO,YES,YES,YES,YES,NO
+2562,Canvas Raven Black,Sunbrella Upholstery,B,005471,Canvas_Raven_Black.jpg,NO,NO,YES,YES,YES,YES,NO
+2563,Canvas Regatta,Sunbrella Upholstery,B,005493-0000,Canvas_Regatta.jpg,NO,NO,YES,YES,YES,YES,NO
+2564,Canvas Rust,Sunbrella Upholstery,B,54010-0000,Canvas_Rust.jpg,NO,NO,YES,YES,YES,YES,NO
+2565,Canvas Sapphire Blue,Sunbrella Upholstery,B,005452,Canvas_Sapphire_Blue.jpg,NO,NO,YES,YES,YES,YES,NO
+2566,Canvas Seasalt,Sunbrella Upholstery,A,0014106-0000,Canvas_Seasalt.jpg,NO,NO,YES,YES,YES,YES,NO
+2567,Canvas Spa,Sunbrella Upholstery,B,005413,Canvas_Spa.jpg,NO,NO,YES,YES,YES,YES,NO
+2568,Canvas Sunflower Yellow,Sunbrella Upholstery,B,005457,Canvas_Sunflower_Yellow.jpg,NO,NO,YES,YES,YES,YES,NO
+2569,Canvas Tangerine,Sunbrella Upholstery,B,005406,Canvas_Tangerine.jpg,NO,NO,YES,YES,YES,YES,NO
+2570,Canvas Taupe,Sunbrella Upholstery,B,005461,Canvas_Taupe.jpg,NO,NO,YES,YES,YES,YES,NO
+2571,Canvas Teak,Sunbrella Upholstery,B,005488,Canvas_Teak.jpg,NO,NO,YES,YES,YES,YES,NO
+2572,Canvas Teal,Sunbrella Upholstery,B,005456,Canvas_Teal.jpg,NO,NO,YES,YES,YES,YES,NO
+2573,Canvas Terracotta,Sunbrella Upholstery,B,005440,Canvas_Terracotta.jpg,NO,NO,YES,YES,YES,YES,NO
+2574,Canvas True Blue,Sunbrella Upholstery,B,005499,Canvas_True_Blue.jpg,NO,NO,YES,YES,YES,YES,NO
+2575,Canvas Tuscan,Sunbrella Upholstery,B,005417,Canvas_Tuscan.jpg,NO,NO,YES,YES,YES,YES,NO
+2576,Canvas Vellum,Sunbrella Upholstery,B,005498,Canvas_Vellum.jpg,NO,NO,YES,YES,YES,YES,NO
+2577,Canvas White,Sunbrella Upholstery,B,0057003-0000,Canvas_White.jpg,NO,NO,YES,YES,YES,YES,NO
+2578,Carousel Confetti,Sunbrella Upholstery,B,007774-0000,Carousel_Confetti.jpg,NO,NO,YES,YES,YES,NO,NO
+2579,Cast Ash,Sunbrella Upholstery,A,0040428-0000,Cast_Ash.jpg,NO,NO,YES,YES,YES,YES,NO
+2580,Cast Breeze,Sunbrella Upholstery,B,0048094-0000,Cast_Breeze.jpg,NO,NO,YES,YES,YES,YES,NO
+2581,Cast Charcoal,Sunbrella Upholstery,B,0040483-0001,Cast_Charcoal.jpg,NO,NO,YES,YES,YES,YES,NO
+2582,Cast Horizon,Sunbrella Upholstery,B,0048091-0000,Cast_Horizon.jpg,NO,NO,YES,YES,YES,YES,NO
+2583,Cast Ivy,Sunbrella Upholstery,B,0048141-0000,Cast_Ivy.jpg,NO,NO,YES,YES,YES,YES,NO
+2584,Cast Lagoon,Sunbrella Upholstery,B,0040456-0000,Cast_Lagoon.jpg,NO,NO,YES,YES,YES,YES,NO
+2585,Cast Mist,Sunbrella Upholstery,B,0040429-0000,Cast_Mist.jpg,NO,NO,YES,YES,YES,YES,NO
+2586,Cast Oasis,Sunbrella Upholstery,B,0040430-0000,Cast_Oasis.jpg,NO,NO,YES,YES,YES,YES,NO
+2587,Cast Ocean,Sunbrella Upholstery,B,0048103-0000,Cast_Ocean.jpg,NO,NO,YES,YES,YES,YES,NO
+2588,Cast Pumice,Sunbrella Upholstery,B,0048114-0000,Cast_Pumice.jpg,NO,NO,YES,YES,YES,YES,NO
+2589,Cast Sage,Sunbrella Upholstery,B,0048092-0000,Cast_Sage.jpg,NO,NO,YES,YES,YES,YES,NO
+2590,Cast Sand,Sunbrella Upholstery,A,0049013-0000,Cast_Sand.jpg,NO,NO,YES,YES,NO,YES,NO
+2591,Cast Shale,Sunbrella Upholstery,A,0040432-0000,Cast_Shale.jpg,NO,NO,YES,YES,YES,YES,NO
+2592,Cast Silver,Sunbrella Upholstery,A,0040433-0000,Cast_Silver.jpg,NO,NO,YES,YES,YES,YES,NO
+2593,Cast Slate,Sunbrella Upholstery,A,0040434-0000,Cast_Slate.jpg,NO,NO,YES,YES,YES,YES,NO
+2594,Charmer Desert,Sunbrella Upholstery,C,0042111-0005,Charmer_Desert.jpg,NO,NO,YES,YES,YES,YES,NO
+2595,Charmer Indigo,Sunbrella Upholstery,C,0042111-0006,Charmer_Indigo.jpg,NO,NO,YES,YES,YES,YES,NO
+2596,Charmer Limestone,Sunbrella Upholstery,C,0042111-0002,Charmer_Limestone.jpg,NO,NO,YES,YES,YES,YES,NO
+2597,Charmer Parchment,Sunbrella Upholstery,C,0042111-0001,Charmer_Parchment.jpg,NO,NO,YES,YES,YES,YES,NO
+2598,Charmer Pebble,Sunbrella Upholstery,C,0042111-0003,Charmer_Pebble.jpg,NO,NO,YES,YES,YES,YES,NO
+2599,Charmer Wren,Sunbrella Upholstery,C,0042111-0004,Charmer_Wren.jpg,NO,NO,YES,YES,YES,YES,NO
+2600,Clock Out Cloud,Sunbrella Upholstery,C,00146205-0003,Clock_Out_Cloud.jpg,NO,NO,YES,YES,YES,NO,NO
+2601,Clock Out Frond,Sunbrella Upholstery,C,00146205-0001,Clock_Out_Frond.jpg,NO,NO,YES,YES,YES,NO,NO
+2602,Cove Pebble,Sunbrella Upholstery,B,0058036-0000,Cove_Pebble.jpg,NO,NO,YES,YES,YES,NO,NO
+2603,Cultivate Stone,Sunbrella Upholstery,B,0056107-0000,Cultivate_Stone.jpg,NO,NO,YES,YES,YES,NO,NO
+2604,Direction Dew,Sunbrella Upholstery,B,0040599-0002,Direction_Dew.jpg,NO,NO,YES,YES,YES,NO,NO
+2605,Direction Linen,Sunbrella Upholstery,B,0040599-0001,Direction_Linen.jpg,NO,NO,YES,YES,YES,NO,NO
+2606,Dolce Mango,Sunbrella Upholstery,B,0056000,Dolce_Mango.jpg,NO,NO,YES,YES,YES,NO,NO
+2607,Dolce Oasis,Sunbrella Upholstery,B,0056001,Dolce_Oasis.jpg,NO,NO,YES,YES,YES,NO,NO
+2608,Dream Dune,Sunbrella Upholstery,C,00146395-0002,Dream_Dune.jpg,NO,NO,YES,YES,YES,YES,NO
+2609,Dream Mist,Sunbrella Upholstery,C,00146395-0001,Dream_Mist.jpg,NO,NO,YES,YES,YES,YES,NO
+2610,Dupione Celeste,Sunbrella Upholstery,B,008067-0000,Dupione_Celeste.jpg,NO,NO,YES,YES,YES,YES,NO
+2611,Dupione Deep Sea,Sunbrella Upholstery,B,008019,Dupione_Deep_Sea.jpg,NO,NO,YES,YES,YES,YES,NO
+2612,Dupione Sand,Sunbrella Upholstery,B,008011,Dupione_Sand.jpg,NO,NO,YES,YES,YES,YES,NO
+2613,Echo Ash,Sunbrella Upholstery,B,0057005-0000,Echo_Ash.jpg,NO,NO,YES,YES,NO,YES,NO
+2614,Embrace Indigo,Sunbrella Upholstery,C,00145849-0003,Embrace_Indigo.jpg,NO,NO,YES,YES,YES,YES,NO
+2615,Embrace Linen,Sunbrella Upholstery,C,00145849-0002,Embrace_Linen.jpg,NO,NO,YES,YES,YES,YES,NO
+2616,Embrace Pewter,Sunbrella Upholstery,C,00145849-0001,Embrace_Pewter.jpg,NO,NO,YES,YES,YES,YES,NO
+2617,Empire Dove,Sunbrella Upholstery,D,0045837-0002,Empire_Dove.jpg,NO,NO,YES,YES,NO,YES,NO
+2618,Exhale Adobe,Sunbrella Upholstery,B,00400001-0007,Exhale_Adobe.jpg,NO,NO,YES,YES,NO,YES,NO
+2619,Exhale Cloud,Sunbrella Upholstery,B,00400001-0001,Exhale_Cloud.jpg,NO,NO,YES,YES,NO,YES,NO
+2620,Exhale Dewdrop,Sunbrella Upholstery,B,00400001-0003,Exhale_Dewdrop.jpg,NO,NO,YES,YES,NO,YES,NO
+2621,Exhale Driftwood,Sunbrella Upholstery,B,00400001-0005,Exhale_Driftwood.jpg,NO,NO,YES,YES,NO,YES,NO
+2622,Exhale Rainwashed,Sunbrella Upholstery,B,00400001-0004,Exhale_Rainwashed.jpg,NO,NO,YES,YES,NO,YES,NO
+2623,Exhale Sky,Sunbrella Upholstery,B,00400001-0002,Exhale_Sky.jpg,NO,NO,YES,YES,NO,YES,NO
+2624,Exhale Teak,Sunbrella Upholstery,B,00400001-0006,Exhale_Teak.jpg,NO,NO,YES,YES,NO,YES,NO
+2625,Expressive Blush,Sunbrella Upholstery,B,0014123-0000,Expressive_Blush.jpg,NO,NO,YES,YES,YES,NO,NO
+2626,Expressive Mist,Sunbrella Upholstery,B,0014120-0000,Expressive_Mist.jpg,NO,NO,YES,YES,YES,NO,NO
+2627,Expressive Sparrow,Sunbrella Upholstery,B,0014121-0000,Expressive_Sparrow.jpg,NO,NO,YES,YES,YES,NO,NO
+2628,Gateway Aloe,Sunbrella Upholstery,A,0014092-0000,Gateway_Aloe.jpg,NO,NO,YES,YES,YES,NO,NO
+2629,Gateway Coast,Sunbrella Upholstery,A,0014087-0000,Gateway_Coast.jpg,NO,NO,YES,YES,YES,NO,NO
+2630,Gateway Mist,Sunbrella Upholstery,B,0058039-0000,Gateway_Mist.jpg,NO,NO,YES,YES,YES,NO,NO
+2631,Harwood Crimson,Sunbrella Upholstery,B,005603,Harwood_Crimson.jpg,NO,NO,YES,YES,YES,NO,NO
+2632,Hybrid Smoke,Sunbrella Upholstery,D,0042079-0000,Hybrid_Smoke.jpg,NO,NO,YES,YES,YES,YES,NO
+2633,Infused Gem,Sunbrella Upholstery,D,00145853-0001,Infused_Gem.jpg,NO,NO,YES,YES,YES,YES,NO
+2634,Leisure Denim,Sunbrella Upholstery,B,0040625-0001,Leisure_Denim.jpg,NO,NO,YES,YES,NO,NO,NO
+2635,Lido Indigo,Sunbrella Upholstery,B,0057004-0000,Lido_Indigo.jpg,NO,NO,YES,YES,YES,NO,NO
+2636,Linen Natural,Sunbrella Upholstery,B,008304,Linen_Natural.jpg,NO,NO,YES,YES,YES,YES,NO
+2637,Linen Sesame,Sunbrella Upholstery,B,008318,Linen_Sesame.jpg,NO,NO,YES,YES,YES,YES,NO
+2638,Linen Silver,Sunbrella Upholstery,B,008351,Linen_Silver.jpg,NO,NO,YES,YES,YES,YES,NO
+2639,Linen Stone,Sunbrella Upholstery,B,008319,Linen_Stone.jpg,NO,NO,YES,YES,YES,YES,NO
+2640,Lively Parchment,Sunbrella Upholstery,B,00146404-0002,Lively_Parchment.jpg,NO,NO,YES,YES,YES,YES,NO
+2641,Lively Sage,Sunbrella Upholstery,B,00146404-0001,Lively_Sage.jpg,NO,NO,YES,YES,YES,YES,NO
+2642,Lore Canyon,Sunbrella Upholstery,A,0048146-0002,Lore_Canyon.jpg,NO,NO,YES,YES,YES,YES,NO
+2643,Lore Moss,Sunbrella Upholstery,A,0048146-0003,Lore_Moss.jpg,NO,NO,YES,YES,YES,YES,NO
+2644,Mainstreet Dove,Sunbrella Upholstery,C,0042048-0015,Mainstreet_Dove.jpg,NO,NO,YES,YES,NO,YES,NO
+2645,Mainstreet Latte,Sunbrella Upholstery,E,0042048-0009,Mainstreet_Latte.jpg,NO,NO,YES,YES,YES,YES,NO
+2646,Mainstreet Putty,Sunbrella Upholstery,C,0042048-0012,Mainstreet_Putty.jpg,NO,NO,YES,YES,NO,YES,NO
+2647,Marvel Mushroom,Sunbrella Upholstery,B,0044494-0004,Marvel_Mushroom.jpg,NO,NO,YES,YES,YES,YES,NO
+2648,Mason Forest Green Stripe,Sunbrella Upholstery,B,005630,Mason_Forest_Green_Stripe.jpg,NO,NO,YES,YES,YES,NO,NO
+2649,Maxim Heather Beige,Sunbrella Upholstery,B,005674,Maxim_Heather_Beige.jpg,NO,NO,YES,YES,YES,NO,NO
+2650,Midori Indigo,Sunbrella Upholstery,E,00145256-0001,Midori_Indigo.jpg,NO,NO,YES,YES,YES,YES,NO
+2651,Midori Stone,Sunbrella Upholstery,E,00145256-0005,Midori_Stone.jpg,NO,NO,YES,YES,YES,YES,NO
+2652,Milano Char,Sunbrella Upholstery,B,0056079-0000,Milano_Char.jpg,NO,NO,YES,YES,YES,NO,NO
+2653,Milano Cobalt,Sunbrella Upholstery,B,0056080-0000,Milano_Cobalt.jpg,NO,NO,YES,YES,YES,NO,NO
+2654,Momento Dove,Sunbrella Upholstery,C,0042105-0003,Momento_Dove.jpg,NO,NO,YES,YES,YES,YES,NO
+2655,Momento Parchment,Sunbrella Upholstery,E,0042105-0002,Momento_Parchment.jpg,NO,NO,YES,YES,YES,YES,NO
+2656,Momento Snow,Sunbrella Upholstery,E,0042105-0001,Momento_Snow.jpg,NO,NO,YES,YES,YES,YES,NO
+2657,Nuance Cloud,Sunbrella Upholstery,B,00400000-0001,Nuance_Cloud.jpg,NO,NO,YES,YES,NO,YES,NO
+2658,Nuance Dove,Sunbrella Upholstery,B,00400000-0004,Nuance_Dove.jpg,NO,NO,YES,YES,NO,YES,NO
+2659,Nuance Eggshell,Sunbrella Upholstery,B,00400000-0002,Nuance_Eggshell.jpg,NO,NO,YES,YES,NO,YES,NO
+2660,Nuance Sand,Sunbrella Upholstery,B,00400000-0003,Nuance_Sand.jpg,NO,NO,YES,YES,NO,YES,NO
+2661,Nurture Charcoal,Sunbrella Upholstery,D,0042102-0006,Nurture_Charcoal.jpg,NO,NO,YES,YES,YES,YES,NO
+2662,Nurture Haze,Sunbrella Upholstery,D,0042102-0009,Nurture_Haze.jpg,NO,NO,YES,YES,YES,YES,NO
+2663,Nurture Indigo,Sunbrella Upholstery,D,0042102-0008,Nurture_Indigo.jpg,NO,NO,YES,YES,YES,YES,NO
+2664,Nurture Pebble,Sunbrella Upholstery,D,0042102-0002,Nurture_Pebble.jpg,NO,NO,YES,YES,YES,YES,NO
+2665,Nurture White,Sunbrella Upholstery,D,0042102-0001,Nurture_White.jpg,NO,NO,YES,YES,YES,YES,NO
+2666,Peyton Granite,Sunbrella Upholstery,B,0056075-0000,Peyton_Granite.jpg,NO,NO,YES,YES,YES,NO,NO
+2667,Platform Cloud,Sunbrella Upholstery,C,0042091-0011,Platform_Cloud.jpg,NO,NO,YES,YES,NO,YES,NO
+2668,Platform Indigo,Sunbrella Upholstery,C,0042091-0003,Platform_Indigo.jpg,NO,NO,YES,YES,YES,YES,NO
+2669,Platform Salt,Sunbrella Upholstery,C,0042091-0013,Platform_Salt.jpg,NO,NO,YES,YES,YES,YES,NO
+2670,Play Adobe,Sunbrella Upholstery,A,0040616-0011,Play_Adobe.jpg,NO,NO,YES,YES,YES,YES,NO
+2671,Play Camel,Sunbrella Upholstery,A,0040616-0003,Play_Camel.jpg,NO,NO,YES,YES,YES,YES,NO
+2672,Play Cameo,Sunbrella Upholstery,A,0040616-0014,Play_Cameo.jpg,NO,NO,YES,YES,YES,YES,NO
+2673,Play Jungle,Sunbrella Upholstery,A,0040616-0008,Play_Jungle.jpg,NO,NO,YES,YES,YES,YES,NO
+2674,Play Lagoon,Sunbrella Upholstery,A,0040616-0009,Play_Lagoon.jpg,NO,NO,YES,YES,YES,YES,NO
+2675,Play Mocha,Sunbrella Upholstery,A,0040616-0004,Play_Mocha.jpg,NO,NO,YES,YES,YES,YES,NO
+2676,Play Mushroom,Sunbrella Upholstery,A,0040616-0005,Play_Mushroom.jpg,NO,NO,YES,YES,YES,YES,NO
+2677,Play Navy,Sunbrella Upholstery,A,0040616-0010,Play_Navy.jpg,NO,NO,YES,YES,YES,YES,NO
+2678,Play Oat,Sunbrella Upholstery,A,0040616-0002,Play_Oat.jpg,NO,NO,YES,YES,YES,YES,NO
+2679,Play Sage,Sunbrella Upholstery,A,0040616-0007,Play_Sage.jpg,NO,NO,YES,YES,YES,YES,NO
+2680,Play Scarlet,Sunbrella Upholstery,A,0040616-0013,Play_Scarlet.jpg,NO,NO,YES,YES,YES,YES,NO
+2681,Play Sky,Sunbrella Upholstery,A,0040616-0006,Play_Sky.jpg,NO,NO,YES,YES,YES,YES,NO
+2682,Play Snow,Sunbrella Upholstery,A,0040616-0001,Play_Snow.jpg,NO,NO,YES,YES,YES,YES,NO
+2683,Play Teak,Sunbrella Upholstery,A,0040616-0012,Play_Teak.jpg,NO,NO,YES,YES,YES,YES,NO
+2684,Principle Lagoon,Sunbrella Upholstery,D,0016009-0002,Principle_Lagoon.jpg,NO,NO,YES,YES,NO,YES,NO
+2685,Principle Tropics,Sunbrella Upholstery,D,0016009-0001,Principle_Tropics.jpg,NO,NO,YES,YES,NO,YES,NO
+2686,Relate Harbor,Sunbrella Upholstery,B,0057017-0004,Relate_Harbor.jpg,NO,NO,YES,YES,YES,NO,NO
+2687,Relate Ivy,Sunbrella Upholstery,B,0057017-0002,Relate_Ivy.jpg,NO,NO,YES,YES,YES,NO,NO
+2688,Relate Persimmon,Sunbrella Upholstery,B,0057017-0003,Relate_Persimmon.jpg,NO,NO,YES,YES,YES,NO,NO
+2689,Remix Camel,Sunbrella Upholstery,A,0048145-0002,Remix_Camel.jpg,NO,NO,YES,YES,YES,YES,NO
+2690,Remix Denim,Sunbrella Upholstery,A,0048145-0006,Remix_Denim.jpg,NO,NO,YES,YES,YES,YES,NO
+2691,Remix Mesa,Sunbrella Upholstery,A,0048145-0005,Remix_Mesa.jpg,NO,NO,YES,YES,YES,YES,NO
+2692,Remix Silk,Sunbrella Upholstery,A,0048145-0003,Remix_Silk.jpg,NO,NO,YES,YES,YES,YES,NO
+2693,Sail Away Aloe,Sunbrella Upholstery,B,0040606-0002,Sail_Away_Aloe.jpg,NO,NO,YES,YES,YES,NO,NO
+2694,Sail Away Denim,Sunbrella Upholstery,B,0040606-0003,Sail_Away_Denim.jpg,NO,NO,YES,YES,YES,NO,NO
+2695,Sail Away Java,Sunbrella Upholstery,B,0040606-0004,Sail_Away_Java.jpg,NO,NO,YES,YES,YES,NO,NO
+2696,Sail Away Sunflower,Sunbrella Upholstery,B,0040606-0001,Sail_Away_Sunflower.jpg,NO,NO,YES,YES,YES,NO,NO
+2697,Sailcloth Sahara,Sunbrella Upholstery,D,0032000-0016,Sailcloth_Sahara.jpg,NO,NO,YES,YES,YES,YES,NO
+2698,Sailcloth Sailor,Sunbrella Upholstery,D,0032000-0026,Sailcloth_Sailor.jpg,NO,NO,YES,YES,YES,YES,NO
+2699,Sailcloth Salt,Sunbrella Upholstery,D,32000-0018,Sailcloth_Salt.jpg,NO,NO,YES,YES,YES,YES,NO
+2700,Sailcloth Seagull,Sunbrella Upholstery,D,0032000-0023,Sailcloth_Seagull.jpg,NO,NO,YES,YES,YES,YES,NO
+2701,Saltillo Sagebrush,Sunbrella Upholstery,A,0014153-0000,Saltillo_Sagebrush.jpg,NO,NO,YES,YES,NO,NO,NO
+2702,Saltillo Sedona,Sunbrella Upholstery,A,0014152-0000,Saltillo_Sedona.jpg,NO,NO,YES,YES,NO,NO,NO
+2703,Seville Seaside,Sunbrella Upholstery,B,005608,Seville_Seaside.jpg,NO,NO,YES,YES,YES,YES,NO
+2704,Shadow Sand,Sunbrella Upholstery,A,51000-0001,Shadow_Sand.jpg,NO,NO,YES,YES,YES,YES,NO
+2705,Shadow Snow,Sunbrella Upholstery,A,51000-0000,Shadow_Snow.jpg,NO,NO,YES,YES,YES,YES,NO
+2706,Shore Classic,Sunbrella Upholstery,B,0058033-0000,Shore_Classic.jpg,NO,NO,YES,YES,YES,NO,NO
+2707,Solana Seagull,Sunbrella Upholstery,D,0032008-0000,Solana_Seagull.jpg,NO,NO,YES,YES,YES,NO,NO
+2708,Solve Clay,Sunbrella Upholstery,C,00146397-0002,Solve_Clay.jpg,NO,NO,YES,YES,YES,YES,NO
+2709,Solve Denim,Sunbrella Upholstery,C,00146397-0001,Solve_Denim.jpg,NO,NO,YES,YES,NO,YES,NO
+2710,Solve Linen,Sunbrella Upholstery,C,00146397-0003,Solve_Linen.jpg,NO,NO,YES,YES,YES,YES,NO
+2711,Spectrum Carbon,Sunbrella Upholstery,A,0048085-0000,Spectrum_Carbon.jpg,NO,NO,YES,YES,YES,YES,NO
+2712,Spectrum Cilantro,Sunbrella Upholstery,B,48022-0000,Spectrum_Cilantro.jpg,NO,NO,YES,YES,YES,YES,NO
+2713,Spectrum Denim,Sunbrella Upholstery,A,0048086-0000,Spectrum_Denim.jpg,NO,NO,YES,YES,YES,YES,NO
+2714,Spectrum Dove,Sunbrella Upholstery,A,48032-0000,Spectrum_Dove.jpg,NO,NO,YES,YES,YES,YES,NO
+2715,Spectrum Eggshell,Sunbrella Upholstery,A,48018-0000,Spectrum_Eggshell.jpg,NO,NO,YES,YES,YES,YES,NO
+2716,Spectrum Graphite,Sunbrella Upholstery,A,48030-0000,Spectrum_Graphite.jpg,NO,NO,YES,YES,YES,YES,NO
+2717,Spectrum Indigo,Sunbrella Upholstery,A,0048080-0000,Spectrum_Indigo.jpg,NO,NO,YES,YES,YES,YES,NO
+2718,Spectrum Mushroom,Sunbrella Upholstery,A,48031-0000,Spectrum_Mushroom.jpg,NO,NO,YES,YES,YES,YES,NO
+2719,Spectrum Peacock,Sunbrella Upholstery,A,0048081-0000,Spectrum_Peacock.jpg,NO,NO,YES,YES,YES,YES,NO
+2720,Spectrum Sand,Sunbrella Upholstery,A,48019-0000,Spectrum_Sand.jpg,NO,NO,YES,YES,YES,YES,NO
+2721,Surround Sunrise,Sunbrella Upholstery,B,0040584-0002,Surround_Sunrise.jpg,NO,NO,YES,YES,YES,NO,NO
+2722,Token Surfside,Sunbrella Upholstery,B,0058040-0000,Token_Surfside.jpg,NO,NO,YES,YES,YES,NO,NO
+2723,Tranquil Camel,Sunbrella Upholstery,B,0044493-0002,Tranquil_Camel.jpg,NO,NO,YES,YES,YES,NO,NO
+2724,Tranquil Linen,Sunbrella Upholstery,B,0044493-0003,Tranquil_Linen.jpg,NO,NO,YES,YES,YES,NO,NO
+2725,Tranquil Sage,Sunbrella Upholstery,B,0044493-0001,Tranquil_Sage.jpg,NO,NO,YES,YES,YES,NO,NO
+2726,Trusted Fog,Sunbrella Upholstery,B,0040524-0001,Trusted_Fog.jpg,NO,NO,YES,YES,YES,NO,NO
+2727,Unwind Cameo,Sunbrella Upholstery,B,00400004-0001,Unwind_Cameo.jpg,NO,NO,YES,YES,NO,NO,NO
+2728,Unwind Driftwood,Sunbrella Upholstery,B,00400005-0001,Unwind_Driftwood.jpg,NO,NO,YES,YES,NO,NO,NO
+2729,Unwind Rainwashed,Sunbrella Upholstery,B,00400003-0001,Unwind_Rainwashed.jpg,NO,NO,YES,YES,NO,NO,NO
+2730,Unwind Sky,Sunbrella Upholstery,B,00400002-0001,Unwind_Sky.jpg,NO,NO,YES,YES,NO,NO,NO
+2731,Valley Desert,Sunbrella Upholstery,C,00146597-0003,Valley_Desert.jpg,NO,NO,YES,YES,NO,YES,NO
+2732,Valley Dune,Sunbrella Upholstery,C,00146597-0006,Valley_Dune.jpg,NO,NO,YES,YES,NO,YES,NO
+2733,Valley Sedona,Sunbrella Upholstery,C,00146597-0010,Valley_Sedona.jpg,NO,NO,YES,YES,NO,YES,NO
+2734,Voyage Breeze,Sunbrella Upholstery,D,00146206-0003,Voyage_Breeze.jpg,NO,NO,YES,YES,YES,YES,NO
+2735,Voyage Dune,Sunbrella Upholstery,D,00146206-0004,Voyage_Dune.jpg,NO,NO,YES,YES,YES,YES,NO
+2736,Voyage Indigo,Sunbrella Upholstery,D,00146206-0001,Voyage_Indigo.jpg,NO,NO,YES,YES,YES,YES,NO
+2737,Voyage Tamale,Sunbrella Upholstery,D,00146206-0002,Voyage_Tamale.jpg,NO,NO,YES,YES,YES,YES,NO
+2738,Aria Blush,Tempotest Top In-Stock,E,0051598-7,Aria_Blush.png,NO,NO,YES,YES,NO,NO,NO
+2739,Aria Powder Blue,Tempotest Top In-Stock,E,0051598-8,Aria_Powder_Blue.png,NO,NO,YES,YES,NO,NO,NO
+2740,Bistro Granite,Tempotest Top In-Stock,A,005435-24,Bistro_Granite.png,NO,NO,YES,YES,NO,NO,NO
+2741,Caravaggio Dark Pewter,Tempotest Top In-Stock,D,0051608-4,Caravaggio_Dark_Pewter.png,NO,NO,YES,YES,NO,NO,NO
+2742,Casanova Gunmetal,Tempotest Top In-Stock,B,005436-94,Casanova_Gunmetal.png,NO,NO,YES,YES,NO,NO,NO
+2743,Casanova Timber,Tempotest Top In-Stock,B,005436-926,Casanova_Timber.png,NO,NO,YES,YES,NO,NO,NO
+2744,Finestra Timber,Tempotest Top In-Stock,E,005179-3,Finestra_Timber.png,NO,NO,YES,YES,NO,NO,NO
+2745,Fredda Brindle,Tempotest Top In-Stock,B,005420-926,Fredda_Brindle.png,NO,NO,YES,YES,NO,NO,NO
+2746,Grano Burnish,Tempotest Top In-Stock,E,0051792-3,Grano_Burnish.png,NO,NO,YES,YES,NO,NO,NO
+2747,Grano Desert Taupe,Tempotest Top In-Stock,E,0051792-4,Grano_Desert_Taupe.png,NO,NO,YES,YES,NO,NO,NO
+2748,Maestro Bloom,Tempotest Top In-Stock,E,0054671-5,Maestro_Bloom.png,NO,NO,YES,YES,NO,NO,NO
+2749,Michelangelo Mocha,Tempotest Top In-Stock,E,0050964-13,Michelangelo_Mocha.png,NO,NO,YES,YES,NO,NO,NO
+2750,Michelangelo Silver Beige,Tempotest Top In-Stock,D,0050964-23,Michelangelo_Silver_Beige.png,NO,NO,YES,YES,NO,NO,NO
+2751,Murano Burnish,Tempotest Top In-Stock,D,0051685-5,Murano_Burnish.png,NO,NO,YES,YES,NO,NO,NO
+2752,Murano Latte,Tempotest Top In-Stock,E,0051685-8,Murano_Latte.png,NO,NO,YES,YES,NO,NO,NO
+2753,Newport Coastal,Tempotest Top In-Stock,E,005437-21,Newport_Coastal.png,NO,NO,YES,YES,NO,NO,NO
+2754,Newport Hemp,Tempotest Top In-Stock,A,005437-102,Newport_Hemp.png,NO,NO,YES,YES,NO,NO,NO
+2755,Presidio Hemp,Tempotest Top In-Stock,A,005414-926,Presidio_Hemp.png,NO,NO,YES,YES,NO,NO,NO
+2756,Presidio Oceana,Tempotest Top In-Stock,A,005414-87,Presidio_Oceana.png,NO,NO,YES,YES,NO,NO,NO
+2757,Spumoni Conch,Tempotest Top In-Stock,B,005438-90,Spumoni_Conch.png,NO,NO,YES,YES,NO,NO,NO
+2758,Spumoni Tidewater,Tempotest Top In-Stock,B,005438-701,Spumoni_Tidewater.png,NO,NO,YES,YES,NO,NO,NO
+2759,Strada Hemp,Tempotest Top In-Stock,E,0051665-3,Strada_Hemp.png,NO,NO,YES,YES,NO,NO,NO
+2760,Tango Burnish,Tempotest Top In-Stock,A,005416-102,Tango_Burnish.png,NO,NO,YES,YES,NO,NO,NO
+2761,Tango Isle Of Palms,Tempotest Top In-Stock,A,005416-21,Tango_Isle_Of_Palms.png,NO,NO,YES,YES,NO,NO,NO
+2762,Tivoli Maritime,Tempotest Top In-Stock,B,0051695-20,Tivoli_Maritime.png,NO,NO,YES,YES,NO,NO,NO
+2763,Donatello Taupe,Tempotest,C,0050963-11,Donatello_Taupe.png,NO,NO,YES,YES,NO,YES,NO

@@ -966,6 +966,7 @@ router.get(
         colorFamily: fabricsTable.colorFamily,
         notes: fabricsTable.notes,
         isStripe: fabricsTable.isStripe,
+        availabilityCodes: fabricsTable.availabilityCodes,
         displayOrder: productFabricOptionsTable.displayOrder,
       })
       .from(productFabricOptionsTable)
@@ -1012,6 +1013,7 @@ router.get(
             colorFamily: fabricsTable.colorFamily,
             notes: fabricsTable.notes,
             isStripe: fabricsTable.isStripe,
+            availabilityCodes: fabricsTable.availabilityCodes,
             displayOrder: fabricsTable.displayOrder,
           })
           .from(fabricsTable)
@@ -1340,6 +1342,7 @@ router.get(
         colorFamily: f.colorFamily,
         notes: f.notes,
         isStripe: f.isStripe,
+        availabilityCodes: f.availabilityCodes,
         displayOrder: f.displayOrder,
       })),
       addonOptions: addonRows.map((a) => ({

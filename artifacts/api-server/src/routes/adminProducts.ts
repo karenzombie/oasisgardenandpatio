@@ -1013,6 +1013,7 @@ router.get(
           grade: fabricsTable.grade,
           colorFamily: fabricsTable.colorFamily,
           isStripe: fabricsTable.isStripe,
+          availabilityCodes: fabricsTable.availabilityCodes,
           displayOrder: productFabricOptionsTable.displayOrder,
         })
         .from(productFabricOptionsTable)
@@ -1359,6 +1360,7 @@ router.get(
         grade: f.grade,
         colorFamily: f.colorFamily,
         isStripe: f.isStripe,
+        availabilityCodes: f.availabilityCodes,
         displayOrder: f.displayOrder,
       })),
     });
