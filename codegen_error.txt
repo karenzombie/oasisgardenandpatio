@@ -1,0 +1,17 @@
+
+> @workspace/api-spec@0.0.0 codegen /home/runner/workspace/lib/api-spec
+> orval --config ./orval.config.ts && pnpm -w run typecheck:libs
+
+file:///home/runner/workspace/node_modules/.pnpm/orval@8.5.3_prettier@3.8.1_typescript@5.9.3/node_modules/orval/dist/config-Q13xuAhd.mjs:25
+import yaml from "js-yaml";
+       ^^^^
+SyntaxError: The requested module 'js-yaml' does not provide an export named 'default'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:302:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:405:5)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v24.13.0
+/home/runner/workspace/lib/api-spec:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/api-spec@0.0.0 codegen: `orval --config ./orval.config.ts && pnpm -w run typecheck:libs`
+Exit status 1
