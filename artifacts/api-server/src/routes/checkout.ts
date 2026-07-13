@@ -290,6 +290,8 @@ router.post(
             unitPrice: cartItemsTable.price,
             weight: productsTable.weight,
             availableOnline: productsTable.availableOnline,
+            productPrice: productsTable.price,
+            productSalePrice: productsTable.salePrice,
             isActive: productsTable.isActive,
             quoteOnly: productsTable.quoteOnly,
             parentCartItemId: cartItemsTable.parentCartItemId,
@@ -359,6 +361,26 @@ router.post(
           return {
             error:
               "One or more items in your cart are available by inquiry only and cannot be purchased online. Please contact us or update your cart.",
+            status: 400,
+          };
+        }
+        // Server-side price safety net (mirrors the cart add guard): a
+        // top-level product with no usable price must never be sellable.
+        // Child add-on lines (parentCartItemId set) carry server-computed
+        // option pricing and are exempt, matching the availableOnline rule.
+        if (
+          lines.some(
+            (l) =>
+              l.parentCartItemId == null &&
+              !(
+                (l.productPrice != null && Number(l.productPrice) > 0) ||
+                (l.productSalePrice != null && Number(l.productSalePrice) > 0)
+              ),
+          )
+        ) {
+          return {
+            error:
+              "One or more items in your cart do not have a price set and cannot be purchased online. Please update your cart and try again.",
             status: 400,
           };
         }

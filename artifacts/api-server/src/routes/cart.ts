@@ -385,6 +385,19 @@ router.post(
       });
       return;
     }
+    // Server-side price safety net: a product that is purchasable but has no
+    // usable price must never be sellable. Mirrors the PDP's hasPrice logic
+    // (price or salePrice non-null and > 0).
+    const hasUsablePrice =
+      (product.price != null && Number(product.price) > 0) ||
+      (product.salePrice != null && Number(product.salePrice) > 0);
+    if (!hasUsablePrice) {
+      res.status(400).json({
+        error:
+          "This product does not have a price set and cannot be added to the cart. Please contact us for pricing and availability.",
+      });
+      return;
+    }
 
     // Determine which option groups this product requires.
     const variantCountRow = await db
