@@ -89,6 +89,7 @@ export interface AdminProduct {
   dimensions: string | null;
   showPriceOnline: boolean;
   availableOnline: boolean;
+  catalogVisible: boolean;
   inStoreOnly: boolean;
   quoteOnly: boolean;
   featured: boolean;

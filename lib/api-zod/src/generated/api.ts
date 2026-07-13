@@ -3575,6 +3575,7 @@ export const AdminListProductsResponse = zod.object({
       dimensions: zod.string().nullable(),
       showPriceOnline: zod.boolean(),
       availableOnline: zod.boolean(),
+      catalogVisible: zod.boolean(),
       inStoreOnly: zod.boolean(),
       quoteOnly: zod.boolean(),
       featured: zod.boolean(),
@@ -3610,6 +3611,7 @@ export const adminCreateProductBodySlugRegExp = new RegExp(
 export const adminCreateProductBodyPricingModeDefault = `fixed`;
 export const adminCreateProductBodyShowPriceOnlineDefault = true;
 export const adminCreateProductBodyAvailableOnlineDefault = true;
+export const adminCreateProductBodyCatalogVisibleDefault = true;
 export const adminCreateProductBodyInStoreOnlyDefault = false;
 export const adminCreateProductBodyQuoteOnlyDefault = false;
 export const adminCreateProductBodyFeaturedDefault = false;
@@ -3668,6 +3670,9 @@ export const AdminCreateProductBody = zod.object({
   availableOnline: zod
     .boolean()
     .default(adminCreateProductBodyAvailableOnlineDefault),
+  catalogVisible: zod
+    .boolean()
+    .default(adminCreateProductBodyCatalogVisibleDefault),
   inStoreOnly: zod.boolean().default(adminCreateProductBodyInStoreOnlyDefault),
   quoteOnly: zod.boolean().default(adminCreateProductBodyQuoteOnlyDefault),
   featured: zod.boolean().default(adminCreateProductBodyFeaturedDefault),
@@ -3768,6 +3773,7 @@ export const AdminGetProductResponse = zod
     dimensions: zod.string().nullable(),
     showPriceOnline: zod.boolean(),
     availableOnline: zod.boolean(),
+    catalogVisible: zod.boolean(),
     inStoreOnly: zod.boolean(),
     quoteOnly: zod.boolean(),
     featured: zod.boolean(),
@@ -3865,6 +3871,7 @@ export const AdminUpdateProductBody = zod.object({
   dimensions: zod.string().nullish(),
   showPriceOnline: zod.boolean().optional(),
   availableOnline: zod.boolean().optional(),
+  catalogVisible: zod.boolean().optional(),
   inStoreOnly: zod.boolean().optional(),
   quoteOnly: zod.boolean().optional(),
   featured: zod.boolean().optional(),
@@ -3961,6 +3968,7 @@ export const AdminUpdateProductResponse = zod.object({
   dimensions: zod.string().nullable(),
   showPriceOnline: zod.boolean(),
   availableOnline: zod.boolean(),
+  catalogVisible: zod.boolean(),
   inStoreOnly: zod.boolean(),
   quoteOnly: zod.boolean(),
   featured: zod.boolean(),
@@ -4073,6 +4081,7 @@ export const AdminSetProductActiveResponse = zod.object({
   dimensions: zod.string().nullable(),
   showPriceOnline: zod.boolean(),
   availableOnline: zod.boolean(),
+  catalogVisible: zod.boolean(),
   inStoreOnly: zod.boolean(),
   quoteOnly: zod.boolean(),
   featured: zod.boolean(),

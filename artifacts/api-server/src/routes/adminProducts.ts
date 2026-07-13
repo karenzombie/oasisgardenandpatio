@@ -157,6 +157,7 @@ function toAdminPayload(r: ProductRow, materials: MaterialPayload[]) {
     dimensions: r.dimensions,
     showPriceOnline: r.showPriceOnline,
     availableOnline: r.availableOnline,
+    catalogVisible: r.catalogVisible,
     inStoreOnly: r.inStoreOnly,
     quoteOnly: r.quoteOnly,
     featured: r.featured,
@@ -521,6 +522,7 @@ router.post(
             dimensions: parsed.data.dimensions ?? null,
             showPriceOnline: parsed.data.showPriceOnline ?? true,
             availableOnline: parsed.data.availableOnline ?? true,
+            catalogVisible: parsed.data.catalogVisible ?? true,
             inStoreOnly: parsed.data.inStoreOnly ?? false,
             quoteOnly: parsed.data.quoteOnly ?? false,
             featured: parsed.data.featured ?? false,
@@ -633,6 +635,9 @@ router.put(
               : {}),
             ...(body.data.availableOnline !== undefined
               ? { availableOnline: body.data.availableOnline }
+              : {}),
+            ...(body.data.catalogVisible !== undefined
+              ? { catalogVisible: body.data.catalogVisible }
               : {}),
             ...(body.data.inStoreOnly !== undefined
               ? { inStoreOnly: body.data.inStoreOnly }

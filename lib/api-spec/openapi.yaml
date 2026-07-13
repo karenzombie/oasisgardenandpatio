@@ -7227,6 +7227,8 @@ components:
           type: boolean
         availableOnline:
           type: boolean
+        catalogVisible:
+          type: boolean
         inStoreOnly:
           type: boolean
         quoteOnly:
@@ -7288,6 +7290,7 @@ components:
         - dimensions
         - showPriceOnline
         - availableOnline
+        - catalogVisible
         - inStoreOnly
         - quoteOnly
         - featured
@@ -7469,6 +7472,9 @@ components:
         availableOnline:
           type: boolean
           default: true
+        catalogVisible:
+          type: boolean
+          default: true
         inStoreOnly:
           type: boolean
           default: false
@@ -7561,6 +7567,8 @@ components:
         showPriceOnline:
           type: boolean
         availableOnline:
+          type: boolean
+        catalogVisible:
           type: boolean
         inStoreOnly:
           type: boolean

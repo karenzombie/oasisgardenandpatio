@@ -177,6 +177,7 @@ interface FormState {
   dimensions: string;
   showPriceOnline: boolean;
   availableOnline: boolean;
+  catalogVisible: boolean;
   inStoreOnly: boolean;
   featured: boolean;
   quoteOnly: boolean;
@@ -222,6 +223,7 @@ function emptyForm(): FormState {
     dimensions: "",
     showPriceOnline: false,
     availableOnline: true,
+    catalogVisible: true,
     inStoreOnly: false,
     featured: false,
     quoteOnly: true,
@@ -559,6 +561,7 @@ export default function ProductEdit() {
         dimensions: d.dimensions ?? "",
         showPriceOnline: d.showPriceOnline,
         availableOnline: d.availableOnline,
+        catalogVisible: d.catalogVisible,
         inStoreOnly: d.inStoreOnly,
         featured: d.featured,
         quoteOnly: d.quoteOnly,
@@ -749,6 +752,7 @@ export default function ProductEdit() {
       dimensions: form.dimensions.trim() || null,
       showPriceOnline: form.showPriceOnline,
       availableOnline: form.availableOnline,
+      catalogVisible: form.catalogVisible,
       inStoreOnly: form.inStoreOnly,
       featured: form.featured,
       quoteOnly: form.quoteOnly,
@@ -1777,6 +1781,16 @@ export default function ProductEdit() {
                 }}
                 checked={form.isActive}
                 onChange={(v) => setForm((f) => ({ ...f, isActive: v }))}
+              />
+              <FlagRow
+                label="Visible in catalog"
+                description="Controls whether this product appears in customer search, category, and manufacturer listings."
+                tooltip={{
+                  on: "Product appears in customer search, category, and manufacturer listings.",
+                  off: "Product does not appear in any customer listing. Use for component products (cushion inserts, top covers) that customers select through options on another product's page.",
+                }}
+                checked={form.catalogVisible}
+                onChange={(v) => setForm((f) => ({ ...f, catalogVisible: v }))}
               />
               <FlagRow
                 label="Available online"

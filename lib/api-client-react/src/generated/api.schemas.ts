@@ -1322,6 +1322,7 @@ export interface AdminProduct {
   dimensions: string | null;
   showPriceOnline: boolean;
   availableOnline: boolean;
+  catalogVisible: boolean;
   inStoreOnly: boolean;
   quoteOnly: boolean;
   featured: boolean;
@@ -1456,6 +1457,7 @@ export interface CreateProductRequest {
   dimensions?: string | null;
   showPriceOnline?: boolean;
   availableOnline?: boolean;
+  catalogVisible?: boolean;
   inStoreOnly?: boolean;
   quoteOnly?: boolean;
   featured?: boolean;
@@ -1538,6 +1540,7 @@ export interface UpdateProductRequest {
   dimensions?: string | null;
   showPriceOnline?: boolean;
   availableOnline?: boolean;
+  catalogVisible?: boolean;
   inStoreOnly?: boolean;
   quoteOnly?: boolean;
   featured?: boolean;
