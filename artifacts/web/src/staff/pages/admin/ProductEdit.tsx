@@ -1800,7 +1800,7 @@ export default function ProductEdit() {
                   off: "Product is shown on the site but switches to inquiry mode. Customers must call or request a quote to purchase. No cart or checkout. Toggle back on at any time to make it purchasable again.",
                 }}
                 checked={form.availableOnline && !form.quoteOnly}
-                disabled={!form.availableOnline}
+                disabled={!form.isActive || !form.catalogVisible}
                 onChange={(v) =>
                   setForm((f) => ({
                     ...f,
