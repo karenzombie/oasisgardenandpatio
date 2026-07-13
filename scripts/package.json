@@ -50,6 +50,7 @@
     "seed-frankford-non-umbrella": "tsx ./src/seedFrankfordNonUmbrellaProducts.ts",
     "upload-galtech-replacement-images": "tsx ./src/uploadGaltechReplacementImages.ts",
     "upload-galtech-missing-images": "tsx ./src/uploadGaltechMissingImages.ts",
+    "upload-homecrest-product-images": "tsx ./src/uploadHomecrestProductImages.ts",
     "export-products": "tsx ./src/exportProducts.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
