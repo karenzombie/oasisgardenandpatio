@@ -1776,8 +1776,8 @@ export default function ProductEdit() {
                 label="Active"
                 description="Turn off only to permanently retire this product. Archived products cannot be seen by customers or used in staff orders."
                 tooltip={{
-                  on: "Product exists in the system and is manageable by staff.",
-                  off: "Product is permanently archived. Hidden from the storefront and all staff order screens. Use this only to retire a product for good.",
+                  on: "Product is live in the system and subject to the other visibility controls.",
+                  off: "Product is hidden from all customer pages and staff order screens. It stays in the admin product list and can be re-activated at any time. Products are never deleted.",
                 }}
                 checked={form.isActive}
                 onChange={(v) => setForm((f) => ({ ...f, isActive: v }))}
@@ -1814,10 +1814,25 @@ export default function ProductEdit() {
             <div className="mt-4">
               <VisibilityStatusBar
                 isActive={form.isActive}
-                availableOnline={form.availableOnline}
+                catalogVisible={form.catalogVisible}
                 quoteOnly={form.quoteOnly}
                 showPriceOnline={form.showPriceOnline}
               />
+              {!form.quoteOnly &&
+                form.availableOnline &&
+                !(
+                  parseFloat(form.price) > 0 ||
+                  parseFloat(form.salePrice) > 0
+                ) && (
+                  <div className="flex items-start gap-2 mt-2 rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                    <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                    <span>
+                      This product has no price. Customers will see Add to Cart
+                      but will not be able to complete checkout until a price is
+                      entered.
+                    </span>
+                  </div>
+                )}
             </div>
             <div className="mt-4 ml-6 pl-4 border-l-2 border-slate-200">
               <FlagRow
@@ -3356,12 +3371,12 @@ export default function ProductEdit() {
 
 function VisibilityStatusBar({
   isActive,
-  availableOnline,
+  catalogVisible,
   quoteOnly,
   showPriceOnline,
 }: {
   isActive: boolean;
-  availableOnline: boolean;
+  catalogVisible: boolean;
   quoteOnly: boolean;
   showPriceOnline: boolean;
 }) {
@@ -3373,12 +3388,12 @@ function VisibilityStatusBar({
     className = "bg-red-50 border-red-200 text-red-800";
     Icon = Archive;
     text =
-      "Product is archived. Hidden from all storefront routes and staff order screens.";
-  } else if (!availableOnline) {
+      "Product is archived and hidden from customers. Toggle Active to restore it.";
+  } else if (!catalogVisible) {
     className = "bg-slate-100 border-slate-300 text-slate-700";
     Icon = EyeOff;
     text =
-      "Hidden from storefront. This product is not visible to customers and cannot be purchased online.";
+      "Not shown in customer listings. Reachable only through product options or a direct link.";
   } else if (!quoteOnly) {
     className = "bg-green-50 border-green-200 text-green-800";
     Icon = CheckCircle2;
@@ -3392,7 +3407,7 @@ function VisibilityStatusBar({
     className = "bg-blue-50 border-blue-200 text-blue-800";
     Icon = Tag;
     text =
-      "Inquiry mode — price is visible, but customers must call or request a quote to purchase.";
+      "Inquiry mode — price visible, but customers must call or request a quote to purchase.";
   }
 
   return (
