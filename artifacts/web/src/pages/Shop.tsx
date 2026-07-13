@@ -18,14 +18,7 @@ import { Button } from "@/components/ui/button";
 import { CheckboxGroup, type FilterOption } from "@/components/FilterCheckboxGroup";
 import { BrowsePagination } from "@/components/BrowsePagination";
 import { parseListParam, joinListParam } from "@/lib/filterParams";
-
-const SORTS = [
-  { value: "featured", label: "Featured" },
-  { value: "newest", label: "Newest" },
-  { value: "price_asc", label: "Price: Low to High" },
-  { value: "price_desc", label: "Price: High to Low" },
-  { value: "name_asc", label: "Name: A–Z" },
-] as const;
+import { SORTS } from "@/lib/sortOptions";
 
 function formatMoney(v: string | null | undefined): string {
   if (v == null || v === "") return "";

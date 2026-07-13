@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { CheckboxGroup, type FilterOption } from "@/components/FilterCheckboxGroup";
 import { parseListParam, joinListParam } from "@/lib/filterParams";
+import { SORTS } from "@/lib/sortOptions";
 
 const PAGE_SIZE_DISPLAY = 24;
 
@@ -45,6 +46,7 @@ export default function ManufacturerProducts() {
   const activeCollections = useMemo(() => parseListParam(q.get("collection")), [q]);
   const activeMaterials = useMemo(() => parseListParam(q.get("material")), [q]);
   const displayPage = Math.max(1, Number(q.get("page") ?? "1") || 1);
+  const activeSort = (q.get("sort") ?? "featured") as ListCatalogProductsParams["sort"];
 
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
@@ -65,7 +67,7 @@ export default function ManufacturerProducts() {
   const queryParams = useMemo<ListCatalogProductsParams>(() => {
     const out: ListCatalogProductsParams = {
       manufacturerSlug: slug,
-      sort: "name_asc",
+      sort: activeSort,
       page: displayPage,
       pageSize: PAGE_SIZE_DISPLAY,
     };
@@ -77,6 +79,7 @@ export default function ManufacturerProducts() {
     return out;
   }, [
     slug,
+    activeSort,
     displayPage,
     activeCategories,
     activeSubCategories,
@@ -263,7 +266,7 @@ export default function ManufacturerProducts() {
         </div>
       ) : (
         <>
-          {/* Toolbar: mobile filter toggle + count */}
+          {/* Toolbar: mobile filter toggle + sort + count */}
           <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
             <div className="flex items-center gap-3">
               {hasFacets && (
@@ -285,6 +288,18 @@ export default function ManufacturerProducts() {
               )}
               <span className="text-sm text-muted-foreground">{countLabel}</span>
             </div>
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+              Sort by
+              <select
+                value={activeSort}
+                onChange={(e) => updateSearch({ sort: e.target.value, page: "1" })}
+                className="border border-input bg-background rounded-none px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+              >
+                {SORTS.map((s) => (
+                  <option key={s.value} value={s.value}>{s.label}</option>
+                ))}
+              </select>
+            </label>
           </div>
 
           {/* Active filter chips */}
