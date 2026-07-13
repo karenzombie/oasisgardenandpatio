@@ -22,7 +22,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import xlsx from "xlsx";
+import ExcelJS from "exceljs";
 import { eq, sql } from "drizzle-orm";
 import {
   db,
@@ -156,10 +156,27 @@ function buildSpecs(r: SpecRow): Record<string, string> {
 async function main(): Promise<void> {
   const xlsxPath = findLatest("OWLee_Product_Specs_Master", ".xlsx");
   console.log(`Loading OW Lee data from ${xlsxPath}`);
-  const wb = xlsx.read(readFileSync(xlsxPath), { type: "buffer" });
-  const sheet = wb.Sheets["Product Specs"];
+  const workbook = new ExcelJS.Workbook();
+  const buf = readFileSync(xlsxPath);
+  await workbook.xlsx.load(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer);
+  const sheet = workbook.getWorksheet("Product Specs");
   if (!sheet) throw new Error("Workbook is missing 'Product Specs' sheet");
-  const rows = xlsx.utils.sheet_to_json<SpecRow>(sheet, { defval: null });
+  const headerRow = sheet.getRow(1);
+  const headers: string[] = [];
+  headerRow.eachCell((cell, colIndex) => {
+    headers[colIndex - 1] = String(cell.value ?? "");
+  });
+  const rows: SpecRow[] = [];
+  sheet.eachRow((_row, rowIndex) => {
+    if (rowIndex === 1) return;
+    const row = sheet.getRow(rowIndex);
+    const obj: Record<string, unknown> = {};
+    headers.forEach((header, idx) => {
+      const cell = row.getCell(idx + 1);
+      obj[header] = cell.value ?? null;
+    });
+    rows.push(obj as SpecRow);
+  });
   console.log(`  parsed ${rows.length} spec rows`);
 
   const manufacturerId = await ensureManufacturer();
