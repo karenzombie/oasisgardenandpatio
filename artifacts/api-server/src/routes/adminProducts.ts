@@ -247,6 +247,7 @@ function baseSelect() {
       featured: productsTable.featured,
       featuredAt: productsTable.featuredAt,
       displayOrder: productsTable.displayOrder,
+      rankGroup: productsTable.rankGroup,
       lowStockThreshold: productsTable.lowStockThreshold,
       finishMinQtyNote: productsTable.finishMinQtyNote,
       cushionUpgradeSku: productsTable.cushionUpgradeSku,

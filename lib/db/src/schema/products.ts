@@ -119,6 +119,7 @@ export const productsTable = pgTable(
     // already featured), cleared to null when featured flips false.
     featuredAt: timestamp("featured_at", { withTimezone: true }),
     displayOrder: integer("display_order").notNull().default(0),
+    rankGroup: integer("rank_group"),
     lowStockThreshold: integer("low_stock_threshold").notNull().default(0),
     isActive: boolean("is_active").notNull().default(true),
     // When set, the PDP shows a Cushion/No Cushion toggle. The value is the
@@ -153,6 +154,9 @@ export const productsTable = pgTable(
     index("idx_products_seat_type")
       .on(t.seatType)
       .where(sql`${t.seatType} IS NOT NULL`),
+    index("idx_products_rank_group")
+      .on(t.rankGroup)
+      .where(sql`${t.rankGroup} IS NOT NULL`),
     check(
       "products_pricing_mode_check",
       sql`${t.pricingMode} IN ('fixed', 'cost_plus_markup', 'msrp_minus_dealer_rate')`,
