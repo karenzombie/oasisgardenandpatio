@@ -82,6 +82,7 @@ const FULL_REPLACE_TABLES = new Set([
 // own), and never touch the id of an existing matched row — this updates
 // dev's content in place while leaving cart/order FK targets untouched.
 const NATURAL_KEY_TABLES: Record<string, string[]> = {
+  product_materials: ["product_id", "material_id"],
   product_fabric_options: ["product_id", "fabric_id"],
   product_finish_options: ["product_id", "finish_id"],
 };
