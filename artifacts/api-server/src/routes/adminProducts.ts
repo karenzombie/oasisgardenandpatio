@@ -240,6 +240,7 @@ function baseSelect() {
       specs: productsTable.specs,
       showPriceOnline: productsTable.showPriceOnline,
       availableOnline: productsTable.availableOnline,
+      catalogVisible: productsTable.catalogVisible,
       inStoreOnly: productsTable.inStoreOnly,
       quoteOnly: productsTable.quoteOnly,
       featured: productsTable.featured,

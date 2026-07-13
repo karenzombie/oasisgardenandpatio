@@ -198,7 +198,7 @@ router.get(
 
     const conditions = [
       eq(productsTable.isActive, true),
-      eq(productsTable.availableOnline, true),
+      eq(productsTable.catalogVisible, true),
     ];
     if (onlineOnly) {
       conditions.push(eq(productsTable.quoteOnly, false));
@@ -376,7 +376,7 @@ router.get(
 
     const conditions = [
       eq(productsTable.isActive, true),
-      eq(productsTable.availableOnline, true),
+      eq(productsTable.catalogVisible, true),
       sql`${productsTable.collection} is not null`,
       sql`${productsTable.collection} <> ''`,
     ];
@@ -440,7 +440,7 @@ router.get(
     const buildConditions = (exclude: Facet | null) => {
       const conds = [
         eq(productsTable.isActive, true),
-        eq(productsTable.availableOnline, true),
+        eq(productsTable.catalogVisible, true),
       ];
       if (onlineOnly) {
         conds.push(eq(productsTable.quoteOnly, false));
