@@ -1,0 +1,353 @@
+id,sku,name,category_id,category_name,sub_category,display_order
+4843,AKZPRTLX,STARLUX AKZ PLUS 10'x13',38,Umbrellas,Cantilever,1
+4844,AKZP13,AKZ PLUS 13',38,Umbrellas,Cantilever,2
+4845,AKZPRT,AKZ PLUS 10'x13',38,Umbrellas,Cantilever,3
+4846,AKZPSQ11,AKZ PLUS 11.5',38,Umbrellas,Cantilever,4
+4847,AKZP,AKZ PLUS 11',38,Umbrellas,Cantilever,5
+4848,AG25TR,AG25T 11.5',38,Umbrellas,Cantilever,6
+4849,AG25TSQR,AG25TSQ 10',38,Umbrellas,Cantilever,7
+4850,AG25TR10,AG25T 10',38,Umbrellas,Cantilever,8
+4851,ET3RT,EASY TRACK® 10'x13',38,Umbrellas,Specialty,9
+4852,ET310,Easy Track®,38,Umbrellas,Specialty,10
+4853,USA45-09,SHANGHAI COLLAR TILT 10',38,Umbrellas,Specialty,11
+4854,UM851,TWIST 11',38,Umbrellas,Market,12
+4855,UM850,TWIST 9',38,Umbrellas,Market,13
+4856,UM800LX,STARLUX COLLAR TILT 9',38,Umbrellas,Market,14
+4857,UM801,COLLAR TILT 11',38,Umbrellas,Market,15
+4858,UM800,COLLAR TILT 9',38,Umbrellas,Market,16
+4859,UM841,FLEX 11',38,Umbrellas,Market,17
+4860,UM840,FLEX 9',38,Umbrellas,Market,18
+4861,UM847SQ,FLEX 7.5',38,Umbrellas,Market,19
+4862,UM812,AUTO TILT 11',38,Umbrellas,Market,20
+4863,UM810,AUTO TILT 9',38,Umbrellas,Market,21
+4864,UM8810RT,AUTO TILT 8'x10',38,Umbrellas,Market,22
+4865,UM970,GLIDE TILT 9',38,Umbrellas,Market,23
+4866,UM977,GLIDE TILT 7.5',38,Umbrellas,Market,24
+4867,UM920,PUSH BUTTON TILT 9',38,Umbrellas,Market,25
+4868,UM907,PUSH BUTTON TILT 7.5',38,Umbrellas,Market,26
+4869,UM809-1H,QUAD PULLEY LIFT 9',38,Umbrellas,Market,27
+4870,BA150,Commercial,39,Umbrella Bases,,28
+4871,BSK120,Steel (with casters),39,Umbrella Bases,,29
+4872,BTT100,Athens,39,Umbrella Bases,,30
+4873,BRW100,Aurora,39,Umbrella Bases,,31
+4874,BKM100,Monaco Round,39,Umbrella Bases,,32
+4875,BKMSQ100,Monaco Square,39,Umbrella Bases,,33
+4876,BG50,Garden,39,Umbrella Bases,,34
+4877,BA50,Art Deco,39,Umbrella Bases,,35
+4878,BW50,Classic,39,Umbrella Bases,,36
+4879,BS359,Steel,39,Umbrella Bases,,37
+4880,BW30,Add-On Weight,39,Umbrella Bases,,38
+4881,BS70-2.0,Steel,39,Umbrella Bases,,39
+4882,ZBWH-SM,Add-On Wheels,39,Umbrella Bases,,40
+4883,BASE-13R-_,AKZ13 Rolling Base,39,Umbrella Bases,Cantilever,41
+4884,ZB115,Z-Plate,39,Umbrella Bases,,42
+4885,BASE-13-_,AKZ13 Base,39,Umbrella Bases,Cantilever,43
+4886,BASE-AKZ-_,AKZ Base,39,Umbrella Bases,Cantilever,44
+2024,421-SB,Monterra Spring Base Lounge Chair,43,Deep Seating,Lounge Chairs,1
+2025,421-SR,Monterra Swivel Rocker Lounge Chair,43,Deep Seating,Lounge Chairs,2
+2026,427-2S,Monterra Love Seat,43,Deep Seating,Love Seats,3
+2027,426-2S,Monterra Crescent Love Seat,43,Deep Seating,Love Seats,4
+2028,427-3S,Monterra Sofa,43,Deep Seating,Sofas,5
+2029,425-L,Monterra Left Sectional,43,Deep Seating,Sectionals,6
+2030,425-C,Monterra Center Sectional,43,Deep Seating,Lounge Chairs,7
+2031,425-R,Monterra Right Sectional,43,Deep Seating,Sectionals,8
+2032,419-O,Monterra Ottoman,43,Deep Seating,Ottomans,9
+2033,424-MSB,Monterra Urban-Scale Spring Base Lounge Chair,43,Deep Seating,Lounge Chairs,10
+2034,424-MSR,Monterra Urban-Scale Swivel Rocker Lounge Chair,43,Deep Seating,Lounge Chairs,11
+2035,423-2MS,Monterra Urban-Scale Crescent Love Seat,43,Deep Seating,Love Seats,12
+2036,424-2MS,Monterra Urban Scale Love Seat,43,Deep Seating,Love Seats,13
+2037,424-3MS,Monterra Urban Scale Sofa,43,Deep Seating,Sofas,14
+2038,4120-O,Monterra Urban Scale Ottoman,43,Deep Seating,Ottomans,15
+2043,487-O,Monterra Curved Ottoman,43,Deep Seating,Ottomans,20
+2044,428-CH,Monterra Adjustable Chaise,43,Deep Seating,Chaise,21
+2045,956-CCW,Classico Lounge Chair,43,Deep Seating,Lounge Chairs,22
+2046,956-SRW,Classico Swivel Rocker Lounge Chair,43,Deep Seating,Lounge Chairs,23
+2047,956-SBT,Classico Spring Base Lounge Chair,43,Deep Seating,Lounge Chairs,24
+2048,937-SBW,Classico High-Back Spring Base Lounge Chair,43,Deep Seating,Lounge Chairs,25
+2049,937-SRW,Classico High-Back Swivel Rocker Lounge Chair,43,Deep Seating,Lounge Chairs,26
+2050,956-2SW,Classico Love Seat,43,Deep Seating,Love Seats,27
+2051,956-3SW,Classico Sofa,43,Deep Seating,Sofas,28
+2052,950-OW,Classico Ottoman,43,Deep Seating,Ottomans,29
+2053,952-CHW,Classico Adjustable Chaise,43,Deep Seating,Chaise,30
+2066,27175-CC,Aris Lounge Chair,43,Deep Seating,Lounge Chairs,43
+2067,27175-SR,Aris Swivel Rocker Lounge Chair,43,Deep Seating,Lounge Chairs,44
+2068,27275-SR,Aris Max Swivel Rocker Lounge Chair,43,Deep Seating,Lounge Chairs,45
+2069,27175-2S,Aris Love Seat,43,Deep Seating,Love Seats,46
+2070,27276-2S,Aris Max Love Seat,43,Deep Seating,Love Seats,47
+2071,27175-3S,Aris Sofa,43,Deep Seating,Sofas,48
+2072,27277-3S,Aris Max Sofa,43,Deep Seating,Sofas,49
+2073,27170-O,Aris Ottoman,43,Deep Seating,Ottomans,50
+2074,27179-CH,Aris Adjustable Chaise,43,Deep Seating,Chaise,51
+2082,34184-CC,Arc Lounge Chair,43,Deep Seating,Lounge Chairs,59
+2083,34184-SR,Arc Swivel Rocker Lounge Chair,43,Deep Seating,Lounge Chairs,60
+2084,34184-2S,Arc Love Seat,43,Deep Seating,Love Seats,61
+2085,34184-3S,Arc Sofa,43,Deep Seating,Sofas,62
+2086,34185-R,Arc Right Sectional,43,Deep Seating,Sectionals,63
+2087,34185-C,Arc Center Sectional,43,Deep Seating,Sectionals,64
+2088,34185-CR,Arc Corner Sectional,43,Deep Seating,Sectionals,65
+2089,34185-L,Arc Left Sectional,43,Deep Seating,Sectionals,66
+2090,34170-O,Arc Ottoman,43,Deep Seating,Ottomans,67
+2091,34198-CH,Arc Sling Adjustable Chaise Lounge,43,Deep Seating,Chaise,68
+5151,86156-CC,Pasadera Lounge Chair,43,Deep Seating,Lounge Chairs,197
+5152,86156-SB,Pasadera Spring Base Lounge Chair,43,Deep Seating,Lounge Chairs,198
+5153,86156-SR,Pasadera Swivel Rocker Lounge Chair,43,Deep Seating,Lounge Chairs,199
+5154,86156-2S,Pasadera Love Seat,43,Deep Seating,Love Seats,200
+5155,86156-3S,Pasadera Sofa,43,Deep Seating,Sofas,201
+5156,86158-R,Pasadera Right Sectional,43,Deep Seating,Sectionals,202
+5157,86158-C,Pasadera Center Sectional,43,Deep Seating,Sectionals,203
+5158,86158-L,Pasadera Left Sectional,43,Deep Seating,Sectionals,204
+5159,8690-O,Pasadera Ottoman,43,Deep Seating,Ottomans,205
+5160,695-CC,San Cristobal Lounge Chair,43,Deep Seating,Lounge Chairs,206
+5161,695-SB,San Cristobal Spring Base Lounge Chair,43,Deep Seating,Lounge Chairs,207
+5162,695-SR,San Cristobal Swivel Rocker Lounge Chair,43,Deep Seating,Lounge Chairs,208
+5163,695-2S,San Cristobal Love Seat,43,Deep Seating,Love Seats,209
+5164,695-3S,San Cristobal Sofa,43,Deep Seating,Sofas,210
+5165,692-R,San Cristobal Right Sectional,43,Deep Seating,Sectionals,211
+5166,692-C,San Cristobal Center Sectional,43,Deep Seating,Lounge Chairs,212
+5167,692-L,San Cristobal Left Sectional,43,Deep Seating,Sectionals,213
+5168,696-O,San Cristobal Ottoman,43,Deep Seating,Ottomans,214
+5169,699-CHW,San Cristobal Chaise Lounge,43,Deep Seating,Chaise,215
+5177,65168-3S,Avana Crescent Sofa,43,Deep Seating,Sofas,223
+5182,65198-CHW,Avana Sling Adjustable Chaise with Wheels,43,Deep Seating,Chaise,228
+5183,65156-CC,Avana Lounge Chair,43,Deep Seating,Lounge Chairs,229
+5184,65156-SR,Avana Swivel Rocker Lounge Chair,43,Deep Seating,Lounge Chairs,230
+5185,65156-2S,Avana Love Seat,43,Deep Seating,Love Seats,231
+5186,65156-3S,Avana Sofa,43,Deep Seating,Sofas,232
+5187,6590-O,Avana Ottoman,43,Deep Seating,Ottomans,233
+5188,62109-CC,Horizon Lounge Chair,43,Deep Seating,Lounge Chairs,234
+5189,62109-SR,Horizon Swivel Rocker Lounge Chair,43,Deep Seating,Lounge Chairs,235
+5190,62109-2S,Horizon Love Seat,43,Deep Seating,Love Seats,236
+5191,62109-3S,Horizon Sofa,43,Deep Seating,Sofas,237
+5192,62170-O,Horizon Ottoman,43,Deep Seating,Ottomans,238
+5195,37165-CC,Marin Lounge Chair,43,Deep Seating,Lounge Chairs,241
+5196,37165-SR,Marin Swivel Rocker Lounge Chair,43,Deep Seating,Lounge Chairs,242
+5197,37165-2S,Marin Love Seat,43,Deep Seating,Love Seats,243
+5198,37165-3S,Marin Sofa,43,Deep Seating,Sofas,244
+5199,37170-O,Marin Ottoman,43,Deep Seating,Ottomans,245
+5200,37198-CH,Marin Sling Chaise Lounge Chair,43,Deep Seating,Chaise,246
+5210,77186-CC,Studio Lounge Chair,43,Deep Seating,Lounge Chairs,256
+5211,77186-SR,Studio Swivel Rocker Lounge Chair,43,Deep Seating,Lounge Chairs,257
+5212,77186-2S,Studio Love Seat,43,Deep Seating,Love Seats,258
+5213,77186-3S,Studio Sofa,43,Deep Seating,Sofas,259
+5214,77186-2R,Studio Right Double Sectional,43,Deep Seating,Sectionals,260
+5215,77186-CR,Studio Corner Sectional,43,Deep Seating,Sectionals,261
+5216,77186-C,Studio Center Sectional,43,Deep Seating,Sectionals,262
+5217,77186-2L,Studio Left Double Sectional,43,Deep Seating,Sectionals,263
+5218,77187-B,Studio Bench,43,Deep Seating,Benches,264
+5219,77180-O,Studio Ottoman,43,Deep Seating,Ottomans,265
+5220,77198-CH,Studio Sling Chaise Lounge,43,Deep Seating,Chaise,266
+2039,404-A,Monterra Dining Arm Chair,44,Dining,Dining Chair,16
+2040,404-SR,Monterra Dining Swivel Rocker Arm Chair,44,Dining,Dining Chair,17
+2041,404-SCS,Monterra Swivel Counter Stool With Arms,44,Dining,Bar & Counter Stools,18
+2042,404-SBS,Monterra Swivel Bar Stool With Arms,44,Dining,Bar & Counter Stools,19
+2054,951-SCS,Classico Armless Swivel Counter Stool,44,Dining,Bar & Counter Stools,31
+2055,951-S,Classico Dining Side Chair,44,Dining,Dining Chair,32
+2056,953-AW,Classico Dining Arm Chair,44,Dining,Dining Chair,33
+2057,953-SRW,Classico Swivel Rocker Dining Arm Chair,44,Dining,Dining Chair,34
+2058,942-SRW,Classico Club Dining Swivel Rocker Arm Chair,44,Dining,Dining Chair,35
+2059,953-SCSW,Classico Swivel Counter Stool With Arms,44,Dining,Bar & Counter Stools,36
+2060,951-SBS,Classico Armless Swivel Bar Stool,44,Dining,Bar & Counter Stools,37
+2061,953-SBSW,Classico Swivel Bar Stool With Arms,44,Dining,Bar & Counter Stools,38
+2075,2731-S,Aris Dining Side Chair,44,Dining,Dining Chair,52
+2076,2733-A,Aris Dining Arm Chair,44,Dining,Dining Chair,53
+2077,2733-SR,Aris Swivel Rocker Dining Arm Chair,44,Dining,Dining Chair,54
+2078,2731-MCS,Aris Backless Counter Stool,44,Dining,Bar & Counter Stools,55
+2079,2731-CS,Aris Armless Counter Stool,44,Dining,Bar & Counter Stools,56
+2080,2731-MBS,Aris Backless Bar Stool,44,Dining,Bar & Counter Stools,57
+2081,2731-BS,Aris Armless Bar Stool,44,Dining,Bar & Counter Stools,58
+2092,3433-S,Arc Dining Side Chair,44,Dining,Dining Chair,69
+2093,3433-A,Arc Dining Arm Chair,44,Dining,Dining Chair,70
+2094,3433-SR,Arc Swivel Rocker Dining Arm Chair,44,Dining,Dining Chair,71
+2095,3433-CS,Arc Counter Stool,44,Dining,Bar & Counter Stools,72
+2096,3433-BS,Arc Bar Stool,44,Dining,Bar & Counter Stools,73
+5170,651-S,San Cristobal Side Chair,44,Dining,Dining Chair,216
+5171,653-A,San Cristobal Dining Arm Chair,44,Dining,Dining Chair,217
+5172,653-SR,San Cristobal Swivel Rocker Dining Chair,44,Dining,Dining Chair,218
+5173,651-SCS,San Cristobal Armless Swivel Counter Stool,44,Dining,Bar & Counter Stools,219
+5174,653-SCS,San Cristobal Swivel Counter Stool,44,Dining,Bar & Counter Stools,220
+5175,651-SBS,San Cristobal Armless Swivel Bar Stool,44,Dining,Bar & Counter Stools,221
+5176,653-SBS,San Cristobal Swivel Bar Stool,44,Dining,Bar & Counter Stools,222
+5178,65192P-A,Avana Padded Sling Dining Arm Chair,44,Dining,Dining Chair,224
+5179,65192-A,Avana Sling Dining Arm Chair,44,Dining,Dining Chair,225
+5180,65192P-SR,Avana Padded Sling Swivel Rocker Dining Arm Chair,44,Dining,Dining Chair,226
+5181,65192-SR,Avana Sling Swivel Rocker Dining Arm Chair,44,Dining,Dining Chair,227
+5201,3733-S,Marin Dining Side Chair,44,Dining,Dining Chair,247
+5202,3733-A,Marin Dining Arm Chair,44,Dining,Dining Chair,248
+5203,37192-A,Marin Sling Dining Arm Chair,44,Dining,Dining Chair,249
+5204,37192P-A,Marin Padded Sling Dining Arm Chair,44,Dining,Dining Chair,250
+5205,3733-SR,Marin Swivel Rocker Dining Chair,44,Dining,Dining Chair,251
+5206,37192-SR,Marin Sling Swivel Rocker Dining Arm Chair,44,Dining,Dining Chair,252
+5207,37192P-SR,Marin Padded Sling Swivel Rocker Dining Arm Chair,44,Dining,Dining Chair,253
+5208,3733-CS,Marin Armless Counter Stool,44,Dining,Bar & Counter Stools,254
+5209,3733-BS,Marin Armless Bar Stool,44,Dining,Bar & Counter Stools,255
+5221,77192-A,Studio Sling Dining Arm Chair,44,Dining,Dining Chair,267
+5222,77192P-A,Studio Padded Sling Dining Arm Chair,44,Dining,Dining Chair,268
+5223,77192-SR,Studio Sling Swivel Rocker Dining Arm Chair,44,Dining,Dining Chair,269
+5224,77192P-SR,Studio Padded Sling Swivel Rocker Arm Chair,44,Dining,Dining Chair,270
+5225,77192-CS,Studio Sling Counter Stool,44,Dining,Bar & Counter Stools,271
+5226,77192P-CS,Studio Padded Sling Counter Stool,44,Dining,Bar & Counter Stools,272
+5227,77192-BS,Studio Sling Bar Stool,44,Dining,Bar & Counter Stools,273
+5228,77192P-BS,Studio Padded Sling Bar Stool,44,Dining,Bar & Counter Stools,274
+4891,5125-42SQC,"Haven 42"" Square Chat Height Fire Pit",45,Fire Tables,,44
+4892,5125-42SQO,"Haven 42"" Square Occasional Height Fire Pit",45,Fire Tables,,45
+4893,5163-42RDC,"Nova 42"" Round Chat Height Fire Pit",45,Fire Tables,,48
+2097,5110-2872O,Santorini Occasional Height Fire Pit,45,Fire Tables,,74
+2098,5110-2872C,Santorini Chat Height Fire Pit,45,Fire Tables,,75
+2099,5110-3050O,Santorini Occasional Height Fire Pit,45,Fire Tables,,76
+2100,5110-3050C,Santorini Chat Height Fire Pit,45,Fire Tables,,77
+2101,5110-30RDC,"Santorini 30"" Rd. Chat Height Fire Pit",45,Fire Tables,,78
+2102,5110-36RDC,"Santorini 36"" Rd. Chat Height Fire Pit",45,Fire Tables,,79
+2103,5110-42RDO,"Santorini 42"" Rd. Occasional Height Fire Pit",45,Fire Tables,,80
+2104,5110-42RDC,"Santorini 42"" Rd. Chat Height Fire Pit",45,Fire Tables,,81
+2105,5110-54RDO,"Santorini 54"" Rd. Occasional Height Fire Pit",45,Fire Tables,,82
+2106,5110-54RDC,"Santorini 54"" Rd. Chat Height Fire Pit",45,Fire Tables,,83
+2107,5110-3658O,Santorini Occasional Height Fire Pit,45,Fire Tables,,84
+2108,5110-3658C,Santorini Chat Height Fire Pit,45,Fire Tables,,85
+2109,5112-3050C,Capri Chat Height Fire Pit,45,Fire Tables,,86
+2110,5112-42RDC,"Capri 42"" Rd. Chat Height Fire Pit",45,Fire Tables,,87
+2111,5112-30RDC,"Capri 30"" Rd. Chat Height Fire Pit",45,Fire Tables,,88
+2112,5112-36RDC,"Capri 36"" Rd. Chat Height Fire Pit",45,Fire Tables,,89
+2113,5112-42RDO,"Capri 42"" Rd. Occasional Height Fire Pit",45,Fire Tables,,90
+2114,5112-54RDO,"Capri 54"" Rd. Occasional Height Fire Pit",45,Fire Tables,,91
+2115,5112-54RDC,"Capri 54"" Rd. Chat Height Fire Pit",45,Fire Tables,,92
+2116,5112-3050O,Capri Occasional Height Fire Pit,45,Fire Tables,,93
+2117,5112-2872O,Capri Occasional Height Fire Pit,45,Fire Tables,,94
+2118,5112-2872C,Capri Chat Height Fire Pit,45,Fire Tables,,95
+2119,5112-3658O,Capri Occasional Height Fire Pit,45,Fire Tables,,96
+2120,5112-3658C,Capri Chat Height Fire Pit,45,Fire Tables,,97
+2126,5122-30RDC,"Elba 30"" Rd. Chat Height Fire Pit",45,Fire Tables,,103
+2127,5122-36RDC,"Elba 36"" Rd. Chat Height Fire Pit",45,Fire Tables,,104
+2128,5122-42RDO,"Elba 42"" Rd. Occasional Height Fire Pit",45,Fire Tables,,105
+2129,5122-42RDC,"Elba 42"" Rd. Chat Height Fire Pit",45,Fire Tables,,106
+2130,5122-54RDC,"Elba 54"" Rd. Chat Height Fire Pit",45,Fire Tables,,107
+2131,5122-54RDO,"Elba 54"" Rd. Occasional Height Fire Pit",45,Fire Tables,,108
+2132,5122-54RDD,"Elba 54"" Rd. Dining Height Fire Pit",45,Fire Tables,,109
+2133,5122-54RDK,"Elba 54"" Rd. Counter Height Fire Pit",45,Fire Tables,,110
+2134,5122-2872O,Elba Occasional Height Fire Pit,45,Fire Tables,,111
+2135,5122-2872C,Elba Chat Height Fire Pit,45,Fire Tables,,112
+2136,5122-3050O,Elba Occasional Height Fire Pit,45,Fire Tables,,113
+2137,5122-3050C,Elba Chat Height Fire Pit,45,Fire Tables,,114
+2138,5122-3658O,Elba Occasional Height Fire Pit,45,Fire Tables,,115
+2139,5122-3658C,Elba Chat Height Fire Pit,45,Fire Tables,,116
+2140,5122-4272K,Elba Counter Height Fire Pit,45,Fire Tables,,117
+2142,5153-2545O,Moda Occasional Height Fire Pit,45,Fire Tables,,122
+2143,5153-2565O,Moda Occasional Height Fire Pit,45,Fire Tables,,123
+2144,5152-2545O,Forma Occasional Height Fire Pit,45,Fire Tables,,124
+2145,5152-2565O,Forma Occasional Height Fire Pit,45,Fire Tables,,125
+2147,5123-42RDC,"Volante 42"" Rd. Chat Height Fire Pit",45,Fire Tables,,127
+5230,5150-36RDC,"Basso 36"" Rd. Chat Height Basso Fire Pit",45,Fire Tables,,276
+5010,RP-001-910,Desert Sunset - Orange,50,Outdoor Rugs,,1
+5011,RP-505-360,Illusion - Black Mirage,50,Outdoor Rugs,,2
+5012,RP-008-350,Trellis - Stone Gray,50,Outdoor Rugs,,3
+5013,RG-334-369,Reflections - Ocean Blue,50,Outdoor Rugs,,4
+5014,RG-097-365,North Shore - Sky Blue,50,Outdoor Rugs,,5
+5015,RG-253-099,Seaside Harbor - Blue,50,Outdoor Rugs,,6
+5016,RG-533-050,South Beach - Spectrum,50,Outdoor Rugs,,7
+5017,RG-252-560,Prism - Taupe,50,Outdoor Rugs,,8
+5018,RG-203-651,Canyon - Taupe,50,Outdoor Rugs,,9
+5019,RG-204-651,Sand Dune - Textured Beige,50,Outdoor Rugs,,10
+5020,RG-097-965,North Shore - Pebble,50,Outdoor Rugs,,11
+5021,RS-511-061,Serenity Stripe - Linen (NEW),50,Outdoor Rugs,,12
+5022,RS-607-637,Athens - Silver,50,Outdoor Rugs,,13
+5023,RS-721-690,Urban Hex - Black (NEW),50,Outdoor Rugs,,14
+5024,PFC530,Bistro Table & Chairs Cover 30″,51,Protective Covers,,1000
+5025,PFC536,Round/Square Bistro Table & Chairs Cover 36″,51,Protective Covers,,1001
+5026,PFC551,Round/Square Table & Chairs Cover 48″,51,Protective Covers,,1002
+5027,PFC571,Round/Square Table & Chairs Cover 54″,51,Protective Covers,,1003
+5028,PFC590,Round/Square Table & Chairs Cover 60″,51,Protective Covers,,1004
+5029,PFC592,Small Oval/Rectangle Table & Chairs,51,Protective Covers,,1005
+5030,PFC594,Medium Oval/Rectangle Table & Chairs,51,Protective Covers,,1006
+5031,PFC596,Large Oval/Rectangle Table & Chairs,51,Protective Covers,,1007
+5032,PFC598,X-Large Oval/Rectangle Table & Chairs,51,Protective Covers,,1008
+5033,PFC401,Modular Right End (Left Facing),51,Protective Covers,,1009
+5034,PFC402,Modular Armless (Middle),51,Protective Covers,,1010
+5035,PFC403,Modular Left End (Right Facing),51,Protective Covers,,1011
+5036,PFC404,Modular Corner,51,Protective Covers,,1012
+5037,PFC405,Modular Extension,51,Protective Covers,,1013
+5038,PFC406-R,Modular Wedge Right End (Left Facing),51,Protective Covers,,1014
+5039,PFC406-C,Modular Wedge Center,51,Protective Covers,,1015
+5040,PFC406-L,Modular Wedge Left End (Right Facing),51,Protective Covers,,1016
+5041,PFC115,Dining Chair,51,Protective Covers,,1017
+5042,PFC116,Counter Height Chair,51,Protective Covers,,1018
+5043,PFC117,Bar Height Chair,51,Protective Covers,,1019
+5044,PFC119S,Small Chaise,51,Protective Covers,,1020
+5045,PFC119L,Large Chaise,51,Protective Covers,,1021
+5046,PFC901,Umbrella (6' to 8.5'),51,Protective Covers,,1022
+5047,PFC902,Large Umbrella (9' to 11'),51,Protective Covers,,1023
+5048,PFC910,X-Large Umbrella (Rectangle up to 10'x13'),51,Protective Covers,,1024
+5049,PFC912,Cantilever (8' to 10'),51,Protective Covers,,1025
+5050,PFC955,Large Cantilever (10' to 11.5'),51,Protective Covers,,1026
+5051,PFC920,X-Large Cantilever (AKZP styles),51,Protective Covers,,1027
+5052,PFC805,Fire Pit/Table/Ottoman - Round 36″-42″,51,Protective Covers,,1028
+5053,PFC810,Fire Pit/Table/Ottoman - Round 48″-54″,51,Protective Covers,,1029
+5054,PFC815,Fire Pit/Table/Ottoman - Square 19″-26″,51,Protective Covers,,1030
+5055,PFC820,Fire Pit/Table/Ottoman - Square 42″-48″,51,Protective Covers,,1031
+5056,PFC825,Fire Pit/Table/Ottoman - Small Rectangle,51,Protective Covers,,1032
+5057,PFC830,Fire Pit/Table/Ottoman - Medium Rectangle,51,Protective Covers,,1033
+5058,PFC835,Fire Pit/Table/Ottoman - Large Rectangle,51,Protective Covers,,1034
+5059,PFC840,Fire Pit/Table/Ottoman - X-Large Rectangle,51,Protective Covers,,1035
+5060,PFC711,Lounge Chair,51,Protective Covers,,1036
+5061,PFC712,Large Lounge Chair,51,Protective Covers,,1037
+5062,PFC741,X-Large Lounge Chair,51,Protective Covers,,1038
+5063,PFC720,Loveseat,51,Protective Covers,,1039
+5064,PFC722,Large Loveseat,51,Protective Covers,,1040
+5065,PFC742,X-Large Loveseat,51,Protective Covers,,1041
+5066,PFC723,Sofa,51,Protective Covers,,1042
+5067,PFC733,Large Sofa,51,Protective Covers,,1043
+5068,PFC743,X-Large Sofa,51,Protective Covers,,1044
+5069,PFC753,Curved Sofa,51,Protective Covers,,1045
+2062,9-ST01,Classico 01 Side Table Base,52,Tables,Table Bases,39
+2063,9-OT05,Classico 05 Occasional Table Base,52,Tables,Table Bases,40
+2064,9-DT07,Classico Dining 07 Table Base,52,Tables,Table Bases,41
+2065,9-DT03,Classico 03 Dining Table Base,52,Tables,Table Bases,42
+4895,51-LT20MMRD,Round Micro Mesh Iron Side Table,52,Tables,Coffee & Side Tables,51
+4896,51-LT20RD,Round Porcelain Tile Iron Side Table,52,Tables,Coffee & Side Tables,52
+4897,MA-2020ST,Square Slat Top Side Table,52,Tables,Coffee & Side Tables,53
+4899,QD-2157DT,Quadra Dining Table,52,Tables,Dining Tables,55
+4900,QD-2323ST,Square Quadra Side Table,52,Tables,Coffee & Side Tables,56
+4910,QD-3153OT,Quadra Occasional Table,52,Tables,Coffee & Side Tables,66
+4912,QD-3375DT,Quadra Dining Table,52,Tables,Dining Tables,68
+4913,QD-3375CT,Quadra Counter Table,52,Tables,Dining Tables,69
+4929,91-WT1650RT,Kensington Console Table,52,Tables,Coffee & Side Tables,90
+4931,91-ST18SQ,Kensington Square Side Table,52,Tables,Coffee & Side Tables,92
+4932,37-ST20RD,Marin Side Table,52,Tables,Coffee & Side Tables,97
+4933,MA-BT03,Modern Aluminum 03 Bar Table Base,52,Tables,Table Bases,99
+4934,MA-CT03,Modern Aluminum 03 Counter Table Base,52,Tables,Table Bases,100
+4935,MA-DT03,Modern Aluminum 03 Dining Table Base,52,Tables,Table Bases,101
+4936,MA-OT03,Modern Aluminum 03 Occasional Table Base,52,Tables,Table Bases,102
+4937,MA-DT07,Modern Aluminum 07 Dining Table Base,52,Tables,Table Bases,106
+4938,6-ST01,San Cristobal 01 Side Table Base,52,Tables,Table Bases,109
+4939,6-DT03,San Cristobal 03 Dining Table Base,52,Tables,Table Bases,110
+4940,6-OT03,San Cristobal 03 Occasional Table Base,52,Tables,Table Bases,111
+4941,6-OT05,San Cristobal 05 Occasional Table Base,52,Tables,Table Bases,112
+4942,6-DT07,San Cristobal 07 Dining Table Base,52,Tables,Table Bases,113
+2150,QD-4587DT,Quadra Dining Table,52,Tables,Dining Tables,158
+2151,37-ST01,Table Bases Marin 01 Side Table Base,52,Tables,Table Bases,170
+2152,37-OT05,Table Bases Marin 05 Occasional Table Base,52,Tables,Table Bases,171
+2153,37-DT03,Table Bases Marin 03 Dining Table Base,52,Tables,Table Bases,172
+2154,37-DT07,Table Bases Marin 07 Dining Table Base,52,Tables,Table Bases,173
+2155,ST01-BASE,Table Bases Standard Iron 01 Side Table Base,52,Tables,Table Bases,174
+2156,OT05-BASE,Table Bases Standard Iron 05 Occasional Table Base,52,Tables,Table Bases,175
+2157,OT03-BASE,Table Bases Standard Iron 03 Occasional Table Base,52,Tables,Table Bases,176
+2158,DT01-BASE,Table Bases Standard Iron 01 Dining Table Base,52,Tables,Table Bases,177
+2159,DT03-BASE,Table Bases Standard Iron 03 Dining Table Base,52,Tables,Table Bases,178
+2160,DT05-BASE,Table Bases Standard Iron 05 Dining Table Base,52,Tables,Table Bases,179
+2161,DT07-BASE,Table Bases Standard Iron 07 Dining Table Base,52,Tables,Table Bases,180
+2162,CT01-BASE,Table Bases Standard Iron 01 Counter Table Base,52,Tables,Table Bases,181
+2163,CT03-BASE,Table Bases Standard Iron 03 Counter Table Base,52,Tables,Table Bases,182
+2164,BT01-BASE,Table Bases Standard Iron 01 Bar Table Base,52,Tables,Table Bases,183
+2165,BT03-BASE,Table Bases Standard Iron 03 Bar Table Base,52,Tables,Table Bases,184
+2166,AT-DT03,Table Bases Standard Aluminum 03 Dining Table Base,52,Tables,Table Bases,185
+2167,AT-DT01,Table Bases Standard Aluminum 01 Dining Table Base,52,Tables,Table Bases,186
+2168,AT-DT07,Table Bases Standard Aluminum 07 Dining Table Base,52,Tables,Table Bases,187
+2169,AT-DT10,Table Bases Standard Aluminum 10 Dining Table Base,52,Tables,Table Bases,188
+2170,AT-CT01,Table Bases Standard Aluminum 01 Counter Table Base,52,Tables,Table Bases,189
+2171,AT-CT03,Table Bases Standard Aluminum 03 Counter Table Base,52,Tables,Table Bases,190
+2172,MA-BT05,Table Bases Modern Aluminum 05 Bar Table Base,52,Tables,Table Bases,191
+2173,MA-CT05,Table Bases Modern Aluminum 05 Counter Table Base,52,Tables,Table Bases,192
+2174,MA-DT10,Table Bases Modern Aluminum 10 Dining Table Base,52,Tables,Table Bases,193
+2176,MA-ST01,Table Bases Modern Aluminum 01 Side Table Base,52,Tables,Table Bases,195
+2177,MA-OT05,Table Bases Modern Aluminum 05 Occasional Table Base,52,Tables,Table Bases,196
+5193,62-STM20SQ,Horizon Square Side Table,52,Tables,Coffee & Side Tables,239
+5194,62-OTM2846,Horizon Occasional Table,52,Tables,Coffee & Side Tables,240
+5245,PA-DT07,Table Bases Parsons 07 Table Base,52,Tables,Table Bases,291

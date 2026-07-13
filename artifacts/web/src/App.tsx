@@ -143,17 +143,22 @@ function CustomerWithClerk() {
 }
 
 function Router() {
-  const [loc] = useLocation();
-  // Mounted here (above both CustomerRouter and StaffRouter) so every
-  // client-side navigation — customer or staff — resets scroll to the top.
+  // useLocation() provides re-render reactivity on every client-side nav.
+  // For the staff/customer shell decision we read window.location.pathname
+  // directly — wouter's base-relative processing can return unexpected values
+  // (e.g. "~/staff") in certain proxy/domain environments, which would cause
+  // the customer shell to mount for staff URLs.
+  useLocation();
+  const pathname =
+    typeof window !== "undefined" ? window.location.pathname : "/";
 
   const isStaff =
-    loc === "/staff" ||
-    loc.startsWith("/staff/") ||
-    loc === "/admin" ||
-    loc.startsWith("/admin/") ||
-    loc === "/agent" ||
-    loc.startsWith("/agent/");
+    pathname === "/staff" ||
+    pathname.startsWith("/staff/") ||
+    pathname === "/admin" ||
+    pathname.startsWith("/admin/") ||
+    pathname === "/agent" ||
+    pathname.startsWith("/agent/");
 
   // Staff portal keeps its own email/password + 2FA flow and is intentionally
   // NOT wrapped in ClerkProvider. Customer routes mount Clerk + the
