@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { and, asc, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
 import {
   db,
   productsTable,
@@ -162,6 +162,7 @@ function toAdminPayload(r: ProductRow, materials: MaterialPayload[]) {
     quoteOnly: r.quoteOnly,
     featured: r.featured,
     displayOrder: r.displayOrder,
+    rankGroup: r.rankGroup,
     lowStockThreshold: r.lowStockThreshold,
     isActive: r.isActive,
     finishMinQtyNote: r.finishMinQtyNote,
@@ -335,6 +336,7 @@ router.get(
       categoryId,
       isActive,
       featured,
+      rankGroup,
       page = 1,
       pageSize = 50,
       sortBy,
@@ -371,6 +373,13 @@ router.get(
     if (featured != null) {
       conditions.push(eq(productsTable.featured, featured));
     }
+    if (rankGroup != null) {
+      if (rankGroup === "none") {
+        conditions.push(isNull(productsTable.rankGroup));
+      } else {
+        conditions.push(eq(productsTable.rankGroup, Number(rankGroup)));
+      }
+    }
     const whereClause = conditions.length ? and(...conditions) : undefined;
 
     const offset = (page - 1) * pageSize;
@@ -389,6 +398,8 @@ router.get(
           return productsTable.price;
         case "onHand":
           return ON_HAND_SQL;
+        case "rankGroup":
+          return productsTable.rankGroup;
         default:
           return null;
       }
@@ -529,6 +540,7 @@ router.post(
             featured: parsed.data.featured ?? false,
             featuredAt: parsed.data.featured ? new Date() : null,
             displayOrder: parsed.data.displayOrder ?? 0,
+            rankGroup: parsed.data.rankGroup ?? null,
             lowStockThreshold: parsed.data.lowStockThreshold ?? 0,
             isActive: parsed.data.isActive ?? true,
           })
@@ -656,6 +668,9 @@ router.put(
               : {}),
             ...(body.data.displayOrder !== undefined
               ? { displayOrder: body.data.displayOrder }
+              : {}),
+            ...(body.data.rankGroup !== undefined
+              ? { rankGroup: body.data.rankGroup ?? null }
               : {}),
             ...(body.data.lowStockThreshold !== undefined
               ? { lowStockThreshold: body.data.lowStockThreshold }

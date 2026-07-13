@@ -3477,6 +3477,7 @@ export const AdminListProductsQueryParams = zod.object({
   categoryId: zod.coerce.number().optional(),
   isActive: zod.coerce.boolean().optional(),
   featured: zod.coerce.boolean().optional(),
+  rankGroup: zod.coerce.string().optional(),
   page: zod.coerce.number().min(1).default(adminListProductsQueryPageDefault),
   pageSize: zod.coerce
     .number()
@@ -3484,7 +3485,7 @@ export const AdminListProductsQueryParams = zod.object({
     .max(adminListProductsQueryPageSizeMax)
     .default(adminListProductsQueryPageSizeDefault),
   sortBy: zod
-    .enum(["name", "sku", "manufacturer", "category", "price", "onHand"])
+    .enum(["name", "sku", "manufacturer", "category", "price", "onHand", "rankGroup"])
     .optional(),
   sortOrder: zod
     .enum(["asc", "desc"])
@@ -3580,6 +3581,7 @@ export const AdminListProductsResponse = zod.object({
       quoteOnly: zod.boolean(),
       featured: zod.boolean(),
       displayOrder: zod.number(),
+      rankGroup: zod.number().nullable(),
       lowStockThreshold: zod.number(),
       isActive: zod.boolean(),
       finishMinQtyNote: zod
@@ -3677,6 +3679,7 @@ export const AdminCreateProductBody = zod.object({
   quoteOnly: zod.boolean().default(adminCreateProductBodyQuoteOnlyDefault),
   featured: zod.boolean().default(adminCreateProductBodyFeaturedDefault),
   displayOrder: zod.number().default(adminCreateProductBodyDisplayOrderDefault),
+  rankGroup: zod.number().nullish(),
   lowStockThreshold: zod
     .number()
     .default(adminCreateProductBodyLowStockThresholdDefault),
@@ -3778,6 +3781,7 @@ export const AdminGetProductResponse = zod
     quoteOnly: zod.boolean(),
     featured: zod.boolean(),
     displayOrder: zod.number(),
+    rankGroup: zod.number().nullable(),
     lowStockThreshold: zod.number(),
     isActive: zod.boolean(),
     finishMinQtyNote: zod
@@ -3876,6 +3880,7 @@ export const AdminUpdateProductBody = zod.object({
   quoteOnly: zod.boolean().optional(),
   featured: zod.boolean().optional(),
   displayOrder: zod.number().optional(),
+  rankGroup: zod.number().nullish(),
   lowStockThreshold: zod.number().optional(),
   isActive: zod.boolean().optional(),
   finishMinQtyNote: zod
@@ -3973,6 +3978,7 @@ export const AdminUpdateProductResponse = zod.object({
   quoteOnly: zod.boolean(),
   featured: zod.boolean(),
   displayOrder: zod.number(),
+  rankGroup: zod.number().nullable(),
   lowStockThreshold: zod.number(),
   isActive: zod.boolean(),
   finishMinQtyNote: zod
@@ -4086,6 +4092,7 @@ export const AdminSetProductActiveResponse = zod.object({
   quoteOnly: zod.boolean(),
   featured: zod.boolean(),
   displayOrder: zod.number(),
+  rankGroup: zod.number().nullable(),
   lowStockThreshold: zod.number(),
   isActive: zod.boolean(),
   finishMinQtyNote: zod
@@ -5364,6 +5371,7 @@ export const AdminBulkUpdateProductsBody = zod.object({
       showPriceOnline: zod.boolean().optional(),
       categoryId: zod.number().nullish(),
       manufacturerId: zod.number().nullish(),
+      rankGroup: zod.number().nullish(),
     })
     .optional()
     .describe(

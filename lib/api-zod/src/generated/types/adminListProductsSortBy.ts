@@ -16,4 +16,5 @@ export const AdminListProductsSortBy = {
   category: "category",
   price: "price",
   onHand: "onHand",
+  rankGroup: "rankGroup",
 } as const;

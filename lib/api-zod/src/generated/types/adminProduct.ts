@@ -94,6 +94,11 @@ export interface AdminProduct {
   quoteOnly: boolean;
   featured: boolean;
   displayOrder: number;
+  /**
+   * Coarse sort tier (1 = highest priority, 2, 3, null = last).
+   * @nullable
+   */
+  rankGroup: number | null;
   lowStockThreshold: number;
   isActive: boolean;
   /**

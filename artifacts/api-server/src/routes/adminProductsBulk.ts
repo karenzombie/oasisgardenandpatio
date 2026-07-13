@@ -192,6 +192,7 @@ router.post(
       if (fields.showPriceOnline !== undefined) scalarSet.showPriceOnline = fields.showPriceOnline;
       if (fields.categoryId !== undefined) scalarSet.categoryId = fields.categoryId ?? null;
       if (fields.manufacturerId !== undefined) scalarSet.manufacturerId = fields.manufacturerId ?? null;
+      if (fields.rankGroup !== undefined) scalarSet.rankGroup = fields.rankGroup ?? null;
     }
     const scalarHasUpdates = Object.keys(scalarSet).length > 0;
 

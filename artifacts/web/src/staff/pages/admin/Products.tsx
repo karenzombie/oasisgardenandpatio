@@ -5,7 +5,7 @@ import { Pencil, Plus, Search, Power, PowerOff, ChevronLeft, ChevronRight, Star,
 import { SortableHeader, toggleSort, type SortState } from "../../lib/sortable";
 import { BulkUpdateProductsDialog } from "../../components/BulkUpdateProductsDialog";
 
-type ProductsSortKey = "name" | "manufacturer" | "category" | "price" | "onHand";
+type ProductsSortKey = "name" | "manufacturer" | "category" | "price" | "onHand" | "rankGroup";
 import {
   useAdminListProducts,
   useAdminSetProductActive,
@@ -52,6 +52,7 @@ export default function Products() {
   const [categoryId, setCategoryId] = useState<string>("any");
   const [statusFilter, setStatusFilter] = useState<string>("active");
   const [featuredFilter, setFeaturedFilter] = useState<string>("any");
+  const [rankGroupFilter, setRankGroupFilter] = useState<string>("any");
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState<SortState<ProductsSortKey>>({ by: null, order: "desc" });
   const [confirmDeactivate, setConfirmDeactivate] = useState<AdminProduct | null>(null);
@@ -86,7 +87,7 @@ export default function Products() {
 
   useEffect(() => {
     setPage(1);
-  }, [manufacturerId, categoryId, statusFilter, featuredFilter]);
+  }, [manufacturerId, categoryId, statusFilter, featuredFilter, rankGroupFilter]);
 
   const queryParams = useMemo(() => {
     const p: Record<string, unknown> = { page, pageSize: PAGE_SIZE };
@@ -97,12 +98,16 @@ export default function Products() {
     if (statusFilter === "inactive") p.isActive = false;
     if (featuredFilter === "yes") p.featured = true;
     if (featuredFilter === "no") p.featured = false;
+    if (rankGroupFilter === "1") p.rankGroup = "1";
+    else if (rankGroupFilter === "2") p.rankGroup = "2";
+    else if (rankGroupFilter === "3") p.rankGroup = "3";
+    else if (rankGroupFilter === "none") p.rankGroup = "none";
     if (sort.by) {
       p.sortBy = sort.by;
       p.sortOrder = sort.order;
     }
     return p;
-  }, [page, search, manufacturerId, categoryId, statusFilter, featuredFilter, sort]);
+  }, [page, search, manufacturerId, categoryId, statusFilter, featuredFilter, rankGroupFilter, sort]);
 
   const list = useAdminListProducts(queryParams, {
     query: {
@@ -224,6 +229,20 @@ export default function Products() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="md:col-span-2">
+              <Select value={rankGroupFilter} onValueChange={setRankGroupFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All rank groups" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">All rank groups</SelectItem>
+                  <SelectItem value="1">Group 1</SelectItem>
+                  <SelectItem value="2">Group 2</SelectItem>
+                  <SelectItem value="3">Group 3</SelectItem>
+                  <SelectItem value="none">Ungrouped</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {list.isLoading ? (
@@ -290,6 +309,7 @@ export default function Products() {
                     <SortableHeader sortKey="price" state={sort} onSort={handleSort} align="right" className="px-4 py-2.5 font-medium w-24">Price</SortableHeader>
                     <th className="px-4 py-2.5 font-medium w-24 text-right">Sale</th>
                     <SortableHeader sortKey="onHand" state={sort} onSort={handleSort} align="right" className="px-4 py-2.5 font-medium w-20">On hand</SortableHeader>
+                    <SortableHeader sortKey="rankGroup" state={sort} onSort={handleSort} align="right" className="px-4 py-2.5 font-medium w-16">Rank</SortableHeader>
                     <th className="px-4 py-2.5 font-medium w-32">Flags</th>
                     <th className="px-4 py-2.5 font-medium w-28 text-right">Actions</th>
                   </tr>
@@ -356,9 +376,15 @@ export default function Products() {
                         <td className={`px-4 py-2.5 text-right tabular-nums ${lowStock ? "text-amber-700 font-medium" : "text-slate-700"}`}>
                           {row.onHand}
                         </td>
+                        <td className="px-4 py-2.5 text-right tabular-nums text-slate-500 text-xs font-medium">
+                          {row.rankGroup ?? <span className="text-slate-300">—</span>}
+                        </td>
                         <td className="px-4 py-2.5">
                           <div className="flex flex-wrap gap-1">
                             {!row.isActive && <Badge variant="secondary">Inactive</Badge>}
+                            {!row.catalogVisible && (
+                              <Badge variant="outline" className="text-xs text-slate-500">Hidden</Badge>
+                            )}
                             {row.featured && (
                               <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">
                                 <Star className="size-3" />

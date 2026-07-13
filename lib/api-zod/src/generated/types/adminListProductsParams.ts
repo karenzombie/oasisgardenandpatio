@@ -14,6 +14,7 @@ export type AdminListProductsParams = {
   categoryId?: number;
   isActive?: boolean;
   featured?: boolean;
+  rankGroup?: string;
   /**
    * @minimum 1
    */

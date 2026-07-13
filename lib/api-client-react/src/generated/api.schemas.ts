@@ -1327,6 +1327,11 @@ export interface AdminProduct {
   quoteOnly: boolean;
   featured: boolean;
   displayOrder: number;
+  /**
+   * Coarse sort tier (1 = highest priority, 2, 3, null = last).
+   * @nullable
+   */
+  rankGroup: number | null;
   lowStockThreshold: number;
   isActive: boolean;
   /**
@@ -1462,6 +1467,8 @@ export interface CreateProductRequest {
   quoteOnly?: boolean;
   featured?: boolean;
   displayOrder?: number;
+  /** @nullable */
+  rankGroup?: number | null;
   lowStockThreshold?: number;
   isActive?: boolean;
 }
@@ -1545,6 +1552,8 @@ export interface UpdateProductRequest {
   quoteOnly?: boolean;
   featured?: boolean;
   displayOrder?: number;
+  /** @nullable */
+  rankGroup?: number | null;
   lowStockThreshold?: number;
   isActive?: boolean;
   /**
@@ -4977,6 +4986,8 @@ export interface AdminBulkUpdateProductsFields {
   categoryId?: number | null;
   /** @nullable */
   manufacturerId?: number | null;
+  /** @nullable */
+  rankGroup?: number | null;
 }
 
 export type AdminBulkPriceAdjustmentFieldsItem =

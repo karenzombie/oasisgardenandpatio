@@ -80,6 +80,7 @@ export function BulkUpdateProductsDialog({
   const [availableOnline, setAvailableOnline] = useState<TriBool>("none");
   const [categoryId, setCategoryId] = useState<FkChoice>("none");
   const [manufacturerId, setManufacturerId] = useState<FkChoice>("none");
+  const [rankGroup, setRankGroup] = useState<FkChoice>("none");
 
   // Fabrics
   const [poolMode, setPoolMode] = useState<FabricMode>("none");
@@ -102,6 +103,7 @@ export function BulkUpdateProductsDialog({
     setAvailableOnline("none");
     setCategoryId("none");
     setManufacturerId("none");
+    setRankGroup("none");
     setPoolMode("none");
     setPoolMfgIds(new Set());
     setPickMode("none");
@@ -161,6 +163,8 @@ export function BulkUpdateProductsDialog({
     if (manufacturerId !== "none")
       fields.manufacturerId =
         manufacturerId === "clear" ? null : Number(manufacturerId);
+    if (rankGroup !== "none")
+      fields.rankGroup = rankGroup === "clear" ? null : Number(rankGroup);
 
     const payload: AdminBulkUpdateProductsRequest = { productIds };
     if (Object.keys(fields).length > 0) payload.fields = fields;
@@ -359,6 +363,18 @@ export function BulkUpdateProductsDialog({
                     value: String(m.id),
                     label: m.name,
                   })),
+                ]}
+              />
+              <FieldSelect
+                label="Rank group"
+                value={rankGroup}
+                onChange={setRankGroup}
+                options={[
+                  { value: "none", label: "No change" },
+                  { value: "clear", label: "(Remove from group)" },
+                  { value: "1", label: "Group 1 (highest priority)" },
+                  { value: "2", label: "Group 2" },
+                  { value: "3", label: "Group 3" },
                 ]}
               />
             </div>

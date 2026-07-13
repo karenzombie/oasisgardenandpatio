@@ -180,6 +180,7 @@ interface FormState {
   catalogVisible: boolean;
   inStoreOnly: boolean;
   featured: boolean;
+  rankGroup: string;
   quoteOnly: boolean;
   displayOrder: string;
   lowStockThreshold: string;
@@ -226,6 +227,7 @@ function emptyForm(): FormState {
     catalogVisible: true,
     inStoreOnly: false,
     featured: false,
+    rankGroup: "none",
     quoteOnly: true,
     displayOrder: "0",
     lowStockThreshold: "0",
@@ -564,6 +566,7 @@ export default function ProductEdit() {
         catalogVisible: d.catalogVisible,
         inStoreOnly: d.inStoreOnly,
         featured: d.featured,
+        rankGroup: d.rankGroup == null ? "none" : String(d.rankGroup),
         quoteOnly: d.quoteOnly,
         displayOrder: String(d.displayOrder),
         lowStockThreshold: String(d.lowStockThreshold),
@@ -755,6 +758,7 @@ export default function ProductEdit() {
       catalogVisible: form.catalogVisible,
       inStoreOnly: form.inStoreOnly,
       featured: form.featured,
+      rankGroup: form.rankGroup === "none" ? null : Number(form.rankGroup),
       quoteOnly: form.quoteOnly,
       displayOrder,
       lowStockThreshold,
@@ -1865,6 +1869,28 @@ export default function ProductEdit() {
               checked={form.featured}
               onChange={(v) => setForm((f) => ({ ...f, featured: v }))}
             />
+
+            {/* Rank group */}
+            <div className="flex items-start gap-4 py-3 border-t border-slate-100 mt-2">
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium text-slate-700">Rank group</div>
+                <div className="text-xs text-slate-500 mt-0.5">
+                  Products in a lower group appear first on listing pages. Order within a group is not controlled. Ungrouped products appear last.
+                </div>
+              </div>
+              <div className="w-44 shrink-0">
+                <select
+                  value={form.rankGroup}
+                  onChange={(e) => setForm((f) => ({ ...f, rankGroup: e.target.value }))}
+                  className="w-full text-sm border border-slate-200 rounded-md px-3 py-1.5 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#1A3C5E]/30"
+                >
+                  <option value="none">Ungrouped</option>
+                  <option value="1">Group 1 (highest)</option>
+                  <option value="2">Group 2</option>
+                  <option value="3">Group 3</option>
+                </select>
+              </div>
+            </div>
           </section>
 
           {/* Images */}
