@@ -273,6 +273,7 @@ router.get(
         default:
           return [
             desc(productsTable.featured),
+            asc(productsTable.rankGroup),
             asc(productsTable.displayOrder),
             asc(productsTable.name),
           ];
