@@ -103,6 +103,10 @@ export const productsTable = pgTable(
     tags: jsonb("tags").$type<string[]>().default(sql`'[]'::jsonb`),
     showPriceOnline: boolean("show_price_online").notNull().default(true),
     availableOnline: boolean("available_online").notNull().default(true),
+    // Whether the product appears in customer-facing listing queries (search,
+    // category, manufacturer, facets). Separated from availableOnline, which
+    // now means purchasability only. Backfilled from available_online.
+    catalogVisible: boolean("catalog_visible").notNull().default(true),
     inStoreOnly: boolean("in_store_only").notNull().default(false),
     // True for vendors whose lines are not sold online — the storefront
     // hides Add-to-Cart and shows a "Available through a sales agent"
