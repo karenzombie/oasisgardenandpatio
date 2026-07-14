@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "wouter";
+import { formatStatusLabel } from "../../lib/statusLabel";
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, ChevronRight, Pencil, Plus, Printer, X } from "lucide-react";
 import {
@@ -877,7 +878,7 @@ export default function OrderDetail() {
                     <SelectContent>
                       {ORDER_STATUSES.filter((s) => s !== "new_online_order").map((s) => (
                         <SelectItem key={s} value={s}>
-                          {s.replace(/_/g, " ")}
+                          {formatStatusLabel(s)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -905,7 +906,7 @@ export default function OrderDetail() {
               <div className="mt-3 text-sm text-slate-600">
                 Current status:{" "}
                 <Badge variant="secondary">
-                  {order.status.replace(/_/g, " ")}
+                  {formatStatusLabel(order.status)}
                 </Badge>
               </div>
             </div>
@@ -1439,7 +1440,7 @@ export default function OrderDetail() {
                   <div>
                     Type:{" "}
                     <span className="capitalize">
-                      {order.orderType.replace(/_/g, " ")}
+                      {formatStatusLabel(order.orderType)}
                     </span>
                   </div>
                   <div>Placed: {fmtDateTime(order.placedAt)}</div>
@@ -1818,11 +1819,11 @@ export default function OrderDetail() {
               <p>
                 This order is currently{" "}
                 <span className="font-medium">
-                  {order?.status.replace(/_/g, " ")}
+                  {formatStatusLabel(order?.status ?? "")}
                 </span>
                 . Moving it back to{" "}
                 <span className="font-medium">
-                  {pendingStatus.replace(/_/g, " ")}
+                  {formatStatusLabel(pendingStatus)}
                 </span>{" "}
                 may not be valid for this order. Are you sure you want to
                 continue?

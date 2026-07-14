@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "wouter";
+import { formatStatusLabel } from "../../lib/statusLabel";
 import { Truck } from "lucide-react";
 import {
   useAdminListLocalDeliveries,
@@ -206,11 +207,11 @@ function LocalDeliveriesTab() {
                     </td>
                     <td className="px-3 py-2">
                       <Badge variant={STATUS_VARIANT[r.status] ?? "secondary"}>
-                        {STATUS_LABEL[r.status] ?? r.status.replace(/_/g, " ")}
+                        {STATUS_LABEL[r.status] ?? formatStatusLabel(r.status)}
                       </Badge>
                     </td>
                     <td className="px-3 py-2 capitalize">
-                      {r.orderType.replace(/_/g, " ")}
+                      {formatStatusLabel(r.orderType)}
                     </td>
                     <td className="px-3 py-2">
                       <div>{r.customerName ?? "—"}</div>
@@ -328,13 +329,13 @@ function DirectShipTab() {
                     </td>
                     <td className="px-3 py-2">
                       <Badge variant={STATUS_VARIANT[r.status] ?? "secondary"}>
-                        {STATUS_LABEL[r.status] ?? r.status.replace(/_/g, " ")}
+                        {STATUS_LABEL[r.status] ?? formatStatusLabel(r.status)}
                       </Badge>
                     </td>
                     <td className="px-3 py-2">{r.carrierName ?? "Unknown"}</td>
                     <td className="px-3 py-2">{r.trackingNumber ?? "—"}</td>
                     <td className="px-3 py-2 capitalize">
-                      {r.orderType.replace(/_/g, " ")}
+                      {formatStatusLabel(r.orderType)}
                     </td>
                     <td className="px-3 py-2">
                       <div>{r.customerName ?? "—"}</div>
@@ -476,7 +477,7 @@ function CompletedTab() {
                     </td>
                     <td className="px-3 py-2">
                       <Badge variant={STATUS_VARIANT[r.status] ?? "secondary"}>
-                        {STATUS_LABEL[r.status] ?? r.status.replace(/_/g, " ")}
+                        {STATUS_LABEL[r.status] ?? formatStatusLabel(r.status)}
                       </Badge>
                     </td>
                     <td className="px-3 py-2">
@@ -497,7 +498,7 @@ function CompletedTab() {
                       )}
                     </td>
                     <td className="px-3 py-2 capitalize">
-                      {r.orderType.replace(/_/g, " ")}
+                      {formatStatusLabel(r.orderType)}
                     </td>
                     <td className="px-3 py-2">
                       <div>{r.customerName ?? "—"}</div>

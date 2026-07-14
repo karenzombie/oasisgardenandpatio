@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "wouter";
+import { formatStatusLabel } from "../../lib/statusLabel";
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, ChevronRight, Pencil, Plus, X } from "lucide-react";
 import {
@@ -374,7 +375,7 @@ export default function AgentOrderDetail() {
                     <SelectTrigger id="status"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {ORDER_STATUSES.filter((s) => s !== "new_online_order").map((s) => (
-                        <SelectItem key={s} value={s}>{s.replace(/_/g, " ")}</SelectItem>
+                        <SelectItem key={s} value={s}>{formatStatusLabel(s)}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -390,7 +391,7 @@ export default function AgentOrderDetail() {
                 </Button>
               </div>
               <div className="mt-3 text-sm text-slate-600">
-                Current status: <Badge variant="secondary">{order.status.replace(/_/g, " ")}</Badge>
+                Current status: <Badge variant="secondary">{formatStatusLabel(order.status)}</Badge>
               </div>
             </div>
 
@@ -671,7 +672,7 @@ export default function AgentOrderDetail() {
               <div>
                 <div className="text-xs font-medium text-slate-500 uppercase mb-1">Order info</div>
                 <div className="text-sm space-y-0.5">
-                  <div>Type: <span className="capitalize">{order.orderType.replace(/_/g, " ")}</span></div>
+                  <div>Type: <span className="capitalize">{formatStatusLabel(order.orderType)}</span></div>
                   <div>Placed: {fmtDateTime(order.placedAt)}</div>
                   {order.salespersonName && <div>Salesperson: {order.salespersonName}</div>}
                   {order.shippingMethod && <div>Shipping: {order.shippingMethod}</div>}
@@ -697,9 +698,9 @@ export default function AgentOrderDetail() {
             <div className="space-y-3 text-sm">
               <p>
                 This order is currently{" "}
-                <span className="font-medium">{order.status.replace(/_/g, " ")}</span>.
+                <span className="font-medium">{formatStatusLabel(order.status)}</span>.
                 Moving it back to{" "}
-                <span className="font-medium">{pendingStatus.replace(/_/g, " ")}</span>{" "}
+                <span className="font-medium">{formatStatusLabel(pendingStatus)}</span>{" "}
                 may not be valid for this order. Are you sure you want to continue?
               </p>
             </div>

@@ -1,5 +1,6 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { Link } from "wouter";
+import { formatStatusLabel } from "../../lib/statusLabel";
 import { Search, PackageSearch, Plus } from "lucide-react";
 import {
   useAdminListVendorOrders,
@@ -170,7 +171,7 @@ export default function VendorOrders() {
                           variant={STATUS_VARIANT[r.status] ?? "secondary"}
                           className={STATUS_EXTRA_CLASS[r.status] ?? ""}
                         >
-                          {r.status.replace(/_/g, " ")}
+                          {formatStatusLabel(r.status)}
                         </Badge>
                       </td>
                       <td className="px-3 py-2">

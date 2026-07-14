@@ -1,5 +1,6 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { Link } from "wouter";
+import { formatStatusLabel } from "../../lib/statusLabel";
 import { Plus, Search, ShoppingCart } from "lucide-react";
 import {
   useAdminListOrders,
@@ -127,7 +128,7 @@ export default function Orders() {
               <SelectItem value="all">All statuses</SelectItem>
               {ORDER_STATUSES.map((s) => (
                 <SelectItem key={s} value={s}>
-                  {s.replace(/_/g, " ")}
+                  {formatStatusLabel(s)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -177,11 +178,11 @@ export default function Orders() {
                       </td>
                       <td className="px-3 py-2">
                         <Badge variant={STATUS_VARIANT[r.status] ?? "secondary"}>
-                          {r.status.replace(/_/g, " ")}
+                          {formatStatusLabel(r.status)}
                         </Badge>
                       </td>
                       <td className="px-3 py-2 capitalize">
-                        {r.orderType.replace(/_/g, " ")}
+                        {formatStatusLabel(r.orderType)}
                       </td>
                       <td className="px-3 py-2">
                         <div>{r.customerName ?? "—"}</div>

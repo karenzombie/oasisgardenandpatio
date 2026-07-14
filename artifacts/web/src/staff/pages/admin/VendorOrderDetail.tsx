@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "wouter";
+import { formatStatusLabel } from "../../lib/statusLabel";
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Printer, Pencil, Flag, Plus, X } from "lucide-react";
 import {
@@ -693,7 +694,7 @@ export default function VendorOrderDetail() {
     <>
       <PageHeader
         title={vo.vendorOrderNumber}
-        subtitle={`${vo.status.replace(/_/g, " ")} · ${vo.manufacturerName ?? "No vendor"}`}
+        subtitle={`${formatStatusLabel(vo.status)} · ${vo.manufacturerName ?? "No vendor"}`}
       />
       <PageBody>
         <div className="mb-4">
@@ -1317,7 +1318,7 @@ export default function VendorOrderDetail() {
                 )}
                 {vo.customerOrderStatus && (
                   <div className="text-xs text-slate-500 capitalize">
-                    {vo.customerOrderStatus.replace(/_/g, " ")}
+                    {formatStatusLabel(vo.customerOrderStatus)}
                   </div>
                 )}
                 {vo.customerName && (

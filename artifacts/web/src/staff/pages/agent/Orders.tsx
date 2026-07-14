@@ -1,5 +1,6 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { Link } from "wouter";
+import { formatStatusLabel } from "../../lib/statusLabel";
 import { Search, ShoppingCart } from "lucide-react";
 import {
   useAdminListOrders,
@@ -101,7 +102,7 @@ export default function AgentOrders() {
             <SelectContent>
               <SelectItem value="all">All statuses</SelectItem>
               {ORDER_STATUSES.map((s) => (
-                <SelectItem key={s} value={s}>{s.replace(/_/g, " ")}</SelectItem>
+                <SelectItem key={s} value={s}>{formatStatusLabel(s)}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -144,10 +145,10 @@ export default function AgentOrders() {
                       </td>
                       <td className="px-3 py-2">
                         <Badge variant={STATUS_VARIANT[r.status] ?? "secondary"}>
-                          {r.status.replace(/_/g, " ")}
+                          {formatStatusLabel(r.status)}
                         </Badge>
                       </td>
-                      <td className="px-3 py-2 capitalize">{r.orderType.replace(/_/g, " ")}</td>
+                      <td className="px-3 py-2 capitalize">{formatStatusLabel(r.orderType)}</td>
                       <td className="px-3 py-2">
                         <div>{r.customerName ?? "—"}</div>
                         <div className="text-xs text-slate-500">{r.customerEmail ?? ""}</div>
