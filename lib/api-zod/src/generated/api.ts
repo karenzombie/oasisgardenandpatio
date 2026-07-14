@@ -209,6 +209,12 @@ export const ListCatalogProductsQueryParams = zod.object({
     .describe(
       "One or more product sub-category names (exact match), comma-separated for multi-select (OR'd together). Typically used together with categorySlug.",
     ),
+  sizeLabel: zod.coerce
+    .string()
+    .optional()
+    .describe(
+      "One or more umbrella canopy size labels, comma-separated for multi-select (OR'd together).",
+    ),
   onlineOnly: zod.coerce
     .boolean()
     .optional()
@@ -328,6 +334,12 @@ export const ListCatalogFacetsQueryParams = zod.object({
     .describe(
       "One or more product sub-category names, comma-separated for multi-select (OR'd together).",
     ),
+  sizeLabel: zod.coerce
+    .string()
+    .optional()
+    .describe(
+      "One or more umbrella canopy size labels, comma-separated for multi-select (OR'd together).",
+    ),
   onlineOnly: zod.coerce.boolean().optional(),
 });
 
@@ -350,6 +362,7 @@ export const ListCatalogFacetsResponse = zod.object({
       name: zod.string(),
     }),
   ),
+  sizes: zod.array(zod.string()),
   collections: zod.array(zod.string()),
   subCategories: zod.array(zod.string()),
 });

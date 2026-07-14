@@ -28,5 +28,9 @@ export type ListCatalogFacetsParams = {
    * One or more product sub-category names, comma-separated for multi-select (OR'd together).
    */
   subCategory?: string;
+  /**
+   * One or more umbrella canopy size labels, comma-separated for multi-select (OR'd together).
+   */
+  sizeLabel?: string;
   onlineOnly?: boolean;
 };

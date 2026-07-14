@@ -11,6 +11,7 @@ export interface CatalogFacets {
   categories: FacetOption[];
   manufacturers: FacetOption[];
   materials: FacetOption[];
+  sizes: string[];
   collections: string[];
   subCategories: string[];
 }

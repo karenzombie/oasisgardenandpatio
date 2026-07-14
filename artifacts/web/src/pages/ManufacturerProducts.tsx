@@ -45,6 +45,7 @@ export default function ManufacturerProducts() {
   const activeSubCategories = useMemo(() => parseListParam(q.get("subcategory")), [q]);
   const activeCollections = useMemo(() => parseListParam(q.get("collection")), [q]);
   const activeMaterials = useMemo(() => parseListParam(q.get("material")), [q]);
+  const activeSizes = useMemo(() => parseListParam(q.get("size")), [q]);
   const displayPage = Math.max(1, Number(q.get("page") ?? "1") || 1);
   const activeSort = (q.get("sort") ?? "featured") as ListCatalogProductsParams["sort"];
 
@@ -76,6 +77,7 @@ export default function ManufacturerProducts() {
       out.subCategory = activeSubCategories.join(",");
     if (activeCollections.length) out.collection = activeCollections.join(",");
     if (activeMaterials.length) out.materialSlug = activeMaterials.join(",");
+    if (activeSizes.length) out.sizeLabel = activeSizes.join(",");
     return out;
   }, [
     slug,
@@ -85,6 +87,7 @@ export default function ManufacturerProducts() {
     activeSubCategories,
     activeCollections,
     activeMaterials,
+    activeSizes,
   ]);
 
   const { data, isLoading, error } = useListCatalogProducts(queryParams);
@@ -99,8 +102,9 @@ export default function ManufacturerProducts() {
       out.subCategory = activeSubCategories.join(",");
     if (activeCollections.length) out.collection = activeCollections.join(",");
     if (activeMaterials.length) out.materialSlug = activeMaterials.join(",");
+    if (activeSizes.length) out.sizeLabel = activeSizes.join(",");
     return out;
-  }, [slug, activeCategories, activeSubCategories, activeCollections, activeMaterials]);
+  }, [slug, activeCategories, activeSubCategories, activeCollections, activeMaterials, activeSizes]);
 
   const { data: facets } = useListCatalogFacets(facetParams);
 
@@ -133,12 +137,17 @@ export default function ManufacturerProducts() {
     () => (facets?.materials ?? []).map((m) => ({ value: m.slug, label: m.name })),
     [facets],
   );
+  const sizeOptions = useMemo<FilterOption[]>(
+    () => (facets?.sizes ?? []).map((s) => ({ value: s, label: s })),
+    [facets],
+  );
 
   const activeFilterCount =
     activeCategories.length +
     activeSubCategories.length +
     activeCollections.length +
-    activeMaterials.length;
+    activeMaterials.length +
+    activeSizes.length;
   const brandLogo = getBrandLogo(manufacturer?.name ?? "");
   const displayName = manufacturer?.name ?? slug.replace(/-/g, " ");
   const aboutInfo = getManufacturerAbout(slug);
@@ -154,6 +163,7 @@ export default function ManufacturerProducts() {
       subcategory: null,
       collection: null,
       material: null,
+      size: null,
       page: "1",
     });
   }
@@ -203,13 +213,22 @@ export default function ManufacturerProducts() {
         selected={activeMaterials}
         onChange={(v) => updateSearch({ material: joinListParam(v), page: "1" })}
       />
+      {sizeOptions.length > 0 && (
+        <CheckboxGroup
+          label="Canopy Size"
+          options={sizeOptions}
+          selected={activeSizes}
+          onChange={(v) => updateSearch({ size: joinListParam(v), page: "1" })}
+        />
+      )}
     </aside>
   );
 
   const hasFacets =
     categoryOptions.length > 0 ||
     collectionOptions.length > 0 ||
-    materialOptions.length > 0;
+    materialOptions.length > 0 ||
+    sizeOptions.length > 0;
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-7xl">
@@ -362,6 +381,22 @@ export default function ManufacturerProducts() {
                     onClick={() =>
                       updateSearch({
                         material: joinListParam(activeMaterials.filter((v) => v !== m)),
+                        page: "1",
+                      })
+                    }
+                  >
+                    <X className="size-3" />
+                  </button>
+                </span>
+              ))}
+              {activeSizes.map((s) => (
+                <span key={`size-${s}`} className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
+                  {sizeOptions.find((o) => o.value === s)?.label ?? s}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      updateSearch({
+                        size: joinListParam(activeSizes.filter((v) => v !== s)),
                         page: "1",
                       })
                     }

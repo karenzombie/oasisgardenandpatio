@@ -222,6 +222,12 @@ paths:
           description: One or more product sub-category names (exact match), comma-separated for multi-select (OR'd together). Typically used together with categorySlug.
           schema:
             type: string
+        - name: sizeLabel
+          in: query
+          required: false
+          description: One or more umbrella canopy size labels, comma-separated for multi-select (OR'd together).
+          schema:
+            type: string
         - name: onlineOnly
           in: query
           required: false
@@ -322,6 +328,12 @@ paths:
           in: query
           required: false
           description: One or more product sub-category names, comma-separated for multi-select (OR'd together).
+          schema:
+            type: string
+        - name: sizeLabel
+          in: query
+          required: false
+          description: One or more umbrella canopy size labels, comma-separated for multi-select (OR'd together).
           schema:
             type: string
         - name: onlineOnly
@@ -7915,6 +7927,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/FacetOption"
+        sizes:
+          type: array
+          items:
+            type: string
         collections:
           type: array
           items:
@@ -7927,6 +7943,7 @@ components:
         - categories
         - manufacturers
         - materials
+        - sizes
         - collections
         - subCategories
     CatalogProductImage:

@@ -1,7 +1,7 @@
 import { useMemo, useState, useRef, useEffect, type FormEvent, type ChangeEvent } from "react";
 import { Link, useLocation, useSearch } from "wouter";
 import { SlidersHorizontal, X, Search as SearchIcon } from "lucide-react";
-import { CheckboxGroup } from "@/components/FilterCheckboxGroup";
+import { CheckboxGroup, type FilterOption } from "@/components/FilterCheckboxGroup";
 import { BrowsePagination } from "@/components/BrowsePagination";
 import {
   useListCatalogProducts,
@@ -46,6 +46,7 @@ export default function SearchPage() {
   const activeManufacturers = useMemo(() => parseListParam(q.get("manufacturer")), [q]);
   const activeCollections = useMemo(() => parseListParam(q.get("collection")), [q]);
   const activeMaterials = useMemo(() => parseListParam(q.get("material")), [q]);
+  const activeSizes = useMemo(() => parseListParam(q.get("size")), [q]);
   const activeSort = (q.get("sort") ?? "featured") as ListCatalogProductsParams["sort"];
   const activePage = Math.max(1, Number(q.get("page") ?? "1") || 1);
 
@@ -54,7 +55,8 @@ export default function SearchPage() {
     activeSubCategories.length +
     activeManufacturers.length +
     activeCollections.length +
-    activeMaterials.length;
+    activeMaterials.length +
+    activeSizes.length;
 
   function updateSearch(patch: Record<string, string | null>) {
     const next = new URLSearchParams(search);
@@ -76,6 +78,7 @@ export default function SearchPage() {
     const next = new URLSearchParams();
     if (activeQ) next.set("q", activeQ);
     if (activeSort && activeSort !== "featured") next.set("sort", activeSort);
+    next.delete("size");
     const qs = next.toString();
     setLocation(qs ? `/search?${qs}` : "/search");
   }
@@ -94,6 +97,7 @@ export default function SearchPage() {
     if (activeManufacturers.length && activeCollections.length)
       out.collection = activeCollections.join(",");
     if (activeMaterials.length) out.materialSlug = activeMaterials.join(",");
+    if (activeSizes.length) out.sizeLabel = activeSizes.join(",");
     return out;
   }, [
     activeQ,
@@ -102,6 +106,7 @@ export default function SearchPage() {
     activeManufacturers,
     activeCollections,
     activeMaterials,
+    activeSizes,
     activeSort,
     activePage,
   ]);
@@ -137,6 +142,7 @@ export default function SearchPage() {
     if (activeManufacturers.length && activeCollections.length)
       out.collection = activeCollections.join(",");
     if (activeMaterials.length) out.materialSlug = activeMaterials.join(",");
+    if (activeSizes.length) out.sizeLabel = activeSizes.join(",");
     return out;
   }, [
     activeQ,
@@ -145,6 +151,7 @@ export default function SearchPage() {
     activeManufacturers,
     activeCollections,
     activeMaterials,
+    activeSizes,
   ]);
   const { data: facets } = useListCatalogFacets(facetParams);
 
@@ -177,6 +184,10 @@ export default function SearchPage() {
   );
   const subCategoryOptions = useMemo(
     () => (facets?.subCategories ?? []).map((c) => ({ value: c, label: c })),
+    [facets],
+  );
+  const sizeOptions = useMemo<FilterOption[]>(
+    () => (facets?.sizes ?? []).map((s) => ({ value: s, label: s })),
     [facets],
   );
   const collectionOptions = useMemo(
@@ -239,6 +250,14 @@ export default function SearchPage() {
         selected={activeMaterials}
         onChange={(v) => updateSearch({ material: joinListParam(v), page: "1" })}
       />
+      {sizeOptions.length > 0 && (
+        <CheckboxGroup
+          label="Canopy Size"
+          options={sizeOptions}
+          selected={activeSizes}
+          onChange={(v) => updateSearch({ size: joinListParam(v), page: "1" })}
+        />
+      )}
     </aside>
   );
 
@@ -394,6 +413,22 @@ export default function SearchPage() {
                 onClick={() =>
                   updateSearch({
                     material: joinListParam(activeMaterials.filter((v) => v !== m)),
+                    page: "1",
+                  })
+                }
+              >
+                <X className="size-3" />
+              </button>
+            </span>
+          ))}
+          {activeSizes.map((s) => (
+            <span key={`size-${s}`} className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
+              {sizeOptions.find((o) => o.value === s)?.label ?? s}
+              <button
+                type="button"
+                onClick={() =>
+                  updateSearch({
+                    size: joinListParam(activeSizes.filter((v) => v !== s)),
                     page: "1",
                   })
                 }

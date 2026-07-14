@@ -1740,6 +1740,7 @@ export interface CatalogFacets {
   categories: FacetOption[];
   manufacturers: FacetOption[];
   materials: FacetOption[];
+  sizes: string[];
   collections: string[];
   subCategories: string[];
 }
@@ -5189,6 +5190,10 @@ export type ListCatalogProductsParams = {
    */
   subCategory?: string;
   /**
+   * One or more umbrella canopy size labels, comma-separated for multi-select (OR'd together).
+   */
+  sizeLabel?: string;
+  /**
    * When true, exclude quote-only products (show only items purchasable online)
    */
   onlineOnly?: boolean;
@@ -5244,6 +5249,10 @@ export type ListCatalogFacetsParams = {
    * One or more product sub-category names, comma-separated for multi-select (OR'd together).
    */
   subCategory?: string;
+  /**
+   * One or more umbrella canopy size labels, comma-separated for multi-select (OR'd together).
+   */
+  sizeLabel?: string;
   onlineOnly?: boolean;
 };
 

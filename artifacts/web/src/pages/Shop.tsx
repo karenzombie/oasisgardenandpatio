@@ -146,6 +146,7 @@ export default function Shop() {
   const activeMaterials = useMemo(() => parseListParam(q.get("material")), [q]);
   const activeCollections = useMemo(() => parseListParam(q.get("collection")), [q]);
   const activeSubCategories = useMemo(() => parseListParam(q.get("subcategory")), [q]);
+  const activeSizes = useMemo(() => parseListParam(q.get("size")), [q]);
   const activeName = debouncedSearch;
 
   // Sync local search input from URL on mount / external changes
@@ -176,6 +177,7 @@ export default function Shop() {
     if (activeName) out.q = activeName;
     if (activeManufacturers.length) out.manufacturerSlug = activeManufacturers.join(",");
     if (activeMaterials.length) out.materialSlug = activeMaterials.join(",");
+    if (activeSizes.length) out.sizeLabel = activeSizes.join(",");
     if (activeManufacturers.length && activeCollections.length)
       out.collection = activeCollections.join(",");
     if (activeCategories.length) out.categorySlug = activeCategories.join(",");
@@ -188,6 +190,7 @@ export default function Shop() {
     activeCategories,
     activeManufacturers,
     activeMaterials,
+    activeSizes,
     activeCollections,
     activeSubCategories,
     activeName,
@@ -207,6 +210,7 @@ export default function Shop() {
     if (activeCategories.length) out.categorySlug = activeCategories.join(",");
     if (activeManufacturers.length) out.manufacturerSlug = activeManufacturers.join(",");
     if (activeMaterials.length) out.materialSlug = activeMaterials.join(",");
+    if (activeSizes.length) out.sizeLabel = activeSizes.join(",");
     if (activeManufacturers.length && activeCollections.length)
       out.collection = activeCollections.join(",");
     if (activeCategories.length && activeSubCategories.length)
@@ -218,6 +222,7 @@ export default function Shop() {
     activeCategories,
     activeManufacturers,
     activeMaterials,
+    activeSizes,
     activeCollections,
     activeSubCategories,
     isOnlineOnly,
@@ -283,6 +288,7 @@ export default function Shop() {
     activeManufacturers.length +
     activeCollections.length +
     activeMaterials.length +
+    activeSizes.length +
     (activeName ? 1 : 0);
 
   const categoryOptions = useMemo<FilterOption[]>(
@@ -295,6 +301,10 @@ export default function Shop() {
   );
   const materialOptions = useMemo<FilterOption[]>(
     () => (facets?.materials ?? []).map((m) => ({ value: m.slug, label: m.name })),
+    [facets],
+  );
+  const sizeOptions = useMemo<FilterOption[]>(
+    () => (facets?.sizes ?? []).map((s) => ({ value: s, label: s })),
     [facets],
   );
   const collectionOptions = useMemo<FilterOption[]>(
@@ -402,6 +412,14 @@ export default function Shop() {
         selected={activeMaterials}
         onChange={(v) => updateSearch({ material: joinListParam(v), page: "1" })}
       />
+      {sizeOptions.length > 0 && (
+        <CheckboxGroup
+          label="Canopy Size"
+          options={sizeOptions}
+          selected={activeSizes}
+          onChange={(v) => updateSearch({ size: joinListParam(v), page: "1" })}
+        />
+      )}
     </aside>
   );
 
@@ -551,6 +569,22 @@ export default function Shop() {
                 onClick={() =>
                   updateSearch({
                     material: joinListParam(activeMaterials.filter((v) => v !== m)),
+                    page: "1",
+                  })
+                }
+              >
+                <X className="size-3" />
+              </button>
+            </span>
+          ))}
+          {activeSizes.map((s) => (
+            <span key={`size-${s}`} className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs px-3 py-1 rounded-full">
+              {sizeOptions.find((o) => o.value === s)?.label ?? s}
+              <button
+                type="button"
+                onClick={() =>
+                  updateSearch({
+                    size: joinListParam(activeSizes.filter((v) => v !== s)),
                     page: "1",
                   })
                 }

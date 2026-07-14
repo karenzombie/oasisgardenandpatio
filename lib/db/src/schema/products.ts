@@ -220,6 +220,29 @@ export const insertProductMaterialSchema = createInsertSchema(
 export type InsertProductMaterial = z.infer<typeof insertProductMaterialSchema>;
 export type ProductMaterial = typeof productMaterialsTable.$inferSelect;
 
+// Many-to-many product ↔ umbrella-size junction. No lookup table; labels are free
+// text and derived from data. Used for faceted canopy-size filtering on the
+// Umbrellas category and manufacturer pages.
+export const productUmbrellaSizesTable = pgTable(
+  "product_umbrella_sizes",
+  {
+    productId: integer("product_id")
+      .notNull()
+      .references(() => productsTable.id, { onDelete: "cascade" }),
+    sizeLabel: text("size_label").notNull(),
+  },
+  (t) => [
+    unique("product_umbrella_sizes_unique").on(t.productId, t.sizeLabel),
+    index("idx_product_umbrella_sizes_size_label").on(t.sizeLabel),
+  ],
+);
+
+export const insertProductUmbrellaSizeSchema = createInsertSchema(
+  productUmbrellaSizesTable,
+);
+export type InsertProductUmbrellaSize = z.infer<typeof insertProductUmbrellaSizeSchema>;
+export type ProductUmbrellaSize = typeof productUmbrellaSizesTable.$inferSelect;
+
 export const insertProductSchema = createInsertSchema(productsTable).omit({
   id: true,
   createdAt: true,

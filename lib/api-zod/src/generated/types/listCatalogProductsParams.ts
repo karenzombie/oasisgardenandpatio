@@ -30,6 +30,10 @@ export type ListCatalogProductsParams = {
    */
   subCategory?: string;
   /**
+   * One or more umbrella canopy size labels, comma-separated for multi-select (OR'd together).
+   */
+  sizeLabel?: string;
+  /**
    * When true, exclude quote-only products (show only items purchasable online)
    */
   onlineOnly?: boolean;

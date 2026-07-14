@@ -8,6 +8,7 @@ import {
   categoriesTable,
   materialsTable,
   productMaterialsTable,
+  productUmbrellaSizesTable,
   productVariantsTable,
   productFabricOptionsTable,
   productFabricPoolsTable,
@@ -40,8 +41,30 @@ import { computeStartingPrices } from "../lib/startingPrices";
 
 const router: IRouter = Router();
 
+// Sort canopy size labels: single-dimension first, then by leading number,
+// then by second number for multi-dimension labels.
+//
+//   6'  7.5'  9'  10'  11'  11.5'  13'
+//   3.5'x7'  6'x6'  8'x8'  8'x10'  8'x11'  10'x10'  10'x13'
+function sizeSort(a: string, b: string): number {
+  const aIsMulti = a.includes("x");
+  const bIsMulti = b.includes("x");
+  if (aIsMulti !== bIsMulti) return aIsMulti ? 1 : -1;
+
+  const aNum = parseFloat(a);
+  const bNum = parseFloat(b);
+  if (aNum !== bNum) return aNum - bNum;
+
+  if (aIsMulti && bIsMulti) {
+    const aSecond = parseFloat(a.split("x")[1] ?? "0");
+    const bSecond = parseFloat(b.split("x")[1] ?? "0");
+    return aSecond - bSecond;
+  }
+  return a.localeCompare(b);
+}
+
 // Facet filter params (categorySlug, manufacturerSlug, materialSlug,
-// collection, subCategory) accept a comma-separated list of values to
+// collection, subCategory, sizeLabel) accept a comma-separated list of values to
 // support multi-select filtering: multiple values within a facet are OR'd
 // together, while different facets combine with AND. No facet value in this
 // catalog contains a literal comma, so a plain split is safe.
@@ -188,6 +211,7 @@ router.get(
       categorySlug,
       manufacturerSlug,
       materialSlug,
+      sizeLabel,
       collection,
       subCategory,
       onlineOnly,
@@ -217,6 +241,7 @@ router.get(
     const manufacturerSlugs = parseMulti(manufacturerSlug);
     const categorySlugs = parseMulti(categorySlug);
     const materialSlugs = parseMulti(materialSlug);
+    const sizeLabels = parseMulti(sizeLabel);
     const collections = parseMulti(collection);
     const subCategories = parseMulti(subCategory);
 
@@ -244,6 +269,21 @@ router.get(
               and(
                 eq(productMaterialsTable.productId, productsTable.id),
                 or(...materialSlugs.map((s) => ilike(materialsTable.slug, s)))!,
+              ),
+            ),
+        ),
+      );
+    }
+    if (sizeLabels.length) {
+      conditions.push(
+        exists(
+          db
+            .select({ one: sql`1` })
+            .from(productUmbrellaSizesTable)
+            .where(
+              and(
+                eq(productUmbrellaSizesTable.productId, productsTable.id),
+                or(...sizeLabels.map((s) => ilike(productUmbrellaSizesTable.sizeLabel, s)))!,
               ),
             ),
         ),
@@ -421,6 +461,7 @@ router.get(
       materialSlug,
       collection,
       subCategory,
+      sizeLabel,
       onlineOnly,
     } = parsed.data;
 
@@ -432,10 +473,12 @@ router.get(
       | "manufacturer"
       | "material"
       | "collection"
-      | "subCategory";
+      | "subCategory"
+      | "size";
     const manufacturerSlugs = parseMulti(manufacturerSlug);
     const categorySlugs = parseMulti(categorySlug);
     const materialSlugs = parseMulti(materialSlug);
+    const sizeLabels = parseMulti(sizeLabel);
     const collections = parseMulti(collection);
     const subCategories = parseMulti(subCategory);
     const buildConditions = (exclude: Facet | null) => {
@@ -487,6 +530,21 @@ router.get(
           ),
         );
       }
+      if (sizeLabels.length && exclude !== "size") {
+        conds.push(
+          exists(
+            db
+              .select({ one: sql`1` })
+              .from(productUmbrellaSizesTable)
+              .where(
+                and(
+                  eq(productUmbrellaSizesTable.productId, productsTable.id),
+                  or(...sizeLabels.map((s) => ilike(productUmbrellaSizesTable.sizeLabel, s)))!,
+                ),
+              ),
+          ),
+        );
+      }
       if (collections.length && exclude !== "collection") {
         conds.push(inArray(productsTable.collection, collections));
       }
@@ -512,6 +570,7 @@ router.get(
       categoryRows,
       manufacturerRows,
       materialRows,
+      sizeRows,
       collectionRows,
       subCategoryRows,
     ] = await Promise.all([
@@ -570,6 +629,24 @@ router.get(
           )
           .where(and(...buildConditions("material"), eq(materialsTable.isActive, true)))
           .orderBy(materialsTable.name),
+        // Distinct canopy size labels present on products matching other facets.
+        db
+          .selectDistinct({ sizeLabel: productUmbrellaSizesTable.sizeLabel })
+          .from(productUmbrellaSizesTable)
+          .innerJoin(
+            productsTable,
+            eq(productsTable.id, productUmbrellaSizesTable.productId),
+          )
+          .leftJoin(
+            manufacturersTable,
+            eq(manufacturersTable.id, productsTable.manufacturerId),
+          )
+          .leftJoin(
+            categoriesTable,
+            eq(categoriesTable.id, productsTable.categoryId),
+          )
+          .where(and(...buildConditions("size")))
+          .orderBy(productUmbrellaSizesTable.sizeLabel),
         withJoins(
           db.selectDistinct({ collection: productsTable.collection }),
         )
@@ -606,6 +683,10 @@ router.get(
           .filter((r) => r.slug != null)
           .map((r) => ({ slug: r.slug as string, name: r.name as string })),
         materials: materialRows.map((r) => ({ slug: r.slug, name: r.name })),
+        sizes: sizeRows
+          .map((r) => r.sizeLabel)
+          .filter((s): s is string => !!s)
+          .sort(sizeSort),
         collections: collectionRows
           .map((r) => r.collection)
           .filter((c): c is string => !!c),
