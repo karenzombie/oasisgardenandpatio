@@ -66,6 +66,7 @@ const checks = await verifyClient.query<{ tbl: string; cnt: number; with_url: nu
   UNION ALL SELECT 'product_fabric_options', COUNT(*)::int, NULL FROM product_fabric_options
   UNION ALL SELECT 'variant_grade_prices', COUNT(*)::int, NULL FROM variant_grade_prices
   UNION ALL SELECT 'product_materials', COUNT(*)::int, NULL FROM product_materials
+  UNION ALL SELECT 'product_umbrella_sizes', COUNT(*)::int, NULL FROM product_umbrella_sizes
   ORDER BY tbl;
 `);
 console.log("\nProduction DB counts after sync:");

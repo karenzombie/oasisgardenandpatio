@@ -29,6 +29,7 @@ const TABLES_IN_ORDER = [
   "finishes",
   "products",
   "product_materials",
+  "product_umbrella_sizes",
   "product_variants",
   "product_images",
   "product_attributes",
@@ -83,6 +84,7 @@ const FULL_REPLACE_TABLES = new Set([
 // dev's content in place while leaving cart/order FK targets untouched.
 const NATURAL_KEY_TABLES: Record<string, string[]> = {
   product_materials: ["product_id", "material_id"],
+  product_umbrella_sizes: ["product_id", "size_label"],
   product_fabric_options: ["product_id", "fabric_id"],
   product_finish_options: ["product_id", "finish_id"],
 };
