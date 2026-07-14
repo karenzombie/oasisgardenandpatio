@@ -1767,7 +1767,7 @@ export default function OrderDetail() {
             <div className="space-y-3 text-sm">
               <p>
                 The order will be moved to{" "}
-                <span className="font-medium">canceled</span>. The record is
+                <span className="font-medium">cancelled</span>. The record is
                 kept for reporting and the cancellation is logged with your
                 name and the time.
               </p>

@@ -81,7 +81,7 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
                 },
                 { label: "Delivered", value: orderCount(ordersByStatus?.delivered) },
                 { label: "Completed", value: orderCount(ordersByStatus?.completed) },
-                { label: "Canceled", value: orderCount(ordersByStatus?.canceled) },
+                { label: "Cancelled", value: orderCount(ordersByStatus?.canceled) },
                 { label: "Refunded", value: orderCount(ordersByStatus?.refunded) },
               ]}
             />

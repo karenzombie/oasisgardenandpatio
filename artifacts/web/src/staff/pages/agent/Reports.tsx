@@ -100,7 +100,7 @@ export default function AgentReports() {
             </div>
             <label className="flex items-center gap-2 text-sm pb-2">
               <Checkbox checked={includeCanceled} onCheckedChange={(v) => setIncludeCanceled(v === true)} />
-              Include canceled & refunded
+              Include cancelled & refunded
             </label>
             <Button onClick={applyFilters}>Apply</Button>
           </CardContent>

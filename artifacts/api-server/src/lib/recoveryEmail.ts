@@ -74,12 +74,18 @@ function emailLayout(title: string, body: string): string {
         <div style="font-size:14px;font-style:italic;color:#5b8a72;">Garden &amp; Patio</div>`;
   return `<!DOCTYPE html>
 <html>
-  <body style="margin:0;padding:0;background:#f5f3ee;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#3a3a3a;">
+  <head>
+    <style>
+      body, p, div, span, td, th, li, ul, ol, strong, a, h1, h2, h3, h4 { font-size: 15px !important; }
+      h1 { font-size: 22px !important; }
+    </style>
+  </head>
+  <body style="margin:0;padding:0;background:#f5f3ee;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#3a3a3a;font-size:15px;">
     <div style="max-width:560px;margin:0 auto;padding:32px 24px;">
       <div style="text-align:center;margin-bottom:32px;">
         ${logoHtml}
       </div>
-      <div style="background:#ffffff;padding:32px 28px;border-radius:4px;border:1px solid #e8e2d6;">
+      <div style="background:#ffffff;padding:32px 28px;border-radius:4px;border:1px solid #e8e2d6;font-size:15px;">
         <h1 style="font-size:22px;color:#1a3c5e;margin:0 0 16px 0;">${title}</h1>
         ${body}
       </div>

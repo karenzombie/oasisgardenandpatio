@@ -562,8 +562,8 @@ export default function VendorOrderDetail() {
           const status = r?.emailStatus;
           const baseTitle =
             cancelScope === "full"
-              ? "Vendor order canceled"
-              : `${cancelItemIds.size} item(s) canceled`;
+              ? "Vendor order cancelled"
+              : `${cancelItemIds.size} item(s) cancelled`;
           let description = "Cancellation PDF generated.";
           let variant: "default" | "destructive" = "default";
           if (status === "sent") {
@@ -621,7 +621,7 @@ export default function VendorOrderDetail() {
         onSuccess: () => {
           const msg =
             cancelPendingScope === "full"
-              ? "Vendor order canceled"
+              ? "Vendor order cancelled"
               : `${cancelPendingItemIds.size} item(s) removed from order`;
           toast({ title: msg });
           setConfirmCancelPending(false);
@@ -1738,7 +1738,7 @@ export default function VendorOrderDetail() {
                     <div className="text-xs text-slate-500">
                       All {vo.items.length} item(s) will be cancelled and the PO
                       status will move to{" "}
-                      <span className="font-medium">canceled</span>.
+                      <span className="font-medium">cancelled</span>.
                     </div>
                   </div>
                 </label>
@@ -1894,7 +1894,7 @@ export default function VendorOrderDetail() {
                 The order is still <span className="font-medium">pending</span> and
                 hasn't been sent to the vendor yet. Canceling will un-assign its items
                 so they can be regrouped onto a different vendor order. The record will
-                be retained with a <span className="font-medium">canceled</span> status.
+                be retained with a <span className="font-medium">cancelled</span> status.
               </p>
 
               {vo && vo.items.length > 1 && (
@@ -1911,7 +1911,7 @@ export default function VendorOrderDetail() {
                       <div className="font-medium">Cancel entire order</div>
                       <div className="text-xs text-slate-500">
                         All {vo.items.length} items will be un-assigned and the PO
-                        will be marked <span className="font-medium">canceled</span>.
+                        will be marked <span className="font-medium">cancelled</span>.
                       </div>
                     </div>
                   </label>
@@ -1979,7 +1979,7 @@ export default function VendorOrderDetail() {
                   id="cancel-pending-reason"
                   value={cancelPendingReason}
                   onChange={(e) => setCancelPendingReason(e.target.value)}
-                  placeholder="e.g. customer canceled order, wrong vendor"
+                  placeholder="e.g. customer cancelled order, wrong vendor"
                   rows={2}
                 />
               </div>
