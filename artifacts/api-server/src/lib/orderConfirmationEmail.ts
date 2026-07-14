@@ -120,10 +120,10 @@ function buildItemsTable(items: OrderEmailData["items"]): string {
         .map(
           (a) => `
           <tr>
-            <td style="padding:4px 0 4px 16px;font-size:13px;color:#555;">
+            <td style="padding:4px 0 4px 16px;font-size:15px;color:#555;">
               + ${escapeHtml(a.addonNameSnapshot)}${a.quantity > 1 ? ` ×${a.quantity}` : ""}
             </td>
-            <td style="padding:4px 0;text-align:right;font-size:13px;color:#555;">${fmtMoney(a.amount)}</td>
+            <td style="padding:4px 0;text-align:right;font-size:15px;color:#555;">${fmtMoney(a.amount)}</td>
           </tr>`,
         )
         .join("");
@@ -132,8 +132,8 @@ function buildItemsTable(items: OrderEmailData["items"]): string {
         <tr style="border-top:1px solid #e8e2d6;">
           <td style="padding:10px 0;vertical-align:top;">
             <div style="font-weight:bold;">${escapeHtml(item.description)}</div>
-            ${specs ? `<div style="font-size:12px;color:#666;margin-top:2px;">${escapeHtml(specs)}</div>` : ""}
-            <div style="font-size:12px;color:#666;">Qty ${item.quantity} × ${fmtMoney(item.unitPrice)}</div>
+            ${specs ? `<div style="font-size:15px;color:#666;margin-top:2px;">${escapeHtml(specs)}</div>` : ""}
+            <div style="font-size:15px;color:#666;">Qty ${item.quantity} × ${fmtMoney(item.unitPrice)}</div>
           </td>
           <td style="padding:10px 0;text-align:right;vertical-align:top;white-space:nowrap;">${fmtMoney(item.amount)}</td>
         </tr>
@@ -142,7 +142,7 @@ function buildItemsTable(items: OrderEmailData["items"]): string {
     .join("");
 
   return `
-    <table style="width:100%;border-collapse:collapse;font-size:14px;margin:16px 0;">
+    <table style="width:100%;border-collapse:collapse;font-size:15px;margin:16px 0;">
       ${rows}
     </table>`;
 }
@@ -151,7 +151,7 @@ function buildTotalsTable(data: OrderEmailData): string {
   const shippingNum = Number(data.deliveryAmount);
   const taxNum = Number(data.taxAmount);
   return `
-    <table style="width:100%;border-collapse:collapse;font-size:14px;margin:16px 0;">
+    <table style="width:100%;border-collapse:collapse;font-size:15px;margin:16px 0;">
       <tr>
         <td style="padding:5px 0;color:#555;">Subtotal</td>
         <td style="padding:5px 0;text-align:right;">${fmtMoney(data.subtotal)}</td>
@@ -208,7 +208,7 @@ export async function sendOrderConfirmationEmail(
       <h2 style="font-size:16px;color:#1a3c5e;margin:24px 0 8px;">Order ${escapeHtml(orderNumber)}</h2>
       ${buildItemsTable(data.items)}
       ${buildTotalsTable(data)}
-      <p style="font-size:13px;color:#555;">Questions? Reply to this email or call us at (661) 255-9909.</p>
+      <p style="font-size:15px;color:#555;">Questions? Reply to this email or call us at (661) 255-9909.</p>
       ${orderUrl ? `<p style="text-align:center;margin:28px 0;"><a href="${orderUrl}" style="display:inline-block;background:#5b8a72;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:4px;font-family:Arial,sans-serif;font-size:14px;letter-spacing:1px;">View Order</a></p>` : ""}
       ${SIGNOFF}
     `;
@@ -263,12 +263,12 @@ export async function sendStoreNewOrderNotification(
     const bodyHtml = `
       <p>A new customer order has been placed on the website.</p>
       <p>Please complete the following steps to process this order:</p>
-      <ol style="margin:0 0 16px 0;padding-left:20px;font-size:14px;">
+      <ol style="margin:0 0 16px 0;padding-left:20px;font-size:15px;">
         <li style="margin-bottom:4px;">Review the order for accuracy (items, address, and pricing)</li>
         <li style="margin-bottom:4px;">Update the order status to Pending</li>
         <li>Review and send the purchase order to the vendor</li>
       </ol>
-      <table style="width:100%;border-collapse:collapse;font-size:14px;margin:16px 0;background:#f9f7f4;border-radius:4px;padding:12px;">
+      <table style="width:100%;border-collapse:collapse;font-size:15px;margin:16px 0;background:#f9f7f4;border-radius:4px;padding:12px;">
         <tr><td style="padding:5px 8px;color:#555;width:140px;">Order number</td><td style="padding:5px 8px;font-weight:bold;">${escapeHtml(orderNumber)}</td></tr>
         <tr><td style="padding:5px 8px;color:#555;">Customer name</td><td style="padding:5px 8px;">${escapeHtml(customerName)}</td></tr>
         <tr><td style="padding:5px 8px;color:#555;">Customer email</td><td style="padding:5px 8px;">${escapeHtml(customer.email)}</td></tr>

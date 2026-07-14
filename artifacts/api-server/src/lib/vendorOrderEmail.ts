@@ -97,20 +97,20 @@ export async function sendVendorOrderEmail(
         .map(
           (ad) => `
         <tr>
-          <td style="padding:8px 10px 8px 24px;border-bottom:1px solid #e8e2d6;font-size:13px;">${escapeHtml(ad.sku ?? "")}</td>
-          <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:13px;">Add-on: ${escapeHtml(ad.name)}</td>
-          <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:13px;text-align:center;">${ad.quantity}</td>
+          <td style="padding:8px 10px 8px 24px;border-bottom:1px solid #e8e2d6;font-size:15px;">${escapeHtml(ad.sku ?? "")}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:15px;">Add-on: ${escapeHtml(ad.name)}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:15px;text-align:center;">${ad.quantity}</td>
         </tr>`,
         )
         .join("");
       return `
         <tr>
-          <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:13px;">${escapeHtml(sku)}</td>
-          <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:13px;">${escapeHtml(desc || "—")}</td>
-          <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:13px;text-align:center;">${it.quantity}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:15px;">${escapeHtml(sku)}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:15px;">${escapeHtml(desc || "—")}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:15px;text-align:center;">${it.quantity}</td>
         </tr>
         ${addonRows}
-        ${it.notes ? `<tr><td colspan="3" style="padding:0 10px 8px 10px;font-size:12px;color:#666;border-bottom:1px solid #e8e2d6;font-style:italic;">Note: ${escapeHtml(it.notes)}</td></tr>` : ""}
+        ${it.notes ? `<tr><td colspan="3" style="padding:0 10px 8px 10px;font-size:15px;color:#666;border-bottom:1px solid #e8e2d6;font-style:italic;">Note: ${escapeHtml(it.notes)}</td></tr>` : ""}
       `;
     })
     .join("");
@@ -135,9 +135,9 @@ export async function sendVendorOrderEmail(
     <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
       <thead>
         <tr style="background:#f5f3ee;">
-          <th style="padding:8px 10px;text-align:left;font-size:12px;color:#666;border-bottom:2px solid #e8e2d6;">SKU</th>
-          <th style="padding:8px 10px;text-align:left;font-size:12px;color:#666;border-bottom:2px solid #e8e2d6;">Description</th>
-          <th style="padding:8px 10px;text-align:center;font-size:12px;color:#666;border-bottom:2px solid #e8e2d6;">Qty</th>
+          <th style="padding:8px 10px;text-align:left;font-size:15px;color:#666;border-bottom:2px solid #e8e2d6;">SKU</th>
+          <th style="padding:8px 10px;text-align:left;font-size:15px;color:#666;border-bottom:2px solid #e8e2d6;">Description</th>
+          <th style="padding:8px 10px;text-align:center;font-size:15px;color:#666;border-bottom:2px solid #e8e2d6;">Qty</th>
         </tr>
       </thead>
       <tbody>
@@ -145,7 +145,7 @@ export async function sendVendorOrderEmail(
       </tbody>
     </table>
     ${notesBlock}
-    <p style="margin:20px 0 0 0;font-size:13px;color:#666;">
+    <p style="margin:20px 0 0 0;font-size:15px;color:#666;">
       Please reply to this email to acknowledge or with any questions.<br/>
       You can also reach us at (661) 255-9909 or <a href="mailto:sales@oasisgardenandpatio.com">sales@oasisgardenandpatio.com</a>.
     </p>
@@ -215,17 +215,17 @@ function renderItemRows(items: VendorOrderItem[], struck: boolean): string {
         .map(
           (ad) => `
         <tr>
-          <td style="padding:8px 10px 8px 24px;border-bottom:1px solid #e8e2d6;font-size:13px;${cellStyle}">${escapeHtml(ad.sku ?? "")}</td>
-          <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:13px;${cellStyle}">Add-on: ${escapeHtml(ad.name)}</td>
-          <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:13px;text-align:center;${cellStyle}">${ad.quantity}</td>
+          <td style="padding:8px 10px 8px 24px;border-bottom:1px solid #e8e2d6;font-size:15px;${cellStyle}">${escapeHtml(ad.sku ?? "")}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:15px;${cellStyle}">Add-on: ${escapeHtml(ad.name)}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:15px;text-align:center;${cellStyle}">${ad.quantity}</td>
         </tr>`,
         )
         .join("");
       return `
         <tr>
-          <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:13px;${cellStyle}">${escapeHtml(sku)}</td>
-          <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:13px;${cellStyle}">${escapeHtml(desc || "—")}</td>
-          <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:13px;text-align:center;${cellStyle}">${it.quantity}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:15px;${cellStyle}">${escapeHtml(sku)}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:15px;${cellStyle}">${escapeHtml(desc || "—")}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e8e2d6;font-size:15px;text-align:center;${cellStyle}">${it.quantity}</td>
         </tr>
         ${addonRows}
       `;
@@ -245,22 +245,22 @@ export async function sendVendorOrderCancellationEmail(
 
   const reasonBlock = reason
     ? `<div style="border:1px solid #f1d4d4;background:#fff5f5;padding:10px 12px;margin:0 0 16px 0;border-radius:3px;">
-         <div style="font-size:11px;text-transform:uppercase;color:#b91c1c;font-weight:bold;margin-bottom:4px;">Cancellation reason</div>
-         <div style="font-size:13px;color:#3a3a3a;">${escapeHtml(reason)}</div>
+         <div style="font-size:15px;text-transform:uppercase;color:#b91c1c;font-weight:bold;margin-bottom:4px;">Cancellation reason</div>
+         <div style="font-size:15px;color:#3a3a3a;">${escapeHtml(reason)}</div>
        </div>`
     : "";
 
   const tableHead = `
     <thead>
       <tr style="background:#f5f3ee;">
-        <th style="padding:8px 10px;text-align:left;font-size:12px;color:#666;border-bottom:2px solid #e8e2d6;">SKU</th>
-        <th style="padding:8px 10px;text-align:left;font-size:12px;color:#666;border-bottom:2px solid #e8e2d6;">Description</th>
-        <th style="padding:8px 10px;text-align:center;font-size:12px;color:#666;border-bottom:2px solid #e8e2d6;">Qty</th>
+        <th style="padding:8px 10px;text-align:left;font-size:15px;color:#666;border-bottom:2px solid #e8e2d6;">SKU</th>
+        <th style="padding:8px 10px;text-align:left;font-size:15px;color:#666;border-bottom:2px solid #e8e2d6;">Description</th>
+        <th style="padding:8px 10px;text-align:center;font-size:15px;color:#666;border-bottom:2px solid #e8e2d6;">Qty</th>
       </tr>
     </thead>`;
 
   const cancelledTable = `
-    <h2 style="font-size:14px;color:#b91c1c;margin:20px 0 8px 0;text-transform:uppercase;letter-spacing:0.5px;">Cancelled items (${cancelledItems.length})</h2>
+    <h2 style="font-size:15px;color:#b91c1c;margin:20px 0 8px 0;text-transform:uppercase;letter-spacing:0.5px;">Cancelled items (${cancelledItems.length})</h2>
     <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
       ${tableHead}
       <tbody>
@@ -276,7 +276,7 @@ export async function sendVendorOrderCancellationEmail(
     </div>
     ${reasonBlock}
     ${cancelledTable}
-    <p style="margin:20px 0 0 0;font-size:13px;color:#666;">
+    <p style="margin:20px 0 0 0;font-size:15px;color:#666;">
       A copy of the cancelled purchase order is attached for your records. Please reply to this email to confirm the cancellation, or reach us at (661) 255-9909 or <a href="mailto:sales@oasisgardenandpatio.com">sales@oasisgardenandpatio.com</a> with any questions.
     </p>
   `;
@@ -326,9 +326,9 @@ export async function sendVendorOrderRevisionEmail(
     <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
       <thead>
         <tr style="background:#f5f3ee;">
-          <th style="padding:8px 10px;text-align:left;font-size:12px;color:#666;border-bottom:2px solid #e8e2d6;">SKU</th>
-          <th style="padding:8px 10px;text-align:left;font-size:12px;color:#666;border-bottom:2px solid #e8e2d6;">Description</th>
-          <th style="padding:8px 10px;text-align:center;font-size:12px;color:#666;border-bottom:2px solid #e8e2d6;">Qty</th>
+          <th style="padding:8px 10px;text-align:left;font-size:15px;color:#666;border-bottom:2px solid #e8e2d6;">SKU</th>
+          <th style="padding:8px 10px;text-align:left;font-size:15px;color:#666;border-bottom:2px solid #e8e2d6;">Description</th>
+          <th style="padding:8px 10px;text-align:center;font-size:15px;color:#666;border-bottom:2px solid #e8e2d6;">Qty</th>
         </tr>
       </thead>
       <tbody>
@@ -343,7 +343,7 @@ export async function sendVendorOrderRevisionEmail(
       ${vendorLine}
     </div>
     ${itemsTable}
-    <p style="margin:20px 0 0 0;font-size:13px;color:#666;">
+    <p style="margin:20px 0 0 0;font-size:15px;color:#666;">
       Please reply to this email to confirm receipt of the revised PO, or reach us at (661) 255-9909 or <a href="mailto:sales@oasisgardenandpatio.com">sales@oasisgardenandpatio.com</a> with any questions.
     </p>
   `;

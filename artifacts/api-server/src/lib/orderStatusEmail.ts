@@ -97,7 +97,7 @@ const TEMPLATES: Record<string, StatusCopy> = {
       ${greeting}
       <p>Great news! Your order has been confirmed and has been submitted to the manufacturer.</p>
       <p>Here is what you can expect next:</p>
-      <ul style="margin:0 0 16px 0;padding-left:20px;font-size:14px;">
+      <ul style="margin:0 0 16px 0;padding-left:20px;font-size:15px;">
         <li style="margin-bottom:8px;">The manufacturer will provide an estimated completion date. Please keep in mind that estimated dates are not guaranteed &mdash; we will keep you informed along the way.</li>
         <li>Once your order is ready, we will follow up with delivery details so you know exactly when to expect it.</li>
       </ul>
@@ -249,7 +249,7 @@ export async function sendOrderRefundEmail(
     let restockingNote = "";
     if (opts.restockingFee != null && opts.restockingFee > 0) {
       restockingNote = `
-        <p style="background:#fff8e1;border:1px solid #ffe082;border-radius:4px;padding:12px 16px;font-size:14px;margin:16px 0;">
+        <p style="background:#fff8e1;border:1px solid #ffe082;border-radius:4px;padding:12px 16px;font-size:15px;margin:16px 0;">
           <strong>Note:</strong> Your refund has been reduced by
           <strong>${fmtMoney(opts.restockingFee)}</strong> per our refund &amp;
           restocking policy. The net refund of
@@ -262,7 +262,7 @@ export async function sendOrderRefundEmail(
     const bodyHtml = `
       ${greeting}
       <p>Your refund for order <strong>${escapeHtml(order.orderNumber)}</strong> has been processed.</p>
-      <table style="width:100%;border-collapse:collapse;font-size:14px;margin:16px 0;">
+      <table style="width:100%;border-collapse:collapse;font-size:15px;margin:16px 0;">
         <tr>
           <td style="padding:6px 0;color:#555;">Gross refund amount</td>
           <td style="padding:6px 0;text-align:right;">${fmtMoney(opts.grossRefundAmount)}</td>
@@ -285,7 +285,7 @@ export async function sendOrderRefundEmail(
       <p>If you have any questions, please don't hesitate to contact us.</p>
       <p>Thank you for your understanding, and we hope to serve you again.</p>
       ${SIGNOFF}
-      <p style="font-size:13px;color:#666;margin-top:24px;">Order reference: <strong>${escapeHtml(order.orderNumber)}</strong></p>
+      <p style="font-size:15px;color:#666;margin-top:24px;">Order reference: <strong>${escapeHtml(order.orderNumber)}</strong></p>
     `;
 
     await sendEmail({
@@ -354,7 +354,7 @@ function renderDeliveryLineList(lines: CarrierDeliveryLine[]): string {
       l.label,
     )} &mdash; Qty ${l.quantity}${nested}</li>`;
   };
-  return `<ul style="margin:4px 0 16px 0;padding-left:20px;font-size:14px;">${topLevel
+  return `<ul style="margin:4px 0 16px 0;padding-left:20px;font-size:15px;">${topLevel
     .map(renderLi)
     .join("")}</ul>`;
 }
@@ -412,7 +412,7 @@ export function buildCarrierDeliveryUpdateEmail(input: {
       <p>If you have any questions, feel free to reply to this email or call us at (661) 255-9909.</p>
       <p>We can't wait for you to enjoy your new pieces!</p>
       ${SIGNOFF}
-      <p style="font-size:13px;color:#666;margin-top:24px;">Order reference: <strong>${escapeHtml(
+      <p style="font-size:15px;color:#666;margin-top:24px;">Order reference: <strong>${escapeHtml(
         orderNumber,
       )}</strong></p>
     `;
@@ -530,7 +530,7 @@ export async function sendOrderStatusEmail(
     const greeting = `<p>Hi ${escapeHtml(recipient.name)},</p>`;
     const trimmedNote = noteToCustomer?.trim();
     const noteHtml = trimmedNote
-      ? `<p style="font-size:13px;color:#666;margin-top:4px;">Note from Oasis Staff: ${escapeHtml(trimmedNote)}</p>`
+      ? `<p style="font-size:15px;color:#666;margin-top:4px;">Note from Oasis Staff: ${escapeHtml(trimmedNote)}</p>`
       : "";
     await sendEmail({
       to: recipient.email,
@@ -538,7 +538,7 @@ export async function sendOrderStatusEmail(
       title: tpl.title,
       bodyHtml: `
         ${tpl.body(greeting, order)}
-        <p style="font-size:13px;color:#666;margin-top:24px;">Order reference: <strong>${order.orderNumber}</strong></p>
+        <p style="font-size:15px;color:#666;margin-top:24px;">Order reference: <strong>${order.orderNumber}</strong></p>
         ${noteHtml}
       `,
     });

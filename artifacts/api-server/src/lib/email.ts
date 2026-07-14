@@ -80,11 +80,11 @@ export function emailLayout(title: string, body: string, titleColor = "#1a3c5e")
       <div style="text-align:center;margin-bottom:32px;">
         ${logoHtml}
       </div>
-      <div style="background:#ffffff;padding:32px 28px;border-radius:4px;border:1px solid #e8e2d6;">
+      <div style="background:#ffffff;padding:32px 28px;border-radius:4px;border:1px solid #e8e2d6;font-size:15px;">
         <h1 style="font-size:22px;color:${titleColor};margin:0 0 16px 0;">${title}</h1>
         ${body}
       </div>
-      <div style="text-align:center;margin-top:24px;font-size:14px;color:#000000;">
+      <div style="text-align:center;margin-top:24px;font-size:15px;color:#000000;">
         <p style="margin:4px 0;">${BRAND_NAME}</p>
         <p style="margin:4px 0;">21182 Centre Pointe Pkwy #100, Santa Clarita, CA 91350</p>
         <p style="margin:4px 0;">(661) 255-9909 &middot; sales@oasisgardenandpatio.com</p>
@@ -128,7 +128,7 @@ export async function sendEmail({
   const redirectBanner =
     effectiveTo === to
       ? ""
-      : `<div style="background:#fff8e1;border:1px solid #ffe082;border-radius:4px;padding:10px 14px;font-size:13px;color:#7a5c00;margin-bottom:16px;font-family:Arial,sans-serif;">
+      : `<div style="background:#fff8e1;border:1px solid #ffe082;border-radius:4px;padding:10px 14px;font-size:15px;color:#7a5c00;margin-bottom:16px;font-family:Arial,sans-serif;">
           <strong>Test mode:</strong> This email was intended for <strong>${to}</strong> but was redirected here because the sending domain is not yet verified.
         </div>`;
 
@@ -164,7 +164,7 @@ export async function sendVerificationEmail({
     <p>${greeting}</p>
     <p>Welcome to ${BRAND_NAME}. Please confirm your email address to complete your account setup.</p>
     ${buttonLink(verificationUrl, "Verify Email")}
-    <p style="font-size:13px;color:#666;">This link expires in 24 hours. If you did not create an account, you can safely ignore this email.</p>
+    <p style="font-size:15px;color:#666;">This link expires in 24 hours. If you did not create an account, you can safely ignore this email.</p>
   `;
 
   const result = await client.emails.send({
@@ -197,7 +197,7 @@ export async function sendEmailChangeCode({
     <p>${greeting}</p>
     <p>We received a request to change the email address on your ${BRAND_NAME} account to this one. Enter the code below to confirm the change.</p>
     <p style="font-size:32px;font-weight:700;letter-spacing:8px;text-align:center;margin:24px 0;color:#1a3c5e;">${code}</p>
-    <p style="font-size:13px;color:#666;">This code expires in 30 minutes. If you did not request this change, you can safely ignore this email and your account will be unchanged.</p>
+    <p style="font-size:15px;color:#666;">This code expires in 30 minutes. If you did not request this change, you can safely ignore this email and your account will be unchanged.</p>
   `;
 
   const result = await client.emails.send({
@@ -236,12 +236,12 @@ export async function sendWishlistDisclosureEmail({
     <p>At Oasis Garden &amp; Patio, we take a personal approach to helping customers create their perfect outdoor space. Because you saved this item while signed in to your account, one of our team members may reach out to share more details, answer questions, or let you know about promotions and events we think you will love.</p>
     <p><strong>You are in control of this preference.</strong> If you would prefer that we not contact you about your wishlist or send you promotional emails, just click the link below to opt out. You can also update this preference any time in your account settings -- it takes just a second.</p>
     ${buttonLink(optOutUrl, "Opt Out of Marketing Contact")}
-    <p style="font-size:13px;color:#666;"><strong>Please note:</strong> Wishlist prices reflect current pricing and are not guaranteed. Product availability is subject to change at the manufacturer's discretion. For a firm price quote, contact us -- quotes are honored for 30 days from the date of issue.</p>
-    <p style="font-size:13px;color:#666;">The marketing contact preference above applies to wishlist follow-ups and promotional emails only. It does not affect your order confirmations, shipping updates, delivery notifications, or any other emails related to a purchase you have placed. Those will always reach you no matter what.</p>
+    <p style="font-size:15px;color:#666;"><strong>Please note:</strong> Wishlist prices reflect current pricing and are not guaranteed. Product availability is subject to change at the manufacturer's discretion. For a firm price quote, contact us -- quotes are honored for 30 days from the date of issue.</p>
+    <p style="font-size:15px;color:#666;">The marketing contact preference above applies to wishlist follow-ups and promotional emails only. It does not affect your order confirmations, shipping updates, delivery notifications, or any other emails related to a purchase you have placed. Those will always reach you no matter what.</p>
     <p>Questions? We would love to hear from you!</p>
     <p>Phone: (661) 255-9909<br />Email: sales@oasisgardenandpatio.com</p>
     <p>Thanks for shopping with us!</p>
-    <p style="font-size:13px;color:#666;">To manage your contact preferences, visit your <a href="${accountSettingsUrl}">account settings</a> at any time. To opt out of marketing contact, click the opt-out link in this email.</p>
+    <p style="font-size:15px;color:#666;">To manage your contact preferences, visit your <a href="${accountSettingsUrl}">account settings</a> at any time. To opt out of marketing contact, click the opt-out link in this email.</p>
   `;
 
   const result = await client.emails.send({
@@ -306,7 +306,7 @@ export function renderWishlistReachOutEmailBody({
   const itemsHtml = items
     .map((item) => {
       const variantHtml = item.variantLabel
-        ? `<div style="font-size:13px;color:#666;">${escapeHtml(item.variantLabel)}</div>`
+        ? `<div style="font-size:15px;color:#666;">${escapeHtml(item.variantLabel)}</div>`
         : "";
       const priceHtml =
         item.price !== null
@@ -334,8 +334,8 @@ export function renderWishlistReachOutEmailBody({
     <p>Phone: (661) 255-9909<br />Email: sales@oasisgardenandpatio.com</p>
     ${noteHtml}
     <hr style="border:none;border-top:1px solid #e8e2d6;margin:24px 0;" />
-    <p style="font-size:13px;color:#666;">Please note that wishlist prices reflect current pricing and are not guaranteed. Product availability is subject to change at the manufacturer's discretion. For a firm price quote, contact us -- quotes are honored for 30 days from the date of issue.</p>
-    <p style="font-size:13px;color:#666;">If you would prefer not to receive messages like this, you can update your marketing contact preference at any time in your <a href="${accountSettingsUrl}">account settings</a>.</p>
+    <p style="font-size:15px;color:#666;">Please note that wishlist prices reflect current pricing and are not guaranteed. Product availability is subject to change at the manufacturer's discretion. For a firm price quote, contact us -- quotes are honored for 30 days from the date of issue.</p>
+    <p style="font-size:15px;color:#666;">If you would prefer not to receive messages like this, you can update your marketing contact preference at any time in your <a href="${accountSettingsUrl}">account settings</a>.</p>
   `;
 }
 
@@ -373,7 +373,7 @@ export async function sendPasswordResetEmail({
     <p>${greeting}</p>
     <p>We received a request to reset the password for your ${BRAND_NAME} account.</p>
     ${buttonLink(resetUrl, "Reset Password")}
-    <p style="font-size:13px;color:#666;">This link expires in 1 hour. If you did not request a password reset, no action is needed and your password will remain unchanged.</p>
+    <p style="font-size:15px;color:#666;">This link expires in 1 hour. If you did not request a password reset, no action is needed and your password will remain unchanged.</p>
   `;
 
   const result = await client.emails.send({

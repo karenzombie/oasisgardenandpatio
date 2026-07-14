@@ -83,7 +83,7 @@ function emailLayout(title: string, body: string): string {
         <h1 style="font-size:22px;color:#1a3c5e;margin:0 0 16px 0;">${title}</h1>
         ${body}
       </div>
-      <div style="text-align:center;margin-top:24px;font-size:12px;color:#8a8a8a;">
+      <div style="text-align:center;margin-top:24px;font-size:15px;color:#8a8a8a;">
         <p style="margin:4px 0;">${BRAND_NAME} &middot; staff security notice</p>
       </div>
     </div>
@@ -156,7 +156,7 @@ export async function sendRecoveryAlertEmail(
   const { client, from } = await getResendClient();
   const body = `
     <p>A staff account recovery has been requested for <strong>${escapeHtml(args.targetEmail)}</strong>.</p>
-    <p style="font-size:13px;color:#666;">
+    <p style="font-size:15px;color:#666;">
       Request details:<br>
       &nbsp;&nbsp;IP: ${escapeHtml(args.requestIp ?? "unknown")}<br>
       &nbsp;&nbsp;Browser: ${escapeHtml((args.requestUserAgent ?? "unknown").slice(0, 200))}
@@ -199,7 +199,7 @@ export async function sendRecoveryFinalizedEmail(
     ? `
       <p>The recovery link for your staff account was just used to set a new password and reset two-factor authentication.</p>
       <p>If this was you, you're all set — sign in at the staff portal and you'll be walked through enrolling a new authenticator app.</p>
-      <p style="font-size:13px;color:#a33;"><strong>If this was NOT you</strong>, contact another administrator immediately.</p>
+      <p style="font-size:15px;color:#a33;"><strong>If this was NOT you</strong>, contact another administrator immediately.</p>
     `
     : `
       <p>The recovery request you made for your staff account was cancelled${args.cancelledByEmail ? ` by <strong>${args.cancelledByEmail}</strong>` : ""}.</p>

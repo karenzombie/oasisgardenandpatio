@@ -46,7 +46,7 @@ export async function sendStaffWelcomeEmail(opts: {
     const bodyHtml = `
       ${greeting}
       <p>A staff account has been created for you on the Oasis Garden &amp; Patio portal. Your login credentials are below.</p>
-      <table style="width:100%;border-collapse:collapse;font-size:14px;margin:20px 0;background:#f9f7f4;border-radius:4px;">
+      <table style="width:100%;border-collapse:collapse;font-size:15px;margin:20px 0;background:#f9f7f4;border-radius:4px;">
         <tr>
           <td style="padding:10px 14px;color:#555;width:160px;border-bottom:1px solid #e8e2d6;">Email</td>
           <td style="padding:10px 14px;font-weight:bold;border-bottom:1px solid #e8e2d6;">${escapeHtml(opts.email)}</td>
@@ -60,7 +60,7 @@ export async function sendStaffWelcomeEmail(opts: {
           <td style="padding:10px 14px;">${escapeHtml(roleLabel)}</td>
         </tr>
       </table>
-      <div style="background:#fff8e1;border:1px solid #ffe082;border-radius:4px;padding:12px 16px;font-size:14px;color:#7a5c00;margin:16px 0;">
+      <div style="background:#fff8e1;border:1px solid #ffe082;border-radius:4px;padding:12px 16px;font-size:15px;color:#7a5c00;margin:16px 0;">
         <strong>Action required:</strong> You will be prompted to set a new password the first time you sign in. Please keep this email secure and do not share your credentials.
       </div>
       ${loginUrl ? `<p style="text-align:center;margin:28px 0;"><a href="${loginUrl}" style="display:inline-block;background:#1a3c5e;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:4px;font-family:Arial,sans-serif;font-size:14px;letter-spacing:1px;">Sign in to Staff Portal</a></p>` : ""}
