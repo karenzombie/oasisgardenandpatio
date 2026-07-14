@@ -3477,7 +3477,7 @@ export const AdminListProductsQueryParams = zod.object({
   categoryId: zod.coerce.number().optional(),
   isActive: zod.coerce.boolean().optional(),
   featured: zod.coerce.boolean().optional(),
-  rankGroup: zod.coerce.string().optional(),
+  rankGroup: zod.enum(["1", "2", "3", "none"]).optional(),
   page: zod.coerce.number().min(1).default(adminListProductsQueryPageDefault),
   pageSize: zod.coerce
     .number()
@@ -3485,7 +3485,15 @@ export const AdminListProductsQueryParams = zod.object({
     .max(adminListProductsQueryPageSizeMax)
     .default(adminListProductsQueryPageSizeDefault),
   sortBy: zod
-    .enum(["name", "sku", "manufacturer", "category", "price", "onHand", "rankGroup"])
+    .enum([
+      "name",
+      "sku",
+      "manufacturer",
+      "category",
+      "price",
+      "onHand",
+      "rankGroup",
+    ])
     .optional(),
   sortOrder: zod
     .enum(["asc", "desc"])
@@ -3581,7 +3589,12 @@ export const AdminListProductsResponse = zod.object({
       quoteOnly: zod.boolean(),
       featured: zod.boolean(),
       displayOrder: zod.number(),
-      rankGroup: zod.number().nullable(),
+      rankGroup: zod
+        .number()
+        .nullable()
+        .describe(
+          "Coarse sort tier (1 = highest priority, 2, 3, null = last). Products in lower numbered groups lead listing pages; order within a group is not controlled.",
+        ),
       lowStockThreshold: zod.number(),
       isActive: zod.boolean(),
       finishMinQtyNote: zod
@@ -3781,7 +3794,12 @@ export const AdminGetProductResponse = zod
     quoteOnly: zod.boolean(),
     featured: zod.boolean(),
     displayOrder: zod.number(),
-    rankGroup: zod.number().nullable(),
+    rankGroup: zod
+      .number()
+      .nullable()
+      .describe(
+        "Coarse sort tier (1 = highest priority, 2, 3, null = last). Products in lower numbered groups lead listing pages; order within a group is not controlled.",
+      ),
     lowStockThreshold: zod.number(),
     isActive: zod.boolean(),
     finishMinQtyNote: zod
@@ -3978,7 +3996,12 @@ export const AdminUpdateProductResponse = zod.object({
   quoteOnly: zod.boolean(),
   featured: zod.boolean(),
   displayOrder: zod.number(),
-  rankGroup: zod.number().nullable(),
+  rankGroup: zod
+    .number()
+    .nullable()
+    .describe(
+      "Coarse sort tier (1 = highest priority, 2, 3, null = last). Products in lower numbered groups lead listing pages; order within a group is not controlled.",
+    ),
   lowStockThreshold: zod.number(),
   isActive: zod.boolean(),
   finishMinQtyNote: zod
@@ -4092,7 +4115,12 @@ export const AdminSetProductActiveResponse = zod.object({
   quoteOnly: zod.boolean(),
   featured: zod.boolean(),
   displayOrder: zod.number(),
-  rankGroup: zod.number().nullable(),
+  rankGroup: zod
+    .number()
+    .nullable()
+    .describe(
+      "Coarse sort tier (1 = highest priority, 2, 3, null = last). Products in lower numbered groups lead listing pages; order within a group is not controlled.",
+    ),
   lowStockThreshold: zod.number(),
   isActive: zod.boolean(),
   finishMinQtyNote: zod

@@ -77,6 +77,8 @@ export interface CreateProductRequest {
   quoteOnly?: boolean;
   featured?: boolean;
   displayOrder?: number;
+  /** @nullable */
+  rankGroup?: number | null;
   lowStockThreshold?: number;
   isActive?: boolean;
 }

@@ -94,7 +94,7 @@ overrides:
   esbuild>@esbuild/win32-x64: '-'
   '@babel/core': '>=7.29.6 <8.0.0'
   form-data: '>=2.5.6'
-  js-yaml: '>=4.2.0'
+  js-yaml: '>=4.2.0 <5'
   linkify-it: '>=5.0.1'
   markdown-it: '>=14.3.0'
   fast-uri@<=3.1.0: '>=3.1.1'

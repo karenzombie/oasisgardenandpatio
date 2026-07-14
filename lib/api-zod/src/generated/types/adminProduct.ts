@@ -95,7 +95,7 @@ export interface AdminProduct {
   featured: boolean;
   displayOrder: number;
   /**
-   * Coarse sort tier (1 = highest priority, 2, 3, null = last).
+   * Coarse sort tier (1 = highest priority, 2, 3, null = last). Products in lower numbered groups lead listing pages; order within a group is not controlled.
    * @nullable
    */
   rankGroup: number | null;

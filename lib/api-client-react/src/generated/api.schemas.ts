@@ -1328,7 +1328,7 @@ export interface AdminProduct {
   featured: boolean;
   displayOrder: number;
   /**
-   * Coarse sort tier (1 = highest priority, 2, 3, null = last).
+   * Coarse sort tier (1 = highest priority, 2, 3, null = last). Products in lower numbered groups lead listing pages; order within a group is not controlled.
    * @nullable
    */
   rankGroup: number | null;
@@ -5288,6 +5288,10 @@ export type AdminListProductsParams = {
   isActive?: boolean;
   featured?: boolean;
   /**
+   * Filter by rank group (1/2/3) or "none" for ungrouped products.
+   */
+  rankGroup?: AdminListProductsRankGroup;
+  /**
    * @minimum 1
    */
   page?: number;
@@ -5300,6 +5304,16 @@ export type AdminListProductsParams = {
   sortOrder?: AdminListProductsSortOrder;
 };
 
+export type AdminListProductsRankGroup =
+  (typeof AdminListProductsRankGroup)[keyof typeof AdminListProductsRankGroup];
+
+export const AdminListProductsRankGroup = {
+  NUMBER_1: "1",
+  NUMBER_2: "2",
+  NUMBER_3: "3",
+  none: "none",
+} as const;
+
 export type AdminListProductsSortBy =
   (typeof AdminListProductsSortBy)[keyof typeof AdminListProductsSortBy];
 
@@ -5310,6 +5324,7 @@ export const AdminListProductsSortBy = {
   category: "category",
   price: "price",
   onHand: "onHand",
+  rankGroup: "rankGroup",
 } as const;
 
 export type AdminListProductsSortOrder =

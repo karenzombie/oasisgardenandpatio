@@ -97,6 +97,7 @@ export * from "./adminListLocalDeliveriesFilter";
 export * from "./adminListLocalDeliveriesParams";
 export * from "./adminListOrdersParams";
 export * from "./adminListProductsParams";
+export * from "./adminListProductsRankGroup";
 export * from "./adminListProductsSortBy";
 export * from "./adminListProductsSortOrder";
 export * from "./adminListUsersGroup";

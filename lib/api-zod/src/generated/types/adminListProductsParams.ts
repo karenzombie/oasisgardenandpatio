@@ -5,6 +5,7 @@
  * Oasis Garden & Patio API
  * OpenAPI spec version: 0.1.0
  */
+import type { AdminListProductsRankGroup } from "./adminListProductsRankGroup";
 import type { AdminListProductsSortBy } from "./adminListProductsSortBy";
 import type { AdminListProductsSortOrder } from "./adminListProductsSortOrder";
 
@@ -14,7 +15,10 @@ export type AdminListProductsParams = {
   categoryId?: number;
   isActive?: boolean;
   featured?: boolean;
-  rankGroup?: string;
+  /**
+   * Filter by rank group (1/2/3) or "none" for ungrouped products.
+   */
+  rankGroup?: AdminListProductsRankGroup;
   /**
    * @minimum 1
    */
