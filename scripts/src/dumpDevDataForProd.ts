@@ -73,6 +73,15 @@ const FULL_REPLACE_TABLES = new Set([
   "product_images",
   "product_fabric_pools",
   "product_finish_pools",
+  // Added 2026-07-15: same id-drift class as the three above. No incoming FKs,
+  // dev is source of truth. variant_grade_prices had confirmed id drift; the
+  // rest are added to prevent the same silent sync failure recurring.
+  "variant_grade_prices",
+  "finish_collections",
+  "product_cover_options",
+  "product_cover_finish_prices",
+  "product_stem_options",
+  "product_addon_grade_prices",
 ]);
 
 // Tables with the same id-drift problem, but their id IS load-bearing: it's
