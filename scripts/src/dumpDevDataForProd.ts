@@ -130,8 +130,11 @@ for (const table of TABLES_IN_ORDER) {
   // existing matched row's id (the live FK target) must never be overwritten.
   const insertCols = naturalKey ? cols.filter((c) => c !== "id") : cols;
 
+  const orderBy = naturalKey
+    ? naturalKey.map((c) => `"${c}"`).join(", ")
+    : `"id"`;
   const rowsRes = await client.query(
-    `SELECT ${cols.map((c) => `"${c}"`).join(", ")} FROM "${table}" ORDER BY id`,
+    `SELECT ${cols.map((c) => `"${c}"`).join(", ")} FROM "${table}" ORDER BY ${orderBy}`,
   );
 
   out.push(`-- ${table}: ${rowsRes.rows.length} rows`);
@@ -145,12 +148,16 @@ for (const table of TABLES_IN_ORDER) {
   }
 
   const colList = insertCols.map((c) => `"${c}"`).join(", ");
-  const updateList = insertCols
-    .filter((c) => c !== "id" && !(naturalKey ?? []).includes(c))
+  const updateCols = insertCols.filter(
+    (c) => c !== "id" && !(naturalKey ?? []).includes(c),
+  );
+  const updateList = updateCols
     .map((c) => `"${c}" = EXCLUDED."${c}"`)
     .join(", ");
   const conflictClause = naturalKey
-    ? `ON CONFLICT (${naturalKey.map((c) => `"${c}"`).join(", ")}) DO UPDATE SET ${updateList}`
+    ? updateCols.length > 0
+      ? `ON CONFLICT (${naturalKey.map((c) => `"${c}"`).join(", ")}) DO UPDATE SET ${updateList}`
+      : `ON CONFLICT (${naturalKey.map((c) => `"${c}"`).join(", ")}) DO NOTHING`
     : `ON CONFLICT (id) DO UPDATE SET ${updateList}`;
 
   // Emit batched multi-row INSERTs (≈1000 rows/statement) so applying the dump
@@ -172,11 +179,13 @@ for (const table of TABLES_IN_ORDER) {
     );
   }
 
-  // Reset the sequence so future inserts don't collide
-  out.push(
-    `SELECT setval(pg_get_serial_sequence('"${table}"', 'id'), ` +
-      `GREATEST((SELECT COALESCE(MAX(id), 1) FROM "${table}"), 1));`,
-  );
+  // Reset the sequence so future inserts don't collide (skip natural-key tables)
+  if (!naturalKey) {
+    out.push(
+      `SELECT setval(pg_get_serial_sequence('"${table}"', 'id'), ` +
+        `GREATEST((SELECT COALESCE(MAX(id), 1) FROM "${table}"), 1));`,
+    );
+  }
   out.push("");
 }
 
