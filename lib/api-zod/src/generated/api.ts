@@ -1783,6 +1783,15 @@ export const placeOrderBodyShippingMethodDefault = `standard`;
 export const placeOrderBodySaveShippingAddressDefault = true;
 
 export const PlaceOrderBody = zod.object({
+  paymentToken: zod
+    .object({
+      dataDescriptor: zod.string(),
+      dataValue: zod.string(),
+    })
+    .optional()
+    .describe(
+      "Accept.js opaque token from the browser. Required for online checkout. The raw card number must never be sent to the server.",
+    ),
   guestContact: zod
     .object({
       email: zod.string().email().min(placeOrderBodyGuestContactEmailMin),

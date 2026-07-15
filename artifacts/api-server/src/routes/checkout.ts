@@ -19,6 +19,7 @@ import {
   variantGradePricesTable,
   productAddonOptionsTable,
   manufacturersTable,
+  paymentsTable,
   type Customer,
 } from "@workspace/db";
 import {
@@ -40,6 +41,7 @@ import {
   computeShippingForLines,
   type ShippableRuleLine,
 } from "../lib/shippingRules";
+import { processAuthnetCharge } from "../lib/authorizeNet";
 
 const router: IRouter = Router();
 
@@ -119,6 +121,24 @@ async function createGuestCustomer(input: {
   return created;
 }
 
+/**
+ * Return the Accept.js sandbox public config (API Login ID + Public Client Key).
+ * The transaction key is server-only and must NEVER appear here.
+ */
+router.get(
+  "/checkout/payment-config",
+  async (_req: Request, res: Response): Promise<void> => {
+    const apiLoginId = process.env["AUTHNET_API_LOGIN_ID"];
+    const publicClientKey = process.env["AUTHNET_PUBLIC_CLIENT_KEY"];
+    if (!apiLoginId || !publicClientKey) {
+      res.status(503).json({ error: "Payment configuration is not available." });
+      return;
+    }
+    const sandbox = process.env["AUTHNET_SANDBOX"] !== "false";
+    res.json({ apiLoginId, publicClientKey, sandbox });
+  },
+);
+
 router.post(
   "/checkout",
   async (req: Request, res: Response): Promise<void> => {
@@ -131,6 +151,14 @@ router.post(
     }
     const data = parsed.data;
     const isGuest = !req.session.userId;
+
+    // Payment token is required for all online orders.
+    if (!data.paymentToken) {
+      res
+        .status(400)
+        .json({ error: "Payment information is required to place an order." });
+      return;
+    }
 
     // For guests, require contact info + a fresh shipping address (no saved
     // address book). Authenticated users may use saved addresses.
@@ -254,14 +282,74 @@ router.post(
 
     const pricingSettings = await loadPricingSettings();
     const shippingConfig = await loadShippingConfig();
+
+    // Order number is generated BEFORE the charge so the same number appears
+    // on both the gateway transaction record and the order row.
     const orderNumber = generateOrderNumber();
     const cartLookup = cartLookupFor(req);
 
-    let result: { totalCents: number } | { error: string; status: number };
+    // ── Phase A: Pre-flight transaction ────────────────────────────────────
+    // Lock the cart, validate contents, compute the total. No inserts.
+    // Returns the data needed to create the order + the totalCents to charge.
+    type AddonRow = {
+      cartItemId: number;
+      addonOptionId: number;
+      unitPrice: string;
+      quantity: number;
+      sku: string;
+      name: string;
+      pricingMode: string;
+      displayOrder: number;
+    };
+    type PreflightResult = {
+      cartId: number;
+      lines: Array<{
+        cartItemId: number;
+        productId: number;
+        sku: string;
+        name: string;
+        categoryId: number | null;
+        manufacturerId: number | null;
+        subCategory: string | null;
+        quantity: number;
+        unitPrice: string;
+        weight: string | null;
+        availableOnline: boolean;
+        productPrice: string | null;
+        productSalePrice: string | null;
+        isActive: boolean;
+        quoteOnly: boolean;
+        parentCartItemId: number | null;
+        fabricIsStripe: boolean | null;
+        variantId: number | null;
+        fabricId: number | null;
+        finishId: number | null;
+        finialId: number | null;
+        variantSku: string | null;
+        variantName: string | null;
+        finishCode: string | null;
+        finishName: string | null;
+        finialCode: string | null;
+        finialName: string | null;
+        fabricItemNumber: string | null;
+        fabricName: string | null;
+        fabricGrade: string | null;
+        fabricBrand: string | null;
+        unitMsrp: string | null;
+        variantShippingSurcharge: string | null;
+        variantWeight: string | null;
+      }>;
+      addonsByCartItem: Map<number, AddonRow[]>;
+      lineCents: number[];
+      subtotalCents: number;
+      shippingCents: number;
+      taxCents: number;
+      totalCents: number;
+    };
+
+    let preflight: PreflightResult | { error: string; status: number };
     try {
-      result = await db.transaction(async (tx) => {
-        // SELECT ... FOR UPDATE on the cart row so concurrent submits of the
-        // same cart serialise instead of double-charging.
+      preflight = await db.transaction(async (tx) => {
         const cartWhere =
           cartLookup.kind === "user"
             ? eq(cartsTable.userId, cartLookup.userId)
@@ -354,9 +442,6 @@ router.post(
             status: 400,
           };
         }
-        // Tied accessory lines (e.g. top covers) may have available_online=false
-        // and are valid as child items attached to a base. Standalone items that
-        // are inquiry-only should not reach checkout.
         if (lines.some((l) => !l.availableOnline && l.parentCartItemId == null)) {
           return {
             error:
@@ -364,10 +449,6 @@ router.post(
             status: 400,
           };
         }
-        // Server-side price safety net (mirrors the cart add guard): a
-        // top-level product with no usable price must never be sellable.
-        // Child add-on lines (parentCartItemId set) carry server-computed
-        // option pricing and are exempt, matching the availableOnline rule.
         if (
           lines.some(
             (l) =>
@@ -384,7 +465,6 @@ router.post(
             status: 400,
           };
         }
-        // Stripe-fabric umbrellas must be ordered in even pairs (qty 2, 4, 6...).
         if (
           lines.some(
             (l) => l.fabricIsStripe && (l.quantity < 2 || l.quantity % 2 !== 0),
@@ -397,13 +477,9 @@ router.post(
           };
         }
 
-        // Load add-on lines for each cart item (e.g. Marella privacy walls).
-        // Each add-on carries a per-unit price snapshot; its line amount is
-        // unitPrice * parent-line quantity. Add-on amounts are part of the
-        // order subtotal but are stored on order_item_addons, NOT folded into
-        // the parent order_items.amount (which stays base * qty).
+        // Load add-on lines.
         const cartItemIds = lines.map((l) => l.cartItemId);
-        const addonLines = cartItemIds.length
+        const addonLines: AddonRow[] = cartItemIds.length
           ? await tx
               .select({
                 cartItemId: cartItemAddonsTable.cartItemId,
@@ -429,13 +505,14 @@ router.post(
                 asc(cartItemAddonsTable.id),
               )
           : [];
-        const addonsByCartItem = new Map<number, typeof addonLines>();
+        const addonsByCartItem = new Map<number, AddonRow[]>();
         for (const a of addonLines) {
           const list = addonsByCartItem.get(a.cartItemId) ?? [];
           list.push(a);
           addonsByCartItem.set(a.cartItemId, list);
         }
 
+        // Compute totals.
         let subtotalCents = 0;
         const lineCents = lines.map((l) => {
           const c = toCents(l.unitPrice) * l.quantity;
@@ -456,19 +533,101 @@ router.post(
           quantity: l.quantity,
           weightLbs: l.weight == null ? null : Number(l.weight),
         }));
-        const shipping = computeShippingForLines(
-          shippingConfig,
-          shippingEngineLines,
-        );
-        const tax = computeTax(
-          subtotalCents,
-          shippingState,
-          shippingZip,
-          pricingSettings,
-        );
+        const shipping = computeShippingForLines(shippingConfig, shippingEngineLines);
+        const tax = computeTax(subtotalCents, shippingState, shippingZip, pricingSettings);
         const shippingCents = shipping.totalCents;
         const taxCents = tax.cents;
         const totalCents = subtotalCents + shippingCents + taxCents;
+
+        return {
+          cartId: cart.id,
+          lines,
+          addonsByCartItem,
+          lineCents,
+          subtotalCents,
+          shippingCents,
+          taxCents,
+          totalCents,
+        };
+      });
+    } catch (err) {
+      req.log?.error({ err }, "checkout preflight failed");
+      res.status(500).json({ error: "Could not place order. Please try again." });
+      return;
+    }
+
+    if ("error" in preflight) {
+      res.status(preflight.status).json({ error: preflight.error });
+      return;
+    }
+
+    // ── Charge the gateway ─────────────────────────────────────────────────
+    // amountCents is the server-computed total from the pre-flight tx.
+    // orderNumber was generated above; it appears on both the gateway record
+    // and the order row created on approval.
+    const chargeResult = await processAuthnetCharge({
+      amountCents: preflight.totalCents,
+      dataDescriptor: data.paymentToken.dataDescriptor,
+      dataValue: data.paymentToken.dataValue,
+      orderNumber,
+      customerEmail: customer.email,
+    });
+
+    if (!chargeResult.success) {
+      // Branch on failure type.
+      // notConfigured or no rawResponse (network error) = server-side problem,
+      // not the customer's fault. Otherwise = real gateway decline.
+      const isServerSide =
+        chargeResult.notConfigured === true || chargeResult.rawResponse == null;
+      const userMessage = isServerSide
+        ? "Payment is temporarily unavailable. Please try again shortly or contact us for assistance."
+        : (chargeResult.errorMessage ??
+          "Your card was not approved. Please try a different card or contact your bank.");
+      res.status(402).json({
+        error: userMessage,
+        paymentDeclined: !isServerSide,
+        paymentUnavailable: isServerSide,
+      });
+      return;
+    }
+
+    // ── Phase B: Order creation transaction (charge approved) ───────────────
+    // Insert order, items, add-ons, status history, vendor orders, and the
+    // payment row all in one atomic commit. The cart is cleared here too.
+    // If this transaction fails after a successful charge, the card has been
+    // charged without an order — logged as CRITICAL for manual reconciliation.
+    const { cartId, lines, addonsByCartItem, lineCents, subtotalCents, shippingCents, taxCents, totalCents } = preflight;
+
+    let result: { totalCents: number } | { error: string; status: number };
+    try {
+      result = await db.transaction(async (tx) => {
+        // Re-lock the cart as a safety net against concurrent submits that
+        // slipped past the pre-flight lock window.
+        const cartWhere =
+          cartLookup.kind === "user"
+            ? eq(cartsTable.userId, cartLookup.userId)
+            : and(
+                eq(cartsTable.sessionId, cartLookup.sessionId),
+                isNull(cartsTable.userId),
+              );
+        const [cart] = await tx
+          .select()
+          .from(cartsTable)
+          .where(and(cartWhere, eq(cartsTable.id, cartId)))
+          .for("update")
+          .limit(1);
+        if (!cart) {
+          req.log?.error(
+            { orderNumber, transId: chargeResult.transId },
+            "CRITICAL: cart missing after successful charge — manual reconciliation required",
+          );
+          return {
+            error:
+              "Your payment was processed but we encountered an error recording your order. Please contact us immediately with reference: " +
+              orderNumber,
+            status: 500,
+          };
+        }
 
         const [order] = await tx
           .insert(ordersTable)
@@ -490,10 +649,6 @@ router.post(
           })
           .returning();
 
-        // Insert base lines before their tied accessory lines (top covers) so a
-        // cover's parent order_item already exists when we link it. cartItemId →
-        // orderItemId lets the cover record point at its base via
-        // parent_order_item_id (mirrors the cart's parent_cart_item_id tie).
         const insertOrder = lines
           .map((_, i) => i)
           .sort(
@@ -511,47 +666,38 @@ router.post(
           const [orderItem] = await tx
             .insert(orderItemsTable)
             .values({
-            orderId: order.id,
-            productId: l.productId,
-            productSkuSnapshot: l.sku,
-            description: l.name,
-            parentOrderItemId,
-            quantity: l.quantity,
-            unitPrice: String(l.unitPrice),
-            amount: moneyFromCents(lineCents[i]),
-            // Snapshot the chosen finish (variant) + frame finish + fabric so
-            // order history and vendor POs survive catalog changes.
-            variantId: l.variantId,
-            fabricId: l.fabricId,
-            finishId: l.finishId,
-            finialId: l.finialId,
-            // Order/PO SKU = base + finish only; the wind vent (kept in the
-            // variant name snapshot) is not part of the orderable SKU.
-            variantSkuSnapshot: stripVentSuffix(l.variantSku),
-            variantNameSnapshot: l.variantName,
-            finishCodeSnapshot: l.finishCode,
-            finishNameSnapshot: l.finishName,
-            finialCodeSnapshot: l.finialCode,
-            finialNameSnapshot: l.finialName,
-            fabricItemNumberSnapshot: l.fabricItemNumber,
-            fabricNameSnapshot: l.fabricName,
-            fabricBrandSnapshot: l.fabricBrand,
-            fabricGradeSnapshot: l.fabricGrade,
-            unitMsrpSnapshot: l.unitMsrp != null ? String(l.unitMsrp) : null,
-            weightSnapshot:
-              l.variantWeight != null
-                ? String(l.variantWeight)
-                : l.weight != null
-                  ? String(l.weight)
-                  : null,
+              orderId: order.id,
+              productId: l.productId,
+              productSkuSnapshot: l.sku,
+              description: l.name,
+              parentOrderItemId,
+              quantity: l.quantity,
+              unitPrice: String(l.unitPrice),
+              amount: moneyFromCents(lineCents[i]),
+              variantId: l.variantId,
+              fabricId: l.fabricId,
+              finishId: l.finishId,
+              finialId: l.finialId,
+              variantSkuSnapshot: stripVentSuffix(l.variantSku),
+              variantNameSnapshot: l.variantName,
+              finishCodeSnapshot: l.finishCode,
+              finishNameSnapshot: l.finishName,
+              finialCodeSnapshot: l.finialCode,
+              finialNameSnapshot: l.finialName,
+              fabricItemNumberSnapshot: l.fabricItemNumber,
+              fabricNameSnapshot: l.fabricName,
+              fabricBrandSnapshot: l.fabricBrand,
+              fabricGradeSnapshot: l.fabricGrade,
+              unitMsrpSnapshot: l.unitMsrp != null ? String(l.unitMsrp) : null,
+              weightSnapshot:
+                l.variantWeight != null
+                  ? String(l.variantWeight)
+                  : l.weight != null
+                    ? String(l.weight)
+                    : null,
             })
             .returning();
 
-          // Persist immutable add-on snapshots for this line. The total count =
-          // the add-on's per-parent-unit quantity (e.g. 2 half-curtain pairs
-          // when two walls are chosen) times the parent-line quantity. Amount =
-          // unitPrice * that total count; gradeSnapshot records the canopy grade
-          // used for per_grade add-ons (null for flat-priced add-ons).
           const lineAddons = addonsByCartItem.get(l.cartItemId) ?? [];
           if (lineAddons.length > 0) {
             await tx.insert(orderItemAddonsTable).values(
@@ -573,8 +719,6 @@ router.post(
             );
           }
 
-          // Record this line's order_item id so any tied accessory line (top
-          // cover) inserted later can link to it via parent_order_item_id.
           orderItemIdByCartItemId.set(l.cartItemId, orderItem.id);
         }
 
@@ -587,12 +731,37 @@ router.post(
             : "Order placed by customer (online)",
         });
 
-        // Auto-create pending vendor POs grouped by manufacturer so staff
-        // can review/send them from the vendor-orders page. Online orders
-        // always ship-to-store (default), so the PO Ship-To stays Oasis.
         await autoGenerateVendorOrders(tx, order.id, null, null);
 
-        // Clear the cart now that the order exists.
+        // Record the payment. status='completed' because the gateway approved.
+        // rawResponse is stored as-is for dispute / audit purposes.
+        await tx.insert(paymentsTable).values({
+          orderId: order.id,
+          paymentMethod: "credit_card",
+          amount: moneyFromCents(totalCents),
+          transactionId: chargeResult.transId ?? null,
+          avsResponse: chargeResult.avsResponse ?? null,
+          cvvResponse: chargeResult.cvvResponse ?? null,
+          cardLast4: chargeResult.cardLast4 ?? null,
+          cardType: chargeResult.cardType ?? null,
+          status: "completed",
+          rawResponse: chargeResult.rawResponse as Record<string, unknown> | null ?? null,
+          receivedAt: new Date(),
+        });
+
+        // Inline balance update: full payment, so depositAmount = total and
+        // balanceDue = 0. Mirrors the recomputeOrderTotals logic in
+        // adminOrderPayments.ts but applied directly since we know the exact
+        // amount and avoid the extra aggregate query.
+        await tx
+          .update(ordersTable)
+          .set({
+            depositAmount: moneyFromCents(totalCents),
+            balanceDue: moneyFromCents(0),
+          })
+          .where(eq(ordersTable.id, order.id));
+
+        // Clear the cart now that the order and payment are committed.
         await tx
           .delete(cartItemsTable)
           .where(eq(cartItemsTable.cartId, cart.id));
@@ -600,8 +769,18 @@ router.post(
         return { totalCents };
       });
     } catch (err) {
-      req.log?.error({ err }, "checkout transaction failed");
-      res.status(500).json({ error: "Could not place order. Please try again." });
+      // Card HAS been charged but order creation failed. Log CRITICAL so staff
+      // can reconcile manually. Return the orderNumber so the customer can
+      // reference it when they contact support.
+      req.log?.error(
+        { err, orderNumber, transId: chargeResult.transId },
+        "CRITICAL: order creation failed after successful charge — manual reconciliation required",
+      );
+      res.status(500).json({
+        error:
+          "Your payment was processed but we encountered an error recording your order. Please contact us immediately with reference: " +
+          orderNumber,
+      });
       return;
     }
 
@@ -611,16 +790,13 @@ router.post(
     }
 
     // Remember this order on the session so the guest can land on the order
-    // confirmation page without an account. Cap the list to keep the cookie
-    // session payload bounded.
+    // confirmation page without an account.
     if (isGuest) {
       const existing = req.session.guestOrders ?? [];
       req.session.guestOrders = [orderNumber, ...existing].slice(0, 25);
     }
 
-    // Fire-and-forget transactional emails. Errors are caught and logged
-    // inside each helper — a transient email failure must never fail the
-    // checkout response.
+    // Fire-and-forget transactional emails.
     void sendOrderConfirmationEmail(customer, orderNumber).catch(() => {});
     void sendStoreNewOrderNotification(customer, orderNumber).catch(() => {});
 

@@ -9134,6 +9134,19 @@ components:
     PlaceOrderRequest:
       type: object
       properties:
+        paymentToken:
+          type: object
+          description: >-
+            Accept.js opaque token from the browser. Required for online
+            checkout. The raw card number must never be sent to the server.
+          properties:
+            dataDescriptor:
+              type: string
+            dataValue:
+              type: string
+          required:
+            - dataDescriptor
+            - dataValue
         guestContact:
           $ref: "#/components/schemas/GuestContact"
           description: >-

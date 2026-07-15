@@ -7,8 +7,11 @@
  */
 import type { AccountAddressInput } from "./accountAddressInput";
 import type { GuestContact } from "./guestContact";
+import type { PlaceOrderRequestPaymentToken } from "./placeOrderRequestPaymentToken";
 
 export interface PlaceOrderRequest {
+  /** Accept.js opaque token from the browser. Required for online checkout. The raw card number must never be sent to the server. */
+  paymentToken?: PlaceOrderRequestPaymentToken;
   /** Required when the request is unauthenticated (guest checkout). Ignored if the caller is signed in. */
   guestContact?: GuestContact;
   /** Use an existing saved address ID instead of providing a new one. */

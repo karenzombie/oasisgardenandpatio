@@ -351,6 +351,7 @@ export * from "./marketingOptOutResponseStatus";
 export * from "./material";
 export * from "./mergeWishlistRequest";
 export * from "./placeOrderRequest";
+export * from "./placeOrderRequestPaymentToken";
 export * from "./placeOrderResult";
 export * from "./productRecommendation";
 export * from "./quoteOrderPricingRequest";
