@@ -897,8 +897,13 @@ router.get(
             collectionName: finishCollectionsTable.collectionName,
             panelImageUrl: finishCollectionsTable.panelImageUrl,
             displayOrder: finishCollectionsTable.displayOrder,
+            manufacturerName: manufacturersTable.name,
           })
           .from(finishCollectionsTable)
+          .innerJoin(
+            manufacturersTable,
+            eq(manufacturersTable.id, finishCollectionsTable.manufacturerId),
+          )
           .where(
             and(
               eq(finishCollectionsTable.manufacturerId, row.manufacturerId),
