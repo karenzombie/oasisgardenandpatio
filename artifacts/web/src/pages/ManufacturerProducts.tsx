@@ -419,7 +419,7 @@ export default function ManufacturerProducts() {
             {/* Desktop sidebar */}
             {hasFacets && (
               <div className="hidden md:block w-52 shrink-0">
-                <div className="sticky top-6 max-h-[calc(100vh-3rem)] overflow-y-auto overscroll-contain pr-1">{sidebar}</div>
+                <div className="sticky top-6 max-h-[calc(100vh-3rem)] overflow-y-auto overscroll-contain pr-1 [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/30">{sidebar}</div>
               </div>
             )}
 
