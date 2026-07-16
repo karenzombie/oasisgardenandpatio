@@ -8,7 +8,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Menu, X, ChevronDown, User, ShoppingBag, Search } from "lucide-react";
-import { useState, useEffect, useRef, type FormEvent } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, type FormEvent } from "react";
 import { useClerk } from "@clerk/react";
 import { useAuth } from "@/lib/auth";
 import { WishlistIconLink } from "@/components/layout/WishlistIconLink";
@@ -117,26 +117,33 @@ export function Navbar() {
     }
   };
 
+  const isCondensedRef = useRef(false);
+
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
+      const y = window.scrollY;
+      const prev = isCondensedRef.current;
+      const next = prev ? (y < 60 ? false : true) : (y > 120 ? true : false);
+      if (next !== prev) {
+        isCondensedRef.current = next;
+        setIsScrolled(next);
+      }
     };
-    window.addEventListener("scroll", handleScroll);
+    handleScroll(); // catches pages loaded already scrolled
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const navRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
+  const [spacerHeight, setSpacerHeight] = useState(0);
+  useLayoutEffect(() => {
     const el = navRef.current;
     if (!el) return;
-    const setHeight = () => {
-      document.documentElement.style.setProperty(
-        "--nav-height",
-        `${el.offsetHeight}px`,
-      );
+    const measureIfExpanded = () => {
+      if (!isCondensedRef.current) setSpacerHeight(el.offsetHeight);
     };
-    setHeight();
-    const observer = new ResizeObserver(setHeight);
+    measureIfExpanded(); // header is expanded on first render
+    const observer = new ResizeObserver(measureIfExpanded);
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
@@ -163,26 +170,28 @@ export function Navbar() {
   );
 
   return (
-    <div ref={navRef} className="w-full flex flex-col z-50 sticky top-0">
-      {/* Top Banner */}
-      {activeBanners.length > 0 && (
-        <div className="bg-primary text-primary-foreground text-center py-2 px-4 text-sm font-medium tracking-wide">
-          {renderWithLinks(
-            activeBanners[0].messageText
-              ? `${activeBanners[0].title}: ${activeBanners[0].messageText}`
-              : activeBanners[0].title,
-          )}
-        </div>
-      )}
+    <>
+      {/* Fixed header wrapper — never shifts scroll position when condensing. */}
+      <div ref={navRef} className="w-full flex flex-col z-50 fixed top-0 left-0 right-0">
+        {/* Top Banner */}
+        {activeBanners.length > 0 && (
+          <div className="bg-primary text-primary-foreground text-center py-2 px-4 text-sm font-medium tracking-wide">
+            {renderWithLinks(
+              activeBanners[0].messageText
+                ? `${activeBanners[0].title}: ${activeBanners[0].messageText}`
+                : activeBanners[0].title,
+            )}
+          </div>
+        )}
 
-      {/* Main Navbar */}
-      <header
-        className={`w-full transition-all duration-300 border-b ${
-          isScrolled
-            ? "bg-secondary border-border shadow-sm"
-            : "bg-secondary border-border"
-        }`}
-      >
+        {/* Main Navbar */}
+        <header
+          className={`w-full transition-all duration-300 border-b ${
+            isScrolled
+              ? "bg-secondary border-border shadow-sm"
+              : "bg-secondary border-border"
+          }`}
+        >
         <div className="w-full px-4 md:px-6">
           <div className="flex items-stretch gap-4 md:gap-6">
 
@@ -368,6 +377,12 @@ export function Navbar() {
           </nav>
         </div>
       )}
-    </div>
+
+      </div>
+
+      {/* Spacer: sibling in normal flow, reserves constant height equal to the
+          full expanded header so condensing never reflows the page. */}
+      <div style={{ height: spacerHeight }} />
+    </>
   );
 }
