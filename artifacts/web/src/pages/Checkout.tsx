@@ -109,6 +109,12 @@ export default function Checkout() {
   // Error shown near the HostedForm button (address validation or gateway errors).
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
+  // One-shot latch: prevents react-acceptjs HostedForm from firing
+  // placeOrderM.mutate more than once per card submission. The ref is set
+  // synchronously inside the handler so a duplicate fire (before isPending
+  // flips) is dropped. Reset onError so the customer can retry after a decline.
+  const orderSubmittedRef = useRef(false);
+
   // Default to first saved address when they load (authed only)
   useEffect(() => {
     if (addresses.length > 0 && selectedId === "new") {
@@ -171,6 +177,9 @@ export default function Checkout() {
           data?.error ??
           (err as { message?: string })?.message ??
           "Could not place order.";
+        // Reset the one-shot latch so the customer can retry after a decline.
+        orderSubmittedRef.current = false;
+
         if (data?.paymentDeclined) {
           setCheckoutError(message);
         } else {
@@ -282,6 +291,11 @@ export default function Checkout() {
     }
 
     setCheckoutError(null);
+
+    // One-shot latch: blocks duplicate onSubmit fires that race before
+    // isPending flips (the ref update is synchronous, the state update is not).
+    if (orderSubmittedRef.current) return;
+    orderSubmittedRef.current = true;
 
     const addressPayload =
       typeof selectedId === "number"

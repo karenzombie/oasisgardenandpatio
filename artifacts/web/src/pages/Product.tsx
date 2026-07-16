@@ -2111,9 +2111,12 @@ export default function Product() {
               {optionsMissingMsg ? (
                 <p className="text-xs text-destructive mt-2">{optionsMissingMsg}</p>
               ) : (
-                <p className="text-xs text-muted-foreground mt-2">
-                  Visit our showroom or contact us for white-glove delivery options.
-                </p>
+                <Link
+                  href="/cart"
+                  className="text-xs text-muted-foreground mt-2 inline-block hover:text-primary underline"
+                >
+                  Go to cart →
+                </Link>
               )}
             </>
           )}

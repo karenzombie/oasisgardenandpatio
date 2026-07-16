@@ -1,0 +1,251 @@
+type,category,item_number,name,grade,restriction,current_db_status
+fabric,Sling,01D,Red,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,05D,Black,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,06D,White,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,11S,Bristol,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,13D,Navy,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,20D,Natural,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,22D,Forest Green,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,24D,Teal,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,28D,Pacific Blue,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,35D,Cobalt,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,38D,Lime,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,41D,Tangerine,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,42D,Sky,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,43D,Yellow,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,51D,Aqua,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,70D,Atlantis,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,71D,Bermuda,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,104,Pinstripe,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,107,Jute,B,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,108,Blazer,B,not on HDPL Attachable Pillow or Mesh Padded Sling,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,110,Bark,B,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,113,Creel,B,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,147,Birch,B,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,152,Balboa,B,not on HDPL Attachable Pillow or Mesh Padded Sling,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,177,Blueprint,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,178,Winter,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,179,Cactus,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,202,Moments Navy,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,209,Collect Indigo,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,214,River,B,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,219,Collect Charcoal,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,229,Augustine Shadow,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,231,Sand Dollar,B,not on HDPL Attachable Pillow or Mesh Padded Sling,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,255,Amalfi,B,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,257,Jewel,B,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,260,Fossil,B,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,262,Abalone,B,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,271,Augustine Fennel,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,306,Ferrera,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,310,Fiesta,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,316,Nickel,B,not on HDPL Attachable Pillow or Mesh Padded Sling,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,320,Luxe,A,not on HDPL Attachable Pillow or Mesh Padded Sling,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,321,Canyon,B,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,365,Baja,B,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,366,Reflection,B,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,368,Trout,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,369,Denver,B,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,396,Marlin,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,397,Brindle,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,398,Niagara,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,466,James,B,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,476,Beacon,B,not on HDPL Attachable Pillow or Mesh Padded Sling,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,489,Boulder,B,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,493,Cane Navy,B,not on HDPL Attachable Pillow or Mesh Padded Sling,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,498,Kipton,A,not on HDPL Attachable Pillow or Mesh Padded Sling,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,531,Tan,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,538,Night,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,558,Deacon,B,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,559,Harbor,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,561,Burke,B,not on HDPL Attachable Pillow or Mesh Padded Sling,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,564,Storm,B,not on HDPL Attachable Pillow or Mesh Padded Sling,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,576,Cole,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,577,Nimbus Ocean,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,578,Charm,B,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,579,Chantilly,B,not on HDPL Attachable Pillow or Mesh Padded Sling,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,630,Mocha,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,749,Breeze,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,753,Tweed,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,865,Skip,B,not on HDPL Attachable Pillow or Mesh Padded Sling,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,868,Brooks,B,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,870,Elevation Stone,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,872,Augustine Pewter,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,874,Augustine Oyster,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,877,Ella,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,878,Smoke,B,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,889,Vineyard,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,950,Mavi,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,957,Alloy,A,,in finishes (misfiled) - migrate to fabrics
+fabric,Sling,998,Putty,B,,in finishes (misfiled) - migrate to fabrics
+fabric,Cushion,01A,Red,A,,absent - NEW create
+fabric,Cushion,02A,Canvas Seasalt,A,,absent - NEW create
+fabric,Cushion,04A,Canvas Macaw,A,,absent - NEW create
+fabric,Cushion,05A,Black,A,,absent - NEW create
+fabric,Cushion,06A,White,A,not on Acrylic Padded Sling,absent - NEW create
+fabric,Cushion,09A,Play Oat,A,,absent - NEW create
+fabric,Cushion,10L,Spontaneous Teak,B,,absent - NEW create
+fabric,Cushion,11L,Mira Chai,C,,absent - NEW create
+fabric,Cushion,12A,Bliss Aloe,A,,absent - NEW create
+fabric,Cushion,12L,Veena Wildwood,D,,absent - NEW create
+fabric,Cushion,13A,Navy,A,,absent - NEW create
+fabric,Cushion,13L,Frondly Cobalt,C,not on ADSC Chateau Double Seat Cushion,absent - NEW create
+fabric,Cushion,14A,Play Mocha,A,,absent - NEW create
+fabric,Cushion,14L,Tilden Spring,D,not on ADSC Chateau Double Seat Cushion,absent - NEW create
+fabric,Cushion,15L,Hastings Toast,C,not on ADSC Chateau Double Seat Cushion,absent - NEW create
+fabric,Cushion,16L,Dapple Linen,C,not on ADSC Chateau Double Seat Cushion,absent - NEW create
+fabric,Cushion,16T,Poros Sky,C,not on ADSC Chateau Double Seat Cushion,absent - NEW create
+fabric,Cushion,17L,Tap Pear,A,,absent - NEW create
+fabric,Cushion,18L,Mira Seasalt,C,,absent - NEW create
+fabric,Cushion,19L,Allister Oyster,B,not on ADSC Chateau Double Seat Cushion,absent - NEW create
+fabric,Cushion,20L,Arboretum Blush,D,,absent - NEW create
+fabric,Cushion,21L,Etna Dune,C,,absent - NEW create
+fabric,Cushion,22A,Forest Green,A,,absent - NEW create
+fabric,Cushion,22L,Beyond Slate,C,not on ADSC Chateau Double Seat Cushion,absent - NEW create
+fabric,Cushion,23L,Spontaneous Spring,B,,absent - NEW create
+fabric,Cushion,24A,Cast Breeze,A,,absent - NEW create
+fabric,Cushion,24L,Martinique Tropic,D,,absent - NEW create
+fabric,Cushion,25L,Hastings Slate,C,not on ADSC Chateau Double Seat Cushion,absent - NEW create
+fabric,Cushion,26L,Unwind Rainwashed,B,not on ADSC Chateau Double Seat Cushion,absent - NEW create
+fabric,Cushion,27L,Frondly Stem,C,not on ADSC Chateau Double Seat Cushion,absent - NEW create
+fabric,Cushion,28A,Pacific Blue,A,,absent - NEW create
+fabric,Cushion,28L,Tap Clay,A,,absent - NEW create
+fabric,Cushion,29L,Martinique Mango,D,,absent - NEW create
+fabric,Cushion,30L,Toro Indigo,B,,absent - NEW create
+fabric,Cushion,31L,Etna Heron,C,,absent - NEW create
+fabric,Cushion,32L,Tap Chambray,A,,absent - NEW create
+fabric,Cushion,33L,Review Denim,C,,absent - NEW create
+fabric,Cushion,34L,Frond Sky,B,,absent - NEW create
+fabric,Cushion,35A,Cobalt,A,,absent - NEW create
+fabric,Cushion,35L,Frond Classic,B,,absent - NEW create
+fabric,Cushion,36A,Stone Linen,B,,absent - NEW create
+fabric,Cushion,40A,Cast Silver,A,,absent - NEW create
+fabric,Cushion,41A,Tangerine,A,,absent - NEW create
+fabric,Cushion,42A,Sky,A,,absent - NEW create
+fabric,Cushion,43A,Yellow,A,,absent - NEW create
+fabric,Cushion,44A,Canvas Flax,A,,absent - NEW create
+fabric,Cushion,46T,Exhale Sky,A,,absent - NEW create
+fabric,Cushion,47T,Exhale Cloud,A,,absent - NEW create
+fabric,Cushion,48T,Nuance Cloud,B,,absent - NEW create
+fabric,Cushion,54A,Stucco,A,,absent - NEW create
+fabric,Cushion,57A,Aruba,A,,absent - NEW create
+fabric,Cushion,66A,Azure,A,,absent - NEW create
+fabric,Cushion,78A,Mineral Blue,A,,absent - NEW create
+fabric,Cushion,79A,Peacock,A,,absent - NEW create
+fabric,Cushion,81A,Greystone,A,,absent - NEW create
+fabric,Cushion,86A,Indigo,A,,absent - NEW create
+fabric,Cushion,89A,Cast,A,,absent - NEW create
+fabric,Cushion,90A,Slate,A,,absent - NEW create
+fabric,Cushion,91A,Canvas Henna,A,,absent - NEW create
+fabric,Cushion,92A,Cast Ivy,A,,absent - NEW create
+fabric,Cushion,93A,Canvas Persimmon,A,,absent - NEW create
+fabric,Cushion,95A,Canvas Haze,A,,absent - NEW create
+fabric,Cushion,154,Dream Mist,C,not on ADSC Chateau Double Seat Cushion,absent - NEW create
+fabric,Cushion,164,Conte River,D,not on ADSC Chateau Double Seat Cushion,absent - NEW create
+fabric,Cushion,167,Nurture Indigo,C,,absent - NEW create
+fabric,Cushion,174,Nurture White,C,not on Acrylic Padded Sling,absent - NEW create
+fabric,Cushion,184,Lively Sage,B,not on ADSC Chateau Double Seat Cushion,absent - NEW create
+fabric,Cushion,192,Koto Clay,C,,absent - NEW create
+fabric,Cushion,196,Remix Mesa,A,,absent - NEW create
+fabric,Cushion,197,Remix Camel,A,,absent - NEW create
+fabric,Cushion,198,Mainstreet Putty,D,not on ADSC Chateau Double Seat Cushion,absent - NEW create
+fabric,Cushion,212,Dream Dune,C,not on ADSC Chateau Double Seat Cushion,absent - NEW create
+fabric,Cushion,251,Nurture Haze,C,,absent - NEW create
+fabric,Cushion,280,Conte Linen,D,not on ADSC Chateau Double Seat Cushion,absent - NEW create
+fabric,Cushion,286,Kismet Teak,B,,absent - NEW create
+fabric,Cushion,290,Kismet Wren,B,,absent - NEW create
+fabric,Cushion,293,Mainstreet Dove,D,not on ADSC Chateau Double Seat Cushion,absent - NEW create
+fabric,Cushion,462,Sahara,C,,absent - NEW create
+fabric,Cushion,497,Marvel Mushroom,A,,absent - NEW create
+fabric,Cushion,591,Hither Twilight,B,not on ADSC Chateau Double Seat Cushion,absent - NEW create
+fabric,Cushion,593,Relate Harbor,A,not on ADSC Chateau Double Seat Cushion,absent - NEW create
+fabric,Cushion,594,Restore Indigo,B,not on ADSC Chateau Double Seat Cushion,absent - NEW create
+fabric,Cushion,595,Ally Coastal,C,,absent - NEW create
+fabric,Cushion,597,Grasscloth Cloud,A,,absent - NEW create
+fabric,Cushion,656,Copeland Chambray,B,,absent - NEW create
+fabric,Cushion,658,Tabloid Cloud,B,,absent - NEW create
+fabric,Cushion,661,Atmosphere Mineral,C,not on ADSC Chateau Double Seat Cushion,absent - NEW create
+fabric,Cushion,664,Charter Silk,C,not on ADSC Chateau Double Seat Cushion,absent - NEW create
+fabric,Cushion,667,Santara Mist,B,not on ADSC Chateau Double Seat Cushion,absent - NEW create
+fabric,Cushion,672,Proven Denim,B,,absent - NEW create
+fabric,Cushion,693,Agra Classic,C,not on ADSC Chateau Double Seat Cushion,absent - NEW create
+fabric,Cushion,694,Proven Ash,B,,absent - NEW create
+fabric,Cushion,696,Sensory Granite,B,,absent - NEW create
+fabric,Cushion,699,Sensory Dove,B,,absent - NEW create
+fabric,Cushion,764,Detail Denim,C,not on ADSC Chateau Double Seat Cushion,absent - NEW create
+fabric,Cushion,766,Fresco Ash,A,not on ADSC Chateau Double Seat Cushion,absent - NEW create
+fabric,Cushion,767,Dreamscape Seaglass,C,,absent - NEW create
+fabric,Cushion,769,Detail Linen,C,not on ADSC Chateau Double Seat Cushion,absent - NEW create
+fabric,Cushion,771,Remy Dove,A,,absent - NEW create
+fabric,Cushion,774,Hither Parchment,B,not on ADSC Chateau Double Seat Cushion,absent - NEW create
+fabric,Cushion,775,Bliss Linen,A,,absent - NEW create
+fabric,Cushion,779,Illusion Plaid Birch,B,not on ADSC Chateau Double Seat Cushion,absent - NEW create
+fabric,Cushion,783,Grasscloth Buff,A,not on ADSC Chateau Double Seat Cushion,absent - NEW create
+fabric,Cushion,784,Thatch Ash,B,,absent - NEW create
+fabric,Cushion,785,Hither Pewter,B,not on ADSC Chateau Double Seat Cushion,absent - NEW create
+fabric,Cushion,791,Grasscloth Dune,A,not on ADSC Chateau Double Seat Cushion,absent - NEW create
+fabric,Cushion,798,Bliss Sand,A,,absent - NEW create
+fabric,Cushion,848,Salt,C,,absent - NEW create
+fabric,Cushion,849,Dazzle,C,,absent - NEW create
+fabric,Cushion,879,Illusion Plaid Onyx,B,not on ADSC Chateau Double Seat Cushion,absent - NEW create
+fabric,Cushion,885,Hither Char,B,,absent - NEW create
+fabric,Cushion,893,Bliss Dew,A,,absent - NEW create
+fabric,Cushion,924,Huskie,B,not on ADSC Chateau Double Seat Cushion,absent - NEW create
+fabric,Cushion,963,Blend Indigo,B,,absent - NEW create
+fabric,Cushion,967,Glimpse Cloud,B,,absent - NEW create
+fabric,Cushion,971,Cabana Classic,B,not on ADSC Chateau Double Seat Cushion,absent - NEW create
+fabric,Cushion,973,Blend Coal,B,,absent - NEW create
+fabric,Cushion,984,Blend Sand,B,,absent - NEW create
+fabric,Ultraleather,10U,Coast Raindrop,F,not on Umbrellas,in finishes (misfiled) - migrate to fabrics
+fabric,Ultraleather,11U,Coast Beacon,F,not on Umbrellas,in finishes (misfiled) - migrate to fabrics
+fabric,Ultraleather,12U,Coast Savanna,F,not on Umbrellas,in finishes (misfiled) - migrate to fabrics
+fabric,Ultraleather,13U,Brisa Mohave,F,not on Umbrellas,in finishes (misfiled) - migrate to fabrics
+fabric,Ultraleather,14U,Brisa Chamois,F,not on Umbrellas,in finishes (misfiled) - migrate to fabrics
+fabric,Rain,13R,Rain Navy,B,not on Umbrellas,absent - NEW create
+fabric,Rain,35R,Rain Cobalt,B,not on Umbrellas,absent - NEW create
+fabric,Rain,40R,Rain Cast Silver,B,not on Umbrellas,absent - NEW create
+fabric,Rain,42R,Rain Sky,B,not on Umbrellas,absent - NEW create
+fabric,Rain,81R,Rain Greystone,B,not on Umbrellas,absent - NEW create
+fabric,Rain,86R,Rain Indigo,B,not on Umbrellas,absent - NEW create
+fabric,Rain,89R,Rain Cast,B,not on Umbrellas,absent - NEW create
+fabric,Rain,90R,Rain Slate,B,not on Umbrellas,absent - NEW create
+finish,Strap,066,White Strap,,,in finishes - keep as finish
+finish,Strap,057,Snow Smooth Strap,,,in finishes - keep as finish
+finish,Strap,0YY,Warm Grey Smooth Strap,,,in finishes - keep as finish
+finish,Strap,001,Pebble Strap,,,in finishes - keep as finish
+finish,Strap,0FF,Storm Smooth Strap,,,in finishes - keep as finish
+finish,Strap,0JJ,Beachwood Smooth Strap,,,in finishes - keep as finish
+finish,Strap,0KK,Kona Smooth Strap,,,in finishes - keep as finish
+finish,Strap,0RR,Graphite Smooth Strap,,,in finishes - keep as finish
+finish,Strap,777,Black Smooth Strap,,,in finishes - keep as finish
+finish,Strap,0NN,New Navy Smooth Strap,,,in finishes - keep as finish
+finish,Strap,035,Cobalt Strap,,,in finishes - keep as finish
+finish,Strap,028,Turquoise Strap,,,in finishes - keep as finish
+finish,Strap,042,Forest Green Strap,,,in finishes - keep as finish
+finish,MGP,P50,Snow,,,in finishes - keep as finish
+finish,MGP,PY0,Warm Grey,,,in finishes - keep as finish
+finish,MGP,P60,Desert,,,in finishes - keep as finish
+finish,MGP,P40,Beachwood,,,in finishes - keep as finish
+finish,MGP,P10,Kona,,,in finishes - keep as finish
+finish,MGP,PF0,Storm,,,in finishes - keep as finish
+finish,MGP,P30,Classic Graphite,,,in finishes - keep as finish
+finish,MGP,P70,Black,,,in finishes - keep as finish
+finish,Accent MGP,PH0,Hunter,,available on select items,in finishes - keep as finish
+finish,Accent MGP,PC0,Cranberry,,available on select items,in finishes - keep as finish
+finish,Accent MGP,PQ0,Aqua,,available on select items,in finishes - keep as finish
+finish,Accent MGP,PN0,Navy,,available on select items,in finishes - keep as finish
+finish,Powdercoat,W,White,,,in finishes - keep as finish
+finish,Powdercoat,6,Snow,,,in finishes - keep as finish
+finish,Powdercoat,Y,Warm Grey,,,in finishes - keep as finish
+finish,Powdercoat,2,Desert Sand,,,in finishes - keep as finish
+finish,Powdercoat,J,Beachwood,,,in finishes - keep as finish
+finish,Powdercoat,K,Kona,,,in finishes - keep as finish
+finish,Powdercoat,F,Storm,,,in finishes - keep as finish
+finish,Powdercoat,T,Graphite,,,in finishes - keep as finish
+finish,Powdercoat,8,Black,,,in finishes - keep as finish
+finish,Rustic,RG0,Cape Grey,,available on select items,in finishes - keep as finish
+finish,Rustic,RX0,Boardwalk,,available on select items,in finishes - keep as finish
+finish,Rustic,RU0,Chestnut,,available on select items,in finishes - keep as finish
+finish,Rustic,RT0,Teak,,available on select items,in finishes - keep as finish
+finish,Rustic,RL0,Laguna,,available on select items,in finishes - keep as finish
+finish,Rustic,RW0,Weathered Wood,,available on select items,in finishes - keep as finish
