@@ -135,6 +135,12 @@ export default function Checkout() {
     Parameters<typeof placeOrderM.mutate>[0]["data"] | null
   >(null);
 
+  // DOM ref for the AcceptUI trigger button. React lowercases all data-*
+  // attribute names when set as JSX props (data-apiLoginID → data-apiloginid),
+  // but AcceptUI requires the exact mixed-case names Authorize.net documents.
+  // We set them imperatively via setAttribute() after mount instead.
+  const acceptUIBtnRef = useRef<HTMLButtonElement | null>(null);
+
   // Default to first saved address when they load (authed only)
   useEffect(() => {
     if (addresses.length > 0 && selectedId === "new") {
@@ -172,6 +178,26 @@ export default function Checkout() {
       return f;
     });
   }, [isAuthenticated, guest.firstName, guest.lastName]);
+
+  // Apply AcceptUI data-* attributes with exact Authorize.net-documented casing.
+  // Must run whenever paymentConfig changes (config loads async after mount).
+  useEffect(() => {
+    const btn = acceptUIBtnRef.current;
+    if (!btn || !paymentConfig) return;
+    btn.setAttribute("data-apiLoginID", paymentConfig.apiLoginId);
+    btn.setAttribute("data-clientKey", paymentConfig.publicClientKey);
+    btn.setAttribute("data-acceptUIFormBtnTxt", "Submit");
+    btn.setAttribute("data-acceptUIFormHeaderTxt", "Card Information");
+    btn.setAttribute(
+      "data-paymentOptions",
+      '{"showCreditCard": true, "showBankAccount": false}',
+    );
+    btn.setAttribute(
+      "data-billingAddressOptions",
+      '{"show":false,"required":false}',
+    );
+    btn.setAttribute("data-responseHandler", "handleAcceptUIResponse");
+  }, [paymentConfig]);
 
   // Load the AcceptUI hosted-form script when config arrives.
   // v3/AcceptUI.js is the hosted lightbox form — different from v1/Accept.js.
@@ -667,28 +693,6 @@ export default function Checkout() {
             ) : null}
           </section>
 
-          {/* Shipping method */}
-          <section>
-            <h2 className="font-serif text-xl mb-4">Shipping Method</h2>
-            <label className="flex items-start gap-3 border border-primary bg-primary/5 p-4">
-              <input
-                type="radio"
-                name="shippingMethod"
-                checked={shippingMethod === "standard"}
-                onChange={() => setShippingMethod("standard")}
-                className="mt-1"
-              />
-              <div className="flex-1 text-sm">
-                <p className="font-medium">Standard Delivery</p>
-                <p className="text-muted-foreground">
-                  White-glove scheduling provided after order placement.
-                  {shippingNum === 0 ? " Your order ships free." : ""}
-                </p>
-              </div>
-              <span className="font-serif">{formatMoney(shippingNum)}</span>
-            </label>
-          </section>
-
           {/* Special instructions */}
           <section>
             <h2 className="font-serif text-xl mb-3">Order Notes</h2>
@@ -701,17 +705,12 @@ export default function Checkout() {
             />
           </section>
 
-          {/* Payment */}
-          <section>
-            <h2 className="font-serif text-xl mb-3">Payment</h2>
-            {isAuthenticated ? (
-              <div className="border border-border bg-card p-5 text-sm text-muted-foreground">
-                <p>
-                  Your card details are entered securely in Authorize.net's
-                  hosted form and never touch our page or server.
-                </p>
-              </div>
-            ) : (
+          {/* Payment — under-construction notice for guests only.
+              Authenticated users see the security note in the Order Summary
+              sidebar directly above the Place Order button. */}
+          {!isAuthenticated ? (
+            <section>
+              <h2 className="font-serif text-xl mb-3">Payment</h2>
               <div className="border border-dashed border-border p-5 bg-card text-sm text-muted-foreground">
                 <p>
                   This site is still under construction and not available for
@@ -727,8 +726,8 @@ export default function Checkout() {
                   if you're looking to make a purchase.
                 </p>
               </div>
-            )}
-          </section>
+            </section>
+          ) : null}
         </div>
 
         {/* Order summary */}
@@ -800,26 +799,36 @@ export default function Checkout() {
             ) : null}
 
             {isAuthenticated ? (
-              // AcceptUI button — class="AcceptUI" is required. AcceptUI.js
-              // listens at document level for clicks on elements with this class
-              // and opens the hosted lightbox form. The onClick handler validates
-              // the address first; e.stopPropagation() blocks the lightbox if
-              // validation fails. type="button" prevents any HTML form submission.
-              <button
-                type="button"
-                className="AcceptUI w-full mt-6 bg-primary text-primary-foreground px-4 py-3 font-serif tracking-widest uppercase text-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                data-apiLoginID={paymentConfig?.apiLoginId ?? ""}
-                data-clientKey={paymentConfig?.publicClientKey ?? ""}
-                data-acceptUIFormBtnTxt="Submit"
-                data-acceptUIFormHeaderTxt="Card Information"
-                data-paymentOptions='{"showCreditCard": true, "showBankAccount": false}'
-                data-billingAddressOptions='{"show":false,"required":false}'
-                data-responseHandler="handleAcceptUIResponse"
-                disabled={placeOrderM.isPending || !paymentConfig}
-                onClick={handleAcceptUIClick}
-              >
-                {placeOrderM.isPending ? "Placing Order…" : "Place Order"}
-              </button>
+              <>
+                {/* Security note — positioned directly under the Order Summary
+                    box so it is visible alongside the Place Order button. */}
+                <div className="mt-4 space-y-1 text-[11px] text-muted-foreground">
+                  <p>
+                    Your card details are entered securely via Authorize.net's
+                    hosted form and never touch our page or server.
+                  </p>
+                  <p>Click <strong>Place Order</strong> to proceed to payment entry.</p>
+                </div>
+
+                {/* AcceptUI trigger button.
+                    - className must include "AcceptUI": AcceptUI.js uses
+                      document-level click delegation keyed on this class.
+                    - All data-* attributes are set via setAttribute() in a
+                      useEffect (see acceptUIBtnRef above) because React
+                      lowercases mixed-case data-* names in JSX, which breaks
+                      AcceptUI's attribute lookup.
+                    - onClick validates the address; e.stopPropagation() keeps
+                      the lightbox closed when validation fails. */}
+                <button
+                  ref={acceptUIBtnRef}
+                  type="button"
+                  className="AcceptUI w-full mt-3 bg-primary text-primary-foreground px-4 py-3 font-serif tracking-widest uppercase text-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  disabled={placeOrderM.isPending || !paymentConfig}
+                  onClick={handleAcceptUIClick}
+                >
+                  {placeOrderM.isPending ? "Placing Order…" : "Place Order"}
+                </button>
+              </>
             ) : (
               <>
                 <Button
