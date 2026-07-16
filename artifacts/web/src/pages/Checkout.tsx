@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
+import { HostedForm } from "react-acceptjs";
+import type { HostedFormDispatchDataResponse } from "react-acceptjs";
 import {
   useGetCart,
   useGetCheckoutPaymentConfig,
@@ -19,28 +21,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
-
-// ---------------------------------------------------------------------------
-// Authorize.net AcceptUI global types.
-// The hosted lightbox form is served by Authorize.net — card data NEVER touches
-// our DOM or server. The response handler receives the opaque token only.
-// ---------------------------------------------------------------------------
-type AcceptUIResponse = {
-  messages: {
-    resultCode: "Ok" | "Error";
-    message: Array<{ code: string; text: string }>;
-  };
-  opaqueData?: {
-    dataDescriptor: string;
-    dataValue: string;
-  };
-};
-
-declare global {
-  interface Window {
-    handleAcceptUIResponse?: (response: AcceptUIResponse) => void;
-  }
-}
 
 function formatMoney(v: string | number | null | undefined): string {
   if (v == null || v === "") return "$0.00";
@@ -126,20 +106,8 @@ export default function Checkout() {
   const [shippingMethod, setShippingMethod] = useState("standard");
   const [specialInstructions, setSpecialInstructions] = useState("");
 
-  // Error shown near the AcceptUI button (address validation or gateway errors).
+  // Error shown near the HostedForm button (address validation or gateway errors).
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
-
-  // Payload captured at AcceptUI-button click time; consumed by the global
-  // response handler when Authorize.net returns the opaque token.
-  const pendingOrderPayloadRef = useRef<
-    Parameters<typeof placeOrderM.mutate>[0]["data"] | null
-  >(null);
-
-  // DOM ref for the AcceptUI trigger button. React lowercases all data-*
-  // attribute names when set as JSX props (data-apiLoginID → data-apiloginid),
-  // but AcceptUI requires the exact mixed-case names Authorize.net documents.
-  // We set them imperatively via setAttribute() after mount instead.
-  const acceptUIBtnRef = useRef<HTMLButtonElement | null>(null);
 
   // Default to first saved address when they load (authed only)
   useEffect(() => {
@@ -179,43 +147,6 @@ export default function Checkout() {
     });
   }, [isAuthenticated, guest.firstName, guest.lastName]);
 
-  // Apply AcceptUI data-* attributes with exact Authorize.net-documented casing.
-  // Must run whenever paymentConfig changes (config loads async after mount).
-  useEffect(() => {
-    const btn = acceptUIBtnRef.current;
-    if (!btn || !paymentConfig) return;
-    btn.setAttribute("data-apiLoginID", paymentConfig.apiLoginId);
-    btn.setAttribute("data-clientKey", paymentConfig.publicClientKey);
-    btn.setAttribute("data-acceptUIFormBtnTxt", "Submit");
-    btn.setAttribute("data-acceptUIFormHeaderTxt", "Card Information");
-    btn.setAttribute(
-      "data-paymentOptions",
-      '{"showCreditCard": true, "showBankAccount": false}',
-    );
-    btn.setAttribute(
-      "data-billingAddressOptions",
-      '{"show":false,"required":false}',
-    );
-    btn.setAttribute("data-responseHandler", "handleAcceptUIResponse");
-  }, [paymentConfig]);
-
-  // Load the AcceptUI hosted-form script when config arrives.
-  // v3/AcceptUI.js is the hosted lightbox form — different from v1/Accept.js.
-  useEffect(() => {
-    if (!paymentConfig || !isAuthenticated) return;
-    const src = paymentConfig.sandbox
-      ? "https://jstest.authorize.net/v3/AcceptUI.js"
-      : "https://js.authorize.net/v3/AcceptUI.js";
-    if (document.querySelector(`script[src="${src}"]`)) return;
-    const script = document.createElement("script");
-    script.src = src;
-    script.async = true;
-    script.charset = "utf-8";
-    document.head.appendChild(script);
-    // Intentionally not removing on unmount — removing and re-adding
-    // causes AcceptUI to lose its delegated click listener.
-  }, [paymentConfig, isAuthenticated]);
-
   const placeOrderM = usePlaceOrder({
     mutation: {
       onSuccess: (resp) => {
@@ -241,8 +172,6 @@ export default function Checkout() {
           (err as { message?: string })?.message ??
           "Could not place order.";
         if (data?.paymentDeclined) {
-          // Show declined messages inline near the payment button so the
-          // customer can immediately retry with a different card.
           setCheckoutError(message);
         } else {
           toast({ title: "Checkout failed", description: message });
@@ -250,43 +179,6 @@ export default function Checkout() {
       },
     },
   });
-
-  // Keep always-current refs so the global AcceptUI response handler is never
-  // stale across renders without needing to re-register it every render.
-  const placeOrderMutateRef = useRef(placeOrderM.mutate);
-  useEffect(() => { placeOrderMutateRef.current = placeOrderM.mutate; });
-  const setCheckoutErrorRef = useRef(setCheckoutError);
-  useEffect(() => { setCheckoutErrorRef.current = setCheckoutError; });
-
-  // Register the global AcceptUI response handler once. AcceptUI calls
-  // window.handleAcceptUIResponse(response) when the hosted form completes.
-  // The global is a thin bridge to the always-current refs above.
-  useEffect(() => {
-    window.handleAcceptUIResponse = (response: AcceptUIResponse) => {
-      if (response.messages.resultCode === "Error" || !response.opaqueData) {
-        const msg =
-          response.messages.message[0]?.text ??
-          "Payment could not be processed. Please try again.";
-        setCheckoutErrorRef.current(msg);
-        return;
-      }
-      const payload = pendingOrderPayloadRef.current;
-      if (!payload) return;
-      setCheckoutErrorRef.current(null);
-      placeOrderMutateRef.current({
-        data: {
-          ...payload,
-          paymentToken: {
-            dataDescriptor: response.opaqueData.dataDescriptor,
-            dataValue: response.opaqueData.dataValue,
-          },
-        },
-      });
-    };
-    return () => {
-      delete window.handleAcceptUIResponse;
-    };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const subtotalNum = Number(cart?.subtotal ?? 0);
   const selectedAddress: AccountAddress | null = useMemo(() => {
@@ -362,64 +254,36 @@ export default function Checkout() {
     setGuest((g) => ({ ...g, [key]: value }));
   }
 
-  function validateGuestContact(): string | null {
-    if (!guest.email.trim() || !EMAIL_RE.test(guest.email.trim())) {
-      return "Enter a valid email address.";
-    }
-    if (!guest.firstName.trim() || !guest.lastName.trim()) {
-      return "Enter your first and last name.";
-    }
-    if (guest.phone.trim().replace(/\D/g, "").length < 7) {
-      return "Enter a phone number we can reach you at.";
-    }
-    return null;
-  }
+  // HostedForm is disabled until a valid shipping address is present. This
+  // prevents the card popup from opening when the customer hasn't filled in
+  // their address yet, providing a clear ordering of steps.
+  const addressComplete = useMemo(() => {
+    if (typeof selectedId === "number") return true; // saved address selected
+    return (
+      form.street1.trim() !== "" &&
+      form.city.trim() !== "" &&
+      form.state.trim() !== "" &&
+      form.zip.trim() !== ""
+    );
+  }, [selectedId, form]);
 
   /**
-   * Click handler for the AcceptUI button. AcceptUI uses document-level click
-   * delegation: calling e.stopPropagation() here prevents the delegated handler
-   * from seeing the event, so the lightbox never opens when validation fails.
-   *
-   * On success, the current address payload is captured in pendingOrderPayloadRef
-   * so the global response handler can include it in the place-order mutation.
+   * Called by react-acceptjs HostedForm when Authorize.net returns a result.
+   * Address is read from current state — no stale closure risk because
+   * HostedForm passes a fresh closure on every render.
    */
-  function handleAcceptUIClick(e: React.MouseEvent<HTMLButtonElement>) {
-    // Block double-submit while a mutation is already in flight.
-    if (placeOrderM.isPending) {
-      e.stopPropagation();
-      return;
-    }
-
-    // Validate new-address form fields manually (the button is type="button"
-    // so native HTML form validation does not fire automatically).
-    if (selectedId === "new") {
-      if (
-        !form.street1.trim() ||
-        !form.city.trim() ||
-        !form.state.trim() ||
-        !form.zip.trim()
-      ) {
-        setCheckoutError(
-          "Please fill in the required shipping address fields (street, city, state, ZIP).",
-        );
-        e.stopPropagation();
-        return;
-      }
-    }
-
-    if (!paymentConfig) {
-      setCheckoutError(
-        "Payment configuration not available. Please refresh and try again.",
-      );
-      e.stopPropagation();
+  function handleHostedFormSubmit(response: HostedFormDispatchDataResponse) {
+    if (response.messages.resultCode === "Error" || !response.opaqueData) {
+      const msg =
+        response.messages.message[0]?.text ??
+        "Payment could not be processed. Please try again.";
+      setCheckoutError(msg);
       return;
     }
 
     setCheckoutError(null);
 
-    // Snapshot the current address payload. The global response handler reads
-    // this ref when Authorize.net returns the opaque token.
-    pendingOrderPayloadRef.current =
+    const addressPayload =
       typeof selectedId === "number"
         ? {
             shippingAddressId: selectedId,
@@ -442,8 +306,15 @@ export default function Checkout() {
             specialInstructions: specialInstructions || undefined,
           };
 
-    // Allow the event to bubble — AcceptUI's document-level listener opens the
-    // hosted lightbox form.
+    placeOrderM.mutate({
+      data: {
+        ...addressPayload,
+        paymentToken: {
+          dataDescriptor: response.opaqueData.dataDescriptor,
+          dataValue: response.opaqueData.dataValue,
+        },
+      },
+    });
   }
 
   if (authLoading || cartLoading) {
@@ -765,6 +636,13 @@ export default function Checkout() {
                 <dt className="text-muted-foreground">Shipping</dt>
                 <dd>{shippingNum === 0 ? "Free" : formatMoney(shippingNum)}</dd>
               </div>
+              {/* Weight shown under Shipping so the customer can see why
+                  shipping costs what it does. */}
+              {quote && quote.shippingWeightLbs > 0 ? (
+                <p className="text-[11px] text-muted-foreground -mt-1">
+                  {quote.shippingWeightLbs.toFixed(1)} lb estimated
+                </p>
+              ) : null}
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">
                   Tax
@@ -780,12 +658,9 @@ export default function Checkout() {
                       : formatMoney(taxNum)}
                 </dd>
               </div>
-              {quote && shippingState ? (
+              {quote && shippingState && quote.taxJurisdiction ? (
                 <p className="text-[11px] text-muted-foreground">
                   {quote.taxJurisdiction}
-                  {quote.shippingWeightLbs > 0
-                    ? ` · ${quote.shippingWeightLbs.toFixed(1)} lb`
-                    : ""}
                 </p>
               ) : null}
             </dl>
@@ -800,39 +675,59 @@ export default function Checkout() {
 
             {isAuthenticated ? (
               <>
-                {/* Security note — positioned directly under the Order Summary
-                    box so it is visible alongside the Place Order button. */}
-                <div className="mt-4 space-y-1 text-[11px] text-muted-foreground">
-                  <p>
-                    Your card details are entered securely via Authorize.net's
-                    hosted form and never touch our page or server.
-                  </p>
-                  <p>Click <strong>Place Order</strong> to proceed to payment entry.</p>
-                </div>
+                {/* Security note directly under the Total line. */}
+                <p className="mt-4 text-[11px] text-muted-foreground">
+                  Your card details are entered securely via Authorize.net's
+                  hosted form and never touch our page or server.
+                </p>
 
-                {/* AcceptUI trigger button.
-                    - className must include "AcceptUI": AcceptUI.js uses
-                      document-level click delegation keyed on this class.
-                    - All data-* attributes are set via setAttribute() in a
-                      useEffect (see acceptUIBtnRef above) because React
-                      lowercases mixed-case data-* names in JSX, which breaks
-                      AcceptUI's attribute lookup.
-                    - onClick validates the address; e.stopPropagation() keeps
-                      the lightbox closed when validation fails. */}
-                <button
-                  ref={acceptUIBtnRef}
-                  type="button"
-                  className="AcceptUI w-full mt-3 bg-primary text-primary-foreground px-4 py-3 font-serif tracking-widest uppercase text-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  disabled={placeOrderM.isPending || !paymentConfig}
-                  onClick={handleAcceptUIClick}
-                >
-                  {placeOrderM.isPending ? "Placing Order…" : "Place Order"}
-                </button>
+                {/* react-acceptjs HostedForm renders the AcceptUI popup button.
+                    disabled= keeps the button locked until the address is
+                    complete and no mutation is in flight (double-submit guard).
+                    onSubmit fires with the opaque token after card entry. */}
+                {paymentConfig ? (
+                  <HostedForm
+                    authData={{
+                      apiLoginID: paymentConfig.apiLoginId,
+                      clientKey: paymentConfig.publicClientKey,
+                    }}
+                    environment={paymentConfig.sandbox ? "SANDBOX" : "PRODUCTION"}
+                    onSubmit={handleHostedFormSubmit}
+                    billingAddressOptions={{ show: false, required: false }}
+                    paymentOptions={{ showCreditCard: true, showBankAccount: false }}
+                    formHeaderText="Card Information"
+                    formButtonText="Submit"
+                    buttonText={placeOrderM.isPending ? "Placing Order…" : "Place Order"}
+                    disabled={!addressComplete || placeOrderM.isPending}
+                    containerClassName="w-full mt-3"
+                    buttonClassName="w-full bg-primary text-primary-foreground px-4 py-3 font-serif tracking-widest uppercase text-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  />
+                ) : (
+                  <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
+                    <Spinner className="size-4" />
+                    <span>Loading payment form…</span>
+                  </div>
+                )}
+
+                {/* Hint shown below the button so customers know clicking
+                    Place Order opens the secure card entry popup. */}
+                {!placeOrderM.isPending && addressComplete && paymentConfig ? (
+                  <p className="mt-2 text-[11px] text-muted-foreground text-center">
+                    Click <strong>Place Order</strong> to proceed to payment entry.
+                  </p>
+                ) : null}
+
+                {/* Prompt shown when address is not yet complete. */}
+                {!addressComplete ? (
+                  <p className="mt-2 text-[11px] text-muted-foreground">
+                    Fill in your shipping address above to enable payment.
+                  </p>
+                ) : null}
               </>
             ) : (
               <>
                 <Button
-                  type="submit"
+                  type="button"
                   disabled
                   className="w-full rounded-none mt-6 font-serif tracking-widest uppercase opacity-50 cursor-not-allowed"
                 >
