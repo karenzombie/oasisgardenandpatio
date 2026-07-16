@@ -22,6 +22,7 @@
     "seed-frankford-pricing": "tsx ./src/seedFrankfordPricing.ts",
     "upload-frankford-missing-swatches": "tsx ./src/uploadFrankfordMissingSwatches.ts",
     "upload-telescope-swatches": "tsx ./src/uploadTelescopeSwatches.ts",
+    "copy-telescope-finish-swatches-to-fabrics": "tsx ./src/copyTelescopeFinishSwatchesToFabrics.ts",
     "seed-frankford-finishes": "tsx ./src/seedFrankfordFinishes.ts",
     "seed-frankford-valances": "tsx ./src/seedFrankfordValances.ts",
     "seed-frankford-base-plates": "tsx ./src/seedFrankfordBasePlates.ts",
