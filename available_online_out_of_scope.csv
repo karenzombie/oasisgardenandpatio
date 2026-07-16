@@ -1,0 +1,233 @@
+id,sku,name,mfg_name,cat_name,available_online,quote_only,show_price_online,price,sale_price,is_active,priced,scope
+5110,NGU550-L,Nova Replacement Top Cover,Frankford Umbrellas,Replacement Parts,True,False,True,810.00,729.00,True,True,OUT
+5131,30-SA,Drill Bit Sand Auger,Frankford Umbrellas,Replacement Parts,True,False,True,145.00,131.00,True,True,OUT
+5132,CB01,Navy Blue Cotton Beach Umbrella Carry Bag,Frankford Umbrellas,Replacement Parts,True,False,True,34.00,31.00,True,True,OUT
+5134,CB87-B-SS (2),Stainless Steel Surface Mount L-Brackets,Frankford Umbrellas,Replacement Parts,True,False,True,120.00,108.00,True,True,OUT
+5135,ECU/ARU-PC,Protective Cover (Eclipse/Aurora),Frankford Umbrellas,Replacement Parts,True,False,True,150.00,135.00,True,True,OUT
+5136,NGU-PC,Protective Cover (NOVA),Frankford Umbrellas,Replacement Parts,True,False,True,396.00,357.00,True,True,OUT
+5137,GS/876-PC,Protective Cover (G-Series/876),Frankford Umbrellas,Replacement Parts,True,False,True,150.00,135.00,True,True,OUT
+5138,PC-SM,"Protective Cover - Small (60"" rib)",Frankford Umbrellas,Replacement Parts,True,False,True,116.00,105.00,True,True,OUT
+5139,PC-LG,"Protective Cover - Large (74"" rib)",Frankford Umbrellas,Replacement Parts,True,False,True,129.00,117.00,True,True,OUT
+5140,1170,Vinyl Cover 6-8ft,Frankford Umbrellas,Replacement Parts,True,False,True,70.00,63.00,True,True,OUT
+5141,1174,Vinyl Cover 9-11ft,Frankford Umbrellas,Replacement Parts,True,False,True,78.00,71.00,True,True,OUT
+5142,MCB01,Sleeve Carry Bag (Greenwich/Monterey),Frankford Umbrellas,Replacement Parts,True,False,True,75.00,68.00,True,True,OUT
+5143,LED01,Led Light + Charging Kit,Frankford Umbrellas,Replacement Parts,True,False,True,99.00,90.00,True,True,OUT
+5144,LED-C4,Eclipse v4 Cantilever Umbrella LED Clip,Frankford Umbrellas,Replacement Parts,True,False,True,9.00,9.00,True,True,OUT
+5145,LED-C3,Monterey Rib Attachment Clip,Frankford Umbrellas,Replacement Parts,True,False,True,9.00,9.00,True,True,OUT
+5146,LED-C2,Aurora-F / G-Series Monterey Rib Attachment Clip,Frankford Umbrellas,Replacement Parts,True,False,True,9.00,9.00,True,True,OUT
+5147,LED-C1,Eclipse / Aurora / G-Series Greenwich / Greenwich / Marella LED Clip,Frankford Umbrellas,Replacement Parts,True,False,True,9.00,9.00,True,True,OUT
+5149,37-BP,"Standard Height Bottom Pole (37"")",Frankford Umbrellas,Replacement Parts,True,False,True,35.00,32.00,True,True,OUT
+5150,47-BP,"Bar Height Bottom Pole (47"")",Frankford Umbrellas,Replacement Parts,True,False,True,41.00,37.00,True,True,OUT
+5566,PIN & CHAIN,Pin & Chain,Frankford Umbrellas,Replacement Parts,True,False,True,16.00,15.00,True,True,OUT
+5567,TPU/FINIALS,TPU Finials,Frankford Umbrellas,Replacement Parts,True,False,True,27.00,25.00,True,True,OUT
+5568,C-TPU VERTEX,C-TPU Vertex Finial,Frankford Umbrellas,Replacement Parts,True,False,True,50.00,45.00,True,True,OUT
+5569,CHROME FINIALS,Chrome Finials,Frankford Umbrellas,Replacement Parts,True,False,True,40.00,36.00,True,True,OUT
+5570,SS-VERTEX FINIAL,Stainless Steel Vertex Finial,Frankford Umbrellas,Replacement Parts,True,False,True,70.00,63.00,True,True,OUT
+5571,C-SS-VERTEX FINIAL,Chrome Stainless Steel Vertex Finial,Frankford Umbrellas,Replacement Parts,True,False,True,80.00,72.00,True,True,OUT
+5572,FM-RIB,Fiberglass Monterey Rib,Frankford Umbrellas,Replacement Parts,True,False,True,32.00,29.00,True,True,OUT
+5573,FM-RIB-G,Fiberglass Monterey Rib - G-Series,Frankford Umbrellas,Replacement Parts,True,False,True,62.00,56.00,True,True,OUT
+5574,CAM-RIB,Camlock Rib,Frankford Umbrellas,Replacement Parts,True,False,True,58.00,53.00,True,True,OUT
+5575,CAM-RIB-G,Camlock Rib - G-Series,Frankford Umbrellas,Replacement Parts,True,False,True,62.00,56.00,True,True,OUT
+5576,ECU-RIB,Eclipse Rib,Frankford Umbrellas,Replacement Parts,True,False,True,82.00,74.00,True,True,OUT
+5577,ARU-RIB,Aurora Rib,Frankford Umbrellas,Replacement Parts,True,False,True,62.00,56.00,True,True,OUT
+5578,ARUF-RIB,Aurora Fiberglass Rib,Frankford Umbrellas,Replacement Parts,True,False,True,62.00,56.00,True,True,OUT
+5579,ECU-WS,Eclipse Wind Strap,Frankford Umbrellas,Replacement Parts,True,False,True,258.00,233.00,True,True,OUT
+5580,ARU-WS,Aurora Wind Strap,Frankford Umbrellas,Replacement Parts,True,False,True,158.00,143.00,True,True,OUT
+5581,ECU-SP,Eclipse Spare Parts Kit,Frankford Umbrellas,Replacement Parts,True,False,True,688.00,620.00,True,True,OUT
+5582,ARU-SP,Aurora Spare Parts Kit,Frankford Umbrellas,Replacement Parts,True,False,True,336.00,303.00,True,True,OUT
+5583,CANOPY-SS,Canopy Support Strap,Frankford Umbrellas,Replacement Parts,True,False,True,14.00,13.00,True,True,OUT
+5584,ROPE,Replacement Rope,Frankford Umbrellas,Replacement Parts,True,False,True,13.00,12.00,True,True,OUT
+5585,38F-SR-BP,"Fiberglass Steel Rib Bottom Pole 38""",Frankford Umbrellas,Replacement Parts,True,False,True,25.00,23.00,True,True,OUT
+5586,42F-SR-BP,"Fiberglass Steel Rib Bottom Pole 42""",Frankford Umbrellas,Replacement Parts,True,False,True,25.00,23.00,True,True,OUT
+5587,42AP,"Aluminum Bottom Pole 42""",Frankford Umbrellas,Replacement Parts,True,False,True,26.00,24.00,True,True,OUT
+5588,WL-B,Wind Lock Bottom,Frankford Umbrellas,Replacement Parts,True,False,True,44.00,40.00,True,True,OUT
+5589,52F-SR-BP,"Fiberglass Steel Rib Bottom Pole 52""",Frankford Umbrellas,Replacement Parts,True,False,True,30.00,27.00,True,True,OUT
+5590,CB01-FC,Back Strap and Shoulder Strap Carry Bag for FC101,Frankford Umbrellas,Replacement Parts,True,False,True,143.00,129.00,True,True,OUT
+5591,W-SPRING,Ash Wood Pole Replacement Retention Pole Spring,Frankford Umbrellas,Replacement Parts,True,False,True,13.00,12.00,True,True,OUT
+5592,HBF,Half Ball Finial for Catalina / Avalon / Lifeguard (Fiberglass),Frankford Umbrellas,Replacement Parts,True,False,True,24.00,22.00,True,True,OUT
+5593,SBC,Steel Bell Cap for Laurel / Emerald Coast / Lifeguard (Steel),Frankford Umbrellas,Replacement Parts,True,False,True,14.00,13.00,True,True,OUT
+5594,SS-DB (1),Stainless Steel Drop-In Bolt (1),Frankford Umbrellas,Replacement Parts,True,False,True,16.00,15.00,True,True,OUT
+5595,01-B (4),Bolt Set 01 (4),Frankford Umbrellas,Replacement Parts,True,False,True,22.00,20.00,True,True,OUT
+5596,02-B (4),Bolt Set 02 (4),Frankford Umbrellas,Replacement Parts,True,False,True,22.00,20.00,True,True,OUT
+5597,03-B (4),Bolt Set 03 (4),Frankford Umbrellas,Replacement Parts,True,False,True,22.00,20.00,True,True,OUT
+5598,04-B (4),Bolt Set 04 (4),Frankford Umbrellas,Replacement Parts,True,False,True,22.00,20.00,True,True,OUT
+5599,ST-B (3),Steel Bolt Set (3),Frankford Umbrellas,Replacement Parts,True,False,True,22.00,20.00,True,True,OUT
+5600,480W,Weight Plate 480,Frankford Umbrellas,Replacement Parts,True,False,True,280.00,252.00,True,True,OUT
+5601,480F,Base Frame 480,Frankford Umbrellas,Replacement Parts,True,False,True,64.00,58.00,True,True,OUT
+5602,CMLK-DP,Camlock Double Pole Adapter,Frankford Umbrellas,Replacement Parts,True,False,True,126.00,114.00,True,True,OUT
+5603,CMLK-ST-SM,Camlock Steel Stem (Small),Frankford Umbrellas,Replacement Parts,True,False,True,188.00,170.00,True,True,OUT
+5604,BZ-IG,Bazooka In-Ground Anchor,Frankford Umbrellas,Replacement Parts,True,False,True,202.00,182.00,True,True,OUT
+5605,BZ-ST-SM,Bazooka Steel Stem (Small),Frankford Umbrellas,Replacement Parts,True,False,True,202.00,182.00,True,True,OUT
+5606,BZ-ST2-SM,"Bazooka Steel Stem 2"" (Small)",Frankford Umbrellas,Replacement Parts,True,False,True,214.00,193.00,True,True,OUT
+5607,ST-TS,Steel Toe Saver,Frankford Umbrellas,Replacement Parts,True,False,True,16.00,15.00,True,True,OUT
+5608,A-WHEEL,Aluminum Wheel,Frankford Umbrellas,Replacement Parts,True,False,True,68.00,62.00,True,True,OUT
+5609,50S/23-ST8,Steel Plate Stack 50S/23 8-Plate,Frankford Umbrellas,Replacement Parts,True,False,True,54.00,49.00,True,True,OUT
+5610,50S/23-ST4,Steel Plate Stack 50S/23 4-Plate,Frankford Umbrellas,Replacement Parts,True,False,True,54.00,49.00,True,True,OUT
+5611,75S/100S-ST8,Steel Plate Stack 75S/100S 8-Plate,Frankford Umbrellas,Replacement Parts,True,False,True,78.00,71.00,True,True,OUT
+5612,SA-WHEEL (1),Sand Anchor Wheel (1),Frankford Umbrellas,Replacement Parts,True,False,True,30.00,27.00,True,True,OUT
+5613,D-WHEEL (1),D-Wheel (1),Frankford Umbrellas,Replacement Parts,True,False,True,14.00,13.00,True,True,OUT
+5072,100A,Premium Aluminum Shell Wheel Base 100 lbs,Frankford Umbrellas,Umbrella Bases,True,False,True,590.00,531.00,True,True,OUT
+5073,100S,Steel Plate Base 100 lbs,Frankford Umbrellas,Umbrella Bases,True,False,True,640.00,576.00,True,True,OUT
+5074,150A,Premium Aluminum Shell Wheel Base 150 lbs,Frankford Umbrellas,Umbrella Bases,True,False,True,970.00,873.00,True,True,OUT
+5075,23,Resin Coated Concrete Base 80 lbs,Frankford Umbrellas,Umbrella Bases,True,False,True,234.00,211.00,True,True,OUT
+5076,24G-SQ,Square Galvanized Steel Base 100 lbs,Frankford Umbrellas,Umbrella Bases,True,False,True,780.00,702.00,True,True,OUT
+5077,30G,Round Galvanized Steel Base 100 lbs,Frankford Umbrellas,Umbrella Bases,True,False,True,860.00,774.00,True,True,OUT
+5078,36G,Round Galvanized Steel Base 150 lbs,Frankford Umbrellas,Umbrella Bases,True,False,True,1160.00,1044.00,True,True,OUT
+5079,36G-SQ,Square Galvanized Steel Base 200 lbs,Frankford Umbrellas,Umbrella Bases,True,False,True,1430.00,1287.00,True,True,OUT
+5080,40G,Round Galvanized Steel Base 185 lbs,Frankford Umbrellas,Umbrella Bases,True,False,True,1430.00,1287.00,True,True,OUT
+5081,480,Galvanized Wheel Base w/ Aluminum Cover,Frankford Umbrellas,Umbrella Bases,True,False,True,1380.00,1242.00,True,True,OUT
+5082,75S,Steel Plate Base 75 lbs,Frankford Umbrellas,Umbrella Bases,True,False,True,414.00,373.00,True,True,OUT
+5083,20G-SQ,Square Galvanized Steel Base 70 lbs,Frankford Umbrellas,Umbrella Bases,True,False,True,680.00,612.00,True,True,OUT
+5084,24G,Round Galvanized Steel Base 70 lbs,Frankford Umbrellas,Umbrella Bases,True,False,True,680.00,612.00,True,True,OUT
+5085,50C,Resin Coated Concrete Base 50 lbs,Frankford Umbrellas,Umbrella Bases,True,False,True,108.00,98.00,True,True,OUT
+5086,50S,Steel Plate Base 50 lbs,Frankford Umbrellas,Umbrella Bases,True,False,True,300.00,270.00,True,True,OUT
+5087,18ST,"Stainless Steel Stem (1.5"" x 18"")",Frankford Umbrellas,Umbrella Bases,True,False,True,174.00,157.00,True,True,OUT
+5088,8ST,"Stainless Steel Stem (1.5"" x 8"")",Frankford Umbrellas,Umbrella Bases,True,False,True,142.00,128.00,True,True,OUT
+5089,18ST2,"Stainless Steel Stem (2.0"" x 18"")",Frankford Umbrellas,Umbrella Bases,True,False,True,216.00,195.00,True,True,OUT
+5090,+W,Castor Locking Wheels (Set of 4),Frankford Umbrellas,Umbrella Bases,True,False,True,280.00,252.00,True,True,OUT
+5091,36G-SQx2,Square Galvanized Steel Base and Base Stacks 400 lbs,Frankford Umbrellas,Umbrella Bases,True,False,True,2540.00,2286.00,True,True,OUT
+5092,36G-SQx3,Square Galvanized Steel Base and Base Stacks 600 lbs,Frankford Umbrellas,Umbrella Bases,True,False,True,3810.00,3429.00,True,True,OUT
+5094,40G+36G,Round Galvanized Steel Base Stacks Combo (Base & 2 Stacking Plates),Frankford Umbrellas,Umbrella Bases,True,False,True,2270.00,2043.00,True,True,OUT
+5095,40Gx2,Round Galvanized Steel Base Stacks 370 lbs,Frankford Umbrellas,Umbrella Bases,True,False,True,2540.00,2286.00,True,True,OUT
+5096,40Gx3,Round Galvanized Steel Base Stacks 555 lbs,Frankford Umbrellas,Umbrella Bases,True,False,True,3810.00,3429.00,True,True,OUT
+5097,40Gx4,Round Galvanized Steel Base Stacks 740 lbs,Frankford Umbrellas,Umbrella Bases,True,False,True,5080.00,4572.00,True,True,OUT
+5100,DP-SM/BK,Surface Mount Deck Plate,Frankford Umbrellas,Umbrella Bases,True,False,True,230.00,207.00,True,True,OUT
+5101,DP-SS,Stainless Steel Surface Mount Deck Plate,Frankford Umbrellas,Umbrella Bases,True,False,True,510.00,459.00,True,True,OUT
+5102,SS-DB (4),Stainless Steel Countersunk Concrete Wedge Anchors (4),Frankford Umbrellas,Umbrella Bases,True,False,True,64.00,58.00,True,True,OUT
+5103,150A+18ST2,Premium Aluminum Shell Wheel Combo (150 lb Base & Stem),Frankford Umbrellas,Umbrella Bases,True,False,True,970.00,873.00,True,True,OUT
+5104,36G+18ST2,Round Galvanized Steel Base Stacks Combo (150 lb Base & Stem),Frankford Umbrellas,Umbrella Bases,True,False,True,1160.00,1044.00,True,True,OUT
+5105,36G-SQ+18ST2,Square Galvanized Steel Base and Base Stacks Combo (200 lb Base & Stem),Frankford Umbrellas,Umbrella Bases,True,False,True,1430.00,1287.00,True,True,OUT
+5106,40G+18ST2,Round Galvanized Steel Base Stacks Combo (185 lb Base & Stem),Frankford Umbrellas,Umbrella Bases,True,False,True,1430.00,1287.00,True,True,OUT
+5107,480+18ST2,Model 480 Wheel Base Combo (Base & Stem),Frankford Umbrellas,Umbrella Bases,True,False,True,1380.00,1242.00,True,True,OUT
+5108,NGU-DP,Galvanized Steel Surface Mount Deck Plate,Frankford Umbrellas,Umbrella Bases,True,False,True,280.00,252.00,True,True,OUT
+5109,NGU550,Galvanized Steel Max Base,Frankford Umbrellas,Umbrella Bases,True,False,True,2540.00,2286.00,True,True,OUT
+5111,BZ2-SM,"Bazooka In-Ground Anchored Stem (2"")",Frankford Umbrellas,Umbrella Bases,True,False,True,484.00,436.00,True,True,OUT
+5112,BZ2-SS,Stainless Steel Bazooka Stem Upgrade,Frankford Umbrellas,Umbrella Bases,True,False,True,112.00,101.00,True,True,OUT
+5113,CMLK-SM,Camlock Surface Mounted Stem,Frankford Umbrellas,Umbrella Bases,True,False,True,306.00,276.00,True,True,OUT
+5114,DP-ST,Stainless Steel Stem Surface Mount,Frankford Umbrellas,Umbrella Bases,True,False,True,160.00,144.00,True,True,OUT
+5116,IG-ST,Stainless Steel Stem In-Ground Mount,Frankford Umbrellas,Umbrella Bases,True,False,True,205.00,185.00,True,True,OUT
+5118,30G+24G-MLA,Round Galvanized Steel Base Stacks Marella Combo (Base & Double Plates),Frankford Umbrellas,Umbrella Bases,True,False,True,1428.00,1286.00,True,True,OUT
+5119,30G-MLA,Round Galvanized Steel Base Stacks 100 lbs (Marella),Frankford Umbrellas,Umbrella Bases,True,False,True,810.00,729.00,True,True,OUT
+5120,30Gx2-MLA,Round Galvanized Steel Base Stacks 200 lbs (Marella),Frankford Umbrellas,Umbrella Bases,True,False,True,1620.00,1458.00,True,True,OUT
+5121,36G-MLA,Round Galvanized Steel Base Stacks 150 lbs (Marella),Frankford Umbrellas,Umbrella Bases,True,False,True,1110.00,999.00,True,True,OUT
+5122,36G-SQ-MLA,Square Galvanized Steel Base (Marella),Frankford Umbrellas,Umbrella Bases,True,False,True,1380.00,1242.00,True,True,OUT
+5123,MLA-8ST2,Marella Stainless Steel Stem,Frankford Umbrellas,Umbrella Bases,True,False,True,216.00,195.00,True,True,OUT
+5124,DP-ST (4),Stainless Steel Stem Surface Mount (4),Frankford Umbrellas,Umbrella Bases,True,False,True,640.00,576.00,True,True,OUT
+5558,IG,In-Ground Mount,Frankford Umbrellas,Umbrella Bases,True,False,True,280.00,252.00,True,True,OUT
+5562,36G-SQx4,Square Galvanized Steel Base and Base Stacks 800 lbs,Frankford Umbrellas,Umbrella Bases,True,False,True,5080.00,4572.00,True,True,OUT
+5563,BZ-SM,"Bazooka In-Ground Anchored Stem (1.5"")",Frankford Umbrellas,Umbrella Bases,True,False,True,345.00,311.00,True,True,OUT
+5564,38-SAP,"Sand and Soil Anchor (1.5"")",Frankford Umbrellas,Umbrella Bases,True,False,True,157.00,142.00,True,True,OUT
+5565,38-SAP-2,"Sand and Soil Anchor (2"")",Frankford Umbrellas,Umbrella Bases,True,False,True,220.00,198.00,True,True,OUT
+2293,845CAM,The Greenwich,Frankford Umbrellas,Umbrellas,True,False,True,1030.00,927.00,True,True,OUT
+2294,845FM,The Monterey Pulley Lift,Frankford Umbrellas,Umbrellas,True,False,True,566.00,510.00,True,True,OUT
+2295,845FMC,The Monterey Crank Lift Non-Tilting,Frankford Umbrellas,Umbrellas,True,False,True,607.00,547.00,True,True,OUT
+2296,845FMA,The Monterey Crank Lift Auto-Tilting,Frankford Umbrellas,Umbrellas,True,False,True,657.00,592.00,True,True,OUT
+2297,880CAM,The Giant Greenwich,Frankford Umbrellas,Umbrellas,True,False,True,1875.00,1688.00,True,True,OUT
+2298,880FM,The Giant Monterey,Frankford Umbrellas,Umbrellas,True,False,True,1682.00,1514.00,True,True,OUT
+2299,868ARU,The Aurora Aluminum,Frankford Umbrellas,Umbrellas,True,False,True,3851.00,3466.00,True,True,OUT
+2300,868ECU,The Eclipse,Frankford Umbrellas,Umbrellas,True,False,True,6040.00,5436.00,True,True,OUT
+2301,844FA-01,The Catalina,Frankford Umbrellas,Umbrellas,True,False,True,456.00,411.00,True,True,OUT
+2302,845A,The Laurel,Frankford Umbrellas,Umbrellas,True,False,True,373.00,336.00,True,True,OUT
+5133,CB87,CB87 Clam Shell Beach Cabana,Frankford Umbrellas,Umbrellas,True,False,True,1227.00,1105.00,True,True,OUT
+5553,896NGU,The Nova,Frankford Umbrellas,Umbrellas,True,False,True,7310.00,6579.00,True,True,OUT
+5555,844FWB-01,The Avalon,Frankford Umbrellas,Umbrellas,True,False,True,445.00,401.00,True,True,OUT
+5556,845W,The Emerald Coast,Frankford Umbrellas,Umbrellas,True,False,True,381.00,343.00,True,True,OUT
+5557,883MLA-SQ,Marella Resort Cabana,Frankford Umbrellas,Umbrellas,True,False,True,8650.00,7785.00,True,True,OUT
+5561,868ARU-F,The Aurora Fiberglass,Frankford Umbrellas,Umbrellas,True,False,True,3680.00,3312.00,True,True,OUT
+5615,BH-UMBRELLA,Beach Haven Folding Beach Umbrella,Frankford Umbrellas,Umbrellas,True,False,True,186.00,168.00,True,True,OUT
+5616,639SS,Shade Star Beach Umbrella,Frankford Umbrellas,Umbrellas,True,False,True,270.00,243.00,True,True,OUT
+4955,COVER-60,Replacement Cover 6',Galtech International,Replacement Parts,True,False,True,,315.00,True,True,OUT
+4956,COVER-66,Replacement Cover 6x6',Galtech International,Replacement Parts,True,False,True,,372.00,True,True,OUT
+4957,COVER-75,Replacement Cover 7.5',Galtech International,Replacement Parts,True,False,True,,285.00,True,True,OUT
+4958,COVER-77,Replacement Cover 3.5x7',Galtech International,Replacement Parts,True,False,True,,379.00,True,True,OUT
+4959,COVER-90,Replacement Cover 9',Galtech International,Replacement Parts,True,False,True,,353.00,True,True,OUT
+4960,COVER-80,Replacement Cover 8x11',Galtech International,Replacement Parts,True,False,True,,675.00,True,True,OUT
+4961,COVER-88,Replacement Cover 8x8',Galtech International,Replacement Parts,True,False,True,,687.00,True,True,OUT
+4962,COVER-11,Replacement Cover 11',Galtech International,Replacement Parts,True,False,True,,529.00,True,True,OUT
+4963,COVER-10,Replacement Cover 10x10',Galtech International,Replacement Parts,True,False,True,,754.00,True,True,OUT
+4964,COVER-13,Replacement Cover 13',Galtech International,Replacement Parts,True,False,True,,990.00,True,True,OUT
+4965,P-RIB,Rib Assembly,Galtech International,Replacement Parts,True,False,True,60.00,45.00,True,True,OUT
+4966,BP,Bottom Pole,Galtech International,Replacement Parts,True,False,True,60.00,45.00,True,True,OUT
+4967,BH,Bar Height Pole,Galtech International,Replacement Parts,True,False,True,70.00,53.00,True,True,OUT
+4968,P-HUB,Runner Hub / Top Hub,Galtech International,Replacement Parts,True,False,True,55.00,42.00,True,True,OUT
+4969,P-FINIAL,Finial,Galtech International,Replacement Parts,True,False,True,40.00,30.00,True,True,OUT
+4970,P-PULLEYS,2-Pulley Kit,Galtech International,Replacement Parts,True,False,True,45.00,34.00,True,True,OUT
+4971,P-PIN,Pin & Chain Assembly,Galtech International,Replacement Parts,True,False,True,30.00,23.00,True,True,OUT
+4972,TFORMER,Transformer for Series 936/986,Galtech International,Replacement Parts,True,False,True,70.00,53.00,True,True,OUT
+4973,FRAME-ALU-727,Replacement Frame Aluminum - 727 7.5',Galtech International,Replacement Parts,True,False,True,450.00,338.00,True,True,OUT
+4974,FRAME-ALU-737,Replacement Frame Aluminum - 737 9',Galtech International,Replacement Parts,True,False,True,500.00,375.00,True,True,OUT
+4976,FRAME-ALU-779,Replacement Frame Aluminum - 779 8x11',Galtech International,Replacement Parts,True,False,True,700.00,525.00,True,True,OUT
+4977,FRAME-ALU-789,Replacement Frame Aluminum - 789 11',Galtech International,Replacement Parts,True,False,True,730.00,548.00,True,True,OUT
+4978,FRAME-ALU-799,Replacement Frame Aluminum - 799 10x10',Galtech International,Replacement Parts,True,False,True,730.00,548.00,True,True,OUT
+4979,FRAME-ALU-636,Replacement Frame Aluminum - 636 9',Galtech International,Replacement Parts,True,False,True,360.00,270.00,True,True,OUT
+4980,FRAME-ALU-736,Replacement Frame Aluminum - 736 9',Galtech International,Replacement Parts,True,False,True,400.00,300.00,True,True,OUT
+4981,FRAME-ALU-936,Replacement Frame Aluminum - 936 9',Galtech International,Replacement Parts,True,False,True,640.00,480.00,True,True,OUT
+4982,FRAME-ALU-986,Replacement Frame Aluminum - 986 11',Galtech International,Replacement Parts,True,False,True,790.00,593.00,True,True,OUT
+4983,FRAME-ALU-762,Replacement Frame Aluminum - 762 6x6',Galtech International,Replacement Parts,True,False,True,570.00,428.00,True,True,OUT
+4984,FRAME-ALU-722,Replacement Frame Aluminum - 722 7.5',Galtech International,Replacement Parts,True,False,True,635.00,477.00,True,True,OUT
+4985,FRAME-ALU-732,Replacement Frame Aluminum - 732 9',Galtech International,Replacement Parts,True,False,True,690.00,518.00,True,True,OUT
+4986,FRAME-ALU-781,Replacement Frame Aluminum - 781 11',Galtech International,Replacement Parts,True,False,True,760.00,570.00,True,True,OUT
+4987,FRAME-ALU-782,Replacement Frame Aluminum - 782 8x8',Galtech International,Replacement Parts,True,False,True,690.00,518.00,True,True,OUT
+4988,FRAME-ALU-792,Replacement Frame Aluminum - 792 10x10',Galtech International,Replacement Parts,True,False,True,760.00,570.00,True,True,OUT
+4989,FRAME-ALU-791,Replacement Frame Aluminum - 791 13',Galtech International,Replacement Parts,True,False,True,880.00,660.00,True,True,OUT
+4990,FRAME-ALU-715AB,Replacement Frame Aluminum - 715AB 6',Galtech International,Replacement Parts,True,False,True,400.00,300.00,True,True,OUT
+4991,FRAME-ALU-725,Replacement Frame Aluminum - 725 7.5',Galtech International,Replacement Parts,True,False,True,430.00,323.00,True,True,OUT
+4992,FRAME-ALU-735,Replacement Frame Aluminum - 735 9',Galtech International,Replacement Parts,True,False,True,480.00,360.00,True,True,OUT
+4993,FRAME-ALU-772,Replacement Frame Aluminum - 772 3.5x7',Galtech International,Replacement Parts,True,False,True,450.00,338.00,True,True,OUT
+4994,FRAME-ALU-887,Replacement Frame Aluminum - 887 11',Galtech International,Replacement Parts,True,False,True,2200.00,1650.00,True,True,OUT
+4995,FRAME-ALU-899,Replacement Frame Aluminum - 899 13',Galtech International,Replacement Parts,True,False,True,3100.00,2325.00,True,True,OUT
+4996,FRAME-ALU-897,Replacement Frame Aluminum - 897 10x10',Galtech International,Replacement Parts,True,False,True,2200.00,1650.00,True,True,OUT
+4997,FRAME-ALU-887-897-899-BASE,Replacement Frame Aluminum - 887-897-899-BASE,Galtech International,Replacement Parts,True,False,True,1050.00,788.00,True,True,OUT
+4998,FRAME-WD-121,Replacement Frame Wood - 121 7.5',Galtech International,Replacement Parts,True,False,True,340.00,255.00,True,True,OUT
+4999,FRAME-WD-221,Replacement Frame Wood - 221 7.5',Galtech International,Replacement Parts,True,False,True,340.00,255.00,True,True,OUT
+5000,FRAME-WD-131,Replacement Frame Wood - 131 9',Galtech International,Replacement Parts,True,False,True,350.00,263.00,True,True,OUT
+5001,FRAME-WD-132,Replacement Frame Wood - 132 9',Galtech International,Replacement Parts,True,False,True,400.00,300.00,True,True,OUT
+5002,FRAME-WD-232,Replacement Frame Wood - 232 9',Galtech International,Replacement Parts,True,False,True,400.00,300.00,True,True,OUT
+5003,FRAME-WD-136,Replacement Frame Wood - 136 9',Galtech International,Replacement Parts,True,False,True,400.00,300.00,True,True,OUT
+5004,FRAME-WD-183,Replacement Frame Wood - 183 11',Galtech International,Replacement Parts,True,False,True,650.00,488.00,True,True,OUT
+5005,FRAME-WD-531,Replacement Frame Wood - 531 9',Galtech International,Replacement Parts,True,False,True,800.00,600.00,True,True,OUT
+5006,FRAME-WD-532,Replacement Frame Wood - 532 9',Galtech International,Replacement Parts,True,False,True,900.00,675.00,True,True,OUT
+5007,FRAME-WD-537,Replacement Frame Wood - 537 9',Galtech International,Replacement Parts,True,False,True,900.00,675.00,True,True,OUT
+5008,FRAME-WD-587,Replacement Frame Wood - 587 11',Galtech International,Replacement Parts,True,False,True,1200.00,900.00,True,True,OUT
+4944,040ED,European Cast Iron Base - 40 lb,Galtech International,Umbrella Bases,True,False,True,400.00,300.00,True,True,OUT
+4945,075ED,European Cast Iron Base - 75 lb,Galtech International,Umbrella Bases,True,False,True,600.00,450.00,True,True,OUT
+4946,BSTUBE15,"Base Tube 1.5"" dia, 12"" height",Galtech International,Umbrella Bases,True,False,True,80.00,60.00,True,True,OUT
+4947,040SQBK,Steel Plate Base - 40 lb (772 only),Galtech International,Umbrella Bases,True,False,True,400.00,300.00,True,True,OUT
+4948,060SQ,Steel Plate Base - 60 lb,Galtech International,Umbrella Bases,True,False,True,600.00,450.00,True,True,OUT
+4949,085SQ,Steel Plate Base - 85 lb,Galtech International,Umbrella Bases,True,False,True,800.00,600.00,True,True,OUT
+4950,095SQ,Wheels Base - 95 lb,Galtech International,Umbrella Bases,True,False,True,1000.00,750.00,True,True,OUT
+4951,120SQ,Heavy Weight Base - 120 lb,Galtech International,Umbrella Bases,True,False,True,1100.00,825.00,True,True,OUT
+4952,170SQ,Heavy Weight Base - 170 lb,Galtech International,Umbrella Bases,True,False,True,1500.00,1125.00,True,True,OUT
+4953,BSTUBE-SQ-12,"Premium Base Tube 12.5""",Galtech International,Umbrella Bases,True,False,True,80.00,60.00,True,True,OUT
+4954,BSTUBE-SQ-24,"Premium Base Tube 24""",Galtech International,Umbrella Bases,True,False,True,90.00,68.00,True,True,OUT
+3375,727,Deluxe Auto Tilt 7.5',Galtech International,Umbrellas,True,False,True,640.00,480.00,True,True,OUT
+3376,737,Deluxe Auto Tilt Umbrella 9',Galtech International,Umbrellas,True,False,True,815.00,612.00,True,True,OUT
+3377,779,Deluxe Auto Tilt Oval Umbrella 8'x11',Galtech International,Umbrellas,True,False,True,1250.00,938.00,True,True,OUT
+3378,789,Deluxe Auto Tilt Umbrella 11',Galtech International,Umbrellas,True,False,True,1085.00,814.00,True,True,OUT
+3379,799,Deluxe Auto Tilt Umbrella 10'x10',Galtech International,Umbrellas,True,False,True,1440.00,1080.00,True,True,OUT
+3380,636,Manual Tilt Umbrella 9',Galtech International,Umbrellas,True,False,True,480.00,360.00,True,True,OUT
+3381,736,Standard Auto Tilt Umbrella 9',Galtech International,Umbrellas,True,False,True,620.00,465.00,True,True,OUT
+3382,936,Auto Tilt with LED Lights Umbrella 9',Galtech International,Umbrellas,True,False,True,785.00,589.00,True,True,OUT
+3383,986,Auto Tilt with LED Lights Umbrella 11',Galtech International,Umbrellas,True,False,True,1130.00,848.00,True,True,OUT
+3384,722,Deluxe Commercial Use 7.5',Galtech International,Umbrellas,True,False,True,830.00,623.00,True,True,OUT
+3385,762,Deluxe Commercial Use Square Umbrella 6'x6',Galtech International,Umbrellas,True,False,True,900.00,675.00,True,True,OUT
+3386,732,Deluxe Commercial Use Umbrella 9',Galtech International,Umbrellas,True,False,True,975.00,732.00,True,True,OUT
+3387,781,Deluxe Commercial Use Flat Profile Umbrella 11',Galtech International,Umbrellas,True,False,True,1305.00,979.00,True,True,OUT
+3388,782,Deluxe Commercial Use Square Umbrella 8'x8',Galtech International,Umbrellas,True,False,True,1125.00,844.00,True,True,OUT
+3389,791,Deluxe Commercial Use Umbrella 13',Galtech International,Umbrellas,True,False,True,1935.00,1452.00,True,True,OUT
+3390,792,Deluxe Commercial Use Umbrella 10'x10',Galtech International,Umbrellas,True,False,True,1380.00,1035.00,True,True,OUT
+3391,715,Commercial Use Umbrella 6',Galtech International,Umbrellas,True,False,True,635.00,477.00,True,True,OUT
+3392,725,Commercial Use 7.5',Galtech International,Umbrellas,True,False,True,595.00,447.00,True,True,OUT
+3393,735,Commercial Use Umbrella 9',Galtech International,Umbrellas,True,False,True,715.00,537.00,True,True,OUT
+3394,772,Half Wall 3.5x7',Galtech International,Umbrellas,True,False,True,725.00,544.00,True,True,OUT
+3395,121,Cafe Wood 7.5',Galtech International,Umbrellas,True,False,True,550.00,413.00,True,True,OUT
+3396,131,All Purpose Wood Umbrella 9',Galtech International,Umbrellas,True,False,True,610.00,458.00,True,True,OUT
+3397,132,Double Pulley Wood Umbrella 9',Galtech International,Umbrellas,True,False,True,650.00,488.00,True,True,OUT
+3398,136,Commercial Wood Umbrella 9',Galtech International,Umbrellas,True,False,True,765.00,574.00,True,True,OUT
+3399,183,Quad Pulley Wood Umbrella 11',Galtech International,Umbrellas,True,False,True,1050.00,788.00,True,True,OUT
+3400,887,Cantilever Umbrella 11',Galtech International,Umbrellas,True,False,True,2950.00,2213.00,True,True,OUT
+3401,899,Cantilever Umbrella 13',Galtech International,Umbrellas,True,False,True,4310.00,3233.00,True,True,OUT
+3402,897,Cantilever Umbrella 10'x10',Galtech International,Umbrellas,True,False,True,3390.00,2543.00,True,True,OUT
+3403,532TK,Designer Teak Umbrella 9',Galtech International,Umbrellas,True,False,True,1240.00,930.00,True,True,OUT
+3404,537TK,Rotational Tilt Teak Umbrella 9',Galtech International,Umbrellas,True,False,True,1270.00,953.00,True,True,OUT
+3405,587TK,Crank Lift Teak Umbrella 11',Galtech International,Umbrellas,True,False,True,1560.00,1170.00,True,True,OUT
