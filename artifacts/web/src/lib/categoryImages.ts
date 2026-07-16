@@ -13,6 +13,8 @@ import categoryCoffeeSideTablesImg from "@/assets/category-coffee-side-tables.pn
 import categoryDaybedsImg from "@/assets/category-daybeds.png";
 import categoryAccentPiecesImg from "@/assets/category-accessories.png";
 import categoryAccessoriesImg from "@assets/accessories_category_image_1782496844450.png";
+import categoryChaiseImg from "@assets/chase_category_image_1784173655679.jpg";
+import categoryPoolImg from "@assets/pool_category_image_1784173655679.jpg";
 import categoryAdirondackImg from "@assets/Adirondack_category_image_1782496844450.png";
 import categoryTablesImg from "@assets/tables_category_image_1782496844450.png";
 
@@ -26,6 +28,8 @@ export const CATEGORY_IMAGES: Record<string, string> = {
   "cat-umbrella-bases": categoryBasesImg,
   "cat-commercial": categoryCommercialImg,
   "cat-replacement-parts": categoryReplacementPartsImg,
+  "cat-chaise": categoryChaiseImg,
+  "pool": categoryPoolImg,
   "cat-bar": categoryBarImg,
   "cat-coffee-side-tables": categoryCoffeeSideTablesImg,
   "cat-daybeds": categoryDaybedsImg,
