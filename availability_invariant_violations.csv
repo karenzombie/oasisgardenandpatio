@@ -1,0 +1,2 @@
+break_type,id,sku,name,category_id,sub_category,available_online,quote_only,show_price_online,is_active,in_store_only,pricing_mode
+B,5930,2542SBSHNU,"Shadow Rock Square Balcony Table 42"" (Post Base, no Hole)",52,,True,True,False,True,False,fixed
