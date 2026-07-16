@@ -21,31 +21,24 @@ import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 
 // ---------------------------------------------------------------------------
-// Accept.js browser global — card data is tokenised by Authorize.net's script,
-// the raw PAN never reaches our server.
+// Authorize.net AcceptUI global types.
+// The hosted lightbox form is served by Authorize.net — card data NEVER touches
+// our DOM or server. The response handler receives the opaque token only.
 // ---------------------------------------------------------------------------
+type AcceptUIResponse = {
+  messages: {
+    resultCode: "Ok" | "Error";
+    message: Array<{ code: string; text: string }>;
+  };
+  opaqueData?: {
+    dataDescriptor: string;
+    dataValue: string;
+  };
+};
+
 declare global {
   interface Window {
-    Accept?: {
-      dispatchData: (
-        secureData: {
-          authData: { clientKey: string; apiLoginID: string };
-          cardData: {
-            cardNumber: string;
-            month: string;
-            year: string;
-            cardCode: string;
-          };
-        },
-        handler: (response: {
-          messages: {
-            resultCode: "Ok" | "Error";
-            message: Array<{ code: string; text: string }>;
-          };
-          opaqueData?: { dataDescriptor: string; dataValue: string };
-        }) => void,
-      ) => void;
-    };
+    handleAcceptUIResponse?: (response: AcceptUIResponse) => void;
   }
 }
 
@@ -98,9 +91,6 @@ export default function Checkout() {
   const { toast } = useToast();
   const qc = useQueryClient();
 
-  // Cart works for both authed users and guests now (session-keyed on the
-  // server). No more redirect to /login — guests can complete a purchase by
-  // providing their contact info.
   const { data: cart, isLoading: cartLoading } = useGetCart({
     query: {
       queryKey: getGetCartQueryKey(),
@@ -115,8 +105,8 @@ export default function Checkout() {
     },
   });
 
-  // Public Accept.js credentials — fetched here so the script can be loaded.
-  // Enabled only for authenticated users (guests see the under-construction UI).
+  // Public AcceptUI credentials — only fetched for authenticated users.
+  // Guests see the under-construction UI and never trigger payment.
   const { data: paymentConfig } = useGetCheckoutPaymentConfig({
     query: {
       queryKey: getGetCheckoutPaymentConfigQueryKey(),
@@ -126,8 +116,6 @@ export default function Checkout() {
   });
 
   const addresses = addrData?.addresses ?? [];
-  // Guests don't have a saved address book, so default to the new-address
-  // form rather than picking from an empty list.
   const [selectedId, setSelectedId] = useState<number | "new">("new");
   const [form, setForm] = useState<AddressForm>(() => ({
     ...EMPTY_FORM,
@@ -138,14 +126,14 @@ export default function Checkout() {
   const [shippingMethod, setShippingMethod] = useState("standard");
   const [specialInstructions, setSpecialInstructions] = useState("");
 
-  // Card fields (Accept.js tokenisation, raw PAN stays in the browser).
-  const [cardNumber, setCardNumber] = useState("");
-  const [expirationDate, setExpirationDate] = useState("");
-  const [cardCode, setCardCode] = useState("");
-  // True while Accept.dispatchData is in flight (before placeOrder fires).
-  const [isTokenizing, setIsTokenizing] = useState(false);
-  // Inline error shown below the card fields.
-  const [cardError, setCardError] = useState<string | null>(null);
+  // Error shown near the AcceptUI button (address validation or gateway errors).
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+
+  // Payload captured at AcceptUI-button click time; consumed by the global
+  // response handler when Authorize.net returns the opaque token.
+  const pendingOrderPayloadRef = useRef<
+    Parameters<typeof placeOrderM.mutate>[0]["data"] | null
+  >(null);
 
   // Default to first saved address when they load (authed only)
   useEffect(() => {
@@ -175,8 +163,6 @@ export default function Checkout() {
     setForm((f) => {
       const auto = `${guest.firstName} ${guest.lastName}`.trim();
       const previousAuto = f.recipientName.trim();
-      // Only auto-fill while the field is blank or still matches the prior
-      // computed value — never clobber a custom recipient the user typed.
       if (
         previousAuto === ""
         || /^[A-Za-z' .-]+ [A-Za-z' .-]+$/.test(previousAuto)
@@ -187,20 +173,21 @@ export default function Checkout() {
     });
   }, [isAuthenticated, guest.firstName, guest.lastName]);
 
-  // Load the Accept.js script once the payment config arrives.
-  // The sandbox flag controls whether to use the test or live script URL.
+  // Load the AcceptUI hosted-form script when config arrives.
+  // v3/AcceptUI.js is the hosted lightbox form — different from v1/Accept.js.
   useEffect(() => {
     if (!paymentConfig || !isAuthenticated) return;
     const src = paymentConfig.sandbox
-      ? "https://jstest.authorize.net/v1/Accept.js"
-      : "https://js.authorize.net/v1/Accept.js";
+      ? "https://jstest.authorize.net/v3/AcceptUI.js"
+      : "https://js.authorize.net/v3/AcceptUI.js";
     if (document.querySelector(`script[src="${src}"]`)) return;
     const script = document.createElement("script");
     script.src = src;
     script.async = true;
+    script.charset = "utf-8";
     document.head.appendChild(script);
-    // Intentionally not removing the script on unmount — removing and
-    // re-adding triggers reload races; Accept.js is lightweight and idempotent.
+    // Intentionally not removing on unmount — removing and re-adding
+    // causes AcceptUI to lose its delegated click listener.
   }, [paymentConfig, isAuthenticated]);
 
   const placeOrderM = usePlaceOrder({
@@ -228,15 +215,52 @@ export default function Checkout() {
           (err as { message?: string })?.message ??
           "Could not place order.";
         if (data?.paymentDeclined) {
-          // Show declined-card messages inline near the card fields so the
-          // customer can immediately try a different card.
-          setCardError(message);
+          // Show declined messages inline near the payment button so the
+          // customer can immediately retry with a different card.
+          setCheckoutError(message);
         } else {
           toast({ title: "Checkout failed", description: message });
         }
       },
     },
   });
+
+  // Keep always-current refs so the global AcceptUI response handler is never
+  // stale across renders without needing to re-register it every render.
+  const placeOrderMutateRef = useRef(placeOrderM.mutate);
+  useEffect(() => { placeOrderMutateRef.current = placeOrderM.mutate; });
+  const setCheckoutErrorRef = useRef(setCheckoutError);
+  useEffect(() => { setCheckoutErrorRef.current = setCheckoutError; });
+
+  // Register the global AcceptUI response handler once. AcceptUI calls
+  // window.handleAcceptUIResponse(response) when the hosted form completes.
+  // The global is a thin bridge to the always-current refs above.
+  useEffect(() => {
+    window.handleAcceptUIResponse = (response: AcceptUIResponse) => {
+      if (response.messages.resultCode === "Error" || !response.opaqueData) {
+        const msg =
+          response.messages.message[0]?.text ??
+          "Payment could not be processed. Please try again.";
+        setCheckoutErrorRef.current(msg);
+        return;
+      }
+      const payload = pendingOrderPayloadRef.current;
+      if (!payload) return;
+      setCheckoutErrorRef.current(null);
+      placeOrderMutateRef.current({
+        data: {
+          ...payload,
+          paymentToken: {
+            dataDescriptor: response.opaqueData.dataDescriptor,
+            dataValue: response.opaqueData.dataValue,
+          },
+        },
+      });
+    };
+    return () => {
+      delete window.handleAcceptUIResponse;
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const subtotalNum = Number(cart?.subtotal ?? 0);
   const selectedAddress: AccountAddress | null = useMemo(() => {
@@ -248,8 +272,6 @@ export default function Checkout() {
     (selectedAddress?.state ?? form.state).toUpperCase().trim();
   const shippingZip = (selectedAddress?.zip ?? form.zip).trim();
 
-  // Live quote — same monotonic-request guard as before so out-of-order
-  // responses can't overwrite the displayed totals.
   const quoteM = useQuoteCheckout();
   const quoteMutate = quoteM.mutate;
   const [confirmedQuote, setConfirmedQuote] = useState<{
@@ -297,9 +319,6 @@ export default function Checkout() {
     confirmedQuote.key.zip === shippingZip &&
     confirmedQuote.key.subtotal === String(cart?.subtotal ?? "");
   const quote = quoteFresh ? confirmedQuote!.data : null;
-  // Shipping comes from the staff-managed Shipping rules and does NOT depend on
-  // the destination address, so it's available straight from the cart even
-  // before a tax quote resolves.
   const cartShipping = Number(cart?.shipping ?? 0);
   const shippingNum = quote ? Number(quote.shipping) : cartShipping;
   const taxNum = quote ? Number(quote.tax) : 0;
@@ -317,25 +336,6 @@ export default function Checkout() {
     setGuest((g) => ({ ...g, [key]: value }));
   }
 
-  // Format card number as XXXX XXXX XXXX XXXX (digits only, max 16).
-  function handleCardNumberChange(raw: string) {
-    const digits = raw.replace(/\D/g, "").slice(0, 16);
-    const formatted = digits.replace(/(.{4})(?=.)/g, "$1 ");
-    setCardNumber(formatted);
-    setCardError(null);
-  }
-
-  // Format expiration date as MM/YY, inserting the slash automatically.
-  function handleExpirationChange(raw: string) {
-    const digits = raw.replace(/\D/g, "").slice(0, 4);
-    if (digits.length <= 2) {
-      setExpirationDate(digits);
-    } else {
-      setExpirationDate(`${digits.slice(0, 2)}/${digits.slice(2)}`);
-    }
-    setCardError(null);
-  }
-
   function validateGuestContact(): string | null {
     if (!guest.email.trim() || !EMAIL_RE.test(guest.email.trim())) {
       return "Enter a valid email address.";
@@ -349,47 +349,51 @@ export default function Checkout() {
     return null;
   }
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  /**
+   * Click handler for the AcceptUI button. AcceptUI uses document-level click
+   * delegation: calling e.stopPropagation() here prevents the delegated handler
+   * from seeing the event, so the lightbox never opens when validation fails.
+   *
+   * On success, the current address payload is captured in pendingOrderPayloadRef
+   * so the global response handler can include it in the place-order mutation.
+   */
+  function handleAcceptUIClick(e: React.MouseEvent<HTMLButtonElement>) {
+    // Block double-submit while a mutation is already in flight.
+    if (placeOrderM.isPending) {
+      e.stopPropagation();
+      return;
+    }
 
-    // Non-authenticated users see the "under construction" UI and cannot submit.
-    if (!isAuthenticated) return;
+    // Validate new-address form fields manually (the button is type="button"
+    // so native HTML form validation does not fire automatically).
+    if (selectedId === "new") {
+      if (
+        !form.street1.trim() ||
+        !form.city.trim() ||
+        !form.state.trim() ||
+        !form.zip.trim()
+      ) {
+        setCheckoutError(
+          "Please fill in the required shipping address fields (street, city, state, ZIP).",
+        );
+        e.stopPropagation();
+        return;
+      }
+    }
 
-    // Validate card fields.
-    const rawCard = cardNumber.replace(/\s/g, "");
-    if (rawCard.length < 13 || rawCard.length > 19) {
-      setCardError("Enter a valid card number.");
-      return;
-    }
-    const expiryMatch = expirationDate.match(/^(\d{1,2})\/(\d{2,4})$/);
-    if (!expiryMatch) {
-      setCardError("Enter the expiration date as MM/YY.");
-      return;
-    }
-    if (!cardCode.trim()) {
-      setCardError("Enter the security code.");
-      return;
-    }
     if (!paymentConfig) {
-      setCardError(
+      setCheckoutError(
         "Payment configuration not available. Please refresh and try again.",
       );
-      return;
-    }
-    if (!window.Accept) {
-      setCardError("Payment is loading. Please try again in a moment.");
+      e.stopPropagation();
       return;
     }
 
-    setCardError(null);
-    setIsTokenizing(true);
+    setCheckoutError(null);
 
-    const month = expiryMatch[1].padStart(2, "0");
-    const rawYear = expiryMatch[2];
-    const year = rawYear.length === 2 ? `20${rawYear}` : rawYear;
-
-    // Build the address portion of the request payload.
-    const addressPayload: Parameters<typeof placeOrderM.mutate>[0]["data"] =
+    // Snapshot the current address payload. The global response handler reads
+    // this ref when Authorize.net returns the opaque token.
+    pendingOrderPayloadRef.current =
       typeof selectedId === "number"
         ? {
             shippingAddressId: selectedId,
@@ -412,37 +416,8 @@ export default function Checkout() {
             specialInstructions: specialInstructions || undefined,
           };
 
-    // Tokenise the card via Accept.js. The raw PAN never reaches our server.
-    window.Accept.dispatchData(
-      {
-        authData: {
-          clientKey: paymentConfig.publicClientKey,
-          apiLoginID: paymentConfig.apiLoginId,
-        },
-        cardData: { cardNumber: rawCard, month, year, cardCode: cardCode.trim() },
-      },
-      (response) => {
-        setIsTokenizing(false);
-        if (
-          response.messages.resultCode === "Error" ||
-          !response.opaqueData
-        ) {
-          const msg =
-            response.messages.message[0]?.text ?? "Card could not be processed.";
-          setCardError(msg);
-          return;
-        }
-        placeOrderM.mutate({
-          data: {
-            ...addressPayload,
-            paymentToken: {
-              dataDescriptor: response.opaqueData.dataDescriptor,
-              dataValue: response.opaqueData.dataValue,
-            },
-          },
-        });
-      },
-    );
+    // Allow the event to bubble — AcceptUI's document-level listener opens the
+    // hosted lightbox form.
   }
 
   if (authLoading || cartLoading) {
@@ -467,8 +442,6 @@ export default function Checkout() {
     );
   }
 
-  const isSubmitting = isTokenizing || placeOrderM.isPending;
-
   return (
     <div className="container mx-auto px-4 py-12 max-w-6xl">
       <nav className="text-xs uppercase tracking-widest text-muted-foreground mb-6 flex items-center gap-2">
@@ -478,10 +451,9 @@ export default function Checkout() {
       </nav>
       <h1 className="font-serif text-3xl md:text-4xl mb-8">Checkout</h1>
 
-      <form
-        onSubmit={handleSubmit}
-        className="grid grid-cols-1 lg:grid-cols-3 gap-12"
-      >
+      {/* No onSubmit — the AcceptUI button is type="button" and handles its own
+          click flow. The form wrapper is kept for browser autofill grouping. */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
         <div className="lg:col-span-2 space-y-10">
           {/* Contact */}
           <section>
@@ -710,9 +682,7 @@ export default function Checkout() {
                 <p className="font-medium">Standard Delivery</p>
                 <p className="text-muted-foreground">
                   White-glove scheduling provided after order placement.
-                  {shippingNum === 0
-                    ? " Your order ships free."
-                    : ""}
+                  {shippingNum === 0 ? " Your order ships free." : ""}
                 </p>
               </div>
               <span className="font-serif">{formatMoney(shippingNum)}</span>
@@ -735,63 +705,10 @@ export default function Checkout() {
           <section>
             <h2 className="font-serif text-xl mb-3">Payment</h2>
             {isAuthenticated ? (
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="cardNumber">Card number *</Label>
-                  <Input
-                    id="cardNumber"
-                    type="text"
-                    inputMode="numeric"
-                    autoComplete="cc-number"
-                    placeholder="1234 5678 9012 3456"
-                    maxLength={19}
-                    value={cardNumber}
-                    onChange={(e) => handleCardNumberChange(e.target.value)}
-                    className="rounded-none font-mono tracking-wider"
-                    disabled={isSubmitting}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="expirationDate">Expiration *</Label>
-                    <Input
-                      id="expirationDate"
-                      type="text"
-                      inputMode="numeric"
-                      autoComplete="cc-exp"
-                      placeholder="MM/YY"
-                      maxLength={5}
-                      value={expirationDate}
-                      onChange={(e) => handleExpirationChange(e.target.value)}
-                      className="rounded-none"
-                      disabled={isSubmitting}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="cardCode">Security code *</Label>
-                    <Input
-                      id="cardCode"
-                      type="password"
-                      inputMode="numeric"
-                      autoComplete="cc-csc"
-                      placeholder="CVV"
-                      maxLength={4}
-                      value={cardCode}
-                      onChange={(e) => {
-                        setCardCode(e.target.value.replace(/\D/g, "").slice(0, 4));
-                        setCardError(null);
-                      }}
-                      className="rounded-none"
-                      disabled={isSubmitting}
-                    />
-                  </div>
-                </div>
-                {cardError ? (
-                  <p className="text-sm text-destructive">{cardError}</p>
-                ) : null}
-                <p className="text-[11px] text-muted-foreground">
-                  Your card details are tokenised by Authorize.net and never
-                  sent to our server.
+              <div className="border border-border bg-card p-5 text-sm text-muted-foreground">
+                <p>
+                  Your card details are entered securely in Authorize.net's
+                  hosted form and never touch our page or server.
                 </p>
               </div>
             ) : (
@@ -877,18 +794,32 @@ export default function Checkout() {
               <span>Total</span>
               <span>{formatMoney(totalNum)}</span>
             </div>
+
+            {checkoutError ? (
+              <p className="text-sm text-destructive mt-4">{checkoutError}</p>
+            ) : null}
+
             {isAuthenticated ? (
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full rounded-none mt-6 font-serif tracking-widest uppercase"
+              // AcceptUI button — class="AcceptUI" is required. AcceptUI.js
+              // listens at document level for clicks on elements with this class
+              // and opens the hosted lightbox form. The onClick handler validates
+              // the address first; e.stopPropagation() blocks the lightbox if
+              // validation fails. type="button" prevents any HTML form submission.
+              <button
+                type="button"
+                className="AcceptUI w-full mt-6 bg-primary text-primary-foreground px-4 py-3 font-serif tracking-widest uppercase text-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                data-apiLoginID={paymentConfig?.apiLoginId ?? ""}
+                data-clientKey={paymentConfig?.publicClientKey ?? ""}
+                data-acceptUIFormBtnTxt="Submit"
+                data-acceptUIFormHeaderTxt="Card Information"
+                data-paymentOptions='{"showCreditCard": true, "showBankAccount": false}'
+                data-billingAddressOptions='{"show":false,"required":false}'
+                data-responseHandler="handleAcceptUIResponse"
+                disabled={placeOrderM.isPending || !paymentConfig}
+                onClick={handleAcceptUIClick}
               >
-                {isTokenizing
-                  ? "Verifying card…"
-                  : placeOrderM.isPending
-                    ? "Placing Order…"
-                    : "Place Order"}
-              </Button>
+                {placeOrderM.isPending ? "Placing Order…" : "Place Order"}
+              </button>
             ) : (
               <>
                 <Button
@@ -915,7 +846,7 @@ export default function Checkout() {
             )}
           </div>
         </aside>
-      </form>
+      </div>
     </div>
   );
 }
