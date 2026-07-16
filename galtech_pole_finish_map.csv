@@ -1,0 +1,62 @@
+model_sku,model_name,material,finish_code,finish_name
+121,Cafe Wood 7.5',WOOD,DW,Dark Wood
+121,Cafe Wood 7.5',WOOD,LW,Light Wood
+131,All Purpose Wood Umbrella 9',WOOD,LW,Light Wood
+132,Double Pulley Wood Umbrella 9',WOOD,DW,Dark Wood
+132,Double Pulley Wood Umbrella 9',WOOD,LW,Light Wood
+136,Commercial Wood Umbrella 9',WOOD,LW,Light Wood
+183,Quad Pulley Wood Umbrella 11',WOOD,LW,Light Wood
+532TK,Designer Teak Umbrella 9',TEAK,TK,Teak
+537TK,Rotational Tilt Teak Umbrella 9',TEAK,TK,Teak
+587TK,Crank Lift Teak Umbrella 11',TEAK,TK,Teak
+636,Manual Tilt Umbrella 9',aluminum,MB,Bronze
+715,Commercial Use Umbrella 6',aluminum,AB,Antique Bronze
+722,Deluxe Commercial Use 7.5',aluminum,AB,Antique Bronze
+722,Deluxe Commercial Use 7.5',aluminum,BK,Black
+722,Deluxe Commercial Use 7.5',aluminum,SR,Silver
+725,Commercial Use 7.5',aluminum,AB,Antique Bronze
+725,Commercial Use 7.5',aluminum,BK,Black
+725,Commercial Use 7.5',aluminum,W,White
+727,Deluxe Auto Tilt 7.5',aluminum,AB,Antique Bronze
+727,Deluxe Auto Tilt 7.5',aluminum,AP,Antique Pewter
+727,Deluxe Auto Tilt 7.5',aluminum,BK,Black
+727,Deluxe Auto Tilt 7.5',aluminum,DC,Deluxe Champagne
+727,Deluxe Auto Tilt 7.5',aluminum,LT,Latte
+727,Deluxe Auto Tilt 7.5',aluminum,RC,Rib Champagne
+727,Deluxe Auto Tilt 7.5',aluminum,SR,Silver
+727,Deluxe Auto Tilt 7.5',aluminum,W,White
+732,Deluxe Commercial Use Umbrella 9',aluminum,AB,Antique Bronze
+732,Deluxe Commercial Use Umbrella 9',aluminum,BK,Black
+732,Deluxe Commercial Use Umbrella 9',aluminum,SR,Silver
+735,Commercial Use Umbrella 9',aluminum,AB,Antique Bronze
+735,Commercial Use Umbrella 9',aluminum,BK,Black
+735,Commercial Use Umbrella 9',aluminum,W,White
+736,Standard Auto Tilt Umbrella 9',aluminum,BK,Black
+736,Standard Auto Tilt Umbrella 9',aluminum,CH,Charcoal
+736,Standard Auto Tilt Umbrella 9',aluminum,MB,Bronze
+736,Standard Auto Tilt Umbrella 9',aluminum,W,White
+737,Deluxe Auto Tilt Umbrella 9',aluminum,AB,Antique Bronze
+737,Deluxe Auto Tilt Umbrella 9',aluminum,AP,Antique Pewter
+737,Deluxe Auto Tilt Umbrella 9',aluminum,BK,Black
+737,Deluxe Auto Tilt Umbrella 9',aluminum,DC,Deluxe Champagne
+737,Deluxe Auto Tilt Umbrella 9',aluminum,LT,Latte
+737,Deluxe Auto Tilt Umbrella 9',aluminum,RC,Rib Champagne
+737,Deluxe Auto Tilt Umbrella 9',aluminum,SR,Silver
+737,Deluxe Auto Tilt Umbrella 9',aluminum,W,White
+762,Deluxe Commercial Use Square Umbrella 6'x6',aluminum,AB,Antique Bronze
+762,Deluxe Commercial Use Square Umbrella 6'x6',aluminum,SR,Silver
+772,Half Wall 3.5x7',aluminum,AB,Antique Bronze
+779,Deluxe Auto Tilt Oval Umbrella 8'x11',aluminum,AB,Antique Bronze
+779,Deluxe Auto Tilt Oval Umbrella 8'x11',aluminum,BK,Black
+781,Deluxe Commercial Use Flat Profile Umbrella 11',aluminum,SR,Silver
+782,Deluxe Commercial Use Square Umbrella 8'x8',aluminum,SR,Silver
+789,Deluxe Auto Tilt Umbrella 11',aluminum,AB,Antique Bronze
+789,Deluxe Auto Tilt Umbrella 11',aluminum,BK,Black
+791,Deluxe Commercial Use Umbrella 13',aluminum,SR,Silver
+792,Deluxe Commercial Use Umbrella 10'x10',aluminum,SR,Silver
+799,Deluxe Auto Tilt Umbrella 10'x10',aluminum,AB,Antique Bronze
+799,Deluxe Auto Tilt Umbrella 10'x10',aluminum,BK,Black
+936,Auto Tilt with LED Lights Umbrella 9',aluminum,AB,Antique Bronze
+936,Auto Tilt with LED Lights Umbrella 9',aluminum,BK,Black
+986,Auto Tilt with LED Lights Umbrella 11',aluminum,AB,Antique Bronze
+986,Auto Tilt with LED Lights Umbrella 11',aluminum,BK,Black

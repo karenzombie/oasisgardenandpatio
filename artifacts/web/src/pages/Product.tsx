@@ -16,6 +16,12 @@ import { useToast } from "@/hooks/use-toast";
 import { Palette, Check } from "lucide-react";
 import { FabricSwatchDialog } from "@/components/FabricSwatchDialog";
 import { ProductOptionPickers } from "@/components/ProductOptionPickers";
+import {
+  GALTECH_POLE_INFO,
+  GALTECH_POLE_MODELS,
+  GALTECH_POLE_FINISHES,
+  composedPoleSku,
+} from "@/lib/galtech-pole-map";
 
 /**
  * Green checkmark shown adjacent to a selector label once the customer has
@@ -98,6 +104,15 @@ export default function Product() {
   const [wlFinishId, setWlFinishId] = useState<number | null>(null);
   const [wlFabricId, setWlFabricId] = useState<number | null>(null);
   const [wlTileId, setWlTileId] = useState<number | null>(null);
+  // Galtech replacement pole (BP/BH) 2-step picker state.
+  // poleModelSku: selected umbrella model SKU (e.g. "727"), null = unset.
+  // poleFinishCode: selected finish code (e.g. "SR"), null = unset.
+  // Both together derive variantId via the composed SKU.
+  const [poleModelSku, setPoleModelSku] = useState<string | null>(null);
+  const [poleFinishCode, setPoleFinishCode] = useState<string | null>(null);
+  // Declared early so effects below can reference it without a forward-ref error.
+  // data?.id is stable by slug; null/undefined compares safely to a number.
+  const isPoleProduct = data?.id === 4966 || data?.id === 4967;
   // Selected add-on option ids (multi-select, default none). Pairing targets are
   // auto-included via effectiveAddonIds — they are not stored here directly.
   const [addonIds, setAddonIds] = useState<number[]>([]);
@@ -170,6 +185,8 @@ export default function Product() {
     setStemPickerOpen(false);
     setCoverFinishId(null);
     setCoverPickerOpen(false);
+    setPoleModelSku(null);
+    setPoleFinishCode(null);
   }, [data?.id]);
 
   // Optional accessories offered by the galvanized plate bases (empty/null for
@@ -409,11 +426,46 @@ export default function Product() {
     // Finish-in-variant / wind-vent products drive variantId from the finish
     // (+ vent) selectors, so never pre-select even with a single variant.
     if (isWindVentMode || finishVariantMode) return;
+    // Pole products use the 2-step picker; never pre-select any of their 61 variants.
+    if (isPoleProduct) return;
     if (variants.length === 1) {
       setVariantId((cur) => cur ?? variants[0]!.id);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data?.id, variants.length, isWindVentMode, finishVariantMode]);
+  }, [data?.id, variants.length, isWindVentMode, finishVariantMode, isPoleProduct]);
+
+  // Pole product: auto-select the finish when the chosen model has only one
+  // finish option, and clear finish when the model changes.
+  useEffect(() => {
+    if (!isPoleProduct) return;
+    if (!poleModelSku) {
+      setPoleFinishCode(null);
+      return;
+    }
+    const model = GALTECH_POLE_MODELS.find((m) => m.sku === poleModelSku);
+    if (model?.finishCodes.length === 1) {
+      setPoleFinishCode(model.finishCodes[0]!);
+    } else {
+      setPoleFinishCode(null);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPoleProduct, poleModelSku]);
+
+  // Pole product: derive variantId from the composed SKU once both model and
+  // finish are selected.  Clears variantId when either is absent.
+  useEffect(() => {
+    if (!isPoleProduct || !data) return;
+    if (!poleModelSku || !poleFinishCode) {
+      setVariantId(null);
+      return;
+    }
+    const poleInfo = GALTECH_POLE_INFO[data.id];
+    if (!poleInfo) return;
+    const sku = composedPoleSku(poleInfo.poleSku, poleModelSku, poleFinishCode);
+    const match = variants.find((v) => v.sku === sku);
+    setVariantId(match?.id ?? null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPoleProduct, data?.id, poleModelSku, poleFinishCode, variants]);
 
   // Clear a now-invalid fabric when the configuration changes (its grade may no
   // longer be priced, or stripes may now be excluded).
@@ -567,9 +619,14 @@ export default function Product() {
       missingSelections.push("a valid Finish + Wind Vent combination");
     }
   } else if (requiresVariant && !selectedVariant) {
-    missingSelections.push(
-      variants[0]?.optionLabel ?? (isGradeMode ? "Configuration" : "Variant"),
-    );
+    if (isPoleProduct) {
+      if (!poleModelSku) missingSelections.push("Umbrella Model");
+      else if (!poleFinishCode) missingSelections.push("Finish");
+    } else {
+      missingSelections.push(
+        variants[0]?.optionLabel ?? (isGradeMode ? "Configuration" : "Variant"),
+      );
+    }
   }
   if (finishes.length > 0 && !selectedFinish) {
     missingSelections.push("Frame Finish");
@@ -1193,7 +1250,119 @@ export default function Product() {
 
               {/* Variant selector (Configuration in grade mode, else Frame Finish) */}
               {!isWindVentMode && !finishVariantMode && requiresVariant ? (
-                variantIsFinish ? (
+                isPoleProduct ? (
+                  /* ── Galtech replacement pole: 2-step picker ─────────────── */
+                  <div className="mb-5">
+                    {/* Step 1: Umbrella Model */}
+                    <div className="mb-4">
+                      <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">
+                        Umbrella Model
+                        <span className="text-destructive ml-1">*</span>
+                        {poleModelSku ? <SelectionCheck /> : null}
+                      </p>
+                      <select
+                        value={poleModelSku ?? ""}
+                        onChange={(e) => setPoleModelSku(e.target.value || null)}
+                        className="w-full sm:max-w-[460px] border border-input bg-background px-3 py-2 text-sm rounded-none focus:outline-none focus:ring-2 focus:ring-primary"
+                      >
+                        <option value="">— Select your umbrella model —</option>
+                        <optgroup label="Aluminum">
+                          {GALTECH_POLE_MODELS.filter((m) => m.material === "ALUMINUM").map((m) => (
+                            <option key={m.sku} value={m.sku}>
+                              {m.name} ({m.sku})
+                            </option>
+                          ))}
+                        </optgroup>
+                        <optgroup label="Wood">
+                          {GALTECH_POLE_MODELS.filter((m) => m.material === "WOOD").map((m) => (
+                            <option key={m.sku} value={m.sku}>
+                              {m.name} ({m.sku})
+                            </option>
+                          ))}
+                        </optgroup>
+                        <optgroup label="Teak">
+                          {GALTECH_POLE_MODELS.filter((m) => m.material === "TEAK").map((m) => (
+                            <option key={m.sku} value={m.sku}>
+                              {m.name} ({m.sku})
+                            </option>
+                          ))}
+                        </optgroup>
+                      </select>
+                    </div>
+
+                    {/* Step 2: Finish — shown only once a model is selected */}
+                    {poleModelSku ? (
+                      <div className="mb-3">
+                        <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">
+                          Finish
+                          <span className="text-destructive ml-1">*</span>
+                          {poleFinishCode ? (
+                            <span className="ml-2 normal-case tracking-normal text-foreground">
+                              {GALTECH_POLE_FINISHES[poleFinishCode]?.name}
+                            </span>
+                          ) : null}
+                          {poleFinishCode ? <SelectionCheck /> : null}
+                        </p>
+                        {(() => {
+                          const model = GALTECH_POLE_MODELS.find((m) => m.sku === poleModelSku);
+                          const codes = model?.finishCodes ?? [];
+                          if (codes.length === 1) {
+                            const finish = GALTECH_POLE_FINISHES[codes[0]!];
+                            return finish ? (
+                              <div className="flex items-center gap-3">
+                                <img
+                                  src={finish.swatchImageUrl}
+                                  alt={finish.name}
+                                  className="h-12 w-12 shrink-0 object-cover border border-border"
+                                />
+                                <span className="text-sm font-medium">{finish.name}</span>
+                              </div>
+                            ) : null;
+                          }
+                          return (
+                            <div className="flex flex-wrap gap-2">
+                              {codes.map((code) => {
+                                const finish = GALTECH_POLE_FINISHES[code];
+                                if (!finish) return null;
+                                return (
+                                  <button
+                                    key={code}
+                                    type="button"
+                                    onClick={() => setPoleFinishCode(code)}
+                                    className={`flex items-center gap-2 px-3 py-2 border text-sm transition-colors ${
+                                      poleFinishCode === code
+                                        ? "border-primary bg-primary text-primary-foreground"
+                                        : "border-input hover:border-foreground"
+                                    }`}
+                                  >
+                                    <img
+                                      src={finish.swatchImageUrl}
+                                      alt={finish.name}
+                                      className="h-5 w-5 shrink-0 object-cover border border-border/50"
+                                    />
+                                    {finish.name}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    ) : null}
+
+                    {/* Composed SKU preview once both selections are made */}
+                    {poleModelSku && poleFinishCode && data && GALTECH_POLE_INFO[data.id] ? (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Part #:{" "}
+                        {composedPoleSku(
+                          GALTECH_POLE_INFO[data.id]!.poleSku,
+                          poleModelSku,
+                          poleFinishCode,
+                        )}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : variantIsFinish ? (
                   <div className="mb-5">
                     <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">
                       {variantOptionLabel}
