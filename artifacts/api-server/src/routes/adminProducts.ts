@@ -1,5 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { and, asc, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
+import { coerceAvailabilityFlags } from "../lib/coerceAvailabilityFlags";
 import {
   db,
   productsTable,
@@ -533,10 +534,12 @@ router.post(
             weight: parsed.data.weight ?? null,
             dimensions: parsed.data.dimensions ?? null,
             showPriceOnline: parsed.data.showPriceOnline ?? true,
-            availableOnline: parsed.data.availableOnline ?? true,
+            ...coerceAvailabilityFlags({
+              availableOnline: parsed.data.availableOnline,
+              quoteOnly: parsed.data.quoteOnly,
+            }),
             catalogVisible: parsed.data.catalogVisible ?? true,
             inStoreOnly: parsed.data.inStoreOnly ?? false,
-            quoteOnly: parsed.data.quoteOnly ?? false,
             featured: parsed.data.featured ?? false,
             featuredAt: parsed.data.featured ? new Date() : null,
             displayOrder: parsed.data.displayOrder ?? 0,
@@ -646,17 +649,15 @@ router.put(
             ...(body.data.showPriceOnline !== undefined
               ? { showPriceOnline: body.data.showPriceOnline }
               : {}),
-            ...(body.data.availableOnline !== undefined
-              ? { availableOnline: body.data.availableOnline }
-              : {}),
+            ...coerceAvailabilityFlags({
+              availableOnline: body.data.availableOnline,
+              quoteOnly: body.data.quoteOnly,
+            }),
             ...(body.data.catalogVisible !== undefined
               ? { catalogVisible: body.data.catalogVisible }
               : {}),
             ...(body.data.inStoreOnly !== undefined
               ? { inStoreOnly: body.data.inStoreOnly }
-              : {}),
-            ...(body.data.quoteOnly !== undefined
-              ? { quoteOnly: body.data.quoteOnly }
               : {}),
             ...(body.data.featured !== undefined
               ? {

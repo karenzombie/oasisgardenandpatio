@@ -156,8 +156,12 @@ export function BulkUpdateProductsDialog({
     if (isActive !== "none") fields.isActive = isActive === "true";
     if (featured !== "none") fields.featured = featured === "true";
     if (inStoreOnly !== "none") fields.inStoreOnly = inStoreOnly === "true";
-    if (availableOnline !== "none")
-      fields.availableOnline = availableOnline === "true";
+    if (availableOnline !== "none") {
+      const avail = availableOnline === "true";
+      fields.availableOnline = avail;
+      fields.quoteOnly = !avail;
+      fields.showPriceOnline = avail;
+    }
     if (categoryId !== "none")
       fields.categoryId = categoryId === "clear" ? null : Number(categoryId);
     if (manufacturerId !== "none")

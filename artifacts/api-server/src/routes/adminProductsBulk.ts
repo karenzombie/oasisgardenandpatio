@@ -1,5 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { asc, eq, inArray, sql } from "drizzle-orm";
+import { coerceAvailabilityFlags } from "../lib/coerceAvailabilityFlags";
 import {
   db,
   productsTable,
@@ -187,8 +188,13 @@ router.post(
           : null;
       }
       if (fields.inStoreOnly !== undefined) scalarSet.inStoreOnly = fields.inStoreOnly;
-      if (fields.availableOnline !== undefined) scalarSet.availableOnline = fields.availableOnline;
-      if (fields.quoteOnly !== undefined) scalarSet.quoteOnly = fields.quoteOnly;
+      Object.assign(
+        scalarSet,
+        coerceAvailabilityFlags({
+          availableOnline: fields.availableOnline,
+          quoteOnly: fields.quoteOnly,
+        }),
+      );
       if (fields.showPriceOnline !== undefined) scalarSet.showPriceOnline = fields.showPriceOnline;
       if (fields.categoryId !== undefined) scalarSet.categoryId = fields.categoryId ?? null;
       if (fields.manufacturerId !== undefined) scalarSet.manufacturerId = fields.manufacturerId ?? null;

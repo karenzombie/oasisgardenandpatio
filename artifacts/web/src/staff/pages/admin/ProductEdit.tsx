@@ -1808,7 +1808,7 @@ export default function ProductEdit() {
                 onChange={(v) =>
                   setForm((f) => ({
                     ...f,
-                    availableOnline: true,
+                    availableOnline: v,
                     quoteOnly: !v,
                     showPriceOnline: v,
                   }))
