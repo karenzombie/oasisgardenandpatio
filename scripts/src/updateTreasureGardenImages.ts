@@ -55,7 +55,7 @@ async function main() {
   console.log("UM847SQ: renamed to 'Flex 7.5\\' Square'");
 
   // Delete current primary
-  const deletedUm = await db
+  await db
     .delete(productImagesTable)
     .where(
       and(
@@ -63,7 +63,7 @@ async function main() {
         eq(productImagesTable.isPrimary, true),
       ),
     );
-  console.log(`UM847SQ: deleted ${deletedUm.length} old primary image(s)`);
+  console.log(`UM847SQ: deleted old primary image(s)`);
 
   // Upload gallery_2 as new primary
   const umGallery2Path = join(
@@ -94,7 +94,7 @@ async function main() {
   const akzId = akz[0].id;
 
   // Delete current primary
-  const deletedAkz = await db
+  await db
     .delete(productImagesTable)
     .where(
       and(
@@ -102,7 +102,7 @@ async function main() {
         eq(productImagesTable.isPrimary, true),
       ),
     );
-  console.log(`AKZPRTLX: deleted ${deletedAkz.length} old primary image(s)`);
+  console.log(`AKZPRTLX: deleted old primary image(s)`);
 
   // Upload attached image as new primary
   const akzPath = join(
