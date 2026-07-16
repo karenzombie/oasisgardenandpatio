@@ -152,6 +152,7 @@ import type {
   CatalogProductsPage,
   Category,
   ChangePasswordRequest,
+  CheckoutPaymentConfig,
   CheckoutQuoteRequest,
   CheckoutQuoteResponse,
   CompleteStaffRecoveryRequest,
@@ -2853,6 +2854,83 @@ export function useGetAccountOrder<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetAccountOrderQueryOptions(orderNumber, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Returns the Authorize.net API Login ID and Public Client Key needed to initialise Accept.js in the browser. The Transaction Key is never returned. The `sandbox` flag controls which Accept.js script URL to load.
+ * @summary Return Accept.js public credentials for browser-side tokenisation
+ */
+export const getGetCheckoutPaymentConfigUrl = () => {
+  return `/api/checkout/payment-config`;
+};
+
+export const getCheckoutPaymentConfig = async (
+  options?: RequestInit,
+): Promise<CheckoutPaymentConfig> => {
+  return customFetch<CheckoutPaymentConfig>(getGetCheckoutPaymentConfigUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetCheckoutPaymentConfigQueryKey = () => {
+  return [`/api/checkout/payment-config`] as const;
+};
+
+export const getGetCheckoutPaymentConfigQueryOptions = <
+  TData = Awaited<ReturnType<typeof getCheckoutPaymentConfig>>,
+  TError = ErrorType<Error>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getCheckoutPaymentConfig>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetCheckoutPaymentConfigQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getCheckoutPaymentConfig>>
+  > = ({ signal }) => getCheckoutPaymentConfig({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getCheckoutPaymentConfig>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetCheckoutPaymentConfigQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getCheckoutPaymentConfig>>
+>;
+export type GetCheckoutPaymentConfigQueryError = ErrorType<Error>;
+
+/**
+ * @summary Return Accept.js public credentials for browser-side tokenisation
+ */
+
+export function useGetCheckoutPaymentConfig<
+  TData = Awaited<ReturnType<typeof getCheckoutPaymentConfig>>,
+  TError = ErrorType<Error>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getCheckoutPaymentConfig>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetCheckoutPaymentConfigQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

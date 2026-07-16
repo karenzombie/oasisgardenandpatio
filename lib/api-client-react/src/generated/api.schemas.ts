@@ -2548,6 +2548,18 @@ export interface PlaceOrderResult {
   total: string;
 }
 
+/**
+ * Public Accept.js credentials returned to the browser for card tokenisation. The Transaction Key is never included.
+ */
+export interface CheckoutPaymentConfig {
+  /** Authorize.net API Login ID (public, safe to expose in the browser). */
+  apiLoginId: string;
+  /** Accept.js Public Client Key. */
+  publicClientKey: string;
+  /** True when the sandbox Accept.js script URL should be used. */
+  sandbox: boolean;
+}
+
 export interface CheckoutQuoteRequest {
   /**
    * 2-letter US state code for the destination, e.g. "CA". Null/empty means unknown destination.

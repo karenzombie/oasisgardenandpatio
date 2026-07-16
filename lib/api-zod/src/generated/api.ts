@@ -1698,6 +1698,26 @@ export const GetAccountOrderResponse = zod.object({
 });
 
 /**
+ * Returns the Authorize.net API Login ID and Public Client Key needed to initialise Accept.js in the browser. The Transaction Key is never returned. The `sandbox` flag controls which Accept.js script URL to load.
+ * @summary Return Accept.js public credentials for browser-side tokenisation
+ */
+export const GetCheckoutPaymentConfigResponse = zod
+  .object({
+    apiLoginId: zod
+      .string()
+      .describe(
+        "Authorize.net API Login ID (public, safe to expose in the browser).",
+      ),
+    publicClientKey: zod.string().describe("Accept.js Public Client Key."),
+    sandbox: zod
+      .boolean()
+      .describe("True when the sandbox Accept.js script URL should be used."),
+  })
+  .describe(
+    "Public Accept.js credentials returned to the browser for card tokenisation. The Transaction Key is never included.",
+  );
+
+/**
  * Returns the live shipping cost and sales tax for the current cart based on a destination state. Used by the checkout page to show realistic totals before the order is placed. The quote is informational: the server re-computes the same values when the order is actually placed.
  * @summary Compute shipping + tax for the signed-in customer's cart
  */

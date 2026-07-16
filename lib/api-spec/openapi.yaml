@@ -827,6 +827,29 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /checkout/payment-config:
+    get:
+      operationId: getCheckoutPaymentConfig
+      tags: [checkout]
+      summary: Return Accept.js public credentials for browser-side tokenisation
+      description: >-
+        Returns the Authorize.net API Login ID and Public Client Key needed to
+        initialise Accept.js in the browser. The Transaction Key is never
+        returned. The `sandbox` flag controls which Accept.js script URL to
+        load.
+      responses:
+        "200":
+          description: Payment configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutPaymentConfig"
+        "503":
+          description: Payment provider not configured on the server
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /checkout/quote:
     post:
       operationId: quoteCheckout
@@ -9182,6 +9205,23 @@ components:
       required:
         - orderNumber
         - total
+    CheckoutPaymentConfig:
+      type: object
+      description: Public Accept.js credentials returned to the browser for card tokenisation. The Transaction Key is never included.
+      properties:
+        apiLoginId:
+          type: string
+          description: Authorize.net API Login ID (public, safe to expose in the browser).
+        publicClientKey:
+          type: string
+          description: Accept.js Public Client Key.
+        sandbox:
+          type: boolean
+          description: True when the sandbox Accept.js script URL should be used.
+      required:
+        - apiLoginId
+        - publicClientKey
+        - sandbox
     CheckoutQuoteRequest:
       type: object
       properties:

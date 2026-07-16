@@ -256,6 +256,7 @@ export * from "./catalogStemOption";
 export * from "./catalogVariantGradePrice";
 export * from "./category";
 export * from "./changePasswordRequest";
+export * from "./checkoutPaymentConfig";
 export * from "./checkoutQuoteRequest";
 export * from "./checkoutQuoteResponse";
 export * from "./completedDeliveryShipmentPair";

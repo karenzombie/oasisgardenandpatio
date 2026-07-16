@@ -3,10 +3,12 @@ import { Link, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useGetCart,
+  useGetCheckoutPaymentConfig,
   useListAccountAddresses,
   usePlaceOrder,
   useQuoteCheckout,
   getGetCartQueryKey,
+  getGetCheckoutPaymentConfigQueryKey,
   getListAccountAddressesQueryKey,
   type AccountAddress,
   type CheckoutQuoteResponse,
@@ -17,6 +19,35 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
+
+// ---------------------------------------------------------------------------
+// Accept.js browser global — card data is tokenised by Authorize.net's script,
+// the raw PAN never reaches our server.
+// ---------------------------------------------------------------------------
+declare global {
+  interface Window {
+    Accept?: {
+      dispatchData: (
+        secureData: {
+          authData: { clientKey: string; apiLoginID: string };
+          cardData: {
+            cardNumber: string;
+            month: string;
+            year: string;
+            cardCode: string;
+          };
+        },
+        handler: (response: {
+          messages: {
+            resultCode: "Ok" | "Error";
+            message: Array<{ code: string; text: string }>;
+          };
+          opaqueData?: { dataDescriptor: string; dataValue: string };
+        }) => void,
+      ) => void;
+    };
+  }
+}
 
 function formatMoney(v: string | number | null | undefined): string {
   if (v == null || v === "") return "$0.00";
@@ -63,7 +94,6 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function Checkout() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const isDemoUser = isAuthenticated;
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const qc = useQueryClient();
@@ -85,6 +115,16 @@ export default function Checkout() {
     },
   });
 
+  // Public Accept.js credentials — fetched here so the script can be loaded.
+  // Enabled only for authenticated users (guests see the under-construction UI).
+  const { data: paymentConfig } = useGetCheckoutPaymentConfig({
+    query: {
+      queryKey: getGetCheckoutPaymentConfigQueryKey(),
+      enabled: isAuthenticated,
+      retry: false,
+    },
+  });
+
   const addresses = addrData?.addresses ?? [];
   // Guests don't have a saved address book, so default to the new-address
   // form rather than picking from an empty list.
@@ -97,6 +137,15 @@ export default function Checkout() {
   const [guest, setGuest] = useState<GuestContactForm>(EMPTY_GUEST);
   const [shippingMethod, setShippingMethod] = useState("standard");
   const [specialInstructions, setSpecialInstructions] = useState("");
+
+  // Card fields (Accept.js tokenisation, raw PAN stays in the browser).
+  const [cardNumber, setCardNumber] = useState("");
+  const [expirationDate, setExpirationDate] = useState("");
+  const [cardCode, setCardCode] = useState("");
+  // True while Accept.dispatchData is in flight (before placeOrder fires).
+  const [isTokenizing, setIsTokenizing] = useState(false);
+  // Inline error shown below the card fields.
+  const [cardError, setCardError] = useState<string | null>(null);
 
   // Default to first saved address when they load (authed only)
   useEffect(() => {
@@ -138,6 +187,22 @@ export default function Checkout() {
     });
   }, [isAuthenticated, guest.firstName, guest.lastName]);
 
+  // Load the Accept.js script once the payment config arrives.
+  // The sandbox flag controls whether to use the test or live script URL.
+  useEffect(() => {
+    if (!paymentConfig || !isAuthenticated) return;
+    const src = paymentConfig.sandbox
+      ? "https://jstest.authorize.net/v1/Accept.js"
+      : "https://js.authorize.net/v1/Accept.js";
+    if (document.querySelector(`script[src="${src}"]`)) return;
+    const script = document.createElement("script");
+    script.src = src;
+    script.async = true;
+    document.head.appendChild(script);
+    // Intentionally not removing the script on unmount — removing and
+    // re-adding triggers reload races; Accept.js is lightweight and idempotent.
+  }, [paymentConfig, isAuthenticated]);
+
   const placeOrderM = usePlaceOrder({
     mutation: {
       onSuccess: (resp) => {
@@ -151,12 +216,24 @@ export default function Checkout() {
         navigate(`/order-confirmation/${encodeURIComponent(resp.orderNumber)}`);
       },
       onError: (err: unknown) => {
+        const data = (
+          err as {
+            response?: {
+              data?: { error?: string; paymentDeclined?: boolean };
+            };
+          }
+        )?.response?.data;
         const message =
-          (err as { response?: { data?: { error?: string } } })?.response?.data
-            ?.error ??
+          data?.error ??
           (err as { message?: string })?.message ??
           "Could not place order.";
-        toast({ title: "Checkout failed", description: message });
+        if (data?.paymentDeclined) {
+          // Show declined-card messages inline near the card fields so the
+          // customer can immediately try a different card.
+          setCardError(message);
+        } else {
+          toast({ title: "Checkout failed", description: message });
+        }
       },
     },
   });
@@ -240,6 +317,25 @@ export default function Checkout() {
     setGuest((g) => ({ ...g, [key]: value }));
   }
 
+  // Format card number as XXXX XXXX XXXX XXXX (digits only, max 16).
+  function handleCardNumberChange(raw: string) {
+    const digits = raw.replace(/\D/g, "").slice(0, 16);
+    const formatted = digits.replace(/(.{4})(?=.)/g, "$1 ");
+    setCardNumber(formatted);
+    setCardError(null);
+  }
+
+  // Format expiration date as MM/YY, inserting the slash automatically.
+  function handleExpirationChange(raw: string) {
+    const digits = raw.replace(/\D/g, "").slice(0, 4);
+    if (digits.length <= 2) {
+      setExpirationDate(digits);
+    } else {
+      setExpirationDate(`${digits.slice(0, 2)}/${digits.slice(2)}`);
+    }
+    setCardError(null);
+  }
+
   function validateGuestContact(): string | null {
     if (!guest.email.trim() || !EMAIL_RE.test(guest.email.trim())) {
       return "Enter a valid email address.";
@@ -255,10 +351,45 @@ export default function Checkout() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!isDemoUser) return;
 
-    // Build the address payload from the selected or entered shipping address
-    const shippingPayload: Parameters<typeof placeOrderM.mutate>[0]["data"] =
+    // Non-authenticated users see the "under construction" UI and cannot submit.
+    if (!isAuthenticated) return;
+
+    // Validate card fields.
+    const rawCard = cardNumber.replace(/\s/g, "");
+    if (rawCard.length < 13 || rawCard.length > 19) {
+      setCardError("Enter a valid card number.");
+      return;
+    }
+    const expiryMatch = expirationDate.match(/^(\d{1,2})\/(\d{2,4})$/);
+    if (!expiryMatch) {
+      setCardError("Enter the expiration date as MM/YY.");
+      return;
+    }
+    if (!cardCode.trim()) {
+      setCardError("Enter the security code.");
+      return;
+    }
+    if (!paymentConfig) {
+      setCardError(
+        "Payment configuration not available. Please refresh and try again.",
+      );
+      return;
+    }
+    if (!window.Accept) {
+      setCardError("Payment is loading. Please try again in a moment.");
+      return;
+    }
+
+    setCardError(null);
+    setIsTokenizing(true);
+
+    const month = expiryMatch[1].padStart(2, "0");
+    const rawYear = expiryMatch[2];
+    const year = rawYear.length === 2 ? `20${rawYear}` : rawYear;
+
+    // Build the address portion of the request payload.
+    const addressPayload: Parameters<typeof placeOrderM.mutate>[0]["data"] =
       typeof selectedId === "number"
         ? {
             shippingAddressId: selectedId,
@@ -281,7 +412,37 @@ export default function Checkout() {
             specialInstructions: specialInstructions || undefined,
           };
 
-    placeOrderM.mutate({ data: shippingPayload });
+    // Tokenise the card via Accept.js. The raw PAN never reaches our server.
+    window.Accept.dispatchData(
+      {
+        authData: {
+          clientKey: paymentConfig.publicClientKey,
+          apiLoginID: paymentConfig.apiLoginId,
+        },
+        cardData: { cardNumber: rawCard, month, year, cardCode: cardCode.trim() },
+      },
+      (response) => {
+        setIsTokenizing(false);
+        if (
+          response.messages.resultCode === "Error" ||
+          !response.opaqueData
+        ) {
+          const msg =
+            response.messages.message[0]?.text ?? "Card could not be processed.";
+          setCardError(msg);
+          return;
+        }
+        placeOrderM.mutate({
+          data: {
+            ...addressPayload,
+            paymentToken: {
+              dataDescriptor: response.opaqueData.dataDescriptor,
+              dataValue: response.opaqueData.dataValue,
+            },
+          },
+        });
+      },
+    );
   }
 
   if (authLoading || cartLoading) {
@@ -305,6 +466,8 @@ export default function Checkout() {
       </div>
     );
   }
+
+  const isSubmitting = isTokenizing || placeOrderM.isPending;
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-6xl">
@@ -568,15 +731,67 @@ export default function Checkout() {
             />
           </section>
 
-          {/* Payment placeholder */}
+          {/* Payment */}
           <section>
             <h2 className="font-serif text-xl mb-3">Payment</h2>
-            {isDemoUser ? (
-              <div className="border border-amber-300 bg-amber-50 p-5 text-sm text-amber-900">
-                <p className="font-medium mb-1">Demo mode — no payment required</p>
-                <p className="text-amber-800">
-                  Your order will be placed without charging a card. This is
-                  enabled for demo purposes only.
+            {isAuthenticated ? (
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="cardNumber">Card number *</Label>
+                  <Input
+                    id="cardNumber"
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="cc-number"
+                    placeholder="1234 5678 9012 3456"
+                    maxLength={19}
+                    value={cardNumber}
+                    onChange={(e) => handleCardNumberChange(e.target.value)}
+                    className="rounded-none font-mono tracking-wider"
+                    disabled={isSubmitting}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="expirationDate">Expiration *</Label>
+                    <Input
+                      id="expirationDate"
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="cc-exp"
+                      placeholder="MM/YY"
+                      maxLength={5}
+                      value={expirationDate}
+                      onChange={(e) => handleExpirationChange(e.target.value)}
+                      className="rounded-none"
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="cardCode">Security code *</Label>
+                    <Input
+                      id="cardCode"
+                      type="password"
+                      inputMode="numeric"
+                      autoComplete="cc-csc"
+                      placeholder="CVV"
+                      maxLength={4}
+                      value={cardCode}
+                      onChange={(e) => {
+                        setCardCode(e.target.value.replace(/\D/g, "").slice(0, 4));
+                        setCardError(null);
+                      }}
+                      className="rounded-none"
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                </div>
+                {cardError ? (
+                  <p className="text-sm text-destructive">{cardError}</p>
+                ) : null}
+                <p className="text-[11px] text-muted-foreground">
+                  Your card details are tokenised by Authorize.net and never
+                  sent to our server.
                 </p>
               </div>
             ) : (
@@ -662,13 +877,17 @@ export default function Checkout() {
               <span>Total</span>
               <span>{formatMoney(totalNum)}</span>
             </div>
-            {isDemoUser ? (
+            {isAuthenticated ? (
               <Button
                 type="submit"
-                disabled={placeOrderM.isPending}
+                disabled={isSubmitting}
                 className="w-full rounded-none mt-6 font-serif tracking-widest uppercase"
               >
-                {placeOrderM.isPending ? "Placing Order…" : "Place Order"}
+                {isTokenizing
+                  ? "Verifying card…"
+                  : placeOrderM.isPending
+                    ? "Placing Order…"
+                    : "Place Order"}
               </Button>
             ) : (
               <>
