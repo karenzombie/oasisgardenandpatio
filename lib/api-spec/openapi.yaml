@@ -9208,6 +9208,9 @@ components:
           type: string
         total:
           type: string
+        heldForReview:
+          type: boolean
+          description: Present and true when the gateway held the transaction for manual review (responseCode 4). The order is created with a pending payment and full balance due. Absent on a normal approval.
       required:
         - orderNumber
         - total

@@ -2556,6 +2556,8 @@ export interface PlaceOrderRequest {
 export interface PlaceOrderResult {
   orderNumber: string;
   total: string;
+  /** Present and true when the gateway held the transaction for manual review (responseCode 4). The order is created with a pending payment and full balance due. Absent on a normal approval. */
+  heldForReview?: boolean;
 }
 
 /**

@@ -9,6 +9,7 @@ export interface AuthnetRefundResult {
 
 export interface AuthnetChargeResult {
   success: boolean;
+  heldForReview?: true;
   transId?: string;
   avsResponse?: string;
   cvvResponse?: string;
@@ -54,6 +55,7 @@ export async function processAuthnetCharge(params: {
   dataValue: string;
   orderNumber: string;
   customerEmail: string;
+  signal?: AbortSignal;
 }): Promise<AuthnetChargeResult> {
   const config = getConfig();
   if (!config) {
@@ -105,6 +107,7 @@ export async function processAuthnetCharge(params: {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
+      signal: params.signal,
     });
 
     const text = await response.text();
@@ -142,6 +145,33 @@ export async function processAuthnetCharge(params: {
       );
       return {
         success: true,
+        transId: txn.transId,
+        avsResponse: txn.avsResultCode,
+        cvvResponse: txn.cvvResultCode,
+        cardLast4: last4,
+        cardType: txn.accountType,
+        rawResponse: json,
+      };
+    }
+
+    if (txn?.responseCode === "4") {
+      // Held for review — the gateway accepted the transaction but flagged it
+      // for manual review. Money may be captured. The checkout route creates an
+      // order with payment status='pending' and does not zero the balance.
+      const last4 = txn.accountNumber?.replace(/^X+/, "") ?? undefined;
+      logger.info(
+        {
+          orderNumber: params.orderNumber,
+          transId: txn.transId,
+          cardLast4: last4,
+          cardType: txn.accountType,
+          amountDollars,
+        },
+        "Authorize.net charge held for review (responseCode 4)",
+      );
+      return {
+        success: false,
+        heldForReview: true,
         transId: txn.transId,
         avsResponse: txn.avsResultCode,
         cvvResponse: txn.cvvResultCode,

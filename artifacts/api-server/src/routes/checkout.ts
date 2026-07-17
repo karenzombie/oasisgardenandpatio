@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { resolveTgPoleVariantName } from "../lib/tgReplacementPartsMap.js";
-import { and, asc, eq, inArray, isNull } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import {
   db,
   cartsTable,
@@ -42,7 +42,10 @@ import {
   computeShippingForLines,
   type ShippableRuleLine,
 } from "../lib/shippingRules";
-import { processAuthnetCharge } from "../lib/authorizeNet";
+import {
+  processAuthnetCharge,
+  type AuthnetChargeResult,
+} from "../lib/authorizeNet";
 
 const router: IRouter = Router();
 
@@ -95,31 +98,6 @@ async function loadCartForCheckout(lookup: CartLookup) {
     )
     .limit(1);
   return cart ?? null;
-}
-
-/**
- * Create a brand-new customer row for a guest checkout. Guest customers have
- * `userId = null` and store the contact info collected on the checkout form so
- * staff can follow up about delivery and payment.
- */
-async function createGuestCustomer(input: {
-  email: string;
-  firstName: string;
-  lastName: string;
-  phone: string;
-}): Promise<Customer> {
-  const [created] = await db
-    .insert(customersTable)
-    .values({
-      userId: null,
-      email: input.email.trim().toLowerCase(),
-      firstName: input.firstName.trim(),
-      lastName: input.lastName.trim(),
-      phone: input.phone.trim(),
-      customerType: "residential",
-    })
-    .returning();
-  return created;
 }
 
 /**
@@ -183,13 +161,20 @@ router.post(
       }
     }
 
-    const customer: Customer = isGuest
-      ? await createGuestCustomer(data.guestContact!)
-      : await getOrCreateCustomer(req.session.userId!);
+    // ── Pre-tx: read-only setup ────────────────────────────────────────────
+    // No DB writes happen before the transaction. Guest customer creation and
+    // all new-address INSERTs are deferred until AFTER the charge succeeds,
+    // inside the atomic transaction, so a decline leaves no orphaned rows.
 
-    // Resolve / persist shipping + billing addresses (outside the txn so any
-    // validation 4xx returns cleanly without an open transaction).
-    let shippingAddressId: number | null = null;
+    // For authenticated users, resolve the customer record now (idempotent).
+    let authedCustomer: Customer | null = null;
+    if (!isGuest) {
+      authedCustomer = await getOrCreateCustomer(req.session.userId!);
+    }
+
+    // Shipping address: if the customer chose a saved address, read it now to
+    // extract state/zip for tax computation. New-address INSERTs are deferred.
+    let savedShippingAddressId: number | null = null;
     let shippingState: string | null = null;
     let shippingZip: string | null = null;
 
@@ -200,7 +185,7 @@ router.post(
         .where(
           and(
             eq(addressesTable.id, data.shippingAddressId),
-            eq(addressesTable.customerId, customer.id),
+            eq(addressesTable.customerId, authedCustomer!.id),
           ),
         )
         .limit(1);
@@ -208,40 +193,21 @@ router.post(
         res.status(400).json({ error: "Shipping address not found" });
         return;
       }
-      shippingAddressId = existing.id;
+      savedShippingAddressId = existing.id;
       shippingState = existing.state;
       shippingZip = existing.zip;
     } else if (data.shippingAddress) {
-      const a = data.shippingAddress;
-      const [created] = await db
-        .insert(addressesTable)
-        .values({
-          customerId: customer.id,
-          type: "shipping",
-          recipientName:
-            a.recipientName
-            ?? (isGuest
-              ? `${data.guestContact!.firstName} ${data.guestContact!.lastName}`.trim()
-              : null),
-          street1: a.street1,
-          street2: a.street2 ?? null,
-          city: a.city,
-          state: a.state,
-          zip: a.zip,
-          country: a.country ?? "US",
-          phone: a.phone ?? (isGuest ? data.guestContact!.phone : null),
-          isDefault: false,
-        })
-        .returning();
-      shippingAddressId = created.id;
-      shippingState = created.state;
-      shippingZip = created.zip;
+      // New address submitted — extract state/zip for tax now; INSERT deferred.
+      shippingState = data.shippingAddress.state;
+      shippingZip = data.shippingAddress.zip;
     } else {
       res.status(400).json({ error: "Shipping address is required" });
       return;
     }
 
-    let billingAddressId: number | null = shippingAddressId;
+    // Billing address: if the customer chose a saved address, read it now.
+    // New-billing-address INSERTs are deferred.
+    let savedBillingAddressId: number | null = null;
     if (data.billingSameAsShipping === false) {
       if (data.billingAddressId) {
         const [existing] = await db
@@ -250,7 +216,7 @@ router.post(
           .where(
             and(
               eq(addressesTable.id, data.billingAddressId),
-              eq(addressesTable.customerId, customer.id),
+              eq(addressesTable.customerId, authedCustomer!.id),
             ),
           )
           .limit(1);
@@ -258,40 +224,26 @@ router.post(
           res.status(400).json({ error: "Billing address not found" });
           return;
         }
-        billingAddressId = existing.id;
-      } else if (data.billingAddress) {
-        const a = data.billingAddress;
-        const [created] = await db
-          .insert(addressesTable)
-          .values({
-            customerId: customer.id,
-            type: "billing",
-            recipientName: a.recipientName ?? null,
-            street1: a.street1,
-            street2: a.street2 ?? null,
-            city: a.city,
-            state: a.state,
-            zip: a.zip,
-            country: a.country ?? "US",
-            phone: a.phone ?? null,
-            isDefault: false,
-          })
-          .returning();
-        billingAddressId = created.id;
+        savedBillingAddressId = existing.id;
       }
+      // else: new billing address in data.billingAddress — INSERT deferred
     }
 
     const pricingSettings = await loadPricingSettings();
     const shippingConfig = await loadShippingConfig();
 
-    // Order number is generated BEFORE the charge so the same number appears
+    // Order number is generated before the charge so the same number appears
     // on both the gateway transaction record and the order row.
     const orderNumber = generateOrderNumber();
     const cartLookup = cartLookupFor(req);
 
-    // ── Phase A: Pre-flight transaction ────────────────────────────────────
-    // Lock the cart, validate contents, compute the total. No inserts.
-    // Returns the data needed to create the order + the totalCents to charge.
+    // ── Single transaction: lock → validate → charge → write-all → clear ──
+    //
+    // chargeResult is hoisted outside the transaction so the outer catch can
+    // inspect it even after a rollback (it is a plain JS variable, not a DB
+    // row, and is unaffected by the transaction rollback).
+    let chargeResult: AuthnetChargeResult | null = null;
+
     type AddonRow = {
       cartItemId: number;
       addonOptionId: number;
@@ -302,56 +254,23 @@ router.post(
       pricingMode: string;
       displayOrder: number;
     };
-    type PreflightResult = {
-      cartId: number;
-      lines: Array<{
-        cartItemId: number;
-        productId: number;
-        sku: string;
-        name: string;
-        categoryId: number | null;
-        manufacturerId: number | null;
-        subCategory: string | null;
-        quantity: number;
-        unitPrice: string;
-        weight: string | null;
-        availableOnline: boolean;
-        productPrice: string | null;
-        productSalePrice: string | null;
-        isActive: boolean;
-        quoteOnly: boolean;
-        parentCartItemId: number | null;
-        fabricIsStripe: boolean | null;
-        variantId: number | null;
-        fabricId: number | null;
-        finishId: number | null;
-        finialId: number | null;
-        variantSku: string | null;
-        variantName: string | null;
-        selectedModelCode: string | null;
-        finishCode: string | null;
-        finishName: string | null;
-        finialCode: string | null;
-        finialName: string | null;
-        fabricItemNumber: string | null;
-        fabricName: string | null;
-        fabricGrade: string | null;
-        fabricBrand: string | null;
-        unitMsrp: string | null;
-        variantShippingSurcharge: string | null;
-        variantWeight: string | null;
-      }>;
-      addonsByCartItem: Map<number, AddonRow[]>;
-      lineCents: number[];
-      subtotalCents: number;
-      shippingCents: number;
-      taxCents: number;
+    type TxSuccess = {
+      orderId: number;
       totalCents: number;
+      isHeld: boolean;
+      finalCustomer: Customer;
     };
+    let txOutcome: TxSuccess | { error: string; status: number };
 
-    let preflight: PreflightResult | { error: string; status: number };
     try {
-      preflight = await db.transaction(async (tx) => {
+      txOutcome = await db.transaction(async (tx) => {
+        // Set READ COMMITTED explicitly — do not rely on the DB-server default,
+        // which may differ between dev (heliumdb) and prod (neondb). Under READ
+        // COMMITTED, a concurrent request that was blocked on the FOR UPDATE
+        // lock re-reads an empty cart after we commit, returning "Cart is empty"
+        // without ever reaching the gateway.
+        await tx.execute(sql`SET TRANSACTION ISOLATION LEVEL READ COMMITTED`);
+
         const cartWhere =
           cartLookup.kind === "user"
             ? eq(cartsTable.userId, cartLookup.userId)
@@ -359,6 +278,11 @@ router.post(
                 eq(cartsTable.sessionId, cartLookup.sessionId),
                 isNull(cartsTable.userId),
               );
+
+        // Lock the cart FOR UPDATE and hold it through the charge and all
+        // writes. A concurrent duplicate request blocks here; after we commit
+        // (cart cleared), it re-reads and finds the cart empty, returning 400
+        // without calling the gateway. This is the double-submit guard.
         const [cart] = await tx
           .select()
           .from(cartsTable)
@@ -542,101 +466,127 @@ router.post(
         const taxCents = tax.cents;
         const totalCents = subtotalCents + shippingCents + taxCents;
 
-        return {
-          cartId: cart.id,
-          lines,
-          addonsByCartItem,
-          lineCents,
-          subtotalCents,
-          shippingCents,
-          taxCents,
-          totalCents,
-        };
-      });
-    } catch (err) {
-      req.log?.error({ err }, "checkout preflight failed");
-      res.status(500).json({ error: "Could not place order. Please try again." });
-      return;
-    }
+        // ── Call the gateway (FOR UPDATE lock is held) ────────────────────
+        // AbortSignal.timeout caps the gateway fetch at 30 s so a hung call
+        // cannot hold the cart lock indefinitely.
+        chargeResult = await processAuthnetCharge({
+          amountCents: totalCents,
+          dataDescriptor: data.paymentToken!.dataDescriptor,
+          dataValue: data.paymentToken!.dataValue,
+          orderNumber,
+          customerEmail: isGuest ? data.guestContact!.email : authedCustomer!.email,
+          signal: AbortSignal.timeout(30_000),
+        });
 
-    if ("error" in preflight) {
-      res.status(preflight.status).json({ error: preflight.error });
-      return;
-    }
-
-    // ── Charge the gateway ─────────────────────────────────────────────────
-    // amountCents is the server-computed total from the pre-flight tx.
-    // orderNumber was generated above; it appears on both the gateway record
-    // and the order row created on approval.
-    const chargeResult = await processAuthnetCharge({
-      amountCents: preflight.totalCents,
-      dataDescriptor: data.paymentToken.dataDescriptor,
-      dataValue: data.paymentToken.dataValue,
-      orderNumber,
-      customerEmail: customer.email,
-    });
-
-    if (!chargeResult.success) {
-      // Branch on failure type.
-      // notConfigured or no rawResponse (network error) = server-side problem,
-      // not the customer's fault. Otherwise = real gateway decline.
-      const isServerSide =
-        chargeResult.notConfigured === true || chargeResult.rawResponse == null;
-      const userMessage = isServerSide
-        ? "Payment is temporarily unavailable. Please try again shortly or contact us for assistance."
-        : (chargeResult.errorMessage ??
-          "Your card was not approved. Please try a different card or contact your bank.");
-      res.status(402).json({
-        error: userMessage,
-        paymentDeclined: !isServerSide,
-        paymentUnavailable: isServerSide,
-      });
-      return;
-    }
-
-    // ── Phase B: Order creation transaction (charge approved) ───────────────
-    // Insert order, items, add-ons, status history, vendor orders, and the
-    // payment row all in one atomic commit. The cart is cleared here too.
-    // If this transaction fails after a successful charge, the card has been
-    // charged without an order — logged as CRITICAL for manual reconciliation.
-    const { cartId, lines, addonsByCartItem, lineCents, subtotalCents, shippingCents, taxCents, totalCents } = preflight;
-
-    let result: { totalCents: number } | { error: string; status: number };
-    try {
-      result = await db.transaction(async (tx) => {
-        // Re-lock the cart as a safety net against concurrent submits that
-        // slipped past the pre-flight lock window.
-        const cartWhere =
-          cartLookup.kind === "user"
-            ? eq(cartsTable.userId, cartLookup.userId)
-            : and(
-                eq(cartsTable.sessionId, cartLookup.sessionId),
-                isNull(cartsTable.userId),
-              );
-        const [cart] = await tx
-          .select()
-          .from(cartsTable)
-          .where(and(cartWhere, eq(cartsTable.id, cartId)))
-          .for("update")
-          .limit(1);
-        if (!cart) {
-          req.log?.error(
-            { orderNumber, transId: chargeResult.transId },
-            "CRITICAL: cart missing after successful charge — manual reconciliation required",
-          );
-          return {
-            error:
-              "Your payment was processed but we encountered an error recording your order. Please contact us immediately with reference: " +
-              orderNumber,
-            status: 500,
-          };
+        if (!chargeResult.success && !chargeResult.heldForReview) {
+          // Network / timeout errors: we do not know whether Authorize.net
+          // captured money. Log a CRITICAL breadcrumb (cart id, amount,
+          // timestamp) so staff can reconcile if a customer later disputes.
+          // Pino writes to stdout — NOT part of the DB transaction — and is
+          // not affected by the rollback that follows this throw.
+          if (chargeResult.rawResponse == null && chargeResult.notConfigured !== true) {
+            req.log?.error(
+              {
+                cartId: cart.id,
+                amountCents: totalCents,
+                timestamp: new Date().toISOString(),
+                errorMessage: chargeResult.errorMessage,
+              },
+              "Gateway fetch failed during checkout — capture state unknown, manual reconciliation may be required",
+            );
+          }
+          // Throw to force the transaction to roll back. Nothing has been
+          // written to the DB. Cart stays intact; customer can retry.
+          throw new Error(chargeResult.errorMessage ?? "Payment gateway declined");
         }
+
+        // ── Charge approved (code 1) or held for review (code 4) ─────────
+        // All DB writes happen AFTER the charge, inside this transaction.
+        // If any write below fails, the transaction rolls back. The card
+        // may already have been captured — the outer catch handles that case.
+
+        // Create guest customer row (deferred until charge approved/held so
+        // a decline leaves no orphaned rows).
+        let finalCustomer: Customer;
+        if (isGuest) {
+          const [created] = await tx
+            .insert(customersTable)
+            .values({
+              userId: null,
+              email: data.guestContact!.email.trim().toLowerCase(),
+              firstName: data.guestContact!.firstName.trim(),
+              lastName: data.guestContact!.lastName.trim(),
+              phone: data.guestContact!.phone.trim(),
+              customerType: "residential",
+            })
+            .returning();
+          finalCustomer = created;
+        } else {
+          finalCustomer = authedCustomer!;
+        }
+
+        // Create new shipping address (deferred until charge approved/held).
+        let shippingAddressId = savedShippingAddressId;
+        if (shippingAddressId == null) {
+          const a = data.shippingAddress!;
+          const [created] = await tx
+            .insert(addressesTable)
+            .values({
+              customerId: finalCustomer.id,
+              type: "shipping",
+              recipientName:
+                a.recipientName ??
+                (isGuest
+                  ? `${data.guestContact!.firstName} ${data.guestContact!.lastName}`.trim()
+                  : null),
+              street1: a.street1,
+              street2: a.street2 ?? null,
+              city: a.city,
+              state: a.state,
+              zip: a.zip,
+              country: a.country ?? "US",
+              phone: a.phone ?? (isGuest ? data.guestContact!.phone : null),
+              isDefault: false,
+            })
+            .returning();
+          shippingAddressId = created.id;
+        }
+
+        // Create new billing address (deferred until charge approved/held).
+        let billingAddressId: number | null =
+          data.billingSameAsShipping !== false ? shippingAddressId : savedBillingAddressId;
+        if (
+          data.billingSameAsShipping === false &&
+          billingAddressId == null &&
+          data.billingAddress
+        ) {
+          const a = data.billingAddress;
+          const [created] = await tx
+            .insert(addressesTable)
+            .values({
+              customerId: finalCustomer.id,
+              type: "billing",
+              recipientName: a.recipientName ?? null,
+              street1: a.street1,
+              street2: a.street2 ?? null,
+              city: a.city,
+              state: a.state,
+              zip: a.zip,
+              country: a.country ?? "US",
+              phone: a.phone ?? null,
+              isDefault: false,
+            })
+            .returning();
+          billingAddressId = created.id;
+        }
+
+        const isHeld = chargeResult.heldForReview === true;
 
         const [order] = await tx
           .insert(ordersTable)
           .values({
             orderNumber,
-            customerId: customer.id,
+            customerId: finalCustomer.id,
             orderType: "online",
             status: "new_online_order",
             subtotal: moneyFromCents(subtotalCents),
@@ -741,10 +691,11 @@ router.post(
             : "Order placed by customer (online)",
         });
 
-        await autoGenerateVendorOrders(tx, order.id, null, null);
-
-        // Record the payment. status='completed' because the gateway approved.
-        // rawResponse is stored as-is for dispute / audit purposes.
+        // Record the payment.
+        // Approval (code 1): status='completed', balance zeroed below.
+        // Held for review (code 4): status='pending'. recomputeOrderTotals only
+        // aggregates completed payments, so balanceDue stays at the full total
+        // until staff flip this row to 'completed' after the hold resolves.
         await tx.insert(paymentsTable).values({
           orderId: order.id,
           paymentMethod: "credit_card",
@@ -754,50 +705,79 @@ router.post(
           cvvResponse: chargeResult.cvvResponse ?? null,
           cardLast4: chargeResult.cardLast4 ?? null,
           cardType: chargeResult.cardType ?? null,
-          status: "completed",
+          status: isHeld ? "pending" : "completed",
           rawResponse: chargeResult.rawResponse as Record<string, unknown> | null ?? null,
           receivedAt: new Date(),
         });
 
-        // Inline balance update: full payment, so depositAmount = total and
-        // balanceDue = 0. Mirrors the recomputeOrderTotals logic in
-        // adminOrderPayments.ts but applied directly since we know the exact
-        // amount and avoid the extra aggregate query.
-        await tx
-          .update(ordersTable)
-          .set({
-            depositAmount: moneyFromCents(totalCents),
-            balanceDue: moneyFromCents(0),
-          })
-          .where(eq(ordersTable.id, order.id));
+        if (!isHeld) {
+          // Approval: zero the balance immediately. Full payment received.
+          await tx
+            .update(ordersTable)
+            .set({
+              depositAmount: moneyFromCents(totalCents),
+              balanceDue: moneyFromCents(0),
+            })
+            .where(eq(ordersTable.id, order.id));
+        }
+        // Held: leave balanceDue at the full total. The pending payment row
+        // is not counted by recomputeOrderTotals until staff mark it completed.
 
-        // Clear the cart now that the order and payment are committed.
+        // Clear the cart. Held orders clear it too — this prevents the customer
+        // from re-submitting the same items and accumulating multiple held orders.
         await tx
           .delete(cartItemsTable)
           .where(eq(cartItemsTable.cartId, cart.id));
 
-        return { totalCents };
+        return { orderId: order.id, totalCents, isHeld, finalCustomer };
       });
     } catch (err) {
-      // Card HAS been charged but order creation failed. Log CRITICAL so staff
-      // can reconcile manually. Return the orderNumber so the customer can
-      // reference it when they contact support.
-      req.log?.error(
-        { err, orderNumber, transId: chargeResult.transId },
-        "CRITICAL: order creation failed after successful charge — manual reconciliation required",
-      );
-      res.status(500).json({
-        error:
-          "Your payment was processed but we encountered an error recording your order. Please contact us immediately with reference: " +
-          orderNumber,
-      });
+      // The transaction has rolled back. Determine what happened.
+      // TypeScript's control-flow analysis does not track assignments made
+      // inside async callbacks (db.transaction), so chargeResult may appear
+      // as type null here. Cast explicitly to recover the runtime type.
+      const cr = chargeResult as AuthnetChargeResult | null;
+      if (cr?.success === true || cr?.heldForReview === true) {
+        // The gateway captured money but a subsequent DB write failed.
+        // The card has been charged but no order exists. Log CRITICAL so staff
+        // can reconcile. Pino writes to stdout — NOT inside the rolled-back
+        // transaction — and is unaffected by the rollback.
+        req.log?.error(
+          { err, orderNumber, transId: cr.transId },
+          "CRITICAL: order creation failed after successful charge — manual reconciliation required",
+        );
+        res.status(500).json({
+          error:
+            "Your payment was processed but we encountered an error recording your order. Please contact us immediately with reference: " +
+            orderNumber,
+        });
+      } else {
+        // Charge was not made, or the gateway declined. No money was captured.
+        // Cart stays intact; the customer can try again.
+        req.log?.error({ err }, "checkout failed");
+        const isServerSide =
+          cr?.notConfigured === true || cr?.rawResponse == null;
+        const userMessage = isServerSide
+          ? "Payment is temporarily unavailable. Please try again shortly or contact us for assistance."
+          : (cr?.errorMessage ??
+            "Your card was not approved. Please try a different card or contact your bank.");
+        res.status(isServerSide ? 503 : 402).json({
+          error: userMessage,
+          paymentDeclined: !isServerSide && cr != null,
+          paymentUnavailable: isServerSide,
+        });
+      }
       return;
     }
 
-    if ("error" in result) {
-      res.status(result.status).json({ error: result.error });
+    // Check for preflight validation errors returned (not thrown) from the
+    // transaction callback. These are cart/input issues, not payment issues.
+    if ("error" in txOutcome) {
+      res.status(txOutcome.status).json({ error: txOutcome.error });
       return;
     }
+
+    const { orderId, totalCents, isHeld, finalCustomer } = txOutcome;
 
     // Remember this order on the session so the guest can land on the order
     // confirmation page without an account.
@@ -806,14 +786,41 @@ router.post(
       req.session.guestOrders = [orderNumber, ...existing].slice(0, 25);
     }
 
-    // Fire-and-forget transactional emails.
-    void sendOrderConfirmationEmail(customer, orderNumber).catch(() => {});
-    void sendStoreNewOrderNotification(customer, orderNumber).catch(() => {});
+    // Post-commit: vendor PO generation.
+    // Runs ONLY on approval (code 1) — payment is confirmed so items can be
+    // ordered from vendors. Held orders (code 4) do NOT generate a PO; payment
+    // is not confirmed so nothing should look "in process" to vendors.
+    // Best-effort: a PO failure must never roll back the paid order.
+    if (!isHeld) {
+      void db
+        .transaction(async (tx) => {
+          await autoGenerateVendorOrders(tx, orderId, null, null);
+        })
+        .catch((vendorErr) => {
+          req.log?.error(
+            { err: vendorErr, orderNumber, orderId },
+            "Vendor PO generation failed after checkout — staff must create the PO manually",
+          );
+        });
+    }
+
+    // Post-commit: fire-and-forget transactional emails.
+    // Approval (code 1): customer confirmation email + staff notification.
+    // Held (code 4): staff notification ONLY. No customer email — the on-screen
+    //   message ("order received, payment under review, we'll contact you") is
+    //   the sole customer communication. An approval-style email would contradict
+    //   the on-screen message. Staff will trigger any customer outreach from
+    //   their own UI.
+    if (!isHeld) {
+      void sendOrderConfirmationEmail(finalCustomer, orderNumber).catch(() => {});
+    }
+    void sendStoreNewOrderNotification(finalCustomer, orderNumber).catch(() => {});
 
     res.json(
       PlaceOrderResultSchema.parse({
         orderNumber,
-        total: moneyFromCents(result.totalCents),
+        total: moneyFromCents(totalCents),
+        ...(isHeld ? { heldForReview: true } : {}),
       }),
     );
   },

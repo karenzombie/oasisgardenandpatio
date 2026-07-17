@@ -1885,6 +1885,12 @@ export const PlaceOrderBody = zod.object({
 export const PlaceOrderResponse = zod.object({
   orderNumber: zod.string(),
   total: zod.string(),
+  heldForReview: zod
+    .boolean()
+    .optional()
+    .describe(
+      "Present and true when the gateway held the transaction for manual review (responseCode 4). The order is created with a pending payment and full balance due. Absent on a normal approval.",
+    ),
 });
 
 /**
