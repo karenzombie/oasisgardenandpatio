@@ -163,7 +163,8 @@ export default function Checkout() {
           subtotal: "0.00",
         });
         qc.invalidateQueries({ queryKey: getGetCartQueryKey() });
-        navigate(`/order-confirmation/${encodeURIComponent(resp.orderNumber)}`);
+        const heldSuffix = resp.heldForReview ? "?held=1" : "";
+        navigate(`/order-confirmation/${encodeURIComponent(resp.orderNumber)}${heldSuffix}`);
       },
       onError: (err: unknown) => {
         const data = (

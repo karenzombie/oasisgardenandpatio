@@ -1,5 +1,5 @@
-import { Link, useRoute } from "wouter";
-import { CheckCircle2 } from "lucide-react";
+import { Link, useRoute, useSearch } from "wouter";
+import { CheckCircle2, Clock } from "lucide-react";
 import { useGetAccountOrder, getGetAccountOrderQueryKey } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -16,6 +16,8 @@ export default function OrderConfirmation() {
     "/order-confirmation/:orderNumber",
   );
   const orderNumber = params?.orderNumber ?? "";
+  const search = useSearch();
+  const isHeld = new URLSearchParams(search).get("held") === "1";
   const { data, isLoading, error } = useGetAccountOrder(orderNumber, {
     query: {
       queryKey: getGetAccountOrderQueryKey(orderNumber),
@@ -50,15 +52,36 @@ export default function OrderConfirmation() {
   return (
     <div className="container mx-auto px-4 py-12 max-w-3xl">
       <div className="text-center mb-10">
-        <CheckCircle2 className="w-14 h-14 text-primary mx-auto mb-4" />
-        <h1 className="font-serif text-3xl md:text-4xl mb-2">
-          Thank you for your order
-        </h1>
-        <p className="text-muted-foreground">
-          Order <span className="text-foreground font-medium">{data.orderNumber}</span>{" "}
-          has been received. We'll be in touch shortly to confirm delivery and
-          collect payment.
-        </p>
+        {isHeld ? (
+          <>
+            <Clock className="w-14 h-14 text-amber-500 mx-auto mb-4" />
+            <h1 className="font-serif text-3xl md:text-4xl mb-2">
+              Order received — payment under review
+            </h1>
+            <p className="text-muted-foreground mb-1">
+              Reference:{" "}
+              <span className="text-foreground font-medium">{data.orderNumber}</span>
+            </p>
+            <p className="text-muted-foreground max-w-lg mx-auto">
+              Your order has been received and your payment is being reviewed.
+              We'll contact you to confirm before your order is processed. You
+              do not need to do anything, and please do not resubmit your order.
+            </p>
+          </>
+        ) : (
+          <>
+            <CheckCircle2 className="w-14 h-14 text-primary mx-auto mb-4" />
+            <h1 className="font-serif text-3xl md:text-4xl mb-2">
+              Thank you for your order
+            </h1>
+            <p className="text-muted-foreground">
+              Order{" "}
+              <span className="text-foreground font-medium">{data.orderNumber}</span>{" "}
+              has been received. We'll be in touch shortly to confirm delivery and
+              collect payment.
+            </p>
+          </>
+        )}
       </div>
 
       <div className="border border-border bg-card p-6 mb-6">
