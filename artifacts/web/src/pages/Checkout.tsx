@@ -347,7 +347,7 @@ export default function Checkout() {
           Add an item to your cart before checking out.
         </p>
         <Button asChild className="rounded-none">
-          <Link href="/shop">Browse the Shop</Link>
+          <Link href="/shop">Browse Products</Link>
         </Button>
       </div>
     );

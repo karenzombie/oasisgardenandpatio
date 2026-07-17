@@ -77,7 +77,7 @@ export default function AccountOrders() {
             You haven't placed any orders yet.
           </p>
           <Button asChild className="rounded-none">
-            <Link href="/shop">Browse the Shop</Link>
+            <Link href="/shop">Browse Products</Link>
           </Button>
         </div>
       ) : (

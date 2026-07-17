@@ -900,7 +900,7 @@ export default function Product() {
       <nav className="text-xs uppercase tracking-widest text-muted-foreground mb-6 flex items-center gap-2 flex-wrap">
         <Link href="/" className="hover:text-foreground">Home</Link>
         <span>/</span>
-        <Link href="/shop" className="hover:text-foreground">Shop</Link>
+        <Link href="/shop" className="hover:text-foreground">Products</Link>
         {data.categorySlug && data.categoryName ? (
           <>
             <span>/</span>
