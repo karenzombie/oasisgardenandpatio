@@ -317,7 +317,7 @@ export default function Shop() {
   );
 
   const heading = isOnlineOnly && !params?.slug
-    ? "Shop Online"
+    ? "Available Online"
     : params?.slug
       ? (data?.products[0]?.categoryName ?? params.slug.replace(/-/g, " "))
       : "Products";
