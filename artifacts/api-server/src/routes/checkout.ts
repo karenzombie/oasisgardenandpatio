@@ -758,7 +758,7 @@ router.post(
         const isServerSide =
           cr?.notConfigured === true || cr?.rawResponse == null;
         const userMessage = isServerSide
-          ? "Payment is temporarily unavailable. Please try again shortly or contact us for assistance."
+          ? "Something interrupted your payment and we can't confirm whether it went through. Please don't try again. Contact us at (661) 255-9909 or sales@oasisgardenandpatio.com during store hours and we'll confirm your order before any charge."
           : (cr?.errorMessage ??
             "Your card was not approved. Please try a different card or contact your bank.");
         res.status(isServerSide ? 503 : 402).json({
