@@ -1,0 +1,13 @@
+Correction to Gate 1: roll back two out-of-scope columns.
+During the TG cart_items.selected_model_code migration, the push also applied two orders columns that are NOT part of this brief and belong to paused coupon work: orders.coupon_code_id and orders.coupon_discount_amount. Both are empty (zero orders reference them). Remove them from dev so the schema matches the paused state.
+Scope, do ONLY this:
+
+Keep cart_items.selected_model_code exactly as-is. Do not touch it.
+Find where coupon_code_id and coupon_discount_amount are defined in the Drizzle schema (the orders table definition) and remove those two column definitions, including the coupon_code_id foreign key, so a future push will not re-add them.
+Drop the two columns from the dev database with scoped ALTER TABLE orders DROP COLUMN ... statements (the FK orders_coupon_code_id_fkey drops with its column). Use scoped ALTER only. Do NOT run a broad drizzle-kit push, that is what swept these in.
+Do NOT touch any other coupon schema. Leave the coupon_codes table and any other coupon-related tables exactly as they are. This rollback is limited to the two orders columns only.
+
+Then verify against the DB: query information_schema.columns to confirm both orders columns are gone and cart_items.selected_model_code still exists. Show me the schema diff and the ALTER output, and stop for review before considering this done.
+Also: close out the coupon work entirely.
+The coupon feature is cancelled, mark it "won't do." Do not bring it up again, do not offer to build it, do not flag its schema as incomplete or pending, and do not treat any remaining coupon tables as work to finish. Leave whatever coupon tables currently exist in the DB alone (no changes, no cleanup) unless I explicitly ask. Only revisit coupon work if I directly instruct you to, otherwise consider it permanently off the board and stop surfacing it.
+Going forward for the rest of this build: use scoped ALTER TABLE statements for schema changes. Do not use drizzle-kit push, which sweeps in unrelated pending schema.

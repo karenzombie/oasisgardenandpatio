@@ -28,9 +28,6 @@ import {
 } from "./variants";
 import { finishesTable } from "./finishes";
 import { productFinialOptionsTable } from "./finials";
-// Circular-dep note: discounts.ts imports ordersTable, so we use an AnyPgColumn
-// thunk below (same pattern as parentOrderItemId) to defer FK resolution.
-import { couponCodesTable } from "./discounts";
 
 export const ordersTable = pgTable(
   "orders",
@@ -114,21 +111,6 @@ export const ordersTable = pgTable(
       .notNull()
       .defaultNow()
       .$onUpdate(() => new Date()),
-    // Coupon applied to this order. Nullable (no coupon = null). onDelete set
-    // null so deleting a coupon code doesn't cascade-delete historical orders.
-    couponCodeId: integer("coupon_code_id").references(
-      (): AnyPgColumn => couponCodesTable.id,
-      { onDelete: "set null" },
-    ),
-    // Dollar amount discounted by the coupon. subtotal stays at the raw
-    // pre-discount merchandise total; this column is subtracted when computing
-    // total/balanceDue/depositAmount. See also automatic_discount_amount (Phase 3).
-    couponDiscountAmount: numeric("coupon_discount_amount", {
-      precision: 10,
-      scale: 2,
-    })
-      .notNull()
-      .default("0"),
   },
   (t) => [
     index("orders_customer_id_idx").on(t.customerId),
