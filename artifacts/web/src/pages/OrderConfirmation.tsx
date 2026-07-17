@@ -56,7 +56,7 @@ export default function OrderConfirmation() {
           <>
             <Clock className="w-14 h-14 text-amber-500 mx-auto mb-4" />
             <h1 className="font-serif text-3xl md:text-4xl mb-2">
-              Order received — payment under review
+              Order received: payment under review
             </h1>
             <p className="text-muted-foreground mb-1">
               Reference:{" "}
