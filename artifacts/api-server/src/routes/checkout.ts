@@ -1,4 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
+import { resolveTgPoleVariantName } from "../lib/tgReplacementPartsMap.js";
 import { and, asc, eq, inArray, isNull } from "drizzle-orm";
 import {
   db,
@@ -327,6 +328,7 @@ router.post(
         finialId: number | null;
         variantSku: string | null;
         variantName: string | null;
+        selectedModelCode: string | null;
         finishCode: string | null;
         finishName: string | null;
         finialCode: string | null;
@@ -390,6 +392,7 @@ router.post(
             finialId: cartItemsTable.finialId,
             variantSku: productVariantsTable.variantSku,
             variantName: productVariantsTable.variantName,
+            selectedModelCode: cartItemsTable.selectedModelCode,
             finishCode: finishesTable.itemNumber,
             finishName: finishesTable.name,
             finialCode: productFinialOptionsTable.code,
@@ -669,7 +672,11 @@ router.post(
               orderId: order.id,
               productId: l.productId,
               productSkuSnapshot: l.sku,
-              description: l.name,
+              // For TG replacement pole lines the variant name carries a [MODEL]
+              // placeholder; substitute the real model name before persisting.
+              description: l.variantName?.includes("[MODEL]")
+                ? resolveTgPoleVariantName(l.variantName, l.selectedModelCode)
+                : l.name,
               parentOrderItemId,
               quantity: l.quantity,
               unitPrice: String(l.unitPrice),
@@ -679,7 +686,10 @@ router.post(
               finishId: l.finishId,
               finialId: l.finialId,
               variantSkuSnapshot: stripVentSuffix(l.variantSku),
-              variantNameSnapshot: l.variantName,
+              variantNameSnapshot: resolveTgPoleVariantName(
+                l.variantName ?? "",
+                l.selectedModelCode,
+              ) || null,
               finishCodeSnapshot: l.finishCode,
               finishNameSnapshot: l.finishName,
               finialCodeSnapshot: l.finialCode,
