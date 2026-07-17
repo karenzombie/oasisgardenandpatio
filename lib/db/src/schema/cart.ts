@@ -103,6 +103,11 @@ export const cartItemsTable = pgTable(
     // unique index so two otherwise-identical lines that differ only by their
     // add-on selection don't collapse into one row on upsert.
     addonSignature: text("addon_signature").notNull().default(""),
+    // Umbrella model code chosen in the TG replacement parts picker (e.g.
+    // "UM810"). Null for every other product type. Used at checkout to assemble
+    // the printed line description ("Bottom Pole 32" for AUTO TILT 9' in
+    // Bronze") because the pole variant SKU encodes pole+finish but not model.
+    selectedModelCode: text("selected_model_code"),
     // When set, this line is an ACCESSORY tied 1:1 to a parent line — used by
     // the galvanized-base "Aluminum Top Cover": the cover line points at its
     // base line. ON DELETE CASCADE removes the cover when the base line is
