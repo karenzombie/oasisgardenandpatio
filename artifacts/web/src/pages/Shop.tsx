@@ -320,7 +320,7 @@ export default function Shop() {
     ? "Shop Online"
     : params?.slug
       ? (data?.products[0]?.categoryName ?? params.slug.replace(/-/g, " "))
-      : "Shop";
+      : "Products";
 
   const sidebar = (
     <aside className="space-y-0">
@@ -431,7 +431,7 @@ export default function Shop() {
         <span>/</span>
         {params?.slug ? (
           <>
-            <Link href="/shop" className="hover:text-foreground">Shop</Link>
+            <Link href="/shop" className="hover:text-foreground">Products</Link>
             <span>/</span>
             <span className="text-foreground capitalize">{heading}</span>
           </>
