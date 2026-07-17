@@ -8668,6 +8668,9 @@ components:
         quantityLocked:
           type: boolean
           description: True when the customer cannot edit this line's quantity directly (it is driven by its parent line).
+        selectedModelCode:
+          type: ["string", "null"]
+          description: For TG replacement pole cart lines — the umbrella model code selected by the customer (e.g. "UM810").
       required:
         - id
         - productId
@@ -8779,6 +8782,9 @@ components:
         coverFinishId:
           type: ["integer", "null"]
           description: Optional Aluminum Top Cover finish id. When set, the cover is added as a SEPARATE cart line tied 1:1 to the base line (locked quantity).
+        selectedModelCode:
+          type: ["string", "null"]
+          description: For TG replacement pole items — the customer's selected umbrella model code (e.g. "UM810"). Stored to assemble the printed line description at order time.
       required:
         - productId
     UpdateCartItemRequest:

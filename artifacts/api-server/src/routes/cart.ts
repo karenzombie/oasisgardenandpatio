@@ -119,6 +119,7 @@ async function loadCart(owner: CartOwner) {
       unitPrice: cartItemsTable.price,
       quantity: cartItemsTable.quantity,
       parentCartItemId: cartItemsTable.parentCartItemId,
+      selectedModelCode: cartItemsTable.selectedModelCode,
       variantId: cartItemsTable.variantId,
       variantName: productVariantsTable.variantName,
       finishId: cartItemsTable.finishId,
@@ -326,6 +327,7 @@ router.post(
     // Optional galvanized-base accessories (resolved + validated below).
     const stemProductId = parsed.data.stemProductId ?? null;
     const coverFinishId = parsed.data.coverFinishId ?? null;
+    const selectedModelCode = parsed.data.selectedModelCode ?? null;
     // Requested add-on option ids (e.g. Marella privacy walls). Dedup + drop any
     // non-positive ids; validated against the product below.
     const requestedAddonIds = Array.from(
@@ -391,7 +393,12 @@ router.post(
     const hasUsablePrice =
       (product.price != null && Number(product.price) > 0) ||
       (product.salePrice != null && Number(product.salePrice) > 0);
-    if (!hasUsablePrice) {
+    // Products where pricing lives entirely in variants (absolute per-variant
+    // msrp/salePrice) may carry no base product price. Allow the add when a
+    // variantId was supplied — the absolute variant price is resolved below and
+    // used as the snapshot. If the variant itself has no price, the fallback
+    // `basePriceStr` null-check below catches it with a clear 400.
+    if (!hasUsablePrice && variantId == null) {
       res.status(400).json({
         error:
           "This product does not have a price set and cannot be added to the cart. Please contact us for pricing and availability.",
@@ -1073,10 +1080,10 @@ router.post(
     // add-ons are always consistent.
     await db.transaction(async (tx) => {
       const result = await tx.execute<{ id: number }>(sql`
-        INSERT INTO cart_items (cart_id, product_id, variant_id, finish_id, finial_id, fabric_id, quantity, price, addon_signature)
+        INSERT INTO cart_items (cart_id, product_id, variant_id, finish_id, finial_id, fabric_id, quantity, price, addon_signature, selected_model_code)
         VALUES (
           ${cart.id}, ${productId}, ${variantId}, ${finishId}, ${finialId}, ${fabricId},
-          ${quantity}, ${snapshotPrice}, ${baseSignature}
+          ${quantity}, ${snapshotPrice}, ${baseSignature}, ${selectedModelCode}
         )
         ON CONFLICT (cart_id, product_id, (COALESCE(variant_id, 0)), (COALESCE(finish_id, 0)), (COALESCE(fabric_id, 0)), (COALESCE(finial_id, 0)), addon_signature)
         DO UPDATE SET quantity = cart_items.quantity + EXCLUDED.quantity

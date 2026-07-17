@@ -42,4 +42,9 @@ export interface AddCartItemRequest {
    * @nullable
    */
   coverFinishId?: number | null;
+  /**
+   * For TG replacement pole items — the customer's selected umbrella model code (e.g. "UM810"). Stored to assemble the printed line description at order time.
+   * @nullable
+   */
+  selectedModelCode?: string | null;
 }

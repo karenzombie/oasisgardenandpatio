@@ -63,4 +63,9 @@ export interface CartItem {
   isAccessory: boolean;
   /** True when the customer cannot edit this line's quantity directly (it is driven by its parent line). */
   quantityLocked: boolean;
+  /**
+   * For TG replacement pole cart lines — the umbrella model code selected by the customer (e.g. "UM810").
+   * @nullable
+   */
+  selectedModelCode?: string | null;
 }

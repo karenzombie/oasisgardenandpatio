@@ -2242,6 +2242,11 @@ export interface CartItem {
   isAccessory: boolean;
   /** True when the customer cannot edit this line's quantity directly (it is driven by its parent line). */
   quantityLocked: boolean;
+  /**
+   * For TG replacement pole cart lines — the umbrella model code selected by the customer (e.g. "UM810").
+   * @nullable
+   */
+  selectedModelCode?: string | null;
 }
 
 export interface CartResponse {
@@ -2291,6 +2296,11 @@ export interface AddCartItemRequest {
    * @nullable
    */
   coverFinishId?: number | null;
+  /**
+   * For TG replacement pole items — the customer's selected umbrella model code (e.g. "UM810"). Stored to assemble the printed line description at order time.
+   * @nullable
+   */
+  selectedModelCode?: string | null;
 }
 
 export interface UpdateCartItemRequest {

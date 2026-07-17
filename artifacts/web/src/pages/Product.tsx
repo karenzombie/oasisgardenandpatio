@@ -22,6 +22,17 @@ import {
   GALTECH_POLE_FINISHES,
   composedPoleSku,
 } from "@/lib/galtech-pole-map";
+import {
+  TG_REPLACEMENT_PARTS_PRODUCT_ID,
+  TG_FRAME_MODELS,
+  TG_POLE_ENTRIES,
+  TG_POLE_MODELS,
+  TG_POLE_MODEL_NAMES,
+  composeTgFrameSku,
+  composeTgPoleSku,
+  tgPoleHeightsForModel,
+  tgPoleEntryFor,
+} from "@/lib/tg-replacement-parts-map";
 
 /**
  * Green checkmark shown adjacent to a selector label once the customer has
@@ -113,6 +124,16 @@ export default function Product() {
   // Declared early so effects below can reference it without a forward-ref error.
   // data?.id is stable by slug; null/undefined compares safely to a number.
   const isPoleProduct = data?.id === 4966 || data?.id === 4967;
+  const isTgReplacementParts = data?.id === TG_REPLACEMENT_PARTS_PRODUCT_ID;
+  // TG Replacement Parts picker state (product 6334 only).
+  // tgPartType: "frame" | "pole" — determined at Step 1.
+  // tgModelCode: frame model code (e.g. "AKZP13") or pole model code (e.g. "UM810").
+  // tgPoleHeight: pole height string (e.g. '32"') — null for frames / unset poles.
+  // tgFinishCode: finish code (e.g. "00", "SS") — resolves the variant SKU.
+  const [tgPartType, setTgPartType] = useState<"frame" | "pole" | null>(null);
+  const [tgModelCode, setTgModelCode] = useState<string | null>(null);
+  const [tgPoleHeight, setTgPoleHeight] = useState<string | null>(null);
+  const [tgFinishCode, setTgFinishCode] = useState<string | null>(null);
   // Selected add-on option ids (multi-select, default none). Pairing targets are
   // auto-included via effectiveAddonIds — they are not stored here directly.
   const [addonIds, setAddonIds] = useState<number[]>([]);
@@ -187,6 +208,10 @@ export default function Product() {
     setCoverPickerOpen(false);
     setPoleModelSku(null);
     setPoleFinishCode(null);
+    setTgPartType(null);
+    setTgModelCode(null);
+    setTgPoleHeight(null);
+    setTgFinishCode(null);
   }, [data?.id]);
 
   // Optional accessories offered by the galvanized plate bases (empty/null for
@@ -428,6 +453,8 @@ export default function Product() {
     if (isWindVentMode || finishVariantMode) return;
     // Pole products use the 2-step picker; never pre-select any of their 61 variants.
     if (isPoleProduct) return;
+    // TG replacement parts use a 3-4 step picker; never pre-select any variant.
+    if (isTgReplacementParts) return;
     if (variants.length === 1) {
       setVariantId((cur) => cur ?? variants[0]!.id);
     }
@@ -466,6 +493,71 @@ export default function Product() {
     setVariantId(match?.id ?? null);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPoleProduct, data?.id, poleModelSku, poleFinishCode, variants]);
+
+  // TG replacement parts: reset downstream steps when Part Type changes.
+  useEffect(() => {
+    if (!isTgReplacementParts) return;
+    setTgModelCode(null);
+    setTgPoleHeight(null);
+    setTgFinishCode(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isTgReplacementParts, tgPartType]);
+
+  // TG replacement parts: reset height+finish when model changes (pole only).
+  useEffect(() => {
+    if (!isTgReplacementParts || tgPartType !== "pole") return;
+    setTgPoleHeight(null);
+    setTgFinishCode(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isTgReplacementParts, tgPartType, tgModelCode]);
+
+  // TG replacement parts: auto-select finish when the model/height combination
+  // has exactly one finish option (e.g. Hardwood-only entries).
+  useEffect(() => {
+    if (!isTgReplacementParts) return;
+    if (tgPartType === "frame" && tgModelCode) {
+      const model = TG_FRAME_MODELS.find((m) => m.modelCode === tgModelCode);
+      if (model?.finishes.length === 1) {
+        setTgFinishCode(model.finishes[0]!.code);
+      } else {
+        setTgFinishCode(null);
+      }
+    } else if (tgPartType === "pole" && tgModelCode && tgPoleHeight) {
+      const entry = tgPoleEntryFor(tgModelCode, tgPoleHeight);
+      if (entry?.finishes.length === 1) {
+        setTgFinishCode(entry.finishes[0]!.code);
+      } else {
+        setTgFinishCode(null);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isTgReplacementParts, tgPartType, tgModelCode, tgPoleHeight]);
+
+  // TG replacement parts: derive variantId from completed picker state.
+  // Frame: SKU = "FRAME-ONLY {stub.replace('_', finishCode)}"
+  // Pole:  SKU = stub.includes('_') ? stub.replace('_', finishCode) : stub
+  useEffect(() => {
+    if (!isTgReplacementParts) return;
+    if (!tgPartType || !tgModelCode || !tgFinishCode) {
+      setVariantId(null);
+      return;
+    }
+    if (tgPartType === "frame") {
+      const model = TG_FRAME_MODELS.find((m) => m.modelCode === tgModelCode);
+      if (!model) { setVariantId(null); return; }
+      const sku = composeTgFrameSku(model.stub, tgFinishCode);
+      const match = variants.find((v) => v.sku === sku);
+      setVariantId(match?.id ?? null);
+    } else {
+      if (!tgPoleHeight) { setVariantId(null); return; }
+      const entry = tgPoleEntryFor(tgModelCode, tgPoleHeight);
+      if (!entry) { setVariantId(null); return; }
+      const sku = composeTgPoleSku(entry.stub, tgFinishCode);
+      const match = variants.find((v) => v.sku === sku);
+      setVariantId(match?.id ?? null);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isTgReplacementParts, tgPartType, tgModelCode, tgPoleHeight, tgFinishCode, variants]);
 
   // Clear a now-invalid fabric when the configuration changes (its grade may no
   // longer be priced, or stripes may now be excluded).
@@ -619,7 +711,12 @@ export default function Product() {
       missingSelections.push("a valid Finish + Wind Vent combination");
     }
   } else if (requiresVariant && !selectedVariant) {
-    if (isPoleProduct) {
+    if (isTgReplacementParts) {
+      if (!tgPartType) missingSelections.push("Part Type");
+      else if (!tgModelCode) missingSelections.push("Umbrella Model");
+      else if (tgPartType === "pole" && !tgPoleHeight) missingSelections.push("Pole Height");
+      else if (!tgFinishCode) missingSelections.push("Finish");
+    } else if (isPoleProduct) {
       if (!poleModelSku) missingSelections.push("Umbrella Model");
       else if (!poleFinishCode) missingSelections.push("Finish");
     } else {
@@ -677,6 +774,9 @@ export default function Product() {
         ...(selectedStem ? { stemProductId: selectedStem.stemProductId } : {}),
         ...(selectedCoverFinish
           ? { coverFinishId: selectedCoverFinish.finishId }
+          : {}),
+        ...(isTgReplacementParts && tgPartType === "pole" && tgModelCode
+          ? { selectedModelCode: tgModelCode }
           : {}),
       },
     });
@@ -828,8 +928,14 @@ export default function Product() {
     ? Number(selectedCoverFinish.unitPrice)
     : 0;
   const accessoryUnitTotal = stemUnitPrice + coverUnitPrice;
+  // TG replacement parts show no total until a variant is fully resolved
+  // (the base product has no price; the variant absolute price drives the total).
   const runningTotal =
-    comboLineTotal != null ? comboLineTotal + accessoryUnitTotal * qty : null;
+    isTgReplacementParts && !selectedVariant
+      ? null
+      : comboLineTotal != null
+        ? comboLineTotal + accessoryUnitTotal * qty
+        : null;
   const runningItemCount =
     qty * (1 + (selectedStem ? 1 : 0) + (selectedCoverFinish ? 1 : 0));
 
@@ -887,12 +993,20 @@ export default function Product() {
   const hasPrice =
     (data.price != null && Number(data.price) > 0) ||
     (data.salePrice != null && Number(data.salePrice) > 0);
-  const canBuyOnline =
-    !data.quoteOnly && hasPrice && data.availableOnline;
+  // TG replacement parts carry no base product price — pricing lives entirely
+  // in the individual variants (absolute msrp/salePrice). Always treat them as
+  // purchasable so the picker + Add-to-Cart button show; the cart endpoint
+  // accepts a no-base-price product when a variantId is supplied.
+  const canBuyOnline = isTgReplacementParts
+    ? !data.quoteOnly && data.availableOnline
+    : !data.quoteOnly && hasPrice && data.availableOnline;
   const showQuoteFallback = !canBuyOnline;
   // Price is only shown to shoppers when (a) the merchant has opted into
   // showing the online price and (b) a price is actually set.
-  const showPriceBlock = data.showPriceOnline && hasPrice;
+  // TG replacement parts: price block shows only once a variant is resolved.
+  const showPriceBlock = isTgReplacementParts
+    ? data.showPriceOnline && selectedVariant != null
+    : data.showPriceOnline && hasPrice;
 
   return (
     <div className="container mx-auto px-4 py-10 max-w-7xl">
@@ -958,7 +1072,7 @@ export default function Product() {
 
           <h1 className="font-serif text-3xl md:text-4xl mb-4">{data.name}</h1>
 
-          {!showPriceBlock && !data.quoteOnly && (
+          {!showPriceBlock && !data.quoteOnly && !isTgReplacementParts && (
             <p className="text-sm text-muted-foreground mb-6">Pricing coming soon — add to your wishlist and we'll be in touch.</p>
           )}
 
@@ -1250,7 +1364,135 @@ export default function Product() {
 
               {/* Variant selector (Configuration in grade mode, else Frame Finish) */}
               {!isWindVentMode && !finishVariantMode && requiresVariant ? (
-                isPoleProduct ? (
+                isTgReplacementParts ? (
+                  /* ── TG Replacement Parts: 3-step (frame) / 4-step (pole) picker ── */
+                  <div className="mb-5 space-y-5">
+                    {/* Step 1: Part Type */}
+                    <div>
+                      <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">
+                        Part Type<span className="text-destructive ml-1">*</span>
+                        {tgPartType ? <SelectionCheck /> : null}
+                      </p>
+                      <div className="flex gap-2 flex-wrap">
+                        {(["frame", "pole"] as const).map((pt) => (
+                          <button
+                            key={pt}
+                            type="button"
+                            onClick={() => setTgPartType(pt)}
+                            className={`px-4 py-2 text-sm border transition-colors ${
+                              tgPartType === pt
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-border hover:border-primary/60"
+                            }`}
+                          >
+                            {pt === "frame" ? "Replacement Frame" : "Bottom Pole"}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Step 2: Model (only after part type chosen) */}
+                    {tgPartType ? (
+                      <div>
+                        <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">
+                          Umbrella Model<span className="text-destructive ml-1">*</span>
+                          {tgModelCode ? <SelectionCheck /> : null}
+                        </p>
+                        <select
+                          value={tgModelCode ?? ""}
+                          onChange={(e) => setTgModelCode(e.target.value || null)}
+                          className="w-full sm:max-w-sm border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                        >
+                          <option value="">— Select your umbrella model —</option>
+                          {tgPartType === "frame"
+                            ? TG_FRAME_MODELS.map((m) => (
+                                <option key={m.modelCode} value={m.modelCode}>
+                                  {m.modelName} ({m.modelCode})
+                                </option>
+                              ))
+                            : TG_POLE_MODELS.map((m) => (
+                                <option key={m.code} value={m.code}>
+                                  {m.name} ({m.code})
+                                </option>
+                              ))}
+                        </select>
+                      </div>
+                    ) : null}
+
+                    {/* Step 3 (Pole only): Height */}
+                    {tgPartType === "pole" && tgModelCode ? (
+                      <div>
+                        <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">
+                          Pole Height<span className="text-destructive ml-1">*</span>
+                          {tgPoleHeight ? <SelectionCheck /> : null}
+                        </p>
+                        <div className="flex gap-2 flex-wrap">
+                          {tgPoleHeightsForModel(tgModelCode).map((h) => (
+                            <button
+                              key={h}
+                              type="button"
+                              onClick={() => setTgPoleHeight(h)}
+                              className={`px-4 py-2 text-sm border transition-colors ${
+                                tgPoleHeight === h
+                                  ? "border-primary bg-primary text-primary-foreground"
+                                  : "border-border hover:border-primary/60"
+                              }`}
+                            >
+                              {h}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {/* Step 3 (Frame) / Step 4 (Pole): Finish */}
+                    {(() => {
+                      if (!tgModelCode) return null;
+                      if (tgPartType === "pole" && !tgPoleHeight) return null;
+                      const finishes =
+                        tgPartType === "frame"
+                          ? (TG_FRAME_MODELS.find((m) => m.modelCode === tgModelCode)?.finishes ?? [])
+                          : (tgPoleEntryFor(tgModelCode, tgPoleHeight!)?.finishes ?? []);
+                      if (finishes.length === 0) return null;
+                      return (
+                        <div>
+                          <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">
+                            Frame Finish<span className="text-destructive ml-1">*</span>
+                            {tgFinishCode ? <SelectionCheck /> : null}
+                          </p>
+                          <div className="flex gap-2 flex-wrap">
+                            {finishes.map((f) => (
+                              <button
+                                key={f.code}
+                                type="button"
+                                onClick={() => setTgFinishCode(f.code)}
+                                className={`px-4 py-2 text-sm border transition-colors ${
+                                  tgFinishCode === f.code
+                                    ? "border-primary bg-primary text-primary-foreground"
+                                    : "border-border hover:border-primary/60"
+                                }`}
+                              >
+                                {f.name}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Part # preview once all steps are complete */}
+                    {selectedVariant ? (
+                      <p className="text-xs text-muted-foreground">
+                        Part #: {selectedVariant.sku}
+                        {tgPartType === "pole" && tgModelCode ? (
+                          <span className="ml-2">
+                            · Fits: {TG_POLE_MODEL_NAMES[tgModelCode] ?? tgModelCode}
+                          </span>
+                        ) : null}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : isPoleProduct ? (
                   /* ── Galtech replacement pole: 2-step picker ─────────────── */
                   <div className="mb-5">
                     {/* Step 1: Umbrella Model */}

@@ -1,0 +1,16 @@
+Data is loaded. Proceed to Gate 2 (picker UI).
+The "Treasure Garden Replacement Parts" product is in dev: product id 6334, SKU "RP", manufacturer_id 12, category_id 41, with 130 variants. Use TG_REPLACEMENT_PARTS_PRODUCT_ID = 6334.
+Build from the updated tg_replacement_parts_master.csv (the one with frame SKUs prefixed). Key points for your map file and composition logic:
+
+Picker flow: Frame = Part Type → Model → Finish (3 steps). Bottom Pole = Part Type → Model → Height → Finish (4 steps, height only for poles). Model + Height + Finish resolves to exactly one variant (verified, no collisions).
+SKU composition differs by part type:
+
+Frames: FRAME-ONLY  + stub + two-digit finish, e.g. FRAME-ONLY AKZP13-00. The space and the FRAME-ONLY prefix are literal and required, they distinguish the replacement frame from the whole-umbrella SKU, and they print on the PO intentionally.
+Poles: stub with the finish dropped into the _ in place, no prefix, e.g. BP32-81000. BP36-8091 has no placeholder and one finish (1H).
+
+
+Model names render verbatim from the data (all-caps, e.g. AUTO TILT 9'). Do not re-case.
+Price: each variant carries its own msrp/sale_price; the storefront's per-variant absolute pricing already overrides the (null) parent price. Price at Add to Cart (B) reads the resolved variant. The title price (A) must stay hidden until a variant is resolved, then show that variant's price so A and B always match. Never show a fixed or placeholder price for A.
+Pole model on the line: store the customer's selected umbrella model code in cart_items.selected_model_code, and assemble the full name (fill [MODEL] in the variant name with the selected model) into order_items.description at checkout so it prints correctly on the customer order and the vendor PO.
+
+Walk through in dev per the brief: pick a frame and a pole end to end, confirm on-screen name, SKU, and price match the CSV for the exact selection, then confirm add-to-cart and the order/PO rendering. Show the diff and the walkthrough result at each gate and stop for review.

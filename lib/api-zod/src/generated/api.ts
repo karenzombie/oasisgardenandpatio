@@ -2242,6 +2242,12 @@ export const GetCartResponse = zod.object({
         .describe(
           "True when the customer cannot edit this line's quantity directly (it is driven by its parent line).",
         ),
+      selectedModelCode: zod
+        .string()
+        .nullish()
+        .describe(
+          'For TG replacement pole cart lines — the umbrella model code selected by the customer (e.g. \"UM810\").',
+        ),
     }),
   ),
   itemCount: zod.number().describe("Sum of quantities across all line items."),
@@ -2350,6 +2356,12 @@ export const ClearCartResponse = zod.object({
         .describe(
           "True when the customer cannot edit this line's quantity directly (it is driven by its parent line).",
         ),
+      selectedModelCode: zod
+        .string()
+        .nullish()
+        .describe(
+          'For TG replacement pole cart lines — the umbrella model code selected by the customer (e.g. \"UM810\").',
+        ),
     }),
   ),
   itemCount: zod.number().describe("Sum of quantities across all line items."),
@@ -2409,6 +2421,12 @@ export const AddCartItemBody = zod.object({
     .nullish()
     .describe(
       "Optional Aluminum Top Cover finish id. When set, the cover is added as a SEPARATE cart line tied 1:1 to the base line (locked quantity).",
+    ),
+  selectedModelCode: zod
+    .string()
+    .nullish()
+    .describe(
+      'For TG replacement pole items — the customer\'s selected umbrella model code (e.g. \"UM810\"). Stored to assemble the printed line description at order time.',
     ),
 });
 
@@ -2499,6 +2517,12 @@ export const AddCartItemResponse = zod.object({
         .boolean()
         .describe(
           "True when the customer cannot edit this line's quantity directly (it is driven by its parent line).",
+        ),
+      selectedModelCode: zod
+        .string()
+        .nullish()
+        .describe(
+          'For TG replacement pole cart lines — the umbrella model code selected by the customer (e.g. \"UM810\").',
         ),
     }),
   ),
@@ -2615,6 +2639,12 @@ export const UpdateCartItemResponse = zod.object({
         .describe(
           "True when the customer cannot edit this line's quantity directly (it is driven by its parent line).",
         ),
+      selectedModelCode: zod
+        .string()
+        .nullish()
+        .describe(
+          'For TG replacement pole cart lines — the umbrella model code selected by the customer (e.g. \"UM810\").',
+        ),
     }),
   ),
   itemCount: zod.number().describe("Sum of quantities across all line items."),
@@ -2725,6 +2755,12 @@ export const RemoveCartItemResponse = zod.object({
         .boolean()
         .describe(
           "True when the customer cannot edit this line's quantity directly (it is driven by its parent line).",
+        ),
+      selectedModelCode: zod
+        .string()
+        .nullish()
+        .describe(
+          'For TG replacement pole cart lines — the umbrella model code selected by the customer (e.g. \"UM810\").',
         ),
     }),
   ),
