@@ -748,8 +748,9 @@ router.post(
         );
         res.status(500).json({
           error:
-            "Your payment was processed but we encountered an error recording your order. Please contact us immediately with reference: " +
-            orderNumber,
+            "Your payment went through, but we hit an error saving your order. Please contact us right away with this reference: " +
+            orderNumber +
+            ". Please do not resubmit your order.",
         });
       } else {
         // Charge was not made, or the gateway declined. No money was captured.

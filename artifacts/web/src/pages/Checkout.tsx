@@ -109,10 +109,20 @@ export default function Checkout() {
   // Error shown near the HostedForm button (address validation or gateway errors).
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
+  // Persistent critical message for 500 (charge confirmed, order write failed)
+  // and 503 (server-side interruption, unknown capture state). Never a toast —
+  // stays on screen so the reference number and "do not resubmit" copy cannot
+  // be dismissed. The one-shot latch is NOT reset on these paths.
+  const [criticalError, setCriticalError] = useState<{
+    title: string;
+    body: string;
+  } | null>(null);
+
   // One-shot latch: prevents react-acceptjs HostedForm from firing
   // placeOrderM.mutate more than once per card submission. The ref is set
   // synchronously inside the handler so a duplicate fire (before isPending
-  // flips) is dropped. Reset onError so the customer can retry after a decline.
+  // flips) is dropped. Reset onError ONLY on declines so the customer can
+  // retry with a different card. NOT reset on 500/503 — do not resubmit.
   const orderSubmittedRef = useRef(false);
 
   // Default to first saved address when they load (authed only)
@@ -170,7 +180,11 @@ export default function Checkout() {
         const data = (
           err as {
             response?: {
-              data?: { error?: string; paymentDeclined?: boolean };
+              data?: {
+                error?: string;
+                paymentDeclined?: boolean;
+                paymentUnavailable?: boolean;
+              };
             };
           }
         )?.response?.data;
@@ -178,13 +192,25 @@ export default function Checkout() {
           data?.error ??
           (err as { message?: string })?.message ??
           "Could not place order.";
-        // Reset the one-shot latch so the customer can retry after a decline.
-        orderSubmittedRef.current = false;
 
         if (data?.paymentDeclined) {
+          // Plain decline: reset latch so they can retry with a different card.
+          orderSubmittedRef.current = false;
           setCheckoutError(message);
+        } else if (data?.paymentUnavailable) {
+          // 503: server-side interruption — unknown capture state.
+          // Do NOT reset latch. Persistent display, not a toast.
+          setCriticalError({
+            title: "Please contact us before retrying",
+            body: message,
+          });
         } else {
-          toast({ title: "Checkout failed", description: message });
+          // 500: charge confirmed but order write failed.
+          // Do NOT reset latch. Persistent display, not a toast.
+          setCriticalError({
+            title: "Payment received — please contact us",
+            body: message,
+          });
         }
       },
     },
@@ -683,6 +709,15 @@ export default function Checkout() {
               <span>Total</span>
               <span>{formatMoney(totalNum)}</span>
             </div>
+
+            {criticalError ? (
+              <div className="mt-4 rounded border border-amber-400 bg-amber-50 p-4">
+                <p className="font-semibold text-amber-900">
+                  {criticalError.title}
+                </p>
+                <p className="mt-1 text-sm text-amber-800">{criticalError.body}</p>
+              </div>
+            ) : null}
 
             {checkoutError ? (
               <p className="text-sm text-destructive mt-4">{checkoutError}</p>
