@@ -1,11 +1,12 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Megaphone, Pencil, Plus } from "lucide-react";
+import { Megaphone, Pencil, Plus, Trash2 } from "lucide-react";
 import {
   useAdminListBanners,
   useAdminCreateBanner,
   useAdminUpdateBanner,
   useAdminSetBannerActive,
+  useAdminDeleteBanner,
   getAdminListBannersQueryKey,
   type AdminBanner,
 } from "@workspace/api-client-react";
@@ -23,6 +24,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Dialog,
   DialogContent,
@@ -53,7 +64,9 @@ export default function Banners() {
   const toast = useToast();
   const list = useAdminListBanners();
   const setActive = useAdminSetBannerActive();
+  const deleteMut = useAdminDeleteBanner();
   const [editing, setEditing] = useState<AdminBanner | "new" | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   async function refetch() {
     await qc.invalidateQueries({ queryKey: getAdminListBannersQueryKey() });
@@ -70,6 +83,24 @@ export default function Banners() {
         description: msg,
         variant: "destructive",
       });
+    }
+  }
+
+  async function handleDelete() {
+    if (deletingId === null) return;
+    try {
+      await deleteMut.mutateAsync({ id: deletingId });
+      await refetch();
+      toast.toast({ title: "Banner deleted" });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to delete";
+      toast.toast({
+        title: "Could not delete banner",
+        description: msg,
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -176,6 +207,14 @@ export default function Banners() {
                           <Pencil className="size-3.5 mr-1" />
                           Edit
                         </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setDeletingId(b.id)}
+                        >
+                          <Trash2 className="size-3.5 mr-1" />
+                          Delete
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -190,6 +229,32 @@ export default function Banners() {
           onClose={() => setEditing(null)}
           onSaved={refetch}
         />
+
+        <AlertDialog
+          open={deletingId !== null}
+          onOpenChange={(o) => { if (!o) setDeletingId(null); }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete banner?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this banner? This cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setDeletingId(null)}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDelete}
+                disabled={deleteMut.isPending}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {deleteMut.isPending ? "Deleting…" : "Delete"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
       </PageBody>
     </>
