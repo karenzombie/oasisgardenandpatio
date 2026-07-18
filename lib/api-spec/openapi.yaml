@@ -8976,6 +8976,31 @@ components:
           pattern: "^[0-9]{6}$"
       required:
         - code
+    OrderPaymentState:
+      type: object
+      description: >
+        Derived payment state for an order, computed server-side from the order's
+        payment records. Clients should render this field directly and not
+        reimplement the derivation logic.
+      properties:
+        kind:
+          type: string
+          enum:
+            - api_paid
+            - api_held
+            - api_not_completed
+            - manual
+            - unpaid
+        hasLiveApiHold:
+          type: boolean
+          description: >
+            True when any payment on this order has a stored gateway response
+            and status = "pending". Independent of the headline kind — used to
+            surface the double-charge nudge even when a manual payment has
+            already settled the order (kind = "manual").
+      required:
+        - kind
+        - hasLiveApiHold
     AccountOrderSummary:
       type: object
       properties:
@@ -8990,12 +9015,15 @@ components:
           type: string
         itemCount:
           type: integer
+        paymentState:
+          $ref: "#/components/schemas/OrderPaymentState"
       required:
         - orderNumber
         - placedAt
         - status
         - total
         - itemCount
+        - paymentState
     AccountOrdersResponse:
       type: object
       properties:
@@ -9122,6 +9150,8 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/AccountOrderLine"
+        paymentState:
+          $ref: "#/components/schemas/OrderPaymentState"
       required:
         - orderNumber
         - placedAt
@@ -9135,6 +9165,7 @@ components:
         - shippingAddress
         - billingAddress
         - items
+        - paymentState
     GuestContact:
       type: object
       description: >-

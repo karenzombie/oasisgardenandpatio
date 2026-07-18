@@ -5,6 +5,7 @@
  * Oasis Garden & Patio API
  * OpenAPI spec version: 0.1.0
  */
+import type { OrderPaymentState } from "./orderPaymentState";
 
 export interface AccountOrderSummary {
   orderNumber: string;
@@ -12,4 +13,5 @@ export interface AccountOrderSummary {
   status: string;
   total: string;
   itemCount: number;
+  paymentState: OrderPaymentState;
 }

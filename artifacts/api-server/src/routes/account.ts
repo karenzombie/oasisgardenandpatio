@@ -10,6 +10,7 @@ import {
   ordersTable,
   orderItemsTable,
   orderItemAddonsTable,
+  paymentsTable,
   productsTable,
   fabricsTable,
   finishesTable,
@@ -32,6 +33,7 @@ import {
 import { requireAuth } from "../middlewares/requireAuth";
 import { toPublicImageUrl } from "../lib/imageUrl";
 import { sendEmailChangeCode } from "../lib/email";
+import { deriveOrderPaymentState } from "../lib/paymentState";
 import { verifyOptOutToken } from "../lib/marketingOptOutToken";
 
 const EMAIL_CHANGE_CODE_TTL_MS = 30 * 60 * 1000;
@@ -715,6 +717,7 @@ router.get(
     const customer = await getOrCreateCustomer(req.user!.id);
     const rows = await db
       .select({
+        id: ordersTable.id,
         orderNumber: ordersTable.orderNumber,
         placedAt: ordersTable.placedAt,
         status: ordersTable.status,
@@ -729,6 +732,28 @@ router.get(
       .where(eq(ordersTable.customerId, customer.id))
       .orderBy(desc(ordersTable.placedAt));
 
+    // Batch-fetch payments for all orders in one query to derive paymentState.
+    const orderIds = rows.map((r) => r.id);
+    const paymentRows = orderIds.length
+      ? await db
+          .select({
+            orderId: paymentsTable.orderId,
+            status: paymentsTable.status,
+            rawResponse: paymentsTable.rawResponse,
+          })
+          .from(paymentsTable)
+          .where(inArray(paymentsTable.orderId, orderIds))
+      : [];
+    const paymentsByOrderId = new Map<
+      number,
+      { status: string; rawResponse: unknown }[]
+    >();
+    for (const p of paymentRows) {
+      const list = paymentsByOrderId.get(p.orderId) ?? [];
+      list.push(p);
+      paymentsByOrderId.set(p.orderId, list);
+    }
+
     res.json(
       ListAccountOrdersResponse.parse({
         orders: rows.map((r) => ({
@@ -740,6 +765,9 @@ router.get(
           status: r.status,
           total: String(r.total),
           itemCount: r.itemCount,
+          paymentState: deriveOrderPaymentState(
+            paymentsByOrderId.get(r.id) ?? [],
+          ),
         })),
       }),
     );
@@ -780,6 +808,13 @@ router.get(
       res.status(404).json({ error: "Order not found" });
       return;
     }
+
+    // Fetch payments to derive paymentState (only need status + rawResponse).
+    const orderPayments = await db
+      .select({ status: paymentsTable.status, rawResponse: paymentsTable.rawResponse })
+      .from(paymentsTable)
+      .where(eq(paymentsTable.orderId, order.id));
+    const paymentState = deriveOrderPaymentState(orderPayments);
 
     const items = await db
       .select({
@@ -920,6 +955,7 @@ router.get(
         specialInstructions: order.specialInstructions,
         shippingAddress,
         billingAddress,
+        paymentState,
         items: items.map((i) => ({
           id: i.id,
           productId: i.productId,

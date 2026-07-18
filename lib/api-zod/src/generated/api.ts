@@ -1577,6 +1577,24 @@ export const ListAccountOrdersResponse = zod.object({
       status: zod.string(),
       total: zod.string(),
       itemCount: zod.number(),
+      paymentState: zod
+        .object({
+          kind: zod.enum([
+            "api_paid",
+            "api_held",
+            "api_not_completed",
+            "manual",
+            "unpaid",
+          ]),
+          hasLiveApiHold: zod
+            .boolean()
+            .describe(
+              'True when any payment on this order has a stored gateway response and status = \"pending\". Independent of the headline kind — used to surface the double-charge nudge even when a manual payment has already settled the order (kind = \"manual\").\n',
+            ),
+        })
+        .describe(
+          "Derived payment state for an order, computed server-side from the order's payment records. Clients should render this field directly and not reimplement the derivation logic.\n",
+        ),
     }),
   ),
 });
@@ -1695,6 +1713,24 @@ export const GetAccountOrderResponse = zod.object({
         ),
     }),
   ),
+  paymentState: zod
+    .object({
+      kind: zod.enum([
+        "api_paid",
+        "api_held",
+        "api_not_completed",
+        "manual",
+        "unpaid",
+      ]),
+      hasLiveApiHold: zod
+        .boolean()
+        .describe(
+          'True when any payment on this order has a stored gateway response and status = \"pending\". Independent of the headline kind — used to surface the double-charge nudge even when a manual payment has already settled the order (kind = \"manual\").\n',
+        ),
+    })
+    .describe(
+      "Derived payment state for an order, computed server-side from the order's payment records. Clients should render this field directly and not reimplement the derivation logic.\n",
+    ),
 });
 
 /**

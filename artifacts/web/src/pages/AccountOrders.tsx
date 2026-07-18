@@ -8,6 +8,7 @@ import {
 import { useAuth } from "@/lib/auth";
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 function formatMoney(v: string | number | null | undefined): string {
   if (v == null || v === "") return "$0.00";
@@ -30,6 +31,38 @@ function formatDate(iso: string): string {
 
 function statusLabel(s: string): string {
   return s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function PaymentBadge({ kind }: { kind: string }) {
+  if (kind === "api_paid") {
+    return (
+      <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white text-[10px] px-1.5 py-0.5 rounded-none font-normal">
+        Paid
+      </Badge>
+    );
+  }
+  if (kind === "manual") {
+    return (
+      <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white text-[10px] px-1.5 py-0.5 rounded-none font-normal">
+        Processed manually
+      </Badge>
+    );
+  }
+  if (kind === "api_held") {
+    return (
+      <Badge className="bg-amber-500 hover:bg-amber-500 text-white text-[10px] px-1.5 py-0.5 rounded-none font-normal">
+        Under review
+      </Badge>
+    );
+  }
+  if (kind === "api_not_completed") {
+    return (
+      <Badge variant="destructive" className="text-[10px] px-1.5 py-0.5 rounded-none font-normal">
+        Payment not completed, please contact us
+      </Badge>
+    );
+  }
+  return null;
 }
 
 export default function AccountOrders() {
@@ -99,10 +132,11 @@ export default function AccountOrders() {
                   {o.itemCount === 1 ? "" : "s"}
                 </p>
               </div>
-              <div className="text-sm">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="inline-block px-2 py-0.5 border border-border bg-background uppercase text-[11px] tracking-widest">
                   {statusLabel(o.status)}
                 </span>
+                <PaymentBadge kind={o.paymentState.kind} />
               </div>
               <div className="font-serif text-lg sm:w-28 sm:text-right">
                 {formatMoney(o.total)}

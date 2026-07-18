@@ -7,6 +7,7 @@
  */
 import type { AccountAddress } from "./accountAddress";
 import type { AccountOrderLine } from "./accountOrderLine";
+import type { OrderPaymentState } from "./orderPaymentState";
 
 export interface AccountOrderDetail {
   orderNumber: string;
@@ -23,4 +24,5 @@ export interface AccountOrderDetail {
   shippingAddress: AccountAddress | null;
   billingAddress: AccountAddress | null;
   items: AccountOrderLine[];
+  paymentState: OrderPaymentState;
 }

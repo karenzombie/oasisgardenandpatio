@@ -2422,12 +2422,35 @@ export interface VerifyEmailChangeBody {
   code: string;
 }
 
+export type OrderPaymentStateKind =
+  (typeof OrderPaymentStateKind)[keyof typeof OrderPaymentStateKind];
+
+export const OrderPaymentStateKind = {
+  api_paid: "api_paid",
+  api_held: "api_held",
+  api_not_completed: "api_not_completed",
+  manual: "manual",
+  unpaid: "unpaid",
+} as const;
+
+/**
+ * Derived payment state for an order, computed server-side from the order's payment records. Clients should render this field directly and not reimplement the derivation logic.
+
+ */
+export interface OrderPaymentState {
+  kind: OrderPaymentStateKind;
+  /** True when any payment on this order has a stored gateway response and status = "pending". Independent of the headline kind — used to surface the double-charge nudge even when a manual payment has already settled the order (kind = "manual").
+   */
+  hasLiveApiHold: boolean;
+}
+
 export interface AccountOrderSummary {
   orderNumber: string;
   placedAt: string;
   status: string;
   total: string;
   itemCount: number;
+  paymentState: OrderPaymentState;
 }
 
 export interface AccountOrdersResponse {
@@ -2513,6 +2536,7 @@ export interface AccountOrderDetail {
   shippingAddress: AccountAddress | null;
   billingAddress: AccountAddress | null;
   items: AccountOrderLine[];
+  paymentState: OrderPaymentState;
 }
 
 /**

@@ -1,4 +1,4 @@
-import { Link, useRoute, useSearch } from "wouter";
+import { Link, useRoute } from "wouter";
 import { CheckCircle2, Clock } from "lucide-react";
 import { useGetAccountOrder, getGetAccountOrderQueryKey } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
@@ -16,8 +16,6 @@ export default function OrderConfirmation() {
     "/order-confirmation/:orderNumber",
   );
   const orderNumber = params?.orderNumber ?? "";
-  const search = useSearch();
-  const isHeld = new URLSearchParams(search).get("held") === "1";
   const { data, isLoading, error } = useGetAccountOrder(orderNumber, {
     query: {
       queryKey: getGetAccountOrderQueryKey(orderNumber),
@@ -48,6 +46,8 @@ export default function OrderConfirmation() {
       </div>
     );
   }
+
+  const isHeld = data.paymentState.kind === "api_held";
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-3xl">

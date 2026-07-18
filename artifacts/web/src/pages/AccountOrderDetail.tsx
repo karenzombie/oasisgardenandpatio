@@ -1,9 +1,11 @@
 import { useEffect } from "react";
 import { Link, useLocation, useRoute } from "wouter";
+import { Clock } from "lucide-react";
 import { useGetAccountOrder, getGetAccountOrderQueryKey } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 function formatMoney(v: string | number | null | undefined): string {
   if (v == null || v === "") return "$0.00";
@@ -25,6 +27,38 @@ function formatDate(iso: string): string {
 
 function statusLabel(s: string): string {
   return s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function PaymentBadge({ kind }: { kind: string }) {
+  if (kind === "api_paid") {
+    return (
+      <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white rounded-none font-normal">
+        Paid
+      </Badge>
+    );
+  }
+  if (kind === "manual") {
+    return (
+      <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white rounded-none font-normal">
+        Processed manually
+      </Badge>
+    );
+  }
+  if (kind === "api_held") {
+    return (
+      <Badge className="bg-amber-500 hover:bg-amber-500 text-white rounded-none font-normal">
+        Under review
+      </Badge>
+    );
+  }
+  if (kind === "api_not_completed") {
+    return (
+      <Badge variant="destructive" className="rounded-none font-normal">
+        Payment not completed, please contact us
+      </Badge>
+    );
+  }
+  return null;
 }
 
 export default function AccountOrderDetail() {
@@ -69,6 +103,8 @@ export default function AccountOrderDetail() {
     );
   }
 
+  const { paymentState } = data;
+
   return (
     <div className="container mx-auto px-4 py-12 max-w-4xl">
       <nav className="text-xs uppercase tracking-widest text-muted-foreground mb-6 flex items-center gap-2 flex-wrap">
@@ -79,7 +115,7 @@ export default function AccountOrderDetail() {
         <span className="text-foreground">{data.orderNumber}</span>
       </nav>
 
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
         <div>
           <h1 className="font-serif text-3xl md:text-4xl">
             Order {data.orderNumber}
@@ -88,10 +124,32 @@ export default function AccountOrderDetail() {
             Placed {formatDate(data.placedAt)}
           </p>
         </div>
-        <span className="self-start inline-block px-3 py-1 border border-border bg-card uppercase text-xs tracking-widest">
-          {statusLabel(data.status)}
-        </span>
+        <div className="flex items-center gap-2 self-start flex-wrap">
+          <span className="inline-block px-3 py-1 border border-border bg-card uppercase text-xs tracking-widest">
+            {statusLabel(data.status)}
+          </span>
+          <PaymentBadge kind={paymentState.kind} />
+        </div>
       </div>
+
+      {paymentState.kind === "api_held" ? (
+        <div className="mb-6 flex items-start gap-3 border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <Clock className="w-4 h-4 mt-0.5 shrink-0 text-amber-600" />
+          <p>
+            Your payment is under review. We'll contact you to confirm before
+            your order is processed. You do not need to do anything.
+          </p>
+        </div>
+      ) : null}
+
+      {paymentState.kind === "api_not_completed" ? (
+        <div className="mb-6 border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          <p>
+            Your payment could not be completed. Please contact us so we can
+            help resolve this for your order.
+          </p>
+        </div>
+      ) : null}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 border border-border bg-card p-6">
