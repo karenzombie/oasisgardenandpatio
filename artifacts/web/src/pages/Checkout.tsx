@@ -505,21 +505,6 @@ export default function Checkout() {
                     </div>
                   </label>
                 ))}
-                <label
-                  className={`flex items-center gap-3 border p-4 cursor-pointer ${
-                    selectedId === "new"
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-foreground/40"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="address"
-                    checked={selectedId === "new"}
-                    onChange={() => setSelectedId("new")}
-                  />
-                  <span className="text-sm">Use a new address</span>
-                </label>
               </div>
             ) : null}
 
