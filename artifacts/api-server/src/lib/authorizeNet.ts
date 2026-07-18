@@ -55,6 +55,8 @@ export async function processAuthnetCharge(params: {
   dataValue: string;
   orderNumber: string;
   customerEmail: string;
+  /** Billing ZIP for AVS matching. Omit (or leave undefined) to send no billTo. */
+  billingZip?: string;
   signal?: AbortSignal;
 }): Promise<AuthnetChargeResult> {
   const config = getConfig();
@@ -98,6 +100,9 @@ export async function processAuthnetCharge(params: {
         customer: {
           email: params.customerEmail,
         },
+        // billTo.zip enables AVS matching. Only included when a billing ZIP is
+        // available; never send an empty string (gateway treats it as a mismatch).
+        ...(params.billingZip ? { billTo: { zip: params.billingZip } } : {}),
       },
     },
   };

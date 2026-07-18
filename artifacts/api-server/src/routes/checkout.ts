@@ -213,8 +213,13 @@ router.post(
 
     // Billing address: if the customer chose a saved address, read it now.
     // New-billing-address INSERTs are deferred.
+    // billingZip is resolved here (before the charge) for AVS.
     let savedBillingAddressId: number | null = null;
-    if (data.billingSameAsShipping === false) {
+    let billingZip: string | null = null;
+    if (data.billingSameAsShipping !== false) {
+      // Billing equals shipping — AVS ZIP is the same as the shipping ZIP.
+      billingZip = shippingZip;
+    } else {
       if (data.billingAddressId) {
         const [existing] = await db
           .select()
@@ -231,8 +236,13 @@ router.post(
           return;
         }
         savedBillingAddressId = existing.id;
+        billingZip = existing.zip;
+      } else if (data.billingAddress) {
+        // New inline billing address — ZIP available from request body.
+        billingZip = data.billingAddress.zip;
       }
-      // else: new billing address in data.billingAddress — INSERT deferred
+      // If neither is present (malformed request), billingZip stays null and
+      // we omit billTo entirely rather than send an empty string to the gateway.
     }
 
     const pricingSettings = await loadPricingSettings();
@@ -481,6 +491,7 @@ router.post(
           dataValue: data.paymentToken!.dataValue,
           orderNumber,
           customerEmail: isGuest ? data.guestContact!.email : authedCustomer!.email,
+          billingZip: billingZip ?? undefined,
           signal: AbortSignal.timeout(30_000),
         });
 
