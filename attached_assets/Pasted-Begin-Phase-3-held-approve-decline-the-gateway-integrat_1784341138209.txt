@@ -1,0 +1,15 @@
+Begin Phase 3 (held approve/decline), the gateway integration. Because this moves real money, do it in TWO gates. Gate 3a is a written design proposal, NO code. Stop after it. Do not write any code until 3a is approved.
+Gate 3a — design proposal, no code. Report:
+
+The exact updateHeldTransactionRequest you will send for both actions. Action values are "approve" and "decline" only. Do not use "reject" (it is not a documented action value). Confirm the endpoint and that the transaction key stays server-only.
+The exact success check on the gateway response before you touch our DB: which resultCode and which message/response code you treat as success, and what you do on anything else (change nothing, surface the gateway error). Paste the real response shape you are keying off, not a guess.
+The DB update path for a successful approve. It must flip the payment row to captured/completed and then call the shared recomputeOrderTotals helper to zero the balance. Do NOT hand-set deposit_amount to the total and balance_due to 0.00 directly. That hardcoded pattern was removed in the hardening pass and must not come back. Confirm you are using recomputeOrderTotals.
+The DB update path for a successful decline (mark the payment declined/not completed) and confirm the customer badge then reads "Payment not completed, please contact us" everywhere via the Phase 1 helper, with fulfillment status NOT changed.
+Stale-held handling: enumerate the ACTUAL Authorize.net response codes for "transaction is no longer held" (already approved, already declined, expired past the ~5-day window). List the real codes you will branch on, not a guessed mapping. For each, state how you re-sync our record to match rather than forcing the action.
+The gateway-succeeded-but-our-DB-update-failed path: confirm you log CRITICAL with the transaction id and surface that the gateway action DID go through, mirroring the checkout reconciliation pattern.
+Server-side admin enforcement: which middleware/check rejects a non-admin caller at the endpoint, so a hidden button is not the only guard.
+The double-charge warning banner carried from Phase 2: it needs hasLiveApiHold on the staff order response (derive it from the API payment rows you already load). Describe where the banner renders, that it points staff at the Decline button, and that it shows even when the header badge reads "Paid in full" because a manual payment settled the order while an API hold is still live.
+Confirm both actions are confirmation-gated and guarded against double-fire, and that neither the card number nor CVV is ever logged.
+
+All against sandbox. Do NOT touch AUTHNET_SANDBOX.
+STOP after 3a. Report 1-9 and wait. Do not write code.
