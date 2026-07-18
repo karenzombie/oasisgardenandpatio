@@ -33,7 +33,8 @@ function statusLabel(s: string): string {
   return s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-function PaymentBadge({ kind }: { kind: string }) {
+function PaymentBadge({ kind }: { kind: string | undefined }) {
+  if (!kind) return null;
   if (kind === "api_paid") {
     return (
       <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white text-[10px] px-1.5 py-0.5 rounded-none font-normal">
@@ -143,7 +144,7 @@ export default function AccountOrders() {
                 <span className="inline-block px-2 py-0.5 border border-border bg-background uppercase text-[11px] tracking-widest">
                   {statusLabel(o.status)}
                 </span>
-                <PaymentBadge kind={o.paymentState.kind} />
+                <PaymentBadge kind={o.paymentState?.kind} />
               </div>
               <div className="font-serif text-lg sm:w-28 sm:text-right">
                 {formatMoney(o.total)}
