@@ -81,5 +81,5 @@ channel = "stable-25_05"
 [userenv]
 
 [userenv.shared]
-EMAIL_TEST_REDIRECT_TO = "coachbradfield@yahoo.com"
+EMAIL_TEST_REDIRECT_TO = ""
 BASE_URL = "https://641bdd57-e650-4f10-a19f-628c07eb50b7-00-1e7i1aja8wnz9.worf.replit.dev"
