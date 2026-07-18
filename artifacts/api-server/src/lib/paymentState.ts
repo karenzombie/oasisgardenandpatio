@@ -3,6 +3,7 @@ export type PaymentStateKind =
   | "api_held"
   | "api_not_completed"
   | "manual"
+  | "balance_due"
   | "unpaid";
 
 export interface OrderPaymentState {
@@ -21,6 +22,7 @@ export const CUSTOMER_PAYMENT_LABEL: Record<PaymentStateKind, string> = {
   api_held:          "Under review",
   api_not_completed: "Payment not completed, please contact us",
   manual:            "Processed manually",
+  balance_due:       "Balance due",
   unpaid:            "",
 };
 
@@ -29,6 +31,7 @@ export const STAFF_PAYMENT_LABEL: Record<PaymentStateKind, string> = {
   api_held:          "Under review",
   api_not_completed: "Not completed",
   manual:            "Processed manually",
+  balance_due:       "Balance due",
   unpaid:            "Unpaid",
 };
 
@@ -51,8 +54,15 @@ interface PaymentLike {
  *
  * `hasLiveApiHold` is always computed independently and may be true even when
  * `kind` is "manual" (order settled manually while an API hold is still open).
+ *
+ * `isPaidInFull` must be true (order.balance_due === 0) for the manual branch
+ * to return "manual". A completed manual payment with a remaining balance
+ * returns "balance_due" instead — a deposit arrangement, not a full settlement.
  */
-export function deriveOrderPaymentState(payments: PaymentLike[]): OrderPaymentState {
+export function deriveOrderPaymentState(
+  payments: PaymentLike[],
+  isPaidInFull: boolean,
+): OrderPaymentState {
   const hasLiveApiHold = payments.some(
     (p) => p.rawResponse != null && p.status === "pending",
   );
@@ -60,7 +70,9 @@ export function deriveOrderPaymentState(payments: PaymentLike[]): OrderPaymentSt
   if (payments.some((p) => p.rawResponse != null && p.status === "completed"))
     return { kind: "api_paid", hasLiveApiHold };
   if (payments.some((p) => p.rawResponse == null && p.status === "completed"))
-    return { kind: "manual", hasLiveApiHold };
+    return isPaidInFull
+      ? { kind: "manual", hasLiveApiHold }
+      : { kind: "balance_due", hasLiveApiHold };
   if (hasLiveApiHold)
     return { kind: "api_held", hasLiveApiHold };
   if (

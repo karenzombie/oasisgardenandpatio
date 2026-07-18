@@ -58,6 +58,13 @@ function PaymentBadge({ kind }: { kind: string }) {
       </Badge>
     );
   }
+  if (kind === "balance_due") {
+    return (
+      <Badge variant="outline" className="rounded-none font-normal">
+        Balance due
+      </Badge>
+    );
+  }
   return null;
 }
 

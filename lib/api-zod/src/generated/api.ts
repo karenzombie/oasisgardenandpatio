@@ -1584,6 +1584,7 @@ export const ListAccountOrdersResponse = zod.object({
             "api_held",
             "api_not_completed",
             "manual",
+            "balance_due",
             "unpaid",
           ]),
           hasLiveApiHold: zod
@@ -1720,6 +1721,7 @@ export const GetAccountOrderResponse = zod.object({
         "api_held",
         "api_not_completed",
         "manual",
+        "balance_due",
         "unpaid",
       ]),
       hasLiveApiHold: zod

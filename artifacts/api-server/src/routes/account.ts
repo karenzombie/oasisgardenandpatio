@@ -722,6 +722,7 @@ router.get(
         placedAt: ordersTable.placedAt,
         status: ordersTable.status,
         total: ordersTable.total,
+        balanceDue: ordersTable.balanceDue,
         itemCount: sql<number>`(
           select coalesce(sum(${orderItemsTable.quantity}), 0)::int
           from ${orderItemsTable}
@@ -767,6 +768,7 @@ router.get(
           itemCount: r.itemCount,
           paymentState: deriveOrderPaymentState(
             paymentsByOrderId.get(r.id) ?? [],
+            Number(r.balanceDue) === 0,
           ),
         })),
       }),
@@ -814,7 +816,10 @@ router.get(
       .select({ status: paymentsTable.status, rawResponse: paymentsTable.rawResponse })
       .from(paymentsTable)
       .where(eq(paymentsTable.orderId, order.id));
-    const paymentState = deriveOrderPaymentState(orderPayments);
+    const paymentState = deriveOrderPaymentState(
+      orderPayments,
+      Number(order.balanceDue) === 0,
+    );
 
     const items = await db
       .select({

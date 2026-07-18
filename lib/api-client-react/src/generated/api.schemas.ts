@@ -2430,6 +2430,7 @@ export const OrderPaymentStateKind = {
   api_held: "api_held",
   api_not_completed: "api_not_completed",
   manual: "manual",
+  balance_due: "balance_due",
   unpaid: "unpaid",
 } as const;
 

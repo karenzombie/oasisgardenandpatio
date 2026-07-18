@@ -8990,6 +8990,7 @@ components:
             - api_held
             - api_not_completed
             - manual
+            - balance_due
             - unpaid
         hasLiveApiHold:
           type: boolean
