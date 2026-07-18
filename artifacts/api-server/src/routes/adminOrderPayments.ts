@@ -555,6 +555,14 @@ async function handleHeldTransactionAction(
           .where(eq(paymentsTable.id, paymentId));
         await recomputeOrderTotals(tx, orderId);
       });
+      await recordHistory(req, {
+        entityType: "order",
+        entityId: orderId,
+        changeType: "update",
+        snapshot: { paymentId, status: newStatus },
+        previousSnapshot: { paymentId, previousStatus: "pending" },
+        notes: `payment.resync id=${paymentId} transId=${payment.transactionId} action=${action} resyncedState=${resyncedState}`,
+      });
       const staleMsg =
         resyncedState === "captured"
           ? "This hold had already been captured by the gateway. Your records have been updated to reflect the current state."
@@ -596,7 +604,7 @@ async function handleHeldTransactionAction(
         throw new Error("payment-row-already-processed");
       }
 
-      const newStatus = action === "approve" ? "completed" : "failed";
+      const newStatus = action === "approve" ? "completed" : "voided";
       await tx
         .update(paymentsTable)
         .set({ status: newStatus, receivedAt: new Date() })
@@ -605,22 +613,34 @@ async function handleHeldTransactionAction(
     });
   } catch (err) {
     dbUpdateFailed = true;
-    req.log?.error(
-      {
-        paymentId,
-        transId: payment.transactionId,
-        action,
-        orderId,
-        isRowConflict:
-          err instanceof Error && err.message === "payment-row-already-processed",
-      },
-      "CRITICAL: gateway action succeeded but DB update failed — manual reconciliation required",
-    );
-    res.status(500).json({
-      error:
-        `The gateway action went through (transaction ID: ${payment.transactionId}) ` +
-        `but we could not update records. Do not retry. Contact an administrator immediately.`,
-    });
+    const isRowConflict =
+      err instanceof Error && err.message === "payment-row-already-processed";
+    if (isRowConflict) {
+      // Another admin actioned this payment concurrently — Authorize.net processed
+      // one action (ours arrived second at the gateway level and got a stale-hold
+      // error there, OR our DB write lost the race). Either way the row is already
+      // correctly updated. No alarm needed.
+      res.status(409).json({
+        error:
+          "This payment was just actioned by another admin — refresh to see the current state.",
+      });
+    } else {
+      // Genuine DB failure after confirmed gateway success — needs reconciliation.
+      req.log?.error(
+        {
+          paymentId,
+          transId: payment.transactionId,
+          action,
+          orderId,
+        },
+        "CRITICAL: gateway action succeeded but DB update failed — manual reconciliation required",
+      );
+      res.status(500).json({
+        error:
+          `The gateway action went through (transaction ID: ${payment.transactionId}) ` +
+          `but we could not update records. Do not retry. Contact an administrator immediately.`,
+      });
+    }
   }
 
   if (dbUpdateFailed) return;
