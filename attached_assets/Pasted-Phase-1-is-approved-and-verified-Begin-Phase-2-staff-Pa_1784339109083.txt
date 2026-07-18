@@ -1,0 +1,15 @@
+Phase 1 is approved and verified. Begin Phase 2: staff Payments truthfulness. Read-only display only, NO gateway calls (that is Phase 3). Do ONE phase, stop at the gate.
+
+In the staff order Payments area, for API payments (a payment with a stored raw_response), render an honest state using the shared helper from Phase 1, never green unless truly captured: green "Paid" only for a captured full payment, amber "Under review" for a held/pending payment, "Not completed" for a declined/voided/expired API payment. Render any unexpected status honestly and never green.
+Do NOT touch the existing amount-driven header badge ("Paid in full / Partial / Unpaid") for manual/in-store orders. That stays exactly as-is. You are ADDING API-state truthfulness alongside it, not replacing it. Before you design the layout, report in the gate how the new API state and the existing amount-driven badge coexist on the same panel when both apply (e.g. an online-origin order settled manually), so they don't contradict each other. Propose it, don't just build it.
+Surface the stored gateway detail for API payments, privacy-limited: transaction id, auth code, response reason text, card type, last four, timestamp, and AVS and CVV as STATUS ONLY ("Match" / "Mismatch" / "Not checked"). NEVER show the card number, the actual billing address, or the actual CVV value.
+Three specifics from the Phase 0 recon you must handle, not assume:
+
+responseReasonText is empty on approvals. The human-readable reason lives in raw_response.transactionResponse.messages[0].description. Fall back to that so the reason does not render blank on approved payments.
+Confirm in the gate whether you are reading AVS/CVV from the avs_response/cvv_response columns or from raw_response.transactionResponse, and pick whichever is actually populated. Paste the code-to-label mapping you use (e.g. AVS Y = Match, CVV P = "Not checked" since P means not processed). The mapping must be complete, not a partial guess.
+Distinguish API vs manual on each payment row so staff never conflate them. raw_response != null is the signal. Do not alter the manual Record Payment dialog or its data.
+
+
+Non-regression: Record Payment, Mark Paid in Full, partial payments, editing a payment, and the audit logging must all behave exactly as before for manual/in-store orders. Only add the API-state branches on top.
+
+At the gate, paste: the raw code diffs (not a summary), the coexistence proposal from point 2, the AVS/CVV mapping from point 4, and the full raw typecheck output. Run pnpm --filter ./lib/api-spec run codegen && git status --short if you touch the spec and paste it. Do NOT start Phase 3.

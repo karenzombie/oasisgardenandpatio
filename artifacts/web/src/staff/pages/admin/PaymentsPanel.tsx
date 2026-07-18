@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, Fragment } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, Pencil, Plus, Trash2 } from "lucide-react";
 import {
@@ -80,6 +80,62 @@ function fromLocalInputValue(v: string): string | null {
   const d = new Date(v);
   if (Number.isNaN(d.getTime())) return null;
   return d.toISOString();
+}
+
+const AVS_LABEL: Record<string, string> = {
+  X: "Match",
+  Y: "Match",
+  A: "Partial match",
+  W: "Partial match",
+  Z: "Partial match",
+  N: "Mismatch",
+  B: "Not checked",
+  E: "Not checked",
+  G: "Not checked",
+  P: "Not checked",
+  R: "Not checked",
+  S: "Not checked",
+  U: "Not checked",
+};
+
+const CVV_LABEL: Record<string, string> = {
+  M: "Match",
+  N: "Mismatch",
+  P: "Not checked",
+  S: "Not provided",
+  U: "Not checked",
+  X: "Not checked",
+};
+
+function avsLabel(code: string | null | undefined): string {
+  if (!code) return "—";
+  return AVS_LABEL[code.toUpperCase()] ?? `Unknown (${code})`;
+}
+
+function cvvLabel(code: string | null | undefined): string {
+  if (!code) return "—";
+  return CVV_LABEL[code.toUpperCase()] ?? `Unknown (${code})`;
+}
+
+function ApiStatusBadge({ status }: { status: string }) {
+  if (status === "completed") {
+    return (
+      <Badge className="bg-emerald-600 text-white hover:bg-emerald-600">
+        Paid
+      </Badge>
+    );
+  }
+  if (status === "pending") {
+    return (
+      <Badge className="bg-amber-500 text-white hover:bg-amber-500">
+        Under review
+      </Badge>
+    );
+  }
+  if (status === "voided" || status === "failed") {
+    return <Badge variant="destructive">Not completed</Badge>;
+  }
+  return <Badge variant="secondary">{status}</Badge>;
 }
 
 type FormState = {
@@ -389,62 +445,104 @@ export default function PaymentsPanel({
             </thead>
             <tbody>
               {payments.map((p) => (
-                <tr key={p.id} className="border-t">
-                  <td className="px-3 py-2 align-top">
-                    {fmtDateTime(p.receivedAt ?? p.createdAt)}
-                  </td>
-                  <td className="px-3 py-2 align-top">
-                    {methodLabel(p.paymentMethod)}
-                    {p.cardLast4 && (
-                      <div className="text-xs text-slate-500">
-                        {p.cardType ? `${p.cardType} ` : ""}•••• {p.cardLast4}
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-3 py-2 text-right align-top font-medium">
-                    {fmtMoney(p.amount)}
-                  </td>
-                  <td className="px-3 py-2 align-top">
-                    <Badge
-                      variant={
-                        p.status === "completed"
-                          ? "default"
-                          : p.status === "refunded" || p.status === "failed"
-                            ? "destructive"
-                            : "secondary"
-                      }
-                    >
-                      {p.status}
-                    </Badge>
-                  </td>
-                  <td className="px-3 py-2 align-top">
-                    {p.transactionId || "—"}
-                    {p.notes && (
-                      <div className="text-xs text-slate-500">{p.notes}</div>
-                    )}
-                  </td>
-                  <td className="px-3 py-2 align-top text-xs text-slate-500">
-                    {p.recordedByEmail ?? "—"}
-                  </td>
-                  <td className="px-3 py-2 align-top text-right">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => openEdit(p)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setConfirmDelete(p)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </td>
-                </tr>
+                <Fragment key={p.id}>
+                  <tr className="border-t">
+                    <td className="px-3 py-2 align-top">
+                      {fmtDateTime(p.receivedAt ?? p.createdAt)}
+                    </td>
+                    <td className="px-3 py-2 align-top">
+                      {methodLabel(p.paymentMethod)}
+                      {p.cardLast4 && (
+                        <div className="text-xs text-slate-500">
+                          {p.cardType ? `${p.cardType} ` : ""}•••• {p.cardLast4}
+                        </div>
+                      )}
+                      {p.isApiPayment && (
+                        <div className="text-xs text-slate-400 mt-0.5">
+                          Authorize.net
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-right align-top font-medium">
+                      {fmtMoney(p.amount)}
+                    </td>
+                    <td className="px-3 py-2 align-top">
+                      {p.isApiPayment ? (
+                        <ApiStatusBadge status={p.status} />
+                      ) : (
+                        <Badge
+                          variant={
+                            p.status === "completed"
+                              ? "default"
+                              : p.status === "refunded" || p.status === "failed"
+                                ? "destructive"
+                                : "secondary"
+                          }
+                        >
+                          {p.status}
+                        </Badge>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 align-top">
+                      {p.transactionId || "—"}
+                      {p.notes && (
+                        <div className="text-xs text-slate-500">{p.notes}</div>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 align-top text-xs text-slate-500">
+                      {p.recordedByEmail ?? "—"}
+                    </td>
+                    <td className="px-3 py-2 align-top text-right">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => openEdit(p)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setConfirmDelete(p)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </td>
+                  </tr>
+                  {p.isApiPayment && (
+                    <tr className="bg-slate-50/60">
+                      <td
+                        colSpan={7}
+                        className="px-3 pb-2.5 pt-0 text-xs text-slate-600"
+                      >
+                        <div className="flex flex-wrap gap-x-5 gap-y-1 pt-1.5 border-t border-slate-100">
+                          {p.authCode && (
+                            <span>
+                              <span className="text-slate-400">Auth:</span>{" "}
+                              <span className="font-mono">{p.authCode}</span>
+                            </span>
+                          )}
+                          {p.gatewayMessage && (
+                            <span>
+                              <span className="text-slate-400">Reason:</span>{" "}
+                              {p.gatewayMessage}
+                            </span>
+                          )}
+                          <span>
+                            <span className="text-slate-400">AVS:</span>{" "}
+                            {avsLabel(p.avsResponse)}
+                          </span>
+                          <span>
+                            <span className="text-slate-400">CVV:</span>{" "}
+                            {cvvLabel(p.cvvResponse)}
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
               ))}
             </tbody>
           </table>

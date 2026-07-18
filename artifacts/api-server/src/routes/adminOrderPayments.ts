@@ -53,7 +53,15 @@ function money(n: number): string {
   return (Math.round(n * 100) / 100).toFixed(2);
 }
 
+type AuthNetRawResponse = {
+  transactionResponse?: {
+    authCode?: string;
+    messages?: Array<{ description?: string }>;
+  };
+};
+
 function paymentToPayload(p: Payment, recordedByEmail: string | null) {
+  const raw = p.rawResponse as AuthNetRawResponse | null;
   return {
     id: p.id,
     orderId: p.orderId,
@@ -68,6 +76,12 @@ function paymentToPayload(p: Payment, recordedByEmail: string | null) {
     recordedByUserId: p.recordedByUserId,
     recordedByEmail,
     createdAt: p.createdAt.toISOString(),
+    isApiPayment: p.rawResponse != null,
+    avsResponse: p.avsResponse,
+    cvvResponse: p.cvvResponse,
+    authCode: raw?.transactionResponse?.authCode ?? null,
+    gatewayMessage:
+      raw?.transactionResponse?.messages?.[0]?.description ?? null,
   };
 }
 

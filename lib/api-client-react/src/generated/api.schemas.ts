@@ -886,6 +886,11 @@ export interface AdminOrderPayment {
   recordedByUserId: number | null;
   recordedByEmail: string | null;
   createdAt: string;
+  isApiPayment: boolean;
+  avsResponse: string | null;
+  cvvResponse: string | null;
+  authCode: string | null;
+  gatewayMessage: string | null;
 }
 
 export interface AdminOrderDetail {

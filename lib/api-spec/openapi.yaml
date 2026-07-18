@@ -6807,7 +6807,12 @@ components:
         recordedByUserId: { type: integer, nullable: true }
         recordedByEmail: { type: string, nullable: true }
         createdAt: { type: string, format: date-time }
-      required: [id, orderId, amount, paymentMethod, status, transactionId, cardLast4, cardType, notes, receivedAt, recordedByUserId, recordedByEmail, createdAt]
+        isApiPayment: { type: boolean }
+        avsResponse: { type: string, nullable: true }
+        cvvResponse: { type: string, nullable: true }
+        authCode: { type: string, nullable: true }
+        gatewayMessage: { type: string, nullable: true }
+      required: [id, orderId, amount, paymentMethod, status, transactionId, cardLast4, cardType, notes, receivedAt, recordedByUserId, recordedByEmail, createdAt, isApiPayment, avsResponse, cvvResponse, authCode, gatewayMessage]
     AdminCreatePaymentRequest:
       type: object
       properties:
