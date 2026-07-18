@@ -12,7 +12,6 @@ import {
   getGetCartQueryKey,
   getGetCheckoutPaymentConfigQueryKey,
   getListAccountAddressesQueryKey,
-  type AccountAddress,
   type CheckoutQuoteResponse,
 } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
@@ -96,12 +95,23 @@ export default function Checkout() {
   });
 
   const addresses = addrData?.addresses ?? [];
-  const [selectedId, setSelectedId] = useState<number | "new">("new");
-  const [form, setForm] = useState<AddressForm>(() => ({
+
+  // Per-section billing/shipping form state
+  const [billingForm, setBillingForm] = useState<AddressForm>(() => ({
     ...EMPTY_FORM,
     recipientName:
       [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "",
   }));
+  const [shippingForm, setShippingForm] = useState<AddressForm>(EMPTY_FORM);
+
+  // Saved address IDs — set when a signed-in customer's saved address prefills
+  // the section. Cleared when they edit any field inline.
+  const [billingSavedId, setBillingSavedId] = useState<number | null>(null);
+  const [shippingSavedId, setShippingSavedId] = useState<number | null>(null);
+
+  // "Shipping same as billing" checkbox — default checked
+  const [shipSameBilling, setShipSameBilling] = useState(true);
+
   const [guest, setGuest] = useState<GuestContactForm>(EMPTY_GUEST);
   const [shippingMethod, setShippingMethod] = useState("standard");
   const [specialInstructions, setSpecialInstructions] = useState("");
@@ -124,18 +134,49 @@ export default function Checkout() {
   // flips) is dropped. Reset onError ONLY on declines so the customer can
   // retry with a different card. NOT reset on 500/503 — do not resubmit.
   const orderSubmittedRef = useRef(false);
+  // One-shot latch: prevents the saved-address prefill from re-running after
+  // the customer has started editing. Set the first time addresses arrive.
+  const prefillDoneRef = useRef(false);
 
-  // Default to first saved address when they load (authed only)
+  // Prefill billing and shipping sections from the customer's saved addresses
+  // the first time the address list loads (signed-in only). Uses a ref so
+  // editing a field does not re-trigger and overwrite what the customer typed.
   useEffect(() => {
-    if (addresses.length > 0 && selectedId === "new") {
-      const def = addresses.find((a) => a.isDefault) ?? addresses[0];
-      setSelectedId(def.id);
+    if (prefillDoneRef.current || addresses.length === 0) return;
+    prefillDoneRef.current = true;
+
+    const savedBilling = addresses.find((a) => a.type === "billing");
+    if (savedBilling) {
+      setBillingForm((prev) => ({
+        recipientName: savedBilling.recipientName ?? prev.recipientName,
+        street1: savedBilling.street1,
+        street2: savedBilling.street2 ?? "",
+        city: savedBilling.city,
+        state: savedBilling.state,
+        zip: savedBilling.zip,
+        phone: savedBilling.phone ?? "",
+      }));
+      setBillingSavedId(savedBilling.id);
     }
-  }, [addresses, selectedId]);
 
-  // Keep recipient name in sync once user loads
+    const savedShipping = addresses.find((a) => a.type === "shipping");
+    if (savedShipping) {
+      setShippingForm((prev) => ({
+        recipientName: savedShipping.recipientName ?? prev.recipientName,
+        street1: savedShipping.street1,
+        street2: savedShipping.street2 ?? "",
+        city: savedShipping.city,
+        state: savedShipping.state,
+        zip: savedShipping.zip,
+        phone: savedShipping.phone ?? "",
+      }));
+      setShippingSavedId(savedShipping.id);
+    }
+  }, [addresses]);
+
+  // Keep billing recipient name in sync once user loads (signed-in only).
   useEffect(() => {
-    setForm((f) =>
+    setBillingForm((f) =>
       f.recipientName
         ? f
         : {
@@ -146,11 +187,11 @@ export default function Checkout() {
     );
   }, [user]);
 
-  // For guests, mirror the contact name into the shipping recipient unless
+  // For guests, mirror the contact name into the billing recipient unless
   // they've typed something different there.
   useEffect(() => {
     if (isAuthenticated) return;
-    setForm((f) => {
+    setBillingForm((f) => {
       const auto = `${guest.firstName} ${guest.lastName}`.trim();
       const previousAuto = f.recipientName.trim();
       if (
@@ -217,14 +258,14 @@ export default function Checkout() {
   });
 
   const subtotalNum = Number(cart?.subtotal ?? 0);
-  const selectedAddress: AccountAddress | null = useMemo(() => {
-    if (typeof selectedId === "number")
-      return addresses.find((a) => a.id === selectedId) ?? null;
-    return null;
-  }, [addresses, selectedId]);
-  const shippingState =
-    (selectedAddress?.state ?? form.state).toUpperCase().trim();
-  const shippingZip = (selectedAddress?.zip ?? form.zip).trim();
+  // shippingState/shippingZip drive the tax quote. When the checkbox is
+  // checked, shipping inherits billing values; otherwise use the shipping form.
+  const shippingState = (
+    shipSameBilling ? billingForm.state : shippingForm.state
+  ).toUpperCase().trim();
+  const shippingZip = (
+    shipSameBilling ? billingForm.zip : shippingForm.zip
+  ).trim();
 
   const quoteM = useQuoteCheckout();
   const quoteMutate = quoteM.mutate;
@@ -280,8 +321,16 @@ export default function Checkout() {
     ? Number(quote.total)
     : subtotalNum + shippingNum + taxNum;
 
-  function setField<K extends keyof AddressForm>(key: K, value: string) {
-    setForm((f) => ({ ...f, [key]: value }));
+  // setBillingField / setShippingField clear the saved ID when the customer
+  // edits inline, so the payload switches from shippingAddressId/billingAddressId
+  // to inline address objects.
+  function setBillingField<K extends keyof AddressForm>(key: K, value: string) {
+    setBillingSavedId(null);
+    setBillingForm((f) => ({ ...f, [key]: value }));
+  }
+  function setShippingField<K extends keyof AddressForm>(key: K, value: string) {
+    setShippingSavedId(null);
+    setShippingForm((f) => ({ ...f, [key]: value }));
   }
   function setGuestField<K extends keyof GuestContactForm>(
     key: K,
@@ -290,18 +339,28 @@ export default function Checkout() {
     setGuest((g) => ({ ...g, [key]: value }));
   }
 
-  // HostedForm is disabled until a valid shipping address is present. This
-  // prevents the card popup from opening when the customer hasn't filled in
-  // their address yet, providing a clear ordering of steps.
+  // Billing is complete when the four required fields are non-empty.
+  // (When a saved address is prefilling the form the fields are already filled.)
+  const billingComplete = useMemo(
+    () =>
+      billingForm.street1.trim() !== "" &&
+      billingForm.city.trim() !== "" &&
+      billingForm.state.trim() !== "" &&
+      billingForm.zip.trim() !== "",
+    [billingForm],
+  );
+
+  // HostedForm is disabled until both billing and shipping are complete.
   const addressComplete = useMemo(() => {
-    if (typeof selectedId === "number") return true; // saved address selected
+    if (!billingComplete) return false;
+    if (shipSameBilling) return true; // shipping inherits billing
     return (
-      form.street1.trim() !== "" &&
-      form.city.trim() !== "" &&
-      form.state.trim() !== "" &&
-      form.zip.trim() !== ""
+      shippingForm.street1.trim() !== "" &&
+      shippingForm.city.trim() !== "" &&
+      shippingForm.state.trim() !== "" &&
+      shippingForm.zip.trim() !== ""
     );
-  }, [selectedId, form]);
+  }, [billingComplete, shipSameBilling, shippingForm]);
 
   /**
    * Called by react-acceptjs HostedForm when Authorize.net returns a result.
@@ -324,28 +383,50 @@ export default function Checkout() {
     if (orderSubmittedRef.current) return;
     orderSubmittedRef.current = true;
 
-    const addressPayload =
-      typeof selectedId === "number"
-        ? {
-            shippingAddressId: selectedId,
-            billingSameAsShipping: true,
-            shippingMethod,
-            specialInstructions: specialInstructions || undefined,
-          }
-        : {
+    // Build the shipping part: if checkbox is checked, shipping equals billing.
+    const shippingSrc = shipSameBilling ? billingForm : shippingForm;
+    const shippingSavedIdForPayload = shipSameBilling
+      ? billingSavedId
+      : shippingSavedId;
+    const shippingPayload =
+      shippingSavedIdForPayload !== null
+        ? ({ shippingAddressId: shippingSavedIdForPayload } as const)
+        : ({
             shippingAddress: {
-              recipientName: form.recipientName || undefined,
-              street1: form.street1,
-              street2: form.street2 || undefined,
-              city: form.city,
-              state: form.state,
-              zip: form.zip,
-              phone: form.phone || undefined,
+              recipientName: shippingSrc.recipientName || undefined,
+              street1: shippingSrc.street1,
+              street2: shippingSrc.street2 || undefined,
+              city: shippingSrc.city,
+              state: shippingSrc.state,
+              zip: shippingSrc.zip,
+              phone: shippingSrc.phone || undefined,
             },
-            billingSameAsShipping: true,
-            shippingMethod,
-            specialInstructions: specialInstructions || undefined,
-          };
+          } as const);
+
+    // Build the billing part.
+    const billingPayload = shipSameBilling
+      ? ({ billingSameAsShipping: true } as const)
+      : billingSavedId !== null
+        ? ({ billingSameAsShipping: false, billingAddressId: billingSavedId } as const)
+        : ({
+            billingSameAsShipping: false,
+            billingAddress: {
+              recipientName: billingForm.recipientName || undefined,
+              street1: billingForm.street1,
+              street2: billingForm.street2 || undefined,
+              city: billingForm.city,
+              state: billingForm.state,
+              zip: billingForm.zip,
+              phone: billingForm.phone || undefined,
+            },
+          } as const);
+
+    const addressPayload = {
+      ...shippingPayload,
+      ...billingPayload,
+      shippingMethod,
+      specialInstructions: specialInstructions || undefined,
+    };
 
     placeOrderM.mutate({
       data: {
@@ -468,121 +549,174 @@ export default function Checkout() {
             )}
           </section>
 
+          {/* Billing address */}
+          <section>
+            <h2 className="font-serif text-xl mb-4">Billing Address</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <Label htmlFor="billingRecipientName">Full name</Label>
+                <Input
+                  id="billingRecipientName"
+                  value={billingForm.recipientName}
+                  onChange={(e) => setBillingField("recipientName", e.target.value)}
+                  className="rounded-none"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <Label htmlFor="billingStreet1">Street address *</Label>
+                <Input
+                  id="billingStreet1"
+                  required
+                  value={billingForm.street1}
+                  onChange={(e) => setBillingField("street1", e.target.value)}
+                  className="rounded-none"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <Label htmlFor="billingStreet2">Apt, suite, etc.</Label>
+                <Input
+                  id="billingStreet2"
+                  value={billingForm.street2}
+                  onChange={(e) => setBillingField("street2", e.target.value)}
+                  className="rounded-none"
+                />
+              </div>
+              <div>
+                <Label htmlFor="billingCity">City *</Label>
+                <Input
+                  id="billingCity"
+                  required
+                  value={billingForm.city}
+                  onChange={(e) => setBillingField("city", e.target.value)}
+                  className="rounded-none"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="billingState">State *</Label>
+                  <Input
+                    id="billingState"
+                    required
+                    maxLength={2}
+                    value={billingForm.state}
+                    onChange={(e) =>
+                      setBillingField("state", e.target.value.toUpperCase())
+                    }
+                    className="rounded-none"
+                    placeholder="CA"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="billingZip">ZIP *</Label>
+                  <Input
+                    id="billingZip"
+                    required
+                    value={billingForm.zip}
+                    onChange={(e) => setBillingField("zip", e.target.value)}
+                    className="rounded-none"
+                  />
+                </div>
+              </div>
+              <div className="md:col-span-2">
+                <Label htmlFor="billingPhone">Phone</Label>
+                <Input
+                  id="billingPhone"
+                  type="tel"
+                  value={billingForm.phone}
+                  onChange={(e) => setBillingField("phone", e.target.value)}
+                  className="rounded-none"
+                />
+              </div>
+            </div>
+          </section>
+
           {/* Shipping address */}
           <section>
             <h2 className="font-serif text-xl mb-4">Shipping Address</h2>
-
-            {isAuthenticated && addresses.length > 0 ? (
-              <div className="space-y-2 mb-4">
-                {addresses.map((a) => (
-                  <label
-                    key={a.id}
-                    className={`flex items-start gap-3 border p-4 cursor-pointer ${
-                      selectedId === a.id
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-foreground/40"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="address"
-                      checked={selectedId === a.id}
-                      onChange={() => setSelectedId(a.id)}
-                      className="mt-1"
-                    />
-                    <div className="text-sm">
-                      {a.recipientName ? (
-                        <p className="font-medium">{a.recipientName}</p>
-                      ) : null}
-                      <p>{a.street1}</p>
-                      {a.street2 ? <p>{a.street2}</p> : null}
-                      <p>
-                        {a.city}, {a.state} {a.zip}
-                      </p>
-                      {a.phone ? (
-                        <p className="text-muted-foreground">{a.phone}</p>
-                      ) : null}
-                    </div>
-                  </label>
-                ))}
-              </div>
-            ) : null}
-
-            {selectedId === "new" ? (
+            <label className="flex items-center gap-2 text-sm cursor-pointer mb-4">
+              <input
+                type="checkbox"
+                checked={shipSameBilling}
+                onChange={(e) => setShipSameBilling(e.target.checked)}
+                className="rounded"
+              />
+              Same as billing address
+            </label>
+            {!shipSameBilling ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
-                  <Label htmlFor="recipientName">Full name</Label>
+                  <Label htmlFor="shippingRecipientName">Full name</Label>
                   <Input
-                    id="recipientName"
-                    value={form.recipientName}
-                    onChange={(e) => setField("recipientName", e.target.value)}
+                    id="shippingRecipientName"
+                    value={shippingForm.recipientName}
+                    onChange={(e) => setShippingField("recipientName", e.target.value)}
                     className="rounded-none"
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <Label htmlFor="street1">Street address *</Label>
+                  <Label htmlFor="shippingStreet1">Street address *</Label>
                   <Input
-                    id="street1"
+                    id="shippingStreet1"
                     required
-                    value={form.street1}
-                    onChange={(e) => setField("street1", e.target.value)}
+                    value={shippingForm.street1}
+                    onChange={(e) => setShippingField("street1", e.target.value)}
                     className="rounded-none"
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <Label htmlFor="street2">Apt, suite, etc.</Label>
+                  <Label htmlFor="shippingStreet2">Apt, suite, etc.</Label>
                   <Input
-                    id="street2"
-                    value={form.street2}
-                    onChange={(e) => setField("street2", e.target.value)}
+                    id="shippingStreet2"
+                    value={shippingForm.street2}
+                    onChange={(e) => setShippingField("street2", e.target.value)}
                     className="rounded-none"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="city">City *</Label>
+                  <Label htmlFor="shippingCity">City *</Label>
                   <Input
-                    id="city"
+                    id="shippingCity"
                     required
-                    value={form.city}
-                    onChange={(e) => setField("city", e.target.value)}
+                    value={shippingForm.city}
+                    onChange={(e) => setShippingField("city", e.target.value)}
                     className="rounded-none"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="state">State *</Label>
+                    <Label htmlFor="shippingState">State *</Label>
                     <Input
-                      id="state"
+                      id="shippingState"
                       required
                       maxLength={2}
-                      value={form.state}
+                      value={shippingForm.state}
                       onChange={(e) =>
-                        setField("state", e.target.value.toUpperCase())
+                        setShippingField("state", e.target.value.toUpperCase())
                       }
                       className="rounded-none"
                       placeholder="CA"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="zip">ZIP *</Label>
+                    <Label htmlFor="shippingZipInput">ZIP *</Label>
                     <Input
-                      id="zip"
+                      id="shippingZipInput"
                       required
-                      value={form.zip}
-                      onChange={(e) => setField("zip", e.target.value)}
+                      value={shippingForm.zip}
+                      onChange={(e) => setShippingField("zip", e.target.value)}
                       className="rounded-none"
                     />
                   </div>
                 </div>
                 <div className="md:col-span-2">
-                  <Label htmlFor="phone">
+                  <Label htmlFor="shippingPhone">
                     Phone {!isAuthenticated ? "(uses your contact phone if blank)" : ""}
                   </Label>
                   <Input
-                    id="phone"
+                    id="shippingPhone"
                     type="tel"
-                    value={form.phone}
-                    onChange={(e) => setField("phone", e.target.value)}
+                    value={shippingForm.phone}
+                    onChange={(e) => setShippingField("phone", e.target.value)}
                     className="rounded-none"
                   />
                 </div>
@@ -755,7 +889,7 @@ export default function Checkout() {
                 {/* Prompt shown when address is not yet complete. */}
                 {!addressComplete ? (
                   <p className="mt-2 text-[11px] text-muted-foreground">
-                    Fill in your shipping address above to enable payment.
+                    Fill in your billing and shipping address above to enable payment.
                   </p>
                 ) : null}
               </>

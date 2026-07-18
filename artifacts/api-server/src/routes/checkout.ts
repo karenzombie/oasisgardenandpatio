@@ -155,6 +155,12 @@ router.post(
         });
         return;
       }
+      if (data.billingAddressId) {
+        res.status(400).json({
+          error: "Guest checkout cannot use a saved address.",
+        });
+        return;
+      }
       if (!data.shippingAddress) {
         res.status(400).json({ error: "Shipping address is required" });
         return;
