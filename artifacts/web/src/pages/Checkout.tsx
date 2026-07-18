@@ -177,17 +177,17 @@ export default function Checkout() {
         navigate(`/order-confirmation/${encodeURIComponent(resp.orderNumber)}${heldSuffix}`);
       },
       onError: (err: unknown) => {
+        // customFetch throws ApiError instances whose parsed JSON body is
+        // at .data (not .response.data — that is the axios shape).
         const data = (
           err as {
-            response?: {
-              data?: {
-                error?: string;
-                paymentDeclined?: boolean;
-                paymentUnavailable?: boolean;
-              };
+            data?: {
+              error?: string;
+              paymentDeclined?: boolean;
+              paymentUnavailable?: boolean;
             };
           }
-        )?.response?.data;
+        )?.data;
         const message =
           data?.error ??
           (err as { message?: string })?.message ??
