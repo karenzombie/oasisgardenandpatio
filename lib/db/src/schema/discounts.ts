@@ -27,6 +27,7 @@ export const discountEventsTable = pgTable(
     endDate: timestamp("end_date", { withTimezone: true }),
     isStackable: boolean("is_stackable").notNull().default(false),
     isActive: boolean("is_active").notNull().default(true),
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -63,6 +64,7 @@ export const couponCodesTable = pgTable(
     expirationDate: timestamp("expiration_date", { withTimezone: true }),
     isStackable: boolean("is_stackable").notNull().default(false),
     isActive: boolean("is_active").notNull().default(true),
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

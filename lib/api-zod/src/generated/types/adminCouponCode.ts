@@ -24,6 +24,7 @@ export interface AdminCouponCode {
   expirationDate: Date | null;
   isStackable: boolean;
   isActive: boolean;
+  archivedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }

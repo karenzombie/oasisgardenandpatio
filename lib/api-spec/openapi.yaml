@@ -5205,10 +5205,15 @@ paths:
     get:
       operationId: adminListDiscountEvents
       tags: [admin-discounts]
-      summary: List all discount events
+      summary: List discount events (non-archived by default)
+      parameters:
+        - name: includeArchived
+          in: query
+          schema: { type: boolean }
+          description: When true, include archived events
       responses:
         "200":
-          description: All events, active first
+          description: Events, active first
           content:
             application/json:
               schema:
@@ -5263,14 +5268,47 @@ paths:
         "404":
           description: Not found
           content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/discount-events/{id}/archive:
+    post:
+      operationId: adminArchiveDiscountEvent
+      tags: [admin-discounts]
+      summary: Archive a discount event (soft-delete)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Archived event
+          content: { application/json: { schema: { $ref: "#/components/schemas/AdminDiscountEvent" } } }
+        "404":
+          description: Not found
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/discount-events/{id}/restore:
+    post:
+      operationId: adminRestoreDiscountEvent
+      tags: [admin-discounts]
+      summary: Restore an archived discount event
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Restored event
+          content: { application/json: { schema: { $ref: "#/components/schemas/AdminDiscountEvent" } } }
+        "404":
+          description: Not found
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
   /admin/coupon-codes:
     get:
       operationId: adminListCouponCodes
       tags: [admin-discounts]
-      summary: List all coupon codes
+      summary: List coupon codes (non-archived by default)
+      parameters:
+        - name: includeArchived
+          in: query
+          schema: { type: boolean }
+          description: When true, include archived coupons
       responses:
         "200":
-          description: All coupons, active first
+          description: Coupons, active first
           content:
             application/json:
               schema:
@@ -5328,6 +5366,34 @@ paths:
         - { name: id, in: path, required: true, schema: { type: integer } }
       responses:
         "204": { description: Deleted }
+        "404":
+          description: Not found
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/coupon-codes/{id}/archive:
+    post:
+      operationId: adminArchiveCouponCode
+      tags: [admin-discounts]
+      summary: Archive a coupon code (soft-delete)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Archived coupon
+          content: { application/json: { schema: { $ref: "#/components/schemas/AdminCouponCode" } } }
+        "404":
+          description: Not found
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/coupon-codes/{id}/restore:
+    post:
+      operationId: adminRestoreCouponCode
+      tags: [admin-discounts]
+      summary: Restore an archived coupon code
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Restored coupon
+          content: { application/json: { schema: { $ref: "#/components/schemas/AdminCouponCode" } } }
         "404":
           description: Not found
           content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
@@ -10368,9 +10434,10 @@ components:
         endDate: { type: string, format: date-time, nullable: true }
         isStackable: { type: boolean }
         isActive: { type: boolean }
+        archivedAt: { type: string, format: date-time, nullable: true }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
-      required: [id, name, type, value, appliesTo, targetIds, startDate, endDate, isStackable, isActive, createdAt, updatedAt]
+      required: [id, name, type, value, appliesTo, targetIds, startDate, endDate, isStackable, isActive, archivedAt, createdAt, updatedAt]
     CreateDiscountEventRequest:
       type: object
       properties:
@@ -10419,9 +10486,10 @@ components:
         expirationDate: { type: string, format: date-time, nullable: true }
         isStackable: { type: boolean }
         isActive: { type: boolean }
+        archivedAt: { type: string, format: date-time, nullable: true }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
-      required: [id, code, discountType, value, minOrderAmount, maxUsesTotal, currentUses, singleUsePerCustomer, appliesTo, targetIds, startDate, expirationDate, isStackable, isActive, createdAt, updatedAt]
+      required: [id, code, discountType, value, minOrderAmount, maxUsesTotal, currentUses, singleUsePerCustomer, appliesTo, targetIds, startDate, expirationDate, isStackable, isActive, archivedAt, createdAt, updatedAt]
     CreateCouponCodeRequest:
       type: object
       properties:

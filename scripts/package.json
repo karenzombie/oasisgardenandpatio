@@ -57,6 +57,7 @@
     "upload-galtech-missing-images": "tsx ./src/uploadGaltechMissingImages.ts",
     "upload-homecrest-product-images": "tsx ./src/uploadHomecrestProductImages.ts",
     "export-products": "tsx ./src/exportProducts.ts",
+    "clear-discount-test-data": "tsx ./src/clearDiscountTestData.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {

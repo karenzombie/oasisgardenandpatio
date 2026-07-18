@@ -66,8 +66,10 @@ import type {
   AdminListAuditLogParams,
   AdminListCancellationRequestsParams,
   AdminListCompletedDeliveriesParams,
+  AdminListCouponCodesParams,
   AdminListCustomersParams,
   AdminListDirectShipDeliveriesParams,
+  AdminListDiscountEventsParams,
   AdminListFinishCollectionsParams,
   AdminListHistory200,
   AdminListHistoryParams,
@@ -18286,44 +18288,68 @@ export const useStaffMarkAllNotificationsRead = <
 };
 
 /**
- * @summary List all discount events
+ * @summary List discount events (non-archived by default)
  */
-export const getAdminListDiscountEventsUrl = () => {
-  return `/api/admin/discount-events`;
+export const getAdminListDiscountEventsUrl = (
+  params?: AdminListDiscountEventsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/admin/discount-events?${stringifiedParams}`
+    : `/api/admin/discount-events`;
 };
 
 export const adminListDiscountEvents = async (
+  params?: AdminListDiscountEventsParams,
   options?: RequestInit,
 ): Promise<AdminDiscountEvent[]> => {
-  return customFetch<AdminDiscountEvent[]>(getAdminListDiscountEventsUrl(), {
-    ...options,
-    method: "GET",
-  });
+  return customFetch<AdminDiscountEvent[]>(
+    getAdminListDiscountEventsUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
 };
 
-export const getAdminListDiscountEventsQueryKey = () => {
-  return [`/api/admin/discount-events`] as const;
+export const getAdminListDiscountEventsQueryKey = (
+  params?: AdminListDiscountEventsParams,
+) => {
+  return [`/api/admin/discount-events`, ...(params ? [params] : [])] as const;
 };
 
 export const getAdminListDiscountEventsQueryOptions = <
   TData = Awaited<ReturnType<typeof adminListDiscountEvents>>,
   TError = ErrorType<unknown>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof adminListDiscountEvents>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}) => {
+>(
+  params?: AdminListDiscountEventsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminListDiscountEvents>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
-    queryOptions?.queryKey ?? getAdminListDiscountEventsQueryKey();
+    queryOptions?.queryKey ?? getAdminListDiscountEventsQueryKey(params);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof adminListDiscountEvents>>
-  > = ({ signal }) => adminListDiscountEvents({ signal, ...requestOptions });
+  > = ({ signal }) =>
+    adminListDiscountEvents(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof adminListDiscountEvents>>,
@@ -18338,21 +18364,24 @@ export type AdminListDiscountEventsQueryResult = NonNullable<
 export type AdminListDiscountEventsQueryError = ErrorType<unknown>;
 
 /**
- * @summary List all discount events
+ * @summary List discount events (non-archived by default)
  */
 
 export function useAdminListDiscountEvents<
   TData = Awaited<ReturnType<typeof adminListDiscountEvents>>,
   TError = ErrorType<unknown>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof adminListDiscountEvents>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getAdminListDiscountEventsQueryOptions(options);
+>(
+  params?: AdminListDiscountEventsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminListDiscountEvents>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminListDiscountEventsQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
@@ -18621,43 +18650,233 @@ export const useAdminDeleteDiscountEvent = <
 };
 
 /**
- * @summary List all coupon codes
+ * @summary Archive a discount event (soft-delete)
  */
-export const getAdminListCouponCodesUrl = () => {
-  return `/api/admin/coupon-codes`;
+export const getAdminArchiveDiscountEventUrl = (id: number) => {
+  return `/api/admin/discount-events/${id}/archive`;
+};
+
+export const adminArchiveDiscountEvent = async (
+  id: number,
+  options?: RequestInit,
+): Promise<AdminDiscountEvent> => {
+  return customFetch<AdminDiscountEvent>(getAdminArchiveDiscountEventUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getAdminArchiveDiscountEventMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminArchiveDiscountEvent>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminArchiveDiscountEvent>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["adminArchiveDiscountEvent"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminArchiveDiscountEvent>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return adminArchiveDiscountEvent(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminArchiveDiscountEventMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminArchiveDiscountEvent>>
+>;
+
+export type AdminArchiveDiscountEventMutationError = ErrorType<Error>;
+
+/**
+ * @summary Archive a discount event (soft-delete)
+ */
+export const useAdminArchiveDiscountEvent = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminArchiveDiscountEvent>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminArchiveDiscountEvent>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getAdminArchiveDiscountEventMutationOptions(options));
+};
+
+/**
+ * @summary Restore an archived discount event
+ */
+export const getAdminRestoreDiscountEventUrl = (id: number) => {
+  return `/api/admin/discount-events/${id}/restore`;
+};
+
+export const adminRestoreDiscountEvent = async (
+  id: number,
+  options?: RequestInit,
+): Promise<AdminDiscountEvent> => {
+  return customFetch<AdminDiscountEvent>(getAdminRestoreDiscountEventUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getAdminRestoreDiscountEventMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminRestoreDiscountEvent>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminRestoreDiscountEvent>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["adminRestoreDiscountEvent"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminRestoreDiscountEvent>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return adminRestoreDiscountEvent(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminRestoreDiscountEventMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminRestoreDiscountEvent>>
+>;
+
+export type AdminRestoreDiscountEventMutationError = ErrorType<Error>;
+
+/**
+ * @summary Restore an archived discount event
+ */
+export const useAdminRestoreDiscountEvent = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminRestoreDiscountEvent>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminRestoreDiscountEvent>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getAdminRestoreDiscountEventMutationOptions(options));
+};
+
+/**
+ * @summary List coupon codes (non-archived by default)
+ */
+export const getAdminListCouponCodesUrl = (
+  params?: AdminListCouponCodesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/admin/coupon-codes?${stringifiedParams}`
+    : `/api/admin/coupon-codes`;
 };
 
 export const adminListCouponCodes = async (
+  params?: AdminListCouponCodesParams,
   options?: RequestInit,
 ): Promise<AdminCouponCode[]> => {
-  return customFetch<AdminCouponCode[]>(getAdminListCouponCodesUrl(), {
+  return customFetch<AdminCouponCode[]>(getAdminListCouponCodesUrl(params), {
     ...options,
     method: "GET",
   });
 };
 
-export const getAdminListCouponCodesQueryKey = () => {
-  return [`/api/admin/coupon-codes`] as const;
+export const getAdminListCouponCodesQueryKey = (
+  params?: AdminListCouponCodesParams,
+) => {
+  return [`/api/admin/coupon-codes`, ...(params ? [params] : [])] as const;
 };
 
 export const getAdminListCouponCodesQueryOptions = <
   TData = Awaited<ReturnType<typeof adminListCouponCodes>>,
   TError = ErrorType<unknown>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof adminListCouponCodes>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}) => {
+>(
+  params?: AdminListCouponCodesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminListCouponCodes>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getAdminListCouponCodesQueryKey();
+  const queryKey =
+    queryOptions?.queryKey ?? getAdminListCouponCodesQueryKey(params);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof adminListCouponCodes>>
-  > = ({ signal }) => adminListCouponCodes({ signal, ...requestOptions });
+  > = ({ signal }) =>
+    adminListCouponCodes(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof adminListCouponCodes>>,
@@ -18672,21 +18891,24 @@ export type AdminListCouponCodesQueryResult = NonNullable<
 export type AdminListCouponCodesQueryError = ErrorType<unknown>;
 
 /**
- * @summary List all coupon codes
+ * @summary List coupon codes (non-archived by default)
  */
 
 export function useAdminListCouponCodes<
   TData = Awaited<ReturnType<typeof adminListCouponCodes>>,
   TError = ErrorType<unknown>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof adminListCouponCodes>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getAdminListCouponCodesQueryOptions(options);
+>(
+  params?: AdminListCouponCodesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminListCouponCodes>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminListCouponCodesQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
@@ -18952,6 +19174,174 @@ export const useAdminDeleteCouponCode = <
   TContext
 > => {
   return useMutation(getAdminDeleteCouponCodeMutationOptions(options));
+};
+
+/**
+ * @summary Archive a coupon code (soft-delete)
+ */
+export const getAdminArchiveCouponCodeUrl = (id: number) => {
+  return `/api/admin/coupon-codes/${id}/archive`;
+};
+
+export const adminArchiveCouponCode = async (
+  id: number,
+  options?: RequestInit,
+): Promise<AdminCouponCode> => {
+  return customFetch<AdminCouponCode>(getAdminArchiveCouponCodeUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getAdminArchiveCouponCodeMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminArchiveCouponCode>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminArchiveCouponCode>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["adminArchiveCouponCode"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminArchiveCouponCode>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return adminArchiveCouponCode(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminArchiveCouponCodeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminArchiveCouponCode>>
+>;
+
+export type AdminArchiveCouponCodeMutationError = ErrorType<Error>;
+
+/**
+ * @summary Archive a coupon code (soft-delete)
+ */
+export const useAdminArchiveCouponCode = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminArchiveCouponCode>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminArchiveCouponCode>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getAdminArchiveCouponCodeMutationOptions(options));
+};
+
+/**
+ * @summary Restore an archived coupon code
+ */
+export const getAdminRestoreCouponCodeUrl = (id: number) => {
+  return `/api/admin/coupon-codes/${id}/restore`;
+};
+
+export const adminRestoreCouponCode = async (
+  id: number,
+  options?: RequestInit,
+): Promise<AdminCouponCode> => {
+  return customFetch<AdminCouponCode>(getAdminRestoreCouponCodeUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getAdminRestoreCouponCodeMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminRestoreCouponCode>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminRestoreCouponCode>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["adminRestoreCouponCode"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminRestoreCouponCode>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return adminRestoreCouponCode(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminRestoreCouponCodeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminRestoreCouponCode>>
+>;
+
+export type AdminRestoreCouponCodeMutationError = ErrorType<Error>;
+
+/**
+ * @summary Restore an archived coupon code
+ */
+export const useAdminRestoreCouponCode = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminRestoreCouponCode>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminRestoreCouponCode>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getAdminRestoreCouponCodeMutationOptions(options));
 };
 
 /**

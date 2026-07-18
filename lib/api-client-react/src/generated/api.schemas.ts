@@ -3525,6 +3525,7 @@ export interface AdminDiscountEvent {
   endDate: string | null;
   isStackable: boolean;
   isActive: boolean;
+  archivedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -3627,6 +3628,7 @@ export interface AdminCouponCode {
   expirationDate: string | null;
   isStackable: boolean;
   isActive: boolean;
+  archivedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -5755,6 +5757,20 @@ export type StaffListNotificationsParams = {
    * @maximum 100
    */
   limit?: number;
+};
+
+export type AdminListDiscountEventsParams = {
+  /**
+   * When true, include archived events
+   */
+  includeArchived?: boolean;
+};
+
+export type AdminListCouponCodesParams = {
+  /**
+   * When true, include archived coupons
+   */
+  includeArchived?: boolean;
 };
 
 export type AdminListCustomersParams = {

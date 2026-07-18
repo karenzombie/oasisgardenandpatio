@@ -12723,8 +12723,15 @@ export const StaffMarkAllNotificationsReadResponse = zod.object({
 });
 
 /**
- * @summary List all discount events
+ * @summary List discount events (non-archived by default)
  */
+export const AdminListDiscountEventsQueryParams = zod.object({
+  includeArchived: zod.coerce
+    .boolean()
+    .optional()
+    .describe("When true, include archived events"),
+});
+
 export const adminListDiscountEventsResponseValueMin = 0;
 
 export const AdminListDiscountEventsResponseItem = zod.object({
@@ -12738,6 +12745,7 @@ export const AdminListDiscountEventsResponseItem = zod.object({
   endDate: zod.coerce.date().nullable(),
   isStackable: zod.boolean(),
   isActive: zod.boolean(),
+  archivedAt: zod.coerce.date().nullable(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -12801,6 +12809,7 @@ export const AdminUpdateDiscountEventResponse = zod.object({
   endDate: zod.coerce.date().nullable(),
   isStackable: zod.boolean(),
   isActive: zod.boolean(),
+  archivedAt: zod.coerce.date().nullable(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -12813,8 +12822,65 @@ export const AdminDeleteDiscountEventParams = zod.object({
 });
 
 /**
- * @summary List all coupon codes
+ * @summary Archive a discount event (soft-delete)
  */
+export const AdminArchiveDiscountEventParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const adminArchiveDiscountEventResponseValueMin = 0;
+
+export const AdminArchiveDiscountEventResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  type: zod.enum(["percentage", "fixed"]),
+  value: zod.number().min(adminArchiveDiscountEventResponseValueMin),
+  appliesTo: zod.enum(["global", "category", "manufacturer", "product"]),
+  targetIds: zod.array(zod.number()),
+  startDate: zod.coerce.date().nullable(),
+  endDate: zod.coerce.date().nullable(),
+  isStackable: zod.boolean(),
+  isActive: zod.boolean(),
+  archivedAt: zod.coerce.date().nullable(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Restore an archived discount event
+ */
+export const AdminRestoreDiscountEventParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const adminRestoreDiscountEventResponseValueMin = 0;
+
+export const AdminRestoreDiscountEventResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  type: zod.enum(["percentage", "fixed"]),
+  value: zod.number().min(adminRestoreDiscountEventResponseValueMin),
+  appliesTo: zod.enum(["global", "category", "manufacturer", "product"]),
+  targetIds: zod.array(zod.number()),
+  startDate: zod.coerce.date().nullable(),
+  endDate: zod.coerce.date().nullable(),
+  isStackable: zod.boolean(),
+  isActive: zod.boolean(),
+  archivedAt: zod.coerce.date().nullable(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary List coupon codes (non-archived by default)
+ */
+export const AdminListCouponCodesQueryParams = zod.object({
+  includeArchived: zod.coerce
+    .boolean()
+    .optional()
+    .describe("When true, include archived coupons"),
+});
+
 export const adminListCouponCodesResponseValueMin = 0;
 
 export const AdminListCouponCodesResponseItem = zod.object({
@@ -12832,6 +12898,7 @@ export const AdminListCouponCodesResponseItem = zod.object({
   expirationDate: zod.coerce.date().nullable(),
   isStackable: zod.boolean(),
   isActive: zod.boolean(),
+  archivedAt: zod.coerce.date().nullable(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -12905,6 +12972,7 @@ export const AdminUpdateCouponCodeResponse = zod.object({
   expirationDate: zod.coerce.date().nullable(),
   isStackable: zod.boolean(),
   isActive: zod.boolean(),
+  archivedAt: zod.coerce.date().nullable(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -12914,6 +12982,64 @@ export const AdminUpdateCouponCodeResponse = zod.object({
  */
 export const AdminDeleteCouponCodeParams = zod.object({
   id: zod.coerce.number(),
+});
+
+/**
+ * @summary Archive a coupon code (soft-delete)
+ */
+export const AdminArchiveCouponCodeParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const adminArchiveCouponCodeResponseValueMin = 0;
+
+export const AdminArchiveCouponCodeResponse = zod.object({
+  id: zod.number(),
+  code: zod.string(),
+  discountType: zod.enum(["percentage", "fixed"]),
+  value: zod.number().min(adminArchiveCouponCodeResponseValueMin),
+  minOrderAmount: zod.number().nullable(),
+  maxUsesTotal: zod.number().nullable(),
+  currentUses: zod.number(),
+  singleUsePerCustomer: zod.boolean(),
+  appliesTo: zod.enum(["global", "category", "manufacturer", "product"]),
+  targetIds: zod.array(zod.number()),
+  startDate: zod.coerce.date().nullable(),
+  expirationDate: zod.coerce.date().nullable(),
+  isStackable: zod.boolean(),
+  isActive: zod.boolean(),
+  archivedAt: zod.coerce.date().nullable(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Restore an archived coupon code
+ */
+export const AdminRestoreCouponCodeParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const adminRestoreCouponCodeResponseValueMin = 0;
+
+export const AdminRestoreCouponCodeResponse = zod.object({
+  id: zod.number(),
+  code: zod.string(),
+  discountType: zod.enum(["percentage", "fixed"]),
+  value: zod.number().min(adminRestoreCouponCodeResponseValueMin),
+  minOrderAmount: zod.number().nullable(),
+  maxUsesTotal: zod.number().nullable(),
+  currentUses: zod.number(),
+  singleUsePerCustomer: zod.boolean(),
+  appliesTo: zod.enum(["global", "category", "manufacturer", "product"]),
+  targetIds: zod.array(zod.number()),
+  startDate: zod.coerce.date().nullable(),
+  expirationDate: zod.coerce.date().nullable(),
+  isStackable: zod.boolean(),
+  isActive: zod.boolean(),
+  archivedAt: zod.coerce.date().nullable(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
 });
 
 /**

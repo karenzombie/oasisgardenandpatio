@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, isNull, isNotNull } from "drizzle-orm";
 import {
   db,
   discountEventsTable,
@@ -42,6 +42,7 @@ function discountEventToPayload(row: DiscountEvent) {
     endDate: row.endDate ? row.endDate.toISOString() : null,
     isStackable: row.isStackable,
     isActive: row.isActive,
+    archivedAt: row.archivedAt ? row.archivedAt.toISOString() : null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -66,6 +67,7 @@ function couponToPayload(row: CouponCode) {
       : null,
     isStackable: row.isStackable,
     isActive: row.isActive,
+    archivedAt: row.archivedAt ? row.archivedAt.toISOString() : null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -85,10 +87,12 @@ router.get(
   "/admin/discount-events",
   requireAuth,
   requireRole("admin"),
-  async (_req: Request, res: Response): Promise<void> => {
+  async (req: Request, res: Response): Promise<void> => {
+    const includeArchived = req.query.includeArchived === "true";
     const rows = await db
       .select()
       .from(discountEventsTable)
+      .where(includeArchived ? undefined : isNull(discountEventsTable.archivedAt))
       .orderBy(
         desc(discountEventsTable.isActive),
         asc(discountEventsTable.id),
@@ -269,16 +273,96 @@ router.delete(
   },
 );
 
+router.post(
+  "/admin/discount-events/:id/archive",
+  requireAuth,
+  requireRole("admin"),
+  async (req: Request, res: Response): Promise<void> => {
+    const params = AdminDeleteDiscountEventParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: "Invalid id" });
+      return;
+    }
+    const [previous] = await db
+      .select()
+      .from(discountEventsTable)
+      .where(eq(discountEventsTable.id, params.data.id))
+      .limit(1);
+    if (!previous) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+    const [row] = await db
+      .update(discountEventsTable)
+      .set({ archivedAt: new Date(), isActive: false })
+      .where(eq(discountEventsTable.id, params.data.id))
+      .returning();
+    if (!row) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+    await recordHistory(req, {
+      entityType: "discount_event",
+      entityId: row.id,
+      changeType: "update",
+      snapshot: row,
+      previousSnapshot: previous,
+    });
+    res.json(discountEventToPayload(row));
+  },
+);
+
+router.post(
+  "/admin/discount-events/:id/restore",
+  requireAuth,
+  requireRole("admin"),
+  async (req: Request, res: Response): Promise<void> => {
+    const params = AdminDeleteDiscountEventParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: "Invalid id" });
+      return;
+    }
+    const [previous] = await db
+      .select()
+      .from(discountEventsTable)
+      .where(eq(discountEventsTable.id, params.data.id))
+      .limit(1);
+    if (!previous) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+    const [row] = await db
+      .update(discountEventsTable)
+      .set({ archivedAt: null })
+      .where(eq(discountEventsTable.id, params.data.id))
+      .returning();
+    if (!row) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+    await recordHistory(req, {
+      entityType: "discount_event",
+      entityId: row.id,
+      changeType: "update",
+      snapshot: row,
+      previousSnapshot: previous,
+    });
+    res.json(discountEventToPayload(row));
+  },
+);
+
 // ---------------- Coupon Codes ----------------
 
 router.get(
   "/admin/coupon-codes",
   requireAuth,
   requireRole("admin"),
-  async (_req: Request, res: Response): Promise<void> => {
+  async (req: Request, res: Response): Promise<void> => {
+    const includeArchived = req.query.includeArchived === "true";
     const rows = await db
       .select()
       .from(couponCodesTable)
+      .where(includeArchived ? undefined : isNull(couponCodesTable.archivedAt))
       .orderBy(desc(couponCodesTable.isActive), asc(couponCodesTable.id));
     res.json(rows.map(couponToPayload));
   },
@@ -489,6 +573,84 @@ router.delete(
       previousSnapshot: previous ?? null,
     });
     res.status(204).end();
+  },
+);
+
+router.post(
+  "/admin/coupon-codes/:id/archive",
+  requireAuth,
+  requireRole("admin"),
+  async (req: Request, res: Response): Promise<void> => {
+    const params = AdminDeleteCouponCodeParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: "Invalid id" });
+      return;
+    }
+    const [previous] = await db
+      .select()
+      .from(couponCodesTable)
+      .where(eq(couponCodesTable.id, params.data.id))
+      .limit(1);
+    if (!previous) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+    const [row] = await db
+      .update(couponCodesTable)
+      .set({ archivedAt: new Date(), isActive: false })
+      .where(eq(couponCodesTable.id, params.data.id))
+      .returning();
+    if (!row) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+    await recordHistory(req, {
+      entityType: "coupon_code",
+      entityId: row.id,
+      changeType: "update",
+      snapshot: row,
+      previousSnapshot: previous,
+    });
+    res.json(couponToPayload(row));
+  },
+);
+
+router.post(
+  "/admin/coupon-codes/:id/restore",
+  requireAuth,
+  requireRole("admin"),
+  async (req: Request, res: Response): Promise<void> => {
+    const params = AdminDeleteCouponCodeParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: "Invalid id" });
+      return;
+    }
+    const [previous] = await db
+      .select()
+      .from(couponCodesTable)
+      .where(eq(couponCodesTable.id, params.data.id))
+      .limit(1);
+    if (!previous) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+    const [row] = await db
+      .update(couponCodesTable)
+      .set({ archivedAt: null })
+      .where(eq(couponCodesTable.id, params.data.id))
+      .returning();
+    if (!row) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+    await recordHistory(req, {
+      entityType: "coupon_code",
+      entityId: row.id,
+      changeType: "update",
+      snapshot: row,
+      previousSnapshot: previous,
+    });
+    res.json(couponToPayload(row));
   },
 );
 

@@ -20,6 +20,7 @@ export interface AdminDiscountEvent {
   endDate: Date | null;
   isStackable: boolean;
   isActive: boolean;
+  archivedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
