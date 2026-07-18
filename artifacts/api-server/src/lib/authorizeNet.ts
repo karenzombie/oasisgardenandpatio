@@ -219,6 +219,180 @@ export async function processAuthnetCharge(params: {
   }
 }
 
+export interface AuthnetUpdateHeldResult {
+  success: boolean;
+  /** Present when the action failed and re-sync discovered the actual state. */
+  resyncedState?: "captured" | "voided" | "still_held";
+  errorMessage?: string;
+  notConfigured?: boolean;
+  rawResponse?: unknown;
+}
+
+/**
+ * Query the current status of a transaction from Authorize.net.
+ * Used to re-sync our record after a stale-hold failure.
+ * Returns undefined when the state cannot be determined (network error, etc.).
+ */
+async function getAuthnetTransactionState(
+  config: NonNullable<ReturnType<typeof getConfig>>,
+  endpoint: string,
+  transId: string,
+): Promise<"captured" | "voided" | "still_held" | undefined> {
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        getTransactionDetailsRequest: {
+          merchantAuthentication: {
+            name: config.apiLoginId,
+            transactionKey: config.transactionKey,
+          },
+          transId,
+        },
+      }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    const text = await response.text();
+    const json = JSON.parse(text.replace(/^\uFEFF/, "")) as {
+      transaction?: { transactionStatus?: string };
+    };
+    const status = json.transaction?.transactionStatus;
+    if (!status) return undefined;
+    if (
+      status === "capturedPendingSettlement" ||
+      status === "settledSuccessfully"
+    )
+      return "captured";
+    if (status === "void" || status === "voided") return "voided";
+    if (
+      status === "FDSPendingReview" ||
+      status === "FDSAuthorizedPendingReview"
+    )
+      return "still_held";
+    return undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Approve or decline a held Authorize.net transaction.
+ *
+ * Action values are "approve" or "decline" only (Authorize.net documented values).
+ * The transaction key stays server-only — never included in any log or response.
+ *
+ * Success gate (both must be true):
+ *   messages.resultCode === "Ok"
+ *   transactionResponse.responseCode === "1" (approve) or "2" (decline)
+ *
+ * On failure, automatically calls getTransactionDetailsRequest to re-sync
+ * and returns resyncedState so the caller can update its DB record.
+ */
+export async function processAuthnetUpdateHeld(params: {
+  transId: string;
+  action: "approve" | "decline";
+}): Promise<AuthnetUpdateHeldResult> {
+  const config = getConfig();
+  if (!config) {
+    logger.warn(
+      "Authorize.net not configured; skipping held transaction action",
+    );
+    return {
+      success: false,
+      notConfigured: true,
+      errorMessage:
+        "Authorize.net credentials not configured (AUTHNET_API_LOGIN_ID / AUTHNET_TRANSACTION_KEY)",
+    };
+  }
+
+  const endpoint = config.sandbox
+    ? "https://apitest.authorize.net/xml/v1/request.api"
+    : "https://api.authorize.net/xml/v1/request.api";
+
+  const payload = {
+    updateHeldTransactionRequest: {
+      merchantAuthentication: {
+        name: config.apiLoginId,
+        transactionKey: config.transactionKey,
+      },
+      action: params.action,
+      refTransId: params.transId,
+    },
+  };
+
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(30_000),
+    });
+
+    const text = await response.text();
+    const json = JSON.parse(text.replace(/^\uFEFF/, "")) as {
+      transactionResponse?: {
+        responseCode?: string;
+        errors?: Array<{ errorCode: string; errorText: string }>;
+      };
+      messages?: {
+        resultCode?: string;
+        message?: Array<{ code: string; text: string }>;
+      };
+    };
+
+    const isOk = json.messages?.resultCode === "Ok";
+    const responseCode = json.transactionResponse?.responseCode;
+    const success =
+      isOk &&
+      (params.action === "approve" ? responseCode === "1" : responseCode === "2");
+
+    if (success) {
+      logger.info(
+        { transId: params.transId, action: params.action },
+        "Authorize.net held transaction action succeeded",
+      );
+      return { success: true, rawResponse: json };
+    }
+
+    // Action failed — attempt re-sync to discover actual gateway state
+    const errorText =
+      json.transactionResponse?.errors?.[0]?.errorText ??
+      json.messages?.message?.[0]?.text ??
+      "Gateway error — no details available";
+
+    logger.warn(
+      { transId: params.transId, action: params.action, errorText },
+      "Authorize.net held transaction action failed — attempting re-sync",
+    );
+
+    const resyncedState = await getAuthnetTransactionState(
+      config,
+      endpoint,
+      params.transId,
+    );
+
+    return {
+      success: false,
+      resyncedState,
+      errorMessage: errorText,
+      rawResponse: json,
+    };
+  } catch (err) {
+    logger.error(
+      { err, transId: params.transId, action: params.action },
+      "Authorize.net held transaction request failed",
+    );
+    return {
+      success: false,
+      errorMessage:
+        err instanceof Error
+          ? err.message
+          : "Network error contacting payment gateway",
+    };
+  }
+}
+
 /**
  * Process a credit-card refund through Authorize.net.
  *

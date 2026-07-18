@@ -3896,6 +3896,78 @@ paths:
         "404":
           description: Not found
           content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/orders/{id}/payments/{paymentId}/approve:
+    post:
+      operationId: adminApproveHeldPayment
+      tags: [admin-orders]
+      summary: Approve a held (gateway-pending) payment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: paymentId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Updated order detail
+          content: { application/json: { schema: { $ref: "#/components/schemas/AdminOrderDetail" } } }
+        "400":
+          description: Bad request
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "401":
+          description: Unauthorized
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "403":
+          description: Forbidden
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "404":
+          description: Not found
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "409":
+          description: Payment already processed or hold already resolved
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "502":
+          description: Gateway error
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  /admin/orders/{id}/payments/{paymentId}/decline:
+    post:
+      operationId: adminDeclineHeldPayment
+      tags: [admin-orders]
+      summary: Decline a held (gateway-pending) payment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: paymentId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Updated order detail
+          content: { application/json: { schema: { $ref: "#/components/schemas/AdminOrderDetail" } } }
+        "400":
+          description: Bad request
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "401":
+          description: Unauthorized
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "403":
+          description: Forbidden
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "404":
+          description: Not found
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "409":
+          description: Payment already processed or hold already resolved
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "502":
+          description: Gateway error
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
   /admin/banners:
     get:
       operationId: adminListBanners

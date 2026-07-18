@@ -19,6 +19,7 @@ import {
 } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import { recordHistory } from "../lib/history";
+import { processAuthnetUpdateHeld } from "../lib/authorizeNet";
 
 const router: IRouter = Router();
 
@@ -492,6 +493,187 @@ router.delete(
       notes: `payment.delete id=${paymentId}`,
     });
     await respondWithDetail(res, orderId, 200);
+  },
+);
+
+type HeldTransactionAction = "approve" | "decline";
+
+async function handleHeldTransactionAction(
+  req: Request,
+  res: Response,
+  orderId: number,
+  paymentId: number,
+  action: HeldTransactionAction,
+): Promise<void> {
+  // Step 1: Non-locking pre-check — fast exit before any gateway call
+  const [payment] = await db
+    .select()
+    .from(paymentsTable)
+    .where(
+      and(eq(paymentsTable.id, paymentId), eq(paymentsTable.orderId, orderId)),
+    )
+    .limit(1);
+
+  if (!payment) {
+    res.status(404).json({ error: "Payment not found" });
+    return;
+  }
+  if (payment.rawResponse == null) {
+    res
+      .status(400)
+      .json({ error: "This payment was not processed via the payment gateway" });
+    return;
+  }
+  if (!payment.transactionId) {
+    res.status(400).json({ error: "Payment has no gateway transaction ID" });
+    return;
+  }
+  if (payment.status !== "pending") {
+    res.status(409).json({
+      error: `Payment has already been ${payment.status === "completed" ? "approved" : "processed"} — refresh to see the current state`,
+    });
+    return;
+  }
+
+  // Step 2: Gateway call — outside any DB transaction (network must not hold locks)
+  const gatewayResult = await processAuthnetUpdateHeld({
+    transId: payment.transactionId,
+    action,
+  });
+
+  // Step 3a: Gateway action failed — stale-hold re-sync or surface error
+  if (!gatewayResult.success) {
+    const { resyncedState } = gatewayResult;
+
+    if (resyncedState && resyncedState !== "still_held") {
+      // Stale hold: re-sync DB to match actual gateway state
+      const newStatus = resyncedState === "captured" ? "completed" : "failed";
+      await db.transaction(async (tx) => {
+        await tx
+          .update(paymentsTable)
+          .set({ status: newStatus, receivedAt: new Date() })
+          .where(eq(paymentsTable.id, paymentId));
+        await recomputeOrderTotals(tx, orderId);
+      });
+      const staleMsg =
+        resyncedState === "captured"
+          ? "This hold had already been captured by the gateway. Your records have been updated to reflect the current state."
+          : "This hold had already expired or been voided by the gateway. Your records have been updated to reflect the current state.";
+      res.status(409).json({ error: staleMsg });
+      return;
+    }
+
+    if (resyncedState === "still_held") {
+      res.status(502).json({
+        error:
+          "This hold is still active but could not be actioned at this time. Please try again or contact your payment processor.",
+      });
+      return;
+    }
+
+    res.status(502).json({
+      error: gatewayResult.errorMessage ?? "Gateway error — please try again",
+    });
+    return;
+  }
+
+  // Step 3b: Gateway succeeded — DB transaction with FOR UPDATE as authoritative guard
+  // Two admins clicking simultaneously: the second admin's gateway call returns a
+  // stale-hold error (Authorize.net only allows one action per held transaction) and
+  // hits the re-sync path above. The FOR UPDATE here guards against the rare case of
+  // two concurrent DB writes racing after both gateway calls somehow both succeed.
+  let dbUpdateFailed = false;
+  try {
+    await db.transaction(async (tx) => {
+      const [locked] = await tx
+        .select({ status: paymentsTable.status })
+        .from(paymentsTable)
+        .where(eq(paymentsTable.id, paymentId))
+        .for("update")
+        .limit(1);
+
+      if (!locked || locked.status !== "pending") {
+        throw new Error("payment-row-already-processed");
+      }
+
+      const newStatus = action === "approve" ? "completed" : "failed";
+      await tx
+        .update(paymentsTable)
+        .set({ status: newStatus, receivedAt: new Date() })
+        .where(eq(paymentsTable.id, paymentId));
+      await recomputeOrderTotals(tx, orderId);
+    });
+  } catch (err) {
+    dbUpdateFailed = true;
+    req.log?.error(
+      {
+        paymentId,
+        transId: payment.transactionId,
+        action,
+        orderId,
+        isRowConflict:
+          err instanceof Error && err.message === "payment-row-already-processed",
+      },
+      "CRITICAL: gateway action succeeded but DB update failed — manual reconciliation required",
+    );
+    res.status(500).json({
+      error:
+        `The gateway action went through (transaction ID: ${payment.transactionId}) ` +
+        `but we could not update records. Do not retry. Contact an administrator immediately.`,
+    });
+  }
+
+  if (dbUpdateFailed) return;
+
+  await recordHistory(req, {
+    entityType: "order",
+    entityId: orderId,
+    changeType: "update",
+    snapshot: { paymentId, action },
+    previousSnapshot: { paymentId, previousStatus: "pending" },
+    notes: `payment.${action} id=${paymentId} transId=${payment.transactionId}`,
+  });
+
+  await respondWithDetail(res, orderId, 200);
+}
+
+router.post(
+  "/admin/orders/:id/payments/:paymentId/approve",
+  requireAuth,
+  requireRole("admin"),
+  async (req: Request, res: Response): Promise<void> => {
+    const params = AdminDeleteOrderPaymentParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: "Invalid parameters" });
+      return;
+    }
+    await handleHeldTransactionAction(
+      req,
+      res,
+      params.data.id,
+      params.data.paymentId,
+      "approve",
+    );
+  },
+);
+
+router.post(
+  "/admin/orders/:id/payments/:paymentId/decline",
+  requireAuth,
+  requireRole("admin"),
+  async (req: Request, res: Response): Promise<void> => {
+    const params = AdminDeleteOrderPaymentParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: "Invalid parameters" });
+      return;
+    }
+    await handleHeldTransactionAction(
+      req,
+      res,
+      params.data.id,
+      params.data.paymentId,
+      "decline",
+    );
   },
 );
 

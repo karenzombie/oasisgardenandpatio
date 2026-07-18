@@ -12924,6 +12924,188 @@ export const useAdminDeleteOrderPayment = <
 };
 
 /**
+ * @summary Approve a held (gateway-pending) payment
+ */
+export const getAdminApproveHeldPaymentUrl = (
+  id: number,
+  paymentId: number,
+) => {
+  return `/api/admin/orders/${id}/payments/${paymentId}/approve`;
+};
+
+export const adminApproveHeldPayment = async (
+  id: number,
+  paymentId: number,
+  options?: RequestInit,
+): Promise<AdminOrderDetail> => {
+  return customFetch<AdminOrderDetail>(
+    getAdminApproveHeldPaymentUrl(id, paymentId),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getAdminApproveHeldPaymentMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminApproveHeldPayment>>,
+    TError,
+    { id: number; paymentId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminApproveHeldPayment>>,
+  TError,
+  { id: number; paymentId: number },
+  TContext
+> => {
+  const mutationKey = ["adminApproveHeldPayment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminApproveHeldPayment>>,
+    { id: number; paymentId: number }
+  > = (props) => {
+    const { id, paymentId } = props ?? {};
+
+    return adminApproveHeldPayment(id, paymentId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminApproveHeldPaymentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminApproveHeldPayment>>
+>;
+
+export type AdminApproveHeldPaymentMutationError = ErrorType<Error>;
+
+/**
+ * @summary Approve a held (gateway-pending) payment
+ */
+export const useAdminApproveHeldPayment = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminApproveHeldPayment>>,
+    TError,
+    { id: number; paymentId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminApproveHeldPayment>>,
+  TError,
+  { id: number; paymentId: number },
+  TContext
+> => {
+  return useMutation(getAdminApproveHeldPaymentMutationOptions(options));
+};
+
+/**
+ * @summary Decline a held (gateway-pending) payment
+ */
+export const getAdminDeclineHeldPaymentUrl = (
+  id: number,
+  paymentId: number,
+) => {
+  return `/api/admin/orders/${id}/payments/${paymentId}/decline`;
+};
+
+export const adminDeclineHeldPayment = async (
+  id: number,
+  paymentId: number,
+  options?: RequestInit,
+): Promise<AdminOrderDetail> => {
+  return customFetch<AdminOrderDetail>(
+    getAdminDeclineHeldPaymentUrl(id, paymentId),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getAdminDeclineHeldPaymentMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeclineHeldPayment>>,
+    TError,
+    { id: number; paymentId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminDeclineHeldPayment>>,
+  TError,
+  { id: number; paymentId: number },
+  TContext
+> => {
+  const mutationKey = ["adminDeclineHeldPayment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminDeclineHeldPayment>>,
+    { id: number; paymentId: number }
+  > = (props) => {
+    const { id, paymentId } = props ?? {};
+
+    return adminDeclineHeldPayment(id, paymentId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminDeclineHeldPaymentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminDeclineHeldPayment>>
+>;
+
+export type AdminDeclineHeldPaymentMutationError = ErrorType<Error>;
+
+/**
+ * @summary Decline a held (gateway-pending) payment
+ */
+export const useAdminDeclineHeldPayment = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeclineHeldPayment>>,
+    TError,
+    { id: number; paymentId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminDeclineHeldPayment>>,
+  TError,
+  { id: number; paymentId: number },
+  TContext
+> => {
+  return useMutation(getAdminDeclineHeldPaymentMutationOptions(options));
+};
+
+/**
  * @summary List all site banners (active + inactive, all dates)
  */
 export const getAdminListBannersUrl = () => {

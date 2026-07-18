@@ -1,7 +1,9 @@
 import { useState, Fragment } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, Pencil, Plus, Trash2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Pencil, Plus, Trash2 } from "lucide-react";
 import {
+  useAdminApproveHeldPayment,
+  useAdminDeclineHeldPayment,
   useAdminCreateOrderPayment,
   useAdminMarkOrderPaidInFull,
   useAdminUpdateOrderPayment,
@@ -209,10 +211,51 @@ export default function PaymentsPanel({
     paymentMethod: "cash",
   });
 
+  const [confirmAction, setConfirmAction] = useState<{
+    paymentId: number;
+    action: "approve" | "decline";
+    amount: number;
+  } | null>(null);
+
   const createMut = useAdminCreateOrderPayment();
   const updateMut = useAdminUpdateOrderPayment();
   const deleteMut = useAdminDeleteOrderPayment();
   const markFullMut = useAdminMarkOrderPaidInFull();
+  const approveMut = useAdminApproveHeldPayment();
+  const declineMut = useAdminDeclineHeldPayment();
+
+  const hasLiveApiHold = payments.some(
+    (p) => p.isApiPayment && p.status === "pending",
+  );
+
+  function handleGatewayAction() {
+    if (!confirmAction) return;
+    const mut =
+      confirmAction.action === "approve" ? approveMut : declineMut;
+    mut.mutate(
+      { id: orderId, paymentId: confirmAction.paymentId },
+      {
+        onSuccess: (data) => {
+          qc.setQueryData(detailKey, data);
+          setConfirmAction(null);
+          toast({
+            title:
+              confirmAction.action === "approve"
+                ? "Payment approved"
+                : "Payment declined",
+          });
+        },
+        onError: (err) => {
+          toast({
+            title: "Gateway error",
+            description: errMsg(err),
+            variant: "destructive",
+          });
+          setConfirmAction(null);
+        },
+      },
+    );
+  }
 
   function openCreate(prefillBalance: boolean) {
     setForm({
@@ -425,6 +468,26 @@ export default function PaymentsPanel({
         </div>
       </div>
 
+      {hasLiveApiHold && (
+        <div className="mx-4 mb-3 flex gap-2.5 rounded-md border border-amber-300 bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+          <span>
+            {paidInFull ? (
+              <>
+                <strong>Double-charge risk:</strong> This order shows as paid in
+                full, but an Authorize.net hold is still active. Approve or
+                decline the hold below before recording any additional payment.
+              </>
+            ) : (
+              <>
+                An Authorize.net payment hold is pending review. Use Approve or
+                Decline on the row below to resolve it at the gateway.
+              </>
+            )}
+          </span>
+        </div>
+      )}
+
       {payments.length === 0 ? (
         <div className="px-4 py-6 text-sm text-slate-500">
           No payments recorded yet.
@@ -509,6 +572,46 @@ export default function PaymentsPanel({
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
+                      {p.isApiPayment && p.status === "pending" && (
+                        <>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            className="text-emerald-700 hover:text-emerald-800"
+                            onClick={() =>
+                              setConfirmAction({
+                                paymentId: p.id,
+                                action: "approve",
+                                amount: p.amount,
+                              })
+                            }
+                            disabled={
+                              approveMut.isPending || declineMut.isPending
+                            }
+                          >
+                            Approve
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            className="text-red-600 hover:text-red-700"
+                            onClick={() =>
+                              setConfirmAction({
+                                paymentId: p.id,
+                                action: "decline",
+                                amount: p.amount,
+                              })
+                            }
+                            disabled={
+                              approveMut.isPending || declineMut.isPending
+                            }
+                          >
+                            Decline
+                          </Button>
+                        </>
+                      )}
                     </td>
                   </tr>
                   {p.isApiPayment && (
@@ -765,6 +868,55 @@ export default function PaymentsPanel({
               disabled={markFullMut.isPending}
             >
               Record full payment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Gateway action confirmation */}
+      <Dialog
+        open={confirmAction !== null}
+        onOpenChange={(o) => !o && setConfirmAction(null)}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>
+              {confirmAction?.action === "approve"
+                ? "Approve payment?"
+                : "Decline payment?"}
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-slate-600">
+            {confirmAction?.action === "approve" ? (
+              <>
+                {fmtMoney(confirmAction.amount)} will be captured from the
+                customer&apos;s card. This cannot be undone.
+              </>
+            ) : (
+              <>
+                The gateway hold on {fmtMoney(confirmAction?.amount ?? 0)} will
+                be released and the order will show an outstanding balance.
+              </>
+            )}
+          </p>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setConfirmAction(null)}
+              disabled={approveMut.isPending || declineMut.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant={
+                confirmAction?.action === "approve" ? "default" : "destructive"
+              }
+              onClick={handleGatewayAction}
+              disabled={approveMut.isPending || declineMut.isPending}
+            >
+              {confirmAction?.action === "approve"
+                ? "Approve"
+                : "Decline"}
             </Button>
           </DialogFooter>
         </DialogContent>

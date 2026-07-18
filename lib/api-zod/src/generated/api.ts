@@ -7708,6 +7708,466 @@ export const AdminDeleteOrderPaymentResponse = zod.object({
 });
 
 /**
+ * @summary Approve a held (gateway-pending) payment
+ */
+export const AdminApproveHeldPaymentParams = zod.object({
+  id: zod.coerce.number(),
+  paymentId: zod.coerce.number(),
+});
+
+export const AdminApproveHeldPaymentResponse = zod.object({
+  id: zod.number(),
+  orderNumber: zod.string(),
+  status: zod.string(),
+  orderType: zod.string(),
+  subtotal: zod.number(),
+  taxAmount: zod.number(),
+  deliveryAmount: zod.number(),
+  total: zod.number(),
+  depositAmount: zod.number(),
+  balanceDue: zod.number(),
+  customerId: zod.number().nullable(),
+  customerName: zod.string().nullable(),
+  customerEmail: zod.string().nullable(),
+  agentId: zod.number().nullable(),
+  agentName: zod.string().nullable(),
+  salespersonName: zod.string().nullable(),
+  shippingMethod: zod.string().nullable(),
+  scheduledDeliveryDate: zod
+    .string()
+    .nullish()
+    .describe("Store-delivery scheduled date (YYYY-MM-DD)."),
+  scheduledDeliveryTime: zod
+    .string()
+    .nullish()
+    .describe(
+      "Store-delivery time window start (HH:MM:SS, e.g. '14:00:00' for the 2-3 PM window). See the fixed 1-hour window mapping.",
+    ),
+  specialInstructions: zod.string().nullable(),
+  notes: zod.string().nullable(),
+  merchandiseReceived: zod.boolean(),
+  placedAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+  shippingAddress: zod.union([
+    zod.object({
+      id: zod.number(),
+      recipientName: zod.string().nullish(),
+      street1: zod.string(),
+      street2: zod.string().nullish(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullish(),
+    }),
+    zod.null(),
+  ]),
+  billingAddress: zod.union([
+    zod.object({
+      id: zod.number(),
+      recipientName: zod.string().nullish(),
+      street1: zod.string(),
+      street2: zod.string().nullish(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullish(),
+    }),
+    zod.null(),
+  ]),
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      productId: zod.number().nullable(),
+      productSkuSnapshot: zod.string().nullable(),
+      variantSkuSnapshot: zod.string().nullable(),
+      variantNameSnapshot: zod.string().nullable(),
+      finishId: zod.number().nullable(),
+      finishCodeSnapshot: zod.string().nullable(),
+      finishNameSnapshot: zod.string().nullable(),
+      finialId: zod.number().nullable(),
+      finialCodeSnapshot: zod.string().nullable(),
+      finialNameSnapshot: zod.string().nullable(),
+      fabricId: zod.number().nullable(),
+      fabricNameSnapshot: zod.string().nullable(),
+      fabricItemNumberSnapshot: zod.string().nullable(),
+      fabricBrandSnapshot: zod.string().nullable(),
+      fabricGradeSnapshot: zod.string().nullable(),
+      unitMsrpSnapshot: zod.string().nullable(),
+      weightSnapshot: zod.string().nullable(),
+      fabricVendorId: zod
+        .number()
+        .nullable()
+        .describe(
+          "Optional alternate vendor for this line's fabric. Null = fabric ships with the product vendor (the default).",
+        ),
+      fabricVendorName: zod.string().nullable(),
+      fabricVendorOrderId: zod
+        .number()
+        .nullable()
+        .describe(
+          "When fabricVendorId is set, this is the id of the separate vendor PO that the fabric was assigned to.",
+        ),
+      department: zod.string().nullable(),
+      description: zod.string(),
+      quantity: zod.number(),
+      unitPrice: zod.number(),
+      amount: zod.number(),
+      discountAmount: zod.number(),
+      discountReason: zod.string().nullable(),
+      notes: zod.string().nullable(),
+      manufacturerName: zod
+        .string()
+        .nullable()
+        .describe(
+          "Manufacturer of the product on this line item. Derived from products.manufacturerId at response time.",
+        ),
+      vendorOrderId: zod.number().nullable(),
+      useInventory: zod
+        .boolean()
+        .describe(
+          "When true this line is sourced from store inventory (staff orders only).",
+        ),
+      inventoryQtyUsed: zod
+        .number()
+        .describe(
+          "Units drawn from store inventory at order creation time. 0 when useInventory is false.",
+        ),
+    }),
+  ),
+  statusHistory: zod.array(
+    zod.object({
+      id: zod.number(),
+      fromStatus: zod.string().nullable(),
+      toStatus: zod.string(),
+      changedByUserId: zod.number().nullable(),
+      changedByEmail: zod.string().nullable(),
+      note: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  vendorOrders: zod.array(
+    zod.object({
+      id: zod.number(),
+      vendorOrderNumber: zod.string(),
+      status: zod.string(),
+      manufacturerId: zod.number().nullable(),
+      manufacturerName: zod.string().nullable(),
+      sentAt: zod.coerce.date().nullable(),
+      receivedAt: zod.coerce.date().nullable(),
+      itemsReceived: zod.boolean(),
+    }),
+  ),
+  cancellationRequests: zod.array(
+    zod.object({
+      id: zod.number(),
+      orderId: zod.number(),
+      orderNumber: zod.string().nullable(),
+      requestedByUserId: zod.number().nullable(),
+      requestedByEmail: zod.string().nullable(),
+      reason: zod.string().nullable(),
+      status: zod.string(),
+      reviewedByUserId: zod.number().nullable(),
+      reviewedByEmail: zod.string().nullable(),
+      reviewedAt: zod.coerce.date().nullable(),
+      reviewNote: zod.string().nullable(),
+      refundAmount: zod.number().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  isQuickOrder: zod.boolean(),
+  skipVendorOrder: zod.boolean(),
+  walkInName: zod.string().nullable(),
+  walkInEmail: zod.string().nullable(),
+  walkInPhone: zod.string().nullable(),
+  isInternalRestock: zod.boolean(),
+  shipToStore: zod.boolean(),
+  shipments: zod.array(
+    zod.object({
+      id: zod.number(),
+      orderId: zod.number(),
+      carrierId: zod.number().nullable(),
+      carrierName: zod.string().nullable(),
+      carrierCode: zod.string().nullable(),
+      trackingNumber: zod.string().nullable(),
+      trackingUrl: zod.string().nullable(),
+      notes: zod.string().nullable(),
+      items: zod.array(
+        zod
+          .object({
+            orderItemId: zod.number(),
+            quantity: zod.number(),
+            description: zod
+              .string()
+              .describe(
+                "Snapshot description of the order line (product + variant\/finish\/fabric).",
+              ),
+          })
+          .describe(
+            "A single order line assigned to a shipment, with the quantity included in that shipment.",
+          ),
+      ),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  payments: zod.array(
+    zod.object({
+      id: zod.number(),
+      orderId: zod.number(),
+      amount: zod.number(),
+      paymentMethod: zod.string(),
+      status: zod.string(),
+      transactionId: zod.string().nullable(),
+      cardLast4: zod.string().nullable(),
+      cardType: zod.string().nullable(),
+      notes: zod.string().nullable(),
+      receivedAt: zod.coerce.date().nullable(),
+      recordedByUserId: zod.number().nullable(),
+      recordedByEmail: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+      isApiPayment: zod.boolean(),
+      avsResponse: zod.string().nullable(),
+      cvvResponse: zod.string().nullable(),
+      authCode: zod.string().nullable(),
+      gatewayMessage: zod.string().nullable(),
+    }),
+  ),
+  amountPaid: zod.number(),
+  paidInFull: zod.boolean(),
+});
+
+/**
+ * @summary Decline a held (gateway-pending) payment
+ */
+export const AdminDeclineHeldPaymentParams = zod.object({
+  id: zod.coerce.number(),
+  paymentId: zod.coerce.number(),
+});
+
+export const AdminDeclineHeldPaymentResponse = zod.object({
+  id: zod.number(),
+  orderNumber: zod.string(),
+  status: zod.string(),
+  orderType: zod.string(),
+  subtotal: zod.number(),
+  taxAmount: zod.number(),
+  deliveryAmount: zod.number(),
+  total: zod.number(),
+  depositAmount: zod.number(),
+  balanceDue: zod.number(),
+  customerId: zod.number().nullable(),
+  customerName: zod.string().nullable(),
+  customerEmail: zod.string().nullable(),
+  agentId: zod.number().nullable(),
+  agentName: zod.string().nullable(),
+  salespersonName: zod.string().nullable(),
+  shippingMethod: zod.string().nullable(),
+  scheduledDeliveryDate: zod
+    .string()
+    .nullish()
+    .describe("Store-delivery scheduled date (YYYY-MM-DD)."),
+  scheduledDeliveryTime: zod
+    .string()
+    .nullish()
+    .describe(
+      "Store-delivery time window start (HH:MM:SS, e.g. '14:00:00' for the 2-3 PM window). See the fixed 1-hour window mapping.",
+    ),
+  specialInstructions: zod.string().nullable(),
+  notes: zod.string().nullable(),
+  merchandiseReceived: zod.boolean(),
+  placedAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+  shippingAddress: zod.union([
+    zod.object({
+      id: zod.number(),
+      recipientName: zod.string().nullish(),
+      street1: zod.string(),
+      street2: zod.string().nullish(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullish(),
+    }),
+    zod.null(),
+  ]),
+  billingAddress: zod.union([
+    zod.object({
+      id: zod.number(),
+      recipientName: zod.string().nullish(),
+      street1: zod.string(),
+      street2: zod.string().nullish(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullish(),
+    }),
+    zod.null(),
+  ]),
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      productId: zod.number().nullable(),
+      productSkuSnapshot: zod.string().nullable(),
+      variantSkuSnapshot: zod.string().nullable(),
+      variantNameSnapshot: zod.string().nullable(),
+      finishId: zod.number().nullable(),
+      finishCodeSnapshot: zod.string().nullable(),
+      finishNameSnapshot: zod.string().nullable(),
+      finialId: zod.number().nullable(),
+      finialCodeSnapshot: zod.string().nullable(),
+      finialNameSnapshot: zod.string().nullable(),
+      fabricId: zod.number().nullable(),
+      fabricNameSnapshot: zod.string().nullable(),
+      fabricItemNumberSnapshot: zod.string().nullable(),
+      fabricBrandSnapshot: zod.string().nullable(),
+      fabricGradeSnapshot: zod.string().nullable(),
+      unitMsrpSnapshot: zod.string().nullable(),
+      weightSnapshot: zod.string().nullable(),
+      fabricVendorId: zod
+        .number()
+        .nullable()
+        .describe(
+          "Optional alternate vendor for this line's fabric. Null = fabric ships with the product vendor (the default).",
+        ),
+      fabricVendorName: zod.string().nullable(),
+      fabricVendorOrderId: zod
+        .number()
+        .nullable()
+        .describe(
+          "When fabricVendorId is set, this is the id of the separate vendor PO that the fabric was assigned to.",
+        ),
+      department: zod.string().nullable(),
+      description: zod.string(),
+      quantity: zod.number(),
+      unitPrice: zod.number(),
+      amount: zod.number(),
+      discountAmount: zod.number(),
+      discountReason: zod.string().nullable(),
+      notes: zod.string().nullable(),
+      manufacturerName: zod
+        .string()
+        .nullable()
+        .describe(
+          "Manufacturer of the product on this line item. Derived from products.manufacturerId at response time.",
+        ),
+      vendorOrderId: zod.number().nullable(),
+      useInventory: zod
+        .boolean()
+        .describe(
+          "When true this line is sourced from store inventory (staff orders only).",
+        ),
+      inventoryQtyUsed: zod
+        .number()
+        .describe(
+          "Units drawn from store inventory at order creation time. 0 when useInventory is false.",
+        ),
+    }),
+  ),
+  statusHistory: zod.array(
+    zod.object({
+      id: zod.number(),
+      fromStatus: zod.string().nullable(),
+      toStatus: zod.string(),
+      changedByUserId: zod.number().nullable(),
+      changedByEmail: zod.string().nullable(),
+      note: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  vendorOrders: zod.array(
+    zod.object({
+      id: zod.number(),
+      vendorOrderNumber: zod.string(),
+      status: zod.string(),
+      manufacturerId: zod.number().nullable(),
+      manufacturerName: zod.string().nullable(),
+      sentAt: zod.coerce.date().nullable(),
+      receivedAt: zod.coerce.date().nullable(),
+      itemsReceived: zod.boolean(),
+    }),
+  ),
+  cancellationRequests: zod.array(
+    zod.object({
+      id: zod.number(),
+      orderId: zod.number(),
+      orderNumber: zod.string().nullable(),
+      requestedByUserId: zod.number().nullable(),
+      requestedByEmail: zod.string().nullable(),
+      reason: zod.string().nullable(),
+      status: zod.string(),
+      reviewedByUserId: zod.number().nullable(),
+      reviewedByEmail: zod.string().nullable(),
+      reviewedAt: zod.coerce.date().nullable(),
+      reviewNote: zod.string().nullable(),
+      refundAmount: zod.number().nullable(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  isQuickOrder: zod.boolean(),
+  skipVendorOrder: zod.boolean(),
+  walkInName: zod.string().nullable(),
+  walkInEmail: zod.string().nullable(),
+  walkInPhone: zod.string().nullable(),
+  isInternalRestock: zod.boolean(),
+  shipToStore: zod.boolean(),
+  shipments: zod.array(
+    zod.object({
+      id: zod.number(),
+      orderId: zod.number(),
+      carrierId: zod.number().nullable(),
+      carrierName: zod.string().nullable(),
+      carrierCode: zod.string().nullable(),
+      trackingNumber: zod.string().nullable(),
+      trackingUrl: zod.string().nullable(),
+      notes: zod.string().nullable(),
+      items: zod.array(
+        zod
+          .object({
+            orderItemId: zod.number(),
+            quantity: zod.number(),
+            description: zod
+              .string()
+              .describe(
+                "Snapshot description of the order line (product + variant\/finish\/fabric).",
+              ),
+          })
+          .describe(
+            "A single order line assigned to a shipment, with the quantity included in that shipment.",
+          ),
+      ),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  payments: zod.array(
+    zod.object({
+      id: zod.number(),
+      orderId: zod.number(),
+      amount: zod.number(),
+      paymentMethod: zod.string(),
+      status: zod.string(),
+      transactionId: zod.string().nullable(),
+      cardLast4: zod.string().nullable(),
+      cardType: zod.string().nullable(),
+      notes: zod.string().nullable(),
+      receivedAt: zod.coerce.date().nullable(),
+      recordedByUserId: zod.number().nullable(),
+      recordedByEmail: zod.string().nullable(),
+      createdAt: zod.coerce.date(),
+      isApiPayment: zod.boolean(),
+      avsResponse: zod.string().nullable(),
+      cvvResponse: zod.string().nullable(),
+      authCode: zod.string().nullable(),
+      gatewayMessage: zod.string().nullable(),
+    }),
+  ),
+  amountPaid: zod.number(),
+  paidInFull: zod.boolean(),
+});
+
+/**
  * @summary List all site banners (active + inactive, all dates)
  */
 export const AdminListBannersResponseItem = zod.object({
