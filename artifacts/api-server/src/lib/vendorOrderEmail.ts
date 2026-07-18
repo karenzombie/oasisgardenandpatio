@@ -1,6 +1,6 @@
 import { Resend } from "resend";
 import { logger } from "./logger";
-import { emailLayout } from "./email";
+import { emailLayout, sendViaResend } from "./email";
 
 async function getResendClient(): Promise<{ client: Resend; from: string }> {
   const directApiKey =
@@ -155,9 +155,7 @@ export async function sendVendorOrderEmail(
     ? `RESENT: Purchase Order ${vendorOrderNumber} -- Oasis Garden & Patio`
     : `Purchase Order ${vendorOrderNumber} — Oasis Garden & Patio`;
 
-  const { client, from } = await getResendClient();
-  const result = await client.emails.send({
-    from,
+  const result = await sendViaResend({
     to,
     subject,
     html: emailLayout(`Purchase Order ${vendorOrderNumber}`, body),
@@ -289,9 +287,7 @@ export async function sendVendorOrderCancellationEmail(
   );
   const filename = `PO-${vendorOrderNumber}-CANCELLED.pdf`;
 
-  const { client, from } = await getResendClient();
-  const result = await client.emails.send({
-    from,
+  const result = await sendViaResend({
     to,
     subject,
     html,
@@ -355,9 +351,7 @@ export async function sendVendorOrderRevisionEmail(
   );
   const filename = `PO-${vendorOrderNumber}-REVISED.pdf`;
 
-  const { client, from } = await getResendClient();
-  const result = await client.emails.send({
-    from,
+  const result = await sendViaResend({
     to,
     subject,
     html,

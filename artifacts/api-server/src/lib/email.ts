@@ -58,6 +58,33 @@ async function getResendClient(): Promise<{ client: Resend; from: string }> {
   return { client: new Resend(apiKey), from: fromEmail };
 }
 
+const ARCHIVE_BCC = "online@oasisgardenandpatio.com";
+
+export async function sendViaResend(payload: {
+  to: string | string[];
+  subject: string;
+  html: string;
+  attachments?: Array<{ filename: string; content: Buffer }>;
+  bcc?: string | string[];
+}) {
+  const { client, from } = await getResendClient();
+  const redirectTo = process.env["EMAIL_TEST_REDIRECT_TO"]?.trim();
+  const isTestRedirect = !!(redirectTo && redirectTo.length > 0);
+  const existingBcc = payload.bcc;
+  const effectiveBcc: string | string[] | undefined = isTestRedirect
+    ? existingBcc
+    : existingBcc === undefined
+      ? ARCHIVE_BCC
+      : Array.isArray(existingBcc)
+        ? [...existingBcc, ARCHIVE_BCC]
+        : [existingBcc, ARCHIVE_BCC];
+  return client.emails.send({
+    from,
+    ...payload,
+    ...(effectiveBcc !== undefined ? { bcc: effectiveBcc } : {}),
+  });
+}
+
 const BRAND_NAME = "Oasis Garden & Patio";
 
 export function getSiteBaseUrl(): string | null {
@@ -120,8 +147,6 @@ export async function sendEmail({
   title,
   bodyHtml,
 }: SendEmailArgs): Promise<void> {
-  const { client, from } = await getResendClient();
-
   // Test-mode redirect: while Resend is unverified it can only deliver to the
   // account owner. If EMAIL_TEST_REDIRECT_TO is set, route every email there
   // so all transactional emails are demonstrable from a single inbox. The
@@ -139,8 +164,7 @@ export async function sendEmail({
           <strong>Test mode:</strong> This email was intended for <strong>${to}</strong> but was redirected here because the sending domain is not yet verified.
         </div>`;
 
-  const result = await client.emails.send({
-    from,
+  const result = await sendViaResend({
     to: effectiveTo,
     subject: effectiveSubject,
     html: emailLayout(title, `${redirectBanner}${bodyHtml}`),
@@ -165,7 +189,6 @@ export async function sendVerificationEmail({
   firstName,
   verificationUrl,
 }: SendVerificationEmailArgs): Promise<void> {
-  const { client, from } = await getResendClient();
   const greeting = firstName ? `Hi ${firstName},` : "Hello,";
   const body = `
     <p>${greeting}</p>
@@ -174,8 +197,7 @@ export async function sendVerificationEmail({
     <p style="font-size:15px;color:#666;">This link expires in 24 hours. If you did not create an account, you can safely ignore this email.</p>
   `;
 
-  const result = await client.emails.send({
-    from,
+  const result = await sendViaResend({
     to,
     subject: `Verify your ${BRAND_NAME} account`,
     html: emailLayout("Confirm your email", body),
@@ -198,7 +220,6 @@ export async function sendEmailChangeCode({
   firstName,
   code,
 }: SendEmailChangeCodeArgs): Promise<void> {
-  const { client, from } = await getResendClient();
   const greeting = firstName ? `Hi ${firstName},` : "Hello,";
   const body = `
     <p>${greeting}</p>
@@ -207,8 +228,7 @@ export async function sendEmailChangeCode({
     <p style="font-size:15px;color:#666;">This code expires in 30 minutes. If you did not request this change, you can safely ignore this email and your account will be unchanged.</p>
   `;
 
-  const result = await client.emails.send({
-    from,
+  const result = await sendViaResend({
     to,
     subject: `Confirm your new ${BRAND_NAME} email address`,
     html: emailLayout("Confirm your new email", body),
@@ -235,7 +255,6 @@ export async function sendWishlistDisclosureEmail({
   optOutUrl,
   accountSettingsUrl,
 }: SendWishlistDisclosureEmailArgs): Promise<void> {
-  const { client, from } = await getResendClient();
   const greeting = firstName ? `Hi ${firstName}!` : "Hi there!";
   const body = `
     <p>${greeting}</p>
@@ -251,8 +270,7 @@ export async function sendWishlistDisclosureEmail({
     <p style="font-size:15px;color:#666;">To manage your contact preferences, visit your <a href="${accountSettingsUrl}">account settings</a> at any time. To opt out of marketing contact, click the opt-out link in this email.</p>
   `;
 
-  const result = await client.emails.send({
-    from,
+  const result = await sendViaResend({
     to,
     subject: `You saved something you love at ${BRAND_NAME}!`,
     html: emailLayout("You saved something you love!", body),
@@ -374,7 +392,6 @@ export async function sendPasswordResetEmail({
   firstName,
   resetUrl,
 }: SendPasswordResetEmailArgs): Promise<void> {
-  const { client, from } = await getResendClient();
   const greeting = firstName ? `Hi ${firstName},` : "Hello,";
   const body = `
     <p>${greeting}</p>
@@ -383,8 +400,7 @@ export async function sendPasswordResetEmail({
     <p style="font-size:15px;color:#666;">This link expires in 1 hour. If you did not request a password reset, no action is needed and your password will remain unchanged.</p>
   `;
 
-  const result = await client.emails.send({
-    from,
+  const result = await sendViaResend({
     to,
     subject: `Reset your ${BRAND_NAME} password`,
     html: emailLayout("Reset your password", body),

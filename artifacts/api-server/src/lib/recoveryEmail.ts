@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { logger } from "./logger";
+import { sendViaResend } from "./email";
 
 interface ResendCredentials {
   apiKey: string;
@@ -123,15 +124,13 @@ export interface RecoveryRequestedArgs {
 export async function sendRecoveryRequestedEmail(
   args: RecoveryRequestedArgs,
 ): Promise<void> {
-  const { client, from } = await getResendClient();
   const body = `
     <p>A recovery request has been submitted for your Oasis Garden &amp; Patio staff account. Click the link below to proceed.</p>
     ${buttonLink(args.recoveryUrl, "Open Recovery Link")}
     <p>If you did not request this, please contact your administrator immediately.</p>
     <p style="margin-top:24px;">Warm regards,<br/>The Oasis Garden &amp; Patio Team</p>
   `;
-  const result = await client.emails.send({
-    from,
+  const result = await sendViaResend({
     to: args.to,
     subject: `Staff account recovery requested — ${BRAND_NAME}`,
     html: emailLayout("Staff account recovery requested", body),
@@ -159,7 +158,6 @@ export interface RecoveryAlertArgs {
 export async function sendRecoveryAlertEmail(
   args: RecoveryAlertArgs,
 ): Promise<void> {
-  const { client, from } = await getResendClient();
   const body = `
     <p>A staff account recovery has been requested for <strong>${escapeHtml(args.targetEmail)}</strong>.</p>
     <p style="font-size:15px;color:#666;">
@@ -170,8 +168,7 @@ export async function sendRecoveryAlertEmail(
     <p>If you do not recognize this request or believe it may be unauthorized, it is recommended that you disable this staff user immediately from the admin portal.</p>
     ${buttonLink(args.staffAccountsUrl, "Review Staff Accounts", "#1a3c5e")}
   `;
-  const result = await client.emails.send({
-    from,
+  const result = await sendViaResend({
     to: RECOVERY_ALERT_TO_EMAIL,
     subject: `Staff account recovery requested — ${BRAND_NAME}`,
     html: emailLayout("Staff account recovery requested", body),
@@ -196,7 +193,6 @@ export interface RecoveryFinalizedArgs {
 export async function sendRecoveryFinalizedEmail(
   args: RecoveryFinalizedArgs,
 ): Promise<void> {
-  const { client, from } = await getResendClient();
   const isCompleted = args.reason === "completed";
   const title = isCompleted
     ? "Your staff account was reset"
@@ -211,8 +207,7 @@ export async function sendRecoveryFinalizedEmail(
       <p>The recovery request you made for your staff account was cancelled${args.cancelledByEmail ? ` by <strong>${args.cancelledByEmail}</strong>` : ""}.</p>
       <p>If you are genuinely locked out, please contact another administrator or submit a new recovery request.</p>
     `;
-  const result = await client.emails.send({
-    from,
+  const result = await sendViaResend({
     to: args.to,
     subject: isCompleted
       ? `Your ${BRAND_NAME} staff account was reset`
