@@ -109,6 +109,11 @@ export default function Checkout() {
   const [billingSavedId, setBillingSavedId] = useState<number | null>(null);
   const [shippingSavedId, setShippingSavedId] = useState<number | null>(null);
 
+  // "saved" = show picker, "new" = show inline form.
+  // Initialized to "new"; the prefill effect switches to "saved" when addresses exist.
+  const [billingMode, setBillingMode] = useState<"saved" | "new">("new");
+  const [shippingMode, setShippingMode] = useState<"saved" | "new">("new");
+
   // "Shipping same as billing" checkbox — default checked
   const [shipSameBilling, setShipSameBilling] = useState(true);
 
@@ -138,39 +143,26 @@ export default function Checkout() {
   // the customer has started editing. Set the first time addresses arrive.
   const prefillDoneRef = useRef(false);
 
-  // Prefill billing and shipping sections from the customer's saved addresses
-  // the first time the address list loads (signed-in only). Uses a ref so
-  // editing a field does not re-trigger and overwrite what the customer typed.
+  // Switch to picker mode and select the default saved address the first time
+  // the address list loads. A ref prevents re-running after user edits.
   useEffect(() => {
     if (prefillDoneRef.current || addresses.length === 0) return;
     prefillDoneRef.current = true;
 
-    const savedBilling = addresses.find((a) => a.type === "billing");
-    if (savedBilling) {
-      setBillingForm((prev) => ({
-        recipientName: savedBilling.recipientName ?? prev.recipientName,
-        street1: savedBilling.street1,
-        street2: savedBilling.street2 ?? "",
-        city: savedBilling.city,
-        state: savedBilling.state,
-        zip: savedBilling.zip,
-        phone: savedBilling.phone ?? "",
-      }));
-      setBillingSavedId(savedBilling.id);
+    const billingAddrs = addresses.filter((a) => a.type === "billing");
+    const defaultBilling =
+      billingAddrs.find((a) => a.isDefault) ?? billingAddrs[0];
+    if (defaultBilling) {
+      setBillingSavedId(defaultBilling.id);
+      setBillingMode("saved");
     }
 
-    const savedShipping = addresses.find((a) => a.type === "shipping");
-    if (savedShipping) {
-      setShippingForm((prev) => ({
-        recipientName: savedShipping.recipientName ?? prev.recipientName,
-        street1: savedShipping.street1,
-        street2: savedShipping.street2 ?? "",
-        city: savedShipping.city,
-        state: savedShipping.state,
-        zip: savedShipping.zip,
-        phone: savedShipping.phone ?? "",
-      }));
-      setShippingSavedId(savedShipping.id);
+    const shippingAddrs = addresses.filter((a) => a.type === "shipping");
+    const defaultShipping =
+      shippingAddrs.find((a) => a.isDefault) ?? shippingAddrs[0];
+    if (defaultShipping) {
+      setShippingSavedId(defaultShipping.id);
+      setShippingMode("saved");
     }
   }, [addresses]);
 
@@ -258,13 +250,33 @@ export default function Checkout() {
   });
 
   const subtotalNum = Number(cart?.subtotal ?? 0);
-  // shippingState/shippingZip drive the tax quote. When the checkbox is
-  // checked, shipping inherits billing values; otherwise use the shipping form.
+
+  // Filtered address lists for each section's picker.
+  const billingAddresses = addresses.filter((a) => a.type === "billing");
+  const shippingAddresses = addresses.filter((a) => a.type === "shipping");
+
+  // Active saved address objects — used to derive state/zip for the tax quote
+  // without requiring the form to be populated when in picker mode.
+  const activeBillingAddr =
+    billingMode === "saved"
+      ? (billingAddresses.find((a) => a.id === billingSavedId) ?? null)
+      : null;
+  const activeShippingAddr =
+    !shipSameBilling && shippingMode === "saved"
+      ? (shippingAddresses.find((a) => a.id === shippingSavedId) ?? null)
+      : null;
+
+  const billingSrc = activeBillingAddr ?? billingForm;
+  // shippingState/shippingZip drive the tax quote. Inherits billing when checked.
   const shippingState = (
-    shipSameBilling ? billingForm.state : shippingForm.state
+    shipSameBilling
+      ? billingSrc.state
+      : (activeShippingAddr ?? shippingForm).state
   ).toUpperCase().trim();
   const shippingZip = (
-    shipSameBilling ? billingForm.zip : shippingForm.zip
+    shipSameBilling
+      ? billingSrc.zip
+      : (activeShippingAddr ?? shippingForm).zip
   ).trim();
 
   const quoteM = useQuoteCheckout();
@@ -339,28 +351,30 @@ export default function Checkout() {
     setGuest((g) => ({ ...g, [key]: value }));
   }
 
-  // Billing is complete when the four required fields are non-empty.
-  // (When a saved address is prefilling the form the fields are already filled.)
-  const billingComplete = useMemo(
-    () =>
+  // A section is complete when either a saved address is selected (picker mode)
+  // or all four required inline fields are filled (form mode).
+  const billingComplete = useMemo(() => {
+    if (billingMode === "saved") return billingSavedId !== null;
+    return (
       billingForm.street1.trim() !== "" &&
       billingForm.city.trim() !== "" &&
       billingForm.state.trim() !== "" &&
-      billingForm.zip.trim() !== "",
-    [billingForm],
-  );
+      billingForm.zip.trim() !== ""
+    );
+  }, [billingMode, billingSavedId, billingForm]);
 
   // HostedForm is disabled until both billing and shipping are complete.
   const addressComplete = useMemo(() => {
     if (!billingComplete) return false;
     if (shipSameBilling) return true; // shipping inherits billing
+    if (shippingMode === "saved") return shippingSavedId !== null;
     return (
       shippingForm.street1.trim() !== "" &&
       shippingForm.city.trim() !== "" &&
       shippingForm.state.trim() !== "" &&
       shippingForm.zip.trim() !== ""
     );
-  }, [billingComplete, shipSameBilling, shippingForm]);
+  }, [billingComplete, shipSameBilling, shippingMode, shippingSavedId, shippingForm]);
 
   /**
    * Called by react-acceptjs HostedForm when Authorize.net returns a result.
@@ -552,82 +566,149 @@ export default function Checkout() {
           {/* Billing address */}
           <section>
             <h2 className="font-serif text-xl mb-4">Billing Address</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="md:col-span-2">
-                <Label htmlFor="billingRecipientName">Full name</Label>
-                <Input
-                  id="billingRecipientName"
-                  value={billingForm.recipientName}
-                  onChange={(e) => setBillingField("recipientName", e.target.value)}
-                  className="rounded-none"
-                />
-              </div>
-              <div className="md:col-span-2">
-                <Label htmlFor="billingStreet1">Street address *</Label>
-                <Input
-                  id="billingStreet1"
-                  required
-                  value={billingForm.street1}
-                  onChange={(e) => setBillingField("street1", e.target.value)}
-                  className="rounded-none"
-                />
-              </div>
-              <div className="md:col-span-2">
-                <Label htmlFor="billingStreet2">Apt, suite, etc.</Label>
-                <Input
-                  id="billingStreet2"
-                  value={billingForm.street2}
-                  onChange={(e) => setBillingField("street2", e.target.value)}
-                  className="rounded-none"
-                />
-              </div>
-              <div>
-                <Label htmlFor="billingCity">City *</Label>
-                <Input
-                  id="billingCity"
-                  required
-                  value={billingForm.city}
-                  onChange={(e) => setBillingField("city", e.target.value)}
-                  className="rounded-none"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="billingState">State *</Label>
-                  <Input
-                    id="billingState"
-                    required
-                    maxLength={2}
-                    value={billingForm.state}
-                    onChange={(e) =>
-                      setBillingField("state", e.target.value.toUpperCase())
-                    }
-                    className="rounded-none"
-                    placeholder="CA"
-                  />
+
+            {isAuthenticated && billingAddresses.length > 0 && billingMode === "saved" ? (
+              <>
+                <div className="space-y-2 mb-3">
+                  {billingAddresses.map((a) => (
+                    <label
+                      key={a.id}
+                      className={`flex items-start gap-3 border p-4 cursor-pointer ${
+                        billingSavedId === a.id
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:border-foreground/40"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="billing-address"
+                        checked={billingSavedId === a.id}
+                        onChange={() => setBillingSavedId(a.id)}
+                        className="mt-1"
+                      />
+                      <div className="text-sm">
+                        {a.recipientName ? (
+                          <p className="font-medium">{a.recipientName}</p>
+                        ) : null}
+                        <p>{a.street1}</p>
+                        {a.street2 ? <p>{a.street2}</p> : null}
+                        <p>
+                          {a.city}, {a.state} {a.zip}
+                        </p>
+                        {a.phone ? (
+                          <p className="text-muted-foreground">{a.phone}</p>
+                        ) : null}
+                      </div>
+                    </label>
+                  ))}
                 </div>
-                <div>
-                  <Label htmlFor="billingZip">ZIP *</Label>
-                  <Input
-                    id="billingZip"
-                    required
-                    value={billingForm.zip}
-                    onChange={(e) => setBillingField("zip", e.target.value)}
-                    className="rounded-none"
-                  />
+                <button
+                  type="button"
+                  className="text-sm underline text-muted-foreground hover:text-foreground"
+                  onClick={() => {
+                    setBillingMode("new");
+                    setBillingSavedId(null);
+                    setBillingForm(EMPTY_FORM);
+                  }}
+                >
+                  Use a different address
+                </button>
+              </>
+            ) : (
+              <>
+                {isAuthenticated && billingAddresses.length > 0 ? (
+                  <button
+                    type="button"
+                    className="text-sm underline text-muted-foreground hover:text-foreground mb-4 block"
+                    onClick={() => {
+                      const fallback =
+                        billingAddresses.find((a) => a.isDefault) ??
+                        billingAddresses[0];
+                      setBillingMode("saved");
+                      setBillingSavedId(fallback.id);
+                    }}
+                  >
+                    ← Use a saved address
+                  </button>
+                ) : null}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="md:col-span-2">
+                    <Label htmlFor="billingRecipientName">Full name</Label>
+                    <Input
+                      id="billingRecipientName"
+                      value={billingForm.recipientName}
+                      onChange={(e) => setBillingField("recipientName", e.target.value)}
+                      className="rounded-none"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <Label htmlFor="billingStreet1">Street address *</Label>
+                    <Input
+                      id="billingStreet1"
+                      required
+                      value={billingForm.street1}
+                      onChange={(e) => setBillingField("street1", e.target.value)}
+                      className="rounded-none"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <Label htmlFor="billingStreet2">Apt, suite, etc.</Label>
+                    <Input
+                      id="billingStreet2"
+                      value={billingForm.street2}
+                      onChange={(e) => setBillingField("street2", e.target.value)}
+                      className="rounded-none"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="billingCity">City *</Label>
+                    <Input
+                      id="billingCity"
+                      required
+                      value={billingForm.city}
+                      onChange={(e) => setBillingField("city", e.target.value)}
+                      className="rounded-none"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="billingState">State *</Label>
+                      <Input
+                        id="billingState"
+                        required
+                        maxLength={2}
+                        value={billingForm.state}
+                        onChange={(e) =>
+                          setBillingField("state", e.target.value.toUpperCase())
+                        }
+                        className="rounded-none"
+                        placeholder="CA"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="billingZip">ZIP *</Label>
+                      <Input
+                        id="billingZip"
+                        required
+                        value={billingForm.zip}
+                        onChange={(e) => setBillingField("zip", e.target.value)}
+                        className="rounded-none"
+                      />
+                    </div>
+                  </div>
+                  <div className="md:col-span-2">
+                    <Label htmlFor="billingPhone">Phone</Label>
+                    <Input
+                      id="billingPhone"
+                      type="tel"
+                      value={billingForm.phone}
+                      onChange={(e) => setBillingField("phone", e.target.value)}
+                      className="rounded-none"
+                    />
+                  </div>
                 </div>
-              </div>
-              <div className="md:col-span-2">
-                <Label htmlFor="billingPhone">Phone</Label>
-                <Input
-                  id="billingPhone"
-                  type="tel"
-                  value={billingForm.phone}
-                  onChange={(e) => setBillingField("phone", e.target.value)}
-                  className="rounded-none"
-                />
-              </div>
-            </div>
+              </>
+            )}
           </section>
 
           {/* Shipping address */}
@@ -643,84 +724,150 @@ export default function Checkout() {
               Same as billing address
             </label>
             {!shipSameBilling ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2">
-                  <Label htmlFor="shippingRecipientName">Full name</Label>
-                  <Input
-                    id="shippingRecipientName"
-                    value={shippingForm.recipientName}
-                    onChange={(e) => setShippingField("recipientName", e.target.value)}
-                    className="rounded-none"
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <Label htmlFor="shippingStreet1">Street address *</Label>
-                  <Input
-                    id="shippingStreet1"
-                    required
-                    value={shippingForm.street1}
-                    onChange={(e) => setShippingField("street1", e.target.value)}
-                    className="rounded-none"
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <Label htmlFor="shippingStreet2">Apt, suite, etc.</Label>
-                  <Input
-                    id="shippingStreet2"
-                    value={shippingForm.street2}
-                    onChange={(e) => setShippingField("street2", e.target.value)}
-                    className="rounded-none"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="shippingCity">City *</Label>
-                  <Input
-                    id="shippingCity"
-                    required
-                    value={shippingForm.city}
-                    onChange={(e) => setShippingField("city", e.target.value)}
-                    className="rounded-none"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="shippingState">State *</Label>
-                    <Input
-                      id="shippingState"
-                      required
-                      maxLength={2}
-                      value={shippingForm.state}
-                      onChange={(e) =>
-                        setShippingField("state", e.target.value.toUpperCase())
-                      }
-                      className="rounded-none"
-                      placeholder="CA"
-                    />
+              isAuthenticated && shippingAddresses.length > 0 && shippingMode === "saved" ? (
+                <>
+                  <div className="space-y-2 mb-3">
+                    {shippingAddresses.map((a) => (
+                      <label
+                        key={a.id}
+                        className={`flex items-start gap-3 border p-4 cursor-pointer ${
+                          shippingSavedId === a.id
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover:border-foreground/40"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="shipping-address"
+                          checked={shippingSavedId === a.id}
+                          onChange={() => setShippingSavedId(a.id)}
+                          className="mt-1"
+                        />
+                        <div className="text-sm">
+                          {a.recipientName ? (
+                            <p className="font-medium">{a.recipientName}</p>
+                          ) : null}
+                          <p>{a.street1}</p>
+                          {a.street2 ? <p>{a.street2}</p> : null}
+                          <p>
+                            {a.city}, {a.state} {a.zip}
+                          </p>
+                          {a.phone ? (
+                            <p className="text-muted-foreground">{a.phone}</p>
+                          ) : null}
+                        </div>
+                      </label>
+                    ))}
                   </div>
-                  <div>
-                    <Label htmlFor="shippingZipInput">ZIP *</Label>
-                    <Input
-                      id="shippingZipInput"
-                      required
-                      value={shippingForm.zip}
-                      onChange={(e) => setShippingField("zip", e.target.value)}
-                      className="rounded-none"
-                    />
+                  <button
+                    type="button"
+                    className="text-sm underline text-muted-foreground hover:text-foreground"
+                    onClick={() => {
+                      setShippingMode("new");
+                      setShippingSavedId(null);
+                      setShippingForm(EMPTY_FORM);
+                    }}
+                  >
+                    Use a different address
+                  </button>
+                </>
+              ) : (
+                <>
+                  {isAuthenticated && shippingAddresses.length > 0 ? (
+                    <button
+                      type="button"
+                      className="text-sm underline text-muted-foreground hover:text-foreground mb-4 block"
+                      onClick={() => {
+                        const fallback =
+                          shippingAddresses.find((a) => a.isDefault) ??
+                          shippingAddresses[0];
+                        setShippingMode("saved");
+                        setShippingSavedId(fallback.id);
+                      }}
+                    >
+                      ← Use a saved address
+                    </button>
+                  ) : null}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2">
+                      <Label htmlFor="shippingRecipientName">Full name</Label>
+                      <Input
+                        id="shippingRecipientName"
+                        value={shippingForm.recipientName}
+                        onChange={(e) => setShippingField("recipientName", e.target.value)}
+                        className="rounded-none"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label htmlFor="shippingStreet1">Street address *</Label>
+                      <Input
+                        id="shippingStreet1"
+                        required
+                        value={shippingForm.street1}
+                        onChange={(e) => setShippingField("street1", e.target.value)}
+                        className="rounded-none"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label htmlFor="shippingStreet2">Apt, suite, etc.</Label>
+                      <Input
+                        id="shippingStreet2"
+                        value={shippingForm.street2}
+                        onChange={(e) => setShippingField("street2", e.target.value)}
+                        className="rounded-none"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="shippingCity">City *</Label>
+                      <Input
+                        id="shippingCity"
+                        required
+                        value={shippingForm.city}
+                        onChange={(e) => setShippingField("city", e.target.value)}
+                        className="rounded-none"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="shippingState">State *</Label>
+                        <Input
+                          id="shippingState"
+                          required
+                          maxLength={2}
+                          value={shippingForm.state}
+                          onChange={(e) =>
+                            setShippingField("state", e.target.value.toUpperCase())
+                          }
+                          className="rounded-none"
+                          placeholder="CA"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="shippingZipInput">ZIP *</Label>
+                        <Input
+                          id="shippingZipInput"
+                          required
+                          value={shippingForm.zip}
+                          onChange={(e) => setShippingField("zip", e.target.value)}
+                          className="rounded-none"
+                        />
+                      </div>
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label htmlFor="shippingPhone">
+                        Phone {!isAuthenticated ? "(uses your contact phone if blank)" : ""}
+                      </Label>
+                      <Input
+                        id="shippingPhone"
+                        type="tel"
+                        value={shippingForm.phone}
+                        onChange={(e) => setShippingField("phone", e.target.value)}
+                        className="rounded-none"
+                      />
+                    </div>
                   </div>
-                </div>
-                <div className="md:col-span-2">
-                  <Label htmlFor="shippingPhone">
-                    Phone {!isAuthenticated ? "(uses your contact phone if blank)" : ""}
-                  </Label>
-                  <Input
-                    id="shippingPhone"
-                    type="tel"
-                    value={shippingForm.phone}
-                    onChange={(e) => setShippingField("phone", e.target.value)}
-                    className="rounded-none"
-                  />
-                </div>
-              </div>
+                </>
+              )
             ) : null}
           </section>
 
