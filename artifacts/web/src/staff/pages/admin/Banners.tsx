@@ -18,13 +18,6 @@ import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -45,6 +38,20 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { PageBody, PageHeader } from "../../StaffShell";
 
+const STYLE_GREEN = "#5C8A72";
+const STYLE_AMBER = "#C77E1E";
+
+type NotifStyle = "standard" | "alert";
+type EditingTarget = AdminBanner | { preset: "banner" | "popup" } | null;
+
+function styleLabel(style: string | undefined): string {
+  return (style ?? "standard") === "alert" ? "Alert" : "Standard";
+}
+
+function styleColor(style: string | undefined): string {
+  return (style ?? "standard") === "alert" ? STYLE_AMBER : STYLE_GREEN;
+}
+
 function formatRange(b: AdminBanner): string {
   if (!b.startDate && !b.endDate) return "Always";
   const fmt = (d: string | null) => (d ? new Date(d).toLocaleDateString() : "—");
@@ -59,13 +66,39 @@ function isLiveNow(b: AdminBanner): boolean {
   return true;
 }
 
+function apiErrorMsg(err: unknown, fallback: string): string {
+  const apiMsg = (err as { response?: { data?: { error?: string } } }).response
+    ?.data?.error;
+  return apiMsg ?? (err instanceof Error ? err.message : fallback);
+}
+
+function StatusCell({ b }: { b: AdminBanner }) {
+  return (
+    <div className="flex items-center gap-2">
+      {isLiveNow(b) ? (
+        <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 font-normal">
+          Live
+        </Badge>
+      ) : b.isActive ? (
+        <Badge variant="outline" className="font-normal text-amber-700 border-amber-300">
+          Scheduled
+        </Badge>
+      ) : (
+        <Badge variant="outline" className="font-normal text-slate-500">
+          Off
+        </Badge>
+      )}
+    </div>
+  );
+}
+
 export default function Banners() {
   const qc = useQueryClient();
   const toast = useToast();
   const list = useAdminListBanners();
   const setActive = useAdminSetBannerActive();
   const deleteMut = useAdminDeleteBanner();
-  const [editing, setEditing] = useState<AdminBanner | "new" | null>(null);
+  const [editing, setEditing] = useState<EditingTarget>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
   async function refetch() {
@@ -77,10 +110,9 @@ export default function Banners() {
       await setActive.mutateAsync({ id: b.id, data: { isActive: next } });
       await refetch();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to update";
       toast.toast({
-        title: "Could not update banner",
-        description: msg,
+        title: "Could not update",
+        description: apiErrorMsg(err, "Failed to update"),
         variant: "destructive",
       });
     }
@@ -91,12 +123,11 @@ export default function Banners() {
     try {
       await deleteMut.mutateAsync({ id: deletingId });
       await refetch();
-      toast.toast({ title: "Banner deleted" });
+      toast.toast({ title: "Deleted" });
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to delete";
       toast.toast({
-        title: "Could not delete banner",
-        description: msg,
+        title: "Could not delete",
+        description: apiErrorMsg(err, "Failed to delete"),
         variant: "destructive",
       });
     } finally {
@@ -104,124 +135,164 @@ export default function Banners() {
     }
   }
 
+  const banners = (list.data ?? []).filter((b) => b.type === "banner");
+  const popups = (list.data ?? []).filter((b) => b.type === "popup");
+
+  const loadingState = list.isLoading ? (
+    <div className="p-12 flex justify-center">
+      <Spinner />
+    </div>
+  ) : list.isError ? (
+    <div className="p-6 text-sm text-rose-600">Failed to load.</div>
+  ) : null;
+
   return (
     <>
-      <PageHeader
-        title="Site Banners"
-        action={
-          <Button onClick={() => setEditing("new")}>
-            <Plus className="size-4 mr-1.5" />
-            Add banner
-          </Button>
-        }
-      />
+      <PageHeader title="Site Notifications" />
       <PageBody>
-        <div className="bg-white rounded-lg border overflow-x-auto">
-          {list.isLoading ? (
-            <div className="p-12 flex justify-center">
-              <Spinner />
+        <div className="space-y-8">
+
+          {/* ── Banners section ── */}
+          <div className="bg-white rounded-lg border overflow-x-auto">
+            <div className="flex items-center justify-between px-4 py-3 border-b">
+              <h2 className="font-semibold text-slate-800">Banners</h2>
+              <Button size="sm" onClick={() => setEditing({ preset: "banner" })}>
+                <Plus className="size-4 mr-1.5" />
+                Add banner
+              </Button>
             </div>
-          ) : list.isError ? (
-            <div className="p-6 text-sm text-rose-600">
-              Failed to load banners.
+            {loadingState ?? (
+              banners.length === 0 ? (
+                <div className="p-12 text-center text-sm text-slate-500">
+                  <Megaphone className="size-8 mx-auto mb-3 text-slate-300" />
+                  No banners yet. Create one to display a site-wide notice.
+                </div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-50 border-b text-left text-xs uppercase tracking-wide text-slate-500">
+                    <tr>
+                      <th className="px-4 py-3 font-semibold">Title</th>
+                      <th className="px-4 py-3 font-semibold">Schedule</th>
+                      <th className="px-4 py-3 font-semibold">Order</th>
+                      <th className="px-4 py-3 font-semibold">Status</th>
+                      <th className="px-4 py-3 font-semibold text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {banners.map((b) => (
+                      <tr key={b.id} className="hover:bg-slate-50 align-top">
+                        <td className="px-4 py-3">
+                          <div className="font-medium text-slate-900">{b.title}</div>
+                          <div className="text-xs text-slate-500 line-clamp-2 max-w-md">
+                            {b.messageText}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-slate-600 text-xs">{formatRange(b)}</td>
+                        <td className="px-4 py-3 text-slate-600">{b.displayOrder}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <Switch
+                              checked={b.isActive}
+                              onCheckedChange={(v) => handleToggle(b, v)}
+                              aria-label={`Toggle ${b.title}`}
+                            />
+                            <StatusCell b={b} />
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <div className="inline-flex gap-1">
+                            <Button variant="outline" size="sm" onClick={() => setEditing(b)}>
+                              <Pencil className="size-3.5 mr-1" />
+                              Edit
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => setDeletingId(b.id)}>
+                              <Trash2 className="size-3.5 mr-1" />
+                              Delete
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )
+            )}
+          </div>
+
+          {/* ── Pop-Ups section ── */}
+          <div className="bg-white rounded-lg border overflow-x-auto">
+            <div className="flex items-center justify-between px-4 py-3 border-b">
+              <h2 className="font-semibold text-slate-800">Pop-Ups</h2>
+              <Button size="sm" onClick={() => setEditing({ preset: "popup" })}>
+                <Plus className="size-4 mr-1.5" />
+                Add pop-up
+              </Button>
             </div>
-          ) : list.data && list.data.length === 0 ? (
-            <div className="p-12 text-center text-sm text-slate-500">
-              <Megaphone className="size-8 mx-auto mb-3 text-slate-300" />
-              No banners yet. Create one to display a site-wide notice.
-            </div>
-          ) : (
-            <table className="w-full text-sm">
-              <thead className="bg-slate-50 border-b text-left text-xs uppercase tracking-wide text-slate-500">
-                <tr>
-                  <th className="px-4 py-3 font-semibold">Title</th>
-                  <th className="px-4 py-3 font-semibold">Type</th>
-                  <th className="px-4 py-3 font-semibold">Schedule</th>
-                  <th className="px-4 py-3 font-semibold">Order</th>
-                  <th className="px-4 py-3 font-semibold">Status</th>
-                  <th className="px-4 py-3 font-semibold text-right">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {(list.data ?? []).map((b) => (
-                  <tr key={b.id} className="hover:bg-slate-50 align-top">
-                    <td className="px-4 py-3">
-                      <div className="font-medium text-slate-900">
-                        {b.title}
-                      </div>
-                      <div className="text-xs text-slate-500 line-clamp-2 max-w-md">
-                        {b.messageText}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge
-                        variant="outline"
-                        className="capitalize font-normal"
-                      >
-                        {b.type}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 text-slate-600 text-xs">
-                      {formatRange(b)}
-                    </td>
-                    <td className="px-4 py-3 text-slate-600">
-                      {b.displayOrder}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <Switch
-                          checked={b.isActive}
-                          onCheckedChange={(v) => handleToggle(b, v)}
-                          aria-label={`Toggle ${b.title}`}
-                        />
-                        {isLiveNow(b) ? (
-                          <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 font-normal">
-                            Live
-                          </Badge>
-                        ) : b.isActive ? (
-                          <Badge
-                            variant="outline"
-                            className="font-normal text-amber-700 border-amber-300"
-                          >
-                            Scheduled
-                          </Badge>
-                        ) : (
-                          <Badge
-                            variant="outline"
-                            className="font-normal text-slate-500"
-                          >
-                            Off
-                          </Badge>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="inline-flex gap-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setEditing(b)}
-                        >
-                          <Pencil className="size-3.5 mr-1" />
-                          Edit
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setDeletingId(b.id)}
-                        >
-                          <Trash2 className="size-3.5 mr-1" />
-                          Delete
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+            {loadingState ?? (
+              popups.length === 0 ? (
+                <div className="p-12 text-center text-sm text-slate-500">
+                  <Megaphone className="size-8 mx-auto mb-3 text-slate-300" />
+                  No pop-ups yet. Create one to show a home-page overlay.
+                </div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-50 border-b text-left text-xs uppercase tracking-wide text-slate-500">
+                    <tr>
+                      <th className="px-4 py-3 font-semibold">Title</th>
+                      <th className="px-4 py-3 font-semibold">Style</th>
+                      <th className="px-4 py-3 font-semibold">Schedule</th>
+                      <th className="px-4 py-3 font-semibold">Status</th>
+                      <th className="px-4 py-3 font-semibold text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {popups.map((b) => (
+                      <tr key={b.id} className="hover:bg-slate-50 align-top">
+                        <td className="px-4 py-3">
+                          <div className="font-medium text-slate-900">{b.title}</div>
+                          <div className="text-xs text-slate-500 line-clamp-2 max-w-md">
+                            {b.messageText}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1.5">
+                            <span
+                              className="inline-block size-3 rounded-full flex-shrink-0"
+                              style={{ backgroundColor: styleColor(b.style) }}
+                            />
+                            <span className="text-slate-700">{styleLabel(b.style)}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-slate-600 text-xs">{formatRange(b)}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <Switch
+                              checked={b.isActive}
+                              onCheckedChange={(v) => handleToggle(b, v)}
+                              aria-label={`Toggle ${b.title}`}
+                            />
+                            <StatusCell b={b} />
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <div className="inline-flex gap-1">
+                            <Button variant="outline" size="sm" onClick={() => setEditing(b)}>
+                              <Pencil className="size-3.5 mr-1" />
+                              Edit
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => setDeletingId(b.id)}>
+                              <Trash2 className="size-3.5 mr-1" />
+                              Delete
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )
+            )}
+          </div>
         </div>
 
         <BannerDialog
@@ -236,15 +307,13 @@ export default function Banners() {
         >
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Delete banner?</AlertDialogTitle>
+              <AlertDialogTitle>Delete notification?</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to delete this banner? This cannot be undone.
+                Are you sure you want to delete this? This cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setDeletingId(null)}>
-                Cancel
-              </AlertDialogCancel>
+              <AlertDialogCancel onClick={() => setDeletingId(null)}>Cancel</AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleDelete}
                 disabled={deleteMut.isPending}
@@ -255,7 +324,6 @@ export default function Banners() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-
       </PageBody>
     </>
   );
@@ -274,12 +342,47 @@ function fromLocalInput(value: string): string | null {
   return Number.isNaN(d.getTime()) ? null : d.toISOString();
 }
 
+function StyleSelector({
+  value,
+  onChange,
+}: {
+  value: NotifStyle;
+  onChange: (v: NotifStyle) => void;
+}) {
+  const options: { value: NotifStyle; label: string; color: string }[] = [
+    { value: "standard", label: "Standard", color: STYLE_GREEN },
+    { value: "alert", label: "Alert", color: STYLE_AMBER },
+  ];
+  return (
+    <div className="flex gap-2">
+      {options.map((opt) => (
+        <button
+          key={opt.value}
+          type="button"
+          onClick={() => onChange(opt.value)}
+          className={`flex items-center gap-2 flex-1 px-3 py-2 rounded-md border text-sm transition-colors ${
+            value === opt.value
+              ? "border-slate-900 bg-slate-50 font-medium"
+              : "border-slate-200 hover:border-slate-400"
+          }`}
+        >
+          <span
+            className="inline-block size-3.5 rounded-full flex-shrink-0"
+            style={{ backgroundColor: opt.color }}
+          />
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function BannerDialog({
   target,
   onClose,
   onSaved,
 }: {
-  target: AdminBanner | "new" | null;
+  target: EditingTarget;
   onClose: () => void;
   onSaved: () => Promise<void>;
 }) {
@@ -290,28 +393,32 @@ function BannerDialog({
   const [title, setTitle] = useState("");
   const [messageText, setMessageText] = useState("");
   const [type, setType] = useState<"popup" | "banner">("banner");
+  const [style, setStyle] = useState<NotifStyle>("standard");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [displayOrder, setDisplayOrder] = useState(0);
   const [isActive, setIsActive] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const isEdit = target && target !== "new";
+  const isEdit = target !== null && "id" in target;
 
   useEffect(() => {
-    if (target === "new") {
+    if (!target) return;
+    if ("preset" in target) {
       setTitle("");
       setMessageText("");
-      setType("banner");
+      setType(target.preset);
+      setStyle("standard");
       setStartDate("");
       setEndDate("");
       setDisplayOrder(0);
       setIsActive(true);
       setError(null);
-    } else if (target) {
+    } else {
       setTitle(target.title);
       setMessageText(target.messageText);
       setType(target.type);
+      setStyle((target.style ?? "standard") as NotifStyle);
       setStartDate(toLocalInput(target.startDate));
       setEndDate(toLocalInput(target.endDate));
       setDisplayOrder(target.displayOrder);
@@ -334,16 +441,17 @@ function BannerDialog({
       return;
     }
     try {
-      if (target && target !== "new") {
+      if (isEdit && target && "id" in target) {
         await updateMut.mutateAsync({
           id: target.id,
           data: {
             title: title.trim(),
             messageText: messageText.trim(),
             type,
+            style,
             startDate: startIso,
             endDate: endIso,
-            displayOrder,
+            ...(type === "banner" ? { displayOrder } : {}),
           },
         });
       } else {
@@ -352,35 +460,45 @@ function BannerDialog({
             title: title.trim(),
             messageText: messageText.trim(),
             type,
+            style,
             startDate: startIso,
             endDate: endIso,
-            displayOrder,
             isActive,
+            ...(type === "banner" ? { displayOrder } : {}),
           },
         });
       }
       await onSaved();
       toast.toast({
-        title: isEdit ? "Banner updated" : "Banner created",
+        title: isEdit
+          ? type === "popup" ? "Pop-up updated" : "Banner updated"
+          : type === "popup" ? "Pop-up created" : "Banner created",
       });
       onClose();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to save";
-      setError(msg);
+      const apiMsg = (err as { response?: { data?: { error?: string } } }).response
+        ?.data?.error;
+      setError(apiMsg ?? (err instanceof Error ? err.message : "Failed to save"));
     }
   }
 
   const open = target !== null;
   const pending = createMut.isPending || updateMut.isPending;
+  const isPopup = type === "popup";
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit banner" : "Add banner"}</DialogTitle>
+          <DialogTitle>
+            {isEdit
+              ? isPopup ? "Edit pop-up" : "Edit banner"
+              : isPopup ? "Add pop-up" : "Add banner"}
+          </DialogTitle>
           <DialogDescription>
-            Banners appear at the top of every page; popups overlay the
-            screen on first visit. Leave dates blank to run indefinitely.
+            {isPopup
+              ? "Pop-ups appear as an overlay on the home page. Leave dates blank to run indefinitely."
+              : "Banners appear at the top of every page. Leave dates blank to run indefinitely."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -402,22 +520,15 @@ function BannerDialog({
               rows={3}
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+
+          {isPopup && (
             <div>
-              <Label htmlFor="b-type">Type</Label>
-              <Select
-                value={type}
-                onValueChange={(v) => setType(v as "popup" | "banner")}
-              >
-                <SelectTrigger id="b-type">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="banner">Banner (top of page)</SelectItem>
-                  <SelectItem value="popup">Popup (modal)</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label className="mb-1.5 block">Style</Label>
+              <StyleSelector value={style} onChange={setStyle} />
             </div>
+          )}
+
+          {!isPopup && (
             <div>
               <Label htmlFor="b-order">Display order</Label>
               <Input
@@ -427,7 +538,8 @@ function BannerDialog({
                 onChange={(e) => setDisplayOrder(Number(e.target.value) || 0)}
               />
             </div>
-          </div>
+          )}
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label htmlFor="b-start">Starts (optional)</Label>
@@ -448,6 +560,7 @@ function BannerDialog({
               />
             </div>
           </div>
+
           {!isEdit && (
             <div className="flex items-center justify-between">
               <Label htmlFor="b-active">Active on creation</Label>
@@ -458,7 +571,9 @@ function BannerDialog({
               />
             </div>
           )}
+
           {error && <div className="text-sm text-rose-600">{error}</div>}
+
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
@@ -468,7 +583,7 @@ function BannerDialog({
                 ? "Saving…"
                 : isEdit
                   ? "Save changes"
-                  : "Create banner"}
+                  : isPopup ? "Create pop-up" : "Create banner"}
             </Button>
           </DialogFooter>
         </form>

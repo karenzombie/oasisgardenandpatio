@@ -72,7 +72,7 @@ export const ADMIN_NAV: NavGroup[] = [
   {
     heading: "Site",
     items: [
-      { label: "Banners", path: "/admin/banners", icon: Megaphone },
+      { label: "Site Notifications", path: "/admin/banners", icon: Megaphone },
       { label: "Legal", path: "/admin/legal", icon: FileText },
     ],
   },
