@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, gt, isNull, lt, ne, or, sql } from "drizzle-orm";
 import { db, siteNotificationsTable, type SiteNotification } from "@workspace/db";
 import {
   AdminCreateBannerBody,
@@ -32,6 +32,60 @@ function bannerToPayload(row: SiteNotification) {
 
 function nullDate(value: Date | null | undefined): Date | null {
   return value ?? null;
+}
+
+/**
+ * Returns true if any other active row of the same type has a window that
+ * overlaps the candidate window.  Null start = −∞, null end = +∞.
+ * Overlap: aStart < bEnd AND bStart < aEnd (strict <, so touching edges are fine).
+ */
+async function findOverlappingActive(candidate: {
+  type: string;
+  startDate: Date | null;
+  endDate: Date | null;
+  excludeId?: number;
+}): Promise<boolean> {
+  const { type, startDate, endDate, excludeId } = candidate;
+
+  // candidate_start < row_end  (null candidate_start = −∞ → always true)
+  const aStartLtBEnd =
+    startDate === null
+      ? sql`true`
+      : or(
+          isNull(siteNotificationsTable.endDate),
+          gt(siteNotificationsTable.endDate, startDate),
+        );
+
+  // row_start < candidate_end  (null candidate_end = +∞ → always true)
+  const bStartLtAEnd =
+    endDate === null
+      ? sql`true`
+      : or(
+          isNull(siteNotificationsTable.startDate),
+          lt(siteNotificationsTable.startDate, endDate),
+        );
+
+  const conditions = [
+    eq(siteNotificationsTable.type, type),
+    eq(siteNotificationsTable.isActive, true),
+    aStartLtBEnd,
+    bStartLtAEnd,
+    ...(excludeId !== undefined ? [ne(siteNotificationsTable.id, excludeId)] : []),
+  ];
+
+  const [conflict] = await db
+    .select({ id: siteNotificationsTable.id })
+    .from(siteNotificationsTable)
+    .where(and(...conditions))
+    .limit(1);
+
+  return conflict !== undefined;
+}
+
+function overlapErrorMessage(type: string): string {
+  return type === "popup"
+    ? "Only one pop-up can be live at a time, and this one's active dates overlap a pop-up that's already active. Turn the other one off, or give this pop-up start and end dates that don't overlap it."
+    : "Only one banner can be live at a time, and this one's active dates overlap a banner that's already active. Turn the other one off, or give this banner start and end dates that don't overlap it.";
 }
 
 router.get(
@@ -70,6 +124,17 @@ router.post(
         .status(400)
         .json({ error: "End date must be after start date" });
       return;
+    }
+    if (parsed.data.isActive ?? true) {
+      const conflict = await findOverlappingActive({
+        type: parsed.data.type,
+        startDate: start,
+        endDate: end,
+      });
+      if (conflict) {
+        res.status(409).json({ error: overlapErrorMessage(parsed.data.type) });
+        return;
+      }
     }
     const [created] = await db
       .insert(siteNotificationsTable)
@@ -127,6 +192,18 @@ router.put(
       .select()
       .from(siteNotificationsTable)
       .where(eq(siteNotificationsTable.id, params.data.id));
+    if (previous?.isActive) {
+      const conflict = await findOverlappingActive({
+        type: body.data.type,
+        startDate: start,
+        endDate: end,
+        excludeId: params.data.id,
+      });
+      if (conflict) {
+        res.status(409).json({ error: overlapErrorMessage(body.data.type) });
+        return;
+      }
+    }
     const [updated] = await db
       .update(siteNotificationsTable)
       .set({
@@ -209,6 +286,22 @@ router.patch(
       .select()
       .from(siteNotificationsTable)
       .where(eq(siteNotificationsTable.id, params.data.id));
+    if (body.data.isActive) {
+      if (!previous) {
+        res.status(404).json({ error: "Banner not found" });
+        return;
+      }
+      const conflict = await findOverlappingActive({
+        type: previous.type,
+        startDate: previous.startDate,
+        endDate: previous.endDate,
+        excludeId: params.data.id,
+      });
+      if (conflict) {
+        res.status(409).json({ error: overlapErrorMessage(previous.type) });
+        return;
+      }
+    }
     const [updated] = await db
       .update(siteNotificationsTable)
       .set({ isActive: body.data.isActive })
