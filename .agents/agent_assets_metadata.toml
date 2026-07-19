@@ -71,3 +71,9 @@ id = "tRWQCjBJfdOX_3-zs8QJ6"
 uri = "file://shoreline_sku_name.csv"
 type = "table"
 title = "shoreline_sku_name.csv"
+
+[[outputs]]
+id = "TT7aQXIgjXGEXIgOTCjTi"
+uri = "file://artifacts/web/public/favicon.svg"
+type = "image"
+title = "Favicon — brand leaf mark"
