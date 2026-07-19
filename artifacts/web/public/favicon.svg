@@ -1,3 +1,14 @@
 <svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-<rect width="180" height="180" rx="36" fill="#FF3C00"/>
+  <!-- Brand green rounded background -->
+  <rect width="180" height="180" rx="36" fill="#4a6c5e"/>
+  <!--
+    Leaf mark lifted verbatim from logo.svg.
+    Original paths are in a 40×48 box (x:12–28, y:8–44 with stem).
+    scale(4.17) fills 150px of the 180px space with 15px padding top/bottom.
+    translate(7 -18) centres horizontally and positions the top at y≈15.
+  -->
+  <g transform="translate(7 -18) scale(4.17)">
+    <path d="M20 8 C12 16 12 28 20 36 C28 28 28 16 20 8 Z" fill="#7ba892" opacity="0.9"/>
+    <line x1="20" y1="36" x2="20" y2="44" stroke="#a8d5be" stroke-width="0.5" stroke-linecap="round"/>
+  </g>
 </svg>
