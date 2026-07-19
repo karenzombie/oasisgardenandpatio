@@ -8887,12 +8887,17 @@ components:
         shippingWeightAmount:
           type: string
           description: The order-level by-weight shipping tier amount included in shipping (Area E), in dollars.
+        shippingWeightLbs:
+          type: number
+          minimum: 0
+          description: Total billable cart weight used to pick the by-weight tier.
       required:
         - items
         - itemCount
         - subtotal
         - shipping
         - shippingWeightAmount
+        - shippingWeightLbs
     AddCartItemRequest:
       type: object
       properties:

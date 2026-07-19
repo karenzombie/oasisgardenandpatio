@@ -2263,6 +2263,11 @@ export interface CartResponse {
   shipping: string;
   /** The order-level by-weight shipping tier amount included in shipping (Area E), in dollars. */
   shippingWeightAmount: string;
+  /**
+   * Total billable cart weight used to pick the by-weight tier.
+   * @minimum 0
+   */
+  shippingWeightLbs: number;
 }
 
 export interface AddCartItemRequest {

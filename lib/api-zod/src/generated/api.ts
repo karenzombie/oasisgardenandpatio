@@ -2198,6 +2198,8 @@ export const AdminGetShippingSubcategoriesResponse = zod.object({
  * @summary Get the signed-in user's cart
  */
 
+export const getCartResponseShippingWeightLbsMin = 0;
+
 export const GetCartResponse = zod.object({
   items: zod.array(
     zod.object({
@@ -2306,11 +2308,17 @@ export const GetCartResponse = zod.object({
     .describe(
       "The order-level by-weight shipping tier amount included in shipping (Area E), in dollars.",
     ),
+  shippingWeightLbs: zod
+    .number()
+    .min(getCartResponseShippingWeightLbsMin)
+    .describe("Total billable cart weight used to pick the by-weight tier."),
 });
 
 /**
  * @summary Remove all items from the signed-in user's cart
  */
+
+export const clearCartResponseShippingWeightLbsMin = 0;
 
 export const ClearCartResponse = zod.object({
   items: zod.array(
@@ -2420,6 +2428,10 @@ export const ClearCartResponse = zod.object({
     .describe(
       "The order-level by-weight shipping tier amount included in shipping (Area E), in dollars.",
     ),
+  shippingWeightLbs: zod
+    .number()
+    .min(clearCartResponseShippingWeightLbsMin)
+    .describe("Total billable cart weight used to pick the by-weight tier."),
 });
 
 /**
@@ -2473,6 +2485,8 @@ export const AddCartItemBody = zod.object({
       'For TG replacement pole items — the customer\'s selected umbrella model code (e.g. \"UM810\"). Stored to assemble the printed line description at order time.',
     ),
 });
+
+export const addCartItemResponseShippingWeightLbsMin = 0;
 
 export const AddCartItemResponse = zod.object({
   items: zod.array(
@@ -2582,6 +2596,10 @@ export const AddCartItemResponse = zod.object({
     .describe(
       "The order-level by-weight shipping tier amount included in shipping (Area E), in dollars.",
     ),
+  shippingWeightLbs: zod
+    .number()
+    .min(addCartItemResponseShippingWeightLbsMin)
+    .describe("Total billable cart weight used to pick the by-weight tier."),
 });
 
 /**
@@ -2594,6 +2612,8 @@ export const UpdateCartItemParams = zod.object({
 export const UpdateCartItemBody = zod.object({
   quantity: zod.number().min(1),
 });
+
+export const updateCartItemResponseShippingWeightLbsMin = 0;
 
 export const UpdateCartItemResponse = zod.object({
   items: zod.array(
@@ -2703,6 +2723,10 @@ export const UpdateCartItemResponse = zod.object({
     .describe(
       "The order-level by-weight shipping tier amount included in shipping (Area E), in dollars.",
     ),
+  shippingWeightLbs: zod
+    .number()
+    .min(updateCartItemResponseShippingWeightLbsMin)
+    .describe("Total billable cart weight used to pick the by-weight tier."),
 });
 
 /**
@@ -2711,6 +2735,8 @@ export const UpdateCartItemResponse = zod.object({
 export const RemoveCartItemParams = zod.object({
   itemId: zod.coerce.number(),
 });
+
+export const removeCartItemResponseShippingWeightLbsMin = 0;
 
 export const RemoveCartItemResponse = zod.object({
   items: zod.array(
@@ -2820,6 +2846,10 @@ export const RemoveCartItemResponse = zod.object({
     .describe(
       "The order-level by-weight shipping tier amount included in shipping (Area E), in dollars.",
     ),
+  shippingWeightLbs: zod
+    .number()
+    .min(removeCartItemResponseShippingWeightLbsMin)
+    .describe("Total billable cart weight used to pick the by-weight tier."),
 });
 
 /**
