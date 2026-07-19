@@ -16,6 +16,7 @@ router.get("/banners/active", async (req, res): Promise<void> => {
       title: siteNotificationsTable.title,
       messageText: siteNotificationsTable.messageText,
       type: siteNotificationsTable.type,
+      style: siteNotificationsTable.style,
     })
     .from(siteNotificationsTable)
     .where(

@@ -23,6 +23,7 @@ function bannerToPayload(row: SiteNotification) {
     startDate: row.startDate ? row.startDate.toISOString() : null,
     endDate: row.endDate ? row.endDate.toISOString() : null,
     isActive: row.isActive,
+    style: row.style,
     displayOrder: row.displayOrder,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -78,6 +79,7 @@ router.post(
         type: parsed.data.type,
         startDate: start,
         endDate: end,
+        style: parsed.data.style ?? "standard",
         isActive: parsed.data.isActive ?? true,
         displayOrder: parsed.data.displayOrder ?? 0,
       })
@@ -133,6 +135,7 @@ router.put(
         type: body.data.type,
         startDate: start,
         endDate: end,
+        ...(body.data.style !== undefined ? { style: body.data.style } : {}),
         ...(body.data.displayOrder !== undefined
           ? { displayOrder: body.data.displayOrder }
           : {}),
