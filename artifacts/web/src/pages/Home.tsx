@@ -90,7 +90,7 @@ export default function Home() {
               Discover curated outdoor furniture collections designed for the way you live outside. Craftsmanship that endures.
             </p>
             <div className="flex flex-col items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
-              <Button variant="outline" className="text-white border-white hover:bg-white/10 rounded-none px-12 py-5 text-lg font-serif tracking-wide bg-transparent w-56 h-auto" asChild>
+              <Button variant="outline" className="text-white border-white hover:bg-white/20 rounded-none px-12 py-5 text-lg font-serif tracking-wide bg-white/10 backdrop-blur-md w-56 h-auto" asChild>
                 <Link href="/contact">Visit Showroom</Link>
               </Button>
             </div>
