@@ -6,7 +6,7 @@ import {
   orderItemAddonsTable,
   type Customer,
 } from "@workspace/db";
-import { sendEmail, getSiteBaseUrl } from "./email";
+import { sendEmail, getSiteBaseUrl, STORE_NOTIFICATION_EMAIL } from "./email";
 import { logger } from "./logger";
 
 const SIGNOFF = `<p style="margin-top:24px;">Warm regards,<br/>The Oasis Garden &amp; Patio Team</p>`;
@@ -234,15 +234,6 @@ export async function sendStoreNewOrderNotification(
   customer: Pick<Customer, "email" | "firstName" | "lastName">,
   orderNumber: string,
 ): Promise<void> {
-  const adminEmail = process.env["ADMIN_EMAIL"];
-  if (!adminEmail) {
-    logger.warn(
-      { orderNumber },
-      "ADMIN_EMAIL not set; skipping store new-order notification",
-    );
-    return;
-  }
-
   try {
     const data = await loadOrderData(orderNumber);
     if (!data) {
@@ -281,12 +272,12 @@ export async function sendStoreNewOrderNotification(
     `;
 
     await sendEmail({
-      to: adminEmail,
+      to: STORE_NOTIFICATION_EMAIL,
       subject: `New online order: ${orderNumber}`,
       title: "New customer order",
       bodyHtml,
     });
-    logger.info({ orderNumber, to: adminEmail }, "Sent store new-order notification");
+    logger.info({ orderNumber, to: STORE_NOTIFICATION_EMAIL }, "Sent store new-order notification");
   } catch (err) {
     logger.error({ err, orderNumber }, "Failed to send store new-order notification");
   }

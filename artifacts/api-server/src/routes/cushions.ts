@@ -20,6 +20,7 @@ import {
 } from "../lib/cushionEmail";
 import { renderCushionOrderPdf } from "../lib/cushionPdf";
 import { logger } from "../lib/logger";
+import { STORE_NOTIFICATION_EMAIL } from "../lib/email";
 
 const router: IRouter = Router();
 
@@ -244,27 +245,24 @@ router.post(
         ),
       );
     }
-    const adminEmail = process.env["ADMIN_EMAIL"];
-    if (adminEmail) {
-      const baseUrl =
-        process.env["PUBLIC_BASE_URL"] ??
-        (process.env["REPLIT_DOMAINS"]?.split(",")[0]
-          ? `https://${process.env["REPLIT_DOMAINS"]?.split(",")[0]}`
-          : "");
-      void sendAdminAlertEmail({
-        to: adminEmail,
-        orderNumber: orderRow.orderNumber,
-        customerName: orderRow.customerName,
-        itemSummary: summary,
-        detailUrl: `${baseUrl}/admin/cushion-orders/${orderRow.id}`,
-        orderKind: data.orderKind,
-      }).catch((err) =>
-        logger.error(
-          { err, orderNumber: orderRow.orderNumber },
-          "Cushion admin alert email failed",
-        ),
-      );
-    }
+    const baseUrl =
+      process.env["PUBLIC_BASE_URL"] ??
+      (process.env["REPLIT_DOMAINS"]?.split(",")[0]
+        ? `https://${process.env["REPLIT_DOMAINS"]?.split(",")[0]}`
+        : "");
+    void sendAdminAlertEmail({
+      to: STORE_NOTIFICATION_EMAIL,
+      orderNumber: orderRow.orderNumber,
+      customerName: orderRow.customerName,
+      itemSummary: summary,
+      detailUrl: `${baseUrl}/admin/cushion-orders/${orderRow.id}`,
+      orderKind: data.orderKind,
+    }).catch((err) =>
+      logger.error(
+        { err, orderNumber: orderRow.orderNumber },
+        "Cushion admin alert email failed",
+      ),
+    );
 
     res.json({ id: orderRow.id, orderNumber: orderRow.orderNumber });
   },

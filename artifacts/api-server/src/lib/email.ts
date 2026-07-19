@@ -59,6 +59,7 @@ async function getResendClient(): Promise<{ client: Resend; from: string }> {
 }
 
 const ARCHIVE_BCC = "online@oasisgardenandpatio.com";
+export const STORE_NOTIFICATION_EMAIL = "sales@oasisgardenandpatio.com";
 
 export async function sendViaResend(payload: {
   to: string | string[];
