@@ -67,8 +67,7 @@ function isLiveNow(b: AdminBanner): boolean {
 }
 
 function apiErrorMsg(err: unknown, fallback: string): string {
-  const apiMsg = (err as { response?: { data?: { error?: string } } }).response
-    ?.data?.error;
+  const apiMsg = (err as { data?: { error?: string } | null }).data?.error;
   return apiMsg ?? (err instanceof Error ? err.message : fallback);
 }
 
@@ -476,8 +475,7 @@ function BannerDialog({
       });
       onClose();
     } catch (err: unknown) {
-      const apiMsg = (err as { response?: { data?: { error?: string } } }).response
-        ?.data?.error;
+      const apiMsg = (err as { data?: { error?: string } | null }).data?.error;
       setError(apiMsg ?? (err instanceof Error ? err.message : "Failed to save"));
     }
   }

@@ -21,6 +21,7 @@ import {
 import { BRAND_LOGOS, getBrandLogo } from "@/lib/brandLogos";
 import heroImg from "@/assets/hero.png";
 import { getCategoryImage } from "@/lib/categoryImages";
+import HomePopup from "./HomePopup";
 
 function formatMoney(v: string | null | undefined): string {
   if (v == null || v === "") return "";
@@ -69,6 +70,7 @@ export default function Home() {
 
   return (
     <div className="w-full">
+      <HomePopup />
       {/* Hero Section — split layout: ship-direct panel on the left, hero photo on the right.
           CSS Grid + clamp() keeps the sidebar width, text, icons and gaps scaling
           *smoothly* with the viewport instead of jumping at rigid breakpoints. */}
