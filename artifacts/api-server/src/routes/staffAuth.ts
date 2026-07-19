@@ -443,4 +443,16 @@ router.post(
   },
 );
 
+router.post("/auth/staff/logout", (req, res): void => {
+  req.session.destroy((err) => {
+    if (err) {
+      req.log.error({ err }, "Failed to destroy staff session on logout");
+      res.status(500).json({ error: "Failed to log out" });
+      return;
+    }
+    res.clearCookie("oasis.staff", { path: "/" });
+    res.status(204).end();
+  });
+});
+
 export default router;

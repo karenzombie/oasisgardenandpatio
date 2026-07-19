@@ -1,7 +1,7 @@
 import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  useLogout,
+  useStaffLogout,
   getStaffGetStateQueryKey,
   getGetCurrentUserQueryKey,
   type StaffUser,
@@ -18,7 +18,7 @@ interface TopbarProps {
 export function Topbar({ user, onMenu }: TopbarProps) {
   const [, navigate] = useLocation();
   const queryClient = useQueryClient();
-  const logoutMutation = useLogout();
+  const logoutMutation = useStaffLogout();
 
   const handleLogout = async () => {
     try {

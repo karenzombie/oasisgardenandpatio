@@ -1664,6 +1664,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /auth/staff/logout:
+    post:
+      operationId: staffLogout
+      tags: [staff-auth]
+      summary: Destroy the staff session and clear the oasis.staff cookie
+      responses:
+        "204":
+          description: Logged out successfully
   /auth/staff/recover/request:
     post:
       operationId: requestStaffRecovery

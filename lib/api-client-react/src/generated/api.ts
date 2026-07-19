@@ -5915,6 +5915,85 @@ export const useStaffDisableTotp = <
 };
 
 /**
+ * @summary Destroy the staff session and clear the oasis.staff cookie
+ */
+export const getStaffLogoutUrl = () => {
+  return `/api/auth/staff/logout`;
+};
+
+export const staffLogout = async (options?: RequestInit): Promise<void> => {
+  return customFetch<void>(getStaffLogoutUrl(), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getStaffLogoutMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof staffLogout>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof staffLogout>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["staffLogout"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof staffLogout>>,
+    void
+  > = () => {
+    return staffLogout(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type StaffLogoutMutationResult = NonNullable<
+  Awaited<ReturnType<typeof staffLogout>>
+>;
+
+export type StaffLogoutMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Destroy the staff session and clear the oasis.staff cookie
+ */
+export const useStaffLogout = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof staffLogout>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof staffLogout>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getStaffLogoutMutationOptions(options));
+};
+
+/**
  * Always returns 200 (does not leak whether the email is registered). If
 the email matches an active staff account, an emailed recovery link is
 scheduled to become usable after a 1-hour cooldown, and all OTHER
