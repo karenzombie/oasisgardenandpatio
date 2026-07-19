@@ -6,7 +6,8 @@ import {
   CircleDot,
   Shield,
   Wrench,
-  LayoutGrid,
+  Lightbulb,
+  RectangleHorizontal,
   Package,
   ChevronLeft,
   ChevronRight,
@@ -39,7 +40,8 @@ function iconForCategory(slug: string): LucideIcon {
   if (s.includes("umbrella-base") || s.includes("base")) return CircleDot;
   if (s.includes("umbrella")) return Umbrella;
   if (s.includes("cover")) return Shield;
-  if (s.includes("rug")) return LayoutGrid;
+  if (s.includes("rug")) return RectangleHorizontal;
+  if (s.includes("light")) return Lightbulb;
   if (s.includes("part") || s.includes("replacement")) return Wrench;
   return Package;
 }
