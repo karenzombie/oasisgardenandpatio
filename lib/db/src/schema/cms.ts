@@ -56,6 +56,7 @@ export const siteNotificationsTable = pgTable(
     startDate: timestamp("start_date", { withTimezone: true }),
     endDate: timestamp("end_date", { withTimezone: true }),
     isActive: boolean("is_active").notNull().default(true),
+    style: text("style").notNull().default("standard"),
     displayOrder: integer("display_order").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -70,6 +71,10 @@ export const siteNotificationsTable = pgTable(
     check(
       "site_notifications_type_check",
       sql`${t.type} in ('popup', 'banner')`,
+    ),
+    check(
+      "site_notifications_style_check",
+      sql`${t.style} in ('standard', 'alert')`,
     ),
   ],
 );
