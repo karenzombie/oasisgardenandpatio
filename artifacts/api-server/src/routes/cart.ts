@@ -285,6 +285,7 @@ async function loadCart(owner: CartOwner) {
     subtotal: subtotal.toFixed(2),
     shipping: (shippingResult.totalCents / 100).toFixed(2),
     shippingWeightAmount: (shippingResult.weightCents / 100).toFixed(2),
+    shippingWeightLbs: shippingResult.totalWeightLbs,
   });
 }
 

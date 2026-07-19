@@ -68,6 +68,7 @@ export default function Cart() {
   const items = data?.items ?? [];
   const subtotal = Number(data?.subtotal ?? 0);
   const shipping = Number(data?.shipping ?? 0);
+  const shippingWeightLbs = Number(data?.shippingWeightLbs ?? 0);
   const total = subtotal + shipping;
 
   // Group tied accessory lines (Aluminum Top Covers) beneath their parent base
@@ -310,6 +311,11 @@ export default function Cart() {
                   <dt className="text-muted-foreground">Shipping</dt>
                   <dd>{formatMoney(String(shipping))}</dd>
                 </div>
+                {shippingWeightLbs > 0 ? (
+                  <p className="text-[11px] text-muted-foreground -mt-1">
+                    {shippingWeightLbs.toFixed(1)} lb estimated
+                  </p>
+                ) : null}
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Tax</dt>
                   <dd className="text-muted-foreground">Calculated at checkout</dd>
