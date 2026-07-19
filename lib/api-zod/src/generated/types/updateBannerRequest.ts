@@ -5,6 +5,7 @@
  * Oasis Garden & Patio API
  * OpenAPI spec version: 0.1.0
  */
+import type { UpdateBannerRequestStyle } from "./updateBannerRequestStyle";
 import type { UpdateBannerRequestType } from "./updateBannerRequestType";
 
 export interface UpdateBannerRequest {
@@ -17,5 +18,6 @@ export interface UpdateBannerRequest {
   startDate?: Date | null;
   /** @nullable */
   endDate?: Date | null;
+  style?: UpdateBannerRequestStyle;
   displayOrder?: number;
 }

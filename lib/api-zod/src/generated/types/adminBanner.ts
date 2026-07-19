@@ -5,6 +5,7 @@
  * Oasis Garden & Patio API
  * OpenAPI spec version: 0.1.0
  */
+import type { AdminBannerStyle } from "./adminBannerStyle";
 import type { AdminBannerType } from "./adminBannerType";
 
 export interface AdminBanner {
@@ -17,6 +18,7 @@ export interface AdminBanner {
   /** @nullable */
   endDate: Date | null;
   isActive: boolean;
+  style?: AdminBannerStyle;
   displayOrder: number;
   createdAt: Date;
   updatedAt: Date;

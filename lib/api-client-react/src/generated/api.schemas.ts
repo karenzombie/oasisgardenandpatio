@@ -1043,11 +1043,19 @@ export const BannerType = {
   banner: "banner",
 } as const;
 
+export type BannerStyle = (typeof BannerStyle)[keyof typeof BannerStyle];
+
+export const BannerStyle = {
+  standard: "standard",
+  alert: "alert",
+} as const;
+
 export interface Banner {
   id: number;
   title: string;
   messageText: string;
   type: BannerType;
+  style?: BannerStyle;
 }
 
 export interface Manufacturer {
@@ -3385,6 +3393,14 @@ export const AdminBannerType = {
   banner: "banner",
 } as const;
 
+export type AdminBannerStyle =
+  (typeof AdminBannerStyle)[keyof typeof AdminBannerStyle];
+
+export const AdminBannerStyle = {
+  standard: "standard",
+  alert: "alert",
+} as const;
+
 export interface AdminBanner {
   id: number;
   title: string;
@@ -3395,6 +3411,7 @@ export interface AdminBanner {
   /** @nullable */
   endDate: string | null;
   isActive: boolean;
+  style?: AdminBannerStyle;
   displayOrder: number;
   createdAt: string;
   updatedAt: string;
@@ -3408,6 +3425,14 @@ export const CreateBannerRequestType = {
   banner: "banner",
 } as const;
 
+export type CreateBannerRequestStyle =
+  (typeof CreateBannerRequestStyle)[keyof typeof CreateBannerRequestStyle];
+
+export const CreateBannerRequestStyle = {
+  standard: "standard",
+  alert: "alert",
+} as const;
+
 export interface CreateBannerRequest {
   /** @minLength 1 */
   title: string;
@@ -3418,6 +3443,7 @@ export interface CreateBannerRequest {
   startDate?: string | null;
   /** @nullable */
   endDate?: string | null;
+  style?: CreateBannerRequestStyle;
   isActive?: boolean;
   displayOrder?: number;
 }
@@ -3430,6 +3456,14 @@ export const UpdateBannerRequestType = {
   banner: "banner",
 } as const;
 
+export type UpdateBannerRequestStyle =
+  (typeof UpdateBannerRequestStyle)[keyof typeof UpdateBannerRequestStyle];
+
+export const UpdateBannerRequestStyle = {
+  standard: "standard",
+  alert: "alert",
+} as const;
+
 export interface UpdateBannerRequest {
   /** @minLength 1 */
   title: string;
@@ -3440,6 +3474,7 @@ export interface UpdateBannerRequest {
   startDate?: string | null;
   /** @nullable */
   endDate?: string | null;
+  style?: UpdateBannerRequestStyle;
   displayOrder?: number;
 }
 

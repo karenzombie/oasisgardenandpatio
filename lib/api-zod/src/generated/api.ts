@@ -48,6 +48,7 @@ export const ListActiveBannersResponseItem = zod.object({
   title: zod.string(),
   messageText: zod.string(),
   type: zod.enum(["popup", "banner"]),
+  style: zod.enum(["standard", "alert"]).optional(),
 });
 export const ListActiveBannersResponse = zod.array(
   ListActiveBannersResponseItem,
@@ -8208,6 +8209,7 @@ export const AdminListBannersResponseItem = zod.object({
   startDate: zod.coerce.date().nullable(),
   endDate: zod.coerce.date().nullable(),
   isActive: zod.boolean(),
+  style: zod.enum(["standard", "alert"]).optional(),
   displayOrder: zod.number(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
@@ -8218,6 +8220,7 @@ export const AdminListBannersResponse = zod.array(AdminListBannersResponseItem);
  * @summary Create a new site banner
  */
 
+export const adminCreateBannerBodyStyleDefault = `standard`;
 export const adminCreateBannerBodyIsActiveDefault = true;
 export const adminCreateBannerBodyDisplayOrderDefault = 0;
 
@@ -8227,6 +8230,9 @@ export const AdminCreateBannerBody = zod.object({
   type: zod.enum(["popup", "banner"]),
   startDate: zod.coerce.date().nullish(),
   endDate: zod.coerce.date().nullish(),
+  style: zod
+    .enum(["standard", "alert"])
+    .default(adminCreateBannerBodyStyleDefault),
   isActive: zod.boolean().default(adminCreateBannerBodyIsActiveDefault),
   displayOrder: zod.number().default(adminCreateBannerBodyDisplayOrderDefault),
 });
@@ -8244,6 +8250,7 @@ export const AdminUpdateBannerBody = zod.object({
   type: zod.enum(["popup", "banner"]),
   startDate: zod.coerce.date().nullish(),
   endDate: zod.coerce.date().nullish(),
+  style: zod.enum(["standard", "alert"]).optional(),
   displayOrder: zod.number().optional(),
 });
 
@@ -8255,6 +8262,7 @@ export const AdminUpdateBannerResponse = zod.object({
   startDate: zod.coerce.date().nullable(),
   endDate: zod.coerce.date().nullable(),
   isActive: zod.boolean(),
+  style: zod.enum(["standard", "alert"]).optional(),
   displayOrder: zod.number(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
@@ -8286,6 +8294,7 @@ export const AdminSetBannerActiveResponse = zod.object({
   startDate: zod.coerce.date().nullable(),
   endDate: zod.coerce.date().nullable(),
   isActive: zod.boolean(),
+  style: zod.enum(["standard", "alert"]).optional(),
   displayOrder: zod.number(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),

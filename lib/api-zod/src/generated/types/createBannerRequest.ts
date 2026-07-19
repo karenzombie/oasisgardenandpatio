@@ -5,6 +5,7 @@
  * Oasis Garden & Patio API
  * OpenAPI spec version: 0.1.0
  */
+import type { CreateBannerRequestStyle } from "./createBannerRequestStyle";
 import type { CreateBannerRequestType } from "./createBannerRequestType";
 
 export interface CreateBannerRequest {
@@ -17,6 +18,7 @@ export interface CreateBannerRequest {
   startDate?: Date | null;
   /** @nullable */
   endDate?: Date | null;
+  style?: CreateBannerRequestStyle;
   isActive?: boolean;
   displayOrder?: number;
 }

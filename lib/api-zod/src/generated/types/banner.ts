@@ -5,6 +5,7 @@
  * Oasis Garden & Patio API
  * OpenAPI spec version: 0.1.0
  */
+import type { BannerStyle } from "./bannerStyle";
 import type { BannerType } from "./bannerType";
 
 export interface Banner {
@@ -12,4 +13,5 @@ export interface Banner {
   title: string;
   messageText: string;
   type: BannerType;
+  style?: BannerStyle;
 }
