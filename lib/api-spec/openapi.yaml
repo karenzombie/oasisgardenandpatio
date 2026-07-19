@@ -7100,6 +7100,9 @@ components:
         type:
           type: string
           enum: [popup, banner]
+        style:
+          type: string
+          enum: [standard, alert]
       required:
         - id
         - title
@@ -10340,6 +10343,7 @@ components:
         startDate: { type: ["string", "null"], format: date-time }
         endDate: { type: ["string", "null"], format: date-time }
         isActive: { type: boolean }
+        style: { type: string, enum: [standard, alert] }
         displayOrder: { type: integer }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
@@ -10362,6 +10366,7 @@ components:
         type: { type: string, enum: [popup, banner] }
         startDate: { type: ["string", "null"], format: date-time }
         endDate: { type: ["string", "null"], format: date-time }
+        style: { type: string, enum: [standard, alert], default: standard }
         isActive: { type: boolean, default: true }
         displayOrder: { type: integer, default: 0 }
       required: [title, messageText, type]
@@ -10373,6 +10378,7 @@ components:
         type: { type: string, enum: [popup, banner] }
         startDate: { type: ["string", "null"], format: date-time }
         endDate: { type: ["string", "null"], format: date-time }
+        style: { type: string, enum: [standard, alert] }
         displayOrder: { type: integer }
       required: [title, messageText, type]
     AdminLegalDocument:
