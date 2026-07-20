@@ -12,7 +12,7 @@ export function toPublicImageUrl<T extends string | null | undefined>(
 ): T {
   if (!url) return url;
   if (typeof url !== "string") return url;
-  if (url.startsWith("/objects/")) {
+  if (url.startsWith("/objects/") || url.startsWith("/public-objects/")) {
     return ("/api/storage" + url) as T;
   }
   return url;

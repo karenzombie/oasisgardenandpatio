@@ -1034,6 +1034,7 @@ export interface LegalDocument {
   version: string;
   content: string;
   effectiveDate: string;
+  pdfStorageUrl?: string | null;
 }
 
 export type BannerType = (typeof BannerType)[keyof typeof BannerType];
@@ -3525,20 +3526,20 @@ export interface AdminLegalDocument {
   content: string;
   effectiveDate: string;
   isActive: boolean;
+  pdfStorageUrl?: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface CreateLegalVersionRequest {
-  /** @minLength 1 */
-  content: string;
+/**
+ * Multipart form-data body. Must include a field named `file` containing the PDF binary (max 25 MB; extension and MIME type must be application/pdf).
+
+ */
+export interface UploadLegalVersionRequest {
+  /** Optional; auto-incremented (v1, v2, ...) if omitted */
+  version?: string;
   /** ISO date (YYYY-MM-DD); defaults to today if omitted */
   effectiveDate?: string;
-  /**
-   * Optional; auto-incremented (v1, v2, ...) if omitted
-   * @minLength 1
-   */
-  version?: string;
 }
 
 export interface SystemSettings {

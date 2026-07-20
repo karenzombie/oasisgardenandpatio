@@ -62,6 +62,36 @@ export async function uploadBufferToStorage(
   return `/objects/${subdir}/${id}`;
 }
 
+/**
+ * Upload a Buffer to the FIRST directory in PUBLIC_OBJECT_SEARCH_PATHS.
+ * Returns the canonical path `/public-objects/<subdir>/<uuid>` to store in the DB.
+ * Files at this path are served unconditionally by GET /api/storage/public-objects/*
+ * with no authentication check — suitable for customer-accessible documents (e.g. PDFs).
+ */
+export async function uploadBufferToPublicStorage(
+  buffer: Buffer,
+  contentType: string,
+  subdir = "uploads",
+): Promise<string> {
+  const pathsStr = process.env.PUBLIC_OBJECT_SEARCH_PATHS || "";
+  const publicDir = pathsStr
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean)[0];
+  if (!publicDir) {
+    throw new Error(
+      "PUBLIC_OBJECT_SEARCH_PATHS not set — object storage must be provisioned first",
+    );
+  }
+  const id = randomUUID();
+  const fullPath = `${publicDir.replace(/\/$/, "")}/${subdir}/${id}`;
+  const { bucketName, objectName } = parseObjectPath(fullPath);
+  const bucket = objectStorageClient.bucket(bucketName);
+  const file = bucket.file(objectName);
+  await file.save(buffer, { contentType, resumable: false });
+  return `/public-objects/${subdir}/${id}`;
+}
+
 export class ObjectStorageService {
   constructor() {}
 

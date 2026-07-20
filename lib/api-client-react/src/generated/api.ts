@@ -168,7 +168,6 @@ import type {
   CreateDiscountEventRequest,
   CreateInventoryAdjustmentRequest,
   CreateInventoryLocationRequest,
-  CreateLegalVersionRequest,
   CreateManufacturerRequest,
   CreateOrderRequest,
   CreateProductRequest,
@@ -272,6 +271,7 @@ import type {
   UpdateUserRequest,
   UpdateVendorOrderRequest,
   UpdateVendorOrderStatusRequest,
+  UploadLegalVersionRequest,
   VerifyEmailChangeBody,
   VerifyEmailRequest,
   WishlistResponse,
@@ -20066,41 +20066,48 @@ export function useAdminListLegalVersions<
 }
 
 /**
- * @summary Publish a new version of a legal document
+ * @summary Upload a PDF and publish it as the new active version
  */
-export const getAdminCreateLegalVersionUrl = (
+export const getAdminUploadLegalVersionUrl = (
   type:
     | "privacy_policy"
     | "terms_and_conditions"
     | "shipping_returns"
     | "warranty",
 ) => {
-  return `/api/admin/legal/${type}`;
+  return `/api/admin/legal/${type}/upload`;
 };
 
-export const adminCreateLegalVersion = async (
+export const adminUploadLegalVersion = async (
   type:
     | "privacy_policy"
     | "terms_and_conditions"
     | "shipping_returns"
     | "warranty",
-  createLegalVersionRequest: CreateLegalVersionRequest,
+  uploadLegalVersionRequest: UploadLegalVersionRequest,
   options?: RequestInit,
 ): Promise<AdminLegalDocument> => {
-  return customFetch<AdminLegalDocument>(getAdminCreateLegalVersionUrl(type), {
+  const formData = new FormData();
+  if (uploadLegalVersionRequest.version !== undefined) {
+    formData.append(`version`, uploadLegalVersionRequest.version);
+  }
+  if (uploadLegalVersionRequest.effectiveDate !== undefined) {
+    formData.append(`effectiveDate`, uploadLegalVersionRequest.effectiveDate);
+  }
+
+  return customFetch<AdminLegalDocument>(getAdminUploadLegalVersionUrl(type), {
     ...options,
     method: "POST",
-    headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(createLegalVersionRequest),
+    body: formData,
   });
 };
 
-export const getAdminCreateLegalVersionMutationOptions = <
+export const getAdminUploadLegalVersionMutationOptions = <
   TError = ErrorType<Error>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof adminCreateLegalVersion>>,
+    Awaited<ReturnType<typeof adminUploadLegalVersion>>,
     TError,
     {
       type:
@@ -20108,13 +20115,13 @@ export const getAdminCreateLegalVersionMutationOptions = <
         | "terms_and_conditions"
         | "shipping_returns"
         | "warranty";
-      data: BodyType<CreateLegalVersionRequest>;
+      data: BodyType<UploadLegalVersionRequest>;
     },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof adminCreateLegalVersion>>,
+  Awaited<ReturnType<typeof adminUploadLegalVersion>>,
   TError,
   {
     type:
@@ -20122,11 +20129,11 @@ export const getAdminCreateLegalVersionMutationOptions = <
       | "terms_and_conditions"
       | "shipping_returns"
       | "warranty";
-    data: BodyType<CreateLegalVersionRequest>;
+    data: BodyType<UploadLegalVersionRequest>;
   },
   TContext
 > => {
-  const mutationKey = ["adminCreateLegalVersion"];
+  const mutationKey = ["adminUploadLegalVersion"];
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
@@ -20136,40 +20143,40 @@ export const getAdminCreateLegalVersionMutationOptions = <
     : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof adminCreateLegalVersion>>,
+    Awaited<ReturnType<typeof adminUploadLegalVersion>>,
     {
       type:
         | "privacy_policy"
         | "terms_and_conditions"
         | "shipping_returns"
         | "warranty";
-      data: BodyType<CreateLegalVersionRequest>;
+      data: BodyType<UploadLegalVersionRequest>;
     }
   > = (props) => {
     const { type, data } = props ?? {};
 
-    return adminCreateLegalVersion(type, data, requestOptions);
+    return adminUploadLegalVersion(type, data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type AdminCreateLegalVersionMutationResult = NonNullable<
-  Awaited<ReturnType<typeof adminCreateLegalVersion>>
+export type AdminUploadLegalVersionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUploadLegalVersion>>
 >;
-export type AdminCreateLegalVersionMutationBody =
-  BodyType<CreateLegalVersionRequest>;
-export type AdminCreateLegalVersionMutationError = ErrorType<Error>;
+export type AdminUploadLegalVersionMutationBody =
+  BodyType<UploadLegalVersionRequest>;
+export type AdminUploadLegalVersionMutationError = ErrorType<Error>;
 
 /**
- * @summary Publish a new version of a legal document
+ * @summary Upload a PDF and publish it as the new active version
  */
-export const useAdminCreateLegalVersion = <
+export const useAdminUploadLegalVersion = <
   TError = ErrorType<Error>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof adminCreateLegalVersion>>,
+    Awaited<ReturnType<typeof adminUploadLegalVersion>>,
     TError,
     {
       type:
@@ -20177,13 +20184,13 @@ export const useAdminCreateLegalVersion = <
         | "terms_and_conditions"
         | "shipping_returns"
         | "warranty";
-      data: BodyType<CreateLegalVersionRequest>;
+      data: BodyType<UploadLegalVersionRequest>;
     },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
-  Awaited<ReturnType<typeof adminCreateLegalVersion>>,
+  Awaited<ReturnType<typeof adminUploadLegalVersion>>,
   TError,
   {
     type:
@@ -20191,15 +20198,15 @@ export const useAdminCreateLegalVersion = <
       | "terms_and_conditions"
       | "shipping_returns"
       | "warranty";
-    data: BodyType<CreateLegalVersionRequest>;
+    data: BodyType<UploadLegalVersionRequest>;
   },
   TContext
 > => {
-  return useMutation(getAdminCreateLegalVersionMutationOptions(options));
+  return useMutation(getAdminUploadLegalVersionMutationOptions(options));
 };
 
 /**
- * @summary Restore a prior version as the active one
+ * @summary Restore a prior PDF version as the active one (text-era versions are blocked)
  */
 export const getAdminRestoreLegalVersionUrl = (
   type:
@@ -20296,7 +20303,7 @@ export type AdminRestoreLegalVersionMutationResult = NonNullable<
 export type AdminRestoreLegalVersionMutationError = ErrorType<Error>;
 
 /**
- * @summary Restore a prior version as the active one
+ * @summary Restore a prior PDF version as the active one (text-era versions are blocked)
  */
 export const useAdminRestoreLegalVersion = <
   TError = ErrorType<Error>,

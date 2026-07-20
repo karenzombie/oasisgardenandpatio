@@ -5565,10 +5565,11 @@ paths:
               schema:
                 type: array
                 items: { $ref: "#/components/schemas/AdminLegalDocument" }
+  /admin/legal/{type}/upload:
     post:
-      operationId: adminCreateLegalVersion
+      operationId: adminUploadLegalVersion
       tags: [admin-legal]
-      summary: Publish a new version of a legal document
+      summary: Upload a PDF and publish it as the new active version
       parameters:
         - name: type
           in: path
@@ -5579,20 +5580,20 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
-            schema: { $ref: "#/components/schemas/CreateLegalVersionRequest" }
+          multipart/form-data:
+            schema: { $ref: "#/components/schemas/UploadLegalVersionRequest" }
       responses:
         "201":
-          description: Newly active version
+          description: Newly active PDF version
           content: { application/json: { schema: { $ref: "#/components/schemas/AdminLegalDocument" } } }
         "400":
-          description: Validation error
+          description: Validation error (missing file, wrong extension, wrong MIME type)
           content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
   /admin/legal/{type}/{id}/restore:
     post:
       operationId: adminRestoreLegalVersion
       tags: [admin-legal]
-      summary: Restore a prior version as the active one
+      summary: Restore a prior PDF version as the active one (text-era versions are blocked)
       parameters:
         - name: type
           in: path
@@ -5610,6 +5611,9 @@ paths:
           content: { application/json: { schema: { $ref: "#/components/schemas/AdminLegalDocument" } } }
         "404":
           description: Not found
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "422":
+          description: Text-era version cannot be restored (no PDF attached)
           content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
   /storage/uploads/request-url:
     post:
@@ -7185,6 +7189,9 @@ components:
         effectiveDate:
           type: string
           format: date
+        pdfStorageUrl:
+          type: string
+          nullable: true
       required:
         - id
         - type
@@ -10554,6 +10561,7 @@ components:
         content: { type: string }
         effectiveDate: { type: string, format: date }
         isActive: { type: boolean }
+        pdfStorageUrl: { type: string, nullable: true }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
       required:
@@ -10565,19 +10573,19 @@ components:
         - isActive
         - createdAt
         - updatedAt
-    CreateLegalVersionRequest:
+    UploadLegalVersionRequest:
       type: object
+      description: >
+        Multipart form-data body. Must include a field named `file` containing
+        the PDF binary (max 25 MB; extension and MIME type must be application/pdf).
       properties:
-        content: { type: string, minLength: 1 }
+        version:
+          type: string
+          description: Optional; auto-incremented (v1, v2, ...) if omitted
         effectiveDate:
           type: string
           format: date
           description: ISO date (YYYY-MM-DD); defaults to today if omitted
-        version:
-          type: string
-          minLength: 1
-          description: Optional; auto-incremented (v1, v2, ...) if omitted
-      required: [content]
     SystemSettings:
       type: object
       properties:

@@ -13,4 +13,5 @@ export interface LegalDocument {
   version: string;
   content: string;
   effectiveDate: Date;
+  pdfStorageUrl?: string | null;
 }

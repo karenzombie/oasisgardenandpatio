@@ -14,6 +14,7 @@ export interface AdminLegalDocument {
   content: string;
   effectiveDate: Date;
   isActive: boolean;
+  pdfStorageUrl?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

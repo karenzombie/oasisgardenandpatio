@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { and, desc, eq } from "drizzle-orm";
 import { db, legalDocumentsTable } from "@workspace/db";
 import { GetLegalDocumentParams } from "@workspace/api-zod";
+import { toPublicImageUrl } from "../lib/imageUrl";
 
 const router: IRouter = Router();
 
@@ -52,6 +53,7 @@ router.get("/legal/:type", async (req, res): Promise<void> => {
     version: doc.version,
     content: doc.content,
     effectiveDate: doc.effectiveDate,
+    pdfStorageUrl: toPublicImageUrl(doc.pdfStorageUrl),
   });
 });
 

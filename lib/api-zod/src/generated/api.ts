@@ -38,6 +38,7 @@ export const GetLegalDocumentResponse = zod.object({
   version: zod.string(),
   content: zod.string(),
   effectiveDate: zod.coerce.date(),
+  pdfStorageUrl: zod.string().nullish(),
 });
 
 /**
@@ -13292,6 +13293,7 @@ export const AdminListLegalVersionsResponseItem = zod.object({
   content: zod.string(),
   effectiveDate: zod.coerce.date(),
   isActive: zod.boolean(),
+  pdfStorageUrl: zod.string().nullish(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -13300,9 +13302,9 @@ export const AdminListLegalVersionsResponse = zod.array(
 );
 
 /**
- * @summary Publish a new version of a legal document
+ * @summary Upload a PDF and publish it as the new active version
  */
-export const AdminCreateLegalVersionParams = zod.object({
+export const AdminUploadLegalVersionParams = zod.object({
   type: zod.enum([
     "privacy_policy",
     "terms_and_conditions",
@@ -13311,21 +13313,23 @@ export const AdminCreateLegalVersionParams = zod.object({
   ]),
 });
 
-export const AdminCreateLegalVersionBody = zod.object({
-  content: zod.string().min(1),
-  effectiveDate: zod.coerce
-    .date()
-    .optional()
-    .describe("ISO date (YYYY-MM-DD); defaults to today if omitted"),
-  version: zod
-    .string()
-    .min(1)
-    .optional()
-    .describe("Optional; auto-incremented (v1, v2, ...) if omitted"),
-});
+export const AdminUploadLegalVersionBody = zod
+  .object({
+    version: zod
+      .string()
+      .optional()
+      .describe("Optional; auto-incremented (v1, v2, ...) if omitted"),
+    effectiveDate: zod.coerce
+      .date()
+      .optional()
+      .describe("ISO date (YYYY-MM-DD); defaults to today if omitted"),
+  })
+  .describe(
+    "Multipart form-data body. Must include a field named `file` containing the PDF binary (max 25 MB; extension and MIME type must be application\/pdf).\n",
+  );
 
 /**
- * @summary Restore a prior version as the active one
+ * @summary Restore a prior PDF version as the active one (text-era versions are blocked)
  */
 export const AdminRestoreLegalVersionParams = zod.object({
   type: zod.enum([
@@ -13349,6 +13353,7 @@ export const AdminRestoreLegalVersionResponse = zod.object({
   content: zod.string(),
   effectiveDate: zod.coerce.date(),
   isActive: zod.boolean(),
+  pdfStorageUrl: zod.string().nullish(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
