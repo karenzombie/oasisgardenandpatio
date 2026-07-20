@@ -7,10 +7,13 @@ import {
   integer,
   index,
   unique,
+  check,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./users";
+import { legalDocumentsTable } from "./cms";
 
 export const customersTable = pgTable(
   "customers",
@@ -101,3 +104,35 @@ export const insertAddressSchema = createInsertSchema(addressesTable).omit({
 });
 export type InsertAddress = z.infer<typeof insertAddressSchema>;
 export type Address = typeof addressesTable.$inferSelect;
+
+// Append-only acceptance log. One row per acceptance event; never updated or
+// deleted. The latest row per document_type for a customer is their current
+// acceptance. document_version is copied from the legal_documents row at
+// acceptance time so the record survives future document edits.
+export const customerLegalAcceptancesTable = pgTable(
+  "customer_legal_acceptances",
+  {
+    id: serial("id").primaryKey(),
+    customerId: integer("customer_id")
+      .notNull()
+      .references(() => customersTable.id, { onDelete: "cascade" }),
+    documentType: text("document_type").notNull(),
+    documentId: integer("document_id")
+      .notNull()
+      .references(() => legalDocumentsTable.id),
+    documentVersion: text("document_version").notNull(),
+    acceptedAt: timestamp("accepted_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("customer_legal_acceptances_customer_id_idx").on(t.customerId),
+    check(
+      "customer_legal_acceptances_document_type_check",
+      sql`${t.documentType} in ('privacy_policy', 'terms_and_conditions')`,
+    ),
+  ],
+);
+
+export type CustomerLegalAcceptance =
+  typeof customerLegalAcceptancesTable.$inferSelect;
