@@ -2404,6 +2404,16 @@ export interface AccountAddressInput {
   isDefault?: boolean;
 }
 
+export interface LegalAcceptanceRecord {
+  acceptedAt: string;
+  documentVersion: string;
+}
+
+export interface LegalAcceptances {
+  privacy_policy: LegalAcceptanceRecord | null;
+  terms_and_conditions: LegalAcceptanceRecord | null;
+}
+
 export interface AccountProfileResponse {
   /** @nullable */
   firstName: string | null;
@@ -2422,6 +2432,9 @@ export interface AccountProfileResponse {
   shippingAddress: AccountAddress | null;
   /** True if the customer has opted out of wishlist/promotional contact. Never affects order/shipping/delivery emails. */
   marketingOptOut: boolean;
+  /** True when the customer's name is incomplete or either legal document type (privacy_policy, terms_and_conditions) has no acceptance row. */
+  onboardingRequired: boolean;
+  legalAcceptances: LegalAcceptances;
 }
 
 export interface AccountProfileInput {
@@ -2455,6 +2468,19 @@ export const MarketingOptOutResponseStatus = {
 export interface MarketingOptOutResponse {
   /** success = token was valid and marketing_opt_out was set true. invalid = token missing/expired/tampered; no change was made. */
   status: MarketingOptOutResponseStatus;
+}
+
+export type RecordLegalAcceptancesInputDocumentTypesItem =
+  (typeof RecordLegalAcceptancesInputDocumentTypesItem)[keyof typeof RecordLegalAcceptancesInputDocumentTypesItem];
+
+export const RecordLegalAcceptancesInputDocumentTypesItem = {
+  privacy_policy: "privacy_policy",
+  terms_and_conditions: "terms_and_conditions",
+} as const;
+
+export interface RecordLegalAcceptancesInput {
+  /** @minItems 1 */
+  documentTypes: RecordLegalAcceptancesInputDocumentTypesItem[];
 }
 
 export interface RequestEmailChangeBody {
@@ -3909,6 +3935,7 @@ export interface AdminCustomer {
 
 export type AdminCustomerDetail = AdminCustomer & {
   addresses: AdminAddress[];
+  legalAcceptances: LegalAcceptances;
 };
 
 export interface AdminCustomerPage {

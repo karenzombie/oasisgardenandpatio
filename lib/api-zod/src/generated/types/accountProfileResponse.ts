@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { AccountAddress } from "./accountAddress";
+import type { LegalAcceptances } from "./legalAcceptances";
 
 export interface AccountProfileResponse {
   /** @nullable */
@@ -25,4 +26,7 @@ export interface AccountProfileResponse {
   shippingAddress: AccountAddress | null;
   /** True if the customer has opted out of wishlist/promotional contact. Never affects order/shipping/delivery emails. */
   marketingOptOut: boolean;
+  /** True when the customer's name is incomplete or either legal document type (privacy_policy, terms_and_conditions) has no acceptance row. */
+  onboardingRequired: boolean;
+  legalAcceptances: LegalAcceptances;
 }

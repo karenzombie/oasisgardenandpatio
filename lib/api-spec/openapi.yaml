@@ -653,6 +653,36 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MarketingOptOutResponse"
+  /account/legal-acceptances:
+    post:
+      operationId: recordLegalAcceptances
+      tags: [account]
+      summary: Record the signed-in customer's acceptance of one or both legal documents. Server looks up the active document version; client never supplies ids, versions, or timestamps.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordLegalAcceptancesInput"
+      responses:
+        "200":
+          description: Acceptances recorded; returns the updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountProfileResponse"
+        "400":
+          description: Invalid request or no active document found for a requested type
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /account/addresses/role/{role}:
     put:
       operationId: upsertAccountRoleAddress
@@ -9227,6 +9257,11 @@ components:
         marketingOptOut:
           type: boolean
           description: True if the customer has opted out of wishlist/promotional contact. Never affects order/shipping/delivery emails.
+        onboardingRequired:
+          type: boolean
+          description: True when the customer's name is incomplete or either legal document type (privacy_policy, terms_and_conditions) has no acceptance row.
+        legalAcceptances:
+          $ref: "#/components/schemas/LegalAcceptances"
       required:
         - firstName
         - lastName
@@ -9237,6 +9272,8 @@ components:
         - billingAddress
         - shippingAddress
         - marketingOptOut
+        - onboardingRequired
+        - legalAcceptances
     AccountProfileInput:
       type: object
       properties:
@@ -9274,6 +9311,37 @@ components:
           description: success = token was valid and marketing_opt_out was set true. invalid = token missing/expired/tampered; no change was made.
       required:
         - status
+    LegalAcceptanceRecord:
+      type: object
+      properties:
+        acceptedAt:
+          type: string
+          format: date-time
+        documentVersion:
+          type: string
+      required: [acceptedAt, documentVersion]
+    LegalAcceptances:
+      type: object
+      properties:
+        privacy_policy:
+          oneOf:
+            - $ref: "#/components/schemas/LegalAcceptanceRecord"
+            - type: "null"
+        terms_and_conditions:
+          oneOf:
+            - $ref: "#/components/schemas/LegalAcceptanceRecord"
+            - type: "null"
+      required: [privacy_policy, terms_and_conditions]
+    RecordLegalAcceptancesInput:
+      type: object
+      properties:
+        documentTypes:
+          type: array
+          items:
+            type: string
+            enum: [privacy_policy, terms_and_conditions]
+          minItems: 1
+      required: [documentTypes]
     RequestEmailChangeBody:
       type: object
       properties:
@@ -10824,7 +10892,9 @@ components:
             addresses:
               type: array
               items: { $ref: "#/components/schemas/AdminAddress" }
-          required: [addresses]
+            legalAcceptances:
+              $ref: "#/components/schemas/LegalAcceptances"
+          required: [addresses, legalAcceptances]
     AdminCustomerPage:
       type: object
       properties:

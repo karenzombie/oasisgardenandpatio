@@ -1226,6 +1226,27 @@ export const GetAccountProfileResponse = zod.object({
     .describe(
       "True if the customer has opted out of wishlist\/promotional contact. Never affects order\/shipping\/delivery emails.",
     ),
+  onboardingRequired: zod
+    .boolean()
+    .describe(
+      "True when the customer's name is incomplete or either legal document type (privacy_policy, terms_and_conditions) has no acceptance row.",
+    ),
+  legalAcceptances: zod.object({
+    privacy_policy: zod.union([
+      zod.object({
+        acceptedAt: zod.coerce.date(),
+        documentVersion: zod.string(),
+      }),
+      zod.null(),
+    ]),
+    terms_and_conditions: zod.union([
+      zod.object({
+        acceptedAt: zod.coerce.date(),
+        documentVersion: zod.string(),
+      }),
+      zod.null(),
+    ]),
+  }),
 });
 
 /**
@@ -1285,6 +1306,27 @@ export const UpdateAccountProfileResponse = zod.object({
     .describe(
       "True if the customer has opted out of wishlist\/promotional contact. Never affects order\/shipping\/delivery emails.",
     ),
+  onboardingRequired: zod
+    .boolean()
+    .describe(
+      "True when the customer's name is incomplete or either legal document type (privacy_policy, terms_and_conditions) has no acceptance row.",
+    ),
+  legalAcceptances: zod.object({
+    privacy_policy: zod.union([
+      zod.object({
+        acceptedAt: zod.coerce.date(),
+        documentVersion: zod.string(),
+      }),
+      zod.null(),
+    ]),
+    terms_and_conditions: zod.union([
+      zod.object({
+        acceptedAt: zod.coerce.date(),
+        documentVersion: zod.string(),
+      }),
+      zod.null(),
+    ]),
+  }),
 });
 
 /**
@@ -1341,6 +1383,27 @@ export const UpdateAccountMarketingPreferenceResponse = zod.object({
     .describe(
       "True if the customer has opted out of wishlist\/promotional contact. Never affects order\/shipping\/delivery emails.",
     ),
+  onboardingRequired: zod
+    .boolean()
+    .describe(
+      "True when the customer's name is incomplete or either legal document type (privacy_policy, terms_and_conditions) has no acceptance row.",
+    ),
+  legalAcceptances: zod.object({
+    privacy_policy: zod.union([
+      zod.object({
+        acceptedAt: zod.coerce.date(),
+        documentVersion: zod.string(),
+      }),
+      zod.null(),
+    ]),
+    terms_and_conditions: zod.union([
+      zod.object({
+        acceptedAt: zod.coerce.date(),
+        documentVersion: zod.string(),
+      }),
+      zod.null(),
+    ]),
+  }),
 });
 
 /**
@@ -1356,6 +1419,86 @@ export const OptOutMarketingPreferenceResponse = zod.object({
     .describe(
       "success = token was valid and marketing_opt_out was set true. invalid = token missing\/expired\/tampered; no change was made.",
     ),
+});
+
+/**
+ * @summary Record the signed-in customer's acceptance of one or both legal documents. Server looks up the active document version; client never supplies ids, versions, or timestamps.
+ */
+
+export const RecordLegalAcceptancesBody = zod.object({
+  documentTypes: zod
+    .array(zod.enum(["privacy_policy", "terms_and_conditions"]))
+    .min(1),
+});
+
+export const RecordLegalAcceptancesResponse = zod.object({
+  firstName: zod.string().nullable(),
+  lastName: zod.string().nullable(),
+  email: zod.string(),
+  emailVerified: zod.boolean(),
+  phone: zod.string().nullable(),
+  pendingEmail: zod
+    .string()
+    .nullable()
+    .describe("New email awaiting code verification, if any."),
+  billingAddress: zod.union([
+    zod.object({
+      id: zod.number(),
+      type: zod.string(),
+      recipientName: zod.string().nullable(),
+      street1: zod.string(),
+      street2: zod.string().nullable(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullable(),
+      isDefault: zod.boolean(),
+    }),
+    zod.null(),
+  ]),
+  shippingAddress: zod.union([
+    zod.object({
+      id: zod.number(),
+      type: zod.string(),
+      recipientName: zod.string().nullable(),
+      street1: zod.string(),
+      street2: zod.string().nullable(),
+      city: zod.string(),
+      state: zod.string(),
+      zip: zod.string(),
+      country: zod.string(),
+      phone: zod.string().nullable(),
+      isDefault: zod.boolean(),
+    }),
+    zod.null(),
+  ]),
+  marketingOptOut: zod
+    .boolean()
+    .describe(
+      "True if the customer has opted out of wishlist\/promotional contact. Never affects order\/shipping\/delivery emails.",
+    ),
+  onboardingRequired: zod
+    .boolean()
+    .describe(
+      "True when the customer's name is incomplete or either legal document type (privacy_policy, terms_and_conditions) has no acceptance row.",
+    ),
+  legalAcceptances: zod.object({
+    privacy_policy: zod.union([
+      zod.object({
+        acceptedAt: zod.coerce.date(),
+        documentVersion: zod.string(),
+      }),
+      zod.null(),
+    ]),
+    terms_and_conditions: zod.union([
+      zod.object({
+        acceptedAt: zod.coerce.date(),
+        documentVersion: zod.string(),
+      }),
+      zod.null(),
+    ]),
+  }),
 });
 
 /**
@@ -1443,6 +1586,27 @@ export const UpsertAccountRoleAddressResponse = zod.object({
     .describe(
       "True if the customer has opted out of wishlist\/promotional contact. Never affects order\/shipping\/delivery emails.",
     ),
+  onboardingRequired: zod
+    .boolean()
+    .describe(
+      "True when the customer's name is incomplete or either legal document type (privacy_policy, terms_and_conditions) has no acceptance row.",
+    ),
+  legalAcceptances: zod.object({
+    privacy_policy: zod.union([
+      zod.object({
+        acceptedAt: zod.coerce.date(),
+        documentVersion: zod.string(),
+      }),
+      zod.null(),
+    ]),
+    terms_and_conditions: zod.union([
+      zod.object({
+        acceptedAt: zod.coerce.date(),
+        documentVersion: zod.string(),
+      }),
+      zod.null(),
+    ]),
+  }),
 });
 
 /**
@@ -1508,6 +1672,27 @@ export const CancelAccountEmailChangeResponse = zod.object({
     .describe(
       "True if the customer has opted out of wishlist\/promotional contact. Never affects order\/shipping\/delivery emails.",
     ),
+  onboardingRequired: zod
+    .boolean()
+    .describe(
+      "True when the customer's name is incomplete or either legal document type (privacy_policy, terms_and_conditions) has no acceptance row.",
+    ),
+  legalAcceptances: zod.object({
+    privacy_policy: zod.union([
+      zod.object({
+        acceptedAt: zod.coerce.date(),
+        documentVersion: zod.string(),
+      }),
+      zod.null(),
+    ]),
+    terms_and_conditions: zod.union([
+      zod.object({
+        acceptedAt: zod.coerce.date(),
+        documentVersion: zod.string(),
+      }),
+      zod.null(),
+    ]),
+  }),
 });
 
 /**
@@ -1566,6 +1751,27 @@ export const VerifyAccountEmailChangeResponse = zod.object({
     .describe(
       "True if the customer has opted out of wishlist\/promotional contact. Never affects order\/shipping\/delivery emails.",
     ),
+  onboardingRequired: zod
+    .boolean()
+    .describe(
+      "True when the customer's name is incomplete or either legal document type (privacy_policy, terms_and_conditions) has no acceptance row.",
+    ),
+  legalAcceptances: zod.object({
+    privacy_policy: zod.union([
+      zod.object({
+        acceptedAt: zod.coerce.date(),
+        documentVersion: zod.string(),
+      }),
+      zod.null(),
+    ]),
+    terms_and_conditions: zod.union([
+      zod.object({
+        acceptedAt: zod.coerce.date(),
+        documentVersion: zod.string(),
+      }),
+      zod.null(),
+    ]),
+  }),
 });
 
 /**
@@ -13487,6 +13693,22 @@ export const AdminGetCustomerResponse = zod
           updatedAt: zod.coerce.date(),
         }),
       ),
+      legalAcceptances: zod.object({
+        privacy_policy: zod.union([
+          zod.object({
+            acceptedAt: zod.coerce.date(),
+            documentVersion: zod.string(),
+          }),
+          zod.null(),
+        ]),
+        terms_and_conditions: zod.union([
+          zod.object({
+            acceptedAt: zod.coerce.date(),
+            documentVersion: zod.string(),
+          }),
+          zod.null(),
+        ]),
+      }),
     }),
   );
 

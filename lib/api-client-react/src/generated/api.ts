@@ -215,6 +215,7 @@ import type {
   QuoteOrderPricingRequest,
   QuoteOrderPricingResponse,
   ReceiveVendorOrderRequest,
+  RecordLegalAcceptancesInput,
   RecoveryCodeRequest,
   RemoveWishlistItemRequest,
   ReorderProductImagesRequest,
@@ -2350,6 +2351,93 @@ export const useOptOutMarketingPreference = <
   TContext
 > => {
   return useMutation(getOptOutMarketingPreferenceMutationOptions(options));
+};
+
+/**
+ * @summary Record the signed-in customer's acceptance of one or both legal documents. Server looks up the active document version; client never supplies ids, versions, or timestamps.
+ */
+export const getRecordLegalAcceptancesUrl = () => {
+  return `/api/account/legal-acceptances`;
+};
+
+export const recordLegalAcceptances = async (
+  recordLegalAcceptancesInput: RecordLegalAcceptancesInput,
+  options?: RequestInit,
+): Promise<AccountProfileResponse> => {
+  return customFetch<AccountProfileResponse>(getRecordLegalAcceptancesUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(recordLegalAcceptancesInput),
+  });
+};
+
+export const getRecordLegalAcceptancesMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof recordLegalAcceptances>>,
+    TError,
+    { data: BodyType<RecordLegalAcceptancesInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof recordLegalAcceptances>>,
+  TError,
+  { data: BodyType<RecordLegalAcceptancesInput> },
+  TContext
+> => {
+  const mutationKey = ["recordLegalAcceptances"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof recordLegalAcceptances>>,
+    { data: BodyType<RecordLegalAcceptancesInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return recordLegalAcceptances(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RecordLegalAcceptancesMutationResult = NonNullable<
+  Awaited<ReturnType<typeof recordLegalAcceptances>>
+>;
+export type RecordLegalAcceptancesMutationBody =
+  BodyType<RecordLegalAcceptancesInput>;
+export type RecordLegalAcceptancesMutationError = ErrorType<Error>;
+
+/**
+ * @summary Record the signed-in customer's acceptance of one or both legal documents. Server looks up the active document version; client never supplies ids, versions, or timestamps.
+ */
+export const useRecordLegalAcceptances = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof recordLegalAcceptances>>,
+    TError,
+    { data: BodyType<RecordLegalAcceptancesInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof recordLegalAcceptances>>,
+  TError,
+  { data: BodyType<RecordLegalAcceptancesInput> },
+  TContext
+> => {
+  return useMutation(getRecordLegalAcceptancesMutationOptions(options));
 };
 
 /**

@@ -16,6 +16,8 @@ import {
   finishesTable,
   wishlistsTable,
   wishlistStatusHistoryTable,
+  customerLegalAcceptancesTable,
+  legalDocumentsTable,
 } from "@workspace/db";
 import {
   CreateAccountAddressBody,
@@ -29,6 +31,7 @@ import {
   GetAccountProfileResponse,
   ListAccountOrdersResponse,
   GetAccountOrderResponse,
+  RecordLegalAcceptancesBody,
 } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/requireAuth";
 import { toPublicImageUrl } from "../lib/imageUrl";
@@ -353,6 +356,25 @@ async function loadProfile(userId: number) {
     .orderBy(desc(emailChangeTokensTable.id))
     .limit(1);
 
+  // Latest acceptance per document type (most recent first within each type).
+  const acceptanceRows = await db
+    .select()
+    .from(customerLegalAcceptancesTable)
+    .where(eq(customerLegalAcceptancesTable.customerId, customer.id))
+    .orderBy(desc(customerLegalAcceptancesTable.acceptedAt));
+
+  const privacyAcceptance =
+    acceptanceRows.find((a) => a.documentType === "privacy_policy") ?? null;
+  const termsAcceptance =
+    acceptanceRows.find((a) => a.documentType === "terms_and_conditions") ??
+    null;
+
+  const onboardingRequired =
+    !user.firstName?.trim() ||
+    !user.lastName?.trim() ||
+    !privacyAcceptance ||
+    !termsAcceptance;
+
   return GetAccountProfileResponse.parse({
     firstName: user.firstName,
     lastName: user.lastName,
@@ -363,6 +385,21 @@ async function loadProfile(userId: number) {
     billingAddress: await loadRoleAddress(customer.id, "billing"),
     shippingAddress: await loadRoleAddress(customer.id, "shipping"),
     marketingOptOut: customer.marketingOptOut,
+    onboardingRequired,
+    legalAcceptances: {
+      privacy_policy: privacyAcceptance
+        ? {
+            acceptedAt: privacyAcceptance.acceptedAt.toISOString(),
+            documentVersion: privacyAcceptance.documentVersion,
+          }
+        : null,
+      terms_and_conditions: termsAcceptance
+        ? {
+            acceptedAt: termsAcceptance.acceptedAt.toISOString(),
+            documentVersion: termsAcceptance.documentVersion,
+          }
+        : null,
+    },
   });
 }
 
@@ -370,6 +407,51 @@ router.get(
   "/account/profile",
   requireAuth,
   async (req: Request, res: Response): Promise<void> => {
+    res.json(await loadProfile(req.user!.id));
+  },
+);
+
+router.post(
+  "/account/legal-acceptances",
+  requireAuth,
+  async (req: Request, res: Response): Promise<void> => {
+    const parsed = RecordLegalAcceptancesBody.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: parsed.error.issues[0]?.message ?? "Invalid body" });
+      return;
+    }
+    const { documentTypes } = parsed.data;
+    const customer = await getOrCreateCustomer(req.user!.id);
+
+    for (const docType of documentTypes) {
+      const [activeDoc] = await db
+        .select()
+        .from(legalDocumentsTable)
+        .where(
+          and(
+            eq(legalDocumentsTable.type, docType as "privacy_policy" | "terms_and_conditions"),
+            eq(legalDocumentsTable.isActive, true),
+          ),
+        )
+        .limit(1);
+
+      if (!activeDoc) {
+        res
+          .status(400)
+          .json({ error: `No active legal document found for type: ${docType}` });
+        return;
+      }
+
+      await db.insert(customerLegalAcceptancesTable).values({
+        customerId: customer.id,
+        documentType: docType,
+        documentId: activeDoc.id,
+        documentVersion: activeDoc.version,
+      });
+    }
+
     res.json(await loadProfile(req.user!.id));
   },
 );
