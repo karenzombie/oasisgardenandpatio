@@ -243,7 +243,13 @@ export function OnboardingView({ profile, onComplete }: OnboardingViewProps) {
           <Button
             type="submit"
             className="w-full rounded-none"
-            disabled={isSubmitting || !privacyChecked || !termsChecked}
+            disabled={
+              isSubmitting ||
+              !firstName.trim() ||
+              !lastName.trim() ||
+              !privacyChecked ||
+              !termsChecked
+            }
           >
             {isSubmitting ? "Saving…" : "Save and continue"}
           </Button>
