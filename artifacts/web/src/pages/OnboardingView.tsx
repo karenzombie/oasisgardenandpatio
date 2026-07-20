@@ -185,8 +185,6 @@ export function OnboardingView({ profile, onComplete }: OnboardingViewProps) {
           </div>
 
           <div className="border border-border p-4 space-y-4">
-            <p className="text-sm font-medium">Legal Agreements</p>
-
             <div className="flex items-start gap-3">
               <Checkbox
                 id="onboarding-privacy"

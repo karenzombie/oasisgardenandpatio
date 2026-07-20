@@ -887,6 +887,54 @@ export default function Account() {
             )}
           </div>
 
+          {/* Terms & Privacy */}
+          <div className="border-t border-border pt-8 mb-8">
+            <h2 className="font-serif text-xl mb-4">Terms &amp; Privacy</h2>
+            <div className="border border-border bg-card divide-y divide-border">
+              {(
+                [
+                  {
+                    key: "privacy_policy" as const,
+                    label: "Privacy Policy",
+                  },
+                  {
+                    key: "terms_and_conditions" as const,
+                    label: "Terms & Conditions",
+                  },
+                ] as const
+              ).map(({ key, label }) => {
+                const acceptance = profile?.legalAcceptances?.[key];
+                return (
+                  <div key={key} className="p-4 flex items-start justify-between gap-4">
+                    <span className="text-sm font-medium">{label}</span>
+                    {acceptance ? (
+                      <span className="text-sm text-muted-foreground text-right">
+                        Accepted{" "}
+                        {new Intl.DateTimeFormat("en-US", {
+                          timeZone: "America/Los_Angeles",
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                          hour: "numeric",
+                          minute: "2-digit",
+                          hour12: true,
+                        }).format(new Date(acceptance.acceptedAt))}{" "}
+                        PT
+                        {acceptance.documentVersion && (
+                          <span className="block text-xs text-muted-foreground/70">
+                            v{acceptance.documentVersion}
+                          </span>
+                        )}
+                      </span>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">Not accepted</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Marketing contact preference */}
           <div className="border-t border-border pt-8 mb-8">
             <h2 className="font-serif text-xl mb-4">

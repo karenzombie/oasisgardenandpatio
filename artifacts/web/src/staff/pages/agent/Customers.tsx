@@ -325,6 +325,47 @@ function ViewCustomerDialog({
               {renderGroup("Other Addresses", other)}
             </div>
           )}
+
+          <div className="border-t pt-3">
+            <div className="text-xs font-medium text-slate-500 uppercase mb-2">Legal Acceptances</div>
+            <div className="space-y-2 text-sm">
+              {(
+                [
+                  { key: "privacy_policy" as const, label: "Privacy Policy" },
+                  { key: "terms_and_conditions" as const, label: "Terms & Conditions" },
+                ] as const
+              ).map(({ key, label }) => {
+                const acceptance = detail.data?.legalAcceptances?.[key];
+                return (
+                  <div key={key} className="border rounded p-2 flex items-start justify-between gap-2">
+                    <span className="font-medium">{label}</span>
+                    {acceptance ? (
+                      <span className="text-right text-slate-500">
+                        Accepted{" "}
+                        {new Intl.DateTimeFormat("en-US", {
+                          timeZone: "America/Los_Angeles",
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                          hour: "numeric",
+                          minute: "2-digit",
+                          hour12: true,
+                        }).format(new Date(acceptance.acceptedAt))}{" "}
+                        PT
+                        {acceptance.documentVersion && (
+                          <span className="block text-xs text-slate-400">
+                            v{acceptance.documentVersion}
+                          </span>
+                        )}
+                      </span>
+                    ) : (
+                      <span className="text-slate-400 italic">Not accepted</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
         <DialogFooter>
           <Button type="button" variant="outline" onClick={onClose}>Close</Button>

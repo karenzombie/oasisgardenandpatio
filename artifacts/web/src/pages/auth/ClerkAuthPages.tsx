@@ -22,7 +22,7 @@ export function SignUpPage() {
         routing="path"
         path={`${basePath}/sign-up`}
         signInUrl={`${basePath}/sign-in`}
-        fallbackRedirectUrl={`${basePath}/`}
+        fallbackRedirectUrl={`${basePath}/account`}
       />
     </div>
   );
