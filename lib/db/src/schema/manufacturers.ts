@@ -6,6 +6,7 @@ import {
   timestamp,
   integer,
   numeric,
+  index,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
@@ -51,6 +52,41 @@ export const manufacturersTable = pgTable("manufacturers", {
     .defaultNow()
     .$onUpdate(() => new Date()),
 });
+
+export const manufacturerContactsTable = pgTable(
+  "manufacturer_contacts",
+  {
+    id: serial("id").primaryKey(),
+    manufacturerId: integer("manufacturer_id")
+      .notNull()
+      .references(() => manufacturersTable.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    email: text("email"),
+    phone: text("phone"),
+    role: text("role"),
+    isPrimary: boolean("is_primary").notNull().default(false),
+    displayOrder: integer("display_order").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [
+    index("manufacturer_contacts_manufacturer_id_idx").on(t.manufacturerId),
+  ],
+);
+
+export const insertManufacturerContactSchema = createInsertSchema(
+  manufacturerContactsTable,
+).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertManufacturerContact = z.infer<
+  typeof insertManufacturerContactSchema
+>;
+export type ManufacturerContact =
+  typeof manufacturerContactsTable.$inferSelect;
 
 export const insertManufacturerSchema = createInsertSchema(
   manufacturersTable,
