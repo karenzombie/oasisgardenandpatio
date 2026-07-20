@@ -922,7 +922,7 @@ export default function Account() {
                         PT
                         {acceptance.documentVersion && (
                           <span className="block text-xs text-muted-foreground/70">
-                            v{acceptance.documentVersion}
+                            {acceptance.documentVersion}
                           </span>
                         )}
                       </span>

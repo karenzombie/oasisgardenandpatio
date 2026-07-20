@@ -354,7 +354,7 @@ function ViewCustomerDialog({
                         PT
                         {acceptance.documentVersion && (
                           <span className="block text-xs text-slate-400">
-                            v{acceptance.documentVersion}
+                            {acceptance.documentVersion}
                           </span>
                         )}
                       </span>
