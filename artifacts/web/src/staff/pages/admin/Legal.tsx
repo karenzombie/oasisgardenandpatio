@@ -1,9 +1,14 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Eye, FileText, History, RotateCcw } from "lucide-react";
+import {
+  ExternalLink,
+  FileText,
+  History,
+  RotateCcw,
+  Upload,
+} from "lucide-react";
 import {
   useAdminListLegalVersions,
-  useAdminCreateLegalVersion,
   useAdminRestoreLegalVersion,
   getAdminListLegalVersionsQueryKey,
   type AdminLegalDocument,
@@ -13,7 +18,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
@@ -36,7 +40,11 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { PageBody, PageHeader } from "../../StaffShell";
 
-type LegalType = "privacy_policy" | "terms_and_conditions" | "shipping_returns" | "warranty";
+type LegalType =
+  | "privacy_policy"
+  | "terms_and_conditions"
+  | "shipping_returns"
+  | "warranty";
 
 const LEGAL_TYPES: Array<{ value: LegalType; label: string }> = [
   { value: "privacy_policy", label: "Privacy Policy" },
@@ -75,11 +83,9 @@ function LegalTypePanel({ type, label }: { type: LegalType; label: string }) {
   const qc = useQueryClient();
   const toast = useToast();
   const list = useAdminListLegalVersions(type);
-  const createMut = useAdminCreateLegalVersion();
   const restoreMut = useAdminRestoreLegalVersion();
 
-  const [editorOpen, setEditorOpen] = useState(false);
-  const [previewing, setPreviewing] = useState<AdminLegalDocument | null>(null);
+  const [uploadOpen, setUploadOpen] = useState(false);
   const [restoring, setRestoring] = useState<AdminLegalDocument | null>(null);
 
   const versions = list.data ?? [];
@@ -113,6 +119,7 @@ function LegalTypePanel({ type, label }: { type: LegalType; label: string }) {
 
   return (
     <div className="space-y-4">
+      {/* Active version card */}
       <div className="bg-white rounded-lg border p-4">
         <div className="flex items-center justify-between mb-3">
           <div>
@@ -120,7 +127,7 @@ function LegalTypePanel({ type, label }: { type: LegalType; label: string }) {
               Currently published
             </div>
             <div className="text-base font-semibold text-slate-900">
-              {active ? `${active.version}` : "No active version"}
+              {active ? active.version : "No active version"}
             </div>
             {active && (
               <div className="text-xs text-slate-500 mt-0.5">
@@ -129,20 +136,40 @@ function LegalTypePanel({ type, label }: { type: LegalType; label: string }) {
               </div>
             )}
           </div>
-          <Button onClick={() => setEditorOpen(true)}>
-            <FileText className="size-4 mr-1.5" />
-            Publish new version
+          <Button onClick={() => setUploadOpen(true)}>
+            <Upload className="size-4 mr-1.5" />
+            Upload new PDF
           </Button>
         </div>
+
         {active && (
-          <div className="border rounded bg-slate-50 p-3 max-h-64 overflow-auto">
-            <pre className="text-xs font-mono text-slate-700 whitespace-pre-wrap">
-              {active.content}
-            </pre>
+          <div className="mt-2">
+            {active.pdfStorageUrl ? (
+              <a
+                href={active.pdfStorageUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-800 hover:underline"
+              >
+                <FileText className="size-4" />
+                View current PDF
+                <ExternalLink className="size-3.5" />
+              </a>
+            ) : (
+              <div className="border rounded bg-slate-50 p-3 max-h-40 overflow-auto">
+                <p className="text-xs text-slate-500 italic mb-1">
+                  Text-era version — no PDF attached
+                </p>
+                <pre className="text-xs font-mono text-slate-700 whitespace-pre-wrap">
+                  {active.content}
+                </pre>
+              </div>
+            )}
           </div>
         )}
       </div>
 
+      {/* Version history */}
       <div className="bg-white rounded-lg border overflow-x-auto">
         <div className="px-4 py-3 border-b text-sm font-semibold text-slate-900 flex items-center gap-2">
           <History className="size-4 text-slate-400" />
@@ -158,7 +185,7 @@ function LegalTypePanel({ type, label }: { type: LegalType; label: string }) {
           </div>
         ) : versions.length === 0 ? (
           <div className="p-8 text-center text-sm text-slate-500">
-            No versions yet. Publish the first one above.
+            No versions yet. Upload the first PDF above.
           </div>
         ) : (
           <table className="w-full text-sm">
@@ -196,24 +223,34 @@ function LegalTypePanel({ type, label }: { type: LegalType; label: string }) {
                     )}
                   </td>
                   <td className="px-4 py-2 text-right">
-                    <div className="inline-flex gap-1">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setPreviewing(v)}
-                      >
-                        <Eye className="size-3.5 mr-1" />
-                        View
-                      </Button>
-                      {!v.isActive && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setRestoring(v)}
-                        >
-                          <RotateCcw className="size-3.5 mr-1" />
-                          Restore
-                        </Button>
+                    <div className="inline-flex gap-1 items-center">
+                      {v.pdfStorageUrl ? (
+                        <>
+                          <Button variant="outline" size="sm" asChild>
+                            <a
+                              href={v.pdfStorageUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <ExternalLink className="size-3.5 mr-1" />
+                              View PDF
+                            </a>
+                          </Button>
+                          {!v.isActive && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setRestoring(v)}
+                            >
+                              <RotateCcw className="size-3.5 mr-1" />
+                              Restore
+                            </Button>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-xs text-slate-400 italic">
+                          Text era — not restorable
+                        </span>
                       )}
                     </div>
                   </td>
@@ -224,41 +261,13 @@ function LegalTypePanel({ type, label }: { type: LegalType; label: string }) {
         )}
       </div>
 
-      <PublishDialog
-        open={editorOpen}
+      <UploadDialog
+        open={uploadOpen}
         type={type}
         label={label}
-        currentContent={active?.content ?? ""}
-        onClose={() => setEditorOpen(false)}
+        onClose={() => setUploadOpen(false)}
         onSaved={refetch}
-        createMut={createMut}
       />
-
-      <Dialog
-        open={previewing !== null}
-        onOpenChange={(o) => !o && setPreviewing(null)}
-      >
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>
-              {label} — {previewing?.version}
-            </DialogTitle>
-            <DialogDescription>
-              Effective {previewing?.effectiveDate}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="border rounded bg-slate-50 p-3 max-h-96 overflow-auto">
-            <pre className="text-xs font-mono text-slate-700 whitespace-pre-wrap">
-              {previewing?.content}
-            </pre>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setPreviewing(null)}>
-              Close
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <AlertDialog
         open={restoring !== null}
@@ -275,8 +284,11 @@ function LegalTypePanel({ type, label }: { type: LegalType; label: string }) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleRestore}>
-              Restore
+            <AlertDialogAction
+              onClick={handleRestore}
+              disabled={restoreMut.isPending}
+            >
+              {restoreMut.isPending ? "Restoring…" : "Restore"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -291,76 +303,99 @@ function todayString(): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-function PublishDialog({
+function UploadDialog({
   open,
   type,
   label,
-  currentContent,
   onClose,
   onSaved,
-  createMut,
 }: {
   open: boolean;
   type: LegalType;
   label: string;
-  currentContent: string;
   onClose: () => void;
   onSaved: () => Promise<void>;
-  createMut: ReturnType<typeof useAdminCreateLegalVersion>;
 }) {
   const toast = useToast();
-  const [content, setContent] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
   const [version, setVersion] = useState("");
   const [effectiveDate, setEffectiveDate] = useState(todayString());
+  const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (open) {
-      setContent(currentContent);
       setVersion("");
       setEffectiveDate(todayString());
+      setPending(false);
       setError(null);
+      if (fileRef.current) fileRef.current.value = "";
     }
-  }, [open, currentContent]);
+  }, [open]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!content.trim()) {
-      setError("Content cannot be empty.");
+
+    const file = fileRef.current?.files?.[0];
+    if (!file) {
+      setError("Please select a PDF file.");
       return;
     }
+    if (!file.name.toLowerCase().endsWith(".pdf")) {
+      setError("Only PDF files are accepted.");
+      return;
+    }
+
+    const body = new FormData();
+    body.append("file", file);
+    if (version.trim()) body.append("version", version.trim());
+    if (effectiveDate) body.append("effectiveDate", effectiveDate);
+
+    setPending(true);
     try {
-      await createMut.mutateAsync({
-        type,
-        data: {
-          content,
-          version: version.trim() || undefined,
-          effectiveDate: effectiveDate || undefined,
-        },
+      const res = await fetch(`/api/admin/legal/${type}/upload`, {
+        method: "POST",
+        credentials: "include",
+        body,
       });
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        throw new Error(
+          (json as { error?: string }).error ?? `Upload failed (${res.status})`,
+        );
+      }
       await onSaved();
-      toast.toast({
-        title: `New ${label} published`,
-      });
+      toast.toast({ title: `New ${label} published` });
       onClose();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to publish";
-      setError(msg);
+      setError(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setPending(false);
     }
   }
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-3xl">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Publish new {label}</DialogTitle>
+          <DialogTitle>Upload new {label}</DialogTitle>
           <DialogDescription>
-            Saving creates a new version and archives the current one. The
-            customer site immediately serves the new content.
+            Upload a PDF to publish as the new active version. The current
+            version will be archived immediately.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="l-file">PDF file</Label>
+            <Input
+              id="l-file"
+              type="file"
+              accept=".pdf,application/pdf"
+              ref={fileRef}
+              className="cursor-pointer"
+            />
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label htmlFor="l-version">Version (optional)</Label>
@@ -381,23 +416,13 @@ function PublishDialog({
               />
             </div>
           </div>
-          <div>
-            <Label htmlFor="l-content">Content (Markdown)</Label>
-            <Textarea
-              id="l-content"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              rows={18}
-              className="font-mono text-sm"
-            />
-          </div>
           {error && <div className="text-sm text-rose-600">{error}</div>}
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={pending}>
               Cancel
             </Button>
-            <Button type="submit" disabled={createMut.isPending}>
-              {createMut.isPending ? "Publishing…" : "Publish"}
+            <Button type="submit" disabled={pending}>
+              {pending ? "Uploading…" : "Upload & publish"}
             </Button>
           </DialogFooter>
         </form>
