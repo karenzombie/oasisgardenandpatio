@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import {
   useGetLegalDocument,
   getGetLegalDocumentQueryKey,
@@ -29,8 +30,32 @@ export default function LegalDocument({ type }: { type: LegalDocumentType }) {
 
   const title = TITLES[type];
 
+  // When the active version has a PDF, redirect to it directly.
+  // Falls through to the text renderer below for text-era rows (pdfStorageUrl absent).
+  useEffect(() => {
+    if (document?.pdfStorageUrl) {
+      window.location.replace(document.pdfStorageUrl);
+    }
+  }, [document?.pdfStorageUrl]);
+
   if (!isLoading && (isError || !document)) {
     return <ComingSoon title={title} />;
+  }
+
+  // While redirecting to a PDF, show a neutral loading state so there is no
+  // flash of the text content before the browser navigates away.
+  if (document?.pdfStorageUrl) {
+    return (
+      <div className="w-full bg-background py-16 md:py-24">
+        <div className="container mx-auto px-4 max-w-4xl">
+          <div className="space-y-4">
+            <Skeleton className="h-8 w-1/3" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-[90%]" />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
