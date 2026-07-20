@@ -1,6 +1,13 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { and, eq, exists, ne, sql } from "drizzle-orm";
-import { db, manufacturersTable, productsTable, type Manufacturer } from "@workspace/db";
+import { and, asc, eq, exists, inArray, ne, sql } from "drizzle-orm";
+import {
+  db,
+  manufacturerContactsTable,
+  manufacturersTable,
+  productsTable,
+  type Manufacturer,
+  type ManufacturerContact,
+} from "@workspace/db";
 import {
   ListManufacturersResponse,
   AdminListManufacturersResponse,
@@ -9,6 +16,11 @@ import {
   AdminUpdateManufacturerBody,
   AdminSetManufacturerActiveParams,
   AdminSetManufacturerActiveBody,
+  AdminCreateManufacturerContactParams,
+  AdminCreateManufacturerContactBody,
+  AdminUpdateManufacturerContactParams,
+  AdminUpdateManufacturerContactBody,
+  AdminDeleteManufacturerContactParams,
 } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import { isUniqueViolation } from "../lib/dbErrors";
@@ -65,7 +77,22 @@ router.get("/manufacturers", async (req, res): Promise<void> => {
 
 // ----- Admin endpoints -----
 
-function toAdminPayload(row: Manufacturer) {
+function toContactPayload(c: ManufacturerContact) {
+  return {
+    id: c.id,
+    manufacturerId: c.manufacturerId,
+    name: c.name,
+    email: c.email,
+    phone: c.phone,
+    role: c.role,
+    isPrimary: c.isPrimary,
+    displayOrder: c.displayOrder,
+    createdAt: c.createdAt.toISOString(),
+    updatedAt: c.updatedAt.toISOString(),
+  };
+}
+
+function toAdminPayload(row: Manufacturer, contacts: ManufacturerContact[] = []) {
   return {
     id: row.id,
     name: row.name,
@@ -90,7 +117,21 @@ function toAdminPayload(row: Manufacturer) {
     isActive: row.isActive,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
+    contacts: contacts.map(toContactPayload),
   };
+}
+
+async function fetchContactsForManufacturer(
+  manufacturerId: number,
+): Promise<ManufacturerContact[]> {
+  return db
+    .select()
+    .from(manufacturerContactsTable)
+    .where(eq(manufacturerContactsTable.manufacturerId, manufacturerId))
+    .orderBy(
+      asc(manufacturerContactsTable.displayOrder),
+      asc(manufacturerContactsTable.id),
+    );
 }
 
 router.get(
@@ -105,7 +146,32 @@ router.get(
         sql`${manufacturersTable.displayOrder} asc`,
         sql`${manufacturersTable.name} asc`,
       );
-    res.json(AdminListManufacturersResponse.parse(rows.map(toAdminPayload)));
+
+    const mfIds = rows.map((r) => r.id);
+    const allContacts =
+      mfIds.length > 0
+        ? await db
+            .select()
+            .from(manufacturerContactsTable)
+            .where(inArray(manufacturerContactsTable.manufacturerId, mfIds))
+            .orderBy(
+              asc(manufacturerContactsTable.displayOrder),
+              asc(manufacturerContactsTable.id),
+            )
+        : [];
+
+    const contactsByMfId = new Map<number, ManufacturerContact[]>();
+    for (const c of allContacts) {
+      const arr = contactsByMfId.get(c.manufacturerId) ?? [];
+      arr.push(c);
+      contactsByMfId.set(c.manufacturerId, arr);
+    }
+
+    res.json(
+      AdminListManufacturersResponse.parse(
+        rows.map((r) => toAdminPayload(r, contactsByMfId.get(r.id) ?? [])),
+      ),
+    );
   },
 );
 
@@ -166,7 +232,7 @@ router.post(
         changeType: "create",
         snapshot: row,
       });
-      res.status(201).json(toAdminPayload(row));
+      res.status(201).json(toAdminPayload(row, []));
     } catch (err) {
       if (isUniqueViolation(err)) {
         res.status(409).json({ error: "A manufacturer with that slug already exists" });
@@ -279,7 +345,8 @@ router.put(
         snapshot: row,
         previousSnapshot: previous ?? null,
       });
-      res.json(toAdminPayload(row));
+      const contacts = await fetchContactsForManufacturer(row.id);
+      res.json(toAdminPayload(row, contacts));
     } catch (err) {
       if (isUniqueViolation(err)) {
         res.status(409).json({ error: "A manufacturer with that slug already exists" });
@@ -323,7 +390,118 @@ router.patch(
       previousSnapshot: previous ?? null,
       notes: `set isActive=${body.data.isActive}`,
     });
-    res.json(toAdminPayload(row));
+    const contacts = await fetchContactsForManufacturer(row.id);
+    res.json(toAdminPayload(row, contacts));
+  },
+);
+
+// ----- Manufacturer contact endpoints -----
+
+router.post(
+  "/admin/manufacturers/:id/contacts",
+  requireAuth,
+  requireRole("admin"),
+  async (req: Request, res: Response): Promise<void> => {
+    const params = AdminCreateManufacturerContactParams.safeParse(req.params);
+    const body = AdminCreateManufacturerContactBody.safeParse(req.body);
+    if (!params.success || !body.success) {
+      const msg = !params.success
+        ? params.error.issues[0]?.message
+        : !body.success
+          ? body.error.issues[0]?.message
+          : "Invalid input";
+      res.status(400).json({ error: msg ?? "Invalid input" });
+      return;
+    }
+    const mfr = await db
+      .select({ id: manufacturersTable.id })
+      .from(manufacturersTable)
+      .where(eq(manufacturersTable.id, params.data.id));
+    if (mfr.length === 0) {
+      res.status(404).json({ error: "Manufacturer not found" });
+      return;
+    }
+    const [contact] = await db
+      .insert(manufacturerContactsTable)
+      .values({
+        manufacturerId: params.data.id,
+        name: body.data.name,
+        email: body.data.email ?? null,
+        phone: body.data.phone ?? null,
+        role: body.data.role ?? null,
+        isPrimary: body.data.isPrimary ?? false,
+        displayOrder: body.data.displayOrder ?? 0,
+      })
+      .returning();
+    res.status(201).json(toContactPayload(contact));
+  },
+);
+
+router.put(
+  "/admin/manufacturers/:id/contacts/:contactId",
+  requireAuth,
+  requireRole("admin"),
+  async (req: Request, res: Response): Promise<void> => {
+    const params = AdminUpdateManufacturerContactParams.safeParse(req.params);
+    const body = AdminUpdateManufacturerContactBody.safeParse(req.body);
+    if (!params.success || !body.success) {
+      const msg = !params.success
+        ? params.error.issues[0]?.message
+        : !body.success
+          ? body.error.issues[0]?.message
+          : "Invalid input";
+      res.status(400).json({ error: msg ?? "Invalid input" });
+      return;
+    }
+    const [contact] = await db
+      .update(manufacturerContactsTable)
+      .set({
+        name: body.data.name,
+        email: body.data.email ?? null,
+        phone: body.data.phone ?? null,
+        role: body.data.role ?? null,
+        isPrimary: body.data.isPrimary ?? false,
+        displayOrder: body.data.displayOrder ?? 0,
+      })
+      .where(
+        and(
+          eq(manufacturerContactsTable.id, params.data.contactId),
+          eq(manufacturerContactsTable.manufacturerId, params.data.id),
+        ),
+      )
+      .returning();
+    if (!contact) {
+      res.status(404).json({ error: "Contact not found" });
+      return;
+    }
+    res.json(toContactPayload(contact));
+  },
+);
+
+router.delete(
+  "/admin/manufacturers/:id/contacts/:contactId",
+  requireAuth,
+  requireRole("admin"),
+  async (req: Request, res: Response): Promise<void> => {
+    const params = AdminDeleteManufacturerContactParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.issues[0]?.message ?? "Invalid input" });
+      return;
+    }
+    const [deleted] = await db
+      .delete(manufacturerContactsTable)
+      .where(
+        and(
+          eq(manufacturerContactsTable.id, params.data.contactId),
+          eq(manufacturerContactsTable.manufacturerId, params.data.id),
+        ),
+      )
+      .returning({ id: manufacturerContactsTable.id });
+    if (!deleted) {
+      res.status(404).json({ error: "Contact not found" });
+      return;
+    }
+    res.status(204).send();
   },
 );
 

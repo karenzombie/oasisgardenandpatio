@@ -351,6 +351,8 @@ export * from "./listCushionOrdersStatus";
 export * from "./listManufacturersParams";
 export * from "./loginRequest";
 export * from "./manufacturer";
+export * from "./manufacturerContact";
+export * from "./manufacturerContactInput";
 export * from "./marketingOptOutBody";
 export * from "./marketingOptOutResponse";
 export * from "./marketingOptOutResponseStatus";

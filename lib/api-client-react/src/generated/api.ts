@@ -204,6 +204,8 @@ import type {
   ListManufacturersParams,
   LoginRequest,
   Manufacturer,
+  ManufacturerContact,
+  ManufacturerContactInput,
   MarketingOptOutBody,
   MarketingOptOutResponse,
   Material,
@@ -6768,6 +6770,283 @@ export const useAdminSetManufacturerActive = <
   TContext
 > => {
   return useMutation(getAdminSetManufacturerActiveMutationOptions(options));
+};
+
+/**
+ * @summary Add a contact to a manufacturer
+ */
+export const getAdminCreateManufacturerContactUrl = (id: number) => {
+  return `/api/admin/manufacturers/${id}/contacts`;
+};
+
+export const adminCreateManufacturerContact = async (
+  id: number,
+  manufacturerContactInput: ManufacturerContactInput,
+  options?: RequestInit,
+): Promise<ManufacturerContact> => {
+  return customFetch<ManufacturerContact>(
+    getAdminCreateManufacturerContactUrl(id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(manufacturerContactInput),
+    },
+  );
+};
+
+export const getAdminCreateManufacturerContactMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCreateManufacturerContact>>,
+    TError,
+    { id: number; data: BodyType<ManufacturerContactInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminCreateManufacturerContact>>,
+  TError,
+  { id: number; data: BodyType<ManufacturerContactInput> },
+  TContext
+> => {
+  const mutationKey = ["adminCreateManufacturerContact"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminCreateManufacturerContact>>,
+    { id: number; data: BodyType<ManufacturerContactInput> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminCreateManufacturerContact(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminCreateManufacturerContactMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminCreateManufacturerContact>>
+>;
+export type AdminCreateManufacturerContactMutationBody =
+  BodyType<ManufacturerContactInput>;
+export type AdminCreateManufacturerContactMutationError = ErrorType<Error>;
+
+/**
+ * @summary Add a contact to a manufacturer
+ */
+export const useAdminCreateManufacturerContact = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCreateManufacturerContact>>,
+    TError,
+    { id: number; data: BodyType<ManufacturerContactInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminCreateManufacturerContact>>,
+  TError,
+  { id: number; data: BodyType<ManufacturerContactInput> },
+  TContext
+> => {
+  return useMutation(getAdminCreateManufacturerContactMutationOptions(options));
+};
+
+/**
+ * @summary Update a manufacturer contact
+ */
+export const getAdminUpdateManufacturerContactUrl = (
+  id: number,
+  contactId: number,
+) => {
+  return `/api/admin/manufacturers/${id}/contacts/${contactId}`;
+};
+
+export const adminUpdateManufacturerContact = async (
+  id: number,
+  contactId: number,
+  manufacturerContactInput: ManufacturerContactInput,
+  options?: RequestInit,
+): Promise<ManufacturerContact> => {
+  return customFetch<ManufacturerContact>(
+    getAdminUpdateManufacturerContactUrl(id, contactId),
+    {
+      ...options,
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(manufacturerContactInput),
+    },
+  );
+};
+
+export const getAdminUpdateManufacturerContactMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateManufacturerContact>>,
+    TError,
+    { id: number; contactId: number; data: BodyType<ManufacturerContactInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUpdateManufacturerContact>>,
+  TError,
+  { id: number; contactId: number; data: BodyType<ManufacturerContactInput> },
+  TContext
+> => {
+  const mutationKey = ["adminUpdateManufacturerContact"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUpdateManufacturerContact>>,
+    { id: number; contactId: number; data: BodyType<ManufacturerContactInput> }
+  > = (props) => {
+    const { id, contactId, data } = props ?? {};
+
+    return adminUpdateManufacturerContact(id, contactId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminUpdateManufacturerContactMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUpdateManufacturerContact>>
+>;
+export type AdminUpdateManufacturerContactMutationBody =
+  BodyType<ManufacturerContactInput>;
+export type AdminUpdateManufacturerContactMutationError = ErrorType<Error>;
+
+/**
+ * @summary Update a manufacturer contact
+ */
+export const useAdminUpdateManufacturerContact = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateManufacturerContact>>,
+    TError,
+    { id: number; contactId: number; data: BodyType<ManufacturerContactInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUpdateManufacturerContact>>,
+  TError,
+  { id: number; contactId: number; data: BodyType<ManufacturerContactInput> },
+  TContext
+> => {
+  return useMutation(getAdminUpdateManufacturerContactMutationOptions(options));
+};
+
+/**
+ * @summary Delete a manufacturer contact
+ */
+export const getAdminDeleteManufacturerContactUrl = (
+  id: number,
+  contactId: number,
+) => {
+  return `/api/admin/manufacturers/${id}/contacts/${contactId}`;
+};
+
+export const adminDeleteManufacturerContact = async (
+  id: number,
+  contactId: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(
+    getAdminDeleteManufacturerContactUrl(id, contactId),
+    {
+      ...options,
+      method: "DELETE",
+    },
+  );
+};
+
+export const getAdminDeleteManufacturerContactMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeleteManufacturerContact>>,
+    TError,
+    { id: number; contactId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminDeleteManufacturerContact>>,
+  TError,
+  { id: number; contactId: number },
+  TContext
+> => {
+  const mutationKey = ["adminDeleteManufacturerContact"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminDeleteManufacturerContact>>,
+    { id: number; contactId: number }
+  > = (props) => {
+    const { id, contactId } = props ?? {};
+
+    return adminDeleteManufacturerContact(id, contactId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminDeleteManufacturerContactMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminDeleteManufacturerContact>>
+>;
+
+export type AdminDeleteManufacturerContactMutationError = ErrorType<Error>;
+
+/**
+ * @summary Delete a manufacturer contact
+ */
+export const useAdminDeleteManufacturerContact = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeleteManufacturerContact>>,
+    TError,
+    { id: number; contactId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminDeleteManufacturerContact>>,
+  TError,
+  { id: number; contactId: number },
+  TContext
+> => {
+  return useMutation(getAdminDeleteManufacturerContactMutationOptions(options));
 };
 
 /**

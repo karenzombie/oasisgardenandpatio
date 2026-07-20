@@ -3348,6 +3348,20 @@ export const AdminListManufacturersResponseItem = zod.object({
   isActive: zod.boolean(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
+  contacts: zod.array(
+    zod.object({
+      id: zod.number(),
+      manufacturerId: zod.number(),
+      name: zod.string(),
+      email: zod.string().nullable(),
+      phone: zod.string().nullable(),
+      role: zod.string().nullable(),
+      isPrimary: zod.boolean(),
+      displayOrder: zod.number(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
 });
 export const AdminListManufacturersResponse = zod.array(
   AdminListManufacturersResponseItem,
@@ -3461,6 +3475,20 @@ export const AdminUpdateManufacturerResponse = zod.object({
   isActive: zod.boolean(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
+  contacts: zod.array(
+    zod.object({
+      id: zod.number(),
+      manufacturerId: zod.number(),
+      name: zod.string(),
+      email: zod.string().nullable(),
+      phone: zod.string().nullable(),
+      role: zod.string().nullable(),
+      isPrimary: zod.boolean(),
+      displayOrder: zod.number(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
 });
 
 /**
@@ -3510,6 +3538,88 @@ export const AdminSetManufacturerActiveResponse = zod.object({
   isActive: zod.boolean(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
+  contacts: zod.array(
+    zod.object({
+      id: zod.number(),
+      manufacturerId: zod.number(),
+      name: zod.string(),
+      email: zod.string().nullable(),
+      phone: zod.string().nullable(),
+      role: zod.string().nullable(),
+      isPrimary: zod.boolean(),
+      displayOrder: zod.number(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+/**
+ * @summary Add a contact to a manufacturer
+ */
+export const AdminCreateManufacturerContactParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const adminCreateManufacturerContactBodyIsPrimaryDefault = false;
+export const adminCreateManufacturerContactBodyDisplayOrderDefault = 0;
+
+export const AdminCreateManufacturerContactBody = zod.object({
+  name: zod.string().min(1),
+  email: zod.string().nullish(),
+  phone: zod.string().nullish(),
+  role: zod.string().nullish(),
+  isPrimary: zod
+    .boolean()
+    .default(adminCreateManufacturerContactBodyIsPrimaryDefault),
+  displayOrder: zod
+    .number()
+    .default(adminCreateManufacturerContactBodyDisplayOrderDefault),
+});
+
+/**
+ * @summary Update a manufacturer contact
+ */
+export const AdminUpdateManufacturerContactParams = zod.object({
+  id: zod.coerce.number(),
+  contactId: zod.coerce.number(),
+});
+
+export const adminUpdateManufacturerContactBodyIsPrimaryDefault = false;
+export const adminUpdateManufacturerContactBodyDisplayOrderDefault = 0;
+
+export const AdminUpdateManufacturerContactBody = zod.object({
+  name: zod.string().min(1),
+  email: zod.string().nullish(),
+  phone: zod.string().nullish(),
+  role: zod.string().nullish(),
+  isPrimary: zod
+    .boolean()
+    .default(adminUpdateManufacturerContactBodyIsPrimaryDefault),
+  displayOrder: zod
+    .number()
+    .default(adminUpdateManufacturerContactBodyDisplayOrderDefault),
+});
+
+export const AdminUpdateManufacturerContactResponse = zod.object({
+  id: zod.number(),
+  manufacturerId: zod.number(),
+  name: zod.string(),
+  email: zod.string().nullable(),
+  phone: zod.string().nullable(),
+  role: zod.string().nullable(),
+  isPrimary: zod.boolean(),
+  displayOrder: zod.number(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete a manufacturer contact
+ */
+export const AdminDeleteManufacturerContactParams = zod.object({
+  id: zod.coerce.number(),
+  contactId: zod.coerce.number(),
 });
 
 /**

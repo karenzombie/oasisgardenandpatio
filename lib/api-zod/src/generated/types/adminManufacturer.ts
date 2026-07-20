@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { AdminManufacturerOrderMethod } from "./adminManufacturerOrderMethod";
+import type { ManufacturerContact } from "./manufacturerContact";
 
 export interface AdminManufacturer {
   id: number;
@@ -53,4 +54,5 @@ export interface AdminManufacturer {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
+  contacts: ManufacturerContact[];
 }

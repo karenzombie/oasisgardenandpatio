@@ -1915,6 +1915,101 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /admin/manufacturers/{id}/contacts:
+    post:
+      operationId: adminCreateManufacturerContact
+      tags: [admin-manufacturers]
+      summary: Add a contact to a manufacturer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ManufacturerContactInput"
+      responses:
+        "201":
+          description: Contact created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ManufacturerContact"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Manufacturer not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /admin/manufacturers/{id}/contacts/{contactId}:
+    put:
+      operationId: adminUpdateManufacturerContact
+      tags: [admin-manufacturers]
+      summary: Update a manufacturer contact
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: contactId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ManufacturerContactInput"
+      responses:
+        "200":
+          description: Contact updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ManufacturerContact"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: adminDeleteManufacturerContact
+      tags: [admin-manufacturers]
+      summary: Delete a manufacturer contact
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: contactId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Contact deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /admin/categories:
     get:
       operationId: adminListCategories
@@ -7209,6 +7304,10 @@ components:
         updatedAt:
           type: string
           format: date-time
+        contacts:
+          type: array
+          items:
+            $ref: "#/components/schemas/ManufacturerContact"
       required:
         - id
         - name
@@ -7233,6 +7332,63 @@ components:
         - isActive
         - createdAt
         - updatedAt
+        - contacts
+    ManufacturerContact:
+      type: object
+      properties:
+        id:
+          type: integer
+        manufacturerId:
+          type: integer
+        name:
+          type: string
+        email:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        role:
+          type: ["string", "null"]
+        isPrimary:
+          type: boolean
+        displayOrder:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - manufacturerId
+        - name
+        - email
+        - phone
+        - role
+        - isPrimary
+        - displayOrder
+        - createdAt
+        - updatedAt
+    ManufacturerContactInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        email:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        role:
+          type: ["string", "null"]
+        isPrimary:
+          type: boolean
+          default: false
+        displayOrder:
+          type: integer
+          default: 0
+      required:
+        - name
     CreateManufacturerRequest:
       type: object
       properties:

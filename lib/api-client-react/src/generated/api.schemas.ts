@@ -1089,6 +1089,22 @@ export const AdminManufacturerOrderMethod = {
   manual: "manual",
 } as const;
 
+export interface ManufacturerContact {
+  id: number;
+  manufacturerId: number;
+  name: string;
+  /** @nullable */
+  email: string | null;
+  /** @nullable */
+  phone: string | null;
+  /** @nullable */
+  role: string | null;
+  isPrimary: boolean;
+  displayOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface AdminManufacturer {
   id: number;
   name: string;
@@ -1135,6 +1151,20 @@ export interface AdminManufacturer {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  contacts: ManufacturerContact[];
+}
+
+export interface ManufacturerContactInput {
+  /** @minLength 1 */
+  name: string;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  role?: string | null;
+  isPrimary?: boolean;
+  displayOrder?: number;
 }
 
 export type CreateManufacturerRequestOrderMethod =
