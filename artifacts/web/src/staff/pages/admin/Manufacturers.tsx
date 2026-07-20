@@ -6,6 +6,7 @@ import {
   Search,
   Power,
   PowerOff,
+  Star,
   Upload,
   X,
 } from "lucide-react";
@@ -14,8 +15,12 @@ import {
   useAdminCreateManufacturer,
   useAdminUpdateManufacturer,
   useAdminSetManufacturerActive,
+  useAdminCreateManufacturerContact,
+  useAdminUpdateManufacturerContact,
+  useAdminDeleteManufacturerContact,
   getAdminListManufacturersQueryKey,
   type AdminManufacturer,
+  type ManufacturerContact,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -143,6 +148,39 @@ function formFromRow(row: AdminManufacturer): FormState {
   };
 }
 
+interface ContactRow {
+  tempId: string;
+  id?: number;
+  name: string;
+  email: string;
+  phone: string;
+  role: string;
+  isPrimary: boolean;
+}
+
+function contactsFromServer(cs: ManufacturerContact[]): ContactRow[] {
+  return cs.map((c) => ({
+    tempId: String(c.id),
+    id: c.id,
+    name: c.name,
+    email: c.email ?? "",
+    phone: c.phone ?? "",
+    role: c.role ?? "",
+    isPrimary: c.isPrimary,
+  }));
+}
+
+function emptyContact(): ContactRow {
+  return {
+    tempId: `new-${Date.now()}-${Math.random()}`,
+    name: "",
+    email: "",
+    phone: "",
+    role: "",
+    isPrimary: false,
+  };
+}
+
 export default function Manufacturers() {
   const qc = useQueryClient();
   const toast = useToast();
@@ -155,6 +193,9 @@ export default function Manufacturers() {
   const createMut = useAdminCreateManufacturer();
   const updateMut = useAdminUpdateManufacturer();
   const setActiveMut = useAdminSetManufacturerActive();
+  const createContactMut = useAdminCreateManufacturerContact();
+  const updateContactMut = useAdminUpdateManufacturerContact();
+  const deleteContactMut = useAdminDeleteManufacturerContact();
 
   const [search, setSearch] = useState("");
   const [showInactive, setShowInactive] = useState(true);
@@ -166,6 +207,8 @@ export default function Manufacturers() {
   const [confirmDeactivate, setConfirmDeactivate] =
     useState<AdminManufacturer | null>(null);
   const [sort, setSort] = useState<SortState<MfgSortKey>>({ by: null, order: "desc" });
+  const [contacts, setContacts] = useState<ContactRow[]>([]);
+  const [originalContacts, setOriginalContacts] = useState<ManufacturerContact[]>([]);
 
   const rows = list.data ?? [];
 
@@ -186,14 +229,34 @@ export default function Manufacturers() {
   function openNew() {
     setEditing(null);
     setForm(emptyForm());
+    setContacts([]);
+    setOriginalContacts([]);
     setError(null);
     setOpen(true);
   }
   function openEdit(row: AdminManufacturer) {
     setEditing(row);
     setForm(formFromRow(row));
+    setContacts(contactsFromServer(row.contacts));
+    setOriginalContacts(row.contacts);
     setError(null);
     setOpen(true);
+  }
+
+  function updateContact(
+    tempId: string,
+    field: keyof Omit<ContactRow, "tempId" | "id" | "isPrimary">,
+    value: string,
+  ) {
+    setContacts((cs) =>
+      cs.map((c) => (c.tempId === tempId ? { ...c, [field]: value } : c)),
+    );
+  }
+
+  function makePrimary(tempId: string) {
+    setContacts((cs) =>
+      cs.map((c) => ({ ...c, isPrimary: c.tempId === tempId })),
+    );
   }
 
   async function handleLogo(file: File | null) {
@@ -293,6 +356,13 @@ export default function Manufacturers() {
       return;
     }
 
+    for (const c of contacts) {
+      if (!c.name.trim()) {
+        setError("All contacts must have a name.");
+        return;
+      }
+    }
+
     const payload = {
       name,
       slug,
@@ -317,13 +387,68 @@ export default function Manufacturers() {
     };
 
     try {
+      let mfrId: number;
       if (editing) {
         await updateMut.mutateAsync({ id: editing.id, data: payload });
+        mfrId = editing.id;
         toast.toast({ title: "Vendor updated" });
       } else {
-        await createMut.mutateAsync({ data: payload });
+        const created = await createMut.mutateAsync({ data: payload });
+        mfrId = created.id;
         toast.toast({ title: "Vendor created" });
       }
+
+      // Reconcile contacts
+      const toDelete = originalContacts.filter(
+        (oc) => !contacts.some((c) => c.id === oc.id),
+      );
+      const toCreate = contacts.filter((c) => !c.id);
+      const toUpdate = contacts.filter((c) => {
+        if (!c.id) return false;
+        const orig = originalContacts.find((oc) => oc.id === c.id);
+        if (!orig) return false;
+        return (
+          c.name.trim() !== orig.name ||
+          (c.email.trim() || null) !== orig.email ||
+          (c.phone.trim() || null) !== orig.phone ||
+          (c.role.trim() || null) !== orig.role ||
+          c.isPrimary !== orig.isPrimary
+        );
+      });
+
+      await Promise.all([
+        ...toDelete.map((oc) =>
+          deleteContactMut.mutateAsync({ id: mfrId, contactId: oc.id }),
+        ),
+        ...toUpdate.map((c) =>
+          updateContactMut.mutateAsync({
+            id: mfrId,
+            contactId: c.id!,
+            data: {
+              name: c.name.trim(),
+              email: c.email.trim() || null,
+              phone: c.phone.trim() || null,
+              role: c.role.trim() || null,
+              isPrimary: c.isPrimary,
+              displayOrder: contacts.findIndex((r) => r.tempId === c.tempId),
+            },
+          }),
+        ),
+        ...toCreate.map((c) =>
+          createContactMut.mutateAsync({
+            id: mfrId,
+            data: {
+              name: c.name.trim(),
+              email: c.email.trim() || null,
+              phone: c.phone.trim() || null,
+              role: c.role.trim() || null,
+              isPrimary: c.isPrimary,
+              displayOrder: contacts.findIndex((r) => r.tempId === c.tempId),
+            },
+          }),
+        ),
+      ]);
+
       await qc.invalidateQueries({
         queryKey: getAdminListManufacturersQueryKey(),
       });
@@ -890,6 +1015,134 @@ export default function Manufacturers() {
                   Determines how purchase orders generated by the site are
                   routed to this vendor.
                 </p>
+              </div>
+
+              {/* Vendor contacts */}
+              <div className="border-t pt-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-sm font-semibold text-slate-900">
+                    Vendor contacts
+                  </h4>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      setContacts((cs) => [...cs, emptyContact()])
+                    }
+                  >
+                    <Plus className="size-3.5 mr-1" />
+                    Add contact
+                  </Button>
+                </div>
+                {contacts.length === 0 ? (
+                  <p className="text-xs text-slate-500">
+                    No contacts yet. Add a rep or account manager.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {contacts.map((c) => (
+                      <div
+                        key={c.tempId}
+                        className="border border-slate-200 rounded-md p-3 space-y-2 bg-slate-50/50"
+                      >
+                        <div className="flex items-center gap-2">
+                          {c.isPrimary && (
+                            <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5">
+                              <Star className="size-3" />
+                              Primary
+                            </span>
+                          )}
+                          <div className="flex-1" />
+                          {!c.isPrimary && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 text-xs text-slate-600 hover:text-amber-700"
+                              onClick={() => makePrimary(c.tempId)}
+                            >
+                              <Star className="size-3 mr-1" />
+                              Make primary
+                            </Button>
+                          )}
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                            onClick={() =>
+                              setContacts((cs) =>
+                                cs.filter((r) => r.tempId !== c.tempId),
+                              )
+                            }
+                          >
+                            <X className="size-3.5 mr-1" />
+                            Remove
+                          </Button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <Label className="text-xs">
+                              Name <span className="text-red-500">*</span>
+                            </Label>
+                            <Input
+                              value={c.name}
+                              onChange={(e) =>
+                                updateContact(c.tempId, "name", e.target.value)
+                              }
+                              placeholder="Jane Smith"
+                              className="h-8 text-sm"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs">Role / title</Label>
+                            <Input
+                              value={c.role}
+                              onChange={(e) =>
+                                updateContact(c.tempId, "role", e.target.value)
+                              }
+                              placeholder="Sales Rep"
+                              className="h-8 text-sm"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs">Email</Label>
+                            <Input
+                              value={c.email}
+                              onChange={(e) =>
+                                updateContact(
+                                  c.tempId,
+                                  "email",
+                                  e.target.value,
+                                )
+                              }
+                              placeholder="jane@brand.com"
+                              type="email"
+                              className="h-8 text-sm"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs">Phone</Label>
+                            <Input
+                              value={c.phone}
+                              onChange={(e) =>
+                                updateContact(
+                                  c.tempId,
+                                  "phone",
+                                  e.target.value,
+                                )
+                              }
+                              placeholder="(555) 555-1234"
+                              type="tel"
+                              className="h-8 text-sm"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {error && (
