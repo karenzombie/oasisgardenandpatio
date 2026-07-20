@@ -138,8 +138,8 @@ function formFromRow(row: AdminManufacturer): FormState {
     state: row.state ?? "",
     postalCode: row.postalCode ?? "",
     country: row.country ?? "",
-    phone: row.phone ?? "",
-    fax: row.fax ?? "",
+    phone: normalizePhoneOnLoad(row.phone),
+    fax: normalizePhoneOnLoad(row.fax),
     orderEmail: row.orderEmail ?? "",
     salesEmail: row.salesEmail ?? "",
     orderMethod: row.orderMethod,
@@ -164,7 +164,7 @@ function contactsFromServer(cs: ManufacturerContact[]): ContactRow[] {
     id: c.id,
     name: c.name,
     email: c.email ?? "",
-    phone: c.phone ?? "",
+    phone: normalizePhoneOnLoad(c.phone),
     role: c.role ?? "",
     isPrimary: c.isPrimary,
   }));
@@ -179,6 +179,24 @@ function emptyContact(): ContactRow {
     role: "",
     isPrimary: false,
   };
+}
+
+/** Strip non-digits, cap at 10, format progressively as (AAA) BBB-CCCC. */
+function formatPhoneInput(raw: string): string {
+  const digits = raw.replace(/\D/g, "").slice(0, 10);
+  if (digits.length === 0) return "";
+  if (digits.length <= 3) return `(${digits}`;
+  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+}
+
+/** On load: if existing value has exactly 10 digits, display formatted; otherwise leave as-is. */
+function normalizePhoneOnLoad(value: string | null | undefined): string {
+  if (!value) return "";
+  const digits = value.replace(/\D/g, "");
+  if (digits.length === 10)
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  return value;
 }
 
 export default function Manufacturers() {
@@ -939,7 +957,7 @@ export default function Manufacturers() {
                       id="m-phone"
                       value={form.phone}
                       onChange={(e) =>
-                        setForm((f) => ({ ...f, phone: e.target.value }))
+                        setForm((f) => ({ ...f, phone: formatPhoneInput(e.target.value) }))
                       }
                       type="tel"
                       placeholder="(555) 555-1234"
@@ -951,7 +969,7 @@ export default function Manufacturers() {
                       id="m-fax"
                       value={form.fax}
                       onChange={(e) =>
-                        setForm((f) => ({ ...f, fax: e.target.value }))
+                        setForm((f) => ({ ...f, fax: formatPhoneInput(e.target.value) }))
                       }
                       type="tel"
                       placeholder="(555) 555-5678"
@@ -1130,7 +1148,7 @@ export default function Manufacturers() {
                                 updateContact(
                                   c.tempId,
                                   "phone",
-                                  e.target.value,
+                                  formatPhoneInput(e.target.value),
                                 )
                               }
                               placeholder="(555) 555-1234"
