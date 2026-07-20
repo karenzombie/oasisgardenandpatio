@@ -43,6 +43,7 @@ import AccountOrderDetail from "@/pages/AccountOrderDetail";
 import AccountOptOut from "@/pages/AccountOptOut";
 
 import StaffRouter from "@/staff/StaffRouter";
+import { OnboardingGate } from "@/components/OnboardingGate";
 
 const queryClient = new QueryClient();
 
@@ -120,7 +121,11 @@ function CustomerArea() {
   // mount inside ClerkProvider.
   useClerkSync();
   useWishlistBootstrap();
-  return <CustomerRouter />;
+  return (
+    <OnboardingGate>
+      <CustomerRouter />
+    </OnboardingGate>
+  );
 }
 
 function CustomerWithClerk() {

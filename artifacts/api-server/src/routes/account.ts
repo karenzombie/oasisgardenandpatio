@@ -425,9 +425,11 @@ router.post(
     const { documentTypes } = parsed.data;
     const customer = await getOrCreateCustomer(req.user!.id);
 
+    // Validate all requested types first so we never write partial data.
+    const resolvedDocs: Array<{ docType: string; docId: number; docVersion: string }> = [];
     for (const docType of documentTypes) {
       const [activeDoc] = await db
-        .select()
+        .select({ id: legalDocumentsTable.id, version: legalDocumentsTable.version })
         .from(legalDocumentsTable)
         .where(
           and(
@@ -443,14 +445,20 @@ router.post(
           .json({ error: `No active legal document found for type: ${docType}` });
         return;
       }
-
-      await db.insert(customerLegalAcceptancesTable).values({
-        customerId: customer.id,
-        documentType: docType,
-        documentId: activeDoc.id,
-        documentVersion: activeDoc.version,
-      });
+      resolvedDocs.push({ docType, docId: activeDoc.id, docVersion: activeDoc.version });
     }
+
+    // All types validated — insert atomically.
+    await db.transaction(async (tx) => {
+      for (const { docType, docId, docVersion } of resolvedDocs) {
+        await tx.insert(customerLegalAcceptancesTable).values({
+          customerId: customer.id,
+          documentType: docType,
+          documentId: docId,
+          documentVersion: docVersion,
+        });
+      }
+    });
 
     res.json(await loadProfile(req.user!.id));
   },

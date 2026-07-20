@@ -19,6 +19,7 @@ import {
 } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
+import { OnboardingView } from "./OnboardingView";
 import { wishlistKeyFor } from "@/lib/wishlistHold";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -291,7 +292,7 @@ export default function Account() {
   const resendMutation = useResendVerification();
   const [resendSent, setResendSent] = useState(false);
 
-  const { data: profile } = useGetAccountProfile({
+  const { data: profile, isLoading: profileLoading } = useGetAccountProfile({
     query: {
       queryKey: getGetAccountProfileQueryKey(),
       enabled: isAuthenticated,
@@ -419,6 +420,19 @@ export default function Account() {
         <Spinner className="size-8 text-primary" />
       </div>
     );
+  }
+
+  // Wait for profile before deciding whether to show onboarding.
+  if (profileLoading && !profile) {
+    return (
+      <div className="w-full bg-muted/30 flex-1 flex items-center justify-center py-24">
+        <Spinner className="size-8 text-primary" />
+      </div>
+    );
+  }
+
+  if (profile?.onboardingRequired) {
+    return <OnboardingView profile={profile} onComplete={setProfile} />;
   }
 
   const handleLogout = async () => {
