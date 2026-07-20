@@ -22,6 +22,7 @@ export const legalDocumentsTable = pgTable(
     content: text("content").notNull(),
     effectiveDate: date("effective_date").notNull(),
     isActive: boolean("is_active").notNull().default(false),
+    pdfStorageUrl: text("pdf_storage_url"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
