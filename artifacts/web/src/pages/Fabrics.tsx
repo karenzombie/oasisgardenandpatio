@@ -527,7 +527,7 @@ export default function Fabrics() {
         <p>
           Performance fabrics typically carry a 5-year limited warranty against
           fading. See our{" "}
-          <a href="/warranty" target="_blank" rel="noopener noreferrer" className="text-primary">
+          <a href="/api/legal/warranty/pdf" target="_blank" rel="noopener noreferrer" className="text-primary">
             warranty page
           </a>{" "}
           for full details.

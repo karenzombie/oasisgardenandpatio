@@ -70,16 +70,16 @@ export function Footer() {
                 <Link href="/contact" className="hover:text-primary transition-colors">Contact Us</Link>
               </li>
               <li>
-                <a href="/shipping-returns" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Shipping & Returns</a>
+                <a href="/api/legal/shipping_returns/pdf" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Shipping & Returns</a>
               </li>
               <li>
-                <a href="/warranty" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Warranty</a>
+                <a href="/api/legal/warranty/pdf" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Warranty</a>
               </li>
               <li>
-                <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Privacy Policy</a>
+                <a href="/api/legal/privacy_policy/pdf" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Privacy Policy</a>
               </li>
               <li>
-                <a href="/terms-and-conditions" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Terms & Conditions</a>
+                <a href="/api/legal/terms_and_conditions/pdf" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Terms & Conditions</a>
               </li>
             </ul>
           </div>

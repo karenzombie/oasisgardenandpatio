@@ -562,7 +562,7 @@ export default function Finishes() {
           Outdoor finishes are built for sun, wind, and weather. Wipe with mild
           soap and water and rinse thoroughly — avoid abrasive pads or solvent
           cleaners, which can dull the topcoat. See our{" "}
-          <a href="/warranty" target="_blank" rel="noopener noreferrer" className="text-primary">
+          <a href="/api/legal/warranty/pdf" target="_blank" rel="noopener noreferrer" className="text-primary">
             warranty page
           </a>{" "}
           for coverage details.
