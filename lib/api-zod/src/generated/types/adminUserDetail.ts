@@ -7,10 +7,12 @@
  */
 import type { AdminAgentPrivileges } from "./adminAgentPrivileges";
 import type { AdminUserSummary } from "./adminUserSummary";
+import type { LegalAcceptances } from "./legalAcceptances";
 
 export type AdminUserDetail = AdminUserSummary & {
   agentPrivileges: AdminAgentPrivileges | null;
   /** Null when this user has no linked customer record (e.g. staff accounts). */
   marketingOptOut: boolean | null;
   marketingOptOutAt: Date | null;
+  legalAcceptances: LegalAcceptances;
 };

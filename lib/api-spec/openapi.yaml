@@ -10828,7 +10828,9 @@ components:
               nullable: true
               description: Null when this user has no linked customer record (e.g. staff accounts).
             marketingOptOutAt: { type: string, format: date-time, nullable: true }
-          required: [agentPrivileges, marketingOptOut, marketingOptOutAt]
+            legalAcceptances:
+              $ref: "#/components/schemas/LegalAcceptances"
+          required: [agentPrivileges, marketingOptOut, marketingOptOutAt, legalAcceptances]
     CreateStaffUserRequest:
       type: object
       properties:
@@ -10892,9 +10894,7 @@ components:
             addresses:
               type: array
               items: { $ref: "#/components/schemas/AdminAddress" }
-            legalAcceptances:
-              $ref: "#/components/schemas/LegalAcceptances"
-          required: [addresses, legalAcceptances]
+          required: [addresses]
     AdminCustomerPage:
       type: object
       properties:

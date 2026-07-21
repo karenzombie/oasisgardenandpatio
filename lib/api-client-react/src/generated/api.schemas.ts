@@ -3854,6 +3854,7 @@ export type AdminUserDetail = AdminUserSummary & {
   /** Null when this user has no linked customer record (e.g. staff accounts). */
   marketingOptOut: boolean | null;
   marketingOptOutAt: string | null;
+  legalAcceptances: LegalAcceptances;
 };
 
 export type CreateStaffUserRequestRole =
@@ -3935,7 +3936,6 @@ export interface AdminCustomer {
 
 export type AdminCustomerDetail = AdminCustomer & {
   addresses: AdminAddress[];
-  legalAcceptances: LegalAcceptances;
 };
 
 export interface AdminCustomerPage {

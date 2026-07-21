@@ -8707,6 +8707,22 @@ export const AdminGetUserResponse = zod
           "Null when this user has no linked customer record (e.g. staff accounts).",
         ),
       marketingOptOutAt: zod.coerce.date().nullable(),
+      legalAcceptances: zod.object({
+        privacy_policy: zod.union([
+          zod.object({
+            acceptedAt: zod.coerce.date(),
+            documentVersion: zod.string(),
+          }),
+          zod.null(),
+        ]),
+        terms_and_conditions: zod.union([
+          zod.object({
+            acceptedAt: zod.coerce.date(),
+            documentVersion: zod.string(),
+          }),
+          zod.null(),
+        ]),
+      }),
     }),
   );
 
@@ -13693,22 +13709,6 @@ export const AdminGetCustomerResponse = zod
           updatedAt: zod.coerce.date(),
         }),
       ),
-      legalAcceptances: zod.object({
-        privacy_policy: zod.union([
-          zod.object({
-            acceptedAt: zod.coerce.date(),
-            documentVersion: zod.string(),
-          }),
-          zod.null(),
-        ]),
-        terms_and_conditions: zod.union([
-          zod.object({
-            acceptedAt: zod.coerce.date(),
-            documentVersion: zod.string(),
-          }),
-          zod.null(),
-        ]),
-      }),
     }),
   );
 

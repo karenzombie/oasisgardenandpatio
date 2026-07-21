@@ -7,9 +7,7 @@
  */
 import type { AdminAddress } from "./adminAddress";
 import type { AdminCustomer } from "./adminCustomer";
-import type { LegalAcceptances } from "./legalAcceptances";
 
 export type AdminCustomerDetail = AdminCustomer & {
   addresses: AdminAddress[];
-  legalAcceptances: LegalAcceptances;
 };

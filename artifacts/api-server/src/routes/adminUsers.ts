@@ -7,6 +7,7 @@ import {
   agentPrivilegesTable,
   sessionsTable,
   customersTable,
+  customerLegalAcceptancesTable,
   type User,
   type AgentPrivileges,
 } from "@workspace/db";
@@ -150,12 +151,31 @@ router.get(
     // null for staff accounts or if this user has no linked customer row.
     const [customer] = await db
       .select({
+        id: customersTable.id,
         marketingOptOut: customersTable.marketingOptOut,
         marketingOptOutAt: customersTable.marketingOptOutAt,
       })
       .from(customersTable)
       .where(eq(customersTable.userId, user.id))
       .limit(1);
+
+    // Legal acceptances — only customer-role users have a customer record;
+    // staff accounts return both as null.
+    let privacyAcceptance = null;
+    let termsAcceptance = null;
+    if (customer) {
+      const acceptanceRows = await db
+        .select()
+        .from(customerLegalAcceptancesTable)
+        .where(eq(customerLegalAcceptancesTable.customerId, customer.id))
+        .orderBy(desc(customerLegalAcceptancesTable.acceptedAt));
+      privacyAcceptance =
+        acceptanceRows.find((a) => a.documentType === "privacy_policy") ?? null;
+      termsAcceptance =
+        acceptanceRows.find(
+          (a) => a.documentType === "terms_and_conditions",
+        ) ?? null;
+    }
 
     res.json({
       ...userToSummary(user),
@@ -164,6 +184,20 @@ router.get(
       marketingOptOutAt: customer?.marketingOptOutAt
         ? customer.marketingOptOutAt.toISOString()
         : null,
+      legalAcceptances: {
+        privacy_policy: privacyAcceptance
+          ? {
+              acceptedAt: privacyAcceptance.acceptedAt.toISOString(),
+              documentVersion: privacyAcceptance.documentVersion,
+            }
+          : null,
+        terms_and_conditions: termsAcceptance
+          ? {
+              acceptedAt: termsAcceptance.acceptedAt.toISOString(),
+              documentVersion: termsAcceptance.documentVersion,
+            }
+          : null,
+      },
     });
   },
 );

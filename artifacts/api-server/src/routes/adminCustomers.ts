@@ -8,7 +8,6 @@ import {
   addressesTable,
   usersTable,
   passwordResetTokensTable,
-  customerLegalAcceptancesTable,
   type Customer,
   type Address,
 } from "@workspace/db";
@@ -151,35 +150,9 @@ router.get(
       .where(eq(addressesTable.customerId, c.id))
       .orderBy(desc(addressesTable.isDefault), asc(addressesTable.id));
 
-    const acceptanceRows = await db
-      .select()
-      .from(customerLegalAcceptancesTable)
-      .where(eq(customerLegalAcceptancesTable.customerId, c.id))
-      .orderBy(desc(customerLegalAcceptancesTable.acceptedAt));
-
-    const privacyAcceptance =
-      acceptanceRows.find((a) => a.documentType === "privacy_policy") ?? null;
-    const termsAcceptance =
-      acceptanceRows.find((a) => a.documentType === "terms_and_conditions") ??
-      null;
-
     res.json({
       ...customerToPayload(c),
       addresses: addresses.map(addressToPayload),
-      legalAcceptances: {
-        privacy_policy: privacyAcceptance
-          ? {
-              acceptedAt: privacyAcceptance.acceptedAt.toISOString(),
-              documentVersion: privacyAcceptance.documentVersion,
-            }
-          : null,
-        terms_and_conditions: termsAcceptance
-          ? {
-              acceptedAt: termsAcceptance.acceptedAt.toISOString(),
-              documentVersion: termsAcceptance.documentVersion,
-            }
-          : null,
-      },
     });
   },
 );
