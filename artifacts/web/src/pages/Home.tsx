@@ -88,10 +88,10 @@ export default function Home() {
 
           <div className="relative z-10 container mx-auto px-4 text-center max-w-4xl text-white">
             <h1 className="font-bodoni italic text-5xl md:text-7xl font-medium tracking-tight mb-6 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-              Discover enduring craftmanship on outdoor furniture collections designed for the way you live outside.
+              Outdoor Living,<br />Refined.
             </h1>
             <p className="font-bodoni text-2xl md:text-4xl text-white mb-10 max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-150 [text-shadow:0_2px_4px_rgba(0,0,0,0.85),0_4px_16px_rgba(0,0,0,0.7)]">
-              Discover curated outdoor furniture collections designed for the way you live outside. Craftsmanship that endures.
+              Discover enduring craftmanship on outdoor furniture collections designed for the way you live outside.
             </p>
             <div className="flex flex-col items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
               <Button variant="outline" className="text-white border-white hover:bg-white/20 rounded-none px-12 py-5 text-lg font-serif tracking-wide bg-white/10 backdrop-blur-md w-56 h-auto" asChild>
