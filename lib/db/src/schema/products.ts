@@ -11,6 +11,7 @@ import {
   uniqueIndex,
   unique,
   foreignKey,
+  primaryKey,
   check,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
@@ -226,13 +227,19 @@ export type ProductMaterial = typeof productMaterialsTable.$inferSelect;
 export const productUmbrellaSizesTable = pgTable(
   "product_umbrella_sizes",
   {
-    productId: integer("product_id")
-      .notNull()
-      .references(() => productsTable.id, { onDelete: "cascade" }),
+    productId: integer("product_id").notNull(),
     sizeLabel: text("size_label").notNull(),
   },
   (t) => [
-    unique("product_umbrella_sizes_unique").on(t.productId, t.sizeLabel),
+    primaryKey({
+      name: "product_umbrella_sizes_pkey",
+      columns: [t.productId, t.sizeLabel],
+    }),
+    foreignKey({
+      columns: [t.productId],
+      foreignColumns: [productsTable.id],
+      name: "product_umbrella_sizes_product_id_fkey",
+    }).onDelete("cascade"),
     index("idx_product_umbrella_sizes_size_label").on(t.sizeLabel),
   ],
 );
