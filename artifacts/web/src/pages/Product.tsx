@@ -10,7 +10,6 @@ import swvDwvImage from "@assets/SWV_DWV_image_1781037074957.png";
 import owleeCareGuide from "@assets/O.W.-Lee-Care-Maintenance-Guide-2026_1782153939648.pdf?url";
 import { getBrandLogo } from "@/lib/brandLogos";
 import { sanitizeHtml } from "@/lib/sanitize";
-import { useSEO } from "@/hooks/use-seo";
 import { WishlistButton } from "@/components/WishlistButton";
 import { CompatibleRecommendations } from "@/components/CompatibleRecommendations";
 import { useToast } from "@/hooks/use-toast";
@@ -91,32 +90,6 @@ export default function Product() {
   const [, params] = useRoute<{ slug: string }>("/shop/:slug");
   const slug = params?.slug ?? "";
   const { data, isLoading, error } = useGetCatalogProductBySlug(slug);
-
-  const _seoDesc = useMemo(() => {
-    if (!data) return "";
-    const MAX = 160;
-    const strip = (s: string) => s.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-    if (data.shortDescription?.trim()) return strip(data.shortDescription).slice(0, MAX);
-    if (data.description?.trim()) return strip(data.description).slice(0, MAX);
-    const parts: string[] = [data.name];
-    if (data.manufacturerName) parts.push(`by ${data.manufacturerName}`);
-    parts.push(
-      data.categoryName
-        ? `${data.categoryName} at Oasis Garden & Patio`
-        : "outdoor furniture at Oasis Garden & Patio",
-    );
-    return parts.join(". ").slice(0, MAX);
-  }, [data]);
-
-  useSEO({
-    title: data ? `${data.name} | Oasis Garden & Patio` : "",
-    description: _seoDesc,
-    canonical: data ? `${window.location.origin}/shop/${slug}` : undefined,
-    ogType: "product",
-    ogImageUrl: data?.primaryImageUrl ?? null,
-    noindex: data?.catalogVisible === false,
-  });
-
   const [tab, setTab] = useState<TabId>("features");
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   const [qty, setQty] = useState(1);

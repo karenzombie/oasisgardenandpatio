@@ -256,11 +256,6 @@ export const ListCatalogProductsResponse = zod.object({
       salePrice: zod.string().nullable(),
       showPriceOnline: zod.boolean(),
       availableOnline: zod.boolean(),
-      catalogVisible: zod
-        .boolean()
-        .describe(
-          "When false the product is hidden from all storefront routes (search, listings, PDP). The SEO injector emits noindex and no enriched metadata for these products.",
-        ),
       quoteOnly: zod.boolean(),
       featured: zod.boolean(),
       primaryImageUrl: zod.string().nullable(),
@@ -555,11 +550,6 @@ export const GetCatalogProductBySlugResponse = zod
     salePrice: zod.string().nullable(),
     showPriceOnline: zod.boolean(),
     availableOnline: zod.boolean(),
-    catalogVisible: zod
-      .boolean()
-      .describe(
-        "When false the product is hidden from all storefront routes (search, listings, PDP). The SEO injector emits noindex and no enriched metadata for these products.",
-      ),
     quoteOnly: zod.boolean(),
     featured: zod.boolean(),
     primaryImageUrl: zod.string().nullable(),

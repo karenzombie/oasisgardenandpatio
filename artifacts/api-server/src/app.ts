@@ -3,10 +3,7 @@ import cors from "cors";
 import pinoHttp from "pino-http";
 import { clerkMiddleware } from "@clerk/express";
 import { publishableKeyFromHost } from "@clerk/shared/keys";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import router from "./routes";
-import spaRouter from "./routes/spaRoutes";
 import { logger } from "./lib/logger";
 import {
   buildCustomerSessionMiddleware,
@@ -17,25 +14,6 @@ import {
   clerkProxyMiddleware,
   getClerkProxyHost,
 } from "./middlewares/clerkProxyMiddleware";
-
-/**
- * Resolve the path to the web artifact's public directory so Express can serve
- * static assets (manufacturer logos, material images, etc.) that live there.
- * These assets are under paths like /manufacturers/*.jpg that the artifact.toml
- * now routes to the API server; without static serving they would be answered
- * by the spaRouter (which returns HTML) instead of their binary content.
- *
- * The bundle lives at artifacts/api-server/dist/index.mjs; going up three
- * levels reaches the workspace root in every launch context.
- */
-function resolveWebPublicDir(): string {
-  try {
-    const bundleDir = dirname(fileURLToPath(import.meta.url));
-    return resolve(bundleDir, "../../..", "artifacts/web/public");
-  } catch {
-    return resolve(process.cwd(), "artifacts/web/public");
-  }
-}
 
 const app: Express = express();
 
@@ -160,21 +138,5 @@ app.use(
 );
 
 app.use("/api", router);
-
-// Serve static files from the web artifact's public directory BEFORE the
-// spaRouter. Paths like /manufacturers/*.jpg and /materials/*.png are stored
-// as static assets in artifacts/web/public/ and were previously served by the
-// Vite dev server. Now that artifact.toml routes /manufacturers and /shop to
-// this Express server, those requests arrive here; without static serving the
-// spaRouter would return HTML instead of image data.
-//
-// express.static calls next() for any path that doesn't match a file, so the
-// spaRouter below still handles genuine document requests.
-app.use(express.static(resolveWebPublicDir(), { index: false, redirect: false }));
-
-// SPA document routes — serve index.html with injected SEO head tags.
-// Mounted AFTER /api and after static so the API prefix and real files always win.
-// Only explicitly listed public storefront paths are enriched (allowlist).
-app.use(spaRouter);
 
 export default app;

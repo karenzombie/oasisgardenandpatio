@@ -8218,9 +8218,6 @@ components:
           type: boolean
         availableOnline:
           type: boolean
-        catalogVisible:
-          type: boolean
-          description: When false the product is hidden from all storefront routes (search, listings, PDP). The SEO injector emits noindex and no enriched metadata for these products.
         quoteOnly:
           type: boolean
         featured:
@@ -8251,7 +8248,6 @@ components:
         - salePrice
         - showPriceOnline
         - availableOnline
-        - catalogVisible
         - quoteOnly
         - featured
         - primaryImageUrl

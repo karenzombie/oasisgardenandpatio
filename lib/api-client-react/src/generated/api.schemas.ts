@@ -1750,8 +1750,6 @@ export interface CatalogProduct {
   salePrice: string | null;
   showPriceOnline: boolean;
   availableOnline: boolean;
-  /** When false the product is hidden from all storefront routes (search, listings, PDP). The SEO injector emits noindex and no enriched metadata for these products. */
-  catalogVisible: boolean;
   quoteOnly: boolean;
   featured: boolean;
   /** @nullable */
