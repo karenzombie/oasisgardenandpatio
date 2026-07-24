@@ -338,6 +338,7 @@ router.get(
         salePrice: productsTable.salePrice,
         showPriceOnline: productsTable.showPriceOnline,
         availableOnline: productsTable.availableOnline,
+        catalogVisible: productsTable.catalogVisible,
         quoteOnly: productsTable.quoteOnly,
         featured: productsTable.featured,
         primaryImageUrl: sql<string | null>`(
