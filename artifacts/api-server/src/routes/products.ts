@@ -736,6 +736,7 @@ router.get(
         featured: productsTable.featured,
         finishMinQtyNote: productsTable.finishMinQtyNote,
         isActive: productsTable.isActive,
+        catalogVisible: productsTable.catalogVisible,
         cushionUpgradeSku: productsTable.cushionUpgradeSku,
       })
       .from(productsTable)
@@ -1361,6 +1362,7 @@ router.get(
       tags: tagsArray,
       showPriceOnline: row.showPriceOnline,
       availableOnline: row.availableOnline,
+      catalogVisible: row.catalogVisible,
       quoteOnly: row.quoteOnly,
       featured: row.featured,
       primaryImageUrl: toPublicImageUrl(primaryGallery?.url ?? null),

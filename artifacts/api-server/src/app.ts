@@ -4,6 +4,7 @@ import pinoHttp from "pino-http";
 import { clerkMiddleware } from "@clerk/express";
 import { publishableKeyFromHost } from "@clerk/shared/keys";
 import router from "./routes";
+import spaRouter from "./routes/spaRoutes";
 import { logger } from "./lib/logger";
 import {
   buildCustomerSessionMiddleware,
@@ -138,5 +139,10 @@ app.use(
 );
 
 app.use("/api", router);
+
+// SPA document routes — serve index.html with injected SEO head tags.
+// Mounted AFTER /api so the API prefix always wins.
+// Only explicitly listed public storefront paths are enriched (allowlist).
+app.use(spaRouter);
 
 export default app;
