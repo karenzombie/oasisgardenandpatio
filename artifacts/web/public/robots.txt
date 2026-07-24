@@ -1,0 +1,10 @@
+User-agent: *
+Disallow: /admin
+Disallow: /agent
+Disallow: /staff
+Disallow: /cart
+Disallow: /checkout
+Disallow: /sign-in
+Disallow: /wishlist
+
+Sitemap: https://oasisgardenandpatio.com/sitemap.xml
