@@ -58,6 +58,9 @@ function serveRawHtml(req: Request, res: Response, next: NextFunction): void {
 // /shop/category/:catSlug is registered before /shop/:slug so the literal
 // "category" segment is never treated as a product slug.
 
+// Manufacturers listing page (plain shell — no per-page enrichment needed)
+router.get("/manufacturers", serveRawHtml);
+
 // Gate 3 — manufacturer brand pages (enriched SEO head)
 router.get(
   "/manufacturers/:slug",
