@@ -1,0 +1,163 @@
+db_id,sku,name
+5460,263215,Bench
+5459,263315,Armless Bar Stool
+2994,263355,Hanamint Armless Counter Stool
+5461,616615,Gas Valve
+3085,616619,Round Glass Guard
+3083,616621,Rectangular Glass Guard
+3082,616690,NG Conversion Kit
+5463,671550,Alumiron Umbrella Base
+5464,672301,Ventura Cast Iron Umbrella Base
+5465,677301,Add-on Weight
+5325,722043,Carlisle Square Pedestal Counter Table
+5326,722053,Carlisle Square Pedestal Bar Table
+5324,722090,Carlisle Rectangular Enclosed Fire Pit Table
+5319,722099,Carlisle Rectangular Extension Dining Table
+5321,722548,Carlisle Round Dining Table
+5327,722636,Carlisle Square Dining Table
+5323,722765,Carlisle Rectangular Coffee Table
+5320,722845,Carlisle Rectangular Dining Table
+5309,309111,Cedar Dining Chair
+5317,309112,Cedar Sling Dining Chair
+5315,309331,Cedar Chaise Lounge
+2914,309336,Cedar Sling Chaise Lounge
+5310,309341,Cedar Swivel Rocker
+5318,309342,Cedar Sling Swivel Rocker
+5311,309411,Cedar Club Chair
+5312,309418,Cedar Club Swivel Rocker
+5313,309421,Cedar Loveseat
+5314,309431,Cedar Sofa
+5316,309451,Cedar Ottoman
+5447,316010,Dominion Square Ice Bucket Side Table
+5450,316063,Dominion Square Bar Table
+5458,316098,Dominion Rectangular Counter Fire Pit Table
+5455,316099,Dominion Rectangular Extension Dining Table
+5454,316245,Dominion Bench
+5448,316624,Dominion Square End Table
+5451,316642,Dominion Square Dining Table
+5453,316715,Dominion Counter Console Table
+5452,316743,Dominion Rectangular Coffee Table
+5456,316825,"Dominion Rectangular Dining Table 42"" x 68"""
+5457,316827,"Dominion Rectangular Dining Table 42"" x 84"""
+5432,048410,Grand Tuscany Club Swivel Rocker
+5431,048412,Grand Tuscany Club Chair
+5433,048422,Grand Tuscany Loveseat
+5435,048432,Grand Tuscany Sofa
+5434,048452,Grand Tuscany Ottoman
+5425,048610,Grand Tuscany Square End Table
+5426,048630,Grand Tuscany Rectangular Coffee Table
+5407,725090,Inverness Rectangular Enclosed Fire Pit Table
+5331,294333,Malibu Left Arm Chaise Lounge
+5330,294334,Malibu Right Arm Chaise Lounge
+5329,294411,Malibu Club Chair
+5334,294441,Malibu Left Arm Club Chair
+5332,294443,Malibu Right Arm Club Chair
+5333,294445,Malibu Middle Club Chair
+5336,294449,Malibu Corner Club Chair
+5335,294451,Malibu Ottoman
+5337,294621,Malibu Square End Table
+5338,294639,Malibu Square Coffee Table
+5339,294794,Malibu Rectangular Coffee Table
+5362,208010,Mayfair Round Ice Bucket Side Table
+5363,208011,Mayfair Rectangular Ice Bucket Table
+5367,208032,Mayfair Round Pedestal Counter Table
+5368,208042,Mayfair Round Pedestal Bar Table
+5356,208081,Mayfair Rectangular Extension Dining Table
+5357,208084,Mayfair Round Inlaid Lazy Susan Dining Table
+5365,208091,Mayfair Oval Enclosed Fire Pit Table
+5366,208092,Mayfair Round Enclosed Fire Pit Table
+5341,208141,Mayfair Dining Chair
+5345,208331,Mayfair Chaise Lounge
+5342,208341,Mayfair Swivel Rocker
+5344,208351,Mayfair Swivel Bar Stool
+5343,208353,Mayfair Swivel Counter Stool
+5346,208411,Mayfair Estate Club Chair
+5347,208415,Mayfair Estate Club Swivel Rocker
+5348,208419,Mayfair Estate Club Swivel Glider
+5352,208441,Mayfair Estate Club Left Chair
+5350,208443,Mayfair Estate Club Right Chair
+5351,208445,Mayfair Estate Club Middle Chair
+5353,208447,Mayfair Estate Club Corner Chair
+5349,208451,Mayfair Estate Ottoman
+5359,208524,Mayfair Round Tea Table
+5354,208542,Mayfair Round Coffee Table
+5355,208548,Mayfair Round Dining Table
+5360,208624,Mayfair Square End Table
+5364,208741,Mayfair Rectangular Counter Table
+5361,208763,Mayfair Rectangular Coffee Table
+5358,208827,Mayfair Rectangular Dining Table
+5369,321413,Melbourne Club Chair
+5370,321418,Melbourne Club Swivel Rocker
+5374,321441,Melbourne Left Arm Club Chair
+5372,321443,Melbourne Right Arm Club Chair
+5373,321445,Melbourne Middle Arm Club Chair
+5375,321453,Melbourne Ottoman
+5378,704116,Santa Barbara Dining Chair
+5380,704117,Santa Barbara Full Cushion Dining Chair KD
+5376,704131,Santa Barbara Full Cushion Dining Chair
+5381,704331,Santa Barbara Chaise Lounge
+5377,704341,Santa Barbara Full Cushion Swivel Rocker
+5379,704346,Santa Barbara Swivel Rocker
+5382,704347,Santa Barbara Full Cushion Swivel Rocker KD
+2921,704411,Santa Barbara Club Chair
+5383,704417,Santa Barbara Club Swivel Rocker
+5384,704421,Santa Barbara Loveseat
+5385,704428,Santa Barbara Loveseat Glider
+5386,704431,Santa Barbara Sofa
+5387,704453,Santa Barbara Ottoman
+5388,247141,Stratford Dining Chair
+2948,247142,Stratford Sling Dining Chair
+5390,247331,Stratford Chaise Lounge
+2932,247336,Stratford Sling Chaise Lounge
+5389,247341,Stratford Swivel Rocker
+2933,247342,Stratford Sling Swivel Rocker
+5392,247351,Stratford Swivel Bar Stool
+2998,247352,Stratford Sling Swivel Bar Stool
+5391,247353,Stratford Swivel Counter Stool
+2999,247354,Stratford Sling Swivel Counter Stool
+5394,247412,Stratford Estate Club Chair
+5395,247417,Stratford Estate Club Swivel Rocker
+5399,247442,Stratford Estate Club Left Chair
+5397,247444,Stratford Estate Club Right Chair
+5398,247445,Stratford Estate Club Middle Chair
+5396,247447,Stratford Estate Club Corner Chair
+5393,247451,Stratford Estate Ottoman
+5340,322093,Sur Rectangular Fire Pit Table
+5400,317112,Sydney Sling Dining Chair
+5402,317336,Sydney Sling Chaise Lounge
+5401,317342,Sydney Sling Swivel Rocker
+5403,317412,Sydney Sling Club Chair
+5404,317418,Sydney Sling Club Swivel Rocker
+5405,317422,Sydney Sling Loveseat
+5406,317452,Sydney Sling Ottoman
+5427,018010,Tuscany Round Ice Bucket Side Table
+5421,018062,Tuscany Round Pedestal Counter Table
+5416,018067,Tuscany Hexagonal Inlaid Lazy Susan Dining Table
+5417,018081,Tuscany Rectangular Extension Dining Table
+5408,018130,Tuscany Dining Chair
+5410,018140,Tuscany Bench
+5409,018240,Tuscany Swivel Rocker
+5413,018250,Tuscany Swivel Bar Stool
+5412,018280,Tuscany Swivel Counter Stool
+5411,018300,Tuscany Chaise Lounge
+5420,018410,Tuscany Round Pedestal Table
+5414,018450,Tuscany Round Dining Table
+5415,018480,Tuscany Round Inlaid Lazy Susan Dining Table
+5418,018530,Tuscany Oblong Dining Table
+5424,018620,Tuscany Round Tea Table
+5419,018670,Tuscany Round Umbrella Side Table
+5422,018690,Tuscany Round Pedestal Bar Table
+5430,048091,Tuscany Round Enclosed Fire Pit Table
+5429,611803,Tuscany Rectangular Console Table
+5462,671548,Tuscany Alumiron Umbrella Base
+5436,248141,Westfield Dining Chair
+5438,248211,Westfield Bench
+5441,248331,Westfield Chaise Lounge
+5437,248341,Westfield Swivel Rocker
+5440,248351,Westfield Swivel Bar Stool
+5439,248353,Westfield Swivel Counter Stool
+5442,248411,Westfield Club Chair
+5443,248417,Westfield Club Swivel Rocker
+5445,248421,Westfield Loveseat
+5446,248431,Westfield Sofa
+5444,248451,Westfield Ottoman
