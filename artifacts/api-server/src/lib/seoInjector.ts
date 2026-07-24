@@ -20,6 +20,7 @@ import {
   categoriesTable,
   db,
   manufacturersTable,
+  materialsTable,
   productImagesTable,
   productsTable,
 } from "@workspace/db";
@@ -40,13 +41,23 @@ type ProductMeta =
       cachedAt: number;
     };
 
+type SimpleMeta =
+  | { type: "notfound"; cachedAt: number }
+  | { type: "found"; name: string; description: string | null; cachedAt: number };
+
 // ─── Cache ─────────────────────────────────────────────────────────────────────
 
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5-minute TTL
 
 const productMetaCache = new Map<string, ProductMeta>();
+const categoryMetaCache = new Map<string, SimpleMeta>();
+const manufacturerMetaCache = new Map<string, SimpleMeta>();
 
-function isFresh(entry: ProductMeta): boolean {
+// Materials: cache the entire slug→displayName map; reloaded after TTL.
+let _materialMap: Map<string, string> | null = null;
+let _materialMapLoadedAt = 0;
+
+function isFresh(entry: { cachedAt: number }): boolean {
   return Date.now() - entry.cachedAt < CACHE_TTL_MS;
 }
 
@@ -110,6 +121,14 @@ function stripHtml(html: string): string {
   return html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 }
 
+/** Convert a slug to a display name (title-case fallback for unknown slugs). */
+function formatSlug(slug: string): string {
+  return slug
+    .split("-")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
 /**
  * Build the ≤160-char meta description using the brief's priority order:
  * 1. short_description (trimmed plain text)
@@ -145,7 +164,7 @@ function buildDescription(p: {
   return parts.join(". ").slice(0, MAX);
 }
 
-// ─── DB lookup ────────────────────────────────────────────────────────────────
+// ─── DB lookups ───────────────────────────────────────────────────────────────
 
 async function queryProductMeta(slug: string): Promise<ProductMeta> {
   const [row] = await db
@@ -213,13 +232,93 @@ async function queryProductMeta(slug: string): Promise<ProductMeta> {
   };
 }
 
+async function queryCategoryMeta(slug: string): Promise<SimpleMeta> {
+  const [row] = await db
+    .select({ name: categoriesTable.name, description: categoriesTable.description })
+    .from(categoriesTable)
+    .where(
+      and(eq(categoriesTable.slug, slug), eq(categoriesTable.isActive, true)),
+    )
+    .limit(1);
+  if (!row) return { type: "notfound", cachedAt: Date.now() };
+  return {
+    type: "found",
+    name: row.name,
+    description: row.description ?? null,
+    cachedAt: Date.now(),
+  };
+}
+
+async function queryManufacturerMeta(slug: string): Promise<SimpleMeta> {
+  const [row] = await db
+    .select({
+      name: manufacturersTable.name,
+      description: manufacturersTable.description,
+    })
+    .from(manufacturersTable)
+    .where(
+      and(
+        eq(manufacturersTable.slug, slug),
+        eq(manufacturersTable.isActive, true),
+      ),
+    )
+    .limit(1);
+  if (!row) return { type: "notfound", cachedAt: Date.now() };
+  return {
+    type: "found",
+    name: row.name,
+    description: row.description ?? null,
+    cachedAt: Date.now(),
+  };
+}
+
+/** Return the slug→displayName map for all materials, cached for 5 minutes. */
+async function getMaterialMap(): Promise<Map<string, string>> {
+  if (_materialMap && Date.now() - _materialMapLoadedAt < CACHE_TTL_MS) {
+    return _materialMap;
+  }
+  const rows = await db
+    .select({ slug: materialsTable.slug, name: materialsTable.name })
+    .from(materialsTable);
+  _materialMap = new Map(rows.map((r) => [r.slug, r.name]));
+  _materialMapLoadedAt = Date.now();
+  return _materialMap;
+}
+
+// ─── Shop canonical computation ───────────────────────────────────────────────
+
+const SHOP_FACETS = ["material", "category", "manufacturer"] as const;
+
+/**
+ * Compute the canonical URL for a /shop (listing) request.
+ *
+ * Rules (Option C from brief):
+ * 1. No facets                → /shop
+ * 2. Exactly one facet        → /shop?{facet}={value}  (page always stripped)
+ * 3. Two or more facets       → /shop
+ *
+ * Unknown / tracking params are ignored for canonical purposes.
+ */
+function computeShopCanonical(baseUrl: string, params: URLSearchParams): string {
+  const active = SHOP_FACETS.filter((f) => {
+    const v = params.get(f);
+    return v !== null && v !== "";
+  });
+  if (active.length === 0) return `${baseUrl}/shop`;
+  if (active.length === 1) {
+    const [f] = active;
+    return `${baseUrl}/shop?${f}=${encodeURIComponent(params.get(f)!)}`;
+  }
+  return `${baseUrl}/shop`;
+}
+
 // ─── Head tag builders ────────────────────────────────────────────────────────
 
 function buildNoindexTag(): string {
   return `    <meta name="robots" content="noindex">`;
 }
 
-function buildEnrichedTags(
+function buildProductTags(
   meta: ProductMeta & { type: "visible" },
   baseUrl: string,
 ): { newTitle: string; extraTags: string } {
@@ -240,6 +339,27 @@ function buildEnrichedTags(
   if (ogImage) {
     tags.push(`    <meta property="og:image" content="${ogImage}">`);
   }
+
+  return { newTitle: title, extraTags: tags.join("\n") };
+}
+
+function buildListTags(opts: {
+  title: string;
+  description: string;
+  canonical: string;
+}): { newTitle: string; extraTags: string } {
+  const title = esc(opts.title);
+  const desc = esc(opts.description);
+  const canonical = esc(opts.canonical);
+
+  const tags: string[] = [
+    `    <meta name="description" content="${desc}">`,
+    `    <link rel="canonical" href="${canonical}">`,
+    `    <meta property="og:type" content="website">`,
+    `    <meta property="og:title" content="${title}">`,
+    `    <meta property="og:description" content="${desc}">`,
+    `    <meta property="og:url" content="${canonical}">`,
+  ];
 
   return { newTitle: title, extraTags: tags.join("\n") };
 }
@@ -297,15 +417,166 @@ export async function injectProductSeo(
         return injectIntoTemplate(template, null, buildNoindexTag());
 
       case "visible": {
-        const { newTitle, extraTags } = buildEnrichedTags(meta, baseUrl);
+        const { newTitle, extraTags } = buildProductTags(meta, baseUrl);
         return injectIntoTemplate(template, newTitle, extraTags);
       }
     }
   } catch (err) {
     logger.error(
       { err, slug },
-      "seoInjector: metadata lookup failed — serving plain index.html",
+      "seoInjector: product metadata lookup failed — serving plain index.html",
     );
     return template; // static fallback
+  }
+}
+
+/**
+ * Return index.html with SEO tags for /shop and /shop?{facet}={value} URLs.
+ *
+ * Canonical rules (Option C):
+ * - No facets            → canonical /shop
+ * - One facet, no page   → canonical /shop?{facet}={value}  (page always stripped)
+ * - Multi-facet          → canonical /shop
+ *
+ * Title/description always reflect the actual facet shown, regardless of
+ * whether the canonical points elsewhere.
+ */
+export async function injectShopSeo(
+  rawQueryString: string,
+  baseUrl: string,
+): Promise<string> {
+  const template = getIndexHtml();
+
+  try {
+    const params = new URLSearchParams(rawQueryString);
+    const canonical = computeShopCanonical(baseUrl, params);
+
+    const materialSlug = params.get("material") ?? "";
+    const categorySlug = params.get("category") ?? "";
+    const manufacturerSlug = params.get("manufacturer") ?? "";
+    const activeFacetCount = [materialSlug, categorySlug, manufacturerSlug].filter(
+      Boolean,
+    ).length;
+
+    let title: string;
+    let description: string;
+
+    if (activeFacetCount === 0) {
+      title = "Shop Outdoor Patio Furniture | Oasis Garden & Patio";
+      description =
+        "Shop our full collection of luxury outdoor patio furniture at Oasis Garden & Patio. Dining sets, deep seating, umbrellas, and more.";
+    } else if (activeFacetCount > 1) {
+      // Multi-facet: title describes what the user sees; canonical → /shop
+      title = "Outdoor Patio Furniture | Oasis Garden & Patio";
+      description =
+        "Shop outdoor patio furniture collections at Oasis Garden & Patio.";
+    } else if (materialSlug) {
+      const matMap = await getMaterialMap();
+      const displayName = matMap.get(materialSlug) ?? formatSlug(materialSlug);
+      title = `${displayName} Outdoor Patio Furniture | Oasis Garden & Patio`;
+      description = `Shop our collection of ${displayName} outdoor patio furniture at Oasis Garden & Patio.`;
+    } else if (categorySlug) {
+      let catMeta = categoryMetaCache.get(categorySlug);
+      if (!catMeta || !isFresh(catMeta)) {
+        catMeta = await queryCategoryMeta(categorySlug);
+        categoryMetaCache.set(categorySlug, catMeta);
+      }
+      if (catMeta.type === "notfound") return template;
+      title = `${catMeta.name} Outdoor Furniture | Oasis Garden & Patio`;
+      description = catMeta.description
+        ? stripHtml(catMeta.description).slice(0, 160)
+        : `Shop ${catMeta.name} outdoor furniture at Oasis Garden & Patio.`;
+    } else {
+      // manufacturerSlug
+      let mfrMeta = manufacturerMetaCache.get(manufacturerSlug);
+      if (!mfrMeta || !isFresh(mfrMeta)) {
+        mfrMeta = await queryManufacturerMeta(manufacturerSlug);
+        manufacturerMetaCache.set(manufacturerSlug, mfrMeta);
+      }
+      if (mfrMeta.type === "notfound") return template;
+      title = `${mfrMeta.name} Patio Furniture | Oasis Garden & Patio`;
+      description = mfrMeta.description
+        ? stripHtml(mfrMeta.description).slice(0, 160)
+        : `Shop ${mfrMeta.name} outdoor patio furniture at Oasis Garden & Patio.`;
+    }
+
+    const { newTitle, extraTags } = buildListTags({ title, description, canonical });
+    return injectIntoTemplate(template, newTitle, extraTags);
+  } catch (err) {
+    logger.error(
+      { err, rawQueryString },
+      "seoInjector: /shop metadata lookup failed — serving plain index.html",
+    );
+    return template;
+  }
+}
+
+/**
+ * Return index.html with SEO tags for /shop/category/:catSlug.
+ * Unknown or inactive category → plain shell (SPA renders 404 client-side).
+ */
+export async function injectCategorySeo(
+  catSlug: string,
+  baseUrl: string,
+): Promise<string> {
+  const template = getIndexHtml();
+
+  try {
+    let meta = categoryMetaCache.get(catSlug);
+    if (!meta || !isFresh(meta)) {
+      meta = await queryCategoryMeta(catSlug);
+      categoryMetaCache.set(catSlug, meta);
+    }
+    if (meta.type === "notfound") return template;
+
+    const canonical = `${baseUrl}/shop/category/${catSlug}`;
+    const title = `${meta.name} Outdoor Furniture | Oasis Garden & Patio`;
+    const description = meta.description
+      ? stripHtml(meta.description).slice(0, 160)
+      : `Shop ${meta.name} outdoor furniture at Oasis Garden & Patio.`;
+
+    const { newTitle, extraTags } = buildListTags({ title, description, canonical });
+    return injectIntoTemplate(template, newTitle, extraTags);
+  } catch (err) {
+    logger.error(
+      { err, catSlug },
+      "seoInjector: /shop/category lookup failed — serving plain index.html",
+    );
+    return template;
+  }
+}
+
+/**
+ * Return index.html with SEO tags for /manufacturers/:slug.
+ * Unknown or inactive manufacturer → plain shell.
+ */
+export async function injectManufacturerSeo(
+  slug: string,
+  baseUrl: string,
+): Promise<string> {
+  const template = getIndexHtml();
+
+  try {
+    let meta = manufacturerMetaCache.get(slug);
+    if (!meta || !isFresh(meta)) {
+      meta = await queryManufacturerMeta(slug);
+      manufacturerMetaCache.set(slug, meta);
+    }
+    if (meta.type === "notfound") return template;
+
+    const canonical = `${baseUrl}/manufacturers/${slug}`;
+    const title = `${meta.name} Patio Furniture | Oasis Garden & Patio`;
+    const description = meta.description
+      ? stripHtml(meta.description).slice(0, 160)
+      : `Shop ${meta.name} outdoor patio furniture at Oasis Garden & Patio.`;
+
+    const { newTitle, extraTags } = buildListTags({ title, description, canonical });
+    return injectIntoTemplate(template, newTitle, extraTags);
+  } catch (err) {
+    logger.error(
+      { err, slug },
+      "seoInjector: /manufacturers lookup failed — serving plain index.html",
+    );
+    return template;
   }
 }

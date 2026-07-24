@@ -21,7 +21,13 @@ import {
   type Response,
   Router,
 } from "express";
-import { getIndexHtml, injectProductSeo } from "../lib/seoInjector";
+import {
+  getIndexHtml,
+  injectCategorySeo,
+  injectManufacturerSeo,
+  injectProductSeo,
+  injectShopSeo,
+} from "../lib/seoInjector";
 import { logger } from "../lib/logger";
 
 const router = Router();
@@ -52,8 +58,41 @@ function serveRawHtml(req: Request, res: Response, next: NextFunction): void {
 // /shop/category/:catSlug is registered before /shop/:slug so the literal
 // "category" segment is never treated as a product slug.
 
-// Gate 3 — category listing pages (plain shell for now; enriched in Gate 3)
-router.get("/shop/category/:catSlug", serveRawHtml);
+// Gate 3 — manufacturer brand pages (enriched SEO head)
+router.get(
+  "/manufacturers/:slug",
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const slug = String(req.params.slug ?? "").trim();
+    try {
+      const html = await injectManufacturerSeo(slug, buildBaseUrl(req));
+      sendHtml(res, html);
+    } catch (err) {
+      logger.error(
+        { err, slug },
+        "spaRoutes: /manufacturers/:slug — could not serve HTML",
+      );
+      next(err);
+    }
+  },
+);
+
+// Gate 3 — category listing pages (enriched SEO head)
+router.get(
+  "/shop/category/:catSlug",
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const catSlug = String(req.params.catSlug ?? "").trim();
+    try {
+      const html = await injectCategorySeo(catSlug, buildBaseUrl(req));
+      sendHtml(res, html);
+    } catch (err) {
+      logger.error(
+        { err, catSlug },
+        "spaRoutes: /shop/category/:catSlug — could not serve HTML",
+      );
+      next(err);
+    }
+  },
+);
 
 // Gate 2 — product detail pages (enriched SEO head)
 router.get(
@@ -71,8 +110,23 @@ router.get(
   },
 );
 
-// Gate 3 — shop listing page (plain shell for now; enriched in Gate 3)
-router.get("/shop", serveRawHtml);
+// Gate 3 — shop listing page with optional filter params (enriched SEO head)
+router.get(
+  "/shop",
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    // Extract raw query string from the URL so URLSearchParams can parse it.
+    const rawUrl = req.url ?? "/shop";
+    const qIdx = rawUrl.indexOf("?");
+    const rawQs = qIdx >= 0 ? rawUrl.slice(qIdx + 1) : "";
+    try {
+      const html = await injectShopSeo(rawQs, buildBaseUrl(req));
+      sendHtml(res, html);
+    } catch (err) {
+      logger.error({ err }, "spaRoutes: /shop — could not serve HTML");
+      next(err);
+    }
+  },
+);
 
 // Catch-all: any other /shop/** path not matched above → plain shell (fail-safe)
 // Express 5 requires a named wildcard param — bare * is rejected by path-to-regexp v8.
