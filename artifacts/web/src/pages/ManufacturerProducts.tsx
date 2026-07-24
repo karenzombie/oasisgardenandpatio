@@ -12,6 +12,7 @@ import type {
 } from "@workspace/api-client-react";
 import { getBrandLogo } from "@/lib/brandLogos";
 import { getManufacturerAbout } from "@/lib/manufacturerAbout";
+import { useSEO } from "@/hooks/use-seo";
 import { ManufacturerAbout } from "@/components/ManufacturerAbout";
 import { BrowsePagination } from "@/components/BrowsePagination";
 import { WishlistButton } from "@/components/WishlistButton";
@@ -151,6 +152,15 @@ export default function ManufacturerProducts() {
   const brandLogo = getBrandLogo(manufacturer?.name ?? "");
   const displayName = manufacturer?.name ?? slug.replace(/-/g, " ");
   const aboutInfo = getManufacturerAbout(slug);
+
+  const _aboutText = aboutInfo?.about ?? null;
+  useSEO({
+    title: `${displayName} Patio Furniture | Oasis Garden & Patio`,
+    description: _aboutText
+      ? _aboutText.slice(0, 160)
+      : `Shop ${displayName} outdoor patio furniture at Oasis Garden & Patio.`,
+    canonical: `${window.location.origin}/manufacturers/${slug}`,
+  });
   const countLabel = loadError
     ? ""
     : isLoading

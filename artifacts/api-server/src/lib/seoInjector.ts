@@ -315,7 +315,7 @@ function computeShopCanonical(baseUrl: string, params: URLSearchParams): string 
 // ─── Head tag builders ────────────────────────────────────────────────────────
 
 function buildNoindexTag(): string {
-  return `    <meta name="robots" content="noindex">`;
+  return `    <meta name="robots" content="noindex" data-ssr="1">`;
 }
 
 function buildProductTags(
@@ -329,15 +329,15 @@ function buildProductTags(
   const ogImage = relImg ? esc(`${baseUrl}${relImg}`) : null;
 
   const tags: string[] = [
-    `    <meta name="description" content="${desc}">`,
-    `    <link rel="canonical" href="${canonical}">`,
-    `    <meta property="og:type" content="product">`,
-    `    <meta property="og:title" content="${title}">`,
-    `    <meta property="og:description" content="${desc}">`,
-    `    <meta property="og:url" content="${canonical}">`,
+    `    <meta name="description" content="${desc}" data-ssr="1">`,
+    `    <link rel="canonical" href="${canonical}" data-ssr="1">`,
+    `    <meta property="og:type" content="product" data-ssr="1">`,
+    `    <meta property="og:title" content="${title}" data-ssr="1">`,
+    `    <meta property="og:description" content="${desc}" data-ssr="1">`,
+    `    <meta property="og:url" content="${canonical}" data-ssr="1">`,
   ];
   if (ogImage) {
-    tags.push(`    <meta property="og:image" content="${ogImage}">`);
+    tags.push(`    <meta property="og:image" content="${ogImage}" data-ssr="1">`);
   }
 
   return { newTitle: title, extraTags: tags.join("\n") };
@@ -353,12 +353,12 @@ function buildListTags(opts: {
   const canonical = esc(opts.canonical);
 
   const tags: string[] = [
-    `    <meta name="description" content="${desc}">`,
-    `    <link rel="canonical" href="${canonical}">`,
-    `    <meta property="og:type" content="website">`,
-    `    <meta property="og:title" content="${title}">`,
-    `    <meta property="og:description" content="${desc}">`,
-    `    <meta property="og:url" content="${canonical}">`,
+    `    <meta name="description" content="${desc}" data-ssr="1">`,
+    `    <link rel="canonical" href="${canonical}" data-ssr="1">`,
+    `    <meta property="og:type" content="website" data-ssr="1">`,
+    `    <meta property="og:title" content="${title}" data-ssr="1">`,
+    `    <meta property="og:description" content="${desc}" data-ssr="1">`,
+    `    <meta property="og:url" content="${canonical}" data-ssr="1">`,
   ];
 
   return { newTitle: title, extraTags: tags.join("\n") };
@@ -376,9 +376,12 @@ function injectIntoTemplate(
   newTitle: string | null,
   afterTitleTags: string,
 ): string {
-  const TITLE_RE = /(<title>)[^<]*(<\/title>)/;
+  const TITLE_RE = /<title>[^<]*<\/title>/;
   if (newTitle !== null) {
-    return html.replace(TITLE_RE, `$1${newTitle}$2\n${afterTitleTags}`);
+    return html.replace(
+      TITLE_RE,
+      `<title data-ssr="1">${newTitle}</title>\n${afterTitleTags}`,
+    );
   }
   return html.replace(TITLE_RE, `$&\n${afterTitleTags}`);
 }

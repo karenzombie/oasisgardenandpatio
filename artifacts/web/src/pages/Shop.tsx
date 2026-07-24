@@ -6,6 +6,9 @@ import {
   useListCatalogFacets,
   getListCatalogProductsQueryKey,
   getListCatalogFacetsQueryKey,
+  useListMaterials,
+  useListCategories,
+  useListManufacturers,
 } from "@workspace/api-client-react";
 import type {
   ListCatalogProductsParams,
@@ -13,6 +16,7 @@ import type {
   CatalogProduct,
 } from "@workspace/api-client-react";
 import { getBrandLogo } from "@/lib/brandLogos";
+import { useSEO } from "@/hooks/use-seo";
 import { WishlistButton } from "@/components/WishlistButton";
 import { Button } from "@/components/ui/button";
 import { CheckboxGroup, type FilterOption } from "@/components/FilterCheckboxGroup";
@@ -230,6 +234,75 @@ export default function Shop() {
   const { data: facets } = useListCatalogFacets(facetParams, {
     query: { queryKey: getListCatalogFacetsQueryKey(facetParams), staleTime: 60_000 },
   });
+
+  const { data: allMaterials } = useListMaterials();
+  const { data: allCategories } = useListCategories();
+  const { data: allManufacturers } = useListManufacturers();
+
+  const _seoTitle = useMemo(() => {
+    const mCount = activeMaterials.length > 0 ? 1 : 0;
+    const cCount = activeCategories.length > 0 ? 1 : 0;
+    const mfrCount = activeManufacturers.length > 0 ? 1 : 0;
+    const facetCount = mCount + cCount + mfrCount;
+    if (facetCount === 0) return "Shop Outdoor Patio Furniture | Oasis Garden & Patio";
+    if (facetCount > 1) return "Outdoor Patio Furniture | Oasis Garden & Patio";
+    if (activeMaterials.length === 1) {
+      const mat = allMaterials?.find((m) => m.slug === activeMaterials[0]);
+      return `${mat?.name ?? activeMaterials[0]} Outdoor Patio Furniture | Oasis Garden & Patio`;
+    }
+    if (activeCategories.length === 1) {
+      const cat = allCategories?.find((c) => c.slug === activeCategories[0]);
+      return `${cat?.name ?? activeCategories[0]} Outdoor Furniture | Oasis Garden & Patio`;
+    }
+    if (activeManufacturers.length === 1) {
+      const mfr = allManufacturers?.find((m) => m.slug === activeManufacturers[0]);
+      return `${mfr?.name ?? activeManufacturers[0]} Patio Furniture | Oasis Garden & Patio`;
+    }
+    return "Outdoor Patio Furniture | Oasis Garden & Patio";
+  }, [activeMaterials, activeCategories, activeManufacturers, allMaterials, allCategories, allManufacturers]);
+
+  const _seoDesc = useMemo(() => {
+    const mCount = activeMaterials.length > 0 ? 1 : 0;
+    const cCount = activeCategories.length > 0 ? 1 : 0;
+    const mfrCount = activeManufacturers.length > 0 ? 1 : 0;
+    const facetCount = mCount + cCount + mfrCount;
+    if (facetCount === 0)
+      return "Shop our full collection of luxury outdoor patio furniture at Oasis Garden & Patio. Dining sets, deep seating, umbrellas, and more.";
+    if (facetCount > 1) return "Shop outdoor patio furniture collections at Oasis Garden & Patio.";
+    if (activeMaterials.length === 1) {
+      const mat = allMaterials?.find((m) => m.slug === activeMaterials[0]);
+      return `Shop our collection of ${mat?.name ?? activeMaterials[0]} outdoor patio furniture at Oasis Garden & Patio.`;
+    }
+    if (activeCategories.length === 1) {
+      const cat = allCategories?.find((c) => c.slug === activeCategories[0]);
+      return `Shop ${cat?.name ?? activeCategories[0]} outdoor furniture at Oasis Garden & Patio.`;
+    }
+    if (activeManufacturers.length === 1) {
+      const mfr = allManufacturers?.find((m) => m.slug === activeManufacturers[0]);
+      return `Shop ${mfr?.name ?? activeManufacturers[0]} outdoor patio furniture at Oasis Garden & Patio.`;
+    }
+    return "Shop outdoor patio furniture collections at Oasis Garden & Patio.";
+  }, [activeMaterials, activeCategories, activeManufacturers, allMaterials, allCategories, allManufacturers]);
+
+  const _seoCanonical = useMemo(() => {
+    const origin = window.location.origin;
+    const mCount = activeMaterials.length > 0 ? 1 : 0;
+    const cCount = activeCategories.length > 0 ? 1 : 0;
+    const mfrCount = activeManufacturers.length > 0 ? 1 : 0;
+    const facetCount = mCount + cCount + mfrCount;
+    if (facetCount !== 1) return `${origin}/shop`;
+    if (activeMaterials.length === 1)
+      return `${origin}/shop?material=${encodeURIComponent(activeMaterials[0])}`;
+    if (activeCategories.length === 1) {
+      if (params?.slug) return `${origin}/shop/category/${params.slug}`;
+      return `${origin}/shop?category=${encodeURIComponent(activeCategories[0])}`;
+    }
+    if (activeManufacturers.length === 1)
+      return `${origin}/shop?manufacturer=${encodeURIComponent(activeManufacturers[0])}`;
+    return `${origin}/shop`;
+  }, [activeMaterials, activeCategories, activeManufacturers, params?.slug]);
+
+  useSEO({ title: _seoTitle, description: _seoDesc, canonical: _seoCanonical });
 
   const total = data?.total ?? 0;
   const pageSize = queryParams.pageSize ?? 12;
