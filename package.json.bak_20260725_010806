@@ -17,6 +17,7 @@
     "overrides": {
       "brace-expansion": "^5.0.8",
       "fast-uri": "^3.1.4",
+      "postcss": "^8.5.23",
       "body-parser": "^2.3.0"
     }
   }

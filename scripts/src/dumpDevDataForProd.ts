@@ -54,12 +54,10 @@ const TABLES_IN_ORDER = [
   // intentionally excluded — they're wiped by TRUNCATE CASCADE like cart/orders.
   "product_addon_options",
   "product_addon_grade_prices",
-  // Shipping config (admin Shipping page is the source of truth for ONLINE
-  // orders). shipping_rules → shipping_rule_products (FK); shipping_weight_tiers
-  // is standalone. These are config, mirrored dev→prod like the catalog.
-  "shipping_rules",
-  "shipping_rule_products",
-  "shipping_weight_tiers",
+  // NOTE: shipping_rules, shipping_rule_products, shipping_weight_tiers are
+  // intentionally EXCLUDED from this sync. Shipping rates are entered by staff
+  // in the prod admin UI and must never be overwritten by dev (which has no
+  // rates configured). Treat these as operational/config data, not catalog.
 ];
 
 // Tables whose ids have drifted between dev and prod (rows re-seeded/recreated
