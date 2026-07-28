@@ -1207,22 +1207,41 @@ export default function Product() {
                       ) : null}
                       {selectedVariant ? <SelectionCheck /> : null}
                     </p>
-                    <div className="flex flex-wrap gap-2">
-                      {variants.map((v) => (
-                        <button
-                          key={v.id}
-                          type="button"
-                          onClick={() => setVariantId(v.id)}
-                          className={`px-3 py-2 border text-sm transition-colors ${
-                            variantId === v.id
-                              ? "border-primary bg-primary text-primary-foreground"
-                              : "border-input hover:border-foreground"
-                          }`}
-                        >
-                          {v.name}
-                        </button>
-                      ))}
-                    </div>
+                    {variants.length === 1 ? (
+                      <span className="text-sm font-medium">{variants[0]!.name}</span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setVariantPickerOpen(true)}
+                        className="w-full sm:max-w-[460px] inline-flex items-center gap-2 border border-primary bg-primary text-primary-foreground px-4 py-2.5 text-sm hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary"
+                      >
+                        <Palette className="h-4 w-4" />
+                        Browse sizes
+                      </button>
+                    )}
+                    {variants.length > 1 ? (
+                      <FabricSwatchDialog
+                        open={variantPickerOpen}
+                        onOpenChange={setVariantPickerOpen}
+                        fabrics={variants.map((v) => ({
+                          id: v.id,
+                          name: v.name,
+                          itemNumber: "",
+                          swatchImageUrl: v.swatchImageUrl ?? null,
+                          grade: null,
+                          colorFamily: null,
+                        }))}
+                        selectedFabricId={variantId}
+                        onConfirm={(id) => setVariantId(id)}
+                        isGradeMode={false}
+                        linePriceForGrade={() => null}
+                        formatPrice={(n) => formatMoney(n)}
+                        title={`Choose a ${variantOptionLabel.toLowerCase()}`}
+                        noun="size"
+                        nounPlural="sizes"
+                        searchPlaceholder="Search sizes…"
+                      />
+                    ) : null}
                   </div>
                 ) : null}
                 <ProductOptionPickers
