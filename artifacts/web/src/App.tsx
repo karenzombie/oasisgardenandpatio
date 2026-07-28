@@ -12,6 +12,7 @@ import { useWishlistBootstrap } from "@/lib/wishlistHold";
 import { useClerkSync } from "@/lib/useClerkSync";
 import { clerkAppearance } from "@/lib/clerkAppearance";
 import { SignInPage, SignUpPage } from "@/pages/auth/ClerkAuthPages";
+import { SSOCallbackPage } from "@/pages/auth/SSOCallback";
 
 import Home from "@/pages/Home";
 import Contact from "@/pages/Contact";
@@ -94,6 +95,7 @@ function CustomerRouter() {
         </Route>
         <Route path="/sign-in/*?" component={SignInPage} />
         <Route path="/sign-up/*?" component={SignUpPage} />
+        <Route path="/sso-callback" component={SSOCallbackPage} />
         <Route path="/forgot-password" component={ForgotPassword} />
         <Route path="/reset-password" component={ResetPassword} />
         <Route path="/verify-email" component={VerifyEmail} />

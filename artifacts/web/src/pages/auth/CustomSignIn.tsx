@@ -5,7 +5,7 @@ import { useLocation } from "wouter";
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 export function CustomSignIn() {
-  const { isLoaded, signIn, setActive } = useSignIn();
+  const { signIn, errors: clerkErrors } = useSignIn();
   const [, setLocation] = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -14,40 +14,48 @@ export function CustomSignIn() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!isLoaded) return;
+    if (!signIn) return;
     setError(null);
     setLoading(true);
     try {
-      const result = await signIn.create({
-        identifier: email,
-        password,
-      });
-      if (result.status === "complete") {
-        await setActive({ session: result.createdSessionId });
+      const result = await signIn.password({ identifier: email, password });
+      if (result.error) {
+        setError(
+          result.error.longMessage ??
+          result.error.message ??
+          "Incorrect email or password."
+        );
+        return;
+      }
+      if (signIn.status === "complete") {
+        await signIn.finalize();
         setLocation("/");
       } else {
         setError("Sign-in could not be completed. Please try again.");
       }
     } catch (err: unknown) {
       const clerkErr = err as { errors?: { longMessage?: string; message?: string }[] };
-      const msg =
+      setError(
         clerkErr?.errors?.[0]?.longMessage ??
         clerkErr?.errors?.[0]?.message ??
-        "Incorrect email or password.";
-      setError(msg);
+        "Incorrect email or password."
+      );
     } finally {
       setLoading(false);
     }
   }
 
   async function handleGoogle() {
-    if (!isLoaded) return;
-    await signIn.authenticateWithRedirect({
+    if (!signIn) return;
+    await signIn.sso({
       strategy: "oauth_google",
       redirectUrl: `${window.location.origin}${basePath}/sso-callback`,
-      redirectUrlComplete: `${window.location.origin}${basePath}/`,
+      redirectCallbackUrl: `${window.location.origin}${basePath}/`,
     });
   }
+
+  // Suppress unused-variable warning — clerkErrors is reactive but we use local error state
+  void clerkErrors;
 
   return (
     <div className="w-full bg-muted/30 flex-1 flex items-center justify-center px-4 py-16 md:py-24">
@@ -78,7 +86,7 @@ export function CustomSignIn() {
           <button
             type="button"
             onClick={handleGoogle}
-            disabled={!isLoaded || loading}
+            disabled={loading}
             className="w-full flex items-center justify-center gap-3 border border-border hover:bg-muted/40 transition-colors text-foreground font-medium py-2.5 px-4 rounded-sm text-sm disabled:opacity-50"
           >
             <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
@@ -145,7 +153,7 @@ export function CustomSignIn() {
 
             <button
               type="submit"
-              disabled={!isLoaded || loading}
+              disabled={loading}
               className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-none font-serif tracking-wide py-2.5 text-sm disabled:opacity-50 transition-colors"
             >
               {loading ? "Signing in…" : "Continue"}
