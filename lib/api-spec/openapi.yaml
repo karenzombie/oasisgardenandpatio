@@ -8881,6 +8881,14 @@ components:
           type: ["integer", "null"]
         selectedTableTopTileId:
           type: ["integer", "null"]
+        finishName:
+          type: ["string", "null"]
+        fabricName:
+          type: ["string", "null"]
+        fabricItemNumber:
+          type: ["string", "null"]
+        tileName:
+          type: ["string", "null"]
         createdAt:
           type: string
           format: date-time
@@ -8901,6 +8909,10 @@ components:
         - selectedFinishId
         - selectedFabricId
         - selectedTableTopTileId
+        - finishName
+        - fabricName
+        - fabricItemNumber
+        - tileName
         - createdAt
     WishlistResponse:
       type: object

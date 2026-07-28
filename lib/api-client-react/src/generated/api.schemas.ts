@@ -2185,6 +2185,14 @@ export interface WishlistItem {
   selectedFabricId: number | null;
   /** @nullable */
   selectedTableTopTileId: number | null;
+  /** @nullable */
+  finishName: string | null;
+  /** @nullable */
+  fabricName: string | null;
+  /** @nullable */
+  fabricItemNumber: string | null;
+  /** @nullable */
+  tileName: string | null;
   createdAt: string;
 }
 

@@ -1,4 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
+import { aliasedTable } from "drizzle-orm/alias";
 import { and, count, desc, eq, isNull, sql } from "drizzle-orm";
 import {
   db,
@@ -9,6 +10,8 @@ import {
   productImagesTable,
   manufacturersTable,
   categoriesTable,
+  finishesTable,
+  fabricsTable,
   usersTable,
   customersTable,
 } from "@workspace/db";
@@ -110,7 +113,7 @@ type WishlistScope = { userId: number } | { deviceToken: string };
 
 // Load a wishlist for either a signed-in user (by userId) or a guest device
 // (by deviceToken, where user_id IS NULL). Returns the GetWishlistResponse
-// shape including each row's saved configuration ids.
+// shape including each row's saved configuration ids and resolved names.
 async function loadWishlist(scope: WishlistScope) {
   const ownerWhere =
     "userId" in scope
@@ -119,6 +122,10 @@ async function loadWishlist(scope: WishlistScope) {
           eq(wishlistItemsTable.deviceToken, scope.deviceToken),
           isNull(wishlistItemsTable.userId),
         );
+
+  // Alias finishesTable twice: once for the frame finish, once for the tile.
+  const frameFinishes = aliasedTable(finishesTable, "frame_finishes");
+  const tileFinishes = aliasedTable(finishesTable, "tile_finishes");
 
   const rows = await db
     .select({
@@ -145,6 +152,11 @@ async function loadWishlist(scope: WishlistScope) {
       selectedFinishId: wishlistItemsTable.selectedFinishId,
       selectedFabricId: wishlistItemsTable.selectedFabricId,
       selectedTableTopTileId: wishlistItemsTable.selectedTableTopTileId,
+      // Resolved selection names — mirrors cart.ts join pattern.
+      finishName: frameFinishes.name,
+      fabricName: fabricsTable.name,
+      fabricItemNumber: fabricsTable.itemNumber,
+      tileName: tileFinishes.name,
       createdAt: wishlistItemsTable.createdAt,
     })
     .from(wishlistItemsTable)
@@ -159,6 +171,18 @@ async function loadWishlist(scope: WishlistScope) {
     .leftJoin(
       categoriesTable,
       eq(categoriesTable.id, productsTable.categoryId),
+    )
+    .leftJoin(
+      fabricsTable,
+      eq(fabricsTable.id, wishlistItemsTable.selectedFabricId),
+    )
+    .leftJoin(
+      frameFinishes,
+      eq(frameFinishes.id, wishlistItemsTable.selectedFinishId),
+    )
+    .leftJoin(
+      tileFinishes,
+      eq(tileFinishes.id, wishlistItemsTable.selectedTableTopTileId),
     )
     .where(and(ownerWhere, eq(productsTable.isActive, true)))
     .orderBy(desc(wishlistItemsTable.createdAt));
