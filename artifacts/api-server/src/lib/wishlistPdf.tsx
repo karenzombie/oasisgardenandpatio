@@ -222,6 +222,10 @@ export interface PdfWishlistItem {
   description: string;
   sku: string | null;
   variantLabel: string | null;
+  finishName: string | null;
+  fabricName: string | null;
+  fabricItemNumber: string | null;
+  tileName: string | null;
   quantity: number;
   unitPrice: number | null;
   amount: number | null;
@@ -279,6 +283,18 @@ function ItemsTable({ items }: { items: PdfWishlistItem[] }) {
             {it.variantLabel && (
               <Text style={s.itemSub}>{it.variantLabel}</Text>
             )}
+            {it.finishName ? (
+              <Text style={s.itemSub}>Finish: {it.finishName}</Text>
+            ) : null}
+            {it.fabricName ? (
+              <Text style={s.itemSub}>
+                Fabric: {it.fabricName}
+                {it.fabricItemNumber ? ` (${it.fabricItemNumber})` : ""}
+              </Text>
+            ) : null}
+            {it.tileName ? (
+              <Text style={s.itemSub}>Tile: {it.tileName}</Text>
+            ) : null}
           </View>
           <Text style={[s.td, s.colMfg]}>{it.manufacturerName ?? "—"}</Text>
           <Text style={[s.td, s.colSku]}>{it.sku ?? "—"}</Text>

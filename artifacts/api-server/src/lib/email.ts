@@ -307,6 +307,10 @@ function formatUsd(n: number): string {
 export interface WishlistReachOutItem {
   name: string;
   variantLabel: string | null;
+  finishName: string | null;
+  fabricName: string | null;
+  fabricItemNumber: string | null;
+  tileName: string | null;
   // Live sale-or-MSRP price, already gated on show_price_online = true by the
   // caller. Null items never render a price (inquiry/call-for-pricing mode).
   price: number | null;
@@ -334,11 +338,25 @@ export function renderWishlistReachOutEmailBody({
       const variantHtml = item.variantLabel
         ? `<div style="font-size:15px;color:#666;">${escapeHtml(item.variantLabel)}</div>`
         : "";
+      const finishHtml = item.finishName
+        ? `<div style="font-size:15px;color:#666;">Finish: ${escapeHtml(item.finishName)}</div>`
+        : "";
+      const fabricLabel = item.fabricName
+        ? item.fabricItemNumber
+          ? `${escapeHtml(item.fabricName)} (${escapeHtml(item.fabricItemNumber)})`
+          : escapeHtml(item.fabricName)
+        : null;
+      const fabricHtml = fabricLabel
+        ? `<div style="font-size:15px;color:#666;">Fabric: ${fabricLabel}</div>`
+        : "";
+      const tileHtml = item.tileName
+        ? `<div style="font-size:15px;color:#666;">Tile: ${escapeHtml(item.tileName)}</div>`
+        : "";
       const priceHtml =
         item.price !== null
           ? ` &mdash; ${formatUsd(item.price)}`
           : "";
-      return `<li style="margin-bottom:12px;"><strong>${escapeHtml(item.name)}</strong>${priceHtml}${variantHtml}</li>`;
+      return `<li style="margin-bottom:12px;"><strong>${escapeHtml(item.name)}</strong>${priceHtml}${variantHtml}${finishHtml}${fabricHtml}${tileHtml}</li>`;
     })
     .join("");
 
