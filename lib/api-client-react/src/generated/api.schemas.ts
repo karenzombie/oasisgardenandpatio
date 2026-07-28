@@ -3965,13 +3965,7 @@ export interface AdminCustomerPage {
   total: number;
 }
 
-export type AdminCreateCustomerResponse = AdminCustomer & {
-  /**
-   * true=invite emailed, false=invite attempted but email send failed, null=no invite was requested.
-   * @nullable
-   */
-  inviteSent: boolean | null;
-};
+export type AdminCreateCustomerResponse = AdminCustomer;
 
 export type CreateCustomerRequestCustomerType =
   (typeof CreateCustomerRequestCustomerType)[keyof typeof CreateCustomerRequestCustomerType];
@@ -3995,8 +3989,6 @@ export interface CreateCustomerRequest {
   customerType?: CreateCustomerRequestCustomerType;
   /** @nullable */
   notes?: string | null;
-  /** When true, also creates a User account in pending state and emails a 'set your password' link. */
-  sendInvite?: boolean;
 }
 
 export type UpdateCustomerRequestCustomerType =

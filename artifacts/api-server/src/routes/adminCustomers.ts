@@ -1,17 +1,12 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm";
-import { randomBytes, createHash } from "node:crypto";
-import bcrypt from "bcryptjs";
 import {
   db,
   customersTable,
   addressesTable,
-  usersTable,
-  passwordResetTokensTable,
   type Customer,
   type Address,
 } from "@workspace/db";
-import { sendPasswordResetEmail } from "../lib/email";
 import {
   AdminListCustomersQueryParams,
   AdminGetCustomerParams,
@@ -30,17 +25,6 @@ import { recordHistory } from "../lib/history";
 import { isUSCountry, US_ONLY_MESSAGE } from "../lib/geo";
 
 const router: IRouter = Router();
-
-const INVITE_TOKEN_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
-const BCRYPT_ROUNDS = 12;
-
-function publicBaseUrl(req: Request): string {
-  const proto = (req.get("x-forwarded-proto") ?? req.protocol ?? "https")
-    .split(",")[0]
-    .trim();
-  const host = req.get("x-forwarded-host") ?? req.get("host") ?? "";
-  return `${proto}://${host}`;
-}
 
 function customerToPayload(c: Customer) {
   return {
@@ -173,9 +157,8 @@ router.post(
     const email = data.email.trim().toLowerCase();
     const firstName = data.firstName.trim();
     const lastName = data.lastName.trim();
-    const sendInvite = data.sendInvite ?? false;
     try {
-      const result = await db.transaction(async (tx) => {
+      const created = await db.transaction(async (tx) => {
         const [createdRow] = await tx
           .insert(customersTable)
           .values({
@@ -192,105 +175,14 @@ router.post(
         if (!createdRow) {
           throw new Error("Insert returned no row");
         }
-
-        let invitedUserId: number | null = null;
-        let inviteRawToken: string | null = null;
-        if (sendInvite) {
-          // If a user already exists for this email, link to it; otherwise
-          // create a pending customer user. The customer record gets userId.
-          const [existingUser] = await tx
-            .select()
-            .from(usersTable)
-            .where(eq(usersTable.email, email))
-            .limit(1);
-          let userId: number;
-          if (existingUser) {
-            // Only customer-role users may be linked via this flow. Refuse to
-            // mint a password-reset token against a staff/admin/agent account.
-            if (existingUser.role !== "customer") {
-              const e = new Error(
-                "An account with this email already exists and is not a customer account.",
-              );
-              (e as Error & { httpStatus?: number }).httpStatus = 409;
-              throw e;
-            }
-            userId = existingUser.id;
-          } else {
-            // Create a pending account with a random unguessable password —
-            // the invitee will set their own via the reset link.
-            const randomPassword = randomBytes(32).toString("hex");
-            const passwordHash = await bcrypt.hash(
-              randomPassword,
-              BCRYPT_ROUNDS,
-            );
-            const [newUser] = await tx
-              .insert(usersTable)
-              .values({
-                email,
-                passwordHash,
-                firstName,
-                lastName,
-                role: "customer",
-                isActive: true,
-                emailVerifiedAt: null,
-              })
-              .returning();
-            if (!newUser) {
-              throw new Error("User insert returned no row");
-            }
-            userId = newUser.id;
-          }
-          // Link customer -> user
-          await tx
-            .update(customersTable)
-            .set({ userId })
-            .where(eq(customersTable.id, createdRow.id));
-          // Issue invite token (mirrors password-reset flow).
-          inviteRawToken = randomBytes(32).toString("hex");
-          const tokenHash = createHash("sha256")
-            .update(inviteRawToken)
-            .digest("hex");
-          const expiresAt = new Date(Date.now() + INVITE_TOKEN_TTL_MS);
-          await tx.insert(passwordResetTokensTable).values({
-            userId,
-            tokenHash,
-            expiresAt,
-          });
-          invitedUserId = userId;
-        }
-
-        return { createdRow, invitedUserId, inviteRawToken };
+        return createdRow;
       });
-
-      const created =
-        result.invitedUserId !== null
-          ? { ...result.createdRow, userId: result.invitedUserId }
-          : result.createdRow;
-
-      let inviteSent: boolean | null = null;
-      if (sendInvite && result.inviteRawToken) {
-        const resetUrl = `${publicBaseUrl(req)}/reset-password?token=${encodeURIComponent(result.inviteRawToken)}`;
-        try {
-          await sendPasswordResetEmail({
-            to: email,
-            firstName,
-            resetUrl,
-          });
-          inviteSent = true;
-        } catch (mailErr) {
-          inviteSent = false;
-          req.log?.warn?.(
-            { err: mailErr, customerId: created.id },
-            "Failed to send customer invite email",
-          );
-        }
-      }
 
       await recordAudit(req, {
         action: "customer.create",
         entityType: "customer",
         entityId: created.id,
-        changes: { email: created.email, sendInvite },
+        changes: { email: created.email },
       });
       await recordHistory(req, {
         entityType: "customer",
@@ -298,17 +190,10 @@ router.post(
         changeType: "create",
         snapshot: created,
       });
-      res
-        .status(201)
-        .json({ ...customerToPayload(created), inviteSent });
+      res.status(201).json(customerToPayload(created));
     } catch (err) {
       if (isUniqueViolation(err)) {
         res.status(409).json({ error: "Customer already exists" });
-        return;
-      }
-      const httpStatus = (err as { httpStatus?: number } | null)?.httpStatus;
-      if (httpStatus === 409 && err instanceof Error) {
-        res.status(409).json({ error: err.message });
         return;
       }
       throw err;

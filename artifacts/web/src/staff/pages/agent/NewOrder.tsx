@@ -99,7 +99,6 @@ interface NewCustomerForm {
   email: string;
   phone: string;
   companyName: string;
-  sendInvite: boolean;
 }
 
 interface WalkInForm {
@@ -176,7 +175,7 @@ export default function AgentNewOrder() {
   const [customerMode, setCustomerMode] = useState<CustomerMode>("existing");
   const [customer, setCustomer] = useState<AdminCustomer | null>(null);
   const [newCustomer, setNewCustomer] = useState<NewCustomerForm>({
-    firstName: "", lastName: "", email: "", phone: "", companyName: "", sendInvite: false,
+    firstName: "", lastName: "", email: "", phone: "", companyName: "",
   });
   const [walkIn, setWalkIn] = useState<WalkInForm>({ name: "", email: "", phone: "" });
 
@@ -617,21 +616,9 @@ export default function AgentNewOrder() {
             companyName: nf.companyName.trim() || null,
             customerType: "residential",
             notes: null,
-            sendInvite: nf.sendInvite,
           },
         });
         customerIdToUse = created.id;
-        if (nf.sendInvite) {
-          if (created.inviteSent === false) {
-            toast({
-              title: "Customer created",
-              description: "Saved, but the invite email could not be sent. You can resend it from the customer page.",
-              variant: "destructive",
-            });
-          } else if (created.inviteSent === true) {
-            toast({ title: "Customer created", description: "Login invite emailed." });
-          }
-        }
       } catch (err) {
         toast({
           title: "Could not create customer",
@@ -830,11 +817,6 @@ export default function AgentNewOrder() {
                     <Input value={newCustomer.companyName}
                       onChange={(e) => setNewCustomer((c) => ({ ...c, companyName: e.target.value }))} />
                   </div>
-                  <label className="col-span-2 inline-flex items-center gap-2 text-sm">
-                    <Checkbox checked={newCustomer.sendInvite}
-                      onCheckedChange={(v) => setNewCustomer((c) => ({ ...c, sendInvite: !!v }))} />
-                    Send login invite email (lets the customer set their own password and view this order online).
-                  </label>
                 </TabsContent>
 
                 <TabsContent value="quick" className="mt-3 space-y-3">

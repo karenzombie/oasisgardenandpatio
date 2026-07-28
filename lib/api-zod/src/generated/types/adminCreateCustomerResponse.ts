@@ -7,10 +7,4 @@
  */
 import type { AdminCustomer } from "./adminCustomer";
 
-export type AdminCreateCustomerResponse = AdminCustomer & {
-  /**
-   * true=invite emailed, false=invite attempted but email send failed, null=no invite was requested.
-   * @nullable
-   */
-  inviteSent: boolean | null;
-};
+export type AdminCreateCustomerResponse = AdminCustomer;

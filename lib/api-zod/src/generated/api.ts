@@ -13675,7 +13675,6 @@ export const AdminListCustomersResponse = zod.object({
  */
 
 export const adminCreateCustomerBodyCustomerTypeDefault = `residential`;
-export const adminCreateCustomerBodySendInviteDefault = false;
 
 export const AdminCreateCustomerBody = zod.object({
   email: zod.string().min(1),
@@ -13687,12 +13686,6 @@ export const AdminCreateCustomerBody = zod.object({
     .enum(["residential", "commercial"])
     .default(adminCreateCustomerBodyCustomerTypeDefault),
   notes: zod.string().nullish(),
-  sendInvite: zod
-    .boolean()
-    .default(adminCreateCustomerBodySendInviteDefault)
-    .describe(
-      "When true, also creates a User account in pending state and emails a 'set your password' link.",
-    ),
 });
 
 /**
