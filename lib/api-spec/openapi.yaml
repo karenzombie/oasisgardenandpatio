@@ -6147,6 +6147,10 @@ components:
         description: { type: string }
         sku: { type: string, nullable: true }
         variantLabel: { type: string, nullable: true }
+        finishName: { type: string, nullable: true }
+        fabricName: { type: string, nullable: true }
+        fabricItemNumber: { type: string, nullable: true }
+        tileName: { type: string, nullable: true }
         quantity: { type: integer }
         unitPrice:
           type: number
@@ -6163,7 +6167,7 @@ components:
           format: date-time
           nullable: true
           description: "Most recent time a reach-out email that included this item was sent. Null if never included in a send."
-      required: [id, productId, description, sku, variantLabel, quantity, unitPrice, amount, addedAt, manufacturerName, lastReachOutSentAt]
+      required: [id, productId, description, sku, variantLabel, finishName, fabricName, fabricItemNumber, tileName, quantity, unitPrice, amount, addedAt, manufacturerName, lastReachOutSentAt]
     AdminWishlistDetail:
       type: object
       properties:

@@ -1,5 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { and, desc, eq, ilike, inArray, max, or, sql } from "drizzle-orm";
+import { aliasedTable } from "drizzle-orm/alias";
 import {
   db,
   wishlistsTable,
@@ -11,6 +12,8 @@ import {
   productsTable,
   manufacturersTable,
   usersTable,
+  finishesTable,
+  fabricsTable,
 } from "@workspace/db";
 import {
   AdminListWishlistsQueryParams,
@@ -234,6 +237,9 @@ async function loadWishlistDetail(customerId: number) {
 
   if (!wishlist) return null;
 
+  const frameFinishes = aliasedTable(finishesTable, "frame_finishes");
+  const tileFinishes = aliasedTable(finishesTable, "tile_finishes");
+
   const itemRows = await db
     .select({
       id: wishlistItemsTable.id,
@@ -246,6 +252,10 @@ async function loadWishlistDetail(customerId: number) {
       price: productsTable.price,
       salePrice: productsTable.salePrice,
       manufacturerName: manufacturersTable.name,
+      finishName: frameFinishes.name,
+      fabricName: fabricsTable.name,
+      fabricItemNumber: fabricsTable.itemNumber,
+      tileName: tileFinishes.name,
     })
     .from(wishlistItemsTable)
     .leftJoin(productsTable, eq(productsTable.id, wishlistItemsTable.productId))
@@ -253,6 +263,9 @@ async function loadWishlistDetail(customerId: number) {
       manufacturersTable,
       eq(manufacturersTable.id, productsTable.manufacturerId),
     )
+    .leftJoin(fabricsTable, eq(fabricsTable.id, wishlistItemsTable.selectedFabricId))
+    .leftJoin(frameFinishes, eq(frameFinishes.id, wishlistItemsTable.selectedFinishId))
+    .leftJoin(tileFinishes, eq(tileFinishes.id, wishlistItemsTable.selectedTableTopTileId))
     .where(eq(wishlistItemsTable.customerId, customerId))
     .orderBy(desc(wishlistItemsTable.createdAt));
 
@@ -296,6 +309,10 @@ async function loadWishlistDetail(customerId: number) {
       description: r.productName ?? "(product no longer available)",
       sku: r.productSku ?? null,
       variantLabel: r.variantLabel,
+      finishName: r.finishName ?? null,
+      fabricName: r.fabricName ?? null,
+      fabricItemNumber: r.fabricItemNumber ?? null,
+      tileName: r.tileName ?? null,
       quantity: r.quantity,
       unitPrice,
       amount,
@@ -425,6 +442,9 @@ async function validateItemIdsBelongToCustomer(
 // UI's livePrice(), which always shows price data regardless of
 // show_price_online.
 async function loadReachOutItems(customerId: number, itemIds: number[]) {
+  const frameFinishes = aliasedTable(finishesTable, "ro_frame_finishes");
+  const tileFinishes = aliasedTable(finishesTable, "ro_tile_finishes");
+
   const rows = await db
     .select({
       productName: productsTable.name,
@@ -432,12 +452,19 @@ async function loadReachOutItems(customerId: number, itemIds: number[]) {
       price: productsTable.price,
       salePrice: productsTable.salePrice,
       showPriceOnline: productsTable.showPriceOnline,
+      finishName: frameFinishes.name,
+      fabricName: fabricsTable.name,
+      fabricItemNumber: fabricsTable.itemNumber,
+      tileName: tileFinishes.name,
     })
     .from(wishlistItemsTable)
     .innerJoin(
       productsTable,
       eq(productsTable.id, wishlistItemsTable.productId),
     )
+    .leftJoin(fabricsTable, eq(fabricsTable.id, wishlistItemsTable.selectedFabricId))
+    .leftJoin(frameFinishes, eq(frameFinishes.id, wishlistItemsTable.selectedFinishId))
+    .leftJoin(tileFinishes, eq(tileFinishes.id, wishlistItemsTable.selectedTableTopTileId))
     .where(
       and(
         eq(wishlistItemsTable.customerId, customerId),
@@ -449,6 +476,10 @@ async function loadReachOutItems(customerId: number, itemIds: number[]) {
   return rows.map((r) => ({
     name: r.productName,
     variantLabel: r.variantLabel,
+    finishName: r.finishName ?? null,
+    fabricName: r.fabricName ?? null,
+    fabricItemNumber: r.fabricItemNumber ?? null,
+    tileName: r.tileName ?? null,
     price: r.showPriceOnline
       ? (money(r.salePrice) ?? money(r.price))
       : null,

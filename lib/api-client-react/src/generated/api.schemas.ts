@@ -116,6 +116,10 @@ export interface AdminWishlistItem {
   description: string;
   sku: string | null;
   variantLabel: string | null;
+  finishName: string | null;
+  fabricName: string | null;
+  fabricItemNumber: string | null;
+  tileName: string | null;
   quantity: number;
   /** Live sale-or-MSRP price read from the product at request time. Null if the product no longer exists or has no price on file. */
   unitPrice: number | null;

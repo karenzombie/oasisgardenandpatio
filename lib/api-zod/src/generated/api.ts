@@ -13886,6 +13886,10 @@ export const AdminGetWishlistResponse = zod.object({
       description: zod.string(),
       sku: zod.string().nullable(),
       variantLabel: zod.string().nullable(),
+      finishName: zod.string().nullable(),
+      fabricName: zod.string().nullable(),
+      fabricItemNumber: zod.string().nullable(),
+      tileName: zod.string().nullable(),
       quantity: zod.number(),
       unitPrice: zod
         .number()
