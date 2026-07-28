@@ -17,7 +17,7 @@ import { usersTable } from "./users";
 import { customersTable } from "./customers";
 import { productsTable } from "./products";
 import { finishesTable } from "./finishes";
-import { fabricsTable } from "./variants";
+import { fabricsTable, productVariantsTable } from "./variants";
 
 export const wishlistItemsTable = pgTable(
   "wishlist_items",
@@ -54,6 +54,15 @@ export const wishlistItemsTable = pgTable(
     ),
     selectedTableTopTileId: integer("selected_table_top_tile_id").references(
       () => finishesTable.id,
+      { onDelete: "set null" },
+    ),
+    // The real, orderable variant the customer chose (e.g. the "#D-24D" row for
+    // a Dakota top saved at "24\" Round"). Nullable — only set when the product
+    // has size/variant options and the customer selected one. Used to resolve the
+    // real variant SKU on every wishlist display surface instead of the parent
+    // placeholder SKU.
+    variantId: integer("variant_id").references(
+      () => productVariantsTable.id,
       { onDelete: "set null" },
     ),
     // Human-readable snapshot of the selected finish/fabric/table-top-tile at
