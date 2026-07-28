@@ -27,5 +27,5 @@ export default function AccountOptOut() {
     return <Redirect to="/account" />;
   }
 
-  return <Redirect to={`${basePath}/sign-in`} />;
+  return <Redirect to="/sign-in" />;
 }

@@ -17,6 +17,7 @@ import {
   type AccountProfileResponse,
   type AccountAddress,
 } from "@workspace/api-client-react";
+import { useAuth as useClerkAuth } from "@clerk/react";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { OnboardingView } from "./OnboardingView";
@@ -408,13 +409,53 @@ export default function Account() {
   const wishlistItems = wishlist?.items ?? [];
   const wishlistPreview = wishlistItems.slice(0, 4);
 
+  // Use Clerk's own auth state to gate the redirect. The custom useAuth()
+  // above is API-backed (/api/auth/me) and can return unauthenticated
+  // transiently while clerk-sync is bridging the Clerk session to the server
+  // session. Redirecting on that transient state causes a sign-in bounce loop.
+  // Only send the user to /sign-in once Clerk itself confirms no active session.
+  const { isLoaded: clerkIsLoaded, isSignedIn: clerkIsSignedIn } =
+    useClerkAuth();
+
+  // Bounded fallback: if Clerk reports signed-in but clerk-sync never
+  // resolves (hard failure), surface an error after 10 s rather than spinning
+  // forever. On success, useClerkSync invalidates the getCurrentUser query,
+  // which refetches /api/auth/me and sets isAuthenticated — clearing the timer.
+  const [syncTimedOut, setSyncTimedOut] = useState(false);
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (!clerkIsLoaded || !clerkIsSignedIn || isAuthenticated) {
+      setSyncTimedOut(false);
+      return;
+    }
+    const timer = setTimeout(() => setSyncTimedOut(true), 10_000);
+    return () => clearTimeout(timer);
+  }, [clerkIsLoaded, clerkIsSignedIn, isAuthenticated]);
+
+  useEffect(() => {
+    if (clerkIsLoaded && !clerkIsSignedIn) {
       navigate("/sign-in");
     }
-  }, [isLoading, isAuthenticated, navigate]);
+  }, [clerkIsLoaded, clerkIsSignedIn, navigate]);
 
-  if (isLoading || !user) {
+  // Spinner while Clerk is loading, while the API call is in-flight, or while
+  // clerk-sync is establishing the server session (Clerk signed-in, API not yet).
+  // The !user branch also covers the instant before the redirect useEffect fires
+  // when Clerk confirms no session — guaranteeing user is non-null below this block.
+  if (!clerkIsLoaded || isLoading || !user) {
+    if (syncTimedOut) {
+      return (
+        <div className="w-full bg-muted/30 flex-1 flex items-center justify-center py-24">
+          <div className="text-center space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Something went wrong completing sign-in. Please try again.
+            </p>
+            <a href="/sign-in" className="text-sm text-primary hover:underline">
+              Back to sign in
+            </a>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="w-full bg-muted/30 flex-1 flex items-center justify-center py-24">
         <Spinner className="size-8 text-primary" />

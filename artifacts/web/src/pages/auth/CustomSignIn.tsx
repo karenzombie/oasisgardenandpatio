@@ -1,12 +1,12 @@
-import { useSignIn } from "@clerk/react";
+import { useSignIn, useAuth as useClerkAuth } from "@clerk/react";
 import { useState, type FormEvent } from "react";
-import { useLocation } from "wouter";
+import { Redirect } from "wouter";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 export function CustomSignIn() {
+  const { isLoaded, isSignedIn } = useClerkAuth();
   const { signIn, errors: clerkErrors } = useSignIn();
-  const [, setLocation] = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -29,7 +29,10 @@ export function CustomSignIn() {
       }
       if (signIn.status === "complete") {
         await signIn.finalize();
-        setLocation("/account");
+        // Navigation is driven by the isSignedIn guard below — do not call
+        // setLocation here. Firing it synchronously races ahead of
+        // clerk-sync (POST /auth/clerk-sync), causing /account to see a 401
+        // from /api/auth/me and bounce back to this page.
       } else {
         setError("Sign-in could not be completed. Please try again.");
       }
@@ -56,6 +59,14 @@ export function CustomSignIn() {
 
   // Suppress unused-variable warning — clerkErrors is reactive but we use local error state
   void clerkErrors;
+
+  // Once Clerk reports the session as active, navigate away from the sign-in
+  // page. Driving the redirect from state (rather than inline after finalize())
+  // guarantees the form never stays on screen after a successful sign-in,
+  // regardless of timing between finalize() and Clerk's React state update.
+  if (isLoaded && isSignedIn) {
+    return <Redirect to="/account" />;
+  }
 
   return (
     <div className="w-full bg-muted/30 flex-1 flex items-center justify-center px-4 py-16 md:py-24">
