@@ -8940,6 +8940,12 @@ components:
           type: ["integer", "null"]
         selectedTableTopTileId:
           type: ["integer", "null"]
+        variantLabel:
+          type: ["string", "null"]
+          description: >-
+            Display name of the selected size/variant (e.g. "24\" Round").
+            Stored in variant_label on the wishlist item so staff can see
+            which size the customer chose.
         replaceExisting:
           type: boolean
           description: >-

@@ -2185,6 +2185,12 @@ export const AddWishlistItemBody = zod.object({
   selectedFinishId: zod.number().nullish(),
   selectedFabricId: zod.number().nullish(),
   selectedTableTopTileId: zod.number().nullish(),
+  variantLabel: zod
+    .string()
+    .nullish()
+    .describe(
+      'Display name of the selected size\/variant (e.g. \"24\\\" Round\"). Stored in variant_label on the wishlist item so staff can see which size the customer chose.',
+    ),
   replaceExisting: zod
     .boolean()
     .optional()

@@ -1213,6 +1213,7 @@ export default function Product() {
                   selectedFinishId={wlFinishId}
                   selectedFabricId={wlFabricId}
                   selectedTableTopTileId={wlTileId}
+                  selectedVariantLabel={selectedVariant?.name ?? null}
                 />
               </div>
             </div>

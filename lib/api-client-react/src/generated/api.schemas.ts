@@ -2214,6 +2214,11 @@ export interface AddWishlistItemRequest {
   selectedFabricId?: number | null;
   /** @nullable */
   selectedTableTopTileId?: number | null;
+  /**
+   * Display name of the selected size/variant (e.g. "24\" Round"). Stored in variant_label on the wishlist item so staff can see which size the customer chose.
+   * @nullable
+   */
+  variantLabel?: string | null;
   /** Guests only. When true, an existing saved configuration for this product on the same device is overwritten instead of returning a 409 conflict. */
   replaceExisting?: boolean;
 }

@@ -251,6 +251,7 @@ router.post(
       selectedFinishId,
       selectedFabricId,
       selectedTableTopTileId,
+      variantLabel,
       replaceExisting,
     } = parsed.data;
 
@@ -273,6 +274,7 @@ router.post(
       selectedFinishId: selectedFinishId ?? null,
       selectedFabricId: selectedFabricId ?? null,
       selectedTableTopTileId: selectedTableTopTileId ?? null,
+      variantLabel: variantLabel ?? null,
     };
 
     // Signed-in users may save multiple configurations of the same product.
