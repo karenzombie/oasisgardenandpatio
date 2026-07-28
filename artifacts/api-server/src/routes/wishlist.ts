@@ -207,12 +207,14 @@ function configKey(o: {
   selectedFinishId: number | null;
   selectedFabricId: number | null;
   selectedTableTopTileId: number | null;
+  variantId?: number | null;
 }): string {
   return [
     o.productId,
     o.selectedFinishId ?? "",
     o.selectedFabricId ?? "",
     o.selectedTableTopTileId ?? "",
+    o.variantId ?? "",
   ].join(":");
 }
 
@@ -252,6 +254,7 @@ router.post(
       selectedFabricId,
       selectedTableTopTileId,
       variantLabel,
+      variantId,
       replaceExisting,
     } = parsed.data;
 
@@ -275,6 +278,7 @@ router.post(
       selectedFabricId: selectedFabricId ?? null,
       selectedTableTopTileId: selectedTableTopTileId ?? null,
       variantLabel: variantLabel ?? null,
+      variantId: variantId ?? null,
     };
 
     // Signed-in users may save multiple configurations of the same product.
@@ -286,6 +290,7 @@ router.post(
           selectedFinishId: wishlistItemsTable.selectedFinishId,
           selectedFabricId: wishlistItemsTable.selectedFabricId,
           selectedTableTopTileId: wishlistItemsTable.selectedTableTopTileId,
+          variantId: wishlistItemsTable.variantId,
         })
         .from(wishlistItemsTable)
         .where(
@@ -432,6 +437,7 @@ router.post(
         selectedFinishId: wishlistItemsTable.selectedFinishId,
         selectedFabricId: wishlistItemsTable.selectedFabricId,
         selectedTableTopTileId: wishlistItemsTable.selectedTableTopTileId,
+        variantId: wishlistItemsTable.variantId,
       })
       .from(wishlistItemsTable)
       .where(
@@ -448,6 +454,7 @@ router.post(
           selectedFinishId: wishlistItemsTable.selectedFinishId,
           selectedFabricId: wishlistItemsTable.selectedFabricId,
           selectedTableTopTileId: wishlistItemsTable.selectedTableTopTileId,
+          variantId: wishlistItemsTable.variantId,
         })
         .from(wishlistItemsTable)
         .where(eq(wishlistItemsTable.userId, userId));

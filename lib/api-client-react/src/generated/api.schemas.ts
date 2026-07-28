@@ -2215,6 +2215,11 @@ export interface AddWishlistItemRequest {
   /** @nullable */
   selectedTableTopTileId?: number | null;
   /**
+   * FK to product_variants.id for the selected size/variant (e.g. the row for "#D-24D"). Stored so every wishlist display resolves to the real variant SKU instead of the parent placeholder SKU.
+   * @nullable
+   */
+  variantId?: number | null;
+  /**
    * Display name of the selected size/variant (e.g. "24\" Round"). Stored in variant_label on the wishlist item so staff can see which size the customer chose.
    * @nullable
    */

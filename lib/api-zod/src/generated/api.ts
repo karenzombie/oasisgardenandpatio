@@ -2185,6 +2185,12 @@ export const AddWishlistItemBody = zod.object({
   selectedFinishId: zod.number().nullish(),
   selectedFabricId: zod.number().nullish(),
   selectedTableTopTileId: zod.number().nullish(),
+  variantId: zod
+    .number()
+    .nullish()
+    .describe(
+      'FK to product_variants.id for the selected size\/variant (e.g. the row for \"#D-24D\"). Stored so every wishlist display resolves to the real variant SKU instead of the parent placeholder SKU.',
+    ),
   variantLabel: zod
     .string()
     .nullish()

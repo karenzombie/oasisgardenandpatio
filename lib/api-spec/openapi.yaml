@@ -8940,6 +8940,12 @@ components:
           type: ["integer", "null"]
         selectedTableTopTileId:
           type: ["integer", "null"]
+        variantId:
+          type: ["integer", "null"]
+          description: >-
+            FK to product_variants.id for the selected size/variant (e.g. the
+            row for "#D-24D"). Stored so every wishlist display resolves to the
+            real variant SKU instead of the parent placeholder SKU.
         variantLabel:
           type: ["string", "null"]
           description: >-

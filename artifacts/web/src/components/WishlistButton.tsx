@@ -38,6 +38,7 @@ export function WishlistButton({
   selectedFabricId = null,
   selectedTableTopTileId = null,
   selectedVariantLabel = null,
+  selectedVariantId = null,
 }: {
   productId: number;
   variant?: Variant;
@@ -49,6 +50,7 @@ export function WishlistButton({
   selectedFabricId?: number | null;
   selectedTableTopTileId?: number | null;
   selectedVariantLabel?: string | null;
+  selectedVariantId?: number | null;
 }) {
   const { toast } = useToast();
   const qc = useQueryClient();
@@ -99,6 +101,7 @@ export function WishlistButton({
       ...(selectedFabricId != null ? { selectedFabricId } : {}),
       ...(selectedTableTopTileId != null ? { selectedTableTopTileId } : {}),
       ...(selectedVariantLabel != null ? { variantLabel: selectedVariantLabel } : {}),
+      ...(selectedVariantId != null ? { variantId: selectedVariantId } : {}),
     };
     if (isAuthenticated) {
       return { productId, ...config };
