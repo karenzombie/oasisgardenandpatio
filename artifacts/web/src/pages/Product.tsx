@@ -15,6 +15,7 @@ import { CompatibleRecommendations } from "@/components/CompatibleRecommendation
 import { useToast } from "@/hooks/use-toast";
 import { Palette, Check } from "lucide-react";
 import { FabricSwatchDialog } from "@/components/FabricSwatchDialog";
+import { SizeListPicker } from "@/components/SizeListPicker";
 import { ProductOptionPickers } from "@/components/ProductOptionPickers";
 import {
   GALTECH_POLE_INFO,
@@ -1220,25 +1221,13 @@ export default function Product() {
                       </button>
                     )}
                     {variants.length > 1 ? (
-                      <FabricSwatchDialog
+                      <SizeListPicker
                         open={variantPickerOpen}
                         onOpenChange={setVariantPickerOpen}
-                        fabrics={variants.map((v) => ({
-                          id: v.id,
-                          name: v.name,
-                          itemNumber: "",
-                          swatchImageUrl: v.swatchImageUrl ?? null,
-                          grade: null,
-                          colorFamily: null,
-                        }))}
-                        selectedFabricId={variantId}
-                        onConfirm={(id) => setVariantId(id)}
-                        isGradeMode={false}
-                        linePriceForGrade={() => null}
-                        formatPrice={(n) => formatMoney(n)}
+                        sizes={variants.map((v) => ({ id: v.id, name: v.name }))}
+                        selectedId={variantId}
+                        onSelect={(id) => setVariantId(id)}
                         title={`Choose a ${variantOptionLabel.toLowerCase()}`}
-                        noun="size"
-                        nounPlural="sizes"
                         searchPlaceholder="Search sizes…"
                       />
                     ) : null}
