@@ -23,7 +23,6 @@ import {
   CreateAccountAddressBody,
   UpdateAccountProfileBody,
   UpdateAccountMarketingPreferenceBody,
-  OptOutMarketingPreferenceBody,
   UpsertAccountRoleAddressBody,
   RequestAccountEmailChangeBody,
   VerifyAccountEmailChangeBody,
@@ -37,7 +36,6 @@ import { requireAuth } from "../middlewares/requireAuth";
 import { toPublicImageUrl } from "../lib/imageUrl";
 import { sendEmailChangeCode } from "../lib/email";
 import { deriveOrderPaymentState } from "../lib/paymentState";
-import { verifyOptOutToken } from "../lib/marketingOptOutToken";
 
 const EMAIL_CHANGE_CODE_TTL_MS = 30 * 60 * 1000;
 
@@ -539,26 +537,16 @@ router.put(
   },
 );
 
-// Public endpoint reached directly from the wishlist disclosure email's
-// opt-out link. No auth -- the signed token itself is the credential.
+// Token-driven opt-out endpoint decommissioned (Gate 2 security fix).
+// Signed tokens in email links no longer grant any account access or
+// trigger any write. Preference changes are performed exclusively through
+// the authenticated PUT /account/marketing-preference endpoint below.
+// Returns 410 Gone so any client still holding a cached reference to this
+// endpoint gets an explicit non-success response and no write occurs.
 router.post(
   "/account/marketing-preference/opt-out",
-  async (req: Request, res: Response): Promise<void> => {
-    const parsed = OptOutMarketingPreferenceBody.safeParse(req.body);
-    if (!parsed.success) {
-      res.json({ status: "invalid" });
-      return;
-    }
-    const verified = verifyOptOutToken(parsed.data.token);
-    if (!verified) {
-      res.json({ status: "invalid" });
-      return;
-    }
-    await db
-      .update(customersTable)
-      .set({ marketingOptOut: true, marketingOptOutAt: new Date() })
-      .where(eq(customersTable.id, verified.customerId));
-    res.json({ status: "success" });
+  (_req: Request, res: Response): void => {
+    res.status(410).json({ status: "gone" });
   },
 );
 

@@ -26,7 +26,6 @@ import { optionalAuth, requireAuth } from "../middlewares/requireAuth";
 import { toPublicImageUrl } from "../lib/imageUrl";
 import { getOrCreateCustomer } from "./account";
 import { sendWishlistDisclosureEmail } from "../lib/email";
-import { signOptOutToken } from "../lib/marketingOptOutToken";
 import { generateWishlistNumber } from "../lib/wishlistNumber";
 import { getBaseUrl } from "../lib/baseUrl";
 import { logger } from "../lib/logger";
@@ -78,15 +77,11 @@ async function maybeSendWishlistDisclosureEmail(
 
   try {
     const baseUrl = getBaseUrl();
-    const optOutUrl = `${baseUrl}/account/preferences/opt-out?token=${encodeURIComponent(
-      signOptOutToken(customerId),
-    )}`;
     const accountSettingsUrl = `${baseUrl}/account`;
     await sendWishlistDisclosureEmail({
       to: customer.email,
       firstName: customer.firstName,
       productName,
-      optOutUrl,
       accountSettingsUrl,
     });
   } catch (err) {

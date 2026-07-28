@@ -29,7 +29,7 @@ export function CustomSignIn() {
       }
       if (signIn.status === "complete") {
         await signIn.finalize();
-        setLocation("/");
+        setLocation("/account");
       } else {
         setError("Sign-in could not be completed. Please try again.");
       }
