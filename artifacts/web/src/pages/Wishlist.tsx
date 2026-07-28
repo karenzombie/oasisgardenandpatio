@@ -147,6 +147,30 @@ export default function Wishlist() {
                   <p className="text-xs text-muted-foreground mt-1">
                     SKU {item.sku}
                   </p>
+                  {item.finishName ? (
+                    <p className="text-xs text-foreground/80 mt-0.5">
+                      <span className="text-muted-foreground">Finish:</span>{" "}
+                      {item.finishName}
+                    </p>
+                  ) : null}
+                  {item.fabricName ? (
+                    <p className="text-xs text-foreground/80 mt-0.5">
+                      <span className="text-muted-foreground">Fabric:</span>{" "}
+                      {item.fabricName}
+                      {item.fabricItemNumber ? (
+                        <span className="text-muted-foreground">
+                          {" "}
+                          ({item.fabricItemNumber})
+                        </span>
+                      ) : null}
+                    </p>
+                  ) : null}
+                  {item.tileName ? (
+                    <p className="text-xs text-foreground/80 mt-0.5">
+                      <span className="text-muted-foreground">Tile:</span>{" "}
+                      {item.tileName}
+                    </p>
+                  ) : null}
                   {item.showPriceOnline && item.price ? (
                     <p className="text-sm mt-2">
                       {onSale ? (
