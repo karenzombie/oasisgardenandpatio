@@ -147,6 +147,27 @@ export default function WishlistPrint() {
                       {it.variantLabel}
                     </div>
                   )}
+                  {it.finishName ? (
+                    <div className="text-xs text-slate-500">
+                      <span className="font-medium">Finish:</span>{" "}
+                      {it.finishName}
+                    </div>
+                  ) : null}
+                  {it.fabricName ? (
+                    <div className="text-xs text-slate-500">
+                      <span className="font-medium">Fabric:</span>{" "}
+                      {it.fabricName}
+                      {it.fabricItemNumber
+                        ? ` (${it.fabricItemNumber})`
+                        : null}
+                    </div>
+                  ) : null}
+                  {it.tileName ? (
+                    <div className="text-xs text-slate-500">
+                      <span className="font-medium">Tile:</span>{" "}
+                      {it.tileName}
+                    </div>
+                  ) : null}
                 </td>
                 <td className="px-2 py-1.5 align-top text-slate-600">
                   {it.manufacturerName ?? "—"}

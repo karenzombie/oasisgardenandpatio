@@ -412,6 +412,27 @@ export default function WishlistDetail() {
                           {it.variantLabel}
                         </div>
                       )}
+                      {it.finishName ? (
+                        <div className="text-xs text-slate-500">
+                          <span className="font-medium">Finish:</span>{" "}
+                          {it.finishName}
+                        </div>
+                      ) : null}
+                      {it.fabricName ? (
+                        <div className="text-xs text-slate-500">
+                          <span className="font-medium">Fabric:</span>{" "}
+                          {it.fabricName}
+                          {it.fabricItemNumber
+                            ? ` (${it.fabricItemNumber})`
+                            : null}
+                        </div>
+                      ) : null}
+                      {it.tileName ? (
+                        <div className="text-xs text-slate-500">
+                          <span className="font-medium">Tile:</span>{" "}
+                          {it.tileName}
+                        </div>
+                      ) : null}
                     </td>
                     <td className="px-3 py-2 text-slate-600 text-sm">
                       {it.manufacturerName ?? "—"}
