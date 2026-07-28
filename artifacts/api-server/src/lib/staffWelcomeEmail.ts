@@ -73,6 +73,7 @@ export async function sendStaffWelcomeEmail(opts: {
       subject: "Your Oasis Garden & Patio staff account is ready",
       title: "Welcome to the staff portal",
       bodyHtml,
+      suppressArchiveBcc: true,
     });
     logger.info(
       { to: opts.email, role: opts.role },

@@ -159,6 +159,7 @@ export async function sendVendorOrderEmail(
     to,
     subject,
     html: emailLayout(`Purchase Order ${vendorOrderNumber}`, body),
+    suppressArchiveBcc: true,
     ...(args.pdfBuffer
       ? {
           attachments: [
@@ -291,6 +292,7 @@ export async function sendVendorOrderCancellationEmail(
     to,
     subject,
     html,
+    suppressArchiveBcc: true,
     ...(args.pdfBuffer
       ? {
           attachments: [{ filename, content: args.pdfBuffer }],
@@ -355,6 +357,7 @@ export async function sendVendorOrderRevisionEmail(
     to,
     subject,
     html,
+    suppressArchiveBcc: true,
     ...(args.pdfBuffer
       ? {
           attachments: [{ filename, content: args.pdfBuffer }],

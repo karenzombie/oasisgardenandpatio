@@ -1,0 +1,13 @@
+Gate 1 root cause accepted. Proceed to Gate 2 with Option A (Clerk-native password reset), plus a second required change below.
+
+Before implementing Option A, confirm from actual account data that there are no sign-in-capable customer accounts that exist only in the local store with no Clerk identity, which would be left unable to reset. If any exist, stop and report them before changing anything.
+
+Option A: move customer password reset onto Clerk's own reset flow so it uses the same credential store as sign-in. The local /auth/request-password-reset and /auth/reset-password endpoints may remain but must no longer be reachable from the customer UI. Also fix the reset-success redirect to go to /sign-in, not /login.
+
+Second change, email BCC scoping: outgoing customer emails currently BCC online@oasisgardenandpatio.com. That BCC must apply ONLY to order-group and wishlist-group emails. It must NOT be applied to any authentication email (password reset, email verification, email change) or any staff email. Locate where the BCC is applied, and in your Gate 2 response list every email the app sends with a clear WILL BCC or WILL NOT BCC label so the classification can be verified before it ships. This matters because reset and verification emails carry credentials and links that must not land in a shared inbox.
+
+Paste the raw diffs for every file changed, plus the BCC classification list, and STOP. Do not self-certify.
+
+Gate 3, after approval: run the end-to-end auth test across customer and staff flows as specified. Additionally verify that a real password reset now lets the user sign in, and that the BCC is present on an order or wishlist email and absent on an auth email. Mark anything that needs Karen's manual or inbox confirmation rather than reporting it passed.
+
+Hard guardrails unchanged, especially: STAFF UI LOGIN MUST NOT BREAK; do not touch checkout, cart, or payments; do not regress the shipped opt-out and sign-in navigation fixes; report adjacent issues rather than changing them.

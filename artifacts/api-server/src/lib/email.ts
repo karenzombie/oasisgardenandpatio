@@ -67,21 +67,30 @@ export async function sendViaResend(payload: {
   html: string;
   attachments?: Array<{ filename: string; content: Buffer }>;
   bcc?: string | string[];
+  /**
+   * When true, the ARCHIVE_BCC address is NOT injected.  Use for
+   * authentication emails (password reset, verification, email-change) and
+   * all staff / vendor-facing emails so that credential links and internal
+   * messages never land in a shared customer-archive inbox.
+   */
+  suppressArchiveBcc?: boolean;
 }) {
   const { client, from } = await getResendClient();
   const redirectTo = process.env["EMAIL_TEST_REDIRECT_TO"]?.trim();
   const isTestRedirect = !!(redirectTo && redirectTo.length > 0);
   const existingBcc = payload.bcc;
-  const effectiveBcc: string | string[] | undefined = isTestRedirect
+  const effectiveBcc: string | string[] | undefined = isTestRedirect || payload.suppressArchiveBcc
     ? existingBcc
     : existingBcc === undefined
       ? ARCHIVE_BCC
       : Array.isArray(existingBcc)
         ? [...existingBcc, ARCHIVE_BCC]
         : [existingBcc, ARCHIVE_BCC];
+  // suppressArchiveBcc is not a Resend field — strip it before sending.
+  const { suppressArchiveBcc: _suppress, ...resendPayload } = payload;
   return client.emails.send({
     from,
-    ...payload,
+    ...resendPayload,
     ...(effectiveBcc !== undefined ? { bcc: effectiveBcc } : {}),
   });
 }
@@ -140,6 +149,8 @@ export interface SendEmailArgs {
   subject: string;
   title: string;
   bodyHtml: string;
+  /** Forward to sendViaResend to opt out of the archive BCC. */
+  suppressArchiveBcc?: boolean;
 }
 
 export async function sendEmail({
@@ -147,6 +158,7 @@ export async function sendEmail({
   subject,
   title,
   bodyHtml,
+  suppressArchiveBcc,
 }: SendEmailArgs): Promise<void> {
   // Test-mode redirect: while Resend is unverified it can only deliver to the
   // account owner. If EMAIL_TEST_REDIRECT_TO is set, route every email there
@@ -169,6 +181,7 @@ export async function sendEmail({
     to: effectiveTo,
     subject: effectiveSubject,
     html: emailLayout(title, `${redirectBanner}${bodyHtml}`),
+    ...(suppressArchiveBcc ? { suppressArchiveBcc: true } : {}),
   });
   if (result.error) {
     logger.error(
@@ -202,6 +215,7 @@ export async function sendVerificationEmail({
     to,
     subject: `Verify your ${BRAND_NAME} account`,
     html: emailLayout("Confirm your email", body),
+    suppressArchiveBcc: true,
   });
 
   if (result.error) {
@@ -233,6 +247,7 @@ export async function sendEmailChangeCode({
     to,
     subject: `Confirm your new ${BRAND_NAME} email address`,
     html: emailLayout("Confirm your new email", body),
+    suppressArchiveBcc: true,
   });
 
   if (result.error) {
@@ -421,6 +436,7 @@ export async function sendPasswordResetEmail({
     to,
     subject: `Reset your ${BRAND_NAME} password`,
     html: emailLayout("Reset your password", body),
+    suppressArchiveBcc: true,
   });
 
   if (result.error) {

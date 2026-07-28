@@ -134,6 +134,7 @@ export async function sendRecoveryRequestedEmail(
     to: args.to,
     subject: `Staff account recovery requested — ${BRAND_NAME}`,
     html: emailLayout("Staff account recovery requested", body),
+    suppressArchiveBcc: true,
   });
   if (result.error) {
     logger.error(
@@ -172,6 +173,7 @@ export async function sendRecoveryAlertEmail(
     to: RECOVERY_ALERT_TO_EMAIL,
     subject: `Staff account recovery requested — ${BRAND_NAME}`,
     html: emailLayout("Staff account recovery requested", body),
+    suppressArchiveBcc: true,
   });
   if (result.error) {
     logger.error(
@@ -213,6 +215,7 @@ export async function sendRecoveryFinalizedEmail(
       ? `Your ${BRAND_NAME} staff account was reset`
       : `Your ${BRAND_NAME} recovery request was cancelled`,
     html: emailLayout(title, body),
+    suppressArchiveBcc: true,
   });
   if (result.error) {
     logger.error(
