@@ -412,35 +412,3 @@ export async function sendWishlistReachOutEmail({
     bodyHtml: renderWishlistReachOutEmailBody(bodyArgs),
   });
 }
-
-export interface SendPasswordResetEmailArgs {
-  to: string;
-  firstName: string | null;
-  resetUrl: string;
-}
-
-export async function sendPasswordResetEmail({
-  to,
-  firstName,
-  resetUrl,
-}: SendPasswordResetEmailArgs): Promise<void> {
-  const greeting = firstName ? `Hi ${firstName},` : "Hello,";
-  const body = `
-    <p>${greeting}</p>
-    <p>We received a request to reset the password for your ${BRAND_NAME} account.</p>
-    ${buttonLink(resetUrl, "Reset Password")}
-    <p style="font-size:15px;color:#666;">This link expires in 1 hour. If you did not request a password reset, no action is needed and your password will remain unchanged.</p>
-  `;
-
-  const result = await sendViaResend({
-    to,
-    subject: `Reset your ${BRAND_NAME} password`,
-    html: emailLayout("Reset your password", body),
-    suppressArchiveBcc: true,
-  });
-
-  if (result.error) {
-    logger.error({ err: result.error, to }, "Failed to send password reset email");
-    throw new Error(`Failed to send password reset email: ${result.error.message}`);
-  }
-}

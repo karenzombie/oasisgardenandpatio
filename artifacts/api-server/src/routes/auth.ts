@@ -10,21 +10,17 @@ import {
   cartsTable,
   cartItemsTable,
   emailVerificationTokensTable,
-  passwordResetTokensTable,
   type User,
 } from "@workspace/db";
 import {
   SignupBody,
   LoginBody,
   VerifyEmailBody,
-  RequestPasswordResetBody,
-  ResetPasswordBody,
 } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/requireAuth";
-import { sendVerificationEmail, sendPasswordResetEmail } from "../lib/email";
+import { sendVerificationEmail } from "../lib/email";
 import {
   loginRateLimiter,
-  passwordResetRateLimiter,
   resendVerificationRateLimiter,
 } from "../middlewares/rateLimit";
 
@@ -32,7 +28,6 @@ const router: IRouter = Router();
 
 const BCRYPT_ROUNDS = 12;
 const VERIFY_TOKEN_TTL_MS = 1000 * 60 * 60 * 24;
-const RESET_TOKEN_TTL_MS = 1000 * 60 * 60;
 
 function generateRawToken(): string {
   return randomBytes(32).toString("hex");
@@ -391,98 +386,6 @@ router.post(
     res.status(204).end();
   },
 );
-
-router.post(
-  "/auth/request-password-reset",
-  passwordResetRateLimiter,
-  async (req, res): Promise<void> => {
-    const parsed = RequestPasswordResetBody.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: parsed.error.message });
-      return;
-    }
-
-    const normalizedEmail = parsed.data.email.trim().toLowerCase();
-
-    const [user] = await db
-      .select()
-      .from(usersTable)
-      .where(eq(usersTable.email, normalizedEmail))
-      .limit(1);
-
-    if (user && user.isActive) {
-      try {
-        const rawToken = generateRawToken();
-        const tokenHash = hashToken(rawToken);
-        const expiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MS);
-        await db.insert(passwordResetTokensTable).values({
-          userId: user.id,
-          tokenHash,
-          expiresAt,
-        });
-        const resetUrl = `${publicBaseUrl(req)}/reset-password?token=${encodeURIComponent(rawToken)}`;
-        await sendPasswordResetEmail({
-          to: user.email,
-          firstName: user.firstName,
-          resetUrl,
-        });
-      } catch (err) {
-        req.log.error({ err, userId: user.id }, "Failed to send password reset email");
-      }
-    }
-
-    res.status(204).end();
-  },
-);
-
-router.post("/auth/reset-password", async (req, res): Promise<void> => {
-  const parsed = ResetPasswordBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
-  }
-
-  const now = new Date();
-  const tokenHash = hashToken(parsed.data.token);
-
-  const [consumed] = await db
-    .update(passwordResetTokensTable)
-    .set({ usedAt: now })
-    .where(
-      and(
-        eq(passwordResetTokensTable.tokenHash, tokenHash),
-        isNull(passwordResetTokensTable.usedAt),
-        gt(passwordResetTokensTable.expiresAt, now),
-      ),
-    )
-    .returning();
-
-  if (!consumed) {
-    res.status(400).json({ error: "This reset link is invalid or has expired" });
-    return;
-  }
-
-  const passwordHash = await bcrypt.hash(parsed.data.newPassword, BCRYPT_ROUNDS);
-
-  await db.transaction(async (tx) => {
-    await tx
-      .update(usersTable)
-      .set({ passwordHash })
-      .where(eq(usersTable.id, consumed.userId));
-
-    await tx
-      .update(passwordResetTokensTable)
-      .set({ usedAt: now })
-      .where(
-        and(
-          eq(passwordResetTokensTable.userId, consumed.userId),
-          isNull(passwordResetTokensTable.usedAt),
-        ),
-      );
-  });
-
-  res.status(204).end();
-});
 
 /**
  * Bridge a Clerk session to a local user row + session cookie.
