@@ -1196,6 +1196,35 @@ export default function Product() {
                     </div>
                   </div>
                 ) : null}
+                {variants.length > 0 && !variantIsFinish ? (
+                  <div className="mb-4">
+                    <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">
+                      {variantOptionLabel}
+                      {selectedVariant ? (
+                        <span className="ml-2 normal-case tracking-normal text-foreground">
+                          {selectedVariant.name}
+                        </span>
+                      ) : null}
+                      {selectedVariant ? <SelectionCheck /> : null}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {variants.map((v) => (
+                        <button
+                          key={v.id}
+                          type="button"
+                          onClick={() => setVariantId(v.id)}
+                          className={`px-3 py-2 border text-sm transition-colors ${
+                            variantId === v.id
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-input hover:border-foreground"
+                          }`}
+                        >
+                          {v.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
                 <ProductOptionPickers
                   finishes={finishes}
                   fabrics={requiresFabric ? fabricOptions : []}
