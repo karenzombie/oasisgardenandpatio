@@ -14,6 +14,7 @@ import {
   usersTable,
   finishesTable,
   fabricsTable,
+  productVariantsTable,
 } from "@workspace/db";
 import {
   AdminListWishlistsQueryParams,
@@ -249,6 +250,7 @@ async function loadWishlistDetail(customerId: number) {
       createdAt: wishlistItemsTable.createdAt,
       productName: productsTable.name,
       productSku: productsTable.sku,
+      variantSku: productVariantsTable.variantSku,
       price: productsTable.price,
       salePrice: productsTable.salePrice,
       manufacturerName: manufacturersTable.name,
@@ -266,6 +268,10 @@ async function loadWishlistDetail(customerId: number) {
     .leftJoin(fabricsTable, eq(fabricsTable.id, wishlistItemsTable.selectedFabricId))
     .leftJoin(frameFinishes, eq(frameFinishes.id, wishlistItemsTable.selectedFinishId))
     .leftJoin(tileFinishes, eq(tileFinishes.id, wishlistItemsTable.selectedTableTopTileId))
+    .leftJoin(
+      productVariantsTable,
+      eq(productVariantsTable.id, wishlistItemsTable.variantId),
+    )
     .where(eq(wishlistItemsTable.customerId, customerId))
     .orderBy(desc(wishlistItemsTable.createdAt));
 
@@ -307,7 +313,7 @@ async function loadWishlistDetail(customerId: number) {
       id: r.id,
       productId: r.productId,
       description: r.productName ?? "(product no longer available)",
-      sku: r.productSku ?? null,
+      sku: r.variantSku ?? r.productSku ?? null,
       variantLabel: r.variantLabel,
       finishName: r.finishName ?? null,
       fabricName: r.fabricName ?? null,

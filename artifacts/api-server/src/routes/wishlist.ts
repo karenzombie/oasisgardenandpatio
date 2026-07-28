@@ -12,6 +12,7 @@ import {
   categoriesTable,
   finishesTable,
   fabricsTable,
+  productVariantsTable,
   usersTable,
   customersTable,
 } from "@workspace/db";
@@ -157,6 +158,8 @@ async function loadWishlist(scope: WishlistScope) {
       fabricName: fabricsTable.name,
       fabricItemNumber: fabricsTable.itemNumber,
       tileName: tileFinishes.name,
+      // Real variant SKU — null when no variant was selected.
+      variantSku: productVariantsTable.variantSku,
       createdAt: wishlistItemsTable.createdAt,
     })
     .from(wishlistItemsTable)
@@ -184,12 +187,19 @@ async function loadWishlist(scope: WishlistScope) {
       tileFinishes,
       eq(tileFinishes.id, wishlistItemsTable.selectedTableTopTileId),
     )
+    .leftJoin(
+      productVariantsTable,
+      eq(productVariantsTable.id, wishlistItemsTable.variantId),
+    )
     .where(and(ownerWhere, eq(productsTable.isActive, true)))
     .orderBy(desc(wishlistItemsTable.createdAt));
 
   return GetWishlistResponse.parse({
     items: rows.map((r) => ({
       ...r,
+      // Resolve to the real variant SKU when a variant was chosen; fall back
+      // to the product SKU for products with no size selection.
+      sku: r.variantSku ?? r.sku,
       primaryImageUrl: toPublicImageUrl(r.primaryImageUrl),
       createdAt:
         r.createdAt instanceof Date
