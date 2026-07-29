@@ -21,4 +21,6 @@ export interface CreateCustomerRequest {
   customerType?: CreateCustomerRequestCustomerType;
   /** @nullable */
   notes?: string | null;
+  /** When true, also creates a User account in pending state and emails a 'set your password' link. */
+  sendInvite?: boolean;
 }

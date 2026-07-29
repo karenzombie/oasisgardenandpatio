@@ -147,6 +147,11 @@ export default function Wishlist() {
                   <p className="text-xs text-muted-foreground mt-1">
                     SKU {item.sku}
                   </p>
+                  {item.variantLabel ? (
+                    <p className="text-xs text-foreground/80 mt-0.5">
+                      {item.variantLabel}
+                    </p>
+                  ) : null}
                   {item.finishName ? (
                     <p className="text-xs text-foreground/80 mt-0.5">
                       <span className="text-muted-foreground">Finish:</span>{" "}

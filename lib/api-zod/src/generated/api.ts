@@ -2170,6 +2170,7 @@ export const GetWishlistResponse = zod.object({
       fabricName: zod.string().nullable(),
       fabricItemNumber: zod.string().nullable(),
       tileName: zod.string().nullable(),
+      variantLabel: zod.string().nullable(),
       createdAt: zod.coerce.date(),
     }),
   ),
@@ -2228,6 +2229,7 @@ export const AddWishlistItemResponse = zod.object({
       fabricName: zod.string().nullable(),
       fabricItemNumber: zod.string().nullable(),
       tileName: zod.string().nullable(),
+      variantLabel: zod.string().nullable(),
       createdAt: zod.coerce.date(),
     }),
   ),
@@ -3111,6 +3113,7 @@ export const MergeWishlistResponse = zod.object({
       fabricName: zod.string().nullable(),
       fabricItemNumber: zod.string().nullable(),
       tileName: zod.string().nullable(),
+      variantLabel: zod.string().nullable(),
       createdAt: zod.coerce.date(),
     }),
   ),
@@ -3151,6 +3154,7 @@ export const RemoveWishlistItemResponse = zod.object({
       fabricName: zod.string().nullable(),
       fabricItemNumber: zod.string().nullable(),
       tileName: zod.string().nullable(),
+      variantLabel: zod.string().nullable(),
       createdAt: zod.coerce.date(),
     }),
   ),
@@ -13675,6 +13679,7 @@ export const AdminListCustomersResponse = zod.object({
  */
 
 export const adminCreateCustomerBodyCustomerTypeDefault = `residential`;
+export const adminCreateCustomerBodySendInviteDefault = false;
 
 export const AdminCreateCustomerBody = zod.object({
   email: zod.string().min(1),
@@ -13686,6 +13691,12 @@ export const AdminCreateCustomerBody = zod.object({
     .enum(["residential", "commercial"])
     .default(adminCreateCustomerBodyCustomerTypeDefault),
   notes: zod.string().nullish(),
+  sendInvite: zod
+    .boolean()
+    .default(adminCreateCustomerBodySendInviteDefault)
+    .describe(
+      "When true, also creates a User account in pending state and emails a 'set your password' link.",
+    ),
 });
 
 /**

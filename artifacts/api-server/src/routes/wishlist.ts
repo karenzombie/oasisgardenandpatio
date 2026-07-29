@@ -153,6 +153,7 @@ async function loadWishlist(scope: WishlistScope) {
       fabricName: fabricsTable.name,
       fabricItemNumber: fabricsTable.itemNumber,
       tileName: tileFinishes.name,
+      variantLabel: wishlistItemsTable.variantLabel,
       // Real variant SKU — null when no variant was selected.
       variantSku: productVariantsTable.variantSku,
       createdAt: wishlistItemsTable.createdAt,

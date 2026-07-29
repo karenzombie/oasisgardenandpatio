@@ -39,5 +39,7 @@ export interface WishlistItem {
   fabricItemNumber: string | null;
   /** @nullable */
   tileName: string | null;
+  /** @nullable */
+  variantLabel: string | null;
   createdAt: Date;
 }
