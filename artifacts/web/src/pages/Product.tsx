@@ -240,6 +240,62 @@ export default function Product() {
     () => variants.find((v) => v.id === variantId) ?? null,
     [variants, variantId],
   );
+
+  // Tile finishes for this product (description matches Table Top Tile / HDPE finish regex).
+  // Derived here so Dekton-top logic can read them without going through ProductOptionPickers.
+  const tileFinishes = useMemo(
+    () =>
+      finishes.filter((f) =>
+        /table\s*(?:top\s*)?tile|table\s*finish|HDPE\s*finish/i.test(
+          f.description ?? "",
+        ),
+      ),
+    [finishes],
+  );
+
+  // Dekton-top: tile finishes named "Dekton <x>" indicate that variant names encode
+  // the tile (e.g. "24\" Round - Soke"). In this case we show a size-only list and
+  // resolve the real per-tile variant when both size and tile are chosen.
+  const isDektonTop = useMemo(
+    () => tileFinishes.some((f) => /^dekton\s/i.test(f.name ?? "")),
+    [tileFinishes],
+  );
+
+  // Unique size entries for the Dekton size picker (first variant per size, tile stripped).
+  const dektonSizes = useMemo(() => {
+    if (!isDektonTop) return null;
+    const seen = new Set<string>();
+    const result: { id: number; name: string }[] = [];
+    for (const v of variants) {
+      const sizeName = v.name.replace(/\s*-\s*(Soke|Trillium)\s*$/i, "");
+      if (!seen.has(sizeName)) {
+        seen.add(sizeName);
+        result.push({ id: v.id, name: sizeName });
+      }
+    }
+    return result;
+  }, [isDektonTop, variants]);
+
+  // For Dekton: human-readable size name stripped of the tile suffix.
+  const selectedDektonSizeName = useMemo(() => {
+    if (!isDektonTop || !variantId) return null;
+    const v = variants.find((v2) => v2.id === variantId);
+    return v ? v.name.replace(/\s*-\s*(Soke|Trillium)\s*$/i, "") : null;
+  }, [isDektonTop, variantId, variants]);
+
+  // For Dekton: tile name suffix derived from the chosen tile finish ("Dekton Soke" → "Soke").
+  const dektonTileSuffix = useMemo(() => {
+    if (!isDektonTop || !wlTileId) return null;
+    const tf = tileFinishes.find((f) => f.id === wlTileId);
+    return tf ? tf.name.replace(/^Dekton\s+/i, "") : null;
+  }, [isDektonTop, wlTileId, tileFinishes]);
+
+  // For Dekton: the real per-tile variant once both size and tile are chosen.
+  const resolvedDektonVariant = useMemo(() => {
+    if (!isDektonTop || !selectedDektonSizeName || !dektonTileSuffix) return null;
+    const target = `${selectedDektonSizeName} - ${dektonTileSuffix}`;
+    return variants.find((v) => v.name === target) ?? null;
+  }, [isDektonTop, selectedDektonSizeName, dektonTileSuffix, variants]);
   const selectedFinish = useMemo(
     () => finishes.find((f) => f.id === finishId) ?? null,
     [finishes, finishId],
@@ -961,7 +1017,7 @@ export default function Product() {
               .filter(Boolean)
               .join("-") || data.sku
           : data.sku)
-      : (selectedVariant?.sku ?? data.sku);
+      : (resolvedDektonVariant?.sku ?? selectedVariant?.sku ?? data.sku);
 
   // Spec-sheet display variant: prefer the selected configuration, otherwise
   // default to the lead variant (lowest display_order, i.e. variants[0] since
@@ -1203,13 +1259,17 @@ export default function Product() {
                       {variantOptionLabel}
                       {selectedVariant ? (
                         <span className="ml-2 normal-case tracking-normal text-foreground">
-                          {selectedVariant.name}
+                          {isDektonTop
+                            ? (selectedDektonSizeName ?? selectedVariant.name)
+                            : selectedVariant.name}
                         </span>
                       ) : null}
                       {selectedVariant ? <SelectionCheck /> : null}
                     </p>
-                    {variants.length === 1 ? (
-                      <span className="text-sm font-medium">{variants[0]!.name}</span>
+                    {(isDektonTop ? (dektonSizes?.length ?? 0) : variants.length) === 1 ? (
+                      <span className="text-sm font-medium">
+                        {isDektonTop ? dektonSizes![0]!.name : variants[0]!.name}
+                      </span>
                     ) : (
                       <button
                         type="button"
@@ -1220,11 +1280,15 @@ export default function Product() {
                         Browse sizes
                       </button>
                     )}
-                    {variants.length > 1 ? (
+                    {(isDektonTop ? (dektonSizes?.length ?? 0) : variants.length) > 1 ? (
                       <SizeListPicker
                         open={variantPickerOpen}
                         onOpenChange={setVariantPickerOpen}
-                        sizes={variants.map((v) => ({ id: v.id, name: v.name }))}
+                        sizes={
+                          isDektonTop
+                            ? dektonSizes!
+                            : variants.map((v) => ({ id: v.id, name: v.name }))
+                        }
                         selectedId={variantId}
                         onSelect={(id) => setVariantId(id)}
                         title={`Choose a ${variantOptionLabel.toLowerCase()}`}
@@ -1250,8 +1314,16 @@ export default function Product() {
                   selectedFinishId={wlFinishId}
                   selectedFabricId={wlFabricId}
                   selectedTableTopTileId={wlTileId}
-                  selectedVariantLabel={selectedVariant?.name ?? null}
-                  selectedVariantId={variantId}
+                  selectedVariantLabel={
+                    isDektonTop
+                      ? (selectedDektonSizeName ?? null)
+                      : (selectedVariant?.name ?? null)
+                  }
+                  selectedVariantId={
+                    isDektonTop
+                      ? (resolvedDektonVariant?.id ?? variantId)
+                      : variantId
+                  }
                 />
               </div>
             </div>
