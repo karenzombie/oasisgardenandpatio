@@ -319,8 +319,11 @@ export default function Product() {
   // per-fabric-grade prices. In this mode the page runs a 3-step selection
   // (Configuration -> Frame Finish -> Fabric) and the line price is driven by
   // the selected fabric's grade rather than base price + adjustment.
+  // FRAME_ONLY is a reserved grade label for the frame-only price option — it
+  // is NOT a real fabric grade, so isGradeMode only considers rows with other
+  // grades. A variant that ONLY has a FRAME_ONLY row is not grade-mode.
   const isGradeMode = useMemo(
-    () => variants.some((v) => (v.gradePrices?.length ?? 0) > 0),
+    () => variants.some((v) => v.gradePrices?.some((gp) => gp.grade !== "FRAME_ONLY") ?? false),
     [variants],
   );
 
@@ -422,13 +425,29 @@ export default function Product() {
   }, [isWindVentMode, finishVariantMode, windVentOptions]);
 
   // Map of grade -> {msrp, salePrice} for the currently selected configuration.
+  // FRAME_ONLY rows are excluded — they are stored separately as gradeFrameOnlyPrice.
   const gradePriceMap = useMemo(() => {
     const m = new Map<string, { msrp: string; salePrice: string }>();
     for (const gp of selectedVariant?.gradePrices ?? []) {
-      m.set(gp.grade, { msrp: gp.msrp, salePrice: gp.salePrice });
+      if (gp.grade !== "FRAME_ONLY") {
+        m.set(gp.grade, { msrp: gp.msrp, salePrice: gp.salePrice });
+      }
     }
     return m;
   }, [selectedVariant]);
+
+  // The FRAME_ONLY price row for the currently selected variant (null when the
+  // variant has no frame-only option or no variant is selected).
+  const gradeFrameOnlyEntry = useMemo(
+    () => selectedVariant?.gradePrices?.find((gp) => gp.grade === "FRAME_ONLY") ?? null,
+    [selectedVariant],
+  );
+  const gradeFrameOnlyPrice = useMemo((): number | null => {
+    if (!gradeFrameOnlyEntry) return null;
+    const sale = Number(gradeFrameOnlyEntry.salePrice);
+    const msrp = Number(gradeFrameOnlyEntry.msrp);
+    return sale > 0 ? sale : msrp > 0 ? msrp : null;
+  }, [gradeFrameOnlyEntry]);
 
   const sortedFabricOptions = useMemo(
     () => [...fabricOptions].sort((a, b) => a.name.localeCompare(b.name)),
@@ -752,9 +771,13 @@ export default function Product() {
   }, [qtyFloor, isStripeSelected]);
 
   const frameOnlyPrice = data?.frameOnlyPrice ?? null;
-  // Grade-priced products always run the full 3-step flow (fabric is required
-  // to derive the line price), so the frame-only shortcut never applies there.
-  const offersFrameOnly = !isGradeMode && hasFabrics && frameOnlyPrice != null;
+  // Grade-mode products offer frame-only when the selected variant has a
+  // FRAME_ONLY grade row. Legacy flat-priced products use the product-level
+  // frameOnlyPrice field. Either path renders the same Frame Only / Frame +
+  // Fabric toggle on the PDP.
+  const offersFrameOnly =
+    (isGradeMode && gradeFrameOnlyPrice != null) ||
+    (!isGradeMode && hasFabrics && frameOnlyPrice != null);
 
   const missingSelections: string[] = [];
   if (isWindVentMode || finishVariantMode) {
@@ -911,14 +934,20 @@ export default function Product() {
 
   // ---- Grade-mode pricing ----
   // gradeLinePrice/gradeMsrp are set once a fabric is chosen (its grade picks
-  // the price row). gradeFromPrice is the lowest line price across all grades
-  // for the chosen configuration, used for the "From $X" teaser before a fabric
-  // is selected.
+  // the price row), or when Frame Only is selected (FRAME_ONLY grade row).
+  // gradeFromPrice is the lowest line price across real-grade rows for the
+  // chosen configuration, used for the "From $X" teaser before a fabric is
+  // selected. FRAME_ONLY is intentionally excluded from the "from" price
+  // because it is a separate product concept, not a fabric-grade option.
   let gradeLinePrice: number | null = null;
   let gradeMsrp: number | null = null;
   let gradeFromPrice: number | null = null;
   if (isGradeMode) {
-    if (selectedFabric?.grade) {
+    if (frameOnly && gradeFrameOnlyPrice != null) {
+      // Frame Only selected in grade mode: use the FRAME_ONLY grade row price.
+      gradeMsrp = gradeFrameOnlyEntry ? Number(gradeFrameOnlyEntry.msrp) : null;
+      gradeLinePrice = gradeFrameOnlyPrice;
+    } else if (selectedFabric?.grade) {
       const gp = gradePriceMap.get(selectedFabric.grade);
       if (gp) {
         gradeMsrp = Number(gp.msrp);
@@ -929,6 +958,7 @@ export default function Product() {
     if (selectedVariant) {
       let minLine = Infinity;
       for (const gp of selectedVariant.gradePrices) {
+        if (gp.grade === "FRAME_ONLY") continue; // not a fabric-grade "from" price
         const line =
           Number(gp.salePrice) > 0 ? Number(gp.salePrice) : Number(gp.msrp);
         if (line < minLine) minLine = line;
@@ -1375,13 +1405,25 @@ export default function Product() {
                 onFabricChange={setWlFabricId}
                 onTableTopTileChange={setWlTileId}
               />
+              {/* Grade-mode quote products (e.g. Arc) use the main selection
+                  state (finishId/fabricId/variantId) for the wishlist, not the
+                  legacy wl* state managed by the picker strip below. When frame
+                  only is chosen, pass null fabricId and label 'Frame Only'. */}
               <WishlistButton
                 productId={(cushionMode && data.cushionUpgradeProductId) ? data.cushionUpgradeProductId : data.id}
                 variant="button"
                 mode="add"
-                selectedFinishId={wlFinishId}
-                selectedFabricId={wlFabricId}
+                selectedFinishId={isGradeMode ? finishId : wlFinishId}
+                selectedFabricId={isGradeMode ? (frameOnly ? null : fabricId) : wlFabricId}
                 selectedTableTopTileId={wlTileId}
+                selectedVariantId={isGradeMode ? (variantId ?? undefined) : undefined}
+                selectedVariantLabel={
+                  isGradeMode
+                    ? frameOnly
+                      ? "Frame Only"
+                      : (selectedFabric?.name ?? selectedVariant?.name ?? null)
+                    : null
+                }
               />
             </div>
           ) : (
@@ -2082,7 +2124,9 @@ export default function Product() {
                       }`}
                     >
                       Frame + Fabric
-                      {data.price ? (
+                      {/* For grade products the fabric drives the price, so no
+                          flat price is shown on the "Frame + Fabric" button. */}
+                      {!isGradeMode && data.price ? (
                         <span className="ml-1 opacity-75">({formatMoney(data.price)})</span>
                       ) : null}
                     </button>
@@ -2096,9 +2140,13 @@ export default function Product() {
                       }`}
                     >
                       Frame Only
-                      {frameOnlyPrice ? (
-                        <span className="ml-1 opacity-75">({formatMoney(frameOnlyPrice)})</span>
-                      ) : null}
+                      {isGradeMode
+                        ? gradeFrameOnlyPrice != null
+                          ? <span className="ml-1 opacity-75">({formatMoney(gradeFrameOnlyPrice)})</span>
+                          : null
+                        : frameOnlyPrice
+                          ? <span className="ml-1 opacity-75">({formatMoney(frameOnlyPrice)})</span>
+                          : null}
                     </button>
                   </div>
                 </div>

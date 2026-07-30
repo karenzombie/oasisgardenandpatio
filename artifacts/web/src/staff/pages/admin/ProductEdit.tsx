@@ -2336,33 +2336,66 @@ export default function ProductEdit() {
                           <Label className="text-xs uppercase tracking-wide text-slate-500">
                             Grade prices
                           </Label>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() =>
-                              setVariants((cur) =>
-                                cur.map((x, i) =>
-                                  i === vi
-                                    ? {
-                                        ...x,
-                                        gradePrices: [
-                                          ...x.gradePrices,
-                                          {
-                                            grade: "",
-                                            msrp: "",
-                                            salePrice: "",
-                                            cost: "",
-                                          },
-                                        ],
-                                      }
-                                    : x,
-                                ),
-                              )
-                            }
-                          >
-                            Add grade
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                setVariants((cur) =>
+                                  cur.map((x, i) =>
+                                    i === vi
+                                      ? {
+                                          ...x,
+                                          gradePrices: [
+                                            ...x.gradePrices,
+                                            {
+                                              grade: "",
+                                              msrp: "",
+                                              salePrice: "",
+                                              cost: "",
+                                            },
+                                          ],
+                                        }
+                                      : x,
+                                  ),
+                                )
+                              }
+                            >
+                              Add grade
+                            </Button>
+                            {/* Add Frame Only row — reserved FRAME_ONLY sentinel.
+                                Button is hidden when one already exists. */}
+                            {!v.gradePrices.some((g) => g.grade === "FRAME_ONLY") && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  setVariants((cur) =>
+                                    cur.map((x, i) =>
+                                      i === vi
+                                        ? {
+                                            ...x,
+                                            gradePrices: [
+                                              ...x.gradePrices,
+                                              {
+                                                grade: "FRAME_ONLY",
+                                                msrp: "",
+                                                salePrice: "",
+                                                cost: "",
+                                              },
+                                            ],
+                                          }
+                                        : x,
+                                    ),
+                                  )
+                                }
+                              >
+                                Add Frame Only pricing
+                              </Button>
+                            )}
+                          </div>
                         </div>
                         {v.gradePrices.length === 0 ? (
                           <p className="text-xs text-slate-400">
@@ -2376,6 +2409,14 @@ export default function ProductEdit() {
                                 key={gi}
                                 className="grid grid-cols-[80px_1fr_1fr_1fr_auto] gap-2 items-center"
                               >
+                                {/* FRAME_ONLY is a reserved grade sentinel — display
+                                    it as a read-only label rather than an editable
+                                    input so staff cannot accidentally mistype it. */}
+                                {g.grade === "FRAME_ONLY" ? (
+                                  <div className="px-2 py-1.5 text-xs font-medium border border-dashed border-slate-300 rounded bg-slate-50 text-slate-600 whitespace-nowrap">
+                                    Frame Only
+                                  </div>
+                                ) : (
                                 <Input
                                   placeholder="Grade"
                                   value={g.grade}
@@ -2400,6 +2441,7 @@ export default function ProductEdit() {
                                     )
                                   }
                                 />
+                                )}
                                 <Input
                                   placeholder="MSRP"
                                   value={g.msrp}
