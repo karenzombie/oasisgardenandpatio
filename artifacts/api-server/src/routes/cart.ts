@@ -454,10 +454,7 @@ router.post(
     // buy just the frame/structure with no cushion/fabric.
     const supportsFrameOnly =
       requiresFabric && product.frameOnlyPrice != null;
-    // When a variantId is provided, grade mode may apply (frame-only via the
-    // FRAME_ONLY grade row). Skip the early fabric rejection in that case and
-    // let the post-variant grade-row checks handle the fabric requirement.
-    if (requiresFabric && !fabricId && !supportsFrameOnly && !variantId) {
+    if (requiresFabric && !fabricId && !supportsFrameOnly) {
       res.status(400).json({
         error: "Please choose a fabric before adding this item to your cart.",
       });
@@ -483,9 +480,6 @@ router.post(
     } | null = null;
     let gradePriceMap: Map<string, { msrp: string; salePrice: string }> | null =
       null;
-    // Price from the FRAME_ONLY grade row when the customer chose frame-only
-    // on a grade-priced product (no fabric/cushion). Null for all other cases.
-    let frameOnlyGradePrice: string | null = null;
     if (variantId) {
       const [variant] = await db
         .select({
@@ -533,39 +527,21 @@ router.post(
         })
         .from(variantGradePricesTable)
         .where(eq(variantGradePricesTable.variantId, variantId));
-
-      // FRAME_ONLY is a reserved grade label for the frame-only price option on
-      // grade-priced products. It must never be treated as a selectable fabric
-      // grade — filter it out of the map so it can't be matched by a fabric's
-      // grade field. Its price is stored separately as frameOnlyGradePrice.
-      const realGradeRows = gradeRows.filter((g) => g.grade !== "FRAME_ONLY");
-      const frameOnlyGradeRow =
-        gradeRows.find((g) => g.grade === "FRAME_ONLY") ?? null;
-
-      if (realGradeRows.length > 0) {
+      if (gradeRows.length > 0) {
         gradePriceMap = new Map(
-          realGradeRows.map((g) => [
+          gradeRows.map((g) => [
             g.grade,
             { msrp: String(g.msrp), salePrice: String(g.salePrice) },
           ]),
         );
       }
-
-      // Derive the frame-only line price from the FRAME_ONLY grade row.
-      // sale > 0 → use sale; otherwise MSRP.
-      frameOnlyGradePrice = frameOnlyGradeRow
-        ? Number(frameOnlyGradeRow.salePrice) > 0
-          ? String(frameOnlyGradeRow.salePrice)
-          : String(frameOnlyGradeRow.msrp)
-        : null;
     }
 
     const isGradeMode = gradePriceMap !== null;
 
-    // Grade-priced products require a fabric unless the variant has a
-    // FRAME_ONLY price row and no fabric was sent (customer explicitly chose
-    // frame only — no cushion/fabric to source from the vendor).
-    if (isGradeMode && !fabricId && !frameOnlyGradePrice) {
+    // Grade-priced products always require a fabric (it drives the line price),
+    // so the frame-only shortcut allowed above never applies in grade mode.
+    if (isGradeMode && !fabricId) {
       res.status(400).json({
         error: "Please choose a fabric before adding this item to your cart.",
       });
@@ -751,14 +727,6 @@ router.post(
         gradeLinePrice =
           Number(gp.salePrice) > 0 ? gp.salePrice : gp.msrp;
       }
-    }
-
-    // Frame-only in grade mode: no fabric chosen, price from the FRAME_ONLY
-    // grade row. This is distinct from the flat frameOnlyPrice (products table)
-    // used by non-grade products — for grade products the FRAME_ONLY grade row
-    // IS the price authority.
-    if (isGradeMode && !fabricId && frameOnlyGradePrice) {
-      gradeLinePrice = frameOnlyGradePrice;
     }
 
     // Minimum order quantity floor. Two independent sources can raise the floor:

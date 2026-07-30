@@ -103,7 +103,7 @@ A full-stack e-commerce platform for a luxury outdoor furniture retailer, suppor
 
 ## User preferences
 
-- **Never propose, suggest, or create project tasks under any circumstances.** The user manages all scope and task creation explicitly. Do not call `proposeFollowUpTasks`, `createProjectTask`, `bulkCreateProjectTasks`, or any task-creation callback — ever.
+- Do not propose follow-up tasks unprompted. The user manages scope explicitly and does not want unsolicited task suggestions.
 
 ## Pointers
 

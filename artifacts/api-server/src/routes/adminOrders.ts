@@ -1221,10 +1221,6 @@ router.put(
             fabricName = f.name;
             fabricBrand = f.brand ?? null;
             fabricGrade = it.grade ?? f.grade ?? null;
-          } else if (it.grade === "FRAME_ONLY") {
-            // Frame-only grade line: no fabric, but snapshot the grade so the
-            // vendor PO / email can print "Frame Only" instead of a blank.
-            fabricGrade = "FRAME_ONLY";
           }
           if (it.variantId != null && it.grade != null) {
             const [gp] = await tx
@@ -2029,10 +2025,6 @@ router.post(
             // (grade-priced products), else fall back to the fabric's own
             // classified grade.
             fabricGrade = it.grade ?? f.grade ?? null;
-          } else if (it.grade === "FRAME_ONLY") {
-            // Frame-only grade line: no fabric, but snapshot the grade so the
-            // vendor PO / email can print "Frame Only" instead of a blank.
-            fabricGrade = "FRAME_ONLY";
           }
           // Snapshot the unit MSRP for grade-priced products from
           // variant_grade_prices, matched on the selected variant + grade.

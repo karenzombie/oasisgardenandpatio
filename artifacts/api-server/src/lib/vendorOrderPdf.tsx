@@ -363,10 +363,7 @@ function optionWithSku(name: string | null, sku: string | null): string | null {
 
 // "Sunbrella — Spectrum Cilantro (48022)" — prefix the fabric line with its
 // brand and append grade so the vendor can match the exact fabric line.
-// For frame-only grade lines the fabric snapshot is null but the grade
-// snapshot is "FRAME_ONLY" — return a human-readable label in that case.
 function fabricOption(it: PdfVendorOrderItem): string | null {
-  if (it.fabricGradeSnapshot === "FRAME_ONLY") return "Frame Only";
   if (!it.fabricNameSnapshot) return null;
   const brand = it.fabricBrandSnapshot ? `${it.fabricBrandSnapshot} — ` : "";
   const base = optionWithSku(it.fabricNameSnapshot, it.fabricItemNumberSnapshot);
