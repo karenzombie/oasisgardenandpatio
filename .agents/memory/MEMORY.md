@@ -1,3 +1,4 @@
+- [No task suggestions — ever](no-task-suggestions.md) — never call proposeFollowUpTasks or any task-creation callback; user manages all scope explicitly.
 - [Pre/post-launch DB sync policy](launch-db-sync-policy.md) — launch=.com connected to prod flips prod to source-of-truth for customers/orders/vendor_orders/users; every post-launch publish needs a divergence report held for user approval.
 - [Staff/customer session cookie collision](staff-customer-session-collision.md) — customer Clerk sign-in regenerates the shared oasis.sid cookie, silently evicting a concurrent staff admin session (403s, not 401s).
 - [New tab loses session cookie](new-tab-loses-session-cookie.md) — window.open()/target=_blank to an auth-gated same-origin endpoint 401s in this embedded-preview env; render print views as same-tab in-app pages + window.print() instead.
