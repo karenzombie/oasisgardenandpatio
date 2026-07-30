@@ -1,0 +1,289 @@
+series,variant_sku,size,umbrella_hole,tile,tile_finish_id,tier,msrp,sale,cost
+Fresco,#P-24D,24x24,no,Canyon Taupe,25,standard,853.00,640.00,580.04
+Fresco,#P-24D,24x24,no,Summit Grey,34,standard,853.00,640.00,580.04
+Fresco,#P-24D,24x24,no,Cabaletta,24,upgrade,938.30,704.00,638.04
+Fresco,#P-24D,24x24,no,Cavatina,26,upgrade,938.30,704.00,638.04
+Fresco,#P-24D,24x24,no,Palazzo White,32,premium,1032.13,775.00,701.85
+Fresco,#P-24D,24x24,no,Palazzo Black,31,premium,1032.13,775.00,701.85
+Fresco,#P-30D,30x30,no,Canyon Taupe,25,standard,1164.00,873.00,791.52
+Fresco,#P-30D,30x30,no,Summit Grey,34,standard,1164.00,873.00,791.52
+Fresco,#P-30D,30x30,no,Cabaletta,24,upgrade,1280.40,961.00,870.67
+Fresco,#P-30D,30x30,no,Cavatina,26,upgrade,1280.40,961.00,870.67
+Fresco,#P-30D,30x30,no,Palazzo White,32,premium,1408.44,1057.00,957.74
+Fresco,#P-30D,30x30,no,Palazzo Black,31,premium,1408.44,1057.00,957.74
+Fresco,#P-42D,42x42,no,Canyon Taupe,25,standard,1991.00,1494.00,1353.88
+Fresco,#P-42D,42x42,no,Summit Grey,34,standard,1991.00,1494.00,1353.88
+Fresco,#P-42D,42x42,no,Cabaletta,24,upgrade,2190.10,1643.00,1489.27
+Fresco,#P-42D,42x42,no,Cavatina,26,upgrade,2190.10,1643.00,1489.27
+Fresco,#P-42D,42x42,no,Palazzo White,32,premium,2409.11,1807.00,1638.19
+Fresco,#P-42D,42x42,no,Palazzo Black,31,premium,2409.11,1807.00,1638.19
+Fresco,#P-42UD,42x42,YES,Canyon Taupe,25,standard,2092.00,1569.00,1422.56
+Fresco,#P-42UD,42x42,YES,Summit Grey,34,standard,2092.00,1569.00,1422.56
+Fresco,#P-42UD,42x42,YES,Cabaletta,24,upgrade,2301.20,1726.00,1564.82
+Fresco,#P-42UD,42x42,YES,Cavatina,26,upgrade,2301.20,1726.00,1564.82
+Fresco,#P-42UD,42x42,YES,Palazzo White,32,premium,2531.32,1899.00,1721.30
+Fresco,#P-42UD,42x42,YES,Palazzo Black,31,premium,2531.32,1899.00,1721.30
+Fresco,#P-54D,54x54,no,Canyon Taupe,25,standard,2901.00,2176.00,1972.68
+Fresco,#P-54D,54x54,no,Summit Grey,34,standard,2901.00,2176.00,1972.68
+Fresco,#P-54D,54x54,no,Cabaletta,24,upgrade,3191.10,2394.00,2169.95
+Fresco,#P-54D,54x54,no,Cavatina,26,upgrade,3191.10,2394.00,2169.95
+Fresco,#P-54D,54x54,no,Palazzo White,32,premium,3510.21,2633.00,2386.94
+Fresco,#P-54D,54x54,no,Palazzo Black,31,premium,3510.21,2633.00,2386.94
+Fresco,#P-54UD,54x54,YES,Canyon Taupe,25,standard,3003.00,2253.00,2042.04
+Fresco,#P-54UD,54x54,YES,Summit Grey,34,standard,3003.00,2253.00,2042.04
+Fresco,#P-54UD,54x54,YES,Cabaletta,24,upgrade,3303.30,2478.00,2246.24
+Fresco,#P-54UD,54x54,YES,Cavatina,26,upgrade,3303.30,2478.00,2246.24
+Fresco,#P-54UD,54x54,YES,Palazzo White,32,premium,3633.63,2726.00,2470.87
+Fresco,#P-54UD,54x54,YES,Palazzo Black,31,premium,3633.63,2726.00,2470.87
+Fresco,#P-2850RTD,28x50,no,Canyon Taupe,25,standard,1763.00,1323.00,1198.84
+Fresco,#P-2850RTD,28x50,no,Summit Grey,34,standard,1763.00,1323.00,1198.84
+Fresco,#P-2850RTD,28x50,no,Cabaletta,24,upgrade,1939.30,1455.00,1318.72
+Fresco,#P-2850RTD,28x50,no,Cavatina,26,upgrade,1939.30,1455.00,1318.72
+Fresco,#P-2850RTD,28x50,no,Palazzo White,32,premium,2133.23,1600.00,1450.60
+Fresco,#P-2850RTD,28x50,no,Palazzo Black,31,premium,2133.23,1600.00,1450.60
+Fresco,#P-3658RTD,36x58,no,Canyon Taupe,25,standard,3300.00,2475.00,2244.00
+Fresco,#P-3658RTD,36x58,no,Summit Grey,34,standard,3300.00,2475.00,2244.00
+Fresco,#P-3658RTD,36x58,no,Cabaletta,24,upgrade,3630.00,2723.00,2468.40
+Fresco,#P-3658RTD,36x58,no,Cavatina,26,upgrade,3630.00,2723.00,2468.40
+Fresco,#P-3658RTD,36x58,no,Palazzo White,32,premium,3993.00,2995.00,2715.24
+Fresco,#P-3658RTD,36x58,no,Palazzo Black,31,premium,3993.00,2995.00,2715.24
+Fresco,#P-3658RTUD,36x58,YES,Canyon Taupe,25,standard,3395.00,2547.00,2308.60
+Fresco,#P-3658RTUD,36x58,YES,Summit Grey,34,standard,3395.00,2547.00,2308.60
+Fresco,#P-3658RTUD,36x58,YES,Cabaletta,24,upgrade,3734.50,2801.00,2539.46
+Fresco,#P-3658RTUD,36x58,YES,Cavatina,26,upgrade,3734.50,2801.00,2539.46
+Fresco,#P-3658RTUD,36x58,YES,Palazzo White,32,premium,4107.95,3081.00,2793.41
+Fresco,#P-3658RTUD,36x58,YES,Palazzo Black,31,premium,4107.95,3081.00,2793.41
+Fresco,#P-4272RTD,42x72,no,Canyon Taupe,25,standard,3587.00,2691.00,2439.16
+Fresco,#P-4272RTD,42x72,no,Summit Grey,34,standard,3587.00,2691.00,2439.16
+Fresco,#P-4272RTD,42x72,no,Cabaletta,24,upgrade,3945.70,2960.00,2683.08
+Fresco,#P-4272RTD,42x72,no,Cavatina,26,upgrade,3945.70,2960.00,2683.08
+Fresco,#P-4272RTD,42x72,no,Palazzo White,32,premium,4340.27,3256.00,2951.38
+Fresco,#P-4272RTD,42x72,no,Palazzo Black,31,premium,4340.27,3256.00,2951.38
+Fresco,#P-4272RTUD,42x72,YES,Canyon Taupe,25,standard,3691.00,2769.00,2509.88
+Fresco,#P-4272RTUD,42x72,YES,Summit Grey,34,standard,3691.00,2769.00,2509.88
+Fresco,#P-4272RTUD,42x72,YES,Cabaletta,24,upgrade,4060.10,3046.00,2760.87
+Fresco,#P-4272RTUD,42x72,YES,Cavatina,26,upgrade,4060.10,3046.00,2760.87
+Fresco,#P-4272RTUD,42x72,YES,Palazzo White,32,premium,4466.11,3350.00,3036.95
+Fresco,#P-4272RTUD,42x72,YES,Palazzo Black,31,premium,4466.11,3350.00,3036.95
+Fresco,#P-4284RTD,42x84,no,Canyon Taupe,25,standard,3732.00,2799.00,2537.76
+Fresco,#P-4284RTD,42x84,no,Summit Grey,34,standard,3732.00,2799.00,2537.76
+Fresco,#P-4284RTD,42x84,no,Cabaletta,24,upgrade,4105.20,3079.00,2791.54
+Fresco,#P-4284RTD,42x84,no,Cavatina,26,upgrade,4105.20,3079.00,2791.54
+Fresco,#P-4284RTD,42x84,no,Palazzo White,32,premium,4515.72,3387.00,3070.69
+Fresco,#P-4284RTD,42x84,no,Palazzo Black,31,premium,4515.72,3387.00,3070.69
+Fresco,#P-4284RTUD,42x84,YES,Canyon Taupe,25,standard,3835.00,2877.00,2607.80
+Fresco,#P-4284RTUD,42x84,YES,Summit Grey,34,standard,3835.00,2877.00,2607.80
+Fresco,#P-4284RTUD,42x84,YES,Cabaletta,24,upgrade,4218.50,3164.00,2868.58
+Fresco,#P-4284RTUD,42x84,YES,Cavatina,26,upgrade,4218.50,3164.00,2868.58
+Fresco,#P-4284RTUD,42x84,YES,Palazzo White,32,premium,4640.35,3481.00,3155.44
+Fresco,#P-4284RTUD,42x84,YES,Palazzo Black,31,premium,4640.35,3481.00,3155.44
+Fresco,#P-42120RTD,42x120,no,Canyon Taupe,25,standard,5250.00,3938.00,3570.00
+Fresco,#P-42120RTD,42x120,no,Summit Grey,34,standard,5250.00,3938.00,3570.00
+Fresco,#P-42120RTD,42x120,no,Cabaletta,24,upgrade,5775.00,4332.00,3927.00
+Fresco,#P-42120RTD,42x120,no,Cavatina,26,upgrade,5775.00,4332.00,3927.00
+Fresco,#P-42120RTD,42x120,no,Palazzo White,32,premium,6352.50,4765.00,4319.70
+Fresco,#P-42120RTD,42x120,no,Palazzo Black,31,premium,6352.50,4765.00,4319.70
+Fresco,#P-24SQD,24x24,no,Canyon Taupe,25,standard,915.00,687.00,622.20
+Fresco,#P-24SQD,24x24,no,Summit Grey,34,standard,915.00,687.00,622.20
+Fresco,#P-24SQD,24x24,no,Cabaletta,24,upgrade,1006.50,755.00,684.42
+Fresco,#P-24SQD,24x24,no,Cavatina,26,upgrade,1006.50,755.00,684.42
+Fresco,#P-24SQD,24x24,no,Palazzo White,32,premium,1107.15,831.00,752.86
+Fresco,#P-24SQD,24x24,no,Palazzo Black,31,premium,1107.15,831.00,752.86
+Fresco,#P-36SQD,36x36,no,Canyon Taupe,25,standard,1306.00,980.00,888.08
+Fresco,#P-36SQD,36x36,no,Summit Grey,34,standard,1306.00,980.00,888.08
+Fresco,#P-36SQD,36x36,no,Cabaletta,24,upgrade,1436.60,1078.00,976.89
+Fresco,#P-36SQD,36x36,no,Cavatina,26,upgrade,1436.60,1078.00,976.89
+Fresco,#P-36SQD,36x36,no,Palazzo White,32,premium,1580.26,1186.00,1074.58
+Fresco,#P-36SQD,36x36,no,Palazzo Black,31,premium,1580.26,1186.00,1074.58
+Fresco,#P-42SQD,42x42,no,Canyon Taupe,25,standard,2202.00,1652.00,1497.36
+Fresco,#P-42SQD,42x42,no,Summit Grey,34,standard,2202.00,1652.00,1497.36
+Fresco,#P-42SQD,42x42,no,Cabaletta,24,upgrade,2422.20,1817.00,1647.10
+Fresco,#P-42SQD,42x42,no,Cavatina,26,upgrade,2422.20,1817.00,1647.10
+Fresco,#P-42SQD,42x42,no,Palazzo White,32,premium,2664.42,1999.00,1811.81
+Fresco,#P-42SQD,42x42,no,Palazzo Black,31,premium,2664.42,1999.00,1811.81
+Fresco,#P-42SQUD,42x42,YES,Canyon Taupe,25,standard,2299.00,1725.00,1563.32
+Fresco,#P-42SQUD,42x42,YES,Summit Grey,34,standard,2299.00,1725.00,1563.32
+Fresco,#P-42SQUD,42x42,YES,Cabaletta,24,upgrade,2528.90,1897.00,1719.65
+Fresco,#P-42SQUD,42x42,YES,Cavatina,26,upgrade,2528.90,1897.00,1719.65
+Fresco,#P-42SQUD,42x42,YES,Palazzo White,32,premium,2781.79,2087.00,1891.62
+Fresco,#P-42SQUD,42x42,YES,Palazzo Black,31,premium,2781.79,2087.00,1891.62
+City,#E-24D,24x24,no,Urban Pulse,35,standard,853.00,640.00,580.04
+City,#E-24D,24x24,no,Urban Shift,36,standard,853.00,640.00,580.04
+City,#E-30D,30x30,no,Urban Pulse,35,standard,1164.00,873.00,791.52
+City,#E-30D,30x30,no,Urban Shift,36,standard,1164.00,873.00,791.52
+City,#E-42D,42x42,no,Urban Pulse,35,standard,1991.00,1494.00,1353.88
+City,#E-42D,42x42,no,Urban Shift,36,standard,1991.00,1494.00,1353.88
+City,#E-42UD,42x42,YES,Urban Pulse,35,standard,2092.00,1569.00,1422.56
+City,#E-42UD,42x42,YES,Urban Shift,36,standard,2092.00,1569.00,1422.56
+City,#E-54D,54x54,no,Urban Pulse,35,standard,2901.00,2176.00,1972.68
+City,#E-54D,54x54,no,Urban Shift,36,standard,2901.00,2176.00,1972.68
+City,#E-54UD,54x54,YES,Urban Pulse,35,standard,3003.00,2253.00,2042.04
+City,#E-54UD,54x54,YES,Urban Shift,36,standard,3003.00,2253.00,2042.04
+City,#E-2850RTD,28x50,no,Urban Pulse,35,standard,1763.00,1323.00,1198.84
+City,#E-2850RTD,28x50,no,Urban Shift,36,standard,1763.00,1323.00,1198.84
+City,#E-3658RTD,36x58,no,Urban Pulse,35,standard,3300.00,2475.00,2244.00
+City,#E-3658RTD,36x58,no,Urban Shift,36,standard,3300.00,2475.00,2244.00
+City,#E-3658RTUD,36x58,YES,Urban Pulse,35,standard,3395.00,2547.00,2308.60
+City,#E-3658RTUD,36x58,YES,Urban Shift,36,standard,3395.00,2547.00,2308.60
+City,#E-4272RTD,42x72,no,Urban Pulse,35,standard,3416.00,2562.00,2322.88
+City,#E-4272RTD,42x72,no,Urban Shift,36,standard,3416.00,2562.00,2322.88
+City,#E-4272RTUD,42x72,YES,Urban Pulse,35,standard,3515.00,2637.00,2390.20
+City,#E-4272RTUD,42x72,YES,Urban Shift,36,standard,3515.00,2637.00,2390.20
+City,#E-4284RTD,42x84,no,Urban Pulse,35,standard,3732.00,2799.00,2537.76
+City,#E-4284RTD,42x84,no,Urban Shift,36,standard,3732.00,2799.00,2537.76
+City,#E-4284RTUD,42x84,YES,Urban Pulse,35,standard,3835.00,2877.00,2607.80
+City,#E-4284RTUD,42x84,YES,Urban Shift,36,standard,3835.00,2877.00,2607.80
+City,#E-42120RTD,42x120,no,Urban Pulse,35,standard,5250.00,3938.00,3570.00
+City,#E-42120RTD,42x120,no,Urban Shift,36,standard,5250.00,3938.00,3570.00
+City,#E-24SQD,24x24,no,Urban Pulse,35,standard,915.00,687.00,622.20
+City,#E-24SQD,24x24,no,Urban Shift,36,standard,915.00,687.00,622.20
+City,#E-36SQD,36x36,no,Urban Pulse,35,standard,1306.00,980.00,888.08
+City,#E-36SQD,36x36,no,Urban Shift,36,standard,1306.00,980.00,888.08
+City,#E-42SQD,42x42,no,Urban Pulse,35,standard,2202.00,1652.00,1497.36
+City,#E-42SQD,42x42,no,Urban Shift,36,standard,2202.00,1652.00,1497.36
+City,#E-42SQUD,42x42,YES,Urban Pulse,35,standard,2299.00,1725.00,1563.32
+City,#E-42SQUD,42x42,YES,Urban Shift,36,standard,2299.00,1725.00,1563.32
+Reclaimed,#W-24D,24x24,no,Myrtle Beach,30,upgrade,938.30,704.00,638.04
+Reclaimed,#W-24D,24x24,no,Atlantic City,21,upgrade,938.30,704.00,638.04
+Reclaimed,#W-30D,30x30,no,Myrtle Beach,30,upgrade,1280.40,961.00,870.67
+Reclaimed,#W-30D,30x30,no,Atlantic City,21,upgrade,1280.40,961.00,870.67
+Reclaimed,#W-42D,42x42,no,Myrtle Beach,30,upgrade,2190.10,1643.00,1489.27
+Reclaimed,#W-42D,42x42,no,Atlantic City,21,upgrade,2190.10,1643.00,1489.27
+Reclaimed,#W-42UD,42x42,YES,Myrtle Beach,30,upgrade,2301.20,1726.00,1564.82
+Reclaimed,#W-42UD,42x42,YES,Atlantic City,21,upgrade,2301.20,1726.00,1564.82
+Reclaimed,#W-54D,54x54,no,Myrtle Beach,30,upgrade,3191.10,2394.00,2169.95
+Reclaimed,#W-54D,54x54,no,Atlantic City,21,upgrade,3191.10,2394.00,2169.95
+Reclaimed,#W-54UD,54x54,YES,Myrtle Beach,30,upgrade,3303.30,2478.00,2246.24
+Reclaimed,#W-54UD,54x54,YES,Atlantic City,21,upgrade,3303.30,2478.00,2246.24
+Reclaimed,#W-2850RTD,28x50,no,Myrtle Beach,30,upgrade,1939.30,1455.00,1318.72
+Reclaimed,#W-2850RTD,28x50,no,Atlantic City,21,upgrade,1939.30,1455.00,1318.72
+Reclaimed,#W-3658RTD,36x58,no,Myrtle Beach,30,upgrade,3630.00,2723.00,2468.40
+Reclaimed,#W-3658RTD,36x58,no,Atlantic City,21,upgrade,3630.00,2723.00,2468.40
+Reclaimed,#W-3658RTUD,36x58,YES,Myrtle Beach,30,upgrade,3734.50,2801.00,2539.46
+Reclaimed,#W-3658RTUD,36x58,YES,Atlantic City,21,upgrade,3734.50,2801.00,2539.46
+Reclaimed,#W-4272RTD,42x72,no,Myrtle Beach,30,upgrade,3945.70,2960.00,2683.08
+Reclaimed,#W-4272RTD,42x72,no,Atlantic City,21,upgrade,3945.70,2960.00,2683.08
+Reclaimed,#W-4272RTUD,42x72,YES,Myrtle Beach,30,upgrade,4060.10,3046.00,2760.87
+Reclaimed,#W-4272RTUD,42x72,YES,Atlantic City,21,upgrade,4060.10,3046.00,2760.87
+Reclaimed,#W-4284RTD,42x84,no,Myrtle Beach,30,upgrade,4105.20,3079.00,2791.54
+Reclaimed,#W-4284RTD,42x84,no,Atlantic City,21,upgrade,4105.20,3079.00,2791.54
+Reclaimed,#W-4284RTUD,42x84,YES,Myrtle Beach,30,upgrade,4218.50,3164.00,2868.58
+Reclaimed,#W-4284RTUD,42x84,YES,Atlantic City,21,upgrade,4218.50,3164.00,2868.58
+Reclaimed,#W-42120RTD,42x120,no,Myrtle Beach,30,upgrade,5775.00,4332.00,3927.00
+Reclaimed,#W-42120RTD,42x120,no,Atlantic City,21,upgrade,5775.00,4332.00,3927.00
+Reclaimed,#W-24SQD,24x24,no,Myrtle Beach,30,upgrade,1006.50,755.00,684.42
+Reclaimed,#W-24SQD,24x24,no,Atlantic City,21,upgrade,1006.50,755.00,684.42
+Reclaimed,#W-36SQD,36x36,no,Myrtle Beach,30,upgrade,1436.60,1078.00,976.89
+Reclaimed,#W-36SQD,36x36,no,Atlantic City,21,upgrade,1436.60,1078.00,976.89
+Reclaimed,#W-42SQD,42x42,no,Myrtle Beach,30,upgrade,2422.20,1817.00,1647.10
+Reclaimed,#W-42SQD,42x42,no,Atlantic City,21,upgrade,2422.20,1817.00,1647.10
+Reclaimed,#W-42SQUD,42x42,YES,Myrtle Beach,30,upgrade,2528.90,1897.00,1719.65
+Reclaimed,#W-42SQUD,42x42,YES,Atlantic City,21,upgrade,2528.90,1897.00,1719.65
+Dakota,#D-24D,24x24,no,Venice Beach,37,upgrade,938.30,704.00,638.04
+Dakota,#D-24D,24x24,no,Buckskin,23,premium,1032.13,775.00,701.85
+Dakota,#D-24D,24x24,no,Silver Oak,33,premium,1032.13,775.00,701.85
+Dakota,#D-24D,24x24,no,Blackwood,22,premium,1032.13,775.00,701.85
+Dakota,#D-30D,30x30,no,Venice Beach,37,upgrade,1280.40,961.00,870.67
+Dakota,#D-30D,30x30,no,Buckskin,23,premium,1408.44,1057.00,957.74
+Dakota,#D-30D,30x30,no,Silver Oak,33,premium,1408.44,1057.00,957.74
+Dakota,#D-30D,30x30,no,Blackwood,22,premium,1408.44,1057.00,957.74
+Dakota,#D-42D,42x42,no,Venice Beach,37,upgrade,2190.10,1643.00,1489.27
+Dakota,#D-42D,42x42,no,Buckskin,23,premium,2409.11,1807.00,1638.19
+Dakota,#D-42D,42x42,no,Silver Oak,33,premium,2409.11,1807.00,1638.19
+Dakota,#D-42D,42x42,no,Blackwood,22,premium,2409.11,1807.00,1638.19
+Dakota,#D-42UD,42x42,YES,Venice Beach,37,upgrade,2301.20,1726.00,1564.82
+Dakota,#D-42UD,42x42,YES,Buckskin,23,premium,2531.32,1899.00,1721.30
+Dakota,#D-42UD,42x42,YES,Silver Oak,33,premium,2531.32,1899.00,1721.30
+Dakota,#D-42UD,42x42,YES,Blackwood,22,premium,2531.32,1899.00,1721.30
+Dakota,#D-54D,54x54,no,Venice Beach,37,upgrade,3191.10,2394.00,2169.95
+Dakota,#D-54D,54x54,no,Buckskin,23,premium,3510.21,2633.00,2386.94
+Dakota,#D-54D,54x54,no,Silver Oak,33,premium,3510.21,2633.00,2386.94
+Dakota,#D-54D,54x54,no,Blackwood,22,premium,3510.21,2633.00,2386.94
+Dakota,#D-54UD,54x54,YES,Venice Beach,37,upgrade,3303.30,2478.00,2246.24
+Dakota,#D-54UD,54x54,YES,Buckskin,23,premium,3633.63,2726.00,2470.87
+Dakota,#D-54UD,54x54,YES,Silver Oak,33,premium,3633.63,2726.00,2470.87
+Dakota,#D-54UD,54x54,YES,Blackwood,22,premium,3633.63,2726.00,2470.87
+Dakota,#D-2850RTD,28x50,no,Venice Beach,37,upgrade,1939.30,1455.00,1318.72
+Dakota,#D-2850RTD,28x50,no,Buckskin,23,premium,2133.23,1600.00,1450.60
+Dakota,#D-2850RTD,28x50,no,Silver Oak,33,premium,2133.23,1600.00,1450.60
+Dakota,#D-2850RTD,28x50,no,Blackwood,22,premium,2133.23,1600.00,1450.60
+Dakota,#D-3658RTD,36x58,no,Venice Beach,37,upgrade,3630.00,2723.00,2468.40
+Dakota,#D-3658RTD,36x58,no,Buckskin,23,premium,3993.00,2995.00,2715.24
+Dakota,#D-3658RTD,36x58,no,Silver Oak,33,premium,3993.00,2995.00,2715.24
+Dakota,#D-3658RTD,36x58,no,Blackwood,22,premium,3993.00,2995.00,2715.24
+Dakota,#D-3658RTUD,36x58,YES,Venice Beach,37,upgrade,3734.50,2801.00,2539.46
+Dakota,#D-3658RTUD,36x58,YES,Buckskin,23,premium,4107.95,3081.00,2793.41
+Dakota,#D-3658RTUD,36x58,YES,Silver Oak,33,premium,4107.95,3081.00,2793.41
+Dakota,#D-3658RTUD,36x58,YES,Blackwood,22,premium,4107.95,3081.00,2793.41
+Dakota,#D-4272RTD,42x72,no,Venice Beach,37,upgrade,3945.70,2960.00,2683.08
+Dakota,#D-4272RTD,42x72,no,Buckskin,23,premium,4340.27,3256.00,2951.38
+Dakota,#D-4272RTD,42x72,no,Silver Oak,33,premium,4340.27,3256.00,2951.38
+Dakota,#D-4272RTD,42x72,no,Blackwood,22,premium,4340.27,3256.00,2951.38
+Dakota,#D-4272RTUD,42x72,YES,Venice Beach,37,upgrade,4060.10,3046.00,2760.87
+Dakota,#D-4272RTUD,42x72,YES,Buckskin,23,premium,4466.11,3350.00,3036.95
+Dakota,#D-4272RTUD,42x72,YES,Silver Oak,33,premium,4466.11,3350.00,3036.95
+Dakota,#D-4272RTUD,42x72,YES,Blackwood,22,premium,4466.11,3350.00,3036.95
+Dakota,#D-4284RTD,42x84,no,Venice Beach,37,upgrade,4105.20,3079.00,2791.54
+Dakota,#D-4284RTD,42x84,no,Buckskin,23,premium,4515.72,3387.00,3070.69
+Dakota,#D-4284RTD,42x84,no,Silver Oak,33,premium,4515.72,3387.00,3070.69
+Dakota,#D-4284RTD,42x84,no,Blackwood,22,premium,4515.72,3387.00,3070.69
+Dakota,#D-4284RTUD,42x84,YES,Venice Beach,37,upgrade,4218.50,3164.00,2868.58
+Dakota,#D-4284RTUD,42x84,YES,Buckskin,23,premium,4640.35,3481.00,3155.44
+Dakota,#D-4284RTUD,42x84,YES,Silver Oak,33,premium,4640.35,3481.00,3155.44
+Dakota,#D-4284RTUD,42x84,YES,Blackwood,22,premium,4640.35,3481.00,3155.44
+Dakota,#D-42120RTD,42x120,no,Venice Beach,37,upgrade,5775.00,4332.00,3927.00
+Dakota,#D-42120RTD,42x120,no,Buckskin,23,premium,6352.50,4765.00,4319.70
+Dakota,#D-42120RTD,42x120,no,Silver Oak,33,premium,6352.50,4765.00,4319.70
+Dakota,#D-42120RTD,42x120,no,Blackwood,22,premium,6352.50,4765.00,4319.70
+Dakota,#D-24SQD,24x24,no,Venice Beach,37,upgrade,1006.50,755.00,684.42
+Dakota,#D-24SQD,24x24,no,Buckskin,23,premium,1107.15,831.00,752.86
+Dakota,#D-24SQD,24x24,no,Silver Oak,33,premium,1107.15,831.00,752.86
+Dakota,#D-24SQD,24x24,no,Blackwood,22,premium,1107.15,831.00,752.86
+Dakota,#D-36SQD,36x36,no,Venice Beach,37,upgrade,1436.60,1078.00,976.89
+Dakota,#D-36SQD,36x36,no,Buckskin,23,premium,1580.26,1186.00,1074.58
+Dakota,#D-36SQD,36x36,no,Silver Oak,33,premium,1580.26,1186.00,1074.58
+Dakota,#D-36SQD,36x36,no,Blackwood,22,premium,1580.26,1186.00,1074.58
+Dakota,#D-42SQD,42x42,no,Venice Beach,37,upgrade,2422.20,1817.00,1647.10
+Dakota,#D-42SQD,42x42,no,Buckskin,23,premium,2664.42,1999.00,1811.81
+Dakota,#D-42SQD,42x42,no,Silver Oak,33,premium,2664.42,1999.00,1811.81
+Dakota,#D-42SQD,42x42,no,Blackwood,22,premium,2664.42,1999.00,1811.81
+Dakota,#D-42SQUD,42x42,YES,Venice Beach,37,upgrade,2528.90,1897.00,1719.65
+Dakota,#D-42SQUD,42x42,YES,Buckskin,23,premium,2781.79,2087.00,1891.62
+Dakota,#D-42SQUD,42x42,YES,Silver Oak,33,premium,2781.79,2087.00,1891.62
+Dakota,#D-42SQUD,42x42,YES,Blackwood,22,premium,2781.79,2087.00,1891.62
+Valencia,#V-24D,24x24,no,Trullo,63,premium,1032.13,775.00,701.85
+Valencia,#V-24D,24x24,no,Cielo,54,premium,1032.13,775.00,701.85
+Valencia,#V-30D,30x30,no,Trullo,63,premium,1408.44,1057.00,957.74
+Valencia,#V-30D,30x30,no,Cielo,54,premium,1408.44,1057.00,957.74
+Valencia,#V-42D,42x42,no,Trullo,63,premium,2409.11,1807.00,1638.19
+Valencia,#V-42D,42x42,no,Cielo,54,premium,2409.11,1807.00,1638.19
+Valencia,#V-42UD,42x42,YES,Trullo,63,premium,2531.32,1899.00,1721.30
+Valencia,#V-42UD,42x42,YES,Cielo,54,premium,2531.32,1899.00,1721.30
+Valencia,#V-54D,54x54,no,Trullo,63,premium,3510.21,2633.00,2386.94
+Valencia,#V-54D,54x54,no,Cielo,54,premium,3510.21,2633.00,2386.94
+Valencia,#V-54UD,54x54,YES,Trullo,63,premium,3633.63,2726.00,2470.87
+Valencia,#V-54UD,54x54,YES,Cielo,54,premium,3633.63,2726.00,2470.87
+Valencia,#V-2850RTD,28x50,no,Trullo,63,premium,2133.23,1600.00,1450.60
+Valencia,#V-2850RTD,28x50,no,Cielo,54,premium,2133.23,1600.00,1450.60
+Valencia,#V-3658RTD,36x58,no,Trullo,63,premium,3993.00,2995.00,2715.24
+Valencia,#V-3658RTD,36x58,no,Cielo,54,premium,3993.00,2995.00,2715.24
+Valencia,#V-3658RTUD,36x58,YES,Trullo,63,premium,4107.95,3081.00,2793.41
+Valencia,#V-3658RTUD,36x58,YES,Cielo,54,premium,4107.95,3081.00,2793.41
+Valencia,#V-4272RTD,42x72,no,Trullo,63,premium,4340.27,3256.00,2951.38
+Valencia,#V-4272RTD,42x72,no,Cielo,54,premium,4340.27,3256.00,2951.38
+Valencia,#V-4272RTUD,42x72,YES,Trullo,63,premium,4466.11,3350.00,3036.95
+Valencia,#V-4272RTUD,42x72,YES,Cielo,54,premium,4466.11,3350.00,3036.95
+Valencia,#V-4284RTD,42x84,no,Trullo,63,premium,4515.72,3387.00,3070.69
+Valencia,#V-4284RTD,42x84,no,Cielo,54,premium,4515.72,3387.00,3070.69
+Valencia,#V-4284RTUD,42x84,YES,Trullo,63,premium,4640.35,3481.00,3155.44
+Valencia,#V-4284RTUD,42x84,YES,Cielo,54,premium,4640.35,3481.00,3155.44
+Valencia,#V-42120RTD,42x120,no,Trullo,63,premium,6352.50,4765.00,4319.70
+Valencia,#V-42120RTD,42x120,no,Cielo,54,premium,6352.50,4765.00,4319.70
+Valencia,#V-24SQD,24x24,no,Trullo,63,premium,1107.15,831.00,752.86
+Valencia,#V-24SQD,24x24,no,Cielo,54,premium,1107.15,831.00,752.86
+Valencia,#V-36SQD,36x36,no,Trullo,63,premium,1580.26,1186.00,1074.58
+Valencia,#V-36SQD,36x36,no,Cielo,54,premium,1580.26,1186.00,1074.58
+Valencia,#V-42SQD,42x42,no,Trullo,63,premium,2664.42,1999.00,1811.81
+Valencia,#V-42SQD,42x42,no,Cielo,54,premium,2664.42,1999.00,1811.81
+Valencia,#V-42SQUD,42x42,YES,Trullo,63,premium,2781.79,2087.00,1891.62
+Valencia,#V-42SQUD,42x42,YES,Cielo,54,premium,2781.79,2087.00,1891.62
