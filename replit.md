@@ -101,6 +101,10 @@ A full-stack e-commerce platform for a luxury outdoor furniture retailer, suppor
 - The inventory mode exclusivity (variant rows vs. variant-null rows for the same product) is enforced at the application layer, not purely via DB constraints.
 - Admin portal pricing calculations (tax, shipping) for new orders mirror customer-facing logic; overrides are possible.
 
+## User preferences
+
+- Do not propose follow-up tasks unprompted. The user manages scope explicitly and does not want unsolicited task suggestions.
+
 ## Pointers
 
 - **OpenAPI Specification**: `lib/api-spec/openapi.yaml` for API contract details.
