@@ -11397,6 +11397,9 @@ components:
         salePrice:
           type: string
           description: Decimal sale price for this configuration at this grade.
+        cost:
+          type: ["string", "null"]
+          description: Staff-only cost for this configuration at this grade. Never returned on customer-facing endpoints.
       required:
         - grade
         - msrp

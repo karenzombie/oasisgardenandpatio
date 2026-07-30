@@ -348,7 +348,7 @@ export default function ProductEdit() {
 
   // Variants + per-grade pricing (umbrella vents, cover sizes, frame/base
   // finishes, etc.). The full set is replaced on save.
-  type GradePriceDraft = { grade: string; msrp: string; salePrice: string };
+  type GradePriceDraft = { grade: string; msrp: string; salePrice: string; cost: string };
   type VariantDraft = {
     key: string;
     variantSku: string;
@@ -480,6 +480,7 @@ export default function ProductEdit() {
               grade: g.grade,
               msrp: g.msrp,
               salePrice: g.salePrice,
+              cost: g.cost ?? "",
             })),
           }),
         ),
@@ -946,6 +947,7 @@ export default function ProductEdit() {
                     grade: g.grade.trim(),
                     msrp: g.msrp.trim(),
                     salePrice: g.salePrice.trim(),
+                    cost: g.cost.trim() === "" ? undefined : g.cost.trim(),
                   })),
               })),
             },
@@ -2350,6 +2352,7 @@ export default function ProductEdit() {
                                             grade: "",
                                             msrp: "",
                                             salePrice: "",
+                                            cost: "",
                                           },
                                         ],
                                       }
@@ -2371,7 +2374,7 @@ export default function ProductEdit() {
                             {v.gradePrices.map((g, gi) => (
                               <div
                                 key={gi}
-                                className="grid grid-cols-[80px_1fr_1fr_auto] gap-2 items-center"
+                                className="grid grid-cols-[80px_1fr_1fr_1fr_auto] gap-2 items-center"
                               >
                                 <Input
                                   placeholder="Grade"
@@ -2437,6 +2440,30 @@ export default function ProductEdit() {
                                                         ...y,
                                                         salePrice:
                                                           e.target.value,
+                                                      }
+                                                    : y,
+                                              ),
+                                            }
+                                          : x,
+                                      ),
+                                    )
+                                  }
+                                />
+                                <Input
+                                  placeholder="Cost"
+                                  value={g.cost}
+                                  onChange={(e) =>
+                                    setVariants((cur) =>
+                                      cur.map((x, i) =>
+                                        i === vi
+                                          ? {
+                                              ...x,
+                                              gradePrices: x.gradePrices.map(
+                                                (y, j) =>
+                                                  j === gi
+                                                    ? {
+                                                        ...y,
+                                                        cost: e.target.value,
                                                       }
                                                     : y,
                                               ),

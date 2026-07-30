@@ -1436,6 +1436,7 @@ async function loadVariantsConfig(productId: number) {
       grade: variantGradePricesTable.grade,
       msrp: variantGradePricesTable.msrp,
       salePrice: variantGradePricesTable.salePrice,
+      cost: variantGradePricesTable.cost,
     })
     .from(variantGradePricesTable)
     .where(
@@ -1446,10 +1447,10 @@ async function loadVariantsConfig(productId: number) {
     )
     .orderBy(asc(variantGradePricesTable.grade));
 
-  const byVariant = new Map<number, { grade: string; msrp: string; salePrice: string }[]>();
+  const byVariant = new Map<number, { grade: string; msrp: string; salePrice: string; cost: string | null }[]>();
   for (const p of prices) {
     const list = byVariant.get(p.variantId) ?? [];
-    list.push({ grade: p.grade, msrp: p.msrp, salePrice: p.salePrice });
+    list.push({ grade: p.grade, msrp: p.msrp, salePrice: p.salePrice, cost: p.cost != null ? String(p.cost) : null });
     byVariant.set(p.variantId, list);
   }
 
@@ -1613,7 +1614,8 @@ router.put(
         if (
           g.grade.trim() === "" ||
           !money.test(g.msrp.trim()) ||
-          !money.test(g.salePrice.trim())
+          !money.test(g.salePrice.trim()) ||
+          (g.cost != null && g.cost.trim() !== "" && !money.test(g.cost.trim()))
         ) {
           res.status(400).json({
             error: `Invalid grade price for variant "${v.variantSku}"`,
@@ -1709,6 +1711,7 @@ router.put(
                 grade: g.grade.trim(),
                 msrp: g.msrp,
                 salePrice: g.salePrice,
+                cost: g.cost != null && g.cost.trim() !== "" ? g.cost.trim() : null,
               })),
             );
           }

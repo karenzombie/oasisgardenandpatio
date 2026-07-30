@@ -4749,6 +4749,11 @@ export interface AdminVariantGradePrice {
   msrp: string;
   /** Decimal sale price for this configuration at this grade. */
   salePrice: string;
+  /**
+   * Staff-only cost for this configuration at this grade. Never returned on customer-facing endpoints.
+   * @nullable
+   */
+  cost?: string | null;
 }
 
 export interface AdminProductVariant {

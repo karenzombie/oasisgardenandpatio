@@ -5276,6 +5276,12 @@ export const AdminGetProductVariantsResponse = zod.object({
             .describe(
               "Decimal sale price for this configuration at this grade.",
             ),
+          cost: zod
+            .string()
+            .nullish()
+            .describe(
+              "Staff-only cost for this configuration at this grade. Never returned on customer-facing endpoints.",
+            ),
         }),
       ),
     }),
@@ -5347,6 +5353,12 @@ export const AdminUpdateProductVariantsBody = zod.object({
               .describe(
                 "Decimal sale price for this configuration at this grade.",
               ),
+            cost: zod
+              .string()
+              .nullish()
+              .describe(
+                "Staff-only cost for this configuration at this grade. Never returned on customer-facing endpoints.",
+              ),
           }),
         ),
       }),
@@ -5408,6 +5420,12 @@ export const AdminUpdateProductVariantsResponse = zod.object({
             .string()
             .describe(
               "Decimal sale price for this configuration at this grade.",
+            ),
+          cost: zod
+            .string()
+            .nullish()
+            .describe(
+              "Staff-only cost for this configuration at this grade. Never returned on customer-facing endpoints.",
             ),
         }),
       ),
