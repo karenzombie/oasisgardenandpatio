@@ -189,6 +189,7 @@ export const variantGradePricesTable = pgTable(
     grade: text("grade").notNull(),
     msrp: numeric("msrp", { precision: 10, scale: 2 }).notNull(),
     salePrice: numeric("sale_price", { precision: 10, scale: 2 }).notNull(),
+    cost: numeric("cost", { precision: 10, scale: 2 }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
