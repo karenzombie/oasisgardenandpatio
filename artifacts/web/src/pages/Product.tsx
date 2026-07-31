@@ -2754,7 +2754,10 @@ export default function Product() {
             </>
           )}
 
-          <CompatibleRecommendations sku={data.sku} />
+          <CompatibleRecommendations
+            sku={data.sku}
+            variantSku={selectedVariant?.sku ?? null}
+          />
 
           {/* Meta */}
           <dl className="mt-8 pt-6 border-t border-border space-y-2 text-sm">

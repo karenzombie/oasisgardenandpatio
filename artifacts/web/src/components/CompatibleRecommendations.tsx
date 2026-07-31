@@ -11,18 +11,42 @@ const INITIAL_VISIBLE = 4;
  * that are active + available for online purchase, and sorts the recommended
  * pick first). Renders nothing when there is nothing to show — no empty state.
  * Each card links to that item's own PDP; there is no inline add-to-cart.
+ *
+ * Some products (OW Lee table tops) key their recommendations off the selected
+ * VARIANT sku instead of the product sku — each top size fits different bases.
+ * Pass `variantSku` for those; variant-level matches take precedence and the
+ * product-level lookup stays as the fallback so umbrella-style product-keyed
+ * recommendations are unaffected.
  */
-export function CompatibleRecommendations({ sku }: { sku: string }) {
+export function CompatibleRecommendations({
+  sku,
+  variantSku,
+}: {
+  sku: string;
+  variantSku?: string | null;
+}) {
   const { data } = useListProductRecommendations(sku);
+  // Variant skus can contain characters like "#" that break a raw URL path;
+  // pre-encode (Express decodes it back before the route param is read).
+  const variantLookup = variantSku && variantSku !== sku ? variantSku : "";
+  // When no distinct variant sku applies, look up the product sku again — the
+  // query key matches the first hook, so react-query dedupes it (no extra
+  // request) and we avoid conditional-hook gymnastics.
+  const { data: variantData } = useListProductRecommendations(
+    encodeURIComponent(variantLookup !== "" ? variantLookup : sku),
+  );
   const [expanded, setExpanded] = useState(false);
 
-  // Collapse back to the first 4 whenever we land on a different product so the
-  // "Show all" reveal never leaks across PDP navigation in the SPA.
+  // Collapse back to the first 4 whenever we land on a different product or
+  // configuration so the "Show all" reveal never leaks across navigation.
   useEffect(() => {
     setExpanded(false);
-  }, [sku]);
+  }, [sku, variantLookup]);
 
-  const items = data ?? [];
+  const items =
+    variantLookup !== "" && (variantData?.length ?? 0) > 0
+      ? (variantData ?? [])
+      : (data ?? []);
   if (items.length === 0) return null;
 
   const hasMore = items.length > INITIAL_VISIBLE;
