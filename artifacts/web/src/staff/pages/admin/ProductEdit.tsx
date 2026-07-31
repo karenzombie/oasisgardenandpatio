@@ -479,7 +479,7 @@ export default function ProductEdit() {
             gradePrices: v.gradePrices.map((g) => ({
               grade: g.grade,
               msrp: g.msrp,
-              salePrice: g.salePrice,
+              salePrice: g.salePrice ?? "",
               cost: g.cost ?? "",
             })),
           }),
@@ -938,15 +938,13 @@ export default function ProductEdit() {
                 isActive: v.isActive,
                 gradePrices: v.gradePrices
                   .filter(
-                    (g) =>
-                      g.grade.trim() !== "" &&
-                      g.msrp.trim() !== "" &&
-                      g.salePrice.trim() !== "",
+                    (g) => g.grade.trim() !== "" && g.msrp.trim() !== "",
                   )
                   .map((g) => ({
                     grade: g.grade.trim(),
                     msrp: g.msrp.trim(),
-                    salePrice: g.salePrice.trim(),
+                    salePrice:
+                      g.salePrice.trim() === "" ? undefined : g.salePrice.trim(),
                     cost: g.cost.trim() === "" ? undefined : g.cost.trim(),
                   })),
               })),

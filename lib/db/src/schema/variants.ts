@@ -188,7 +188,9 @@ export const variantGradePricesTable = pgTable(
     // "A+", "B", "C", "D", "E", "F"). Case-sensitive match at lookup time.
     grade: text("grade").notNull(),
     msrp: numeric("msrp", { precision: 10, scale: 2 }).notNull(),
-    salePrice: numeric("sale_price", { precision: 10, scale: 2 }).notNull(),
+    // Nullable: OW Lee seating rows are seeded with MSRP only; sale prices are
+    // entered later by staff. All price consumers fall back to msrp when null.
+    salePrice: numeric("sale_price", { precision: 10, scale: 2 }),
     cost: numeric("cost", { precision: 10, scale: 2 }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()

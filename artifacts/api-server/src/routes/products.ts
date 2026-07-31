@@ -847,14 +847,14 @@ router.get(
 
     const gradePricesByVariant = new Map<
       number,
-      { grade: string; msrp: string; salePrice: string }[]
+      { grade: string; msrp: string; salePrice: string | null }[]
     >();
     for (const gp of gradePriceRows) {
       const list = gradePricesByVariant.get(gp.variantId) ?? [];
       list.push({
         grade: gp.grade,
         msrp: String(gp.msrp),
-        salePrice: String(gp.salePrice),
+        salePrice: gp.salePrice != null ? String(gp.salePrice) : null,
       });
       gradePricesByVariant.set(gp.variantId, list);
     }

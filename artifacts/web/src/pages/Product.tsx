@@ -423,9 +423,9 @@ export default function Product() {
 
   // Map of grade -> {msrp, salePrice} for the currently selected configuration.
   const gradePriceMap = useMemo(() => {
-    const m = new Map<string, { msrp: string; salePrice: string }>();
+    const m = new Map<string, { msrp: string; salePrice: string | null }>();
     for (const gp of selectedVariant?.gradePrices ?? []) {
-      m.set(gp.grade, { msrp: gp.msrp, salePrice: gp.salePrice });
+      m.set(gp.grade, { msrp: gp.msrp, salePrice: gp.salePrice ?? null });
     }
     return m;
   }, [selectedVariant]);

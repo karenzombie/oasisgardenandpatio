@@ -11,6 +11,9 @@ export interface CatalogVariantGradePrice {
   grade: string;
   /** Decimal MSRP for this configuration at this grade. */
   msrp: string;
-  /** Decimal sale price for this configuration at this grade. */
-  salePrice: string;
+  /**
+   * Decimal sale price for this configuration at this grade. Null when no sale price has been set (display falls back to MSRP).
+   * @nullable
+   */
+  salePrice: string | null;
 }

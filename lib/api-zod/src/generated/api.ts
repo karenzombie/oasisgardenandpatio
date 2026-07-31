@@ -690,8 +690,9 @@ export const GetCatalogProductBySlugResponse = zod
                     ),
                   salePrice: zod
                     .string()
+                    .nullable()
                     .describe(
-                      "Decimal sale price for this configuration at this grade.",
+                      "Decimal sale price for this configuration at this grade. Null when no sale price has been set (display falls back to MSRP).",
                     ),
                 }),
               )
@@ -924,8 +925,9 @@ export const GetCatalogProductBySlugResponse = zod
                       ),
                     salePrice: zod
                       .string()
+                      .nullable()
                       .describe(
-                        "Decimal sale price for this configuration at this grade.",
+                        "Decimal sale price for this configuration at this grade. Null when no sale price has been set (display falls back to MSRP).",
                       ),
                   }),
                 )
@@ -4773,8 +4775,9 @@ export const AdminGetProductPickerResponse = zod
                 .describe("Decimal MSRP for this configuration at this grade."),
               salePrice: zod
                 .string()
+                .nullable()
                 .describe(
-                  "Decimal sale price for this configuration at this grade.",
+                  "Decimal sale price for this configuration at this grade. Null when no sale price has been set (display falls back to MSRP).",
                 ),
             }),
           )
@@ -5273,8 +5276,9 @@ export const AdminGetProductVariantsResponse = zod.object({
             .describe("Decimal MSRP for this configuration at this grade."),
           salePrice: zod
             .string()
+            .nullish()
             .describe(
-              "Decimal sale price for this configuration at this grade.",
+              "Decimal sale price for this configuration at this grade. Null when no sale price has been set.",
             ),
           cost: zod
             .string()
@@ -5350,8 +5354,9 @@ export const AdminUpdateProductVariantsBody = zod.object({
               .describe("Decimal MSRP for this configuration at this grade."),
             salePrice: zod
               .string()
+              .nullish()
               .describe(
-                "Decimal sale price for this configuration at this grade.",
+                "Decimal sale price for this configuration at this grade. Null when no sale price has been set.",
               ),
             cost: zod
               .string()
@@ -5418,8 +5423,9 @@ export const AdminUpdateProductVariantsResponse = zod.object({
             .describe("Decimal MSRP for this configuration at this grade."),
           salePrice: zod
             .string()
+            .nullish()
             .describe(
-              "Decimal sale price for this configuration at this grade.",
+              "Decimal sale price for this configuration at this grade. Null when no sale price has been set.",
             ),
           cost: zod
             .string()

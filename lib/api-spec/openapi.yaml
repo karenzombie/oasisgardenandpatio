@@ -8427,8 +8427,8 @@ components:
           type: string
           description: Decimal MSRP for this configuration at this grade.
         salePrice:
-          type: string
-          description: Decimal sale price for this configuration at this grade.
+          type: ["string", "null"]
+          description: Decimal sale price for this configuration at this grade. Null when no sale price has been set (display falls back to MSRP).
       required:
         - grade
         - msrp
@@ -11395,15 +11395,14 @@ components:
           type: string
           description: Decimal MSRP for this configuration at this grade.
         salePrice:
-          type: string
-          description: Decimal sale price for this configuration at this grade.
+          type: ["string", "null"]
+          description: Decimal sale price for this configuration at this grade. Null when no sale price has been set.
         cost:
           type: ["string", "null"]
           description: Staff-only cost for this configuration at this grade. Never returned on customer-facing endpoints.
       required:
         - grade
         - msrp
-        - salePrice
     AdminProductVariant:
       type: object
       properties:

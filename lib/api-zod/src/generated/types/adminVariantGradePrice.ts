@@ -11,8 +11,11 @@ export interface AdminVariantGradePrice {
   grade: string;
   /** Decimal MSRP for this configuration at this grade. */
   msrp: string;
-  /** Decimal sale price for this configuration at this grade. */
-  salePrice: string;
+  /**
+   * Decimal sale price for this configuration at this grade. Null when no sale price has been set.
+   * @nullable
+   */
+  salePrice?: string | null;
   /**
    * Staff-only cost for this configuration at this grade. Never returned on customer-facing endpoints.
    * @nullable

@@ -478,7 +478,7 @@ router.post(
       minOrderQty: number | null;
       excludeStripeFabrics: boolean;
     } | null = null;
-    let gradePriceMap: Map<string, { msrp: string; salePrice: string }> | null =
+    let gradePriceMap: Map<string, { msrp: string; salePrice: string | null }> | null =
       null;
     if (variantId) {
       const [variant] = await db
@@ -531,7 +531,10 @@ router.post(
         gradePriceMap = new Map(
           gradeRows.map((g) => [
             g.grade,
-            { msrp: String(g.msrp), salePrice: String(g.salePrice) },
+            {
+              msrp: String(g.msrp),
+              salePrice: g.salePrice != null ? String(g.salePrice) : null,
+            },
           ]),
         );
       }
@@ -725,7 +728,9 @@ router.post(
           return;
         }
         gradeLinePrice =
-          Number(gp.salePrice) > 0 ? gp.salePrice : gp.msrp;
+          gp.salePrice != null && Number(gp.salePrice) > 0
+            ? gp.salePrice
+            : gp.msrp;
       }
     }
 
