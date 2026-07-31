@@ -752,9 +752,30 @@ export default function Product() {
   }, [qtyFloor, isStripeSelected]);
 
   const frameOnlyPrice = data?.frameOnlyPrice ?? null;
-  // Grade-priced products always run the full 3-step flow (fabric is required
-  // to derive the line price), so the frame-only shortcut never applies there.
-  const offersFrameOnly = !isGradeMode && hasFabrics && frameOnlyPrice != null;
+  // Grade-priced products (e.g. OW Lee seating) may carry a reserved
+  // "Frame Only" grade row on the configuration: the frame + finish is
+  // purchasable without any fabric, priced from that row. Fabric grades never
+  // use this label, so it can't collide with the fabric picker.
+  const frameOnlyGradeRow = isGradeMode
+    ? ((selectedVariant?.gradePrices ?? []).find(
+        (g) => g.grade === "Frame Only",
+      ) ?? null)
+    : null;
+  // Flat-priced products use the legacy product-level frameOnlyPrice;
+  // grade-priced products offer frame-only when a "Frame Only" row exists.
+  const offersFrameOnly =
+    hasFabrics &&
+    (isGradeMode ? frameOnlyGradeRow != null : frameOnlyPrice != null);
+  const frameOnlyGradeLine = frameOnlyGradeRow
+    ? Number(frameOnlyGradeRow.salePrice) > 0
+      ? Number(frameOnlyGradeRow.salePrice)
+      : Number(frameOnlyGradeRow.msrp)
+    : null;
+  // Clear a stale frame-only choice if the current selection no longer offers
+  // it (e.g. configuration changed to one without a "Frame Only" row).
+  useEffect(() => {
+    if (frameOnly && !offersFrameOnly) setFrameOnly(false);
+  }, [frameOnly, offersFrameOnly]);
 
   const missingSelections: string[] = [];
   if (isWindVentMode || finishVariantMode) {
@@ -918,7 +939,11 @@ export default function Product() {
   let gradeMsrp: number | null = null;
   let gradeFromPrice: number | null = null;
   if (isGradeMode) {
-    if (selectedFabric?.grade) {
+    if (frameOnly && frameOnlyGradeRow) {
+      // Frame-only: price from the reserved "Frame Only" grade row.
+      gradeMsrp = Number(frameOnlyGradeRow.msrp);
+      gradeLinePrice = frameOnlyGradeLine;
+    } else if (selectedFabric?.grade) {
       const gp = gradePriceMap.get(selectedFabric.grade);
       if (gp) {
         gradeMsrp = Number(gp.msrp);
@@ -927,8 +952,11 @@ export default function Product() {
       }
     }
     if (selectedVariant) {
+      // "From $X" teaser: cheapest fabric-grade line for this configuration.
+      // The reserved "Frame Only" row is excluded — it isn't a fabric option.
       let minLine = Infinity;
       for (const gp of selectedVariant.gradePrices) {
+        if (gp.grade === "Frame Only") continue;
         const line =
           Number(gp.salePrice) > 0 ? Number(gp.salePrice) : Number(gp.msrp);
         if (line < minLine) minLine = line;
@@ -1297,6 +1325,42 @@ export default function Product() {
                     ) : null}
                   </div>
                 ) : null}
+                {/* Frame Only / Frame + Fabric choice for wishlist selections */}
+                {offersFrameOnly ? (
+                  <div className="mb-4">
+                    <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">
+                      Cushion option
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setFrameOnly(false)}
+                        className={`flex-1 px-3 py-2 border text-sm transition-colors ${
+                          !frameOnly
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-input hover:border-foreground"
+                        }`}
+                      >
+                        Frame + Fabric
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFrameOnly(true);
+                          setFabricId(null);
+                          setWlFabricId(null);
+                        }}
+                        className={`flex-1 px-3 py-2 border text-sm transition-colors ${
+                          frameOnly
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-input hover:border-foreground"
+                        }`}
+                      >
+                        Frame Only
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
                 <ProductOptionPickers
                   finishes={finishes}
                   fabrics={requiresFabric ? fabricOptions : []}
@@ -1312,12 +1376,14 @@ export default function Product() {
                   variant="button"
                   mode="add"
                   selectedFinishId={wlFinishId}
-                  selectedFabricId={wlFabricId}
+                  selectedFabricId={frameOnly ? null : wlFabricId}
                   selectedTableTopTileId={wlTileId}
                   selectedVariantLabel={
-                    isDektonTop
-                      ? (selectedDektonSizeName ?? null)
-                      : (selectedVariant?.name ?? null)
+                    frameOnly
+                      ? "Frame Only"
+                      : isDektonTop
+                        ? (selectedDektonSizeName ?? null)
+                        : (selectedVariant?.name ?? null)
                   }
                   selectedVariantId={
                     isDektonTop
@@ -1365,11 +1431,47 @@ export default function Product() {
                   </div>
                 </div>
               ) : null}
+              {/* Frame Only / Frame + Fabric choice for wishlist selections */}
+              {offersFrameOnly ? (
+                <div className="mb-4">
+                  <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">
+                    Cushion option
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setFrameOnly(false)}
+                      className={`flex-1 px-3 py-2 border text-sm transition-colors ${
+                        !frameOnly
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-input hover:border-foreground"
+                      }`}
+                    >
+                      Frame + Fabric
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFrameOnly(true);
+                        setFabricId(null);
+                        setWlFabricId(null);
+                      }}
+                      className={`flex-1 px-3 py-2 border text-sm transition-colors ${
+                        frameOnly
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-input hover:border-foreground"
+                      }`}
+                    >
+                      Frame Only
+                    </button>
+                  </div>
+                </div>
+              ) : null}
               <ProductOptionPickers
                 finishes={finishes}
                 fabrics={requiresFabric ? fabricOptions : []}
                 selectedFinishId={wlFinishId}
-                selectedFabricId={wlFabricId}
+                selectedFabricId={frameOnly ? null : wlFabricId}
                 selectedTableTopTileId={wlTileId}
                 onFinishChange={setWlFinishId}
                 onFabricChange={setWlFabricId}
@@ -1380,8 +1482,9 @@ export default function Product() {
                 variant="button"
                 mode="add"
                 selectedFinishId={wlFinishId}
-                selectedFabricId={wlFabricId}
+                selectedFabricId={frameOnly ? null : wlFabricId}
                 selectedTableTopTileId={wlTileId}
+                selectedVariantLabel={frameOnly ? "Frame Only" : null}
               />
             </div>
           ) : (
@@ -2082,7 +2185,11 @@ export default function Product() {
                       }`}
                     >
                       Frame + Fabric
-                      {data.price ? (
+                      {isGradeMode ? (
+                        gradeFromPrice != null ? (
+                          <span className="ml-1 opacity-75">(from {formatMoney(gradeFromPrice)})</span>
+                        ) : null
+                      ) : data.price ? (
                         <span className="ml-1 opacity-75">({formatMoney(data.price)})</span>
                       ) : null}
                     </button>
@@ -2096,7 +2203,11 @@ export default function Product() {
                       }`}
                     >
                       Frame Only
-                      {frameOnlyPrice ? (
+                      {isGradeMode ? (
+                        frameOnlyGradeLine != null ? (
+                          <span className="ml-1 opacity-75">({formatMoney(frameOnlyGradeLine)})</span>
+                        ) : null
+                      ) : frameOnlyPrice ? (
                         <span className="ml-1 opacity-75">({formatMoney(frameOnlyPrice)})</span>
                       ) : null}
                     </button>

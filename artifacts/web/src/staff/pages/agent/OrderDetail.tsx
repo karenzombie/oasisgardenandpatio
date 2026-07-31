@@ -168,14 +168,17 @@ export default function AgentOrderDetail() {
     unitPrice: number,
     stem: CatalogStemOption | null,
     cover: { picker: CatalogCoverPicker; finish: CatalogCoverFinish } | null,
+    gradeLabel: string | null,
   ) {
     const isGradeMode = gradeUnitPrice != null;
+    const isFrameOnlyLine = gradeLabel === "Frame Only";
     const desc = [
       p.name,
       variant ? variant.name : null,
       finish ? finish.name : null,
       finial ? finial.name : null,
       fabric ? `${fabric.name} (${fabric.itemNumber})` : null,
+      isFrameOnlyLine ? "Frame Only" : null,
     ]
       .filter(Boolean)
       .join(" — ");
@@ -191,7 +194,7 @@ export default function AgentOrderDetail() {
       variantId: variant?.id ?? null,
       finishId: finish?.id ?? null,
       finialId: finial?.id ?? null,
-      grade: isGradeMode ? (fabric?.grade ?? null) : null,
+      grade: isGradeMode ? (gradeLabel ?? fabric?.grade ?? null) : null,
       fabricId: fabric?.id ?? null,
       fabricVendorId: null,
       description: desc,

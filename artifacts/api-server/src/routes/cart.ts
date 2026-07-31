@@ -542,9 +542,13 @@ router.post(
 
     const isGradeMode = gradePriceMap !== null;
 
-    // Grade-priced products always require a fabric (it drives the line price),
-    // so the frame-only shortcut allowed above never applies in grade mode.
-    if (isGradeMode && !fabricId) {
+    // Grade-priced frame-only: a reserved "Frame Only" grade row on the
+    // configuration (e.g. OW Lee seating) makes the frame + finish purchasable
+    // without a fabric, priced from that row. Fabric grades never use this
+    // label. Without that row, grade mode always requires a fabric (it drives
+    // the line price).
+    const frameOnlyGradeRow = gradePriceMap?.get("Frame Only") ?? null;
+    if (isGradeMode && !fabricId && !frameOnlyGradeRow) {
       res.status(400).json({
         error: "Please choose a fabric before adding this item to your cart.",
       });
@@ -766,6 +770,16 @@ router.post(
         error: `This configuration has a minimum order quantity of ${effectiveMinQty}.`,
       });
       return;
+    }
+
+    // Grade-mode frame-only line: no fabric selected, price from the reserved
+    // "Frame Only" grade row (sale when set and > 0, else MSRP).
+    if (isGradeMode && !fabricId && frameOnlyGradeRow) {
+      gradeLinePrice =
+        frameOnlyGradeRow.salePrice != null &&
+        Number(frameOnlyGradeRow.salePrice) > 0
+          ? frameOnlyGradeRow.salePrice
+          : frameOnlyGradeRow.msrp;
     }
 
     let snapshotPrice: string;

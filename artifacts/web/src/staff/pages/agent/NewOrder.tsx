@@ -423,6 +423,10 @@ export default function AgentNewOrder() {
     // 1:1 to the base with its quantity locked to the base.
     stem: CatalogStemOption | null,
     cover: { picker: CatalogCoverPicker; finish: CatalogCoverFinish } | null,
+    // Grade label to persist on the line: the fabric's grade, or the reserved
+    // "Frame Only" label for grade-mode frame-only lines (no fabric). Drives
+    // the order snapshot's variant-grade MSRP lookup.
+    gradeLabel: string | null = null,
   ) {
     // The picker dialog computes the canonical per-unit price (grade price, or
     // frame-only price, or base + variant adjustment, plus any frame-finish
@@ -430,6 +434,7 @@ export default function AgentNewOrder() {
     // saw. `gradeUnitPrice` is still used to flag grade mode for the grade
     // snapshot and the manufacturer minimum order quantity.
     const isGradeMode = gradeUnitPrice != null;
+    const isFrameOnlyLine = gradeLabel === "Frame Only";
     // For pole products the variant name IS the composed name (poleName-model-finish);
     // skip p.name to avoid "Bottom Pole — Bottom Pole-..." redundancy.
     const isPole = p.id === 4966 || p.id === 4967;
@@ -441,6 +446,7 @@ export default function AgentNewOrder() {
           finish ? finish.name : null,
           finial ? finial.name : null,
           fabric ? `${fabric.name} (${fabric.itemNumber})` : null,
+          isFrameOnlyLine ? "Frame Only" : null,
         ]
           .filter(Boolean)
           .join(" — ");
@@ -461,7 +467,7 @@ export default function AgentNewOrder() {
       variantName: variant?.name ?? null,
       finishId: finish?.id ?? null,
       finialId: finial?.id ?? null,
-      grade: isGradeMode ? fabric?.grade ?? null : null,
+      grade: isGradeMode ? (gradeLabel ?? fabric?.grade ?? null) : null,
       fabricId: fabric?.id ?? null,
       fabricName: fabric?.name ?? null,
       // Reset alt fabric vendor whenever fabric changes; the previous
@@ -1417,7 +1423,7 @@ export default function AgentNewOrder() {
           open={pickProductFor !== null}
           initialProduct={pickProductFor?.preselect ?? null}
           onOpenChange={(v) => !v && setPickProductFor(null)}
-          onApply={(p, variant, fabric, finish, finial, gradeUnitPrice, unitPrice, stem, cover) =>
+          onApply={(p, variant, fabric, finish, finial, gradeUnitPrice, unitPrice, stem, cover, gradeLabel) =>
             pickProductFor !== null &&
             applyPickedProduct(
               pickProductFor.idx,
@@ -1430,6 +1436,7 @@ export default function AgentNewOrder() {
               unitPrice,
               stem,
               cover,
+              gradeLabel,
             )
           }
         />
@@ -1503,6 +1510,9 @@ export function ProductPickerDialog({
     unitPrice: number,
     stem: CatalogStemOption | null,
     cover: { picker: CatalogCoverPicker; finish: CatalogCoverFinish } | null,
+    // Grade label to persist on the line: fabric grade, or the reserved
+    // "Frame Only" label for grade-mode frame-only lines. Null outside grade mode.
+    gradeLabel: string | null,
   ) => void;
 }) {
   const [searchInput, setSearchInput] = useState("");
@@ -1695,12 +1705,20 @@ export function ProductPickerDialog({
 
   const needsVariant = variants.length > 0;
   const hasFabrics = fabricOptions.length > 0;
-  // Frame-only is a legacy-mode affordance; grade mode always requires fabric.
-  const supportsFrameOnly = !isGradeMode && hasFabrics && !!detail.data?.frameOnlyPrice;
+  // Frame-only support: legacy (flat-priced) products carry a product-level
+  // frameOnlyPrice; grade-priced products (e.g. OW Lee seating) carry a
+  // reserved "Frame Only" grade row on the configuration. Fabric grades never
+  // use that label.
+  const frameOnlyGradeRow = isGradeMode
+    ? (gradePriceMap.get("Frame Only") ?? null)
+    : null;
+  const supportsFrameOnly = hasFabrics
+    ? isGradeMode
+      ? frameOnlyGradeRow != null
+      : !!detail.data?.frameOnlyPrice
+    : false;
   // Staff default: frame only when supported. Staff explicitly opts into fabric.
-  const needsFabric = isGradeMode
-    ? true
-    : hasFabrics && (!supportsFrameOnly || includeFabric);
+  const needsFabric = hasFabrics && (!supportsFrameOnly || includeFabric);
   // Discrete frame finishes are surfaced whenever the product has them —
   // grade-priced (Frankford) AND legacy products (e.g. OW Lee), matching the
   // customer PDP, which never gates the finish picker on grade mode.
@@ -1708,13 +1726,29 @@ export function ProductPickerDialog({
   // Finial picker is required whenever the product carries options (mirrors PDP).
   const needsFinial = finialOptions.length > 0;
 
-  // Grade-mode unit price = selected fabric grade's sale price (if any) else MSRP.
+  // Grade-mode unit price: frame-only lines price from the reserved
+  // "Frame Only" grade row; fabric lines from the selected fabric grade's
+  // sale price (if any) else MSRP.
   const gradeUnitPrice = useMemo(() => {
-    if (!isGradeMode || !selectedFabric?.grade) return null;
+    if (!isGradeMode) return null;
+    if (supportsFrameOnly && !includeFabric) {
+      if (!frameOnlyGradeRow) return null;
+      return frameOnlyGradeRow.salePrice > 0
+        ? frameOnlyGradeRow.salePrice
+        : frameOnlyGradeRow.msrp;
+    }
+    if (!selectedFabric?.grade) return null;
     const gp = gradePriceMap.get(selectedFabric.grade);
     if (!gp) return null;
     return gp.salePrice > 0 ? gp.salePrice : gp.msrp;
-  }, [isGradeMode, selectedFabric, gradePriceMap]);
+  }, [
+    isGradeMode,
+    supportsFrameOnly,
+    includeFabric,
+    frameOnlyGradeRow,
+    selectedFabric,
+    gradePriceMap,
+  ]);
 
   // Block "Add to order" until product detail has actually loaded — otherwise
   // empty variants/fabric arrays would falsely report "no required picks".
@@ -1773,6 +1807,11 @@ export function ProductPickerDialog({
       effectivePrice ?? 0,
       stem,
       cover,
+      isGradeMode
+        ? supportsFrameOnly && !includeFabric
+          ? "Frame Only"
+          : (f?.grade ?? null)
+        : null,
     );
   }
 
