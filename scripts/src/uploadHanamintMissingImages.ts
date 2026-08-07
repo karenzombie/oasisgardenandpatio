@@ -114,7 +114,8 @@ for (const [sku, filename] of fileMap.entries()) {
     url,
     altText: null,
     isPrimary: true,
-    sortOrder: 0,
+    displayOrder: 0,
+    imageKind: "gallery",
   });
 
   console.log(`  ✓ [${sku}] → ${url}`);

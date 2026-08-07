@@ -103,7 +103,8 @@ for (const { sku, sourceFile } of SKU_FILES) {
     url,
     altText: null,
     isPrimary: true,
-    sortOrder: 0,
+    displayOrder: 0,
+    imageKind: "gallery",
   });
 
   inserted.push({ sku, url });

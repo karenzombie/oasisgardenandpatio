@@ -372,7 +372,7 @@ export default function VendorOrderNew() {
                       <th className="py-1 px-2 font-medium w-20">Qty</th>
                       <th className="py-1 px-2 font-medium w-32">Unit cost</th>
                       <th className="py-1 px-2 font-medium w-28 text-right">
-                        Amount
+                        Total cost
                       </th>
                       <th className="py-1 pl-2 w-10"></th>
                     </tr>
