@@ -244,6 +244,14 @@ export const orderItemsTable = pgTable(
     poSubDescription: text("po_sub_description"),
     poQuantity: integer("po_quantity"),
     poUnitPrice: numeric("po_unit_price", { precision: 10, scale: 2 }),
+    // Per-unit cost frozen at line creation (staff-only). Resolved once from
+    // the product/variant/grade at creation time and never re-read live.
+    // Null for pre-existing lines (no backfill) and when cost cannot resolve.
+    // Never exposed to customers or vendors.
+    unitCostSnapshot: numeric("unit_cost_snapshot", {
+      precision: 10,
+      scale: 2,
+    }),
   },
   (t) => [
     index("order_items_order_id_idx").on(t.orderId),

@@ -114,6 +114,10 @@ export const productVariantsTable = pgTable(
     // Null on legacy variants, which keep the base + adjustment model.
     msrp: numeric("msrp", { precision: 10, scale: 2 }),
     salePrice: numeric("sale_price", { precision: 10, scale: 2 }),
+    // Per-variant cost (staff-only). Set for absolute/size-priced variants
+    // that carry their own pricing independent of the product base. Null for
+    // variants using the base + adjustment model (cost lives on the product).
+    cost: numeric("cost", { precision: 10, scale: 2 }),
     // Flat per-unit shipping surcharge in dollars for this SKU (e.g. an
     // oversize "truck only" freight fee). Added on top of computed shipping
     // for each unit of this variant ordered. Defaults to 0 (no surcharge).

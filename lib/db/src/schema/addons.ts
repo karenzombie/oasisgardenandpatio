@@ -57,6 +57,9 @@ export const productAddonOptionsTable = pgTable(
     // Flat pricing — used only when pricingMode = 'flat'.
     flatMsrp: numeric("flat_msrp", { precision: 10, scale: 2 }),
     flatSalePrice: numeric("flat_sale_price", { precision: 10, scale: 2 }),
+    // Per-unit cost for flat-priced add-ons (staff-only). Null until set by
+    // staff. Never exposed to customers or vendors.
+    flatCost: numeric("flat_cost", { precision: 10, scale: 2 }),
     // Pairing flags. Selecting any triggersPairing option auto-requires every
     // isPairingTarget option on the same product.
     triggersPairing: boolean("triggers_pairing").notNull().default(false),
@@ -102,6 +105,9 @@ export const productAddonGradePricesTable = pgTable(
     grade: text("grade").notNull(),
     msrp: numeric("msrp", { precision: 10, scale: 2 }).notNull(),
     salePrice: numeric("sale_price", { precision: 10, scale: 2 }).notNull(),
+    // Per-grade cost for per_grade add-ons (staff-only). Null until set by
+    // staff. Never exposed to customers or vendors.
+    cost: numeric("cost", { precision: 10, scale: 2 }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -208,6 +214,14 @@ export const orderItemAddonsTable = pgTable(
     quantity: integer("quantity").notNull(),
     // Line amount for this add-on = unitPriceSnapshot * quantity.
     amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
+    // Per-unit cost frozen at add-on line creation (staff-only). Resolved once
+    // from the add-on option's flat_cost or per-grade cost at checkout time.
+    // Null for pre-existing lines (no backfill) and when cost cannot resolve.
+    // Never exposed to customers or vendors.
+    unitCostSnapshot: numeric("unit_cost_snapshot", {
+      precision: 10,
+      scale: 2,
+    }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
