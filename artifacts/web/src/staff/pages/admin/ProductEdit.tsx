@@ -2369,35 +2369,67 @@ export default function ProductEdit() {
                           </p>
                         ) : (
                           <div className="space-y-2">
+                            {/* Column headers — same grid template as data rows */}
+                            <div className="grid grid-cols-[80px_1fr_1fr_1fr_32px] gap-2">
+                              <span className="text-xs font-medium text-slate-500">Grade</span>
+                              <span className="text-xs font-medium text-slate-500">MSRP</span>
+                              <span className="text-xs font-medium text-slate-500">Sale</span>
+                              <span className="text-xs font-medium text-slate-500">Cost</span>
+                              <span />
+                            </div>
                             {v.gradePrices.map((g, gi) => (
                               <div
                                 key={gi}
-                                className="grid grid-cols-[80px_1fr_1fr_1fr_auto] gap-2 items-center"
+                                className="grid grid-cols-[80px_1fr_1fr_1fr_32px] gap-2 items-center"
                               >
-                                <Input
-                                  placeholder="Grade"
-                                  value={g.grade}
-                                  onChange={(e) =>
-                                    setVariants((cur) =>
-                                      cur.map((x, i) =>
-                                        i === vi
-                                          ? {
-                                              ...x,
-                                              gradePrices: x.gradePrices.map(
-                                                (y, j) =>
-                                                  j === gi
-                                                    ? {
-                                                        ...y,
-                                                        grade: e.target.value,
-                                                      }
-                                                    : y,
-                                              ),
-                                            }
-                                          : x,
-                                      ),
-                                    )
-                                  }
-                                />
+                                <div>
+                                  <Input
+                                    placeholder="Grade"
+                                    value={g.grade}
+                                    onChange={(e) =>
+                                      setVariants((cur) =>
+                                        cur.map((x, i) =>
+                                          i === vi
+                                            ? {
+                                                ...x,
+                                                gradePrices: x.gradePrices.map(
+                                                  (y, j) =>
+                                                    j === gi
+                                                      ? {
+                                                          ...y,
+                                                          grade: e.target.value,
+                                                        }
+                                                      : y,
+                                                ),
+                                              }
+                                            : x,
+                                        ),
+                                      )
+                                    }
+                                  />
+                                  {(() => {
+                                    if (!/^[0-9]+$/.test(g.grade)) return null;
+                                    const finishId = Number(g.grade);
+                                    const mfgId =
+                                      form.manufacturerId !== "none"
+                                        ? Number(form.manufacturerId)
+                                        : null;
+                                    const finish = (
+                                      finishesList.data ?? []
+                                    ).find(
+                                      (f) =>
+                                        f.id === finishId &&
+                                        (mfgId === null ||
+                                          f.manufacturerId === mfgId),
+                                    );
+                                    if (!finish) return null;
+                                    return (
+                                      <span className="mt-0.5 block text-xs leading-tight text-slate-400">
+                                        {finish.name}
+                                      </span>
+                                    );
+                                  })()}
+                                </div>
                                 <Input
                                   placeholder="MSRP"
                                   value={g.msrp}
