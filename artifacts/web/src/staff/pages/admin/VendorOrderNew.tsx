@@ -8,6 +8,7 @@ import {
   getAdminGetProductPickerQueryKey,
   useAdminCreateStandaloneVendorOrder,
   type AdminProduct,
+  type AdminProductPickerDetail,
   type CatalogProductVariant,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
@@ -46,6 +47,12 @@ type LineItem = {
   productSku: string;
   variantId: number | null;
   variantName: string | null;
+  /** Fabric grade key (e.g. "A", "B"). Null for non-grade-priced products. */
+  grade: string | null;
+  /** Finish ID for finish-graded (tile) products. */
+  finishId: number | null;
+  /** Human-readable label for the selected grade/finish, shown in the row. */
+  gradeLabel: string | null;
   quantity: number;
   unitPrice: number; // editable, defaults to product.cost
   notes: string;
@@ -88,6 +95,9 @@ export default function VendorOrderNew() {
   function handleAddItem(
     product: AdminProduct,
     variant: CatalogProductVariant | null,
+    grade: string | null,
+    finishId: number | null,
+    gradeLabel: string | null,
   ) {
     // Default unit cost: product.cost when set, else 0. Staff can edit.
     const baseCost =
@@ -101,6 +111,9 @@ export default function VendorOrderNew() {
         productSku: product.sku,
         variantId: variant?.id ?? null,
         variantName: variant?.name ?? null,
+        grade,
+        finishId,
+        gradeLabel,
         quantity: 1,
         unitPrice: Number.isFinite(baseCost) ? baseCost : 0,
         notes: "",
@@ -165,6 +178,8 @@ export default function VendorOrderNew() {
             quantity: it.quantity,
             unitPrice: it.unitPrice,
             notes: it.notes.trim() || null,
+            grade: it.grade ?? null,
+            finishId: it.finishId ?? null,
           })),
         },
       });
@@ -390,6 +405,11 @@ export default function VendorOrderNew() {
                               {it.variantName}
                             </div>
                           )}
+                          {it.gradeLabel && (
+                            <div className="text-xs text-slate-500">
+                              {it.gradeLabel}
+                            </div>
+                          )}
                           <Input
                             value={it.notes}
                             onChange={(e) =>
@@ -489,8 +509,9 @@ export default function VendorOrderNew() {
 
 // ---------------------------------------------------------------------------
 // Product picker — simplified version of the agent NewOrder picker.
-// Only asks for variant (no fabric — vendor orders are a single product
-// line, not a customer-facing fabric pick).
+// Asks for variant, and also for grade (grade-priced products) or finish
+// (finish-graded / tile products) when applicable, so the server can freeze
+// a meaningful unit_cost_snapshot on creation.
 // ---------------------------------------------------------------------------
 function ProductPickerDialog({
   open,
@@ -499,12 +520,22 @@ function ProductPickerDialog({
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  onApply: (product: AdminProduct, variant: CatalogProductVariant | null) => void;
+  onApply: (
+    product: AdminProduct,
+    variant: CatalogProductVariant | null,
+    grade: string | null,
+    finishId: number | null,
+    gradeLabel: string | null,
+  ) => void;
 }) {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [picked, setPicked] = useState<AdminProduct | null>(null);
   const [variantId, setVariantId] = useState<string>("");
+  // Grade key for grade-priced variants (e.g. "A", "B", "C").
+  const [gradeKey, setGradeKey] = useState<string>("");
+  // Finish ID (as string for Select) for finish-graded (tile) products.
+  const [finishIdStr, setFinishIdStr] = useState<string>("");
 
   // Debounced search so we don't query on every keystroke.
   useEffect(() => {
@@ -517,10 +548,18 @@ function ProductPickerDialog({
     if (!open) {
       setPicked(null);
       setVariantId("");
+      setGradeKey("");
+      setFinishIdStr("");
       setSearchInput("");
       setSearch("");
     }
   }, [open]);
+
+  // Reset grade/finish when variant changes.
+  useEffect(() => {
+    setGradeKey("");
+    setFinishIdStr("");
+  }, [variantId]);
 
   const list = useAdminListProducts({
     page: 1,
@@ -537,17 +576,46 @@ function ProductPickerDialog({
     },
   });
   const variants = detail.data?.variants ?? [];
+  const finishes: AdminProductPickerDetail["finishes"] =
+    detail.data?.finishes ?? [];
+  const selectedVariant =
+    variants.find((x) => String(x.id) === variantId) ?? null;
+
   const needsVariant = variants.length > 0;
+  // Finish-graded (tile): product has finishes — finish selector drives the grade key.
+  const needsFinish = finishes.length > 0;
+  // Grade-priced: variant has grade rows but product has no finish selector.
+  const needsGrade =
+    !needsFinish && (selectedVariant?.gradePrices.length ?? 0) > 0;
+
   const detailReady = !!picked && !detail.isLoading && !!detail.data;
-  const canAdd = detailReady && (!needsVariant || !!variantId);
+  const canAdd =
+    detailReady &&
+    (!needsVariant || !!variantId) &&
+    (!needsFinish || !!finishIdStr) &&
+    (!needsGrade || !!gradeKey);
 
   function handleAdd() {
     if (!picked || !detailReady) return;
     if (needsVariant && !variantId) return;
-    const v = needsVariant
-      ? variants.find((x) => String(x.id) === variantId) ?? null
-      : null;
-    onApply(picked, v);
+    if (needsFinish && !finishIdStr) return;
+    if (needsGrade && !gradeKey) return;
+
+    const v = needsVariant ? selectedVariant : null;
+    const resolvedGrade = needsGrade && gradeKey ? gradeKey : null;
+    const resolvedFinishId =
+      needsFinish && finishIdStr ? Number(finishIdStr) : null;
+
+    // Build a human-readable label for the line item row.
+    let resolvedLabel: string | null = null;
+    if (needsGrade && gradeKey) {
+      resolvedLabel = `Grade ${gradeKey}`;
+    } else if (needsFinish && finishIdStr) {
+      const f = finishes.find((x) => String(x.id) === finishIdStr);
+      resolvedLabel = f ? f.name : null;
+    }
+
+    onApply(picked, v, resolvedGrade, resolvedFinishId, resolvedLabel);
   }
 
   return (
@@ -627,6 +695,8 @@ function ProductPickerDialog({
                 onClick={() => {
                   setPicked(null);
                   setVariantId("");
+                  setGradeKey("");
+                  setFinishIdStr("");
                 }}
               >
                 Change product
@@ -663,6 +733,48 @@ function ProductPickerDialog({
             {!needsVariant && !detail.isLoading && (
               <div className="text-xs text-slate-500">
                 No variants required for this product.
+              </div>
+            )}
+
+            {/* Grade selector — grade-priced variants (e.g. Frankford) */}
+            {needsGrade && (
+              <div>
+                <Label className="text-xs">
+                  Grade <span className="text-red-600">*</span>
+                </Label>
+                <Select value={gradeKey} onValueChange={setGradeKey}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pick a grade" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(selectedVariant?.gradePrices ?? []).map((gp) => (
+                      <SelectItem key={gp.grade} value={gp.grade}>
+                        Grade {gp.grade}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Finish selector — finish-graded / tile products */}
+            {needsFinish && (
+              <div>
+                <Label className="text-xs">
+                  Finish / Tile <span className="text-red-600">*</span>
+                </Label>
+                <Select value={finishIdStr} onValueChange={setFinishIdStr}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pick a finish" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {finishes.map((f) => (
+                      <SelectItem key={f.id} value={String(f.id)}>
+                        {f.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             )}
           </div>

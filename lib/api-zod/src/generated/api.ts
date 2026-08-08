@@ -11248,6 +11248,18 @@ export const AdminCreateStandaloneVendorOrderBody = zod
             .number()
             .min(adminCreateStandaloneVendorOrderBodyItemsItemUnitPriceMin),
           notes: zod.string().nullish(),
+          grade: zod
+            .string()
+            .nullish()
+            .describe(
+              'Fabric grade key for grade-priced variants (e.g. \"A\", \"B\", \"C\"). Null for non-grade-priced products. Takes precedence over finishId when deriving the cost grade key.',
+            ),
+          finishId: zod
+            .number()
+            .nullish()
+            .describe(
+              "Finish ID for finish-graded (tile) products. When grade is null and finishId is set, the cost resolver derives the grade key as String(finishId).",
+            ),
         }),
       )
       .min(1),

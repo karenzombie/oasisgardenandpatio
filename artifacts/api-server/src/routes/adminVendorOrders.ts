@@ -20,6 +20,7 @@ import {
   inventoryLocationsTable,
   inventoryTable,
   entityHistoryTable,
+  resolveLineCost,
   type VendorOrder,
   type OrderItem,
 } from "@workspace/db";
@@ -260,6 +261,24 @@ router.post(
 
     const userId = (req as Request & { user?: { id: number } }).user?.id ?? null;
 
+    // Resolve unit cost snapshots before opening the transaction (read-only).
+    // Priority: item.grade → String(item.finishId) → null (no grade supplied).
+    const costSnapshots: (string | null)[] = [];
+    for (const item of body.items) {
+      const derivedGrade =
+        item.grade != null
+          ? item.grade
+          : item.finishId != null
+            ? String(item.finishId)
+            : null;
+      const cost = await resolveLineCost(db, {
+        productId: item.productId,
+        variantId: item.variantId ?? null,
+        grade: derivedGrade,
+      });
+      costSnapshots.push(cost != null ? String(cost) : null);
+    }
+
     const created = await db.transaction(async (tx) => {
       const number = await nextVendorOrderNumber(tx);
       const [vo] = await tx
@@ -291,7 +310,10 @@ router.post(
       // vendorOrderId points at the new VO. We capture description as
       // "Product Name" or "Product Name — Variant Name" and snapshot
       // SKUs so the PDF and detail page survive future product edits.
-      for (const item of body.items) {
+      // unitCostSnapshot is frozen from the resolver above; pre-existing
+      // lines (created before this field existed) remain null.
+      for (let i = 0; i < body.items.length; i++) {
+        const item = body.items[i]!;
         const p = productById.get(item.productId)!;
         const v = item.variantId != null ? variantById.get(item.variantId) ?? null : null;
         const description = v ? `${p.name} — ${v.variantName}` : p.name;
@@ -316,6 +338,7 @@ router.post(
           unitPrice,
           amount,
           notes: item.notes ?? null,
+          unitCostSnapshot: costSnapshots[i] ?? null,
         });
       }
 
