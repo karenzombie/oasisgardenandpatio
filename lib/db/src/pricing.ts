@@ -140,23 +140,28 @@ export async function resolveLineCost(
     return row?.cost ?? null;
   }
 
-  // Case 2: absolute / size-priced variant
+  // Case 2: absolute / size-priced variant — use variant.cost when it is
+  // explicitly set. Legacy variants (base + price_adjustment) carry no own
+  // cost and inherit from the product, so fall through to Case 3 when
+  // variant.cost is null.
   if (variantId != null) {
-    const [row] = await db
+    const [vrow] = await db
       .select({ cost: productVariantsTable.cost })
       .from(productVariantsTable)
       .where(eq(productVariantsTable.id, variantId))
       .limit(1);
-    return row?.cost ?? null;
+    if (vrow?.cost != null) return vrow.cost;
+    // Fall through: variant.cost is null → inherit from product.
   }
 
-  // Case 3: flat product
-  const [row] = await db
+  // Case 3: flat product (also the fallthrough target for Case 2 when
+  // variant.cost is null).
+  const [prow] = await db
     .select({ cost: productsTable.cost })
     .from(productsTable)
     .where(eq(productsTable.id, productId))
     .limit(1);
-  return row?.cost ?? null;
+  return prow?.cost ?? null;
 }
 
 /**
