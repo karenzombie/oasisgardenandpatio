@@ -21,6 +21,8 @@ import {
   productAddonOptionsTable,
   manufacturersTable,
   paymentsTable,
+  resolveLineCost,
+  resolveAddonCost,
   type Customer,
 } from "@workspace/db";
 import {
@@ -633,6 +635,24 @@ router.post(
             l.parentCartItemId != null
               ? (orderItemIdByCartItemId.get(l.parentCartItemId) ?? null)
               : null;
+          // Resolve cost snapshot inside the transaction (atomic with INSERT).
+          // unit_price/amount are the customer sale price — not touched.
+          // grade priority: line's fabric grade → String(finishId) → null.
+          const derivedGrade =
+            l.fabricGrade != null
+              ? l.fabricGrade
+              : l.finishId != null
+                ? String(l.finishId)
+                : null;
+          const resolvedCost =
+            l.productId != null
+              ? await resolveLineCost(tx, {
+                  productId: l.productId,
+                  variantId: l.variantId ?? null,
+                  grade: derivedGrade,
+                })
+              : null;
+
           const [orderItem] = await tx
             .insert(orderItemsTable)
             .values({
@@ -672,13 +692,27 @@ router.post(
                   : l.weight != null
                     ? String(l.weight)
                     : null,
+              unitCostSnapshot: resolvedCost != null ? String(resolvedCost) : null,
             })
             .returning();
 
           const lineAddons = addonsByCartItem.get(l.cartItemId) ?? [];
           if (lineAddons.length > 0) {
+            // Resolve each add-on's cost snapshot inside the transaction.
+            // per_grade add-ons use the line's fabric grade; flat add-ons use flat_cost.
+            const addonCosts: (string | null)[] = [];
+            for (const a of lineAddons) {
+              const addonGrade =
+                a.pricingMode === "per_grade" ? (l.fabricGrade ?? null) : null;
+              const cost = await resolveAddonCost(tx, {
+                addonOptionId: a.addonOptionId,
+                pricingMode: a.pricingMode as "flat" | "per_grade",
+                grade: addonGrade,
+              });
+              addonCosts.push(cost != null ? String(cost) : null);
+            }
             await tx.insert(orderItemAddonsTable).values(
-              lineAddons.map((a) => {
+              lineAddons.map((a, idx) => {
                 const totalQty = a.quantity * l.quantity;
                 return {
                   orderItemId: orderItem.id,
@@ -691,6 +725,7 @@ router.post(
                   unitPriceSnapshot: String(a.unitPrice),
                   quantity: totalQty,
                   amount: moneyFromCents(toCents(a.unitPrice) * totalQty),
+                  unitCostSnapshot: addonCosts[idx] ?? null,
                 };
               }),
             );
