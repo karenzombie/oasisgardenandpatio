@@ -1,0 +1,17 @@
+Karen has read your audit. You are correct that the manufacturer filter was never present. It is a pre-existing gap, not something you removed. That is settled and you are not at fault for it.
+
+First, a new document is attached: Addendum 2, working rules. Read it in full before doing anything else. It applies to all remaining Phase 2 work and everything after. It adds no scope, it changes how you work.
+
+Second, scope decisions from Karen:
+
+The tile/frame split is DEFERRED. Do not implement your proposed fix. The problem is broader than the vendor order picker: the same collapse exists on the staff Create New Order screen, and the real requirement is that a product can have any number of independent option selections (size, frame finish, tile, and others depending on the product), not a fixed pair. That will be scoped as its own phase after Phase 2 closes. Leave the current picker behavior as it is. Do not touch it.
+The manufacturer filter on the vendor order picker is also DEFERRED to that same later phase, since it lives in the same picker. The server-side guard already prevents a bad order from being created, so nothing incorrect can be saved. Leave it alone.
+Proceed to Step 7, the final step of Phase 2. It is read-only verification, no code changes expected.
+
+Confirm and show evidence for each:
+
+vendorOrderPdf.tsx still renders only Item #, Description, and Order Qty. No unit price, no cost, no total, no amount column, including add-on sub-rows.
+The PO email path carries no cost.
+unit_cost_snapshot (on both order_items and order_item_addons), product_variants.cost, product_addon_options.flat_cost, and product_addon_grade_prices.cost appear in NO customer-facing response and in nothing sent to a vendor. Include the customer-facing order and checkout responses, not just vendor surfaces, since customer order lines now carry a cost snapshot.
+
+Paste the relevant code showing the absence for each point, as literal text. If you find cost leaking anywhere, stop and report it rather than fixing it.
