@@ -20,6 +20,7 @@ import {
   variantGradePricesTable,
   inventoryTable,
   inventoryAdjustmentsTable,
+  resolveLineCost,
   type Order,
   type OrderItem,
   type Address,
@@ -1127,6 +1128,7 @@ router.put(
           notes: string | null;
           useInventory: boolean;
           inventoryQtyUsed: number;
+          unitCostSnapshot: string | null;
         };
         const parentRefs: Array<number | null> = [];
         const prepared: PreparedItem[] = [];
@@ -1255,6 +1257,24 @@ router.put(
           const discountAmt = it.discountAmount ?? 0;
           const lineGrossAmount = it.quantity * it.unitPrice;
 
+          // Resolve cost snapshot inside the transaction (atomic with INSERT).
+          // unit_price/amount are sale price — not touched. Only the cost
+          // snapshot column is set here. grade priority: it.grade → String(finishId) → null.
+          const derivedGrade =
+            it.grade != null
+              ? it.grade
+              : it.finishId != null
+                ? String(it.finishId)
+                : null;
+          const resolvedCost =
+            it.productId != null
+              ? await resolveLineCost(tx, {
+                  productId: it.productId,
+                  variantId: it.variantId ?? null,
+                  grade: derivedGrade,
+                })
+              : null;
+
           prepared.push({
             productId: it.productId ?? null,
             variantId: it.variantId ?? null,
@@ -1284,6 +1304,7 @@ router.put(
             notes: it.notes ?? null,
             useInventory: false,
             inventoryQtyUsed: 0,
+            unitCostSnapshot: resolvedCost != null ? String(resolvedCost) : null,
           });
 
           const pIdx = it.parentItemIndex ?? null;
@@ -1924,6 +1945,7 @@ router.post(
           notes: string | null;
           useInventory: boolean;
           inventoryQtyUsed: number;
+          unitCostSnapshot: string | null;
         }> = [];
 
         for (const it of data.items) {
@@ -2095,6 +2117,24 @@ router.post(
             }
           }
 
+          // Resolve cost snapshot inside the transaction (atomic with INSERT).
+          // unit_price/amount are sale price — not touched. Only the cost
+          // snapshot column is set here. grade priority: it.grade → String(finishId) → null.
+          const derivedGrade =
+            it.grade != null
+              ? it.grade
+              : it.finishId != null
+                ? String(it.finishId)
+                : null;
+          const resolvedCost =
+            it.productId != null
+              ? await resolveLineCost(tx, {
+                  productId: it.productId,
+                  variantId: it.variantId ?? null,
+                  grade: derivedGrade,
+                })
+              : null;
+
           prepared.push({
             productId: it.productId ?? null,
             variantId: it.variantId ?? null,
@@ -2126,6 +2166,7 @@ router.post(
             notes: it.notes ?? null,
             useInventory: wantsInventory,
             inventoryQtyUsed,
+            unitCostSnapshot: resolvedCost != null ? String(resolvedCost) : null,
           });
           // Track the base-line index for accessory (cover) lines so we can
           // wire parent_order_item_id after the items are inserted.

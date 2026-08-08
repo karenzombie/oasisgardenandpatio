@@ -1163,6 +1163,8 @@ router.post(
           }
         } else {
           // Added line: a fresh order_items row owned solely by this PO.
+          // Free-form lines have productId=null so cost cannot be resolved;
+          // unitCostSnapshot is null (pre-existing lines stay null too).
           await tx.insert(orderItemsTable).values({
             orderId: null,
             vendorOrderId: id,
@@ -1174,6 +1176,7 @@ router.post(
             unitPrice: unitPrice.toFixed(2),
             amount: (unitPrice * quantity).toFixed(2),
             poEdited: true,
+            unitCostSnapshot: null,
           });
         }
       }
