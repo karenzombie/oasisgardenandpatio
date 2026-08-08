@@ -23,6 +23,11 @@ export interface AdminProductVariant {
    * @nullable
    */
   salePrice: string | null;
+  /**
+   * Staff-only per-variant cost. Only meaningful for absolute/size-priced variants. Never returned on customer-facing endpoints.
+   * @nullable
+   */
+  cost: string | null;
   /** Flat per-unit shipping surcharge for this variant in dollars (e.g. oversize "truck only" freight). "0" when none. */
   shippingSurcharge: string;
   /**

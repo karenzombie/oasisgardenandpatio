@@ -23,6 +23,11 @@ export interface AdminProductVariantInput {
    */
   salePrice?: string | null;
   /**
+   * Staff-only per-variant cost. Null/omit to leave unset.
+   * @nullable
+   */
+  cost?: string | null;
+  /**
    * Flat per-unit shipping surcharge in dollars (e.g. oversize "truck only" freight). Omit/null/"" for none.
    * @nullable
    */

@@ -27,6 +27,11 @@ export interface AdminProductAddon {
   flatMsrp: string | null;
   /** @nullable */
   flatSalePrice: string | null;
+  /**
+   * Staff-only flat cost for flat-priced add-ons. Never returned on customer-facing endpoints.
+   * @nullable
+   */
+  flatCost: string | null;
   triggersPairing: boolean;
   isPairingTarget: boolean;
   enabled: boolean;

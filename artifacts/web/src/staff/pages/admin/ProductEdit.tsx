@@ -357,6 +357,7 @@ export default function ProductEdit() {
     priceAdjustment: string;
     msrp: string;
     salePrice: string;
+    cost: string;
     shippingSurcharge: string;
     weight: string;
     dimensions: string;
@@ -372,7 +373,7 @@ export default function ProductEdit() {
   // Add-on options (e.g. privacy walls, replacement stems). Each is either
   // per-grade (priced off the canopy fabric grade) or flat. The full set is
   // replaced on save. Stored as draft strings for controlled inputs.
-  type AddonGradePriceDraft = { grade: string; msrp: string; salePrice: string };
+  type AddonGradePriceDraft = { grade: string; msrp: string; salePrice: string; cost: string };
   type AddonDraft = {
     key: string;
     id: number | null;
@@ -383,6 +384,7 @@ export default function ProductEdit() {
     pricingMode: "per_grade" | "flat";
     flatMsrp: string;
     flatSalePrice: string;
+    flatCost: string;
     triggersPairing: boolean;
     isPairingTarget: boolean;
     enabled: boolean;
@@ -469,6 +471,7 @@ export default function ProductEdit() {
             priceAdjustment: v.priceAdjustment,
             msrp: v.msrp ?? "",
             salePrice: v.salePrice ?? "",
+            cost: v.cost ?? "",
             shippingSurcharge: v.shippingSurcharge ?? "0",
             weight: v.weight ?? "",
             dimensions: v.dimensions ?? "",
@@ -504,6 +507,7 @@ export default function ProductEdit() {
             pricingMode: a.pricingMode,
             flatMsrp: a.flatMsrp ?? "",
             flatSalePrice: a.flatSalePrice ?? "",
+            flatCost: a.flatCost ?? "",
             triggersPairing: a.triggersPairing,
             isPairingTarget: a.isPairingTarget,
             enabled: a.enabled,
@@ -511,6 +515,7 @@ export default function ProductEdit() {
               grade: g.grade,
               msrp: g.msrp,
               salePrice: g.salePrice,
+              cost: g.cost ?? "",
             })),
           }),
         ),
@@ -924,6 +929,7 @@ export default function ProductEdit() {
                 priceAdjustment: v.priceAdjustment.trim() || "0",
                 msrp: v.msrp.trim() === "" ? null : v.msrp.trim(),
                 salePrice: v.salePrice.trim() === "" ? null : v.salePrice.trim(),
+                cost: v.cost.trim() === "" ? null : v.cost.trim(),
                 shippingSurcharge: v.shippingSurcharge.trim() || "0",
                 weight: v.weight.trim() === "" ? null : v.weight.trim(),
                 dimensions:
@@ -975,6 +981,10 @@ export default function ProductEdit() {
                   a.pricingMode === "flat" && a.flatSalePrice.trim() !== ""
                     ? a.flatSalePrice.trim()
                     : null,
+                flatCost:
+                  a.pricingMode === "flat" && a.flatCost.trim() !== ""
+                    ? a.flatCost.trim()
+                    : null,
                 triggersPairing: a.triggersPairing,
                 isPairingTarget: a.isPairingTarget,
                 enabled: a.enabled,
@@ -992,6 +1002,7 @@ export default function ProductEdit() {
                           grade: g.grade.trim(),
                           msrp: g.msrp.trim(),
                           salePrice: g.salePrice.trim(),
+                          cost: g.cost.trim() === "" ? undefined : g.cost.trim(),
                         }))
                     : [],
               })),
@@ -2210,6 +2221,22 @@ export default function ProductEdit() {
                           />
                         </div>
                         <div>
+                          <Label>Cost</Label>
+                          <Input
+                            placeholder="Blank = no cost"
+                            value={v.cost}
+                            onChange={(e) =>
+                              setVariants((cur) =>
+                                cur.map((x, i) =>
+                                  i === vi
+                                    ? { ...x, cost: e.target.value }
+                                    : x,
+                                ),
+                              )
+                            }
+                          />
+                        </div>
+                        <div>
                           <Label>Shipping surcharge</Label>
                           <Input
                             placeholder="0.00"
@@ -2551,6 +2578,7 @@ export default function ProductEdit() {
                       priceAdjustment: "0",
                       msrp: "",
                       salePrice: "",
+                      cost: "",
                       shippingSurcharge: "0",
                       weight: "",
                       dimensions: "",
@@ -3108,6 +3136,22 @@ export default function ProductEdit() {
                               placeholder="195"
                             />
                           </div>
+                          <div>
+                            <Label className="text-xs">Flat cost</Label>
+                            <Input
+                              value={a.flatCost}
+                              onChange={(e) =>
+                                setAddons((cur) =>
+                                  cur.map((x, i) =>
+                                    i === ai
+                                      ? { ...x, flatCost: e.target.value }
+                                      : x,
+                                  ),
+                                )
+                              }
+                              placeholder="Blank = no cost"
+                            />
+                          </div>
                         </div>
                       ) : (
                         <div>
@@ -3123,7 +3167,7 @@ export default function ProductEdit() {
                                           ...x,
                                           gradePrices: [
                                             ...x.gradePrices,
-                                            { grade: "", msrp: "", salePrice: "" },
+                                            { grade: "", msrp: "", salePrice: "", cost: "" },
                                           ],
                                         }
                                       : x,
@@ -3213,6 +3257,32 @@ export default function ProductEdit() {
                                   className="w-24 rounded border border-slate-300 px-2 py-1 text-xs text-right"
                                   aria-label="Grade sale price"
                                 />
+                                <input
+                                  value={g.cost}
+                                  onChange={(e) =>
+                                    setAddons((cur) =>
+                                      cur.map((x, i) =>
+                                        i === ai
+                                          ? {
+                                              ...x,
+                                              gradePrices: x.gradePrices.map(
+                                                (gg, j) =>
+                                                  j === gi
+                                                    ? {
+                                                        ...gg,
+                                                        cost: e.target.value,
+                                                      }
+                                                    : gg,
+                                              ),
+                                            }
+                                          : x,
+                                      ),
+                                    )
+                                  }
+                                  placeholder="Cost"
+                                  className="w-24 rounded border border-slate-300 px-2 py-1 text-xs text-right"
+                                  aria-label="Grade cost"
+                                />
                                 <button
                                   type="button"
                                   onClick={() =>
@@ -3256,6 +3326,7 @@ export default function ProductEdit() {
                           pricingMode: "per_grade",
                           flatMsrp: "",
                           flatSalePrice: "",
+                          flatCost: "",
                           triggersPairing: false,
                           isPairingTarget: false,
                           enabled: true,

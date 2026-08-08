@@ -10,4 +10,9 @@ export interface AdminAddonGradePrice {
   grade: string;
   msrp: string;
   salePrice: string;
+  /**
+   * Staff-only cost for this grade. Never returned on customer-facing endpoints.
+   * @nullable
+   */
+  cost?: string | null;
 }

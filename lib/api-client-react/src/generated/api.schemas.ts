@@ -4778,6 +4778,11 @@ export interface AdminProductVariant {
    * @nullable
    */
   salePrice: string | null;
+  /**
+   * Staff-only per-variant cost. Only meaningful for absolute/size-priced variants. Never returned on customer-facing endpoints.
+   * @nullable
+   */
+  cost: string | null;
   /** Flat per-unit shipping surcharge for this variant in dollars (e.g. oversize "truck only" freight). "0" when none. */
   shippingSurcharge: string;
   /**
@@ -4819,6 +4824,11 @@ export interface AdminProductVariantInput {
    * @nullable
    */
   salePrice?: string | null;
+  /**
+   * Staff-only per-variant cost. Null/omit to leave unset.
+   * @nullable
+   */
+  cost?: string | null;
   /**
    * Flat per-unit shipping surcharge in dollars (e.g. oversize "truck only" freight). Omit/null/"" for none.
    * @nullable
@@ -5048,6 +5058,11 @@ export interface AdminAddonGradePrice {
   grade: string;
   msrp: string;
   salePrice: string;
+  /**
+   * Staff-only cost for this grade. Never returned on customer-facing endpoints.
+   * @nullable
+   */
+  cost?: string | null;
 }
 
 export type AdminProductAddonPricingMode =
@@ -5077,6 +5092,11 @@ export interface AdminProductAddon {
   flatMsrp: string | null;
   /** @nullable */
   flatSalePrice: string | null;
+  /**
+   * Staff-only flat cost for flat-priced add-ons. Never returned on customer-facing endpoints.
+   * @nullable
+   */
+  flatCost: string | null;
   triggersPairing: boolean;
   isPairingTarget: boolean;
   enabled: boolean;
@@ -5118,6 +5138,11 @@ export interface AdminProductAddonInput {
   flatMsrp?: string | null;
   /** @nullable */
   flatSalePrice?: string | null;
+  /**
+   * Staff-only flat cost. Null/omit to leave unset.
+   * @nullable
+   */
+  flatCost?: string | null;
   triggersPairing?: boolean;
   isPairingTarget?: boolean;
   enabled?: boolean;

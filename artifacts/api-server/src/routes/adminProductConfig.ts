@@ -1415,6 +1415,7 @@ async function loadVariantsConfig(productId: number) {
       priceAdjustment: productVariantsTable.priceAdjustment,
       msrp: productVariantsTable.msrp,
       salePrice: productVariantsTable.salePrice,
+      cost: productVariantsTable.cost,
       shippingSurcharge: productVariantsTable.shippingSurcharge,
       weight: productVariantsTable.weight,
       dimensions: productVariantsTable.dimensions,
@@ -1568,6 +1569,16 @@ router.put(
         });
         return;
       }
+      if (
+        v.cost != null &&
+        v.cost.trim() !== "" &&
+        !money.test(v.cost.trim())
+      ) {
+        res.status(400).json({
+          error: `Invalid cost for variant "${v.variantSku}"`,
+        });
+        return;
+      }
       // Absolute per-variant pricing is keyed on MSRP across PDP/cart/checkout.
       // A sale price without an MSRP would be silently ignored (falling back to
       // base pricing), so reject that ambiguous state rather than misprice.
@@ -1669,6 +1680,8 @@ router.put(
               v.salePrice != null && v.salePrice.trim() !== ""
                 ? v.salePrice.trim()
                 : null,
+            cost:
+              v.cost != null && v.cost.trim() !== "" ? v.cost.trim() : null,
             shippingSurcharge:
               v.shippingSurcharge != null && v.shippingSurcharge.trim() !== ""
                 ? v.shippingSurcharge.trim()
@@ -1774,6 +1787,7 @@ async function loadAddonsConfig(productId: number) {
       pricingMode: productAddonOptionsTable.pricingMode,
       flatMsrp: productAddonOptionsTable.flatMsrp,
       flatSalePrice: productAddonOptionsTable.flatSalePrice,
+      flatCost: productAddonOptionsTable.flatCost,
       triggersPairing: productAddonOptionsTable.triggersPairing,
       isPairingTarget: productAddonOptionsTable.isPairingTarget,
       enabled: productAddonOptionsTable.enabled,
@@ -1791,6 +1805,7 @@ async function loadAddonsConfig(productId: number) {
           grade: productAddonGradePricesTable.grade,
           msrp: productAddonGradePricesTable.msrp,
           salePrice: productAddonGradePricesTable.salePrice,
+          cost: productAddonGradePricesTable.cost,
         })
         .from(productAddonGradePricesTable)
         .where(inArray(productAddonGradePricesTable.addonOptionId, addonIds))
@@ -1798,7 +1813,7 @@ async function loadAddonsConfig(productId: number) {
     : [];
   const gradesByAddon = new Map<
     number,
-    { grade: string; msrp: string; salePrice: string }[]
+    { grade: string; msrp: string; salePrice: string; cost: string | null }[]
   >();
   for (const g of gradeRows) {
     const list = gradesByAddon.get(g.addonOptionId) ?? [];
@@ -1806,6 +1821,7 @@ async function loadAddonsConfig(productId: number) {
       grade: g.grade,
       msrp: String(g.msrp),
       salePrice: String(g.salePrice),
+      cost: g.cost != null ? String(g.cost) : null,
     });
     gradesByAddon.set(g.addonOptionId, list);
   }
@@ -1820,6 +1836,7 @@ async function loadAddonsConfig(productId: number) {
       pricingMode: a.pricingMode,
       flatMsrp: a.flatMsrp != null ? String(a.flatMsrp) : null,
       flatSalePrice: a.flatSalePrice != null ? String(a.flatSalePrice) : null,
+      flatCost: a.flatCost != null ? String(a.flatCost) : null,
       triggersPairing: a.triggersPairing,
       isPairingTarget: a.isPairingTarget,
       enabled: a.enabled,
@@ -1943,6 +1960,10 @@ router.put(
               a.flatSalePrice != null && a.flatSalePrice.trim() !== ""
                 ? a.flatSalePrice.trim()
                 : null,
+            flatCost:
+              a.flatCost != null && a.flatCost.trim() !== ""
+                ? a.flatCost.trim()
+                : null,
             triggersPairing: a.triggersPairing ?? false,
             isPairingTarget: a.isPairingTarget ?? false,
             enabled: a.enabled ?? true,
@@ -1975,6 +1996,10 @@ router.put(
                 grade: g.grade.trim(),
                 msrp: g.msrp,
                 salePrice: g.salePrice,
+                cost:
+                  g.cost != null && g.cost.trim() !== ""
+                    ? g.cost.trim()
+                    : null,
               })),
             );
           }

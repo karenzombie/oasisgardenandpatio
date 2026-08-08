@@ -30,6 +30,11 @@ export interface AdminProductAddonInput {
   flatMsrp?: string | null;
   /** @nullable */
   flatSalePrice?: string | null;
+  /**
+   * Staff-only flat cost. Null/omit to leave unset.
+   * @nullable
+   */
+  flatCost?: string | null;
   triggersPairing?: boolean;
   isPairingTarget?: boolean;
   enabled?: boolean;

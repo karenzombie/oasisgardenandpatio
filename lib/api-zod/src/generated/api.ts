@@ -5244,6 +5244,12 @@ export const AdminGetProductVariantsResponse = zod.object({
         .describe(
           "Absolute per-variant sale price. When set with msrp, drives the line\/displayed price for this variant.",
         ),
+      cost: zod
+        .string()
+        .nullable()
+        .describe(
+          "Staff-only per-variant cost. Only meaningful for absolute\/size-priced variants. Never returned on customer-facing endpoints.",
+        ),
       shippingSurcharge: zod
         .string()
         .describe(
@@ -5319,6 +5325,12 @@ export const AdminUpdateProductVariantsBody = zod.object({
           .describe(
             "Absolute per-variant sale price. Send with msrp to enable absolute per-variant pricing.",
           ),
+        cost: zod
+          .string()
+          .nullish()
+          .describe(
+            "Staff-only per-variant cost. Null\/omit to leave unset.",
+          ),
         shippingSurcharge: zod
           .string()
           .nullish()
@@ -5390,6 +5402,12 @@ export const AdminUpdateProductVariantsResponse = zod.object({
         .nullable()
         .describe(
           "Absolute per-variant sale price. When set with msrp, drives the line\/displayed price for this variant.",
+        ),
+      cost: zod
+        .string()
+        .nullable()
+        .describe(
+          "Staff-only per-variant cost. Only meaningful for absolute\/size-priced variants. Never returned on customer-facing endpoints.",
         ),
       shippingSurcharge: zod
         .string()
@@ -5653,6 +5671,12 @@ export const AdminGetProductAddonsResponse = zod.object({
         pricingMode: zod.enum(["per_grade", "flat"]),
         flatMsrp: zod.string().nullable(),
         flatSalePrice: zod.string().nullable(),
+        flatCost: zod
+          .string()
+          .nullable()
+          .describe(
+            "Staff-only flat cost for flat-priced add-ons. Never returned on customer-facing endpoints.",
+          ),
         triggersPairing: zod.boolean(),
         isPairingTarget: zod.boolean(),
         enabled: zod.boolean(),
@@ -5662,6 +5686,12 @@ export const AdminGetProductAddonsResponse = zod.object({
             grade: zod.string(),
             msrp: zod.string(),
             salePrice: zod.string(),
+            cost: zod
+              .string()
+              .nullish()
+              .describe(
+                "Staff-only cost for this grade. Never returned on customer-facing endpoints.",
+              ),
           }),
         ),
       })
@@ -5693,6 +5723,12 @@ export const AdminUpdateProductAddonsBody = zod.object({
         pricingMode: zod.enum(["per_grade", "flat"]),
         flatMsrp: zod.string().nullish(),
         flatSalePrice: zod.string().nullish(),
+        flatCost: zod
+          .string()
+          .nullish()
+          .describe(
+            "Staff-only flat cost. Null\/omit to leave unset.",
+          ),
         triggersPairing: zod.boolean().optional(),
         isPairingTarget: zod.boolean().optional(),
         enabled: zod.boolean().optional(),
@@ -5702,6 +5738,12 @@ export const AdminUpdateProductAddonsBody = zod.object({
             grade: zod.string(),
             msrp: zod.string(),
             salePrice: zod.string(),
+            cost: zod
+              .string()
+              .nullish()
+              .describe(
+                "Staff-only cost for this grade. Never returned on customer-facing endpoints.",
+              ),
           }),
         ),
       })
@@ -5726,6 +5768,12 @@ export const AdminUpdateProductAddonsResponse = zod.object({
         pricingMode: zod.enum(["per_grade", "flat"]),
         flatMsrp: zod.string().nullable(),
         flatSalePrice: zod.string().nullable(),
+        flatCost: zod
+          .string()
+          .nullable()
+          .describe(
+            "Staff-only flat cost for flat-priced add-ons. Never returned on customer-facing endpoints.",
+          ),
         triggersPairing: zod.boolean(),
         isPairingTarget: zod.boolean(),
         enabled: zod.boolean(),
@@ -5735,6 +5783,12 @@ export const AdminUpdateProductAddonsResponse = zod.object({
             grade: zod.string(),
             msrp: zod.string(),
             salePrice: zod.string(),
+            cost: zod
+              .string()
+              .nullish()
+              .describe(
+                "Staff-only cost for this grade. Never returned on customer-facing endpoints.",
+              ),
           }),
         ),
       })

@@ -11422,6 +11422,9 @@ components:
         salePrice:
           type: ["string", "null"]
           description: Absolute per-variant sale price. When set with msrp, drives the line/displayed price for this variant.
+        cost:
+          type: ["string", "null"]
+          description: Staff-only per-variant cost. Only meaningful for absolute/size-priced variants. Never returned on customer-facing endpoints.
         shippingSurcharge:
           type: string
           description: Flat per-unit shipping surcharge for this variant in dollars (e.g. oversize "truck only" freight). "0" when none.
@@ -11488,6 +11491,9 @@ components:
         salePrice:
           type: ["string", "null"]
           description: Absolute per-variant sale price. Send with msrp to enable absolute per-variant pricing.
+        cost:
+          type: ["string", "null"]
+          description: Staff-only per-variant cost. Null/omit to leave unset.
         shippingSurcharge:
           type: ["string", "null"]
           description: Flat per-unit shipping surcharge in dollars (e.g. oversize "truck only" freight). Omit/null/"" for none.
@@ -11832,6 +11838,9 @@ components:
           type: string
         salePrice:
           type: string
+        cost:
+          type: ["string", "null"]
+          description: Staff-only cost for this grade. Never returned on customer-facing endpoints.
       required:
         - grade
         - msrp
@@ -11858,6 +11867,9 @@ components:
           type: ["string", "null"]
         flatSalePrice:
           type: ["string", "null"]
+        flatCost:
+          type: ["string", "null"]
+          description: Staff-only flat cost for flat-priced add-ons. Never returned on customer-facing endpoints.
         triggersPairing:
           type: boolean
         isPairingTarget:
@@ -11879,6 +11891,7 @@ components:
         - pricingMode
         - flatMsrp
         - flatSalePrice
+        - flatCost
         - triggersPairing
         - isPairingTarget
         - enabled
@@ -11917,6 +11930,9 @@ components:
           type: ["string", "null"]
         flatSalePrice:
           type: ["string", "null"]
+        flatCost:
+          type: ["string", "null"]
+          description: Staff-only flat cost. Null/omit to leave unset.
         triggersPairing:
           type: boolean
         isPairingTarget:
