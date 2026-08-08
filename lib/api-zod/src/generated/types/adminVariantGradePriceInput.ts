@@ -7,9 +7,9 @@
  */
 
 /**
- * Per-grade price row as returned by the server (all fields always present).
+ * Per-grade price row as sent by the client. cost and salePrice are optional — omit or send null to leave unset.
  */
-export interface AdminVariantGradePrice {
+export interface AdminVariantGradePriceInput {
   /** Fabric grade label (e.g. "A", "B", "C", "D"). */
   grade: string;
   /** Decimal MSRP for this configuration at this grade. */
@@ -18,10 +18,10 @@ export interface AdminVariantGradePrice {
    * Decimal sale price for this configuration at this grade. Null when no sale price has been set.
    * @nullable
    */
-  salePrice: string | null;
+  salePrice?: string | null;
   /**
-   * Staff-only cost for this configuration at this grade. Never returned on customer-facing endpoints.
+   * Staff-only cost for this configuration at this grade. Null/omit to leave unset.
    * @nullable
    */
-  cost: string | null;
+  cost?: string | null;
 }

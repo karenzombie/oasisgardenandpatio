@@ -6,6 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
+/**
+ * Per-grade add-on price row as returned by the server (all fields always present).
+ */
 export interface AdminAddonGradePrice {
   grade: string;
   msrp: string;

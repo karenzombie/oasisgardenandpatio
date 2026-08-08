@@ -5,7 +5,7 @@
  * Oasis Garden & Patio API
  * OpenAPI spec version: 0.1.0
  */
-import type { AdminVariantGradePrice } from "./adminVariantGradePrice";
+import type { AdminVariantGradePriceInput } from "./adminVariantGradePriceInput";
 
 export interface AdminProductVariantInput {
   variantSku: string;
@@ -49,5 +49,5 @@ export interface AdminProductVariantInput {
   excludeStripeFabrics?: boolean;
   displayOrder?: number;
   isActive?: boolean;
-  gradePrices: AdminVariantGradePrice[];
+  gradePrices: AdminVariantGradePriceInput[];
 }

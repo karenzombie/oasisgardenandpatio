@@ -5273,26 +5273,32 @@ export const AdminGetProductVariantsResponse = zod.object({
       displayOrder: zod.number(),
       isActive: zod.boolean(),
       gradePrices: zod.array(
-        zod.object({
-          grade: zod
-            .string()
-            .describe('Fabric grade label (e.g. \"A\", \"B\", \"C\", \"D\").'),
-          msrp: zod
-            .string()
-            .describe("Decimal MSRP for this configuration at this grade."),
-          salePrice: zod
-            .string()
-            .nullish()
-            .describe(
-              "Decimal sale price for this configuration at this grade. Null when no sale price has been set.",
-            ),
-          cost: zod
-            .string()
-            .nullish()
-            .describe(
-              "Staff-only cost for this configuration at this grade. Never returned on customer-facing endpoints.",
-            ),
-        }),
+        zod
+          .object({
+            grade: zod
+              .string()
+              .describe(
+                'Fabric grade label (e.g. \"A\", \"B\", \"C\", \"D\").',
+              ),
+            msrp: zod
+              .string()
+              .describe("Decimal MSRP for this configuration at this grade."),
+            salePrice: zod
+              .string()
+              .nullable()
+              .describe(
+                "Decimal sale price for this configuration at this grade. Null when no sale price has been set.",
+              ),
+            cost: zod
+              .string()
+              .nullable()
+              .describe(
+                "Staff-only cost for this configuration at this grade. Never returned on customer-facing endpoints.",
+              ),
+          })
+          .describe(
+            "Per-grade price row as returned by the server (all fields always present).",
+          ),
       ),
     }),
   ),
@@ -5353,28 +5359,32 @@ export const AdminUpdateProductVariantsBody = zod.object({
         displayOrder: zod.number().optional(),
         isActive: zod.boolean().optional(),
         gradePrices: zod.array(
-          zod.object({
-            grade: zod
-              .string()
-              .describe(
-                'Fabric grade label (e.g. \"A\", \"B\", \"C\", \"D\").',
-              ),
-            msrp: zod
-              .string()
-              .describe("Decimal MSRP for this configuration at this grade."),
-            salePrice: zod
-              .string()
-              .nullish()
-              .describe(
-                "Decimal sale price for this configuration at this grade. Null when no sale price has been set.",
-              ),
-            cost: zod
-              .string()
-              .nullish()
-              .describe(
-                "Staff-only cost for this configuration at this grade. Never returned on customer-facing endpoints.",
-              ),
-          }),
+          zod
+            .object({
+              grade: zod
+                .string()
+                .describe(
+                  'Fabric grade label (e.g. \"A\", \"B\", \"C\", \"D\").',
+                ),
+              msrp: zod
+                .string()
+                .describe("Decimal MSRP for this configuration at this grade."),
+              salePrice: zod
+                .string()
+                .nullish()
+                .describe(
+                  "Decimal sale price for this configuration at this grade. Null when no sale price has been set.",
+                ),
+              cost: zod
+                .string()
+                .nullish()
+                .describe(
+                  "Staff-only cost for this configuration at this grade. Null\/omit to leave unset.",
+                ),
+            })
+            .describe(
+              "Per-grade price row as sent by the client. cost and salePrice are optional — omit or send null to leave unset.",
+            ),
         ),
       }),
     )
@@ -5430,26 +5440,32 @@ export const AdminUpdateProductVariantsResponse = zod.object({
       displayOrder: zod.number(),
       isActive: zod.boolean(),
       gradePrices: zod.array(
-        zod.object({
-          grade: zod
-            .string()
-            .describe('Fabric grade label (e.g. \"A\", \"B\", \"C\", \"D\").'),
-          msrp: zod
-            .string()
-            .describe("Decimal MSRP for this configuration at this grade."),
-          salePrice: zod
-            .string()
-            .nullish()
-            .describe(
-              "Decimal sale price for this configuration at this grade. Null when no sale price has been set.",
-            ),
-          cost: zod
-            .string()
-            .nullish()
-            .describe(
-              "Staff-only cost for this configuration at this grade. Never returned on customer-facing endpoints.",
-            ),
-        }),
+        zod
+          .object({
+            grade: zod
+              .string()
+              .describe(
+                'Fabric grade label (e.g. \"A\", \"B\", \"C\", \"D\").',
+              ),
+            msrp: zod
+              .string()
+              .describe("Decimal MSRP for this configuration at this grade."),
+            salePrice: zod
+              .string()
+              .nullable()
+              .describe(
+                "Decimal sale price for this configuration at this grade. Null when no sale price has been set.",
+              ),
+            cost: zod
+              .string()
+              .nullable()
+              .describe(
+                "Staff-only cost for this configuration at this grade. Never returned on customer-facing endpoints.",
+              ),
+          })
+          .describe(
+            "Per-grade price row as returned by the server (all fields always present).",
+          ),
       ),
     }),
   ),
@@ -5680,17 +5696,21 @@ export const AdminGetProductAddonsResponse = zod.object({
         enabled: zod.boolean(),
         displayOrder: zod.number(),
         gradePrices: zod.array(
-          zod.object({
-            grade: zod.string(),
-            msrp: zod.string(),
-            salePrice: zod.string(),
-            cost: zod
-              .string()
-              .nullable()
-              .describe(
-                "Staff-only cost for this grade. Never returned on customer-facing endpoints.",
-              ),
-          }),
+          zod
+            .object({
+              grade: zod.string(),
+              msrp: zod.string(),
+              salePrice: zod.string(),
+              cost: zod
+                .string()
+                .nullable()
+                .describe(
+                  "Staff-only cost for this grade. Never returned on customer-facing endpoints.",
+                ),
+            })
+            .describe(
+              "Per-grade add-on price row as returned by the server (all fields always present).",
+            ),
         ),
       })
       .describe("An add-on option configured on a product (admin view)."),
@@ -5730,17 +5750,21 @@ export const AdminUpdateProductAddonsBody = zod.object({
         enabled: zod.boolean().optional(),
         displayOrder: zod.number().optional(),
         gradePrices: zod.array(
-          zod.object({
-            grade: zod.string(),
-            msrp: zod.string(),
-            salePrice: zod.string(),
-            cost: zod
-              .string()
-              .nullable()
-              .describe(
-                "Staff-only cost for this grade. Never returned on customer-facing endpoints.",
-              ),
-          }),
+          zod
+            .object({
+              grade: zod.string(),
+              msrp: zod.string(),
+              salePrice: zod.string(),
+              cost: zod
+                .string()
+                .nullish()
+                .describe(
+                  "Staff-only cost for this grade. Null\/omit to leave unset.",
+                ),
+            })
+            .describe(
+              "Per-grade add-on price row as sent by the client. cost is optional — omit or send null to leave unset.",
+            ),
         ),
       })
       .describe(
@@ -5775,17 +5799,21 @@ export const AdminUpdateProductAddonsResponse = zod.object({
         enabled: zod.boolean(),
         displayOrder: zod.number(),
         gradePrices: zod.array(
-          zod.object({
-            grade: zod.string(),
-            msrp: zod.string(),
-            salePrice: zod.string(),
-            cost: zod
-              .string()
-              .nullable()
-              .describe(
-                "Staff-only cost for this grade. Never returned on customer-facing endpoints.",
-              ),
-          }),
+          zod
+            .object({
+              grade: zod.string(),
+              msrp: zod.string(),
+              salePrice: zod.string(),
+              cost: zod
+                .string()
+                .nullable()
+                .describe(
+                  "Staff-only cost for this grade. Never returned on customer-facing endpoints.",
+                ),
+            })
+            .describe(
+              "Per-grade add-on price row as returned by the server (all fields always present).",
+            ),
         ),
       })
       .describe("An add-on option configured on a product (admin view)."),

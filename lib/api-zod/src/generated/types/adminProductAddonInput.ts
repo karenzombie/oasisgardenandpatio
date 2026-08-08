@@ -5,7 +5,7 @@
  * Oasis Garden & Patio API
  * OpenAPI spec version: 0.1.0
  */
-import type { AdminAddonGradePrice } from "./adminAddonGradePrice";
+import type { AdminAddonGradePriceInput } from "./adminAddonGradePriceInput";
 import type { AdminProductAddonInputPricingMode } from "./adminProductAddonInputPricingMode";
 
 /**
@@ -39,5 +39,5 @@ export interface AdminProductAddonInput {
   isPairingTarget?: boolean;
   enabled?: boolean;
   displayOrder?: number;
-  gradePrices: AdminAddonGradePrice[];
+  gradePrices: AdminAddonGradePriceInput[];
 }

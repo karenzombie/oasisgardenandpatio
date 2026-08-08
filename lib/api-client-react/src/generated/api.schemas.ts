@@ -4745,7 +4745,30 @@ export interface AdminUpdateProductFabricsRequest {
   fabricIds: number[];
 }
 
+/**
+ * Per-grade price row as returned by the server (all fields always present).
+ */
 export interface AdminVariantGradePrice {
+  /** Fabric grade label (e.g. "A", "B", "C", "D"). */
+  grade: string;
+  /** Decimal MSRP for this configuration at this grade. */
+  msrp: string;
+  /**
+   * Decimal sale price for this configuration at this grade. Null when no sale price has been set.
+   * @nullable
+   */
+  salePrice: string | null;
+  /**
+   * Staff-only cost for this configuration at this grade. Never returned on customer-facing endpoints.
+   * @nullable
+   */
+  cost: string | null;
+}
+
+/**
+ * Per-grade price row as sent by the client. cost and salePrice are optional — omit or send null to leave unset.
+ */
+export interface AdminVariantGradePriceInput {
   /** Fabric grade label (e.g. "A", "B", "C", "D"). */
   grade: string;
   /** Decimal MSRP for this configuration at this grade. */
@@ -4756,7 +4779,7 @@ export interface AdminVariantGradePrice {
    */
   salePrice?: string | null;
   /**
-   * Staff-only cost for this configuration at this grade. Never returned on customer-facing endpoints.
+   * Staff-only cost for this configuration at this grade. Null/omit to leave unset.
    * @nullable
    */
   cost?: string | null;
@@ -4851,7 +4874,7 @@ export interface AdminProductVariantInput {
   excludeStripeFabrics?: boolean;
   displayOrder?: number;
   isActive?: boolean;
-  gradePrices: AdminVariantGradePrice[];
+  gradePrices: AdminVariantGradePriceInput[];
 }
 
 export interface AdminUpdateProductVariantsRequest {
@@ -5054,6 +5077,9 @@ export interface AdminUpdateProductFinishesRequest {
   upcharges?: AdminUpdateProductFinishesRequestUpchargesItem[];
 }
 
+/**
+ * Per-grade add-on price row as returned by the server (all fields always present).
+ */
 export interface AdminAddonGradePrice {
   grade: string;
   msrp: string;
@@ -5063,6 +5089,20 @@ export interface AdminAddonGradePrice {
    * @nullable
    */
   cost: string | null;
+}
+
+/**
+ * Per-grade add-on price row as sent by the client. cost is optional — omit or send null to leave unset.
+ */
+export interface AdminAddonGradePriceInput {
+  grade: string;
+  msrp: string;
+  salePrice: string;
+  /**
+   * Staff-only cost for this grade. Null/omit to leave unset.
+   * @nullable
+   */
+  cost?: string | null;
 }
 
 export type AdminProductAddonPricingMode =
@@ -5147,7 +5187,7 @@ export interface AdminProductAddonInput {
   isPairingTarget?: boolean;
   enabled?: boolean;
   displayOrder?: number;
-  gradePrices: AdminAddonGradePrice[];
+  gradePrices: AdminAddonGradePriceInput[];
 }
 
 export interface AdminUpdateProductAddonsRequest {
