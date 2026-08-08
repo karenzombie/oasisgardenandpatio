@@ -140,18 +140,33 @@ export async function resolveLineCost(
     return row?.cost ?? null;
   }
 
-  // Case 2: absolute / size-priced variant — use variant.cost when it is
-  // explicitly set. Legacy variants (base + price_adjustment) carry no own
-  // cost and inherit from the product, so fall through to Case 3 when
-  // variant.cost is null.
+  // Case 2: variantId is set but grade is null.
+  //
+  // Two sub-cases must be distinguished:
+  //   a) Grade-priced variant (has variant_grade_prices rows) but the caller
+  //      did not supply a grade key — return null. Falling through to
+  //      products.cost would fabricate a cost for the wrong pricing mode and
+  //      mask the missing grade key.
+  //   b) Non-grade variant (no grade rows): use variant.cost if explicitly
+  //      set. Legacy base+price_adjustment variants carry no own cost and
+  //      inherit from the product, so fall through to Case 3 when null.
   if (variantId != null) {
+    const [gradeRow] = await db
+      .select({ grade: variantGradePricesTable.grade })
+      .from(variantGradePricesTable)
+      .where(eq(variantGradePricesTable.variantId, variantId))
+      .limit(1);
+    if (gradeRow != null) {
+      // Grade-priced variant — grade key is required but was not supplied.
+      return null;
+    }
     const [vrow] = await db
       .select({ cost: productVariantsTable.cost })
       .from(productVariantsTable)
       .where(eq(productVariantsTable.id, variantId))
       .limit(1);
     if (vrow?.cost != null) return vrow.cost;
-    // Fall through: variant.cost is null → inherit from product.
+    // Fall through: legacy variant with no own cost → inherit from product.
   }
 
   // Case 3: flat product (also the fallthrough target for Case 2 when
