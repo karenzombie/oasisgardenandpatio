@@ -261,24 +261,6 @@ router.post(
 
     const userId = (req as Request & { user?: { id: number } }).user?.id ?? null;
 
-    // Resolve unit cost snapshots before opening the transaction (read-only).
-    // Priority: item.grade → String(item.finishId) → null (no grade supplied).
-    const costSnapshots: (string | null)[] = [];
-    for (const item of body.items) {
-      const derivedGrade =
-        item.grade != null
-          ? item.grade
-          : item.finishId != null
-            ? String(item.finishId)
-            : null;
-      const cost = await resolveLineCost(db, {
-        productId: item.productId,
-        variantId: item.variantId ?? null,
-        grade: derivedGrade,
-      });
-      costSnapshots.push(cost != null ? String(cost) : null);
-    }
-
     const created = await db.transaction(async (tx) => {
       const number = await nextVendorOrderNumber(tx);
       const [vo] = await tx
@@ -306,19 +288,36 @@ router.post(
         .returning();
       if (!vo) throw new Error("Failed to insert vendor order");
 
-      // Insert line items. orderId is NULL (standalone PO);
-      // vendorOrderId points at the new VO. We capture description as
-      // "Product Name" or "Product Name — Variant Name" and snapshot
-      // SKUs so the PDF and detail page survive future product edits.
-      // unitCostSnapshot is frozen from the resolver above; pre-existing
-      // lines (created before this field existed) remain null.
-      for (let i = 0; i < body.items.length; i++) {
-        const item = body.items[i]!;
+      // Insert line items. orderId is NULL (standalone PO).
+      // Cost is resolved inside the transaction (reads and INSERT are atomic —
+      // no concurrent admin write can land between the cost SELECT and the row
+      // INSERT). unit_price = frozen resolved cost; amount = cost × qty.
+      // unitCostSnapshot mirrors unit_price for the staff display column.
+      for (const item of body.items) {
         const p = productById.get(item.productId)!;
         const v = item.variantId != null ? variantById.get(item.variantId) ?? null : null;
         const description = v ? `${p.name} — ${v.variantName}` : p.name;
-        const unitPrice = item.unitPrice.toFixed(2);
-        const amount = (item.unitPrice * item.quantity).toFixed(2);
+
+        // grade priority: item.grade → String(item.finishId) → null.
+        const derivedGrade =
+          item.grade != null
+            ? item.grade
+            : item.finishId != null
+              ? String(item.finishId)
+              : null;
+        const resolvedCost = await resolveLineCost(tx, {
+          productId: p.id,
+          variantId: v?.id ?? null,
+          grade: derivedGrade,
+        });
+
+        const unitPrice =
+          resolvedCost != null ? Number(resolvedCost).toFixed(2) : "0.00";
+        const amount =
+          resolvedCost != null
+            ? (Number(resolvedCost) * item.quantity).toFixed(2)
+            : "0.00";
+
         await tx.insert(orderItemsTable).values({
           orderId: null,
           vendorOrderId: vo.id,
@@ -338,7 +337,7 @@ router.post(
           unitPrice,
           amount,
           notes: item.notes ?? null,
-          unitCostSnapshot: costSnapshots[i] ?? null,
+          unitCostSnapshot: resolvedCost != null ? String(resolvedCost) : null,
         });
       }
 

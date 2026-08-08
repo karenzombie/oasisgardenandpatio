@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useLocation } from "wouter";
 import { ArrowLeft, Plus, Trash2, Search } from "lucide-react";
 import {
@@ -54,7 +54,6 @@ type LineItem = {
   /** Human-readable label for the selected grade/finish, shown in the row. */
   gradeLabel: string | null;
   quantity: number;
-  unitPrice: number; // editable, defaults to product.cost
   notes: string;
 };
 
@@ -87,11 +86,6 @@ export default function VendorOrderNew() {
 
   const create = useAdminCreateStandaloneVendorOrder();
 
-  const total = useMemo(
-    () => items.reduce((sum, it) => sum + it.unitPrice * it.quantity, 0),
-    [items],
-  );
-
   function handleAddItem(
     product: AdminProduct,
     variant: CatalogProductVariant | null,
@@ -99,9 +93,6 @@ export default function VendorOrderNew() {
     finishId: number | null,
     gradeLabel: string | null,
   ) {
-    // Default unit cost: product.cost when set, else 0. Staff can edit.
-    const baseCost =
-      product.cost != null && product.cost !== "" ? Number(product.cost) : 0;
     setItems((prev) => [
       ...prev,
       {
@@ -115,7 +106,6 @@ export default function VendorOrderNew() {
         finishId,
         gradeLabel,
         quantity: 1,
-        unitPrice: Number.isFinite(baseCost) ? baseCost : 0,
         notes: "",
       },
     ]);
@@ -176,7 +166,6 @@ export default function VendorOrderNew() {
             productId: it.productId,
             variantId: it.variantId,
             quantity: it.quantity,
-            unitPrice: it.unitPrice,
             notes: it.notes.trim() || null,
             grade: it.grade ?? null,
             finishId: it.finishId ?? null,
@@ -385,10 +374,6 @@ export default function VendorOrderNew() {
                     <tr>
                       <th className="py-1 pr-2 font-medium">Product</th>
                       <th className="py-1 px-2 font-medium w-20">Qty</th>
-                      <th className="py-1 px-2 font-medium w-32">Unit cost</th>
-                      <th className="py-1 px-2 font-medium w-28 text-right">
-                        Total cost
-                      </th>
                       <th className="py-1 pl-2 w-10"></th>
                     </tr>
                   </thead>
@@ -435,26 +420,6 @@ export default function VendorOrderNew() {
                             className="h-8"
                           />
                         </td>
-                        <td className="py-2 px-2">
-                          <Input
-                            type="number"
-                            min={0}
-                            step="0.01"
-                            value={it.unitPrice}
-                            onChange={(e) =>
-                              updateItem(it.uid, {
-                                unitPrice: Math.max(
-                                  0,
-                                  Number(e.target.value) || 0,
-                                ),
-                              })
-                            }
-                            className="h-8 tabular-nums"
-                          />
-                        </td>
-                        <td className="py-2 px-2 text-right tabular-nums">
-                          {fmtMoney(it.unitPrice * it.quantity)}
-                        </td>
                         <td className="py-2 pl-2">
                           <Button
                             type="button"
@@ -467,15 +432,7 @@ export default function VendorOrderNew() {
                         </td>
                       </tr>
                     ))}
-                    <tr className="border-t bg-slate-50 font-medium">
-                      <td className="py-2 pr-2 text-right" colSpan={3}>
-                        Total
-                      </td>
-                      <td className="py-2 px-2 text-right tabular-nums">
-                        {fmtMoney(total)}
-                      </td>
-                      <td></td>
-                    </tr>
+
                   </tbody>
                 </table>
               </div>
@@ -681,11 +638,8 @@ function ProductPickerDialog({
                 <div className="text-xs text-slate-500 font-mono">
                   {picked.sku}
                 </div>
-                <div className="text-xs text-slate-600 mt-1">
-                  Default unit cost:{" "}
-                  {picked.cost != null && picked.cost !== ""
-                    ? fmtMoney(Number(picked.cost))
-                    : "not set"}
+                <div className="text-xs text-slate-500 mt-1">
+                  Cost resolved on save
                 </div>
               </div>
               <Button

@@ -11,8 +11,6 @@ export interface CreateStandaloneVendorOrderItem {
   variantId?: number | null;
   /** @minimum 1 */
   quantity: number;
-  /** @minimum 0 */
-  unitPrice: number;
   notes?: string | null;
   /** Fabric grade key for grade-priced variants (e.g. "A", "B", "C"). Null for non-grade-priced products. Takes precedence over finishId when deriving the cost grade key. */
   grade?: string | null;

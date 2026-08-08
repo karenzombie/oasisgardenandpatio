@@ -6601,7 +6601,6 @@ components:
         productId: { type: integer }
         variantId: { type: integer, nullable: true }
         quantity: { type: integer, minimum: 1 }
-        unitPrice: { type: number, minimum: 0 }
         notes: { type: string, nullable: true }
         grade:
           type: string
@@ -6617,7 +6616,7 @@ components:
             Finish ID for finish-graded (tile) products. When grade is null and
             finishId is set, the cost resolver derives the grade key as
             String(finishId).
-      required: [productId, quantity, unitPrice]
+      required: [productId, quantity]
     CreateStandaloneVendorOrderRequest:
       type: object
       description: Create a vendor order that is not tied to a customer order.

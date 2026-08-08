@@ -11218,8 +11218,6 @@ export const AdminReviewCancellationRequestResponse = zod.object({
  * @summary Create a vendor order directly (no parent customer order)
  */
 
-export const adminCreateStandaloneVendorOrderBodyItemsItemUnitPriceMin = 0;
-
 export const AdminCreateStandaloneVendorOrderBody = zod
   .object({
     manufacturerId: zod.number(),
@@ -11244,9 +11242,6 @@ export const AdminCreateStandaloneVendorOrderBody = zod
           productId: zod.number(),
           variantId: zod.number().nullish(),
           quantity: zod.number().min(1),
-          unitPrice: zod
-            .number()
-            .min(adminCreateStandaloneVendorOrderBodyItemsItemUnitPriceMin),
           notes: zod.string().nullish(),
           grade: zod
             .string()
