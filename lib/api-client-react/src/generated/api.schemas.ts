@@ -5062,7 +5062,7 @@ export interface AdminAddonGradePrice {
    * Staff-only cost for this grade. Never returned on customer-facing endpoints.
    * @nullable
    */
-  cost?: string | null;
+  cost: string | null;
 }
 
 export type AdminProductAddonPricingMode =

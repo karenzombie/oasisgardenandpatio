@@ -11846,6 +11846,7 @@ components:
         - grade
         - msrp
         - salePrice
+        - cost
     AdminProductAddon:
       type: object
       description: An add-on option configured on a product (admin view).

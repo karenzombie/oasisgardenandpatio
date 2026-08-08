@@ -5686,7 +5686,7 @@ export const AdminGetProductAddonsResponse = zod.object({
             salePrice: zod.string(),
             cost: zod
               .string()
-              .nullish()
+              .nullable()
               .describe(
                 "Staff-only cost for this grade. Never returned on customer-facing endpoints.",
               ),
@@ -5736,7 +5736,7 @@ export const AdminUpdateProductAddonsBody = zod.object({
             salePrice: zod.string(),
             cost: zod
               .string()
-              .nullish()
+              .nullable()
               .describe(
                 "Staff-only cost for this grade. Never returned on customer-facing endpoints.",
               ),
@@ -5781,7 +5781,7 @@ export const AdminUpdateProductAddonsResponse = zod.object({
             salePrice: zod.string(),
             cost: zod
               .string()
-              .nullish()
+              .nullable()
               .describe(
                 "Staff-only cost for this grade. Never returned on customer-facing endpoints.",
               ),
