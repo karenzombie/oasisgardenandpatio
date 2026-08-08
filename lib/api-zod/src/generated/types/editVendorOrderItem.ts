@@ -15,7 +15,7 @@ export interface EditVendorOrderItem {
   /** @minimum 0 */
   quantity: number;
   /** @minimum 0 */
-  unitPrice: number;
+  unitPrice?: number;
   /** When true, drop this existing line from the PO (kept on the customer order). */
   removed?: boolean;
 }

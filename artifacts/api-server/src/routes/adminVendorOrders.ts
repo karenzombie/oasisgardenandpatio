@@ -97,7 +97,6 @@ function nameOf(first: string | null, last: string | null): string | null {
 function itemToPayload(
   it: OrderItem,
   kind: "product" | "fabric" = "product",
-  cost: number | null = null,
   addons: Array<{ sku: string | null; name: string; quantity: number }> = [],
 ) {
   // Effective (PO-facing) values: a PO edit layers po_* overrides on top of
@@ -133,7 +132,7 @@ function itemToPayload(
     notes: it.notes,
     sku: effSku,
     subDescription: effSubDescription,
-    cost,
+    cost: it.unitCostSnapshot != null ? Number(it.unitCostSnapshot) : null,
     edited: it.poEdited,
     kind,
     // Add-on snapshots (e.g. Marella privacy walls) ordered from the vendor
@@ -542,61 +541,6 @@ async function loadVendorOrderDetail(id: number) {
     }
   }
 
-  // Per-unit cost is pulled LIVE from the product record (products.cost). It is
-  // staff-only (shown in the UI to help hit vendor order minimums) and is never
-  // printed/emailed on the PO. Batch-resolve by productId, falling back to a
-  // SKU match for added lines that have no productId.
-  const costProductIds = Array.from(
-    new Set(
-      items
-        .map((x) => x.row.productId)
-        .filter((v): v is number => v != null),
-    ),
-  );
-  const costSkus = Array.from(
-    new Set(
-      items
-        .filter((x) => x.row.productId == null)
-        .map(
-          (x) =>
-            x.row.poSku ??
-            x.row.variantSkuSnapshot ??
-            x.row.productSkuSnapshot ??
-            null,
-        )
-        .filter((v): v is string => v != null && v.length > 0),
-    ),
-  );
-  const costByProductId = new Map<number, string | null>();
-  if (costProductIds.length) {
-    const rows = await db
-      .select({ id: productsTable.id, cost: productsTable.cost })
-      .from(productsTable)
-      .where(inArray(productsTable.id, costProductIds));
-    rows.forEach((r) => costByProductId.set(r.id, r.cost));
-  }
-  const costBySku = new Map<string, string | null>();
-  if (costSkus.length) {
-    const rows = await db
-      .select({ sku: productsTable.sku, cost: productsTable.cost })
-      .from(productsTable)
-      .where(inArray(productsTable.sku, costSkus));
-    rows.forEach((r) => costBySku.set(r.sku, r.cost));
-  }
-  const resolveCost = (row: OrderItem): number | null => {
-    let raw: string | null | undefined = null;
-    if (row.productId != null) {
-      raw = costByProductId.get(row.productId) ?? null;
-    } else {
-      const sku =
-        row.poSku ?? row.variantSkuSnapshot ?? row.productSkuSnapshot ?? null;
-      if (sku) raw = costBySku.get(sku) ?? null;
-    }
-    if (raw == null) return null;
-    const n = Number(raw);
-    return Number.isFinite(n) ? n : null;
-  };
-
   const receives = await db
     .select({ r: vendorOrderReceivesTable, receiver: usersTable })
     .from(vendorOrderReceivesTable)
@@ -742,7 +686,6 @@ async function loadVendorOrderDetail(id: number) {
       itemToPayload(
         x.row,
         x.kind,
-        resolveCost(x.row),
         x.kind === "product" ? (addonsByOrderItem.get(x.row.id) ?? []) : [],
       ),
     ),
@@ -1116,7 +1059,7 @@ router.post(
         const description = item.description.trim();
         const subDescription = item.subDescription?.trim() || null;
         const quantity = item.quantity;
-        const unitPrice = item.unitPrice;
+        const unitPrice = item.unitPrice ?? 0;
 
         if (item.id != null) {
           const row = rowById.get(item.id);
@@ -1139,14 +1082,11 @@ router.post(
           const effSubDescription =
             row.poSubDescription ?? row.variantNameSnapshot ?? null;
           const effQuantity = row.poQuantity ?? row.quantity;
-          const effUnitPrice = Number(row.poUnitPrice ?? row.unitPrice);
-
           const changed =
             sku !== effSku ||
             description !== effDescription ||
             subDescription !== effSubDescription ||
-            quantity !== effQuantity ||
-            unitPrice !== effUnitPrice;
+            quantity !== effQuantity;
 
           if (changed) {
             await tx
@@ -1157,7 +1097,6 @@ router.post(
                 poDescription: description,
                 poSubDescription: subDescription,
                 poQuantity: quantity,
-                poUnitPrice: unitPrice.toFixed(2),
               })
               .where(eq(orderItemsTable.id, row.id));
           }

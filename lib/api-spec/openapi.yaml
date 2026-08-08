@@ -6452,7 +6452,7 @@ components:
         cost:
           type: number
           nullable: true
-          description: "Per-unit cost from the product record (staff-only, never printed on the PO). Null when there is no cost data for the line."
+          description: "Per-unit cost from the frozen unit_cost_snapshot (staff-only, never printed on the PO). Null for lines created before cost capture was enabled or where cost could not be resolved."
         edited:
           type: boolean
           description: "True when this line differs from the customer's original order (drives the staff-only red flag). Never printed on the PO."
@@ -6496,7 +6496,7 @@ components:
         removed:
           type: boolean
           description: "When true, drop this existing line from the PO (kept on the customer order)."
-      required: [description, quantity, unitPrice]
+      required: [description, quantity]
     EditVendorOrderRequest:
       type: object
       properties:

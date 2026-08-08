@@ -11397,7 +11397,7 @@ export const AdminGetVendorOrderResponse = zod.object({
         .number()
         .nullable()
         .describe(
-          "Per-unit cost from the product record (staff-only, never printed on the PO). Null when there is no cost data for the line.",
+          "Per-unit cost from the frozen unit_cost_snapshot (staff-only, never printed on the PO). Null for lines created before cost capture was enabled or where cost could not be resolved.",
         ),
       edited: zod
         .boolean()
@@ -11574,7 +11574,7 @@ export const AdminUpdateVendorOrderResponse = zod.object({
         .number()
         .nullable()
         .describe(
-          "Per-unit cost from the product record (staff-only, never printed on the PO). Null when there is no cost data for the line.",
+          "Per-unit cost from the frozen unit_cost_snapshot (staff-only, never printed on the PO). Null for lines created before cost capture was enabled or where cost could not be resolved.",
         ),
       edited: zod
         .boolean()
@@ -11705,7 +11705,8 @@ export const AdminEditVendorOrderBody = zod.object({
       quantity: zod.number().min(adminEditVendorOrderBodyItemsItemQuantityMin),
       unitPrice: zod
         .number()
-        .min(adminEditVendorOrderBodyItemsItemUnitPriceMin),
+        .min(adminEditVendorOrderBodyItemsItemUnitPriceMin)
+        .optional(),
       removed: zod
         .boolean()
         .optional()
@@ -11791,7 +11792,7 @@ export const AdminEditVendorOrderResponse = zod.object({
         .number()
         .nullable()
         .describe(
-          "Per-unit cost from the product record (staff-only, never printed on the PO). Null when there is no cost data for the line.",
+          "Per-unit cost from the frozen unit_cost_snapshot (staff-only, never printed on the PO). Null for lines created before cost capture was enabled or where cost could not be resolved.",
         ),
       edited: zod
         .boolean()
@@ -12067,7 +12068,7 @@ export const AdminSendVendorOrderResponse = zod.object({
         .number()
         .nullable()
         .describe(
-          "Per-unit cost from the product record (staff-only, never printed on the PO). Null when there is no cost data for the line.",
+          "Per-unit cost from the frozen unit_cost_snapshot (staff-only, never printed on the PO). Null for lines created before cost capture was enabled or where cost could not be resolved.",
         ),
       edited: zod
         .boolean()
@@ -12243,7 +12244,7 @@ export const AdminUpdateVendorOrderStatusResponse = zod.object({
         .number()
         .nullable()
         .describe(
-          "Per-unit cost from the product record (staff-only, never printed on the PO). Null when there is no cost data for the line.",
+          "Per-unit cost from the frozen unit_cost_snapshot (staff-only, never printed on the PO). Null for lines created before cost capture was enabled or where cost could not be resolved.",
         ),
       edited: zod
         .boolean()
@@ -12429,7 +12430,7 @@ export const AdminReceiveVendorOrderResponse = zod.object({
         .number()
         .nullable()
         .describe(
-          "Per-unit cost from the product record (staff-only, never printed on the PO). Null when there is no cost data for the line.",
+          "Per-unit cost from the frozen unit_cost_snapshot (staff-only, never printed on the PO). Null for lines created before cost capture was enabled or where cost could not be resolved.",
         ),
       edited: zod
         .boolean()
@@ -12613,7 +12614,7 @@ export const AdminCancelPendingVendorOrderResponse = zod.object({
         .number()
         .nullable()
         .describe(
-          "Per-unit cost from the product record (staff-only, never printed on the PO). Null when there is no cost data for the line.",
+          "Per-unit cost from the frozen unit_cost_snapshot (staff-only, never printed on the PO). Null for lines created before cost capture was enabled or where cost could not be resolved.",
         ),
       edited: zod
         .boolean()
@@ -12811,7 +12812,7 @@ export const AdminCancelVendorOrderResponse = zod.object({
         .number()
         .nullable()
         .describe(
-          "Per-unit cost from the product record (staff-only, never printed on the PO). Null when there is no cost data for the line.",
+          "Per-unit cost from the frozen unit_cost_snapshot (staff-only, never printed on the PO). Null for lines created before cost capture was enabled or where cost could not be resolved.",
         ),
       edited: zod
         .boolean()

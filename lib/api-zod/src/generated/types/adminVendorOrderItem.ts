@@ -27,7 +27,7 @@ export interface AdminVendorOrderItem {
   sku: string | null;
   /** Effective sub-description / variant line (PO override if edited, else the variant/fabric snapshot line). */
   subDescription: string | null;
-  /** Per-unit cost from the product record (staff-only, never printed on the PO). Null when there is no cost data for the line. */
+  /** Per-unit cost from the frozen unit_cost_snapshot (staff-only, never printed on the PO). Null for lines created before cost capture was enabled or where cost could not be resolved. */
   cost: number | null;
   /** True when this line differs from the customer's original order (drives the staff-only red flag). Never printed on the PO. */
   edited: boolean;

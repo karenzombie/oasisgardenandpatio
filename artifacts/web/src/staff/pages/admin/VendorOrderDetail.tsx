@@ -88,7 +88,6 @@ type EditRow = {
   description: string;
   subDescription: string;
   quantity: string;
-  unitPrice: string;
   cost: number | null;
   removed: boolean;
   kind: string;
@@ -109,7 +108,6 @@ function serializeEdit(
       description: r.description.trim(),
       subDescription: r.subDescription.trim(),
       quantity: r.quantity.trim(),
-      unitPrice: r.unitPrice.trim(),
       removed: r.removed,
     })),
     notes,
@@ -243,7 +241,6 @@ export default function VendorOrderDetail() {
       description: it.description,
       subDescription: it.subDescription ?? "",
       quantity: String(it.quantity),
-      unitPrice: String(it.unitPrice),
       cost: it.cost,
       removed: false,
       kind: it.kind,
@@ -301,7 +298,6 @@ export default function VendorOrderDetail() {
         description: "",
         subDescription: "",
         quantity: "1",
-        unitPrice: "0",
         cost: null,
         removed: false,
         kind: "product",
@@ -332,7 +328,6 @@ export default function VendorOrderDetail() {
       description: r.description.trim(),
       subDescription: r.subDescription.trim() || null,
       quantity: Number(r.quantity) || 0,
-      unitPrice: Number(r.unitPrice) || 0,
     }));
     return {
       changeNote: note,
@@ -664,7 +659,10 @@ export default function VendorOrderDetail() {
     );
   }
 
-  const itemsTotal = vo.items.reduce((sum, it) => sum + it.amount, 0);
+  const itemsCostTotal = vo.items.reduce(
+    (sum, it) => sum + (it.cost != null ? it.cost * it.quantity : 0),
+    0,
+  );
   const isPending = vo.status === "pending";
   const isTerminal = vo.status === "received" || vo.status === "canceled";
   const canCancel = !isTerminal;
@@ -729,7 +727,6 @@ export default function VendorOrderDetail() {
                         <th className="px-3 py-2 font-medium">Description</th>
                         <th className="px-3 py-2 font-medium">Sub-description</th>
                         <th className="px-3 py-2 font-medium text-right">Qty</th>
-                        <th className="px-3 py-2 font-medium text-right">Unit</th>
                         <th className="px-3 py-2 font-medium text-right">Cost</th>
                         <th className="px-3 py-2 font-medium w-10"></th>
                       </tr>
@@ -784,19 +781,6 @@ export default function VendorOrderDetail() {
                               className={`h-8 text-right ${EDIT_INPUT_CLS}`}
                             />
                           </td>
-                          <td className="px-2 py-1.5 align-top w-24">
-                            <Input
-                              type="number"
-                              min={0}
-                              step="0.01"
-                              value={r.unitPrice}
-                              onChange={(e) =>
-                                updateRow(r.key, { unitPrice: e.target.value })
-                              }
-                              disabled={r.removed}
-                              className={`h-8 text-right ${EDIT_INPUT_CLS}`}
-                            />
-                          </td>
                           <td className="px-3 py-1.5 align-middle text-right whitespace-nowrap">
                             {r.cost != null ? (
                               fmtMoney(r.cost)
@@ -824,7 +808,7 @@ export default function VendorOrderDetail() {
                       {editRows.length === 0 && (
                         <tr className="border-t">
                           <td
-                            colSpan={7}
+                            colSpan={6}
                             className="px-3 py-6 text-center text-sm text-slate-500"
                           >
                             No line items. Add one below.
@@ -858,11 +842,8 @@ export default function VendorOrderDetail() {
                         <th className="px-3 py-2 font-medium">SKU</th>
                         <th className="px-3 py-2 font-medium">Description</th>
                         <th className="px-3 py-2 font-medium text-right">Qty</th>
-                        <th className="px-3 py-2 font-medium text-right">Unit</th>
                         <th className="px-3 py-2 font-medium text-right">Cost</th>
-                        <th className="px-3 py-2 font-medium text-right">
-                          Total
-                        </th>
+                        <th className="px-3 py-2 font-medium text-right">Total</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -895,32 +876,25 @@ export default function VendorOrderDetail() {
                           <td className="px-3 py-2 text-right">
                             {it.quantity}
                           </td>
-                          <td className="px-3 py-2 text-right">
-                            {fmtMoney(it.unitPrice)}
-                          </td>
                           <td className="px-3 py-2 text-right whitespace-nowrap">
-                            {it.cost != null ? (
-                              fmtMoney(it.cost)
-                            ) : (
-                              <span className="italic text-slate-400">
-                                no data
-                              </span>
-                            )}
+                            {it.cost != null ? fmtMoney(it.cost) : ""}
                           </td>
                           <td className="px-3 py-2 text-right font-medium">
-                            {fmtMoney(it.amount)}
+                            {it.cost != null
+                              ? fmtMoney(it.cost * it.quantity)
+                              : ""}
                           </td>
                         </tr>
                       ))}
                       <tr className="border-t bg-slate-50">
                         <td
-                          colSpan={6}
+                          colSpan={5}
                           className="px-3 py-2 text-right font-medium"
                         >
                           Total
                         </td>
                         <td className="px-3 py-2 text-right font-medium">
-                          {fmtMoney(itemsTotal)}
+                          {fmtMoney(itemsCostTotal)}
                         </td>
                       </tr>
                     </tbody>
