@@ -5328,9 +5328,7 @@ export const AdminUpdateProductVariantsBody = zod.object({
         cost: zod
           .string()
           .nullish()
-          .describe(
-            "Staff-only per-variant cost. Null\/omit to leave unset.",
-          ),
+          .describe("Staff-only per-variant cost. Null\/omit to leave unset."),
         shippingSurcharge: zod
           .string()
           .nullish()
@@ -5726,9 +5724,7 @@ export const AdminUpdateProductAddonsBody = zod.object({
         flatCost: zod
           .string()
           .nullish()
-          .describe(
-            "Staff-only flat cost. Null\/omit to leave unset.",
-          ),
+          .describe("Staff-only flat cost. Null\/omit to leave unset."),
         triggersPairing: zod.boolean().optional(),
         isPairingTarget: zod.boolean().optional(),
         enabled: zod.boolean().optional(),

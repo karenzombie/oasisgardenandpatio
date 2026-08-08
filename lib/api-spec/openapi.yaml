@@ -11456,6 +11456,7 @@ components:
         - priceAdjustment
         - msrp
         - salePrice
+        - cost
         - shippingSurcharge
         - weight
         - dimensions
