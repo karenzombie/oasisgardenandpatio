@@ -8173,6 +8173,8 @@ components:
           type: ["string", "null"]
         salePrice:
           type: ["string", "null"]
+        msrp:
+          type: ["string", "null"]
         showPriceOnline:
           type: boolean
         availableOnline:
@@ -8197,6 +8199,7 @@ components:
         - categoryName
         - price
         - salePrice
+        - msrp
         - showPriceOnline
         - availableOnline
         - primaryImageUrl
@@ -8231,6 +8234,8 @@ components:
           type: ["string", "null"]
         salePrice:
           type: ["string", "null"]
+        msrp:
+          type: ["string", "null"]
         showPriceOnline:
           type: boolean
         availableOnline:
@@ -8263,6 +8268,7 @@ components:
         - collection
         - price
         - salePrice
+        - msrp
         - showPriceOnline
         - availableOnline
         - quoteOnly
