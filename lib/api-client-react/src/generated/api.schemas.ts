@@ -2187,6 +2187,8 @@ export interface WishlistItem {
   price: string | null;
   /** @nullable */
   salePrice: string | null;
+  /** @nullable */
+  msrp: string | null;
   showPriceOnline: boolean;
   availableOnline: boolean;
   quoteOnly: boolean;
@@ -3153,6 +3155,8 @@ export interface AdminSetItem {
   productName: string;
   /** @nullable */
   productPrice: string | null;
+  /** @nullable */
+  productMsrp: string | null;
   /** @nullable */
   productPrimaryImageUrl: string | null;
   /** @minimum 1 */

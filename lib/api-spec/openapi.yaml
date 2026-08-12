@@ -8890,6 +8890,8 @@ components:
           type: ["string", "null"]
         salePrice:
           type: ["string", "null"]
+        msrp:
+          type: ["string", "null"]
         showPriceOnline:
           type: boolean
         availableOnline:
@@ -8927,6 +8929,7 @@ components:
         - categoryName
         - price
         - salePrice
+        - msrp
         - showPriceOnline
         - availableOnline
         - quoteOnly
@@ -10311,6 +10314,7 @@ components:
         productSku: { type: string }
         productName: { type: string }
         productPrice: { type: ["string", "null"] }
+        productMsrp: { type: ["string", "null"] }
         productPrimaryImageUrl: { type: ["string", "null"] }
         quantity: { type: integer, minimum: 1 }
         displayOrder: { type: integer }
@@ -10321,6 +10325,7 @@ components:
         - productSku
         - productName
         - productPrice
+        - productMsrp
         - productPrimaryImageUrl
         - quantity
         - displayOrder

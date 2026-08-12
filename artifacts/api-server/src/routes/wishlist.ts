@@ -134,6 +134,7 @@ async function loadWishlist(scope: WishlistScope) {
       categoryName: categoriesTable.name,
       price: productsTable.price,
       salePrice: productsTable.salePrice,
+      msrp: productsTable.msrp,
       showPriceOnline: productsTable.showPriceOnline,
       availableOnline: productsTable.availableOnline,
       quoteOnly: productsTable.quoteOnly,

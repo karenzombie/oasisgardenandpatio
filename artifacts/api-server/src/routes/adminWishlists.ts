@@ -45,10 +45,10 @@ function money(n: string | number | null | undefined): number | null {
 // conversion feature only (Brief 7, Step 5).
 function livePrice(product: {
   salePrice: string | null;
-  price: string | null;
+  msrp: string | null;
 } | null): number | null {
   if (!product) return null;
-  return money(product.salePrice) ?? money(product.price);
+  return money(product.salePrice) ?? money(product.msrp);
 }
 
 router.get(
@@ -253,6 +253,7 @@ async function loadWishlistDetail(customerId: number) {
       variantSku: productVariantsTable.variantSku,
       price: productsTable.price,
       salePrice: productsTable.salePrice,
+      msrp: productsTable.msrp,
       manufacturerName: manufacturersTable.name,
       finishName: frameFinishes.name,
       fabricName: fabricsTable.name,
@@ -303,7 +304,7 @@ async function loadWishlistDetail(customerId: number) {
   let hasUnpricedItems = false;
   const items = itemRows.map((r) => {
     const unitPrice = livePrice(
-      r.productId ? { price: r.price, salePrice: r.salePrice } : null,
+      r.productId ? { msrp: r.msrp, salePrice: r.salePrice } : null,
     );
     const amount = unitPrice !== null ? unitPrice * r.quantity : null;
     if (amount === null) hasUnpricedItems = true;
@@ -457,6 +458,7 @@ async function loadReachOutItems(customerId: number, itemIds: number[]) {
       variantLabel: wishlistItemsTable.variantLabel,
       price: productsTable.price,
       salePrice: productsTable.salePrice,
+      msrp: productsTable.msrp,
       showPriceOnline: productsTable.showPriceOnline,
       finishName: frameFinishes.name,
       fabricName: fabricsTable.name,
@@ -487,7 +489,7 @@ async function loadReachOutItems(customerId: number, itemIds: number[]) {
     fabricItemNumber: r.fabricItemNumber ?? null,
     tileName: r.tileName ?? null,
     price: r.showPriceOnline
-      ? (money(r.salePrice) ?? money(r.price))
+      ? (money(r.salePrice) ?? money(r.msrp))
       : null,
   }));
 }

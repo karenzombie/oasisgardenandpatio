@@ -20,6 +20,8 @@ export interface WishlistItem {
   price: string | null;
   /** @nullable */
   salePrice: string | null;
+  /** @nullable */
+  msrp: string | null;
   showPriceOnline: boolean;
   availableOnline: boolean;
   quoteOnly: boolean;

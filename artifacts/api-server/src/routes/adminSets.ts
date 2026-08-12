@@ -73,6 +73,7 @@ async function loadSetItems(setId: number): Promise<ItemRow[]> {
       productSku: productsTable.sku,
       productName: productsTable.name,
       productPrice: productsTable.price,
+      productMsrp: productsTable.msrp,
       productPrimaryImageUrl: sql<string | null>`(
         select ${productImagesTable.url}
         from ${productImagesTable}

@@ -18,6 +18,8 @@ export interface AdminSetItem {
   /** @nullable */
   productPrice: string | null;
   /** @nullable */
+  productMsrp: string | null;
+  /** @nullable */
   productPrimaryImageUrl: string | null;
   /** @minimum 1 */
   quantity: number;
