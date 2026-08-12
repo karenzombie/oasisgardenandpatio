@@ -298,8 +298,8 @@ router.get(
     }
     const whereClause = and(...conditions);
 
-    // Effective price for sorting: COALESCE(sale_price, price)
-    const effectivePrice = sql<string>`COALESCE(${productsTable.salePrice}, ${productsTable.price})`;
+    // Effective price for sorting: COALESCE(sale_price, msrp)
+    const effectivePrice = sql<string>`COALESCE(${productsTable.salePrice}, ${productsTable.msrp})`;
     const orderBy = (() => {
       switch (sort) {
         case "price_asc":
@@ -1203,6 +1203,7 @@ router.get(
         slug: productsTable.slug,
         price: productsTable.price,
         salePrice: productsTable.salePrice,
+        msrp: productsTable.msrp,
         primaryImageUrl: sql<string | null>`(
           select ${productImagesTable.url}
           from ${productImagesTable}
@@ -1231,14 +1232,14 @@ router.get(
     const stemOptions = stemOptionRows.map((s) => {
       const sale =
         s.salePrice != null && Number(s.salePrice) > 0 ? s.salePrice : null;
-      const unitPrice = sale ?? (s.price != null ? s.price : "0");
+      const unitPrice = sale ?? (s.msrp != null ? s.msrp : "0");
       return {
         stemProductId: s.stemProductId,
         sku: s.sku,
         name: s.name,
         slug: s.slug,
         imageUrl: toPublicImageUrl(s.primaryImageUrl),
-        msrp: s.price == null ? null : String(s.price),
+        msrp: s.msrp == null ? null : String(s.msrp),
         salePrice: sale == null ? null : String(sale),
         unitPrice: String(unitPrice),
       };

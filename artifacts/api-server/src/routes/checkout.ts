@@ -324,6 +324,7 @@ router.post(
             availableOnline: productsTable.availableOnline,
             productPrice: productsTable.price,
             productSalePrice: productsTable.salePrice,
+            productMsrp: productsTable.msrp,
             isActive: productsTable.isActive,
             quoteOnly: productsTable.quoteOnly,
             parentCartItemId: cartItemsTable.parentCartItemId,
@@ -399,7 +400,7 @@ router.post(
             (l) =>
               l.parentCartItemId == null &&
               !(
-                (l.productPrice != null && Number(l.productPrice) > 0) ||
+                (l.productMsrp != null && Number(l.productMsrp) > 0) ||
                 (l.productSalePrice != null && Number(l.productSalePrice) > 0)
               ),
           )

@@ -35,8 +35,8 @@ router.get("/categories", async (req, res): Promise<void> => {
     productConditions.push(eq(productsTable.quoteOnly, false));
     productConditions.push(eq(productsTable.inStoreOnly, false));
     productConditions.push(eq(productsTable.showPriceOnline, true));
-    productConditions.push(sql`${productsTable.price} IS NOT NULL`);
-    productConditions.push(sql`${productsTable.price} > 0`);
+    productConditions.push(sql`${productsTable.msrp} IS NOT NULL`);
+    productConditions.push(sql`${productsTable.msrp} > 0`);
   }
 
   const rows = await db

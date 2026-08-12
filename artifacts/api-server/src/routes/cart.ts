@@ -352,6 +352,7 @@ router.post(
         id: productsTable.id,
         price: productsTable.price,
         salePrice: productsTable.salePrice,
+        msrp: productsTable.msrp,
         frameOnlyPrice: productsTable.frameOnlyPrice,
         quoteOnly: productsTable.quoteOnly,
         availableOnline: productsTable.availableOnline,
@@ -392,7 +393,7 @@ router.post(
     // usable price must never be sellable. Mirrors the PDP's hasPrice logic
     // (price or salePrice non-null and > 0).
     const hasUsablePrice =
-      (product.price != null && Number(product.price) > 0) ||
+      (product.msrp != null && Number(product.msrp) > 0) ||
       (product.salePrice != null && Number(product.salePrice) > 0);
     // Products where pricing lives entirely in variants (absolute per-variant
     // msrp/salePrice) may carry no base product price. Allow the add when a
@@ -820,7 +821,7 @@ router.post(
         basePriceStr =
           product.salePrice && Number(product.salePrice) > 0
             ? product.salePrice
-            : product.price;
+            : product.msrp;
       }
       if (!basePriceStr) {
         res.status(400).json({ error: "Product has no price set" });
@@ -997,6 +998,7 @@ router.post(
           id: productsTable.id,
           price: productsTable.price,
           salePrice: productsTable.salePrice,
+          msrp: productsTable.msrp,
         })
         .from(productStemOptionsTable)
         .innerJoin(
@@ -1021,7 +1023,7 @@ router.post(
         stem.salePrice != null && Number(stem.salePrice) > 0
           ? Number(stem.salePrice)
           : null;
-      const stemPrice = stemSale ?? (stem.price != null ? Number(stem.price) : null);
+      const stemPrice = stemSale ?? (stem.msrp != null ? Number(stem.msrp) : null);
       if (stemPrice == null) {
         res.status(400).json({ error: "The selected stem has no price set." });
         return;

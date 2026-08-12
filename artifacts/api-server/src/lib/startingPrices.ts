@@ -73,16 +73,16 @@ export async function computeStartingPrices(
 
       -- Base price + per-variant adjustment (no grade prices, no absolute variant price)
       SELECT v.product_id AS product_id,
-             (p.price + v.price_adjustment)::text AS msrp,
+             (p.msrp + v.price_adjustment)::text AS msrp,
              (CASE WHEN p.sale_price > 0
                    THEN (p.sale_price + v.price_adjustment) END)::text AS sale_price,
-             ((CASE WHEN p.sale_price > 0 THEN p.sale_price ELSE p.price END)
+             ((CASE WHEN p.sale_price > 0 THEN p.sale_price ELSE p.msrp END)
                + v.price_adjustment) AS eff
       FROM product_variants v
       JOIN products p ON p.id = v.product_id
       WHERE v.is_active = true
         AND v.msrp IS NULL
-        AND p.price IS NOT NULL
+        AND p.msrp IS NOT NULL
         AND v.product_id IN (${ids})
         AND NOT EXISTS (
           SELECT 1 FROM variant_grade_prices g WHERE g.variant_id = v.id
