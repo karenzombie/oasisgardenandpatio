@@ -1829,7 +1829,9 @@ export function ProductPickerDialog({
     ? gradeUnitPrice
     : supportsFrameOnly && !includeFabric && detail.data?.frameOnlyPrice
       ? Number(detail.data.frameOnlyPrice)
-      : (picked?.msrp != null ? Number(picked.msrp) : 0) +
+      : (picked?.salePrice != null && Number(picked.salePrice) > 0
+          ? Number(picked.salePrice)
+          : (picked?.msrp != null ? Number(picked.msrp) : 0)) +
         (selectedVariant ? Number(selectedVariant.priceAdjustment) || 0 : 0);
   const effectivePrice =
     baseEffectivePrice != null ? baseEffectivePrice + finishUpcharge : null;
