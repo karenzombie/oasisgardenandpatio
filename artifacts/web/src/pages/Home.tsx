@@ -259,7 +259,7 @@ export default function Home() {
               >
                 {featured.map((p) => {
                   const varies = p.priceVaries && p.showPriceOnline;
-                  const displayPrice = varies ? p.startingPrice : p.price;
+                  const displayPrice = varies ? p.startingPrice : p.msrp;
                   const displaySale = varies ? p.startingSalePrice : p.salePrice;
                   const onSale =
                     displaySale &&

@@ -29,7 +29,7 @@ function formatMoney(v: string | null | undefined): string {
 
 const ProductCard = memo(function ProductCard({ product: p }: { product: CatalogProduct }) {
   const varies = p.priceVaries && p.showPriceOnline;
-  const displayPrice = varies ? p.startingPrice : p.price;
+  const displayPrice = varies ? p.startingPrice : p.msrp;
   const displaySale = varies ? p.startingSalePrice : p.salePrice;
   const onSale =
     displaySale &&

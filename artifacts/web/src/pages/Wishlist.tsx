@@ -112,7 +112,7 @@ export default function Wishlist() {
         <ul className="divide-y divide-border border-y border-border">
           {items.map((item) => {
             const onSale =
-              item.salePrice && item.price && Number(item.salePrice) < Number(item.price);
+              item.salePrice && item.msrp && Number(item.salePrice) < Number(item.msrp);
             return (
               <li
                 key={item.id}
@@ -176,19 +176,19 @@ export default function Wishlist() {
                       {item.tileName}
                     </p>
                   ) : null}
-                  {item.showPriceOnline && item.price ? (
+                  {item.showPriceOnline && item.msrp ? (
                     <p className="text-sm mt-2">
                       {onSale ? (
                         <>
                           <span className="text-muted-foreground line-through mr-2">
-                            {formatMoney(item.price)}
+                            {formatMoney(item.msrp)}
                           </span>
                           <span className="text-primary font-semibold">
                             {formatMoney(item.salePrice)}
                           </span>
                         </>
                       ) : (
-                        <span>{formatMoney(item.price)}</span>
+                        <span>{formatMoney(item.msrp)}</span>
                       )}
                     </p>
                   ) : null}

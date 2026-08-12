@@ -542,7 +542,7 @@ export default function SearchPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {data.products.map((p) => {
                 const varies = p.priceVaries && p.showPriceOnline;
-                const displayPrice = varies ? p.startingPrice : p.price;
+                const displayPrice = varies ? p.startingPrice : p.msrp;
                 const displaySale = varies ? p.startingSalePrice : p.salePrice;
                 const onSale =
                   displaySale &&

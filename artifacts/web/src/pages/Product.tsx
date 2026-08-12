@@ -890,7 +890,7 @@ export default function Product() {
       : allGalleryImages;
   const specImages = data.images.filter((i) => i.imageKind === "spec");
   const activeImage = galleryImages[activeImageIdx] ?? galleryImages[0] ?? null;
-  const onSale = data.salePrice && data.price && Number(data.salePrice) < Number(data.price);
+  const onSale = data.salePrice && data.msrp && Number(data.salePrice) < Number(data.msrp);
   const brandLogo = getBrandLogo(data.manufacturerName);
 
   // When frame-only is selected, effectivePrice uses frameOnlyPrice (no sale
@@ -900,7 +900,7 @@ export default function Product() {
     : Number(
         (data.salePrice && Number(data.salePrice) > 0
           ? data.salePrice
-          : data.price) ?? 0,
+          : data.msrp) ?? 0,
       );
   const variantAdj = Number(selectedVariant?.priceAdjustment ?? 0);
   // Absolute per-variant pricing (e.g. per-size rugs). When the selected
@@ -928,7 +928,7 @@ export default function Product() {
     : Boolean(onSale) && !frameOnly;
   const strikePrice = variantHasAbsolute
     ? (variantMsrp ?? 0)
-    : Number(data.price);
+    : Number(data.msrp);
 
   // ---- Grade-mode pricing ----
   // gradeLinePrice/gradeMsrp are set once a fabric is chosen (its grade picks
@@ -1076,7 +1076,7 @@ export default function Product() {
   // request otherwise, so we mirror those rules here and fall back to the
   // "Contact us" panel + Wishlist button when any rule fails.
   const hasPrice =
-    (data.price != null && Number(data.price) > 0) ||
+    (data.msrp != null && Number(data.msrp) > 0) ||
     (data.salePrice != null && Number(data.salePrice) > 0);
   // TG replacement parts carry no base product price — pricing lives entirely
   // in the individual variants (absolute msrp/salePrice). Always treat them as
@@ -2189,8 +2189,8 @@ export default function Product() {
                         gradeFromPrice != null ? (
                           <span className="ml-1 opacity-75">(from {formatMoney(gradeFromPrice)})</span>
                         ) : null
-                      ) : data.price ? (
-                        <span className="ml-1 opacity-75">({formatMoney(data.price)})</span>
+                      ) : data.msrp ? (
+                        <span className="ml-1 opacity-75">({formatMoney(data.msrp)})</span>
                       ) : null}
                     </button>
                     <button
