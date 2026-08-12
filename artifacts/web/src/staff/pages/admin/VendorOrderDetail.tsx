@@ -727,7 +727,7 @@ export default function VendorOrderDetail() {
                         <th className="px-3 py-2 font-medium">Description</th>
                         <th className="px-3 py-2 font-medium">Sub-description</th>
                         <th className="px-3 py-2 font-medium text-right">Qty</th>
-                        <th className="px-3 py-2 font-medium text-right">Cost</th>
+                        <th className="px-3 py-2 font-medium text-right">Unit cost</th>
                         <th className="px-3 py-2 font-medium w-10"></th>
                       </tr>
                     </thead>
@@ -842,8 +842,8 @@ export default function VendorOrderDetail() {
                         <th className="px-3 py-2 font-medium">SKU</th>
                         <th className="px-3 py-2 font-medium">Description</th>
                         <th className="px-3 py-2 font-medium text-right">Qty</th>
-                        <th className="px-3 py-2 font-medium text-right">Cost</th>
-                        <th className="px-3 py-2 font-medium text-right">Total</th>
+                        <th className="px-3 py-2 font-medium text-right">Unit cost</th>
+                        <th className="px-3 py-2 font-medium text-right">Total cost</th>
                       </tr>
                     </thead>
                     <tbody>

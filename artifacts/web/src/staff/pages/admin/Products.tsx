@@ -364,7 +364,7 @@ export default function Products() {
                           {row.categoryName ?? <span className="text-slate-400">—</span>}
                         </td>
                         <td className="px-4 py-2.5 text-right text-slate-700 tabular-nums">
-                          {row.price ? `$${Number(row.price).toFixed(2)}` : <span className="text-slate-400">—</span>}
+                          {row.msrp ? `$${Number(row.msrp).toFixed(2)}` : <span className="text-slate-400">—</span>}
                         </td>
                         <td className="px-4 py-2.5 text-right tabular-nums">
                           {row.salePrice ? (

@@ -311,7 +311,7 @@ export default function SetEdit() {
         productId: p.id,
         productSku: p.sku,
         productName: p.name,
-        productPrice: p.price,
+        productPrice: p.msrp,
         productPrimaryImageUrl: p.primaryImageUrl,
         quantity: 1,
       },
@@ -601,9 +601,9 @@ export default function SetEdit() {
                                 {p.sku}
                               </span>
                               <span className="flex-1 truncate">{p.name}</span>
-                              {p.price && (
+                              {p.msrp && (
                                 <span className="ml-auto text-xs text-slate-500 tabular-nums shrink-0">
-                                  {formatMoney(p.price)}
+                                  {formatMoney(p.msrp)}
                                 </span>
                               )}
                             </CommandItem>

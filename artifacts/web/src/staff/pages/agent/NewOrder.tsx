@@ -1198,8 +1198,8 @@ export default function AgentNewOrder() {
                                       </div>
                                     </div>
                                     <div className="text-xs tabular-nums shrink-0">
-                                      {p.price != null
-                                        ? fmtMoney(Number(p.price))
+                                      {p.msrp != null
+                                        ? fmtMoney(Number(p.msrp))
                                         : "—"}
                                     </div>
                                   </div>
@@ -1829,7 +1829,7 @@ export function ProductPickerDialog({
     ? gradeUnitPrice
     : supportsFrameOnly && !includeFabric && detail.data?.frameOnlyPrice
       ? Number(detail.data.frameOnlyPrice)
-      : (picked?.price != null ? Number(picked.price) : 0) +
+      : (picked?.msrp != null ? Number(picked.msrp) : 0) +
         (selectedVariant ? Number(selectedVariant.priceAdjustment) || 0 : 0);
   const effectivePrice =
     baseEffectivePrice != null ? baseEffectivePrice + finishUpcharge : null;
@@ -1864,7 +1864,7 @@ export function ProductPickerDialog({
                           {p.manufacturerName ? ` · ${p.manufacturerName}` : ""}
                         </div>
                       </div>
-                      <div className="text-sm tabular-nums">{p.price != null ? fmtMoney(Number(p.price)) : "—"}</div>
+                      <div className="text-sm tabular-nums">{p.msrp != null ? fmtMoney(Number(p.msrp)) : "—"}</div>
                     </div>
                   </button>
                 ))
@@ -1911,7 +1911,7 @@ export function ProductPickerDialog({
                 Include fabric
                 {detail.data?.frameOnlyPrice && (
                   <span className="text-xs text-slate-500">
-                    (+{fmtMoney(Number(picked.price) - Number(detail.data.frameOnlyPrice))} vs. frame only)
+                    (+{fmtMoney(Number(picked.msrp) - Number(detail.data.frameOnlyPrice))} vs. frame only)
                   </span>
                 )}
               </label>

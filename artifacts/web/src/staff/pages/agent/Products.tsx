@@ -130,7 +130,7 @@ export default function AgentProducts() {
                       <td className="px-4 py-3 font-mono text-xs text-slate-600">{row.sku}</td>
                       <td className="px-4 py-3 text-slate-700">{row.manufacturerName ?? "—"}</td>
                       <td className="px-4 py-3 text-slate-700">{row.categoryName ?? "—"}</td>
-                      <td className="px-4 py-3 text-right tabular-nums">{fmtMoney(row.price)}</td>
+                      <td className="px-4 py-3 text-right tabular-nums">{fmtMoney(row.msrp)}</td>
                       <td className="px-4 py-3 text-right tabular-nums">{row.onHand}</td>
                       <td className="px-4 py-3">
                         {row.isActive ? (
