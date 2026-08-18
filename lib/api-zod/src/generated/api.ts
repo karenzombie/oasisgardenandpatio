@@ -11689,8 +11689,6 @@ export const AdminEditVendorOrderParams = zod.object({
 
 export const adminEditVendorOrderBodyItemsItemQuantityMin = 0;
 
-export const adminEditVendorOrderBodyItemsItemUnitPriceMin = 0;
-
 export const AdminEditVendorOrderBody = zod.object({
   changeNote: zod
     .string()
@@ -11709,14 +11707,17 @@ export const AdminEditVendorOrderBody = zod.object({
         .describe(
           "Existing order_item id to edit. Omit \/ null to ADD a new line to this PO.",
         ),
-      sku: zod.string().nullish(),
-      description: zod.string(),
-      subDescription: zod.string().nullish(),
-      quantity: zod.number().min(adminEditVendorOrderBodyItemsItemQuantityMin),
-      unitPrice: zod
+      productId: zod
         .number()
-        .min(adminEditVendorOrderBodyItemsItemUnitPriceMin)
-        .optional(),
+        .nullish()
+        .describe(
+          "Required when adding a new line (id is null). The product to add. Must not be set when editing an existing line.",
+        ),
+      variantId: zod.string().nullish(),
+      grade: zod.string().nullish(),
+      finishId: zod.number().nullish(),
+      notes: zod.string().nullish(),
+      quantity: zod.number().min(adminEditVendorOrderBodyItemsItemQuantityMin),
       removed: zod
         .boolean()
         .optional()

@@ -401,13 +401,14 @@ export interface AdminVendorOrderEdit {
 export interface EditVendorOrderItem {
   /** Existing order_item id to edit. Omit / null to ADD a new line to this PO. */
   id?: number | null;
-  sku?: string | null;
-  description: string;
-  subDescription?: string | null;
+  /** Required when adding a new line (id is null). The product to add. Must not be set when editing an existing line. */
+  productId?: number | null;
+  variantId?: string | null;
+  grade?: string | null;
+  finishId?: number | null;
+  notes?: string | null;
   /** @minimum 0 */
   quantity: number;
-  /** @minimum 0 */
-  unitPrice?: number;
   /** When true, drop this existing line from the PO (kept on the customer order). */
   removed?: boolean;
 }

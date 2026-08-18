@@ -6488,15 +6488,19 @@ components:
           type: integer
           nullable: true
           description: "Existing order_item id to edit. Omit / null to ADD a new line to this PO."
-        sku: { type: string, nullable: true }
-        description: { type: string }
-        subDescription: { type: string, nullable: true }
+        productId:
+          type: integer
+          nullable: true
+          description: "Required when adding a new line (id is null). The product to add. Must not be set when editing an existing line."
+        variantId: { type: string, nullable: true }
+        grade: { type: string, nullable: true }
+        finishId: { type: integer, nullable: true }
+        notes: { type: string, nullable: true }
         quantity: { type: integer, minimum: 0 }
-        unitPrice: { type: number, minimum: 0 }
         removed:
           type: boolean
           description: "When true, drop this existing line from the PO (kept on the customer order)."
-      required: [description, quantity]
+      required: [quantity]
     EditVendorOrderRequest:
       type: object
       properties:
