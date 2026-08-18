@@ -11,7 +11,7 @@ export interface EditVendorOrderItem {
   id?: number | null;
   /** Required when adding a new line (id is null). The product to add. Must not be set when editing an existing line. */
   productId?: number | null;
-  variantId?: string | null;
+  variantId?: number | null;
   grade?: string | null;
   finishId?: number | null;
   notes?: string | null;

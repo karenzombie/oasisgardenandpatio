@@ -11713,7 +11713,7 @@ export const AdminEditVendorOrderBody = zod.object({
         .describe(
           "Required when adding a new line (id is null). The product to add. Must not be set when editing an existing line.",
         ),
-      variantId: zod.string().nullish(),
+      variantId: zod.number().nullish(),
       grade: zod.string().nullish(),
       finishId: zod.number().nullish(),
       notes: zod.string().nullish(),

@@ -6492,7 +6492,7 @@ components:
           type: integer
           nullable: true
           description: "Required when adding a new line (id is null). The product to add. Must not be set when editing an existing line."
-        variantId: { type: string, nullable: true }
+        variantId: { type: integer, nullable: true }
         grade: { type: string, nullable: true }
         finishId: { type: integer, nullable: true }
         notes: { type: string, nullable: true }

@@ -1024,6 +1024,53 @@ router.post(
     const id = params.data.id;
     const userId = req.session?.userId ?? null;
 
+    // Pre-fetch products and variants for any lines being added (id == null).
+    // Mirrors the CREATE endpoint: validate before opening the transaction so
+    // we can return a clean 400/404 without rolling back a txn.
+    const addedItems = body.data.items.filter((i) => i.id == null);
+    for (const item of addedItems) {
+      if (item.productId == null) {
+        res.status(400).json({ error: "productId is required when adding a new line" });
+        return;
+      }
+    }
+    const addedProductIds = Array.from(new Set(addedItems.map((i) => i.productId as number)));
+    const addedVariantIds = Array.from(
+      new Set(addedItems.map((i) => i.variantId).filter((x): x is number => x != null)),
+    );
+    const addedProductsRows = addedProductIds.length
+      ? await db.select().from(productsTable).where(inArray(productsTable.id, addedProductIds))
+      : [];
+    const addedProductById = new Map(addedProductsRows.map((p) => [p.id, p]));
+    for (const pid of addedProductIds) {
+      if (!addedProductById.get(pid)) {
+        res.status(404).json({ error: `Product ${pid} not found` });
+        return;
+      }
+    }
+    const addedVariantsRows = addedVariantIds.length
+      ? await db
+          .select()
+          .from(productVariantsTable)
+          .where(inArray(productVariantsTable.id, addedVariantIds))
+      : [];
+    const addedVariantById = new Map(addedVariantsRows.map((v) => [v.id, v]));
+    for (const item of addedItems) {
+      if (item.variantId != null) {
+        const v = addedVariantById.get(item.variantId);
+        if (!v) {
+          res.status(404).json({ error: `Variant ${item.variantId} not found` });
+          return;
+        }
+        if (v.productId !== item.productId) {
+          res.status(400).json({
+            error: `Variant ${item.variantId} does not belong to product ${item.productId}`,
+          });
+          return;
+        }
+      }
+    }
+
     const result = await db.transaction(async (tx) => {
       const [existing] = await tx
         .select()
@@ -1036,6 +1083,14 @@ router.post(
       // status as-is (resending is a separate, explicit action).
       if (existing.status !== "pending" && existing.status !== "sent") {
         return { kind: "not_pending" as const, status: existing.status };
+      }
+
+      // Enforce single-vendor PO: every added product must belong to this PO's manufacturer.
+      for (const pid of addedProductIds) {
+        const p = addedProductById.get(pid)!;
+        if (p.manufacturerId !== existing.manufacturerId) {
+          return { kind: "wrong_manufacturer" as const, sku: p.sku };
+        }
       }
 
       // Load this PO's live (non-removed) lines, keyed by id, so we can apply
@@ -1055,11 +1110,7 @@ router.post(
       const rowById = new Map(currentRows.map((r) => [r.id, r]));
 
       for (const item of body.data.items) {
-        const sku = item.sku?.trim() || null;
-        const description = item.description.trim();
-        const subDescription = item.subDescription?.trim() || null;
         const quantity = item.quantity;
-        const unitPrice = item.unitPrice ?? 0;
 
         if (item.id != null) {
           const row = rowById.get(item.id);
@@ -1074,48 +1125,63 @@ router.post(
             continue;
           }
 
-          // Compare against the current EFFECTIVE values so a no-op save
-          // doesn't spuriously flag the line.
-          const effSku =
-            row.poSku ?? row.variantSkuSnapshot ?? row.productSkuSnapshot ?? null;
-          const effDescription = row.poDescription ?? row.description;
-          const effSubDescription =
-            row.poSubDescription ?? row.variantNameSnapshot ?? null;
+          // Quantity-only change check: text fields are locked to the product
+          // snapshot; only the PO quantity can change on an existing line.
           const effQuantity = row.poQuantity ?? row.quantity;
-          const changed =
-            sku !== effSku ||
-            description !== effDescription ||
-            subDescription !== effSubDescription ||
-            quantity !== effQuantity;
-
-          if (changed) {
+          if (quantity !== effQuantity) {
             await tx
               .update(orderItemsTable)
-              .set({
-                poEdited: true,
-                poSku: sku,
-                poDescription: description,
-                poSubDescription: subDescription,
-                poQuantity: quantity,
-              })
+              .set({ poEdited: true, poQuantity: quantity })
               .where(eq(orderItemsTable.id, row.id));
           }
         } else {
-          // Added line: a fresh order_items row owned solely by this PO.
-          // Free-form lines have productId=null so cost cannot be resolved;
-          // unitCostSnapshot is null (pre-existing lines stay null too).
+          // Added line: product-linked row owned solely by this PO.
+          // Mirrors the CREATE endpoint: snapshots are taken from the live
+          // product/variant rows; cost is resolved inside the transaction.
+          const p = addedProductById.get(item.productId!)!;
+          const v =
+            item.variantId != null ? (addedVariantById.get(item.variantId) ?? null) : null;
+          const description = v ? `${p.name} — ${v.variantName}` : p.name;
+
+          const derivedGrade =
+            item.grade != null
+              ? item.grade
+              : item.finishId != null
+                ? String(item.finishId)
+                : null;
+          const resolvedCost = await resolveLineCost(tx, {
+            productId: p.id,
+            variantId: v?.id ?? null,
+            grade: derivedGrade,
+          });
+
+          const unitPrice = resolvedCost != null ? Number(resolvedCost).toFixed(2) : "0.00";
+          const amount =
+            resolvedCost != null
+              ? (Number(resolvedCost) * quantity).toFixed(2)
+              : "0.00";
+
           await tx.insert(orderItemsTable).values({
             orderId: null,
             vendorOrderId: id,
-            productId: null,
-            productSkuSnapshot: sku,
+            productId: p.id,
+            variantId: v?.id ?? null,
+            productSkuSnapshot: p.sku,
+            variantSkuSnapshot: v?.variantSku ?? null,
+            variantNameSnapshot: v?.variantName ?? null,
+            weightSnapshot:
+              v?.weight != null
+                ? String(v.weight)
+                : p.weight != null
+                  ? String(p.weight)
+                  : null,
             description,
-            variantNameSnapshot: subDescription,
             quantity,
-            unitPrice: unitPrice.toFixed(2),
-            amount: (unitPrice * quantity).toFixed(2),
+            unitPrice,
+            amount,
+            notes: item.notes ?? null,
             poEdited: true,
-            unitCostSnapshot: null,
+            unitCostSnapshot: resolvedCost != null ? String(resolvedCost) : null,
           });
         }
       }
@@ -1154,6 +1220,12 @@ router.post(
     if (result.kind === "not_pending") {
       res.status(409).json({
         error: `Only pending or sent vendor orders can be edited (this one is '${result.status}').`,
+      });
+      return;
+    }
+    if (result.kind === "wrong_manufacturer") {
+      res.status(400).json({
+        error: `Product ${result.sku} is made by a different manufacturer than this PO`,
       });
       return;
     }
