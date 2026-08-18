@@ -7,6 +7,7 @@ When dev and production databases diverge on data (SKUs, codes, material IDs, et
 - **Dev is the source of truth** — it reflects the intended/correct state from seed scripts and explicit changes.
 - **Production often has stale data** from earlier seeding runs or manual imports.
 - Always update prod to match dev, never the reverse.
+- **Always ask Karen before running any prod data sync — even small targeted patches.** Do not auto-sync.
 
 **Why:** Reversing direction corrupts dev with old/wrong data, breaks seed scripts that rely on correct dev state, and wastes time undoing the mistake.
 

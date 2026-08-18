@@ -104,6 +104,7 @@ A full-stack e-commerce platform for a luxury outdoor furniture retailer, suppor
 ## User preferences
 
 - Do not propose follow-up tasks unprompted. The user manages scope explicitly and does not want unsolicited task suggestions.
+- **Always ask before syncing any data from dev to prod.** Do not auto-sync even for small targeted patches.
 
 ## Pointers
 

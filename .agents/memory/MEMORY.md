@@ -13,7 +13,7 @@
 - [Variant PUT cart cascade](variant-put-cart-cascade.md) — admin variant replace-all must keyed-upsert by variantSku (not delete+reinsert) or cart_items cascade-delete; gate Save on variantsHydrated.
 - [Product short_description teaser](product-short-description.md) — PDP top blurb = short_description (first paragraph of description, NOT char-clamp+"…"); description is the full copy in the tab.
 - [Image upload location](image-upload-location.md) — user always uploads image folders to workspace root (e.g. ./coture_jardin_finish_images/), NOT Object Storage. Check root first.
-- [Dev→prod sync direction](dev-prod-sync-direction.md) — always update prod to match dev, never dev to match prod; prod often has stale data.
+- [Dev→prod sync direction](dev-prod-sync-direction.md) — always update prod to match dev, never dev to match prod; prod often has stale data. Always ask Karen before syncing.
 - [Variant absolute pricing](variant-absolute-pricing.md) — per-variant msrp/sale/surcharge override base+adjustment across PDP/cart/checkout, keyed on msrp; admin rejects sale-without-msrp; adminOrders skipped (no variantId).
 - [CSV bare inch quotes](csv-bare-inch-quotes.md) — vendor product-list CSVs mix bare/escaped inch marks; preprocess `([0-9'])"(?!")`→″ (product list only, not pricing); image SKUs may drop hyphen.
 - [Radix Select long-list scroll bug](radix-select-long-list-scroll.md) — Radix Select clips/won't-scroll long lists (Safari); use Popover+cmdk Command combobox (Fabrics.tsx pattern) instead.
