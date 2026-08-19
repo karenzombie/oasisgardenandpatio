@@ -877,45 +877,71 @@ export default function VendorOrderDetail() {
                       </tr>
                     </thead>
                     <tbody>
-                      {vo.items.map((it) => (
-                        <tr key={it.id} className="border-t">
-                          <td className="px-3 py-2 align-top">
-                            {it.edited && (
-                              <Flag
-                                className="size-4 text-red-600 fill-red-600"
-                                aria-label="Differs from original order"
-                              />
-                            )}
-                          </td>
-                          <td className="px-3 py-2 font-mono text-xs">
-                            {it.sku ??
-                              it.variantSkuSnapshot ??
-                              it.productSkuSnapshot ??
-                              "—"}
-                          </td>
-                          <td className="px-3 py-2">
-                            <div>{it.description}</div>
-                            {(it.subDescription || it.fabricNameSnapshot) && (
-                              <div className="text-xs text-slate-500">
-                                {[it.subDescription, it.fabricNameSnapshot]
-                                  .filter(Boolean)
-                                  .join(" · ")}
-                              </div>
-                            )}
-                          </td>
-                          <td className="px-3 py-2 text-right">
-                            {it.quantity}
-                          </td>
-                          <td className="px-3 py-2 text-right whitespace-nowrap">
-                            {it.cost != null ? fmtMoney(it.cost) : ""}
-                          </td>
-                          <td className="px-3 py-2 text-right font-medium">
-                            {it.cost != null
-                              ? fmtMoney(it.cost * it.quantity)
-                              : ""}
-                          </td>
-                        </tr>
-                      ))}
+                      {vo.items.map((it) => {
+                        // Build a structured option detail line from snapshot fields.
+                        // Falls back to subDescription when no snapshots are set (pre-snapshot lines).
+                        const finishLabel = it.finishNameSnapshot
+                          ? it.finishCodeSnapshot
+                            ? `${it.finishNameSnapshot} (${it.finishCodeSnapshot})`
+                            : it.finishNameSnapshot
+                          : null;
+                        const finialLabel = it.finialNameSnapshot
+                          ? it.finialCodeSnapshot
+                            ? `${it.finialNameSnapshot} (${it.finialCodeSnapshot})`
+                            : it.finialNameSnapshot
+                          : null;
+                        const fabricParts = [
+                          it.fabricNameSnapshot,
+                          it.fabricGradeSnapshot
+                            ? `Grade ${it.fabricGradeSnapshot}`
+                            : null,
+                          it.fabricItemNumberSnapshot,
+                        ].filter(Boolean);
+                        const fabricLabel = fabricParts.length
+                          ? fabricParts.join(" · ")
+                          : null;
+                        const optionLine =
+                          [finishLabel, finialLabel, fabricLabel]
+                            .filter(Boolean)
+                            .join(" · ") || it.subDescription;
+                        return (
+                          <tr key={it.id} className="border-t">
+                            <td className="px-3 py-2 align-top">
+                              {it.edited && (
+                                <Flag
+                                  className="size-4 text-red-600 fill-red-600"
+                                  aria-label="Differs from original order"
+                                />
+                              )}
+                            </td>
+                            <td className="px-3 py-2 font-mono text-xs">
+                              {it.sku ??
+                                it.variantSkuSnapshot ??
+                                it.productSkuSnapshot ??
+                                "—"}
+                            </td>
+                            <td className="px-3 py-2">
+                              <div>{it.description}</div>
+                              {optionLine && (
+                                <div className="text-xs text-slate-500">
+                                  {optionLine}
+                                </div>
+                              )}
+                            </td>
+                            <td className="px-3 py-2 text-right">
+                              {it.quantity}
+                            </td>
+                            <td className="px-3 py-2 text-right whitespace-nowrap">
+                              {it.cost != null ? fmtMoney(it.cost) : ""}
+                            </td>
+                            <td className="px-3 py-2 text-right font-medium">
+                              {it.cost != null
+                                ? fmtMoney(it.cost * it.quantity)
+                                : ""}
+                            </td>
+                          </tr>
+                        );
+                      })}
                       <tr className="border-t bg-slate-50">
                         <td
                           colSpan={5}
@@ -1647,6 +1673,30 @@ export default function VendorOrderDetail() {
                       const remaining = item.quantity - item.receivedQuantity;
                       const qtyStr = receiveItems.get(item.id) ?? "0";
                       const isFullyReceived = remaining <= 0;
+                      const rcvFinishLabel = item.finishNameSnapshot
+                        ? item.finishCodeSnapshot
+                          ? `${item.finishNameSnapshot} (${item.finishCodeSnapshot})`
+                          : item.finishNameSnapshot
+                        : null;
+                      const rcvFinialLabel = item.finialNameSnapshot
+                        ? item.finialCodeSnapshot
+                          ? `${item.finialNameSnapshot} (${item.finialCodeSnapshot})`
+                          : item.finialNameSnapshot
+                        : null;
+                      const rcvFabricParts = [
+                        item.fabricNameSnapshot,
+                        item.fabricGradeSnapshot
+                          ? `Grade ${item.fabricGradeSnapshot}`
+                          : null,
+                        item.fabricItemNumberSnapshot,
+                      ].filter(Boolean);
+                      const rcvFabricLabel = rcvFabricParts.length
+                        ? rcvFabricParts.join(" · ")
+                        : null;
+                      const rcvOptionLine =
+                        [rcvFinishLabel, rcvFinialLabel, rcvFabricLabel]
+                          .filter(Boolean)
+                          .join(" · ") || item.subDescription;
                       return (
                         <tr
                           key={item.id}
@@ -1657,8 +1707,8 @@ export default function VendorOrderDetail() {
                           </td>
                           <td className="px-3 py-2 text-slate-700 max-w-[240px]">
                             <div>{item.description}</div>
-                            {item.subDescription && (
-                              <div className="text-slate-500 text-xs">{item.subDescription}</div>
+                            {rcvOptionLine && (
+                              <div className="text-slate-500 text-xs">{rcvOptionLine}</div>
                             )}
                           </td>
                           <td className="px-3 py-2 text-right text-slate-600">
