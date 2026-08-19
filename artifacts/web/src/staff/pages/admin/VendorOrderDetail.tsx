@@ -994,7 +994,7 @@ export default function VendorOrderDetail() {
 
               {/* Change-note box appears as soon as anything is edited. */}
               {editMode && editDirty && (
-                <div className="rounded-md border border-blue-200 bg-blue-50/60 p-3 space-y-1.5">
+                <div className="rounded-md border border-red-300 bg-red-50 p-3 space-y-1.5">
                   <Label htmlFor="vo-change-note" className="text-sm font-medium">
                     Why are you making this change? (required)
                   </Label>
