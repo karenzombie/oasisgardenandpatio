@@ -6432,7 +6432,14 @@ components:
         variantSkuSnapshot: { type: string, nullable: true }
         variantNameSnapshot: { type: string, nullable: true }
         weightSnapshot: { type: string, nullable: true }
+        finishNameSnapshot: { type: string, nullable: true }
+        finishCodeSnapshot: { type: string, nullable: true }
+        finialNameSnapshot: { type: string, nullable: true }
+        finialCodeSnapshot: { type: string, nullable: true }
         fabricNameSnapshot: { type: string, nullable: true }
+        fabricItemNumberSnapshot: { type: string, nullable: true }
+        fabricBrandSnapshot: { type: string, nullable: true }
+        fabricGradeSnapshot: { type: string, nullable: true }
         description: { type: string }
         quantity: { type: integer }
         receivedQuantity:
@@ -6471,7 +6478,7 @@ components:
               quantity: { type: integer }
             required: [sku, name, quantity]
       required:
-        [id, productId, productSkuSnapshot, variantSkuSnapshot, variantNameSnapshot, weightSnapshot, fabricNameSnapshot, description, quantity, receivedQuantity, unitPrice, amount, notes, sku, subDescription, cost, edited, kind, addons]
+        [id, productId, productSkuSnapshot, variantSkuSnapshot, variantNameSnapshot, weightSnapshot, finishNameSnapshot, finishCodeSnapshot, finialNameSnapshot, finialCodeSnapshot, fabricNameSnapshot, fabricItemNumberSnapshot, fabricBrandSnapshot, fabricGradeSnapshot, description, quantity, receivedQuantity, unitPrice, amount, notes, sku, subDescription, cost, edited, kind, addons]
     AdminVendorOrderEdit:
       type: object
       properties:
@@ -6495,6 +6502,8 @@ components:
         variantId: { type: integer, nullable: true }
         grade: { type: string, nullable: true }
         finishId: { type: integer, nullable: true }
+        fabricId: { type: integer, nullable: true }
+        finialId: { type: integer, nullable: true }
         notes: { type: string, nullable: true }
         quantity: { type: integer, minimum: 0 }
         removed:
@@ -6620,6 +6629,8 @@ components:
             Finish ID for finish-graded (tile) products. When grade is null and
             finishId is set, the cost resolver derives the grade key as
             String(finishId).
+        fabricId: { type: integer, nullable: true }
+        finialId: { type: integer, nullable: true }
       required: [productId, quantity]
     CreateStandaloneVendorOrderRequest:
       type: object

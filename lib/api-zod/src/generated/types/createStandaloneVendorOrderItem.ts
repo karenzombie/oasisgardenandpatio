@@ -16,4 +16,6 @@ export interface CreateStandaloneVendorOrderItem {
   grade?: string | null;
   /** Finish ID for finish-graded (tile) products. When grade is null and finishId is set, the cost resolver derives the grade key as String(finishId). */
   finishId?: number | null;
+  fabricId?: number | null;
+  finialId?: number | null;
 }

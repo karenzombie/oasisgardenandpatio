@@ -368,7 +368,14 @@ export interface AdminVendorOrderItem {
   variantSkuSnapshot: string | null;
   variantNameSnapshot: string | null;
   weightSnapshot: string | null;
+  finishNameSnapshot: string | null;
+  finishCodeSnapshot: string | null;
+  finialNameSnapshot: string | null;
+  finialCodeSnapshot: string | null;
   fabricNameSnapshot: string | null;
+  fabricItemNumberSnapshot: string | null;
+  fabricBrandSnapshot: string | null;
+  fabricGradeSnapshot: string | null;
   description: string;
   quantity: number;
   /** Cumulative quantity received across all partial receive events for this line item. */
@@ -406,6 +413,8 @@ export interface EditVendorOrderItem {
   variantId?: number | null;
   grade?: string | null;
   finishId?: number | null;
+  fabricId?: number | null;
+  finialId?: number | null;
   notes?: string | null;
   /** @minimum 0 */
   quantity: number;
@@ -540,6 +549,8 @@ export interface CreateStandaloneVendorOrderItem {
   grade?: string | null;
   /** Finish ID for finish-graded (tile) products. When grade is null and finishId is set, the cost resolver derives the grade key as String(finishId). */
   finishId?: number | null;
+  fabricId?: number | null;
+  finialId?: number | null;
 }
 
 /**

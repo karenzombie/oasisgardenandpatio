@@ -14,6 +14,8 @@ export interface EditVendorOrderItem {
   variantId?: number | null;
   grade?: string | null;
   finishId?: number | null;
+  fabricId?: number | null;
+  finialId?: number | null;
   notes?: string | null;
   /** @minimum 0 */
   quantity: number;

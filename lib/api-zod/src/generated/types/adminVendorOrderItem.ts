@@ -15,7 +15,14 @@ export interface AdminVendorOrderItem {
   variantSkuSnapshot: string | null;
   variantNameSnapshot: string | null;
   weightSnapshot: string | null;
+  finishNameSnapshot: string | null;
+  finishCodeSnapshot: string | null;
+  finialNameSnapshot: string | null;
+  finialCodeSnapshot: string | null;
   fabricNameSnapshot: string | null;
+  fabricItemNumberSnapshot: string | null;
+  fabricBrandSnapshot: string | null;
+  fabricGradeSnapshot: string | null;
   description: string;
   quantity: number;
   /** Cumulative quantity received across all partial receive events for this line item. */
