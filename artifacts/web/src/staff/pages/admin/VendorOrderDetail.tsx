@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "wouter";
 import { formatStatusLabel } from "../../lib/statusLabel";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Printer, Pencil, Flag, Plus, X } from "lucide-react";
+import { ArrowLeft, Printer, Pencil, Flag, Plus, Search, X } from "lucide-react";
 import {
   useAdminGetVendorOrder,
   useAdminUpdateVendorOrder,
@@ -12,10 +12,16 @@ import {
   useAdminReceiveVendorOrder,
   useAdminCancelVendorOrder,
   useAdminCancelPendingVendorOrder,
+  useAdminListProducts,
+  useAdminGetProductPicker,
   getAdminGetVendorOrderQueryKey,
   getAdminListVendorOrdersQueryKey,
   getAdminGetOrderQueryKey,
+  getAdminGetProductPickerQueryKey,
   type AdminVendorOrderDetail,
+  type AdminProduct,
+  type AdminProductPickerDetail,
+  type CatalogProductVariant,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +30,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Tooltip,
   TooltipContent,
@@ -84,13 +97,21 @@ function isoToDateInput(s: string | null): string {
 type EditRow = {
   key: string;
   id: number | null;
-  sku: string;
+  // Read-only display: from the existing item (for existing lines) or
+  // derived by the picker (for new lines). Never free-typed.
+  sku: string | null;
   description: string;
-  subDescription: string;
+  subDescription: string | null;
   quantity: string;
   cost: number | null;
   removed: boolean;
   kind: string;
+  // Picker payload — only populated for new (id == null) lines.
+  productId: number | null;
+  variantId: number | null;
+  grade: string | null;
+  finishId: number | null;
+  notes: string | null;
 };
 
 // Stable string signature of the whole edit form, used to detect whether the
@@ -104,11 +125,11 @@ function serializeEdit(
   return JSON.stringify({
     rows: rows.map((r) => ({
       id: r.id,
-      sku: r.sku.trim(),
-      description: r.description.trim(),
-      subDescription: r.subDescription.trim(),
       quantity: r.quantity.trim(),
       removed: r.removed,
+      ...(r.id == null
+        ? { productId: r.productId, variantId: r.variantId, grade: r.grade, finishId: r.finishId }
+        : {}),
     })),
     notes,
     noteToVendor,
@@ -168,6 +189,7 @@ export default function VendorOrderDetail() {
   const [editRows, setEditRows] = useState<EditRow[]>([]);
   const [changeNote, setChangeNote] = useState("");
   const [noteError, setNoteError] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const editBaselineRef = useRef<string>("");
 
   useEffect(() => {
@@ -237,13 +259,18 @@ export default function VendorOrderDetail() {
     const rows: EditRow[] = vo.items.map((it) => ({
       key: `r${it.id}`,
       id: it.id,
-      sku: it.sku ?? "",
+      sku: it.sku ?? null,
       description: it.description,
-      subDescription: it.subDescription ?? "",
+      subDescription: it.subDescription ?? null,
       quantity: String(it.quantity),
       cost: it.cost,
       removed: false,
       kind: it.kind,
+      productId: null,
+      variantId: null,
+      grade: null,
+      finishId: null,
+      notes: null,
     }));
     const notes = vo.notes ?? "";
     const noteToVendor = vo.noteToVendor ?? "";
@@ -288,21 +315,36 @@ export default function VendorOrderDetail() {
     );
   }
 
-  function addRow() {
+  function handlePickerApply(
+    product: AdminProduct,
+    variant: CatalogProductVariant | null,
+    grade: string | null,
+    finishId: number | null,
+    gradeLabel: string | null,
+  ) {
+    const description = variant
+      ? `${product.name} — ${variant.name}`
+      : product.name;
     setEditRows((rs) => [
       ...rs,
       {
         key: `new-${Date.now()}-${rs.length}`,
         id: null,
-        sku: "",
-        description: "",
-        subDescription: "",
+        sku: variant?.sku ?? product.sku,
+        description,
+        subDescription: gradeLabel,
         quantity: "1",
         cost: null,
         removed: false,
         kind: "product",
+        productId: product.id,
+        variantId: variant?.id ?? null,
+        grade,
+        finishId,
+        notes: null,
       },
     ]);
+    setPickerOpen(false);
   }
 
   function buildEditData() {
@@ -311,24 +353,23 @@ export default function VendorOrderDetail() {
       setNoteError(true);
       return null;
     }
-    // Every kept line needs a description.
-    const missingDesc = editRows.some(
-      (r) => !r.removed && r.description.trim().length === 0,
-    );
-    if (missingDesc) {
-      toast({
-        title: "Each line needs a description",
-        variant: "destructive",
-      });
-      return null;
-    }
-    const items = editRows.map((r) => ({
-      ...(r.id != null ? { id: r.id, removed: r.removed } : {}),
-      sku: r.sku.trim() || null,
-      description: r.description.trim(),
-      subDescription: r.subDescription.trim() || null,
-      quantity: Number(r.quantity) || 0,
-    }));
+    const items = editRows.map((r) => {
+      if (r.id != null) {
+        return {
+          id: r.id,
+          removed: r.removed,
+          quantity: Number(r.quantity) || 0,
+        };
+      }
+      return {
+        productId: r.productId!,
+        ...(r.variantId != null ? { variantId: r.variantId } : {}),
+        ...(r.grade != null ? { grade: r.grade } : {}),
+        ...(r.finishId != null ? { finishId: r.finishId } : {}),
+        ...(r.notes != null ? { notes: r.notes } : {}),
+        quantity: Number(r.quantity) || 0,
+      };
+    });
     return {
       changeNote: note,
       notes: notesDraft || null,
@@ -723,9 +764,7 @@ export default function VendorOrderDetail() {
                   <table className="w-full text-sm">
                     <thead className="bg-slate-50 text-left">
                       <tr>
-                        <th className="px-3 py-2 font-medium">SKU</th>
                         <th className="px-3 py-2 font-medium">Description</th>
-                        <th className="px-3 py-2 font-medium">Sub-description</th>
                         <th className="px-3 py-2 font-medium text-right">Qty</th>
                         <th className="px-3 py-2 font-medium text-right">Unit cost</th>
                         <th className="px-3 py-2 font-medium w-10"></th>
@@ -737,39 +776,20 @@ export default function VendorOrderDetail() {
                           key={r.key}
                           className={`border-t ${r.removed ? "bg-red-50 opacity-60" : ""}`}
                         >
-                          <td className="px-2 py-1.5 align-top">
-                            <Input
-                              value={r.sku}
-                              onChange={(e) =>
-                                updateRow(r.key, { sku: e.target.value })
-                              }
-                              disabled={r.removed}
-                              className={`h-8 font-mono text-xs ${EDIT_INPUT_CLS}`}
-                            />
+                          <td className="px-3 py-1.5 align-middle">
+                            <div className="font-medium">{r.description}</div>
+                            {r.sku && (
+                              <div className="text-xs font-mono text-slate-500">
+                                {r.sku}
+                              </div>
+                            )}
+                            {r.subDescription && (
+                              <div className="text-xs text-slate-500">
+                                {r.subDescription}
+                              </div>
+                            )}
                           </td>
-                          <td className="px-2 py-1.5 align-top">
-                            <Input
-                              value={r.description}
-                              onChange={(e) =>
-                                updateRow(r.key, { description: e.target.value })
-                              }
-                              disabled={r.removed}
-                              className={`h-8 ${EDIT_INPUT_CLS}`}
-                            />
-                          </td>
-                          <td className="px-2 py-1.5 align-top">
-                            <Input
-                              value={r.subDescription}
-                              onChange={(e) =>
-                                updateRow(r.key, {
-                                  subDescription: e.target.value,
-                                })
-                              }
-                              disabled={r.removed}
-                              className={`h-8 text-xs ${EDIT_INPUT_CLS}`}
-                            />
-                          </td>
-                          <td className="px-2 py-1.5 align-top w-20">
+                          <td className="px-2 py-1.5 align-middle w-20">
                             <Input
                               type="number"
                               min={0}
@@ -786,7 +806,7 @@ export default function VendorOrderDetail() {
                               fmtMoney(r.cost)
                             ) : (
                               <span className="italic text-slate-400">
-                                no data
+                                on save
                               </span>
                             )}
                           </td>
@@ -808,7 +828,7 @@ export default function VendorOrderDetail() {
                       {editRows.length === 0 && (
                         <tr className="border-t">
                           <td
-                            colSpan={6}
+                            colSpan={4}
                             className="px-3 py-6 text-center text-sm text-slate-500"
                           >
                             No line items. Add one below.
@@ -822,10 +842,10 @@ export default function VendorOrderDetail() {
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={addRow}
+                      onClick={() => setPickerOpen(true)}
                     >
                       <Plus className="size-4 mr-1" />
-                      Add line item
+                      Add product
                     </Button>
                   </div>
                 </>
@@ -1981,6 +2001,14 @@ export default function VendorOrderDetail() {
           </DialogContent>
         </Dialog>
 
+        {editMode && (
+          <ProductPickerDialog
+            open={pickerOpen}
+            onOpenChange={setPickerOpen}
+            onApply={handlePickerApply}
+          />
+        )}
+
         {Number.isFinite(id) ? (
           <div className="mt-6">
             <HistoryPanel entityType="vendor_order" entityId={id} />
@@ -1988,5 +2016,286 @@ export default function VendorOrderDetail() {
         ) : null}
       </PageBody>
     </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Product picker dialog — mirrors the one in VendorOrderNew.tsx.
+// Searches admin products, then asks for variant / grade / finish as needed
+// so the server can freeze a meaningful cost snapshot on creation.
+// ---------------------------------------------------------------------------
+function ProductPickerDialog({
+  open,
+  onOpenChange,
+  onApply,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  onApply: (
+    product: AdminProduct,
+    variant: CatalogProductVariant | null,
+    grade: string | null,
+    finishId: number | null,
+    gradeLabel: string | null,
+  ) => void;
+}) {
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+  const [picked, setPicked] = useState<AdminProduct | null>(null);
+  const [variantId, setVariantId] = useState<string>("");
+  const [gradeKey, setGradeKey] = useState<string>("");
+  const [finishIdStr, setFinishIdStr] = useState<string>("");
+
+  // Debounced search so we don't query on every keystroke.
+  useEffect(() => {
+    const t = setTimeout(() => setSearch(searchInput.trim()), 200);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  // Reset when dialog closes.
+  useEffect(() => {
+    if (!open) {
+      setPicked(null);
+      setVariantId("");
+      setGradeKey("");
+      setFinishIdStr("");
+      setSearchInput("");
+      setSearch("");
+    }
+  }, [open]);
+
+  // Reset grade/finish when variant changes.
+  useEffect(() => {
+    setGradeKey("");
+    setFinishIdStr("");
+  }, [variantId]);
+
+  const list = useAdminListProducts({
+    page: 1,
+    pageSize: 20,
+    ...(search ? { q: search } : {}),
+  });
+
+  const pickedId = picked?.id ?? 0;
+  const detail = useAdminGetProductPicker(pickedId, {
+    query: {
+      queryKey: getAdminGetProductPickerQueryKey(pickedId),
+      enabled: !!picked,
+      staleTime: 0,
+    },
+  });
+  const variants = detail.data?.variants ?? [];
+  const finishes: AdminProductPickerDetail["finishes"] =
+    detail.data?.finishes ?? [];
+  const selectedVariant =
+    variants.find((x) => String(x.id) === variantId) ?? null;
+
+  const needsVariant = variants.length > 0;
+  const needsFinish = finishes.length > 0;
+  const needsGrade =
+    !needsFinish && (selectedVariant?.gradePrices.length ?? 0) > 0;
+
+  const detailReady = !!picked && !detail.isLoading && !!detail.data;
+  const canAdd =
+    detailReady &&
+    (!needsVariant || !!variantId) &&
+    (!needsFinish || !!finishIdStr) &&
+    (!needsGrade || !!gradeKey);
+
+  function handleAdd() {
+    if (!picked || !detailReady) return;
+    if (needsVariant && !variantId) return;
+    if (needsFinish && !finishIdStr) return;
+    if (needsGrade && !gradeKey) return;
+
+    const v = needsVariant ? selectedVariant : null;
+    const resolvedGrade = needsGrade && gradeKey ? gradeKey : null;
+    const resolvedFinishId =
+      needsFinish && finishIdStr ? Number(finishIdStr) : null;
+
+    let resolvedLabel: string | null = null;
+    if (needsGrade && gradeKey) {
+      resolvedLabel = `Grade ${gradeKey}`;
+    } else if (needsFinish && finishIdStr) {
+      const f = finishes.find((x) => String(x.id) === finishIdStr);
+      resolvedLabel = f ? f.name : null;
+    }
+
+    onApply(picked, v, resolvedGrade, resolvedFinishId, resolvedLabel);
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Pick a product</DialogTitle>
+        </DialogHeader>
+
+        {!picked ? (
+          <>
+            <div className="relative">
+              <Search className="size-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Input
+                autoFocus
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="Search by name, SKU, or slug…"
+                className="pl-8"
+              />
+            </div>
+            <div className="border rounded max-h-96 overflow-y-auto">
+              {list.isLoading ? (
+                <div className="p-6 flex justify-center">
+                  <Spinner />
+                </div>
+              ) : (list.data?.products ?? []).length === 0 ? (
+                <div className="p-6 text-sm text-slate-500 text-center">
+                  No products match.
+                </div>
+              ) : (
+                (list.data?.products ?? []).map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    className="w-full text-left px-3 py-2 hover:bg-slate-50 border-t first:border-t-0"
+                    onClick={() => setPicked(p)}
+                  >
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <div className="font-medium text-sm">{p.name}</div>
+                        <div className="text-xs text-slate-500 font-mono">
+                          {p.sku}
+                        </div>
+                      </div>
+                      <div className="text-sm tabular-nums text-slate-600">
+                        cost{" "}
+                        {p.cost != null && p.cost !== ""
+                          ? fmtMoney(Number(p.cost))
+                          : "—"}
+                      </div>
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+          </>
+        ) : (
+          <div className="space-y-3">
+            <div className="rounded border bg-slate-50 p-3 flex justify-between items-start">
+              <div>
+                <div className="font-medium">{picked.name}</div>
+                <div className="text-xs text-slate-500 font-mono">
+                  {picked.sku}
+                </div>
+                <div className="text-xs text-slate-500 mt-1">
+                  Cost resolved on save
+                </div>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setPicked(null);
+                  setVariantId("");
+                  setGradeKey("");
+                  setFinishIdStr("");
+                }}
+              >
+                Change product
+              </Button>
+            </div>
+
+            {detail.isLoading && (
+              <div className="flex justify-center py-3">
+                <Spinner />
+              </div>
+            )}
+
+            {needsVariant && (
+              <div>
+                <Label className="text-xs">
+                  {variants[0]?.optionLabel || "Variant"}{" "}
+                  <span className="text-red-600">*</span>
+                </Label>
+                <Select value={variantId} onValueChange={setVariantId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pick a variant" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {variants.map((v) => (
+                      <SelectItem key={v.id} value={String(v.id)}>
+                        {v.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {!needsVariant && !detail.isLoading && (
+              <div className="text-xs text-slate-500">
+                No variants required for this product.
+              </div>
+            )}
+
+            {needsGrade && (
+              <div>
+                <Label className="text-xs">
+                  Grade <span className="text-red-600">*</span>
+                </Label>
+                <Select value={gradeKey} onValueChange={setGradeKey}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pick a grade" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(selectedVariant?.gradePrices ?? []).map((gp) => (
+                      <SelectItem key={gp.grade} value={gp.grade}>
+                        Grade {gp.grade}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {needsFinish && (
+              <div>
+                <Label className="text-xs">
+                  Finish / Tile <span className="text-red-600">*</span>
+                </Label>
+                <Select value={finishIdStr} onValueChange={setFinishIdStr}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pick a finish" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {finishes.map((f) => (
+                      <SelectItem key={f.id} value={String(f.id)}>
+                        {f.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+        )}
+
+        {picked && (
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="button" disabled={!canAdd} onClick={handleAdd}>
+              Add to PO
+            </Button>
+          </DialogFooter>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
