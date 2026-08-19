@@ -371,21 +371,12 @@ function fabricOption(it: PdfVendorOrderItem): string | null {
   return `${brand}${base}${grade}`;
 }
 
-function weightOption(it: PdfVendorOrderItem): string | null {
-  if (it.weightSnapshot == null || it.weightSnapshot.trim() === "") return null;
-  const n = Number(it.weightSnapshot);
-  if (!Number.isFinite(n)) return null;
-  // String(n) drops trailing ".00" so "19.00" reads as "19 lbs".
-  return `Weight: ${String(n)} lbs`;
-}
-
 function itemOptions(it: PdfVendorOrderItem): string[] {
   return [
     optionWithSku(it.variantNameSnapshot, it.variantSkuSnapshot),
     optionWithSku(it.finishNameSnapshot, it.finishCodeSnapshot),
     optionWithSku(it.finialNameSnapshot, it.finialCodeSnapshot),
     fabricOption(it),
-    weightOption(it),
   ].filter((v): v is string => Boolean(v));
 }
 
@@ -586,12 +577,7 @@ function VendorOrderDocument(args: VendorOrderPdfArgs) {
                     ? `for ${it.description}${it.variantNameSnapshot ? ` — ${it.variantNameSnapshot}` : ""}`
                     : null,
                 ].filter((v): v is string => Boolean(v))
-              : // A staff-edited line carries a single sub-description override
-                // that stands in for the option lines; unedited lines render
-                // the derived option list.
-                it.edited && it.subDescription
-                ? [it.subDescription]
-                : itemOptions(it);
+              : itemOptions(it);
             const rowBg = idx % 2 === 0 ? "#fff" : LIGHT_BG;
             return (
               <React.Fragment key={idx}>
