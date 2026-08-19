@@ -20,6 +20,9 @@ import {
   inventoryLocationsTable,
   inventoryTable,
   entityHistoryTable,
+  finishesTable,
+  productFinialOptionsTable,
+  fabricsTable,
   resolveLineCost,
   type VendorOrder,
   type OrderItem,
@@ -297,6 +300,55 @@ router.post(
         const v = item.variantId != null ? variantById.get(item.variantId) ?? null : null;
         const description = v ? `${p.name} — ${v.variantName}` : p.name;
 
+        // Snapshot lookups for finish / finial / fabric.
+        let finishCode: string | null = null;
+        let finishName: string | null = null;
+        let finialCode: string | null = null;
+        let finialName: string | null = null;
+        let fabricItem: string | null = null;
+        let fabricName: string | null = null;
+        let fabricBrand: string | null = null;
+        let fabricGrade: string | null = null;
+
+        if (item.finishId != null) {
+          const [fin] = await tx
+            .select({ code: finishesTable.itemNumber, name: finishesTable.name })
+            .from(finishesTable)
+            .where(eq(finishesTable.id, item.finishId))
+            .limit(1);
+          if (!fin) throw new Error(`Finish ${item.finishId} not found`);
+          finishCode = fin.code;
+          finishName = fin.name;
+        }
+        if (item.finialId != null) {
+          const [fnl] = await tx
+            .select({ code: productFinialOptionsTable.code, name: productFinialOptionsTable.name })
+            .from(productFinialOptionsTable)
+            .where(eq(productFinialOptionsTable.id, item.finialId))
+            .limit(1);
+          if (!fnl) throw new Error(`Finial ${item.finialId} not found`);
+          finialCode = fnl.code;
+          finialName = fnl.name;
+        }
+        if (item.fabricId != null) {
+          const [f] = await tx
+            .select({
+              itemNumber: fabricsTable.itemNumber,
+              name: fabricsTable.name,
+              grade: fabricsTable.grade,
+              brand: manufacturersTable.name,
+            })
+            .from(fabricsTable)
+            .leftJoin(manufacturersTable, eq(manufacturersTable.id, fabricsTable.manufacturerId))
+            .where(eq(fabricsTable.id, item.fabricId))
+            .limit(1);
+          if (!f) throw new Error(`Fabric ${item.fabricId} not found`);
+          fabricItem = f.itemNumber;
+          fabricName = f.name;
+          fabricBrand = f.brand ?? null;
+          fabricGrade = item.grade ?? f.grade ?? null;
+        }
+
         // grade priority: item.grade → String(item.finishId) → null.
         const derivedGrade =
           item.grade != null
@@ -322,9 +374,20 @@ router.post(
           vendorOrderId: vo.id,
           productId: p.id,
           variantId: v?.id ?? null,
+          finishId: item.finishId ?? null,
+          finialId: item.finialId ?? null,
+          fabricId: item.fabricId ?? null,
           productSkuSnapshot: p.sku,
           variantSkuSnapshot: v?.variantSku ?? null,
           variantNameSnapshot: v?.variantName ?? null,
+          finishCodeSnapshot: finishCode,
+          finishNameSnapshot: finishName,
+          finialCodeSnapshot: finialCode,
+          finialNameSnapshot: finialName,
+          fabricItemNumberSnapshot: fabricItem,
+          fabricNameSnapshot: fabricName,
+          fabricBrandSnapshot: fabricBrand,
+          fabricGradeSnapshot: fabricGrade,
           weightSnapshot:
             v?.weight != null
               ? String(v.weight)
@@ -1143,6 +1206,55 @@ router.post(
             item.variantId != null ? (addedVariantById.get(item.variantId) ?? null) : null;
           const description = v ? `${p.name} — ${v.variantName}` : p.name;
 
+          // Snapshot lookups for finish / finial / fabric.
+          let finishCode: string | null = null;
+          let finishName: string | null = null;
+          let finialCode: string | null = null;
+          let finialName: string | null = null;
+          let fabricItem: string | null = null;
+          let fabricName: string | null = null;
+          let fabricBrand: string | null = null;
+          let fabricGrade: string | null = null;
+
+          if (item.finishId != null) {
+            const [fin] = await tx
+              .select({ code: finishesTable.itemNumber, name: finishesTable.name })
+              .from(finishesTable)
+              .where(eq(finishesTable.id, item.finishId))
+              .limit(1);
+            if (!fin) throw new Error(`Finish ${item.finishId} not found`);
+            finishCode = fin.code;
+            finishName = fin.name;
+          }
+          if (item.finialId != null) {
+            const [fnl] = await tx
+              .select({ code: productFinialOptionsTable.code, name: productFinialOptionsTable.name })
+              .from(productFinialOptionsTable)
+              .where(eq(productFinialOptionsTable.id, item.finialId))
+              .limit(1);
+            if (!fnl) throw new Error(`Finial ${item.finialId} not found`);
+            finialCode = fnl.code;
+            finialName = fnl.name;
+          }
+          if (item.fabricId != null) {
+            const [f] = await tx
+              .select({
+                itemNumber: fabricsTable.itemNumber,
+                name: fabricsTable.name,
+                grade: fabricsTable.grade,
+                brand: manufacturersTable.name,
+              })
+              .from(fabricsTable)
+              .leftJoin(manufacturersTable, eq(manufacturersTable.id, fabricsTable.manufacturerId))
+              .where(eq(fabricsTable.id, item.fabricId))
+              .limit(1);
+            if (!f) throw new Error(`Fabric ${item.fabricId} not found`);
+            fabricItem = f.itemNumber;
+            fabricName = f.name;
+            fabricBrand = f.brand ?? null;
+            fabricGrade = item.grade ?? f.grade ?? null;
+          }
+
           const derivedGrade =
             item.grade != null
               ? item.grade
@@ -1166,9 +1278,20 @@ router.post(
             vendorOrderId: id,
             productId: p.id,
             variantId: v?.id ?? null,
+            finishId: item.finishId ?? null,
+            finialId: item.finialId ?? null,
+            fabricId: item.fabricId ?? null,
             productSkuSnapshot: p.sku,
             variantSkuSnapshot: v?.variantSku ?? null,
             variantNameSnapshot: v?.variantName ?? null,
+            finishCodeSnapshot: finishCode,
+            finishNameSnapshot: finishName,
+            finialCodeSnapshot: finialCode,
+            finialNameSnapshot: finialName,
+            fabricItemNumberSnapshot: fabricItem,
+            fabricNameSnapshot: fabricName,
+            fabricBrandSnapshot: fabricBrand,
+            fabricGradeSnapshot: fabricGrade,
             weightSnapshot:
               v?.weight != null
                 ? String(v.weight)
