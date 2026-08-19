@@ -111,6 +111,8 @@ type EditRow = {
   variantId: number | null;
   grade: string | null;
   finishId: number | null;
+  fabricId: number | null;
+  finialId: number | null;
   notes: string | null;
 };
 
@@ -128,7 +130,7 @@ function serializeEdit(
       quantity: r.quantity.trim(),
       removed: r.removed,
       ...(r.id == null
-        ? { productId: r.productId, variantId: r.variantId, grade: r.grade, finishId: r.finishId }
+        ? { productId: r.productId, variantId: r.variantId, grade: r.grade, finishId: r.finishId, fabricId: r.fabricId, finialId: r.finialId }
         : {}),
     })),
     notes,
@@ -270,6 +272,8 @@ export default function VendorOrderDetail() {
       variantId: null,
       grade: null,
       finishId: null,
+      fabricId: null,
+      finialId: null,
       notes: null,
     }));
     const notes = vo.notes ?? "";
@@ -320,6 +324,8 @@ export default function VendorOrderDetail() {
     variant: CatalogProductVariant | null,
     grade: string | null,
     finishId: number | null,
+    fabricId: number | null,
+    finialId: number | null,
     gradeLabel: string | null,
   ) {
     const description = variant
@@ -341,6 +347,8 @@ export default function VendorOrderDetail() {
         variantId: variant?.id ?? null,
         grade,
         finishId,
+        fabricId,
+        finialId,
         notes: null,
       },
     ]);
@@ -366,6 +374,8 @@ export default function VendorOrderDetail() {
         ...(r.variantId != null ? { variantId: r.variantId } : {}),
         ...(r.grade != null ? { grade: r.grade } : {}),
         ...(r.finishId != null ? { finishId: r.finishId } : {}),
+        ...(r.fabricId != null ? { fabricId: r.fabricId } : {}),
+        ...(r.finialId != null ? { finialId: r.finialId } : {}),
         ...(r.notes != null ? { notes: r.notes } : {}),
         quantity: Number(r.quantity) || 0,
       };
@@ -2021,8 +2031,10 @@ export default function VendorOrderDetail() {
 
 // ---------------------------------------------------------------------------
 // Product picker dialog — mirrors the one in VendorOrderNew.tsx.
-// Searches admin products, then asks for variant / grade / finish as needed
-// so the server can freeze a meaningful cost snapshot on creation.
+// Asks for variant, finish (finish-graded/tile products), fabric (grade-priced
+// products with fabrics — fabric grade supplies the cost grade key), finial
+// (when the product has options), and a bare grade dropdown as a fallback for
+// grade-priced products with no fabrics.
 // ---------------------------------------------------------------------------
 function ProductPickerDialog({
   open,
@@ -2036,6 +2048,8 @@ function ProductPickerDialog({
     variant: CatalogProductVariant | null,
     grade: string | null,
     finishId: number | null,
+    fabricId: number | null,
+    finialId: number | null,
     gradeLabel: string | null,
   ) => void;
 }) {
@@ -2043,8 +2057,14 @@ function ProductPickerDialog({
   const [search, setSearch] = useState("");
   const [picked, setPicked] = useState<AdminProduct | null>(null);
   const [variantId, setVariantId] = useState<string>("");
+  // Bare grade key — fallback for grade-priced products with no fabric options.
   const [gradeKey, setGradeKey] = useState<string>("");
+  // Finish ID (as string for Select) for finish-graded (tile) products.
   const [finishIdStr, setFinishIdStr] = useState<string>("");
+  // Fabric ID for grade-priced products that have fabric options.
+  const [fabricId, setFabricId] = useState<string>("");
+  // Finial ID for products with finial options.
+  const [finialId, setFinialId] = useState<string>("");
 
   // Debounced search so we don't query on every keystroke.
   useEffect(() => {
@@ -2059,15 +2079,19 @@ function ProductPickerDialog({
       setVariantId("");
       setGradeKey("");
       setFinishIdStr("");
+      setFabricId("");
+      setFinialId("");
       setSearchInput("");
       setSearch("");
     }
   }, [open]);
 
-  // Reset grade/finish when variant changes.
+  // Reset option picks when variant changes.
   useEffect(() => {
     setGradeKey("");
     setFinishIdStr("");
+    setFabricId("");
+    setFinialId("");
   }, [variantId]);
 
   const list = useAdminListProducts({
@@ -2087,41 +2111,70 @@ function ProductPickerDialog({
   const variants = detail.data?.variants ?? [];
   const finishes: AdminProductPickerDetail["finishes"] =
     detail.data?.finishes ?? [];
+  const fabricOptions = detail.data?.fabricOptions ?? [];
+  const finialOptions = detail.data?.finialOptions ?? [];
   const selectedVariant =
     variants.find((x) => String(x.id) === variantId) ?? null;
+  const selectedFabric =
+    fabricOptions.find((f) => String(f.id) === fabricId) ?? null;
 
   const needsVariant = variants.length > 0;
+  // Finish-graded (tile): product has finishes — finish selector drives the grade key server-side.
   const needsFinish = finishes.length > 0;
+  // Grade-priced products: any variant carries per-grade prices.
+  const isGradeMode = variants.some((v) => (v.gradePrices?.length ?? 0) > 0);
+  // Fabric selector: shown when grade-priced AND product has fabric options.
+  // The selected fabric's grade supplies the cost grade key (replaces bare dropdown).
+  const needsFabric = isGradeMode && fabricOptions.length > 0;
+  // Bare grade dropdown: fallback for grade-priced products with no fabric options.
   const needsGrade =
-    !needsFinish && (selectedVariant?.gradePrices.length ?? 0) > 0;
+    !needsFinish && !needsFabric && (selectedVariant?.gradePrices.length ?? 0) > 0;
+  // Finial picker: shown whenever the product carries finial options.
+  const needsFinial = finialOptions.length > 0;
 
   const detailReady = !!picked && !detail.isLoading && !!detail.data;
   const canAdd =
     detailReady &&
     (!needsVariant || !!variantId) &&
     (!needsFinish || !!finishIdStr) &&
-    (!needsGrade || !!gradeKey);
+    (!needsFabric || !!fabricId) &&
+    (!needsGrade || !!gradeKey) &&
+    (!needsFinial || !!finialId);
 
   function handleAdd() {
     if (!picked || !detailReady) return;
     if (needsVariant && !variantId) return;
     if (needsFinish && !finishIdStr) return;
+    if (needsFabric && !fabricId) return;
     if (needsGrade && !gradeKey) return;
+    if (needsFinial && !finialId) return;
 
     const v = needsVariant ? selectedVariant : null;
-    const resolvedGrade = needsGrade && gradeKey ? gradeKey : null;
-    const resolvedFinishId =
-      needsFinish && finishIdStr ? Number(finishIdStr) : null;
+    // Grade key: fabric.grade for grade-priced products; bare gradeKey as fallback;
+    // null for finish-graded products (server derives grade from finishId).
+    const resolvedGrade = needsFabric
+      ? (selectedFabric?.grade ?? null)
+      : needsGrade && gradeKey
+        ? gradeKey
+        : null;
+    const resolvedFinishId = needsFinish && finishIdStr ? Number(finishIdStr) : null;
+    const resolvedFabricId = needsFabric && fabricId ? Number(fabricId) : null;
+    const resolvedFinialId = needsFinial && finialId ? Number(finialId) : null;
 
+    // Human-readable label for the line row (display only).
     let resolvedLabel: string | null = null;
-    if (needsGrade && gradeKey) {
+    if (needsFabric && selectedFabric) {
+      resolvedLabel = selectedFabric.grade
+        ? `${selectedFabric.name} (Grade ${selectedFabric.grade})`
+        : selectedFabric.name;
+    } else if (needsGrade && gradeKey) {
       resolvedLabel = `Grade ${gradeKey}`;
     } else if (needsFinish && finishIdStr) {
       const f = finishes.find((x) => String(x.id) === finishIdStr);
       resolvedLabel = f ? f.name : null;
     }
 
-    onApply(picked, v, resolvedGrade, resolvedFinishId, resolvedLabel);
+    onApply(picked, v, resolvedGrade, resolvedFinishId, resolvedFabricId, resolvedFinialId, resolvedLabel);
   }
 
   return (
@@ -2200,6 +2253,8 @@ function ProductPickerDialog({
                   setVariantId("");
                   setGradeKey("");
                   setFinishIdStr("");
+                  setFabricId("");
+                  setFinialId("");
                 }}
               >
                 Change product
@@ -2215,12 +2270,12 @@ function ProductPickerDialog({
             {needsVariant && (
               <div>
                 <Label className="text-xs">
-                  {variants[0]?.optionLabel || "Variant"}{" "}
+                  {isGradeMode ? "Configuration" : variants[0]?.optionLabel || "Variant"}{" "}
                   <span className="text-red-600">*</span>
                 </Label>
                 <Select value={variantId} onValueChange={setVariantId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Pick a variant" />
+                    <SelectValue placeholder={isGradeMode ? "Pick a configuration" : "Pick a variant"} />
                   </SelectTrigger>
                   <SelectContent>
                     {variants.map((v) => (
@@ -2239,6 +2294,7 @@ function ProductPickerDialog({
               </div>
             )}
 
+            {/* Grade selector — fallback for grade-priced variants with no fabrics */}
             {needsGrade && (
               <div>
                 <Label className="text-xs">
@@ -2259,6 +2315,7 @@ function ProductPickerDialog({
               </div>
             )}
 
+            {/* Finish selector — finish-graded / tile products */}
             {needsFinish && (
               <div>
                 <Label className="text-xs">
@@ -2272,6 +2329,61 @@ function ProductPickerDialog({
                     {finishes.map((f) => (
                       <SelectItem key={f.id} value={String(f.id)}>
                         {f.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Fabric selector — grade-priced products with fabric options.
+                The selected fabric's grade supplies the cost grade key. */}
+            {needsFabric && (
+              <div>
+                <Label className="text-xs">
+                  Fabric <span className="text-red-600">*</span>
+                </Label>
+                <Select
+                  value={fabricId}
+                  onValueChange={setFabricId}
+                  disabled={needsVariant && !variantId}
+                >
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={
+                        needsVariant && !variantId
+                          ? "Pick a configuration first"
+                          : "Pick a fabric"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-72">
+                    {fabricOptions.map((f) => (
+                      <SelectItem key={f.id} value={String(f.id)}>
+                        {f.name}
+                        {f.grade ? ` — Grade ${f.grade}` : ""}
+                        {f.itemNumber ? ` (${f.itemNumber})` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Finial selector */}
+            {needsFinial && (
+              <div>
+                <Label className="text-xs">
+                  Finial <span className="text-red-600">*</span>
+                </Label>
+                <Select value={finialId} onValueChange={setFinialId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pick a finial" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-72">
+                    {finialOptions.map((fn) => (
+                      <SelectItem key={fn.id} value={String(fn.id)}>
+                        {fn.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
