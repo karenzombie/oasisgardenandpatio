@@ -296,8 +296,19 @@ export default function AgentNewOrder() {
   }, [addresses, shippingAddressId]);
 
   const pickedAddress = addresses.find((a) => String(a.id) === shippingAddressId) ?? null;
-  const shippingState = pickedAddress?.state ?? (isQuickOrder ? quoteState : null);
-  const shippingZip = pickedAddress?.zip ?? (isQuickOrder ? quoteZip : null);
+  const willUseCustomAddress =
+    !shipToStore &&
+    !isRestockOrder &&
+    !isQuickOrder &&
+    (customerMode === "new" ||
+      (customerMode === "existing" &&
+        (directShipMode === "custom" || addresses.length === 0)));
+  const shippingState = willUseCustomAddress
+    ? customShipAddr.state.trim().toUpperCase()
+    : pickedAddress?.state ?? (isQuickOrder ? quoteState : null);
+  const shippingZip = willUseCustomAddress
+    ? customShipAddr.zip.trim()
+    : pickedAddress?.zip ?? (isQuickOrder ? quoteZip : null);
 
   const subtotal = useMemo(
     () => items.reduce((sum, it) => sum + (Number(it.quantity) || 0) * (Number(it.unitPrice) || 0), 0),
@@ -557,13 +568,6 @@ export default function AgentNewOrder() {
     // calls (e.g. creating a new customer). Direct-ship + custom address
     // failures here used to leak a half-created customer record because the
     // address validation lived after createCustomer.
-    const willUseCustomAddress =
-      !shipToStore &&
-      !isRestockOrder &&
-      !isQuickOrder &&
-      (customerMode === "new" ||
-        (customerMode === "existing" &&
-          (directShipMode === "custom" || addresses.length === 0)));
     if (willUseCustomAddress) {
       const c = customShipAddr;
       if (!c.street1.trim() || !c.city.trim() || !c.state.trim() || !c.zip.trim()) {

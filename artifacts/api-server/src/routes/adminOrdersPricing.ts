@@ -35,12 +35,14 @@ router.post(
     }
 
     const settings = await loadPricingSettings();
-    const tax = computeTax(
-      subtotalCents,
-      shippingState ?? null,
-      shippingZip ?? null,
-      settings,
-    );
+    const tax =
+      shippingState == null || shippingState.trim() === ""
+        ? {
+            cents: Math.round(subtotalCents * settings.defaultTaxRate),
+            rate: settings.defaultTaxRate,
+            jurisdiction: "Store Default Rate",
+          }
+        : computeTax(subtotalCents, shippingState, shippingZip ?? null, settings);
 
     const subtotal = subtotalCents / 100;
     const taxAmount = tax.cents / 100;
