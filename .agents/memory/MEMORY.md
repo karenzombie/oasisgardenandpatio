@@ -63,3 +63,4 @@
 - [No auto-patching deployment/data failures](no-auto-patch-deployment-failures.md) — on ANY prod sync/migration/script failure: STOP, report the exact error, and stand by for user instructions. Never diagnose-and-fix independently.
 - [Frame-only via reserved grade row](owlee-frame-only-grade-row.md) — grade-priced frame-only = "Frame Only" variant_grade_prices row; sale_price now NULLABLE (msrp fallback everywhere); staff lines persist grade "Frame Only".
 - [Clerk v6 useSignIn API](clerk-v6-signin-api.md) — v6 returns { signIn, errors, fetchStatus } NOT { isLoaded, signIn, setActive }; password() + finalize(); HandleSSOCallback needs all 3 nav props.
+- [Direct build mode preference](direct-build-no-task-mode.md) — stay in direct build mode; never create or offer tasks unless the user explicitly requests task planning.
