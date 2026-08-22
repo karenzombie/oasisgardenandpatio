@@ -44,6 +44,9 @@ the table's apparent role.
 - Emit batched multi-row INSERTs (~1000 rows/stmt) — one-per-row blows the 120s tool limit on
   remote prod round-trips.
 - Run the apply in the foreground — Replit reaps detached/`setsid` processes mid-transaction.
+- `product_materials` uses a natural-key upsert but is not removed by the current
+  prod-only cleanup step; after any catalog sync, verify its exact key set and
+  explicitly reconcile stale production-only links before declaring parity.
 - **Prereq: prod schema must already match dev** — the reload inserts dev's exact columns; a
   schema mismatch fails the apply hard (clean rollback via the single transaction).
 - **Both allowlist AND prod schema silently drift when new tables/columns are added.** A table
