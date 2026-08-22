@@ -65,6 +65,10 @@ const ALL_TABS = [
   { id: "warranty", label: "Warranty" },
 ] as const;
 type TabId = (typeof ALL_TABS)[number]["id"];
+type FrankfordCareKind = "fabric" | "base" | "none" | "not-applicable";
+const FRANKFORD_BASE_CARE_EXCLUDED_IDS = new Set([
+  5090, 5617, 5618, 5619, 5620, 5621, 5622, 5623,
+]);
 
 // ---- Combined Finish x Wind Vent variant helpers ----
 // Treasure Garden market umbrellas encode the wind-vent choice as a SKU suffix
@@ -478,10 +482,30 @@ export default function Product() {
     return normalized.slice(idx).trim();
   }, [data?.description]);
 
+  const frankfordCareKind = useMemo<FrankfordCareKind>(() => {
+    if (data?.manufacturerSlug !== "frankford-umbrellas") {
+      return "not-applicable";
+    }
+    if (data.categorySlug === "cat-umbrellas") {
+      return "fabric";
+    }
+    if (
+      data.categorySlug === "cat-umbrella-bases" &&
+      !FRANKFORD_BASE_CARE_EXCLUDED_IDS.has(data.id)
+    ) {
+      return "base";
+    }
+    return "none";
+  }, [data?.manufacturerSlug, data?.categorySlug, data?.id]);
+
   const visibleTabs = useMemo(
     () =>
-      ALL_TABS.filter((t) => (t.id === "features" ? featuresHtml.length > 0 : true)),
-    [featuresHtml],
+      ALL_TABS.filter((t) => {
+        if (t.id === "features") return featuresHtml.length > 0;
+        if (t.id === "care") return frankfordCareKind !== "none";
+        return true;
+      }),
+    [featuresHtml, frankfordCareKind],
   );
   const activeTab = visibleTabs.some((t) => t.id === tab)
     ? tab
@@ -2916,6 +2940,80 @@ export default function Product() {
                     .
                   </p>
                 </object>
+              </div>
+            ) : frankfordCareKind === "fabric" ? (
+              <div className="prose max-w-none text-foreground/80">
+                <p className="font-bold">Fabric Care</p>
+                <p>
+                  Recacril® 9 oz. awning-grade acrylic fabric is treated with the Infinity Process: A highly technological finish, providing REcacril® with long-lasting protection against mold and mildew, excellent water and oil repellency, and protection from the sun. However, the accumulation of dust, pollution particles, foreign organic materials, and general dirt can damage this protection, shortening the life of the Recacril®.
+                </p>
+                <p>
+                  To preserve the look of your umbrella, they should be removed. The most effective method for maintaining REcacril® is to clean the canvas once a month with water using a low-pressure hose. It is very important that after cleaning with water, the canvas be allowed to completely dry before rolling or storing your umbrella. If for any reason you have to roll and/or store a wet umbrella, it must be unrolled and opened as soon as possible to dry. In times of continuous rain, it is advisable to keep the umbrella rolled and stored.
+                </p>
+                <p>
+                  If periodic washing with water is done, in most environments, you should only need to do a more thorough cleaning every 2-3 years.
+                </p>
+                <p className="font-bold">FABRIC CRAZING/MARBLING</p>
+                <p>
+                  Crazing is an inherent characteristic of all solution-dyed acrylic fabrics and is caused by folding or creasing of the fabric during production or installation.
+                </p>
+                <ul>
+                  <li>Crazing lines appear as white lines on dark-colored fabrics when front-lit, and dark lines on light-colored fabrics when backlit. The primary contributors to crazing are the resins added in the final stages of manufacturing. These resins add stiffness so the fabric lies flat during sewing, which is critical for the manufacturing process.</li>
+                  <li>These resins can be viewed as an industrial fabric starch with a specific end purpose. Crazing DOES NOT affect the performance or characteristics of Recasens®, Sunbrella®, Outdura®, or other acrylic fabrics. The fabric remains water repellent as well as stain and mildew resistant, and the lines will diminish over time with exposure to the elements.</li>
+                </ul>
+                <p className="font-bold">Intensive Care &amp; Cleaning</p>
+                <p>
+                  Recacril® is highly resistant to the growth of fungus, mold, and mildew. However, these can grow on embedded dirt. To clean these stains, follow these more intensive cleaning procedures.
+                </p>
+                <ul>
+                  <li>Brush off dust and dirt with a soft brush. NEVER brush with stiff brushes as this can damage the fabric finish.</li>
+                  <li>Prepare a solution with 10% household bleach, 20% solvent-free neutral detergent (Free &amp; Clear detergents) and 70% water.</li>
+                  <li>Apply the solution to the fabric, letting it remain between 15 and 20 minutes maximum.</li>
+                  <li>Rinse with clean water several times. Any bleach residues remaining on the canvas, combined with the sun, could damage the fabric and stitching.</li>
+                  <li>Let air dry and do not close the umbrella until the canvas is completely dry.</li>
+                </ul>
+                <p className="font-bold">Casual Care &amp; Cleaning</p>
+                <p>
+                  Regular cleaning and care sets up your umbrella for lasting success. Here are some tips for general upkeep of your shade.
+                </p>
+                <ul>
+                  <li>Brush off dust and dirt with a soft brush. NEVER brush with stiff brushes since this can damage the fabric finish.</li>
+                  <li>Spray the umbrella with clean water. If a hose is used, avoid high pressure.</li>
+                  <li>Prepare a solution of solvent-free soap in warm water (no more than 100°F) and apply it to the fabric and stitching.</li>
+                  <li>Scrub with a soft brush, allowing the solution to penetrate the fabric.</li>
+                  <li>Rinse with water to remove all traces of soap.</li>
+                  <li>Let air dry and do not close the umbrella until the canvas is completely dry.</li>
+                </ul>
+              </div>
+            ) : frankfordCareKind === "base" ? (
+              <div className="prose max-w-none text-foreground/80">
+                <p className="font-bold">Umbrella Base Care</p>
+                <p>
+                  Do not let dirt build up on the bases. Bases should be cleaned with mild soap and water. Seasonal touch-up of any scratches, chips, occasional rust seepage from crevices or hidden or unfinished surfaces inherent in some designs is all that is required. Never leave bases standing in water. To keep your bases looking their best, you may wish to store them when not in use for an extended period of time.
+                </p>
+                <p className="font-bold">DISCLAIMER: Finishes will vary slightly depending on the final process and raw materials on which it is applied.</p>
+                <p className="font-bold">STEEL BASE/MOUNTS PREVENTIVE MAINTENANCE</p>
+                <p className="font-bold">DISCLAIMER: Ferrous metals are naturally in the air and can adhere and etch into any surface. These small particles can rust on the surface giving an unsightly look. To combat this, periodically hose powder coated steel bases, steel umbrella stems and steel mounts with warm fresh water and a mild detergent. This should be a part of a weekly routine to ensure the longevity of all steel products.</p>
+                <p className="font-bold">POWDER COATED STEEL STEM AND BASE</p>
+                <p>
+                  Upon receiving your powder coated steel base, and/or mount, apply a rust inhibitor to the inside of the steel stem. The stems are powder coated steel, however, the inside of the stem lacks total coverage, exposing the raw steel and accelerating natural deterioration.
+                </p>
+                <p>
+                  <strong>PRO TIP:</strong> Before setting up your base, rinse with clean fresh water, towel dry or air dry, and apply WD-40 SPECIALIST LONG TERM CORROSION INHIBITOR to the entirety of the base. Repeat this twice a year to ensure the longevity of your base.
+                </p>
+                <p className="font-bold">VISUAL RUST</p>
+                <p>
+                  If you notice rust stains, rinse the steel product with warm water and a mild detergent to determine it's origin. Once the damaged area has been discovered, scrub off the visible rust using warm water, white vinegar and a stainless steel wire brush (steel wire brushes will leave further iron deposits on the surface).
+                </p>
+                <p>
+                  Once rust (orange oxidation) is visibly gone, apply a thin coat of RUST-OLEUM® STOPS RUST® RUST INHIBITOR SPRAY to the affected area. Then apply the closest matching RUST-OLEUM® paint available at your local hardware store.
+                </p>
+                <p>
+                  Rusty water stains may appear from rusting ferrous metal deposits on the surface, not the actual product. The most common place this would occur is from the umbrella stem/threads. Remove the stem, clean with warm fresh water, white vinegar and a soft sponge or brush.
+                </p>
+                <p>
+                  Dry off with a towel, and then apply WD-40 SPECIALIST LONG TERM CORROSION INHIBITOR to the threads of the umbrella stem and female receiving cup of the stem.
+                </p>
               </div>
             ) : (
               <div className="prose max-w-none text-foreground/80">
