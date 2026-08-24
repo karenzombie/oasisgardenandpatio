@@ -4,8 +4,8 @@
   "description": "Luxury outdoor furniture and patio design",
   "start_url": "/",
   "display": "browser",
-  "background_color": "#5C8A75",
-  "theme_color": "#5C8A75",
+  "background_color": "#E4D7CD",
+  "theme_color": "#E4D7CD",
   "icons": [
     {
       "src": "/apple-touch-icon.png",
