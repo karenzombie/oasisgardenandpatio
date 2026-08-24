@@ -84,3 +84,10 @@ uri = "file://.agents/outputs/favicon-beige-preview.html"
 type = "text"
 title = "Favicon beige preview"
 description = "Preview of the favicon with the shared header/footer beige background and black Oasis logo. The live favicon has not been changed."
+
+[[outputs]]
+id = "MQ6exiwKr-pJpXHA4RgJo"
+uri = "file://.agents/outputs/favicon-beige-preview.png"
+type = "image"
+title = "Favicon beige PNG preview"
+description = "Rendered PNG preview of the proposed beige favicon with the black Oasis Garden & Patio logo. The live favicon remains unchanged."
