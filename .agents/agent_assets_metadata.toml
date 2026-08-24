@@ -77,3 +77,10 @@ id = "TT7aQXIgjXGEXIgOTCjTi"
 uri = "file://artifacts/web/public/favicon.svg"
 type = "image"
 title = "Favicon with Oasis logo"
+
+[[outputs]]
+id = "s4l4iEToszoQH58veXc3Z"
+uri = "file://.agents/outputs/favicon-beige-preview.html"
+type = "text"
+title = "Favicon beige preview"
+description = "Preview of the favicon with the shared header/footer beige background and black Oasis logo. The live favicon has not been changed."
