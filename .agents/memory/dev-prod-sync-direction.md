@@ -15,11 +15,11 @@ When dev and production databases diverge on data (SKUs, codes, material IDs, et
 
 ## Pre-launch policy (user-set, July 2026): flag ALL dev/prod differences before publish
 
-Until the site launches, every publish pushes dev over prod (code + DB data incl. catalog). But the user requires that **any difference found between dev and prod — in ANY table, not just catalog** — is flagged to them for a decision BEFORE publishing/syncing. Do not silently overwrite or silently skip differences.
+Until the site launches, a **data sync** may push the approved dev catalog state over prod, but a code-only publish must not be treated as a database sync. The user requires differences to be flagged only within the exact tables and rows the proposed data operation can affect; operational dev/prod separation is expected and is never a sync target.
 
 **Why:** The July 2026 catalog sync's `TRUNCATE manufacturers CASCADE` silently wiped prod `vendor_orders` (FK cascade) — the user accepted the loss but wants to make that call themselves next time. Transactional tables (orders, customers, vendor_orders, users) may hold prod-only test data the user cares about.
 
-**How to apply:** Before any publish or prod data sync, diff dev vs prod row counts across ALL tables (not just the catalog mirror list), enumerate prod-only rows in transactional tables and catalog tables, and identify changed/deleted/replaced rows that the operation could overwrite or cascade-delete. Present the exact differences to the user for sign-off first. If any difference was not explicitly approved, stop before mutation. A successful command must never be treated as implicit approval.
+**How to apply:** Before any data sync, identify its exact write/delete/cascade footprint, diff only the affected tables and rows, and present unexpected differences for sign-off before mutation. Never blanket-audit unrelated operational tables for a code-only publish, and never use their expected dev/prod drift as a reason to block or approve a catalog sync. A successful command must never be treated as implicit approval.
 
 ## Catalog mirror mechanism (replaces old syncProd.ts + seedGaltech.ts)
 
