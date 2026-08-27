@@ -29,7 +29,18 @@ async function deleteWhereNotIn(
   const toDelete = all.rows.filter((r) => !keepIds.has(r.id as number));
   if (toDelete.length === 0) return 0;
   const ids = toDelete.map((r) => r.id).join(",");
-  console.log(`  → deleting ${toDelete.length} prod-only rows from ${table} (ids: ${ids})`);
+  console.log(`  → detected ${toDelete.length} prod-only rows in ${table} (ids: ${ids})`);
+  const details = await client.query(`SELECT id, name FROM "${table}" WHERE id IN (${ids}) ORDER BY id`);
+  for (const row of details.rows) {
+    console.log(`    ${table} ${row.id}: ${row.name ?? "(unnamed)"}`);
+  }
+  if (process.env.APPROVE_PROD_CATALOG_DELETIONS !== "1") {
+    throw new Error(
+      `Approval required before deleting prod-only ${table} rows. ` +
+        "Review the listed records and rerun with APPROVE_PROD_CATALOG_DELETIONS=1 only after explicit user approval.",
+    );
+  }
+  console.log(`  → deleting approved prod-only rows from ${table}`);
   await client.query(`DELETE FROM "${table}" WHERE id IN (${ids})`);
   return toDelete.length;
 }

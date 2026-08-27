@@ -11,7 +11,7 @@ When dev and production databases diverge on data (SKUs, codes, material IDs, et
 
 **Why:** Reversing direction corrupts dev with old/wrong data, breaks seed scripts that rely on correct dev state, and wastes time undoing the mistake.
 
-**How to apply:** Before running any UPDATE on dev to "normalize" it to prod, stop and ask: is prod's format correct and intentional, or is it a legacy artifact? If prod is stale, fix prod.
+**How to apply:** Before running any UPDATE on dev to "normalize" it to prod, stop and ask: is prod's format correct and intentional, or is it a legacy artifact? If prod is stale, fix prod. Before any dev→prod sync, produce a read-only row-level divergence report across all tables and get explicit approval for every unexpected difference. A narrowly scoped request (such as syncing one manufacturer's documents) does not approve unrelated changes, especially deletions or replacements.
 
 ## Pre-launch policy (user-set, July 2026): flag ALL dev/prod differences before publish
 
@@ -19,7 +19,7 @@ Until the site launches, every publish pushes dev over prod (code + DB data incl
 
 **Why:** The July 2026 catalog sync's `TRUNCATE manufacturers CASCADE` silently wiped prod `vendor_orders` (FK cascade) — the user accepted the loss but wants to make that call themselves next time. Transactional tables (orders, customers, vendor_orders, users) may hold prod-only test data the user cares about.
 
-**How to apply:** Before any publish or prod data sync, diff dev vs prod row counts across ALL tables (not just the catalog mirror list), enumerate prod-only rows in transactional tables that a TRUNCATE CASCADE would destroy, and present the differences to the user for sign-off first.
+**How to apply:** Before any publish or prod data sync, diff dev vs prod row counts across ALL tables (not just the catalog mirror list), enumerate prod-only rows in transactional tables and catalog tables, and identify changed/deleted/replaced rows that the operation could overwrite or cascade-delete. Present the exact differences to the user for sign-off first. If any difference was not explicitly approved, stop before mutation. A successful command must never be treated as implicit approval.
 
 ## Catalog mirror mechanism (replaces old syncProd.ts + seedGaltech.ts)
 

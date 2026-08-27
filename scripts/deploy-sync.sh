@@ -6,6 +6,8 @@ set -e
 # finishes, variants, options, shipping rules, etc.
 # Transactional tables (orders, customers, users, carts, inventory) are intentionally
 # excluded and are never touched.
+# If prod-only catalog rows are detected, cleanup stops and requires the user-approved
+# APPROVE_PROD_CATALOG_DELETIONS=1 flag before any such rows can be removed.
 
 echo "→ Pruning pnpm store..."
 pnpm store prune
