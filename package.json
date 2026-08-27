@@ -17,8 +17,7 @@
     "overrides": {
       "brace-expansion": "^5.0.8",
       "fast-uri": "^3.1.4",
-      "body-parser": "^2.3.0",
-      "ip-address": ">=10.3.1"
+      "body-parser": "^2.3.0"
     }
   }
 }
