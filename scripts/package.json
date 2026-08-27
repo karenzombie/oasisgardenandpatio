@@ -52,6 +52,7 @@
     "import-treasure-garden-prices": "tsx ./src/importTreasureGardenPrices.ts",
     "seed-galtech-fabrics": "tsx ./src/seedGaltechFabrics.ts",
     "seed-tg-fabrics": "tsx ./src/seedTgFabrics.ts",
+    "load-tg-product-documents": "tsx ./src/loadTgProductDocuments.ts",
     "seed-frankford-non-umbrella": "tsx ./src/seedFrankfordNonUmbrellaProducts.ts",
     "upload-galtech-replacement-images": "tsx ./src/uploadGaltechReplacementImages.ts",
     "upload-galtech-missing-images": "tsx ./src/uploadGaltechMissingImages.ts",
