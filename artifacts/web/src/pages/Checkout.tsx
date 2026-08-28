@@ -84,12 +84,10 @@ export default function Checkout() {
     },
   });
 
-  // Public AcceptUI credentials — only fetched for authenticated users.
-  // Guests see the under-construction UI and never trigger payment.
+  // Public AcceptUI credentials — fetched for both signed-in users and guests.
   const { data: paymentConfig } = useGetCheckoutPaymentConfig({
     query: {
       queryKey: getGetCheckoutPaymentConfigQueryKey(),
-      enabled: isAuthenticated,
       retry: false,
     },
   });
@@ -883,29 +881,6 @@ export default function Checkout() {
             />
           </section>
 
-          {/* Payment — under-construction notice for guests only.
-              Authenticated users see the security note in the Order Summary
-              sidebar directly above the Place Order button. */}
-          {!isAuthenticated ? (
-            <section>
-              <h2 className="font-serif text-xl mb-3">Payment</h2>
-              <div className="border border-dashed border-border p-5 bg-card text-sm text-muted-foreground">
-                <p>
-                  This site is still under construction and not available for
-                  online purchasing. Please visit{" "}
-                  <a
-                    href="https://www.oasispatioumbrellas.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline text-foreground hover:text-primary"
-                  >
-                    oasispatioumbrellas.com
-                  </a>{" "}
-                  if you're looking to make a purchase.
-                </p>
-              </div>
-            </section>
-          ) : null}
         </div>
 
         {/* Order summary */}
@@ -989,81 +964,56 @@ export default function Checkout() {
               <p className="text-sm text-destructive mt-4">{checkoutError}</p>
             ) : null}
 
-            {isAuthenticated ? (
-              <>
-                {/* Security note directly under the Total line. */}
-                <p className="mt-4 text-[11px] text-muted-foreground">
-                  Your card details are entered securely via Authorize.net's
-                  hosted form and never touch our page or server.
+            <>
+              {/* Security note directly under the Total line. */}
+              <p className="mt-4 text-[11px] text-muted-foreground">
+                Your card details are entered securely via Authorize.net's
+                hosted form and never touch our page or server.
+              </p>
+
+              {/* react-acceptjs HostedForm renders the AcceptUI popup button.
+                  disabled= keeps the button locked until the address is
+                  complete and no mutation is in flight (double-submit guard).
+                  onSubmit fires with the opaque token after card entry. */}
+              {paymentConfig ? (
+                <HostedForm
+                  authData={{
+                    apiLoginID: paymentConfig.apiLoginId,
+                    clientKey: paymentConfig.publicClientKey,
+                  }}
+                  environment={paymentConfig.sandbox ? "SANDBOX" : "PRODUCTION"}
+                  onSubmit={handleHostedFormSubmit}
+                  billingAddressOptions={{ show: false, required: false }}
+                  paymentOptions={{ showCreditCard: true, showBankAccount: false }}
+                  formHeaderText="Card Information"
+                  formButtonText="Submit"
+                  buttonText={placeOrderM.isPending ? "Placing Order…" : "Place Order"}
+                  disabled={!addressComplete || placeOrderM.isPending}
+                  containerClassName="w-full mt-3"
+                  buttonClassName="w-full bg-primary text-primary-foreground px-4 py-3 font-serif tracking-widest uppercase text-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                />
+              ) : (
+                <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
+                  <Spinner className="size-4" />
+                  <span>Loading payment form…</span>
+                </div>
+              )}
+
+              {/* Hint shown below the button so customers know clicking
+                  Place Order opens the secure card entry popup. */}
+              {!placeOrderM.isPending && addressComplete && paymentConfig ? (
+                <p className="mt-2 text-[11px] text-muted-foreground text-center">
+                  Click <strong>Place Order</strong> to proceed to payment entry.
                 </p>
+              ) : null}
 
-                {/* react-acceptjs HostedForm renders the AcceptUI popup button.
-                    disabled= keeps the button locked until the address is
-                    complete and no mutation is in flight (double-submit guard).
-                    onSubmit fires with the opaque token after card entry. */}
-                {paymentConfig ? (
-                  <HostedForm
-                    authData={{
-                      apiLoginID: paymentConfig.apiLoginId,
-                      clientKey: paymentConfig.publicClientKey,
-                    }}
-                    environment={paymentConfig.sandbox ? "SANDBOX" : "PRODUCTION"}
-                    onSubmit={handleHostedFormSubmit}
-                    billingAddressOptions={{ show: false, required: false }}
-                    paymentOptions={{ showCreditCard: true, showBankAccount: false }}
-                    formHeaderText="Card Information"
-                    formButtonText="Submit"
-                    buttonText={placeOrderM.isPending ? "Placing Order…" : "Place Order"}
-                    disabled={!addressComplete || placeOrderM.isPending}
-                    containerClassName="w-full mt-3"
-                    buttonClassName="w-full bg-primary text-primary-foreground px-4 py-3 font-serif tracking-widest uppercase text-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  />
-                ) : (
-                  <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
-                    <Spinner className="size-4" />
-                    <span>Loading payment form…</span>
-                  </div>
-                )}
-
-                {/* Hint shown below the button so customers know clicking
-                    Place Order opens the secure card entry popup. */}
-                {!placeOrderM.isPending && addressComplete && paymentConfig ? (
-                  <p className="mt-2 text-[11px] text-muted-foreground text-center">
-                    Click <strong>Place Order</strong> to proceed to payment entry.
-                  </p>
-                ) : null}
-
-                {/* Prompt shown when address is not yet complete. */}
-                {!addressComplete ? (
-                  <p className="mt-2 text-[11px] text-muted-foreground">
-                    Fill in your billing and shipping address above to enable payment.
-                  </p>
-                ) : null}
-              </>
-            ) : (
-              <>
-                <Button
-                  type="button"
-                  disabled
-                  className="w-full rounded-none mt-6 font-serif tracking-widest uppercase opacity-50 cursor-not-allowed"
-                >
-                  Place Order
-                </Button>
-                <p className="text-[11px] text-muted-foreground mt-3 text-center">
-                  This site is still under construction and not available for
-                  online purchasing. Please visit{" "}
-                  <a
-                    href="https://www.oasispatioumbrellas.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline hover:text-primary"
-                  >
-                    oasispatioumbrellas.com
-                  </a>{" "}
-                  to make a purchase.
+              {/* Prompt shown when address is not yet complete. */}
+              {!addressComplete ? (
+                <p className="mt-2 text-[11px] text-muted-foreground">
+                  Fill in your billing and shipping address above to enable payment.
                 </p>
-              </>
-            )}
+              ) : null}
+            </>
           </div>
         </aside>
       </div>
