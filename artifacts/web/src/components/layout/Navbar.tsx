@@ -1,16 +1,13 @@
 import { Link, useLocation, useSearch } from "wouter";
 import {
   useListActiveBanners,
-  useLogout,
   useGetCart,
-  getGetCurrentUserQueryKey,
   getGetCartQueryKey,
 } from "@workspace/api-client-react";
-import { useQueryClient } from "@tanstack/react-query";
 import { Menu, X, ChevronDown, User, ShoppingBag, Search } from "lucide-react";
 import { useState, useEffect, useLayoutEffect, useRef, type FormEvent } from "react";
-import { useClerk } from "@clerk/react";
 import { useAuth } from "@/lib/auth";
+import { useCustomerLogout } from "@/lib/useCustomerLogout";
 import { WishlistIconLink } from "@/components/layout/WishlistIconLink";
 import logoImg from "@/assets/logo.png";
 import {
@@ -89,9 +86,10 @@ export function Navbar() {
   const activeBanners = Array.isArray(banners) ? banners.filter(b => b.type === "banner") : [];
 
   const { user, isAuthenticated } = useAuth();
-  const logoutMutation = useLogout();
-  const queryClient = useQueryClient();
-  const { signOut: clerkSignOut } = useClerk();
+  const { logout: handleLogout, isPending: isLogoutPending } = useCustomerLogout(() => {
+    setIsMobileMenuOpen(false);
+    navigate("/");
+  });
 
   const { data: cart } = useGetCart({
     query: {
@@ -102,20 +100,6 @@ export function Navbar() {
     },
   });
   const cartCount = cart?.itemCount ?? 0;
-
-  const handleLogout = async () => {
-    try {
-      await clerkSignOut().catch(() => {});
-      await logoutMutation.mutateAsync().catch(() => {});
-    } finally {
-      await queryClient.invalidateQueries({
-        queryKey: getGetCurrentUserQueryKey(),
-      });
-      queryClient.setQueryData(getGetCurrentUserQueryKey(), undefined);
-      setIsMobileMenuOpen(false);
-      navigate("/");
-    }
-  };
 
   const isCondensedRef = useRef(false);
 
@@ -273,7 +257,7 @@ export function Navbar() {
                             e.preventDefault();
                             handleLogout();
                           }}
-                          disabled={logoutMutation.isPending}
+                          disabled={isLogoutPending}
                           className="cursor-pointer"
                         >
                           Log Out
@@ -360,7 +344,7 @@ export function Navbar() {
                   type="button"
                   className="text-lg font-serif text-muted-foreground hover:text-primary transition-colors"
                   onClick={handleLogout}
-                  disabled={logoutMutation.isPending}
+                  disabled={isLogoutPending}
                 >
                   Log Out
                 </button>

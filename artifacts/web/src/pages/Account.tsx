@@ -1,8 +1,7 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useLocation, useSearch, Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  useLogout,
   useResendVerification,
   useGetWishlist,
   useGetAccountProfile,
@@ -19,6 +18,7 @@ import {
 } from "@workspace/api-client-react";
 import { useAuth as useClerkAuth } from "@clerk/react";
 import { useAuth } from "@/lib/auth";
+import { useCustomerLogout } from "@/lib/useCustomerLogout";
 import { useToast } from "@/hooks/use-toast";
 import { OnboardingView } from "./OnboardingView";
 import { wishlistKeyFor } from "@/lib/wishlistHold";
@@ -289,7 +289,11 @@ export default function Account() {
   const params = new URLSearchParams(search);
   const isWelcome = params.get("welcome") === "1";
 
-  const logoutMutation = useLogout();
+  const handleLogoutComplete = useCallback(() => {
+    navigate("/");
+  }, [navigate]);
+  const { logout: handleLogout, isPending: isLogoutPending } =
+    useCustomerLogout(handleLogoutComplete);
   const resendMutation = useResendVerification();
   const [resendSent, setResendSent] = useState(false);
 
@@ -475,18 +479,6 @@ export default function Account() {
   if (profile?.onboardingRequired) {
     return <OnboardingView profile={profile} onComplete={setProfile} />;
   }
-
-  const handleLogout = async () => {
-    try {
-      await logoutMutation.mutateAsync();
-    } finally {
-      await queryClient.invalidateQueries({
-        queryKey: getGetCurrentUserQueryKey(),
-      });
-      queryClient.setQueryData(getGetCurrentUserQueryKey(), undefined);
-      navigate("/");
-    }
-  };
 
   const handleResend = async () => {
     try {
@@ -1025,9 +1017,9 @@ export default function Account() {
               variant="outline"
               className="rounded-none font-serif tracking-wide"
               onClick={handleLogout}
-              disabled={logoutMutation.isPending}
+              disabled={isLogoutPending}
             >
-              {logoutMutation.isPending ? (
+              {isLogoutPending ? (
                 <>
                   <Spinner className="mr-2" /> Logging out…
                 </>
