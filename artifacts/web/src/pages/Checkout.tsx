@@ -361,8 +361,9 @@ export default function Checkout() {
     );
   }, [billingMode, billingSavedId, billingForm]);
 
-  // HostedForm is disabled until both billing and shipping are complete.
-  const addressComplete = useMemo(() => {
+  // HostedForm is disabled until guest contact (when applicable), billing,
+  // and shipping are complete.
+  const addressFieldsComplete = useMemo(() => {
     if (!billingComplete) return false;
     if (shipSameBilling) return true; // shipping inherits billing
     if (shippingMode === "saved") return shippingSavedId !== null;
@@ -373,6 +374,13 @@ export default function Checkout() {
       shippingForm.zip.trim() !== ""
     );
   }, [billingComplete, shipSameBilling, shippingMode, shippingSavedId, shippingForm]);
+  const guestContactComplete =
+    isAuthenticated ||
+    (EMAIL_RE.test(guest.email.trim()) &&
+      guest.firstName.trim() !== "" &&
+      guest.lastName.trim() !== "" &&
+      guest.phone.trim().length >= 7);
+  const addressComplete = addressFieldsComplete && guestContactComplete;
 
   /**
    * Called by react-acceptjs HostedForm when Authorize.net returns a result.
@@ -443,6 +451,16 @@ export default function Checkout() {
     placeOrderM.mutate({
       data: {
         ...addressPayload,
+        ...(!isAuthenticated
+          ? {
+              guestContact: {
+                email: guest.email.trim(),
+                firstName: guest.firstName.trim(),
+                lastName: guest.lastName.trim(),
+                phone: guest.phone.trim(),
+              },
+            }
+          : {}),
         paymentToken: {
           dataDescriptor: response.opaqueData.dataDescriptor,
           dataValue: response.opaqueData.dataValue,
@@ -1008,9 +1026,14 @@ export default function Checkout() {
               ) : null}
 
               {/* Prompt shown when address is not yet complete. */}
-              {!addressComplete ? (
+              {!addressFieldsComplete ? (
                 <p className="mt-2 text-[11px] text-muted-foreground">
                   Fill in your billing and shipping address above to enable payment.
+                </p>
+              ) : null}
+              {!isAuthenticated && !guestContactComplete ? (
+                <p className="mt-2 text-[11px] text-muted-foreground">
+                  Complete your contact information above to enable payment.
                 </p>
               ) : null}
             </>
