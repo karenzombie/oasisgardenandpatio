@@ -34,7 +34,6 @@ function minQtyFor(item: {
 
 export default function Cart() {
   const { isAuthenticated } = useAuth();
-  const isDemoUser = isAuthenticated;
   const qc = useQueryClient();
 
   // Cart is now anonymous-friendly: the API uses `req.session.id` to track a
@@ -325,36 +324,12 @@ export default function Cart() {
                 <span>Total</span>
                 <span>{formatMoney(String(total))}</span>
               </div>
-              {isDemoUser ? (
-                <Button
-                  asChild
-                  className="w-full rounded-none mt-6 font-serif tracking-widest uppercase"
-                >
-                  <Link href="/checkout">Proceed to Checkout</Link>
-                </Button>
-              ) : (
-                <>
-                  <Button
-                    disabled
-                    className="w-full rounded-none mt-6 font-serif tracking-widest uppercase opacity-50 cursor-not-allowed"
-                  >
-                    Proceed to Checkout
-                  </Button>
-                  <p className="text-xs text-muted-foreground mt-3 text-center">
-                    This site is still under construction and not available for
-                    online purchasing. Please visit{" "}
-                    <a
-                      href="https://www.oasispatioumbrellas.com"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="underline hover:text-foreground"
-                    >
-                      oasispatioumbrellas.com
-                    </a>{" "}
-                    to make a purchase.
-                  </p>
-                </>
-              )}
+              <Button
+                asChild
+                className="w-full rounded-none mt-6 font-serif tracking-widest uppercase"
+              >
+                <Link href="/checkout">Proceed to Checkout</Link>
+              </Button>
               <Link
                 href="/shop"
                 className="block text-center text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground mt-4"
