@@ -500,6 +500,33 @@ export default function Checkout() {
       </nav>
       <h1 className="font-serif text-3xl md:text-4xl mb-8">Checkout</h1>
 
+      {!isAuthenticated ? (
+        <div
+          className="mb-8 flex items-start gap-3 border-l-4 border-[#C8843C] bg-[#FDF6EC] px-4 py-3 text-[#7A4E15]"
+          role="status"
+        >
+          <span aria-hidden="true" className="mt-0.5 text-lg leading-none">
+            ⚠
+          </span>
+          <div className="space-y-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em]">
+              You're checking out as a guest
+            </p>
+            <p className="text-sm leading-relaxed">
+              This order won't appear in an order history, and your confirmation email
+              will be your only record of it.{" "}
+              <Link
+                href="/sign-up?redirect_url=%2Fcheckout"
+                className="font-medium underline underline-offset-2 hover:no-underline"
+              >
+                Create an account now
+              </Link>{" "}
+              and this order is saved to it.
+            </p>
+          </div>
+        </div>
+      ) : null}
+
       {/* No onSubmit — the AcceptUI button is type="button" and handles its own
           click flow. The form wrapper is kept for browser autofill grouping. */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
@@ -513,7 +540,7 @@ export default function Checkout() {
                   href="/sign-in?redirect_url=%2Fcheckout"
                   className="text-xs uppercase tracking-widest text-muted-foreground hover:text-primary"
                 >
-                  Sign in for faster checkout →
+                  Sign in for existing accounts →
                 </Link>
               ) : null}
             </div>
