@@ -115,7 +115,7 @@ export default function Cart() {
                 href="/sign-in?redirect_url=%2Fcheckout"
                 className="text-xs uppercase tracking-widest font-medium hover:text-primary"
               >
-                Sign in for faster checkout →
+                Sign in for existing accounts →
               </Link>
             </div>
           ) : null}

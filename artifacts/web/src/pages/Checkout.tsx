@@ -514,14 +514,20 @@ export default function Checkout() {
             </p>
             <p className="text-sm leading-relaxed">
               This order won't appear in an order history, and your confirmation email
-              will be your only record of it.{" "}
+              will be your only record.{" "}
               <Link
                 href="/sign-up?redirect_url=%2Fcheckout"
                 className="font-medium underline underline-offset-2 hover:no-underline"
               >
                 Create an account now
               </Link>{" "}
-              and this order is saved to it.
+              to have the order history saved. Already have an account?{" "}
+              <Link
+                href="/sign-in?redirect_url=%2Fcheckout"
+                className="font-medium underline underline-offset-2 hover:no-underline"
+              >
+                Sign in
+              </Link>.
             </p>
           </div>
         </div>
@@ -533,16 +539,8 @@ export default function Checkout() {
         <div className="lg:col-span-2 space-y-10">
           {/* Contact */}
           <section>
-            <div className="flex items-baseline justify-between mb-3">
+            <div className="mb-3">
               <h2 className="font-serif text-xl">Contact</h2>
-              {!isAuthenticated ? (
-                <Link
-                  href="/sign-in?redirect_url=%2Fcheckout"
-                  className="text-xs uppercase tracking-widest text-muted-foreground hover:text-primary"
-                >
-                  Sign in for existing accounts →
-                </Link>
-              ) : null}
             </div>
             {isAuthenticated ? (
               <p className="text-sm text-muted-foreground">
