@@ -3,6 +3,7 @@ import { CheckCircle2, Clock } from "lucide-react";
 import { useGetAccountOrder, getGetAccountOrderQueryKey } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { useAuth } from "@/lib/auth";
 
 function formatMoney(v: string | number | null | undefined): string {
   if (v == null || v === "") return "$0.00";
@@ -12,6 +13,7 @@ function formatMoney(v: string | number | null | undefined): string {
 }
 
 export default function OrderConfirmation() {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [, params] = useRoute<{ orderNumber: string }>(
     "/order-confirmation/:orderNumber",
   );
@@ -19,12 +21,12 @@ export default function OrderConfirmation() {
   const { data, isLoading, error } = useGetAccountOrder(orderNumber, {
     query: {
       queryKey: getGetAccountOrderQueryKey(orderNumber),
-      enabled: !!orderNumber,
+      enabled: !!orderNumber && !authLoading,
       retry: false,
     },
   });
 
-  if (isLoading) {
+  if (authLoading || isLoading) {
     return (
       <div className="container mx-auto px-4 py-24 text-center">
         <Spinner className="size-8 text-primary mx-auto" />
@@ -37,12 +39,44 @@ export default function OrderConfirmation() {
       <div className="container mx-auto px-4 py-24 max-w-xl text-center">
         <h1 className="font-serif text-3xl mb-3">Order not found</h1>
         <p className="text-muted-foreground mb-6">
-          We couldn't find that order. If you just placed it, please check your
-          account.
+          {isAuthenticated
+            ? "We couldn't find that order. If you just placed it, please check your account."
+            : "We couldn't find that order in this browser session."}
         </p>
-        <Button asChild className="rounded-none">
-          <Link href="/account/orders">My Orders</Link>
-        </Button>
+        {!isAuthenticated ? (
+          <div className="mb-6 flex items-start gap-3 border-l-4 border-[#C8843C] bg-[#FDF6EC] px-4 py-3 text-left text-[#7A4E15]">
+            <span aria-hidden="true" className="mt-0.5 text-lg leading-none">
+              ⚠
+            </span>
+            <div className="space-y-1">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em]">
+                Placed an order as a guest?
+              </p>
+              <p className="text-sm leading-relaxed">
+                Guest orders are only viewable in the browser they were placed in.
+                Please check your email for your confirmation, or contact us at
+                (661) 255-9909 or sales@oasisgardenandpatio.com and we'll look it up
+                for you.
+              </p>
+            </div>
+          </div>
+        ) : null}
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          {isAuthenticated ? (
+            <Button asChild className="rounded-none">
+              <Link href="/account/orders">My Orders</Link>
+            </Button>
+          ) : (
+            <>
+              <Button type="button" disabled className="rounded-none">
+                My Orders
+              </Button>
+              <Button asChild className="rounded-none">
+                <Link href="/shop">Continue Shopping</Link>
+              </Button>
+            </>
+          )}
+        </div>
       </div>
     );
   }
@@ -153,10 +187,40 @@ export default function OrderConfirmation() {
         </div>
       ) : null}
 
+      {!isAuthenticated ? (
+        <div className="mb-6 flex items-start gap-3 border-l-4 border-[#C8843C] bg-[#FDF6EC] px-4 py-3 text-left text-[#7A4E15]">
+          <span aria-hidden="true" className="mt-0.5 text-lg leading-none">
+            ⚠
+          </span>
+          <div className="space-y-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em]">
+              Keep your confirmation email
+            </p>
+            <p className="text-sm leading-relaxed">
+              This order was placed as a guest, so it isn't linked to an account and
+              can't be viewed online. Your confirmation email is your receipt.{" "}
+              <Link
+                href="/sign-up"
+                className="font-medium underline underline-offset-2 hover:no-underline"
+              >
+                Create an account
+              </Link>{" "}
+              to track future orders.
+            </p>
+          </div>
+        </div>
+      ) : null}
+
       <div className="flex flex-col sm:flex-row gap-3 justify-center">
-        <Button asChild variant="outline" className="rounded-none">
-          <Link href="/account/orders">View My Orders</Link>
-        </Button>
+        {isAuthenticated ? (
+          <Button asChild variant="outline" className="rounded-none">
+            <Link href="/account/orders">View My Orders</Link>
+          </Button>
+        ) : (
+          <Button type="button" variant="outline" disabled className="rounded-none">
+            View My Orders
+          </Button>
+        )}
         <Button asChild className="rounded-none">
           <Link href="/shop">Continue Shopping</Link>
         </Button>
