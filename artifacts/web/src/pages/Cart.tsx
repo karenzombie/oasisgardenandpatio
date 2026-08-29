@@ -106,10 +106,10 @@ export default function Cart() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           {!isAuthenticated ? (
-            <div className="lg:col-span-3 -mt-2 border border-border bg-muted/30 p-4 text-sm">
-              <p className="text-muted-foreground">
+            <div className="lg:col-span-3 -mt-2 border-l-4 border-[#C8843C] bg-[#FDF6EC] p-4 text-sm text-[#7A4E15]">
+              <p>
                 Checking out as a guest is fine, no account required.{" "}
-                <span className="text-foreground">Have an account?</span>
+                <span className="font-medium">Have an account?</span>
                 {" "}
                 <Link
                   href="/sign-in?redirect_url=%2Fcheckout"
