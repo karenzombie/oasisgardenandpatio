@@ -106,17 +106,18 @@ export default function Cart() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           {!isAuthenticated ? (
-            <div className="lg:col-span-3 -mt-2 border border-border bg-muted/30 p-4 text-sm flex flex-wrap items-center justify-between gap-3">
+            <div className="lg:col-span-3 -mt-2 border border-border bg-muted/30 p-4 text-sm">
               <p className="text-muted-foreground">
-                Checking out as a guest is fine — no account required.{" "}
+                Checking out as a guest is fine, no account required.{" "}
                 <span className="text-foreground">Have an account?</span>
+                {" "}
+                <Link
+                  href="/sign-in?redirect_url=%2Fcheckout"
+                  className="font-medium underline underline-offset-2 hover:no-underline"
+                >
+                  Sign in
+                </Link>.
               </p>
-              <Link
-                href="/sign-in?redirect_url=%2Fcheckout"
-                className="text-xs uppercase tracking-widest font-medium hover:text-primary"
-              >
-                Sign in for existing accounts →
-              </Link>
             </div>
           ) : null}
           <ul className="lg:col-span-2 divide-y divide-border border-y border-border">
