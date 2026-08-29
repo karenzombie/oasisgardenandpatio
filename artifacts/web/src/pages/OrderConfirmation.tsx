@@ -198,7 +198,7 @@ export default function OrderConfirmation() {
             </p>
             <p className="text-sm leading-relaxed">
               This order was placed as a guest, so it isn't linked to an account and
-              can't be viewed online. Your confirmation email is your receipt.{" "}
+              can't be viewed again later. Your confirmation email is your receipt.{" "}
               <Link
                 href="/sign-up"
                 className="font-medium underline underline-offset-2 hover:no-underline"
