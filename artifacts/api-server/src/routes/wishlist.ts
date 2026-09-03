@@ -227,25 +227,15 @@ function configKey(o: {
 
 router.get(
   "/wishlist",
-  optionalAuth,
+  requireAuth,
   async (req: Request, res: Response): Promise<void> => {
-    if (req.user) {
-      res.json(await loadWishlist({ userId: req.user.id }));
-      return;
-    }
-    const deviceToken =
-      typeof req.query.deviceToken === "string" ? req.query.deviceToken : "";
-    if (!deviceToken) {
-      res.json(GetWishlistResponse.parse({ items: [] }));
-      return;
-    }
-    res.json(await loadWishlist({ deviceToken }));
+    res.json(await loadWishlist({ userId: req.user!.id }));
   },
 );
 
 router.post(
   "/wishlist",
-  optionalAuth,
+  requireAuth,
   async (req: Request, res: Response): Promise<void> => {
     const parsed = AddWishlistItemBody.safeParse(req.body);
     if (!parsed.success) {
@@ -256,13 +246,11 @@ router.post(
     }
     const {
       productId,
-      deviceToken,
       selectedFinishId,
       selectedFabricId,
       selectedTableTopTileId,
       variantLabel,
       variantId,
-      replaceExisting,
     } = parsed.data;
 
     // Wishlist may hold non-purchasable products (e.g. most O.W. Lee items),
@@ -349,75 +337,6 @@ router.post(
       res.json(await loadWishlist({ userId: req.user.id }));
       return;
     }
-
-    // Guests must identify themselves with a device token.
-    if (!deviceToken) {
-      res.status(400).json({ error: "deviceToken is required for guests" });
-      return;
-    }
-
-    // One configuration per product per device. If a row already exists,
-    // either overwrite it (replaceExisting) or signal a conflict so the
-    // client can prompt the guest to sign in / create an account / replace.
-    const [existingGuest] = await db
-      .select({ id: wishlistItemsTable.id })
-      .from(wishlistItemsTable)
-      .where(
-        and(
-          eq(wishlistItemsTable.deviceToken, deviceToken),
-          eq(wishlistItemsTable.productId, productId),
-          isNull(wishlistItemsTable.userId),
-        ),
-      )
-      .limit(1);
-
-    if (existingGuest) {
-      if (!replaceExisting) {
-        res.status(409).json({
-          error: "A saved configuration already exists for this product",
-        });
-        return;
-      }
-      await db
-        .update(wishlistItemsTable)
-        .set(config)
-        .where(eq(wishlistItemsTable.id, existingGuest.id));
-      res.json(await loadWishlist({ deviceToken }));
-      return;
-    }
-
-    try {
-      await db
-        .insert(wishlistItemsTable)
-        .values({ deviceToken, productId, ...config });
-    } catch (err) {
-      // Concurrent add of the same product on the same device races past the
-      // pre-check above and hits the partial unique index
-      // (device_token, product_id) WHERE user_id IS NULL. Map that to the same
-      // conflict/replace flow instead of leaking a 500.
-      if (isUniqueViolation(err)) {
-        if (!replaceExisting) {
-          res.status(409).json({
-            error: "A saved configuration already exists for this product",
-          });
-          return;
-        }
-        await db
-          .update(wishlistItemsTable)
-          .set(config)
-          .where(
-            and(
-              eq(wishlistItemsTable.deviceToken, deviceToken),
-              eq(wishlistItemsTable.productId, productId),
-              isNull(wishlistItemsTable.userId),
-            ),
-          );
-      } else {
-        throw err;
-      }
-    }
-
-    res.json(await loadWishlist({ deviceToken }));
   },
 );
 
@@ -490,7 +409,7 @@ router.post(
 
 router.delete(
   "/wishlist/:id",
-  optionalAuth,
+  requireAuth,
   async (req: Request, res: Response): Promise<void> => {
     const id = Number(req.params.id);
     if (!Number.isInteger(id) || id <= 0) {
@@ -515,28 +434,6 @@ router.delete(
       res.json(await loadWishlist({ userId: req.user.id }));
       return;
     }
-
-    const parsed = RemoveWishlistItemBody.safeParse(req.body ?? {});
-    const deviceToken = parsed.success ? parsed.data.deviceToken : null;
-    if (!deviceToken) {
-      res.status(400).json({ error: "deviceToken is required for guests" });
-      return;
-    }
-    const deleted = await db
-      .delete(wishlistItemsTable)
-      .where(
-        and(
-          eq(wishlistItemsTable.id, id),
-          eq(wishlistItemsTable.deviceToken, deviceToken),
-          isNull(wishlistItemsTable.userId),
-        ),
-      )
-      .returning({ id: wishlistItemsTable.id });
-    if (deleted.length === 0) {
-      res.status(404).json({ error: "Wishlist item not found" });
-      return;
-    }
-    res.json(await loadWishlist({ deviceToken }));
   },
 );
 
