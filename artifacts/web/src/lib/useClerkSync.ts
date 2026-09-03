@@ -4,7 +4,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   clerkSync,
   getGetCurrentUserQueryKey,
-  getGetCartQueryKey,
   ApiError,
 } from "@workspace/api-client-react";
 import { useAuth } from "./auth";
@@ -55,9 +54,7 @@ export function useClerkSync(): void {
     void clerkSync()
       .then(() => {
         syncedSessionRef.current = sessionId;
-        return qc
-          .invalidateQueries({ queryKey: getGetCurrentUserQueryKey() })
-          .then(() => qc.invalidateQueries({ queryKey: getGetCartQueryKey() }));
+        return qc.invalidateQueries({ queryKey: getGetCurrentUserQueryKey() });
       })
       .catch(async (err) => {
         if (err instanceof ApiError && err.status === 403) {
