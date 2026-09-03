@@ -24,9 +24,8 @@ function formatMoney(v: string | null | undefined): string {
 }
 
 /**
- * Public wishlist page. Server-backed for both signed-in users and guests
- * (guests identified by their device token). Each row is a saved
- * configuration; signed-in users may have multiple per product.
+ * Public wishlist page. Signed-out visitors see an account prompt; signed-in
+ * customers see their server-backed saved configurations.
  */
 export default function Wishlist() {
   const qc = useQueryClient();
@@ -88,25 +87,39 @@ export default function Wishlist() {
 
       <div className="flex items-center gap-3 mb-2">
         <Heart className="w-6 h-6 text-primary" />
-        <h1 className="font-serif text-3xl md:text-4xl">My Wishlist</h1>
+        <h1 className="font-serif text-3xl md:text-4xl">
+          {isAuthenticated ? "My Wishlist" : "Wishlist"}
+        </h1>
       </div>
-      {!isAuthenticated && (
-        <p className="text-sm text-muted-foreground mb-8">
-          Saved on this device.{" "}
-          <Link href="/sign-in" className="text-primary hover:underline">
-            Sign in
-          </Link>{" "}
-          to save them to your account permanently.
-        </p>
-      )}
-      {isAuthenticated && <div className="mb-8" />}
+      <div className="mb-8" />
 
       {items.length === 0 ? (
         <div className="border border-border bg-card p-12 text-center">
-          <p className="text-muted-foreground mb-4">Your wishlist is empty.</p>
-          <Button asChild className="rounded-none">
-            <Link href="/shop">Browse Products</Link>
-          </Button>
+          {isAuthenticated ? (
+            <>
+              <p className="text-muted-foreground mb-4">Your wishlist is empty.</p>
+              <Button asChild className="rounded-none">
+                <Link href="/shop">Browse Products</Link>
+              </Button>
+            </>
+          ) : (
+            <p className="text-muted-foreground">
+              <Link
+                href="/sign-in?redirect_url=%2Fwishlist"
+                className="text-primary hover:underline"
+              >
+                Sign In
+              </Link>{" "}
+              or{" "}
+              <Link
+                href="/sign-up?redirect_url=%2Fwishlist"
+                className="text-primary hover:underline"
+              >
+                Create Account
+              </Link>{" "}
+              to save items to your Wishlist
+            </p>
+          )}
         </div>
       ) : (
         <ul className="divide-y divide-border border-y border-border">
