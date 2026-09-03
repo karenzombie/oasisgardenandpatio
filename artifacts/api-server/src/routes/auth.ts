@@ -1,7 +1,7 @@
 import { Router, type IRouter, type Request } from "express";
 import { randomBytes, createHash } from "node:crypto";
 import { inspect } from "node:util";
-import { and, eq, isNull, gt, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, gt, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { getAuth, clerkClient } from "@clerk/express";
 import {
@@ -10,6 +10,7 @@ import {
   customersTable,
   cartsTable,
   cartItemsTable,
+  cartItemAddonsTable,
   emailVerificationTokensTable,
   type User,
 } from "@workspace/db";
@@ -126,8 +127,9 @@ async function mergeGuestCartIntoUserCart(
       // Existing user cart — copy each scalar line using the same seven-column
       // upsert tuple as /cart/items so duplicates accumulate quantities
       // atomically. Parent references and add-ons are handled in later stages.
+      const guestItemIdToUserItemId = new Map<number, number>();
       for (const guestItem of guestItems) {
-        await tx.execute<{ id: number }>(sql`
+        const result = await tx.execute<{ id: number }>(sql`
           INSERT INTO cart_items (
             cart_id,
             product_id,
@@ -164,6 +166,46 @@ async function mergeGuestCartIntoUserCart(
           DO UPDATE SET quantity = cart_items.quantity + EXCLUDED.quantity
           RETURNING id
         `);
+        const userItemId = result.rows[0]?.id;
+        if (userItemId == null) {
+          throw new Error(
+            `Cart merge did not return an id for guest cart item ${guestItem.id}`,
+          );
+        }
+        guestItemIdToUserItemId.set(guestItem.id, userItemId);
+      }
+
+      const guestAddons = await tx
+        .select()
+        .from(cartItemAddonsTable)
+        .where(
+          inArray(
+            cartItemAddonsTable.cartItemId,
+            guestItems.map((guestItem) => guestItem.id),
+          ),
+        );
+      if (guestAddons.length > 0) {
+        await tx
+          .insert(cartItemAddonsTable)
+          .values(
+            guestAddons.map((guestAddon) => {
+              const userItemId = guestItemIdToUserItemId.get(
+                guestAddon.cartItemId,
+              );
+              if (userItemId == null) {
+                throw new Error(
+                  `Cart merge has no destination for guest cart item ${guestAddon.cartItemId}`,
+                );
+              }
+              return {
+                cartItemId: userItemId,
+                addonOptionId: guestAddon.addonOptionId,
+                unitPrice: guestAddon.unitPrice,
+                quantity: guestAddon.quantity,
+              };
+            }),
+          )
+          .onConflictDoNothing();
       }
 
       await tx
