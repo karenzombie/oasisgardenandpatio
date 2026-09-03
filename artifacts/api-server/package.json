@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "export NODE_ENV=development && pnpm run build && pnpm run start",
     "build": "node ./build.mjs",
-    "postbuild": "[ \"$REPLIT_DEPLOYMENT\" = '1' ] && bash ../../scripts/deploy-sync.sh || true",
+    "postbuild": "if [ \"$REPLIT_DEPLOYMENT\" = '1' ] && [ \"$ALLOW_PROD_DATA_SYNC\" = '1' ]; then bash ../../scripts/deploy-sync.sh || true; else echo 'Skipping production data sync'; fi",
     "start": "node --enable-source-maps ./dist/index.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
