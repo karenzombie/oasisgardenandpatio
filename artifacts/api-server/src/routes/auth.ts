@@ -1,5 +1,6 @@
 import { Router, type IRouter, type Request } from "express";
 import { randomBytes, createHash } from "node:crypto";
+import { inspect } from "node:util";
 import { and, eq, isNull, gt, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { getAuth, clerkClient } from "@clerk/express";
@@ -137,6 +138,15 @@ async function mergeGuestCartIntoUserCart(
       .where(eq(cartItemsTable.cartId, guestCart.id));
     await db.delete(cartsTable).where(eq(cartsTable.id, guestCart.id));
   } catch (err) {
+    req.log?.error(
+      {
+        err,
+        errorInspection: inspect(err, { showHidden: true, depth: null }),
+        userId,
+        guestSessionId,
+      },
+      "DIAGNOSTIC: guest cart merge failure",
+    );
     req.log?.warn(
       { err, userId, guestSessionId },
       "failed to merge guest cart into user cart",
