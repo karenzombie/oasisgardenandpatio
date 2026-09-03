@@ -128,7 +128,23 @@ async function mergeGuestCartIntoUserCart(
       // upsert tuple as /cart/items so duplicates accumulate quantities
       // atomically. Parent references and add-ons are handled in later stages.
       const guestItemIdToUserItemId = new Map<number, number>();
-      for (const guestItem of guestItems) {
+      const orderedGuestItems = [...guestItems].sort((a, b) => {
+        const aIsChild = a.parentCartItemId != null ? 1 : 0;
+        const bIsChild = b.parentCartItemId != null ? 1 : 0;
+        return aIsChild - bIsChild || a.id - b.id;
+      });
+      for (const guestItem of orderedGuestItems) {
+        let parentCartItemId: number | null = null;
+        if (guestItem.parentCartItemId != null) {
+          parentCartItemId =
+            guestItemIdToUserItemId.get(guestItem.parentCartItemId) ?? null;
+          if (parentCartItemId == null) {
+            throw new Error(
+              `Cart merge parent ${guestItem.parentCartItemId} was not copied before child ${guestItem.id}`,
+            );
+          }
+        }
+
         const result = await tx.execute<{ id: number }>(sql`
           INSERT INTO cart_items (
             cart_id,
@@ -140,7 +156,8 @@ async function mergeGuestCartIntoUserCart(
             quantity,
             price,
             addon_signature,
-            selected_model_code
+            selected_model_code,
+            parent_cart_item_id
           )
           VALUES (
             ${userCart.id},
@@ -152,7 +169,8 @@ async function mergeGuestCartIntoUserCart(
             ${guestItem.quantity},
             ${guestItem.price},
             ${guestItem.addonSignature},
-            ${guestItem.selectedModelCode}
+            ${guestItem.selectedModelCode},
+            ${parentCartItemId}
           )
           ON CONFLICT (
             cart_id,
