@@ -53,11 +53,12 @@ export function useClerkSync(): void {
 
     inFlightRef.current = true;
     void clerkSync()
-      .then(() => {
+      .then(async (user) => {
         syncedSessionRef.current = sessionId;
-        return qc
-          .invalidateQueries({ queryKey: getGetCurrentUserQueryKey() })
-          .then(() => qc.invalidateQueries({ queryKey: getGetCartQueryKey() }));
+        const currentUserQueryKey = getGetCurrentUserQueryKey();
+        await qc.cancelQueries({ queryKey: currentUserQueryKey });
+        qc.setQueryData(currentUserQueryKey, user);
+        return qc.invalidateQueries({ queryKey: getGetCartQueryKey() });
       })
       .catch(async (err) => {
         if (err instanceof ApiError && err.status === 403) {
