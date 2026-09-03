@@ -1,6 +1,5 @@
 import { Router, type IRouter, type Request } from "express";
 import { randomBytes, createHash } from "node:crypto";
-import { inspect } from "node:util";
 import { and, eq, inArray, isNull, gt, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { getAuth, clerkClient } from "@clerk/express";
@@ -84,6 +83,9 @@ async function mergeGuestCartIntoUserCart(
   guestSessionId: string,
   userId: number,
 ): Promise<void> {
+  let guestCartId: number | null = null;
+  let userCartId: number | null = null;
+
   try {
     await db.transaction(async (tx) => {
       const [guestCart] = await tx
@@ -96,6 +98,7 @@ async function mergeGuestCartIntoUserCart(
           ),
         )
         .limit(1);
+      guestCartId = guestCart?.id ?? null;
       if (!guestCart) return;
 
       const guestItems = await tx
@@ -113,6 +116,7 @@ async function mergeGuestCartIntoUserCart(
         .from(cartsTable)
         .where(eq(cartsTable.userId, userId))
         .limit(1);
+      userCartId = userCart?.id ?? null;
 
       if (!userCart) {
         // Re-key the guest cart in place — preserves the cart's createdAt and
@@ -126,7 +130,8 @@ async function mergeGuestCartIntoUserCart(
 
       // Existing user cart — copy each scalar line using the same seven-column
       // upsert tuple as /cart/items so duplicates accumulate quantities
-      // atomically. Parent references and add-ons are handled in later stages.
+      // atomically. Parent references use the id map and add-ons are copied
+      // below before the guest cart is deleted.
       const guestItemIdToUserItemId = new Map<number, number>();
       const orderedGuestItems = [...guestItems].sort((a, b) => {
         const aIsChild = a.parentCartItemId != null ? 1 : 0;
@@ -233,16 +238,7 @@ async function mergeGuestCartIntoUserCart(
     });
   } catch (err) {
     req.log?.error(
-      {
-        err,
-        errorInspection: inspect(err, { showHidden: true, depth: null }),
-        userId,
-        guestSessionId,
-      },
-      "DIAGNOSTIC: guest cart merge failure",
-    );
-    req.log?.warn(
-      { err, userId, guestSessionId },
+      { err, userId, guestSessionId, guestCartId, userCartId },
       "failed to merge guest cart into user cart",
     );
   }
