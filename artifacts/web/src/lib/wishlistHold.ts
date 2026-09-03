@@ -11,10 +11,8 @@ import { useEffect, useRef, useSyncExternalStore } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   addWishlistItem,
-  mergeWishlist,
   useGetWishlist,
   getGetWishlistQueryKey,
-  type WishlistResponse,
 } from "@workspace/api-client-react";
 import { useAuth } from "./auth";
 
@@ -112,36 +110,31 @@ export function useDeviceToken(): string | null {
 /**
  * Centralized wishlist read for the current identity:
  * - signed-in: GET /wishlist (session-scoped)
- * - guest with a token: GET /wishlist?deviceToken=…
- * - guest without a token yet: disabled, empty list
+ * - guest: disabled, empty list
  */
 export function useWishlistItems() {
   const { user, isAuthenticated } = useAuth();
   const userId = user?.id ?? null;
   const deviceToken = useDeviceToken();
-  const params =
-    !isAuthenticated && deviceToken ? { deviceToken } : undefined;
-  const enabled = isAuthenticated || Boolean(deviceToken);
   const queryKey = wishlistKeyFor(userId, deviceToken);
 
-  const query = useGetWishlist(params, {
+  const query = useGetWishlist(undefined, {
     query: {
       queryKey,
-      enabled,
+      enabled: isAuthenticated,
       retry: false,
       staleTime: 30_000,
     },
   });
 
   return {
-    // Never surface cached data when the query is disabled (e.g. a brand-new
-    // guest with no token): each identity reads only its own scoped entry.
-    items: enabled ? (query.data?.items ?? []) : [],
+    // Never surface cached data or a loading state for signed-out visitors.
+    items: isAuthenticated ? (query.data?.items ?? []) : [],
     isAuthenticated,
     userId,
     deviceToken,
     queryKey,
-    isLoading: query.isLoading,
+    isLoading: isAuthenticated ? query.isLoading : false,
   };
 }
 
@@ -155,6 +148,15 @@ async function migrateLegacyGuestWishlist(
   isAuthenticated: boolean,
 ): Promise<void> {
   if (typeof window === "undefined") return;
+  if (!isAuthenticated) {
+    try {
+      window.localStorage.removeItem(LEGACY_KEY);
+    } catch {
+      // ignore
+    }
+    return;
+  }
+
   let raw: string | null = null;
   try {
     raw = window.localStorage.getItem(LEGACY_KEY);
@@ -183,15 +185,9 @@ async function migrateLegacyGuestWishlist(
   }
   if (ids.length === 0) return;
 
-  // Signed-in users get the items added straight to their account; guests get
-  // them written under a (freshly minted) device token.
-  const token = isAuthenticated ? null : ensureDeviceToken();
   for (const productId of ids) {
     try {
-      await addWishlistItem({
-        productId,
-        ...(token ? { deviceToken: token } : {}),
-      });
+      await addWishlistItem({ productId });
     } catch {
       // Skip items that can't be re-added.
     }
@@ -199,16 +195,13 @@ async function migrateLegacyGuestWishlist(
 }
 
 /**
- * Mount once near the top of the customer tree. Handles:
- *  1. the one-time legacy localStorage → DB migration, and
- *  2. merging a guest device's wishlist into the account on login.
+ * Mount once near the top of the customer tree. Handles the one-time legacy
+ * localStorage → DB migration for signed-in customers.
  */
 export function useWishlistBootstrap(): void {
-  const { user, isAuthenticated, isLoading } = useAuth();
-  const userId = user?.id ?? null;
+  const { isAuthenticated, isLoading } = useAuth();
   const qc = useQueryClient();
   const migratedRef = useRef(false);
-  const mergedRef = useRef(false);
 
   // One-time legacy migration.
   useEffect(() => {
@@ -218,30 +211,4 @@ export function useWishlistBootstrap(): void {
       qc.invalidateQueries({ queryKey: WISHLIST_BASE_KEY });
     });
   }, [isLoading, isAuthenticated, qc]);
-
-  // Merge guest device wishlist into the account on login.
-  useEffect(() => {
-    if (isLoading) return;
-    if (!isAuthenticated || userId == null) {
-      mergedRef.current = false;
-      return;
-    }
-    if (mergedRef.current) return;
-    const token = getDeviceToken();
-    if (!token) {
-      mergedRef.current = true;
-      return;
-    }
-    mergedRef.current = true;
-    void mergeWishlist({ deviceToken: token })
-      .then((resp: WishlistResponse) => {
-        qc.setQueryData(wishlistKeyFor(userId, null), resp);
-        clearDeviceToken();
-        qc.invalidateQueries({ queryKey: WISHLIST_BASE_KEY });
-      })
-      .catch(() => {
-        // Retry on the next auth event.
-        mergedRef.current = false;
-      });
-  }, [isLoading, isAuthenticated, userId, qc]);
 }
