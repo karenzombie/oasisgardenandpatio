@@ -84,59 +84,93 @@ async function mergeGuestCartIntoUserCart(
   userId: number,
 ): Promise<void> {
   try {
-    const [guestCart] = await db
-      .select()
-      .from(cartsTable)
-      .where(
-        and(
-          eq(cartsTable.sessionId, guestSessionId),
-          isNull(cartsTable.userId),
-        ),
-      )
-      .limit(1);
-    if (!guestCart) return;
+    await db.transaction(async (tx) => {
+      const [guestCart] = await tx
+        .select()
+        .from(cartsTable)
+        .where(
+          and(
+            eq(cartsTable.sessionId, guestSessionId),
+            isNull(cartsTable.userId),
+          ),
+        )
+        .limit(1);
+      if (!guestCart) return;
 
-    const guestItems = await db
-      .select({ id: cartItemsTable.id })
-      .from(cartItemsTable)
-      .where(eq(cartItemsTable.cartId, guestCart.id))
-      .limit(1);
+      const guestItems = await tx
+        .select()
+        .from(cartItemsTable)
+        .where(eq(cartItemsTable.cartId, guestCart.id));
 
-    if (guestItems.length === 0) {
-      await db.delete(cartsTable).where(eq(cartsTable.id, guestCart.id));
-      return;
-    }
+      if (guestItems.length === 0) {
+        await tx.delete(cartsTable).where(eq(cartsTable.id, guestCart.id));
+        return;
+      }
 
-    const [userCart] = await db
-      .select()
-      .from(cartsTable)
-      .where(eq(cartsTable.userId, userId))
-      .limit(1);
+      const [userCart] = await tx
+        .select()
+        .from(cartsTable)
+        .where(eq(cartsTable.userId, userId))
+        .limit(1);
 
-    if (!userCart) {
-      // Re-key the guest cart in place — preserves the cart's createdAt and
-      // avoids copying every line.
-      await db
-        .update(cartsTable)
-        .set({ userId, sessionId: null })
-        .where(eq(cartsTable.id, guestCart.id));
-      return;
-    }
+      if (!userCart) {
+        // Re-key the guest cart in place — preserves the cart's createdAt and
+        // avoids copying every line.
+        await tx
+          .update(cartsTable)
+          .set({ userId, sessionId: null })
+          .where(eq(cartsTable.id, guestCart.id));
+        return;
+      }
 
-    // Existing user cart — copy lines using the same upsert tuple as
-    // /cart/items so duplicates accumulate quantities atomically.
-    await db.execute(sql`
-      INSERT INTO cart_items (cart_id, product_id, variant_id, fabric_id, quantity, price)
-      SELECT ${userCart.id}, product_id, variant_id, fabric_id, quantity, price
-      FROM cart_items
-      WHERE cart_id = ${guestCart.id}
-      ON CONFLICT (cart_id, product_id, (COALESCE(variant_id, 0)), (COALESCE(fabric_id, 0)))
-      DO UPDATE SET quantity = cart_items.quantity + EXCLUDED.quantity
-    `);
-    await db
-      .delete(cartItemsTable)
-      .where(eq(cartItemsTable.cartId, guestCart.id));
-    await db.delete(cartsTable).where(eq(cartsTable.id, guestCart.id));
+      // Existing user cart — copy each scalar line using the same seven-column
+      // upsert tuple as /cart/items so duplicates accumulate quantities
+      // atomically. Parent references and add-ons are handled in later stages.
+      for (const guestItem of guestItems) {
+        await tx.execute<{ id: number }>(sql`
+          INSERT INTO cart_items (
+            cart_id,
+            product_id,
+            variant_id,
+            finish_id,
+            finial_id,
+            fabric_id,
+            quantity,
+            price,
+            addon_signature,
+            selected_model_code
+          )
+          VALUES (
+            ${userCart.id},
+            ${guestItem.productId},
+            ${guestItem.variantId},
+            ${guestItem.finishId},
+            ${guestItem.finialId},
+            ${guestItem.fabricId},
+            ${guestItem.quantity},
+            ${guestItem.price},
+            ${guestItem.addonSignature},
+            ${guestItem.selectedModelCode}
+          )
+          ON CONFLICT (
+            cart_id,
+            product_id,
+            (COALESCE(variant_id, 0)),
+            (COALESCE(finish_id, 0)),
+            (COALESCE(fabric_id, 0)),
+            (COALESCE(finial_id, 0)),
+            addon_signature
+          )
+          DO UPDATE SET quantity = cart_items.quantity + EXCLUDED.quantity
+          RETURNING id
+        `);
+      }
+
+      await tx
+        .delete(cartItemsTable)
+        .where(eq(cartItemsTable.cartId, guestCart.id));
+      await tx.delete(cartsTable).where(eq(cartsTable.id, guestCart.id));
+    });
   } catch (err) {
     req.log?.error(
       {
