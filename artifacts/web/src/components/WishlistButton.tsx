@@ -5,11 +5,9 @@ import { Heart } from "lucide-react";
 import {
   useAddWishlistItem,
   useRemoveWishlistItem,
-  ApiError,
 } from "@workspace/api-client-react";
 import {
   useWishlistItems,
-  ensureDeviceToken,
   wishlistKeyFor,
   getDeviceToken,
 } from "@/lib/wishlistHold";
@@ -23,9 +21,10 @@ type Variant = "icon" | "button";
  *
  * - mode="toggle" (default): a coarse per-product heart. Adds with no
  *   configuration when empty, removes the saved row when set. Used on cards.
- * - mode="add": always attempts to add the current configuration. Signed-in
- *   users accumulate multiple configurations; guests who already saved this
- *   product get the account-prompt modal. Used on the PDP option pickers.
+ * - mode="add": always attempts to add the current configuration. Used on the
+ *   PDP option pickers.
+ * - Guests can use every visible control, but saving or removing opens the
+ *   account prompt instead of calling the wishlist API.
  */
 export function WishlistButton({
   productId,
@@ -57,7 +56,7 @@ export function WishlistButton({
   const [, navigate] = useLocation();
   const [promptOpen, setPromptOpen] = useState(false);
 
-  const { items, isAuthenticated, userId, deviceToken } = useWishlistItems();
+  const { items, isAuthenticated, userId } = useWishlistItems();
   const matching = useMemo(
     () => items.filter((i) => i.productId === productId),
     [items, productId],
@@ -71,12 +70,7 @@ export function WishlistButton({
         setPromptOpen(false);
         toast({ title: "Saved to wishlist" });
       },
-      onError: (err: unknown) => {
-        // Guest tried to save a second configuration of this product.
-        if (err instanceof ApiError && err.status === 409) {
-          setPromptOpen(true);
-          return;
-        }
+      onError: () => {
         toast({
           title: "Could not save to wishlist",
           description: "Please try again.",
@@ -95,23 +89,14 @@ export function WishlistButton({
 
   const pending = addM.isPending || removeM.isPending;
 
-  function buildAddData(replaceExisting: boolean) {
-    const config = {
+  function buildAddData() {
+    return {
+      productId,
       ...(selectedFinishId != null ? { selectedFinishId } : {}),
       ...(selectedFabricId != null ? { selectedFabricId } : {}),
       ...(selectedTableTopTileId != null ? { selectedTableTopTileId } : {}),
       ...(selectedVariantLabel != null ? { variantLabel: selectedVariantLabel } : {}),
       ...(selectedVariantId != null ? { variantId: selectedVariantId } : {}),
-    };
-    if (isAuthenticated) {
-      return { productId, ...config };
-    }
-    const token = ensureDeviceToken();
-    return {
-      productId,
-      deviceToken: token,
-      ...config,
-      ...(replaceExisting ? { replaceExisting: true } : {}),
     };
   }
 
@@ -125,17 +110,22 @@ export function WishlistButton({
       return;
     }
 
+    if (!isAuthenticated) {
+      setPromptOpen(true);
+      return;
+    }
+
     // Toggle mode removes the existing row when the product is already saved.
     if (mode === "toggle" && inWishlist) {
       const row = matching[0];
       removeM.mutate({
         id: row.id,
-        data: isAuthenticated ? {} : { deviceToken: deviceToken ?? "" },
+        data: {},
       });
       return;
     }
 
-    addM.mutate({ data: buildAddData(false) });
+    addM.mutate({ data: buildAddData() });
   }
 
   const nextUrl = encodeURIComponent(
@@ -146,7 +136,6 @@ export function WishlistButton({
     <WishlistAccountPromptModal
       open={promptOpen}
       onOpenChange={setPromptOpen}
-      replacing={addM.isPending}
       onSignIn={() => {
         setPromptOpen(false);
         navigate(`/sign-in?redirect_url=${nextUrl}`);
@@ -154,9 +143,6 @@ export function WishlistButton({
       onCreateAccount={() => {
         setPromptOpen(false);
         navigate(`/sign-up?redirect_url=${nextUrl}`);
-      }}
-      onReplace={() => {
-        addM.mutate({ data: buildAddData(true) });
       }}
     />
   );
