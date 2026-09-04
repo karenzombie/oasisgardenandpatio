@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import {
   useGetCurrentUser,
   getGetCurrentUserQueryKey,
@@ -31,10 +32,23 @@ export function useAuth(): {
   // (no orders, no wishlist, etc.) and showing their name in the storefront
   // navbar is confusing. Treat any non-customer role as anonymous here.
   const user = rawUser && rawUser.role === "customer" ? rawUser : null;
+  const isAuthenticated = Boolean(user);
+  const previousIsAuthenticatedRef = useRef<boolean | undefined>(undefined);
+
+  useEffect(() => {
+    if (previousIsAuthenticatedRef.current === isAuthenticated) return;
+    previousIsAuthenticatedRef.current = isAuthenticated;
+    console.log("[AUTHDIAG] derived isAuthenticated changed", {
+      isAuthenticated,
+      queryStatus: query.status,
+      hasData: Boolean(query.data),
+      errorStatus: error instanceof ApiError ? error.status : null,
+    });
+  }, [isAuthenticated, query.status, query.data, error]);
 
   return {
     user,
     isLoading: query.isLoading,
-    isAuthenticated: !!user,
+    isAuthenticated,
   };
 }
