@@ -8,6 +8,7 @@ import {
   ApiError,
 } from "@workspace/api-client-react";
 import { useAuth } from "./auth";
+import { addAuthDiagnostic } from "./authDiagnostics";
 
 function extractErrorMessage(err: ApiError, fallback: string): string {
   const data = err.data as { error?: unknown } | null | undefined;
@@ -48,23 +49,23 @@ export function useClerkSync(): void {
     };
 
     if (!isLoaded || localLoading) {
-      console.log(
-        "[AUTHDIAG] useClerkSync early return: auth state not ready",
+      addAuthDiagnostic(
+        "useClerkSync early return: auth state not ready",
         diagnosticState,
       );
       return;
     }
     if (!isSignedIn || !sessionId) {
-      console.log(
-        "[AUTHDIAG] useClerkSync early return: Clerk signed out or session missing",
+      addAuthDiagnostic(
+        "useClerkSync early return: Clerk signed out or session missing",
         diagnosticState,
       );
       syncedSessionRef.current = null;
       return;
     }
     if (localUser) {
-      console.log(
-        "[AUTHDIAG] useClerkSync early return: local user already present",
+      addAuthDiagnostic(
+        "useClerkSync early return: local user already present",
         diagnosticState,
       );
       // Already bridged on a previous render — remember which Clerk session
@@ -73,28 +74,28 @@ export function useClerkSync(): void {
       return;
     }
     if (syncedSessionRef.current === sessionId) {
-      console.log(
-        "[AUTHDIAG] useClerkSync early return: Clerk session already synced",
+      addAuthDiagnostic(
+        "useClerkSync early return: Clerk session already synced",
         diagnosticState,
       );
       return;
     }
     if (inFlightRef.current) {
-      console.log(
-        "[AUTHDIAG] useClerkSync early return: sync already in flight",
+      addAuthDiagnostic(
+        "useClerkSync early return: sync already in flight",
         diagnosticState,
       );
       return;
     }
 
     inFlightRef.current = true;
-    console.log("[AUTHDIAG] useClerkSync calling clerkSync", {
+    addAuthDiagnostic("useClerkSync calling clerkSync", {
       ...diagnosticState,
       inFlight: inFlightRef.current,
     });
     void clerkSync()
       .then(async (user) => {
-        console.log("[AUTHDIAG] clerkSync resolved", {
+        addAuthDiagnostic("clerkSync resolved", {
           userId: user.id,
           role: user.role,
         });
@@ -103,14 +104,19 @@ export function useClerkSync(): void {
         await qc.cancelQueries({ queryKey: currentUserQueryKey });
         qc.setQueryData(currentUserQueryKey, user);
         const cachedUser = qc.getQueryData<typeof user>(currentUserQueryKey);
-        console.log("[AUTHDIAG] current user cache after setQueryData", {
+        addAuthDiagnostic("current user cache after setQueryData", {
           isPresent: Boolean(cachedUser),
           userId: cachedUser?.id ?? null,
         });
         return qc.invalidateQueries({ queryKey: getGetCartQueryKey() });
       })
       .catch(async (err) => {
-        console.log("[AUTHDIAG] clerkSync catch reached", { error: err });
+        addAuthDiagnostic("clerkSync catch reached", {
+          error:
+            err instanceof Error
+              ? { name: err.name, message: err.message }
+              : err,
+        });
         if (err instanceof ApiError && err.status === 403) {
           const data = err.data as
             | { code?: unknown }

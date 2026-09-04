@@ -5,6 +5,10 @@ import {
   ApiError,
   type CurrentUser,
 } from "@workspace/api-client-react";
+import {
+  addAuthDiagnostic,
+  setAuthDiagnosticStatus,
+} from "./authDiagnostics";
 
 export function useAuth(): {
   user: CurrentUser | null;
@@ -36,14 +40,16 @@ export function useAuth(): {
   const previousIsAuthenticatedRef = useRef<boolean | undefined>(undefined);
 
   useEffect(() => {
-    if (previousIsAuthenticatedRef.current === isAuthenticated) return;
-    previousIsAuthenticatedRef.current = isAuthenticated;
-    console.log("[AUTHDIAG] derived isAuthenticated changed", {
+    const status = {
       isAuthenticated,
       queryStatus: query.status,
       hasData: Boolean(query.data),
       errorStatus: error instanceof ApiError ? error.status : null,
-    });
+    };
+    setAuthDiagnosticStatus(status);
+    if (previousIsAuthenticatedRef.current === isAuthenticated) return;
+    previousIsAuthenticatedRef.current = isAuthenticated;
+    addAuthDiagnostic("derived isAuthenticated changed", status);
   }, [isAuthenticated, query.status, query.data, error]);
 
   return {
