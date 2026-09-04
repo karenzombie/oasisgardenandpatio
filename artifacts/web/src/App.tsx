@@ -10,7 +10,6 @@ import NotFound from "@/pages/not-found";
 import { trackVisitOnce } from "@/lib/analytics";
 import { useWishlistBootstrap } from "@/lib/wishlistHold";
 import { useClerkSync } from "@/lib/useClerkSync";
-import { AuthDiagnosticPanel } from "@/lib/authDiagnostics";
 import { clerkAppearance } from "@/lib/clerkAppearance";
 import { SignInPage, SignUpPage } from "@/pages/auth/ClerkAuthPages";
 import { SSOCallbackPage } from "@/pages/auth/SSOCallback";
@@ -209,7 +208,6 @@ function App() {
           <Router />
         </WouterRouter>
         <Toaster />
-        <AuthDiagnosticPanel />
       </TooltipProvider>
     </QueryClientProvider>
   );

@@ -8,7 +8,6 @@ import {
   ApiError,
 } from "@workspace/api-client-react";
 import { useAuth } from "./auth";
-import { addAuthDiagnostic } from "./authDiagnostics";
 
 function extractErrorMessage(err: ApiError, fallback: string): string {
   const data = err.data as { error?: unknown } | null | undefined;
@@ -38,85 +37,30 @@ export function useClerkSync(): void {
   const inFlightRef = useRef<boolean>(false);
 
   useEffect(() => {
-    const diagnosticState = {
-      isLoaded,
-      isSignedIn,
-      hasSessionId: Boolean(sessionId),
-      localLoading,
-      hasLocalUser: Boolean(localUser),
-      syncedSessionMatches: syncedSessionRef.current === sessionId,
-      inFlight: inFlightRef.current,
-    };
-
-    if (!isLoaded || localLoading) {
-      addAuthDiagnostic(
-        "useClerkSync early return: auth state not ready",
-        diagnosticState,
-      );
-      return;
-    }
+    if (!isLoaded || localLoading) return;
     if (!isSignedIn || !sessionId) {
-      addAuthDiagnostic(
-        "useClerkSync early return: Clerk signed out or session missing",
-        diagnosticState,
-      );
       syncedSessionRef.current = null;
       return;
     }
     if (localUser) {
-      addAuthDiagnostic(
-        "useClerkSync early return: local user already present",
-        diagnosticState,
-      );
       // Already bridged on a previous render — remember which Clerk session
       // succeeded so we don't re-sync until the user signs out and back in.
       syncedSessionRef.current = sessionId;
       return;
     }
-    if (syncedSessionRef.current === sessionId) {
-      addAuthDiagnostic(
-        "useClerkSync early return: Clerk session already synced",
-        diagnosticState,
-      );
-      return;
-    }
-    if (inFlightRef.current) {
-      addAuthDiagnostic(
-        "useClerkSync early return: sync already in flight",
-        diagnosticState,
-      );
-      return;
-    }
+    if (syncedSessionRef.current === sessionId) return;
+    if (inFlightRef.current) return;
 
     inFlightRef.current = true;
-    addAuthDiagnostic("useClerkSync calling clerkSync", {
-      ...diagnosticState,
-      inFlight: inFlightRef.current,
-    });
     void clerkSync()
       .then(async (user) => {
-        addAuthDiagnostic("clerkSync resolved", {
-          userId: user.id,
-          role: user.role,
-        });
         syncedSessionRef.current = sessionId;
         const currentUserQueryKey = getGetCurrentUserQueryKey();
         await qc.cancelQueries({ queryKey: currentUserQueryKey });
         qc.setQueryData(currentUserQueryKey, user);
-        const cachedUser = qc.getQueryData<typeof user>(currentUserQueryKey);
-        addAuthDiagnostic("current user cache after setQueryData", {
-          isPresent: Boolean(cachedUser),
-          userId: cachedUser?.id ?? null,
-        });
         return qc.invalidateQueries({ queryKey: getGetCartQueryKey() });
       })
       .catch(async (err) => {
-        addAuthDiagnostic("clerkSync catch reached", {
-          error:
-            err instanceof Error
-              ? { name: err.name, message: err.message }
-              : err,
-        });
         if (err instanceof ApiError && err.status === 403) {
           const data = err.data as
             | { code?: unknown }

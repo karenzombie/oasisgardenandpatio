@@ -1,14 +1,9 @@
-import { useEffect, useRef } from "react";
 import {
   useGetCurrentUser,
   getGetCurrentUserQueryKey,
   ApiError,
   type CurrentUser,
 } from "@workspace/api-client-react";
-import {
-  addAuthDiagnostic,
-  setAuthDiagnosticStatus,
-} from "./authDiagnostics";
 
 export function useAuth(): {
   user: CurrentUser | null;
@@ -36,25 +31,10 @@ export function useAuth(): {
   // (no orders, no wishlist, etc.) and showing their name in the storefront
   // navbar is confusing. Treat any non-customer role as anonymous here.
   const user = rawUser && rawUser.role === "customer" ? rawUser : null;
-  const isAuthenticated = Boolean(user);
-  const previousIsAuthenticatedRef = useRef<boolean | undefined>(undefined);
-
-  useEffect(() => {
-    const status = {
-      isAuthenticated,
-      queryStatus: query.status,
-      hasData: Boolean(query.data),
-      errorStatus: error instanceof ApiError ? error.status : null,
-    };
-    setAuthDiagnosticStatus(status);
-    if (previousIsAuthenticatedRef.current === isAuthenticated) return;
-    previousIsAuthenticatedRef.current = isAuthenticated;
-    addAuthDiagnostic("derived isAuthenticated changed", status);
-  }, [isAuthenticated, query.status, query.data, error]);
 
   return {
     user,
     isLoading: query.isLoading,
-    isAuthenticated,
+    isAuthenticated: !!user,
   };
 }

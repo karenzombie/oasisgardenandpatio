@@ -1,5 +1,4 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { createHash } from "node:crypto";
 import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import {
   db,
@@ -36,43 +35,6 @@ import {
 } from "../lib/shippingRules";
 
 const router: IRouter = Router();
-
-function sessionDiagnostic(endpoint: string) {
-  return (req: Request, res: Response, next: () => void): void => {
-    const sessionState = () => ({
-      sessionIdFingerprint: createHash("sha256")
-        .update(req.sessionID)
-        .digest("hex")
-        .slice(0, 12),
-      sessionUserId: req.session.userId ?? null,
-    });
-    req.log.info(
-      { endpoint, phase: "entry", ...sessionState() },
-      "temporary session diagnostic",
-    );
-    res.once("finish", () => {
-      const rawSetCookie = res.getHeader("set-cookie");
-      const setCookies = Array.isArray(rawSetCookie)
-        ? rawSetCookie
-        : rawSetCookie == null
-          ? []
-          : [String(rawSetCookie)];
-      req.log.info(
-        {
-          endpoint,
-          phase: "exit",
-          statusCode: res.statusCode,
-          ...sessionState(),
-          setsSessionCookie: setCookies.some((value) =>
-            value.startsWith("oasis.sid="),
-          ),
-        },
-        "temporary session diagnostic",
-      );
-    });
-    next();
-  };
-}
 
 /**
  * Resolve which cart owner identity to use for the request. Authenticated
@@ -329,7 +291,6 @@ async function loadCart(owner: CartOwner) {
 
 router.get(
   "/cart",
-  sessionDiagnostic("GET /api/cart"),
   async (req: Request, res: Response): Promise<void> => {
     await ensureSessionPersisted(req);
     res.json(await loadCart(ownerFor(req)));

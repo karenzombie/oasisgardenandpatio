@@ -1,4 +1,4 @@
-import { Router, type IRouter, type Request, type Response } from "express";
+import { Router, type IRouter, type Request } from "express";
 import { randomBytes, createHash } from "node:crypto";
 import { and, eq, inArray, isNull, gt, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
@@ -36,40 +36,6 @@ function generateRawToken(): string {
 
 function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
-}
-
-function sessionDiagnostic(endpoint: string) {
-  return (req: Request, res: Response, next: () => void): void => {
-    const sessionState = () => ({
-      sessionIdFingerprint: hashToken(req.sessionID).slice(0, 12),
-      sessionUserId: req.session.userId ?? null,
-    });
-    req.log.info(
-      { endpoint, phase: "entry", ...sessionState() },
-      "temporary session diagnostic",
-    );
-    res.once("finish", () => {
-      const rawSetCookie = res.getHeader("set-cookie");
-      const setCookies = Array.isArray(rawSetCookie)
-        ? rawSetCookie
-        : rawSetCookie == null
-          ? []
-          : [String(rawSetCookie)];
-      req.log.info(
-        {
-          endpoint,
-          phase: "exit",
-          statusCode: res.statusCode,
-          ...sessionState(),
-          setsSessionCookie: setCookies.some((value) =>
-            value.startsWith("oasis.sid="),
-          ),
-        },
-        "temporary session diagnostic",
-      );
-    });
-    next();
-  };
 }
 
 function publicBaseUrl(req: Request): string {
@@ -453,14 +419,9 @@ router.post("/auth/logout", (req, res): void => {
   });
 });
 
-router.get(
-  "/auth/me",
-  sessionDiagnostic("GET /api/auth/me"),
-  requireAuth,
-  (req, res): void => {
+router.get("/auth/me", requireAuth, (req, res): void => {
   res.status(200).json(toCurrentUser(req.user!));
-  },
-);
+});
 
 router.post("/auth/verify-email", async (req, res): Promise<void> => {
   const parsed = VerifyEmailBody.safeParse(req.body);
@@ -539,10 +500,7 @@ router.post(
  * The frontend calls this once whenever the Clerk user transitions from
  * signed-out to signed-in, then refetches /auth/me.
  */
-router.post(
-  "/auth/clerk-sync",
-  sessionDiagnostic("POST /api/auth/clerk-sync"),
-  async (req, res): Promise<void> => {
+router.post("/auth/clerk-sync", async (req, res): Promise<void> => {
   const auth = getAuth(req);
   const clerkUserId = auth?.userId;
   if (!clerkUserId) {
@@ -719,8 +677,7 @@ router.post(
   await mergeGuestCartIntoUserCart(req, guestSessionId, user.id);
   await saveSession(req);
 
-    res.status(200).json(toCurrentUser(user));
-  },
-);
+  res.status(200).json(toCurrentUser(user));
+});
 
 export default router;
