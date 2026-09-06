@@ -1,0 +1,52 @@
+Correction to the brief: the expected override count in check 2.1 is 114,
+not 111. The brief's figure of 111 was counted before the three new
+override lines (qs, browserslist, fflate) were added in Step 1. 111 + 3 = 114.
+The uuid line was a replacement, not an addition, so it does not add to
+the count. Your result of 114 is CORRECT and 2.1 PASSES.
+
+Do not re-run pnpm install. Do not change any file. Continue Step 2 from
+check 2.2, using the already-installed state.
+
+2.2 THE ORIGINAL NINE ARE STILL ACTIVE
+Confirm all nine of these names still appear in the pnpm-lock.yaml
+overrides: block:
+brace-expansion, fast-uri, body-parser, ip-address, js-cookie,
+js-yaml, nanoid, postcss, dompurify
+If ANY one is missing, stop immediately and report it. Do not attempt a fix.
+
+2.3 RESOLVED VERSIONS
+Confirm each of these in pnpm-lock.yaml and report the actual version found:
+- orval: 8.22.0 or higher
+- uuid: exactly ONE copy, at 14.0.2
+- esbuild: exactly ONE copy, at 0.28.1
+- qs: 6.16.0 or higher
+- browserslist: 4.28.7 or higher
+- fflate: 0.8.3 or higher
+
+For uuid and esbuild, "exactly one copy" is a hard requirement. Confirm
+that none of these appear anywhere in the lockfile:
+uuid@8.3.2, uuid@9.0.1, uuid@10.0.0,
+esbuild@0.18.20, esbuild@0.25.12, esbuild@0.27.7
+
+2.4 EXPECTED REMOVALS
+Confirm these are gone. This is correct and intended, not an error:
+@esbuild-kit/esm-loader, @esbuild-kit/core-utils,
+source-map@0.6.1, source-map-support@0.5.21,
+plus the platform-specific binary packages for Android, Windows,
+macOS and FreeBSD.
+
+2.5 GENERATED FILES UNTOUCHED
+Confirm that no file under lib/api-zod/src/generated/ or
+lib/api-client-react/src/generated/ has been modified. The only changed
+files at this point should be the three edited in Step 1, plus
+pnpm-lock.yaml.
+
+CONSTRAINTS
+- Do not run typecheck, build, or any test.
+- Do not run orval codegen.
+- Do not run any database command.
+- Do not deploy or republish.
+- Do not modify any source file.
+- If any check fails, stop and report the exact output. Do not attempt a fix.
+
+Report results for 2.2 through 2.5, then stop.
