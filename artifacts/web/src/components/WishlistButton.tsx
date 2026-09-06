@@ -136,10 +136,6 @@ export function WishlistButton({
     <WishlistAccountPromptModal
       open={promptOpen}
       onOpenChange={setPromptOpen}
-      onSignIn={() => {
-        setPromptOpen(false);
-        navigate(`/sign-in?redirect_url=${nextUrl}`);
-      }}
       onCreateAccount={() => {
         setPromptOpen(false);
         navigate(`/sign-up?redirect_url=${nextUrl}`);

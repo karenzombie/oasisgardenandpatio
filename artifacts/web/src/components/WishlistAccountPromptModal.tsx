@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -5,6 +6,8 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { SignInForm } from "@/components/auth/SignInForm";
+import { useAuth } from "@/lib/auth";
 
 /**
  * Shown when a guest uses a wishlist control. Explains that wishlists require
@@ -13,14 +16,20 @@ import {
 export function WishlistAccountPromptModal({
   open,
   onOpenChange,
-  onSignIn,
   onCreateAccount,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSignIn: () => void;
   onCreateAccount: () => void;
 }) {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (open && !isLoading && isAuthenticated) {
+      onOpenChange(false);
+    }
+  }, [open, isLoading, isAuthenticated, onOpenChange]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
@@ -36,13 +45,7 @@ export function WishlistAccountPromptModal({
         </DialogHeader>
 
         <div className="mt-2 flex flex-col gap-2">
-          <button
-            type="button"
-            onClick={onSignIn}
-            className="w-full bg-primary text-primary-foreground px-4 py-2.5 text-sm uppercase tracking-widest font-medium hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            Sign In
-          </button>
+          <SignInForm showGoogle={false} />
           <button
             type="button"
             onClick={onCreateAccount}
