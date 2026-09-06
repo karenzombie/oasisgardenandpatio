@@ -4,6 +4,12 @@ import { Redirect } from "wouter";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
+function stripBase(path: string): string {
+  return basePath && path.startsWith(basePath)
+    ? path.slice(basePath.length) || "/"
+    : path;
+}
+
 function getPostSignInRedirect(): string {
   const fallback = "/account";
   const requested = new URLSearchParams(window.location.search).get(
@@ -23,7 +29,7 @@ function getPostSignInRedirect(): string {
 
     const parsed = new URL(requested, window.location.origin);
     if (parsed.origin !== window.location.origin) return fallback;
-    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+    return stripBase(`${parsed.pathname}${parsed.search}${parsed.hash}`);
   } catch {
     return fallback;
   }
